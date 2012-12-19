@@ -930,6 +930,8 @@ namespace stk {
       //std::cout << "tmp dump_elements 1" << std::endl;
       // m_eMesh.dump_elements();
 #endif
+      //m_eMesh.dump_vtk("after-ref-b4-fix.vtk");
+
       /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
 
       /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
@@ -2301,7 +2303,7 @@ namespace stk {
                                   std::cout << "found side element needing fixing, id= " << side.identifier() <<  std::endl;
                                   std::cout << "found side element needing fixing, ele id= " << element.identifier() <<  std::endl;
                                   //exit(123);
-                                  throw std::logic_error("fix_side_sets_2 error 1");
+                                  throw std::logic_error("fix_side_sets_1 error 1");
                                 }
 
 
@@ -2669,6 +2671,13 @@ namespace stk {
           for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
             {
               stk::mesh::Bucket & side_bucket = **it_side_bucket ;
+
+              if (m_eMesh.is_in_geometry_parts(m_geomFile, side_bucket))
+                {
+                  // std::cout << "found geom parts" << std::endl;
+                  continue;
+                }
+              
               const unsigned num_elements_in_side_bucket = side_bucket.size();
               for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
                 {
@@ -2731,7 +2740,8 @@ namespace stk {
 
               if (!found)
                 {
-                  std::cout << "ERROR: side = " << side << std::endl;
+                  std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side) << std::endl;
+                  m_eMesh.print(side);
                   throw std::logic_error("fix_side_sets_2 error 2");
                 }
             }
@@ -2744,11 +2754,21 @@ namespace stk {
     bool Refiner::connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap *side_part_map)
     {
       EXCEPTWATCH;
+      bool debug = false;
+      //if (side_elem.identifier() == 4348) debug = true;
+      //       if (element.identifier() == 71896)
+      //         {
+      //           if (side_elem.identifier() == 11174) debug = true;
+      //           if (side_elem.identifier() == 10190) debug = true;
+      //         }
+
       shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
-      //std::cout << "tmp srk connectSidesForced element= "; m_eMesh.print(element, false); 
-      //std::cout << " side= "; m_eMesh.print(side_elem, true); 
+      if (debug) {
+        std::cout << "tmp srk connectSidesForced element= "; m_eMesh.print(element, true, true); 
+        std::cout << " side= "; m_eMesh.print(side_elem, true, true); 
+      }
 
       // check validity of connection
       if (side_part_map)
@@ -2802,6 +2822,8 @@ namespace stk {
           element_nsides = (unsigned) element_topo.getEdgeCount();
         }
 
+      if (debug) std::cout << "isShell= " << isShell << std::endl;
+
       int permIndex = -1;
       int permPolarity = 1;
 
@@ -2830,14 +2852,14 @@ namespace stk {
                 {
                   stk::mesh::PairIterRelation elem_sides = element.relations(side_elem.entity_rank());
                   unsigned elem_sides_size= elem_sides.size();
-                  //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
+                  if (debug) std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
                     {
                       stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
                       if (rel_id > 1)
                         throw std::logic_error("connectSides:: logic 1");
                       k_element_side = (rel_id == 0 ? 1 : 0);
-                      //std::cout << "tmp srk k_element_side= " << k_element_side << " rel_id= " << rel_id << std::endl;
+                      if (debug) std::cout << "tmp srk k_element_side= " << k_element_side << " rel_id= " << rel_id << std::endl;
                     }
                 }
             }
@@ -2848,14 +2870,24 @@ namespace stk {
           unsigned rel_id = 0;
           for (unsigned iside=0; iside < elem_sides_size; iside++)
             {
-              if (elem_sides[iside].entity() == side_elem)
+              stk::mesh::Entity existing_side = elem_sides[iside].entity();
+              if (existing_side == side_elem)
                 {
                   ++exists;
                   rel_id = elem_sides[iside].identifier();
                 }
+
+              if (elem_sides[iside].identifier() == k_element_side ) {
+                std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true); 
+                std::cout << " side= " << side_elem.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, side_elem.bucket()); m_eMesh.print(side_elem, true, true); 
+                std::cout << " existing_side= " << existing_side.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, existing_side.bucket()); m_eMesh.print(existing_side, true, true); 
+                VERIFY_OP_ON(elem_sides[iside].identifier(), !=, k_element_side, "Relation already exists!");
+              }
+
             }
           if (!exists)
             {
+              EXCEPTWATCH;
               m_eMesh.get_bulk_data()->declare_relation(element, side_elem, k_element_side);
             }
           else

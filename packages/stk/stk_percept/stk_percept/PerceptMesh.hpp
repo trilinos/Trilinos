@@ -378,6 +378,9 @@ namespace stk {
       /// @note Only available when Percept is configured with STK_PERCEPT_HAS_GEOMETRY
       void remove_geometry_blocks_on_output(std::string geometry_file_name);
 
+      /// check if an bucket belongs to the geometry parts
+      bool is_in_geometry_parts(const std::string& geometry_file_name, stk::mesh::Bucket& bucket);
+
       /// dump a vtk file for the mesh surrounding the given node 
       void dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector=0);
       void dump_vtk(std::string filename);
@@ -390,7 +393,7 @@ namespace stk {
       void set_smooth_surfaces(bool do_smooth_surfaces=true) { m_do_smooth_surfaces = do_smooth_surfaces; }
       bool get_smooth_surfaces() { return m_do_smooth_surfaces; }
 
-      void print(const stk::mesh::Entity entity, bool cr=true);
+      void print(const stk::mesh::Entity entity, bool cr=true, bool id_only=false);
 
       /////// mesh parameter ////////////////////////////////////////////////////////////////////////////////
 
@@ -733,6 +736,7 @@ namespace stk {
       bool                                  m_do_smooth_surfaces;
 
       static PerceptMesh* s_static_singleton_instance;
+      stk::mesh::PartVector                 * m_geometry_parts;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);

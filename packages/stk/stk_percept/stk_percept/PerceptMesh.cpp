@@ -94,6 +94,7 @@ namespace stk {
       ,m_num_coordinate_field_states(1)
       ,m_do_respect_spacing(false)
       ,m_do_smooth_surfaces(false)
+      ,m_geometry_parts(0)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -872,6 +873,7 @@ namespace stk {
       ,m_num_coordinate_field_states(1)
       ,m_do_respect_spacing(false)
       ,m_do_smooth_surfaces(false)
+      ,m_geometry_parts(0)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -942,6 +944,7 @@ namespace stk {
         }
       //m_spatialDim = 0;
       m_coordinatesField = NULL;
+      if (m_geometry_parts) delete m_geometry_parts;
     }
 
     PerceptMesh::~PerceptMesh()
@@ -2709,6 +2712,10 @@ namespace stk {
     void PerceptMesh::
     element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity)
     {
+      bool debug = false;
+      //if (side.identifier() == 4348) debug = true;
+      if (debug) std::cout << "tmp srk element_side_permutation: element= " << element.identifier() << " side= " << side.identifier() << " iSubDimOrd= " << iSubDimOrd << std::endl;
+
       returnedPolarity = 1;
       returnedIndex = -1;
 
@@ -2771,42 +2778,28 @@ namespace stk {
       // if number of nodes on each side doesn't match, return (this can happen with wedge and pyramid)
       if (nSubDimNodes > side_nodes.size())
         {
+          if (debug) std::cout << "found wedge/pyr" << std::endl;
           returnedIndex = -1;
           returnedPolarity = 1;
           return;
         }
 
       int found_node_offset = -1;
-      for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
+      for (unsigned node_offset = 0; node_offset < nSubDimNodes; node_offset++)
         {
-          for (unsigned node_offset = 0; node_offset < nSubDimNodes; node_offset++)
+          unsigned knode = node_offset;
+          if (elem_nodes[inodes[0]].entity().identifier() == side_nodes[ knode ].entity().identifier() )
             {
-              unsigned knode = (jnode + node_offset) % nSubDimNodes;
-              if (1)
-                {
-                  VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 1003");
-                  VERIFY_OP_ON(knode, < , side_nodes.size(), "err 1005");
-                  if (knode >= side_nodes.size())
-                    {
-                      std::cout << "err 1005\n";
-                      exit(1);
-                    }
-                  stk::mesh::Entity elem_nodes_jnode = elem_nodes[inodes[jnode]].entity();
-                  stk::mesh::Entity side_nodes_knode = side_nodes[ knode ].entity();
-                  VERIFY_OP_ON(elem_nodes_jnode, !=, stk::mesh::Entity(), "err 1006");
-                  VERIFY_OP_ON(side_nodes_knode, !=, stk::mesh::Entity(), "err 1007");
-                  if (!elem_nodes_jnode.is_valid() || !side_nodes_knode.is_valid())
-                    {
-                      std::cout << "elem_nodes_jnode= " << elem_nodes_jnode << std::endl;
-                      std::cout << "side_nodes_knode= " << side_nodes_knode << std::endl;
-                    }
-                }
-
-              if (elem_nodes[inodes[jnode]].entity().identifier() == side_nodes[ knode ].entity().identifier() )
-                {
-                  found_node_offset = (int)node_offset;
-                }
+              found_node_offset = (int)node_offset;
+              break;
             }
+          if (debug) {
+            std::cout << "nSubDimNodes= " << nSubDimNodes << " inodes[0]= " << inodes[0] << " knode= " << knode 
+                      << " enode= " << elem_nodes[inodes[0]].entity().identifier() 
+                      << " snode= " << side_nodes[ knode ].entity().identifier()  
+                      << " found_node_offset= " << found_node_offset
+                      << std::endl;
+          }
         }
 
       if (found_node_offset >= 0)
@@ -4221,32 +4214,46 @@ namespace stk {
         }
     }
 
-    void PerceptMesh::print(const stk::mesh::Entity entity, bool cr)
+    void PerceptMesh::print(const stk::mesh::Entity entity, bool cr, bool id_only)
     {
       std::ostream& out = std::cout;
       if (entity.entity_rank() != stk::mesh::MetaData::NODE_RANK)
         {
-          out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(entity);
+          shards::CellTopology cell_topo(cell_topo_data);
+          out << " Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " topo: " << cell_topo.getName() << " nodes: [";
 
           const mesh::PairIterRelation elem_nodes = entity.relations(node_rank() );
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
-              double *coord = PerceptMesh::field_data( get_coordinates_field() , node );
-
-              out << " id: " <<  node.identifier() << " x: ";
-              for (int i=0; i < get_spatial_dim(); i++)
+              out << (inode != 0? ", ": "") << node.identifier();
+              out << "<" << elem_nodes[inode].identifier() << ">";
+            }
+          out << "] ";
+          if (!id_only)
+            {
+              for (unsigned inode=0; inode < num_node; inode++)
                 {
-                  out << " " << coord[i];
+                  mesh::Entity node = elem_nodes[ inode ].entity();
+                  double *coord = PerceptMesh::field_data( get_coordinates_field() , node );
+
+                  out << " id: [" <<  node.identifier() << "] x: {";
+                  for (int i=0; i < get_spatial_dim(); i++)
+                    {
+                      out << (i != 0? ", ": " ") << coord[i];
+                    }
+                  out << "} ";
                 }
             }
+
           //out << std::endl;
         }
 
       else if (entity.entity_rank() == stk::mesh::MetaData::NODE_RANK)
         {
-          out << "Node: id: " << entity.identifier() << " x: ";
+          out << " Node: id: " << entity.identifier() << " x: ";
           double *coord = PerceptMesh::field_data( get_coordinates_field() ,entity );
 
           for (int i=0; i < get_spatial_dim(); i++)
@@ -4303,6 +4310,41 @@ namespace stk {
       min_max_ave[2] /= nele;
 
       return min_max_ave[1];
+    }
+
+    bool PerceptMesh::is_in_geometry_parts(const std::string& geometry_file_name, stk::mesh::Bucket& bucket)
+    {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
+      if (geometry_file_name.size() == 0) return false;
+      if (!m_geometry_parts)
+        {
+          GeometryKernelOpenNURBS gk;
+          // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
+          double doCheckMovement = 0.0;
+
+          // anything exceeding a value > 0.0 will be printed
+          double doCheckCPUTime = 0.0;
+          //double doCheckCPUTime = 0.1;
+
+          MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(geometry_file_name, this);
+
+          m_geometry_parts = new stk::mesh::PartVector();
+          const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
+          for (unsigned i = 0; i < geomEvals.size(); i++)
+            {
+              m_geometry_parts->push_back(geomEvals[i]->mPart);
+            }
+        }
+      if (m_geometry_parts)
+        {
+          return bucket.member_any(*m_geometry_parts);
+        }
+      return false;
+#else
+      throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
+#endif
     }
 
     //====================================================================================================================================

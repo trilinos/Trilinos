@@ -541,7 +541,7 @@ namespace stk {
             }
 
           // special case for shells
-          if (0 && isShell)
+          if (isShell)
             {
               // FIXME for 2D
               if (side_elem.entity_rank() == eMesh.face_rank())
