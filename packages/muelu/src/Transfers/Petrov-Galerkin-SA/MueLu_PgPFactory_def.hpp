@@ -293,6 +293,7 @@ namespace MueLu {
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::Build: minimization mode not supported. error");
+        break;
       }
 
 
@@ -352,8 +353,8 @@ namespace MueLu {
         {
         case ANORM:     { GetOStream(MueLu::Statistics1, 0) << "Anorm)"     << std::endl;   }   break;
         case L2NORM:    { GetOStream(MueLu::Statistics1, 0) << "L2norm)"    << std::endl;   }   break;
-        case DINVANORM: { GetOStream(MueLu::Statistics1, 0) << "DinvAnorm)" << std::endl;   }    break;
-        default:          GetOStream(MueLu::Statistics1, 0) << "unknown)" << std::endl;
+        case DINVANORM: { GetOStream(MueLu::Statistics1, 0) << "DinvAnorm)" << std::endl;   }   break;
+        default:          GetOStream(MueLu::Statistics1, 0) << "unknown)" << std::endl;         break;
         }
       GetOStream(MueLu::Statistics1, 0) << "Damping parameter: min = " << min_all << ", max = " << max_all << std::endl;
       GetOStream(MueLu::Statistics, 0) << "# negative omegas: " << zero_all << " out of " << ColBasedOmega->getGlobalLength() << " column-based omegas" << std::endl;
