@@ -50,6 +50,7 @@
 
 #include <KokkosArray_LegendrePolynomial.hpp>
 #include <KokkosArray_ProductTensorLegendre.hpp>
+#include <KokkosArray_CrsProductTensorLegendre.hpp>
 
 namespace unit_test {
 namespace {
@@ -374,10 +375,9 @@ void product_tensor_legendre()
   //--------------------------------
 
   {
-    // Choose maximum degree to allow {1,1,1,1,...,1}
-    const unsigned nvar = 7 ;
-    const unsigned pdeg = 3 ;
-    const unsigned pmax = 7 ;
+    const unsigned nvar = 6 ;
+    const unsigned pdeg = 5 ;
+    const unsigned pmax = 5 ;
     product_tensor_bases<false>( nvar , pdeg , pmax );
   }
 }

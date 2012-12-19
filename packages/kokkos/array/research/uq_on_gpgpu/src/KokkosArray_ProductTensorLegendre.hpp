@@ -48,8 +48,6 @@
 #include <utility>
 #include <vector>
 #include <KokkosArray_Macros.hpp>
-#include <KokkosArray_ProductTensorIndex.hpp>
-#include <KokkosArray_LegendrePolynomial.hpp>
 
 namespace KokkosArray {
 
@@ -66,7 +64,8 @@ private:
   unsigned char m_map[ N * N * N ];
   float m_terms[ NONZERO_COUNT ];
 
-  static inline
+  static
+  KOKKOSARRAY_INLINE_FUNCTION
   unsigned offset( const unsigned i , const unsigned j , const unsigned k ) 
   { return ( i << 6 ) | ( j << 3 ) | k ; }
 
@@ -96,7 +95,6 @@ public:
     for ( unsigned iv = 0 ; iv < n ; ++iv ) {
       val *= m_terms[ m_map[ offset(I[iv],J[iv],K[iv]) ] ];
     }
-    return val ;
 #else
     unsigned m ;
     for ( unsigned iv = 0 ;

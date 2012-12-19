@@ -48,6 +48,7 @@
 #include <sstream>
 #include <vector>
 #include <KokkosArray_ProductTensor.hpp>
+#include <KokkosArray_CrsProductTensorLegendre.hpp>
 #include <KokkosArray_BlockCrsMatrix.hpp>
 
 #include <TestGenerateGraph.hpp>

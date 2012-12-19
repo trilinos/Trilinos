@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <impl/KokkosArray_Timer.hpp>
+#include <TestProductTensorLegendre.hpp>
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
 #include "Stokhos_LegendreBasis.hpp"
@@ -148,14 +149,12 @@ void print_tensor_parameters( const std::string & label ,
 template< class Device , template< unsigned , typename , class > class TensorType >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
 
   tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
-  print_tensor_parameters( "test_product_tensor" , var_degree , tensor );
-
-  tensor.print( std::cout );
+  // tensor.print( std::cout );
 
   // Verification?
 }
@@ -176,7 +175,7 @@ test_product_tensor_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
 
@@ -201,10 +200,6 @@ test_product_tensor_matrix(
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
-
-  print_tensor_parameters( "test_product_tensor_matrix" , var_degree , matrix.block );
-  std::cout << " block_dimension = " << inner_length << std::endl ;
-
 
   matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
 
@@ -279,7 +274,7 @@ test_product_tensor_diagonal_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::SparseProductTensor > tensor_type ;
 
   //------------------------------
@@ -306,8 +301,6 @@ test_product_tensor_diagonal_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
-
-  print_tensor_parameters( "test_product_tensor_diagonal_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
@@ -402,7 +395,7 @@ test_product_flat_commuted_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
      value_type , polynomial ,
@@ -427,8 +420,6 @@ test_product_flat_commuted_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
-
-  print_tensor_parameters( "test_product_flat_commuted_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
@@ -565,7 +556,7 @@ test_product_flat_original_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
     value_type , polynomial ,
@@ -590,8 +581,6 @@ test_product_flat_original_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
-
-  print_tensor_parameters( "test_product_flat_original_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
@@ -1159,8 +1148,11 @@ void performance_test_driver_all( const int pdeg ,
     // const std::pair<size_t,double> perf_tensor =
     //   test_product_tensor_matrix<double,Device,KokkosArray::SparseProductTensor>( var_degree , nGrid , nIter , print );
 
+    // const std::pair<size_t,double> perf_crs_tensor =
+    //   test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+
     const std::pair<size_t,double> perf_crs_tensor =
-      test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter , print );
 
     const std::vector<double> perf_flat_commuted =
       test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter , print );
