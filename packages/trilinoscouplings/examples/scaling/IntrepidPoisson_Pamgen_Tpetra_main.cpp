@@ -206,10 +206,11 @@ main (int argc, char *argv[])
                   X, A, B, Teuchos::null, Teuchos::null);
 
   // Summarize timings
-  RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
-  reportParams->set ("Report format", std::string ("YAML"));
-  reportParams->set ("writeGlobalStats", true);
-  Teuchos::TimeMonitor::report (*out, reportParams);
+  // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+  // reportParams->set ("Report format", std::string ("YAML"));
+  // reportParams->set ("writeGlobalStats", true);
+  // Teuchos::TimeMonitor::report (*out, reportParams);
+  Teuchos::TimeMonitor::summarize(std::cout);
   return EXIT_SUCCESS;
 }
 

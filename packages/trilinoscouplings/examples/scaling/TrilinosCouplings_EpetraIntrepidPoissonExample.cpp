@@ -236,8 +236,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools;
   typedef Intrepid::CellTools<ST>      IntrepidCTools;
 
-  const int numProcs = comm->MyPID ();
-  const int myRank = comm->NumProc ();
+  const int myRank = comm->MyPID ();
+  const int numProcs = comm->NumProc ();
   // We'll use this to check return values of Epetra methods.
   int errCode = 0;
 
@@ -958,7 +958,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           ArrayView<ST> sourceTermContributionAV =
             arrayView (&sourceTermContribution, 1);
 
-          errCode = rhsVector->SumIntoGlobalValues (1, sourceTermContributionAV.getRawPtr (), &globalRow);
+	  {
+	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
+	    errCode = rhsVector->SumIntoGlobalValues (1, sourceTermContributionAV.getRawPtr (), &globalRow);
+	  }
           TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
             "Epetra_Vector::SumIntoGlobalValues on global row " << globalRow
             << " on process " << myRank << " failed with error code "
@@ -974,10 +977,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
               worksetStiffMatrix (worksetCellOrdinal, cellRow, cellCol);
             ArrayView<ST> operatorMatrixContributionAV =
               arrayView<ST> (&operatorMatrixContribution, 1);
-            errCode = StiffMatrix->SumIntoGlobalValues (globalRow,
-                                                        as<int> (operatorMatrixContributionAV.size ()),
-                                                        operatorMatrixContributionAV.getRawPtr (),
-                                                        globalColAV.getRawPtr ());
+	    {
+	      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
+					     elem_matrix);
+	      errCode = StiffMatrix->SumIntoGlobalValues (
+		globalRow,
+		as<int> (operatorMatrixContributionAV.size ()),
+		operatorMatrixContributionAV.getRawPtr (),
+		globalColAV.getRawPtr ());
+	    }
             TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
               "Epetra_CrsMatrix::SumIntoGlobalValues on global row "
               << globalRow << " on process " << myRank << " failed with "
@@ -1304,7 +1312,7 @@ materialTensor (Scalar material[][3],
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
-  const bool illConditioned = true;
+  const bool illConditioned = false;
   if (illConditioned) {
     const Scalar zero = STS::zero ();
     const Scalar one = STS::one ();

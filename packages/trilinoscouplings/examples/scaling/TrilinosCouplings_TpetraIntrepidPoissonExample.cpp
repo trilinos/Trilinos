@@ -916,7 +916,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           ArrayView<ST> sourceTermContributionAV =
             arrayView (&sourceTermContribution, 1);
 
-          rhsVector->sumIntoGlobalValue (globalRow, sourceTermContribution);
+	  {
+	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
+	    rhsVector->sumIntoGlobalValue (globalRow, sourceTermContribution);
+	  }
 
           // "CELL VARIABLE" loop for the workset cell: cellCol is
           // relative to the cell DoF numbering.
@@ -929,8 +932,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             ArrayView<ST> operatorMatrixContributionAV =
               arrayView<ST> (&operatorMatrixContribution, 1);
 
-            StiffMatrix->sumIntoGlobalValues (globalRow, globalColAV,
-                                              operatorMatrixContributionAV);
+	    {
+	      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
+					     elem_matrix);
+	      StiffMatrix->sumIntoGlobalValues (globalRow, globalColAV,
+						operatorMatrixContributionAV);
+	    }
           }// *** cell col loop ***
         }// *** cell row loop ***
       }// *** workset cell loop **
@@ -1110,7 +1117,7 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
   std::vector<MT> results (3);
   results[0] = R->norm2 ();
   results[1] = B->norm2 ();
-  results[3] = A->getFrobeniusNorm ();
+  results[2] = A->getFrobeniusNorm ();
   return results;
 }
 
