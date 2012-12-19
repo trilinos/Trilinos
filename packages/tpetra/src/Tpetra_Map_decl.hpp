@@ -173,6 +173,16 @@ namespace Tpetra {
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
   public:
+    //! @name Typedefs
+    //@{
+    
+    //! The type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! The type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! The type of the Kokkos Node.
+    typedef Node node_type;
+
     //! @name Constructors and destructor
     //@{
 
