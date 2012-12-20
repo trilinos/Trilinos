@@ -155,20 +155,29 @@ test_product_tensor_legendre(
 
   {
     const double tol = 1.0e-13 ;
+    const size_t error_max = 10 ;
 
     KokkosArray::deep_copy( hx , y );
+
+    size_t error_count = 0 ;
 
     for ( size_t iRowFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
       for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
         const double mag   = std::abs( hy_result(iRowStoch,iRowFEM) );
         const double error = std::abs( hx(iRowStoch,iRowFEM) - hy_result(iRowStoch,iRowFEM) );
         if ( tol < error && tol < error / mag ) {
-          std::cout << "test_product_tensor_legendre error:"
-                    << " y(" << iRowStoch << "," << iRowFEM << ") = " << hx(iRowStoch,iRowFEM)
-                    << " , error = " << ( hx(iRowStoch,iRowFEM) - hy_result(iRowStoch,iRowFEM) )
-                    << std::endl ;
+          if ( error_count < error_max ) {
+            std::cout << "test_product_tensor_legendre error:"
+                      << " y(" << iRowStoch << "," << iRowFEM << ") = " << hx(iRowStoch,iRowFEM)
+                      << " , error = " << ( hx(iRowStoch,iRowFEM) - hy_result(iRowStoch,iRowFEM) )
+                      << std::endl ;
+          }
+          ++error_count ;
         }
       }
+    }
+    if ( error_count ) {
+      std::cout << "test_product_tensor_legendre error_count = " << error_count << std::endl ;
     }
   }
 

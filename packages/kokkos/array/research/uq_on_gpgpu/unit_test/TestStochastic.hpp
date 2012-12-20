@@ -15,251 +15,6 @@
 
 namespace unit_test {
 
-template< unsigned P >
-void test_integration()
-{
-  KokkosArray::GaussLegendre<P> rule ;
-  double result_1 = 0 ;
-  double result_x = 0 ;
-  double result_x2 = 0 ;
-  for ( unsigned i = 0 ; i < rule.N ; ++i ) {
-    result_1 += rule.weights[i];
-    result_x += rule.points[i] * rule.weights[i];
-    result_x2 += rule.points[i] * rule.points[i] * rule.weights[i];
-  }
-  std::cout << "IntegrateP" << P << "(1) = " << result_1 << std::endl ;
-  std::cout << "IntegrateP" << P << "(x) = " << result_x << std::endl ;
-  std::cout << "IntegrateP" << P << "(x^2) = " << result_x2 << std::endl ;
-}
-
-//----------------------------------------------------------------------------
-
-template< unsigned P , class Device >
-void test_inner_product_legengre_polynomial()
-{
-  const double tolerance = 1e-14 ;
-
-  KokkosArray::GaussLegendre<P*2> rule ;
-  KokkosArray::NormalizedLegendrePolynomialBases<P> poly ;
-
-  double values[P+1];
-  double result[P+1][P+1];
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-    for ( unsigned j = 0 ; j <= P ; ++j ) {
-      result[k][j] = 0 ;
-    }
-  }
-
-  for ( unsigned i = 0 ; i < rule.N ; ++i ) {
-    poly.evaluate( P , rule.points[i] , values );
-
-    for ( unsigned k = 0 ; k <= P ; ++k ) {
-      for ( unsigned j = 0 ; j <= P ; ++j ) {
-        result[k][j] += rule.weights[i] * values[k] * values[j] ;
-      }
-    }
-  }
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-    if ( tolerance < std::fabs( result[k][k] ) ) {
-      std::cout << "<P" << k << ",P" << k << "> = " ;
-      std::cout.precision(16);
-      std::cout << result[k][k] << std::endl ;
-    }
-  }
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-    for ( unsigned j = k + 1 ; j <= P ; ++j ) {
-      if ( tolerance < std::fabs( result[k][j] ) ) {
-        std::cout << "<P" << k << ",P" << j << "> = " ;
-        std::cout.precision(16);
-        std::cout << result[k][j] << std::endl ;
-      }
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
-
-template< unsigned P , class Device >
-void test_triple_product_legendre_polynomial()
-{
-  const double tolerance = 1e-14 ;
-
-  KokkosArray::GaussLegendre<P*3+1> rule ;
-  KokkosArray::NormalizedLegendrePolynomialBases<P> poly ;
-
-  double values[P+1];
-  double result[P+1][P+1][P+1];
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-  for ( unsigned j = 0 ; j <= P ; ++j ) {
-  for ( unsigned i = 0 ; i <= P ; ++i ) {
-      result[k][j][i] = 0 ;
-  } } }
-
-  for ( unsigned n = 0 ; n < rule.N ; ++n ) {
-    poly.evaluate( P , rule.points[n] , values );
-
-    for ( unsigned k = 0 ; k <= P ; ++k ) {
-    for ( unsigned j = 0 ; j <= P ; ++j ) {
-    for ( unsigned i = 0 ; i <= P ; ++i ) {
-      result[k][j][i] += rule.weights[n] * values[k] * values[j] * values[i] ;
-    } } }
-  }
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-    if ( tolerance < std::fabs( result[k][k][k] ) ) {
-      std::cout << "<P" << k << ",P" << k << ",P" << k << "> = " ;
-      std::cout.precision(16);
-      std::cout << result[k][k][k] << std::endl ;
-    }
-  }
-
-  for ( unsigned k = 0 ; k <= P ; ++k ) {
-  for ( unsigned j = k + 1 ; j <= P ; ++j ) {
-  for ( unsigned i = j ; i <= P ; ++i ) {
-    if ( tolerance < std::fabs( result[k][j][i] ) ) {
-      std::cout << "<P" << k << ",P" << j << ",P" << i << "> = " ;
-      std::cout.precision(16);
-      std::cout << result[k][j][i] << std::endl ;
-    }
-  } } }
-}
-
-//----------------------------------------------------------------------------
-
-template< class TensorType >
-void print_tensor_parameters( const std::string & label ,
-                              const std::vector<int> & var_degree ,
-                              const TensorType & tensor )
-{
-  std::cout << label ;
-  std::cout << " : var_degree(" ;
-  for ( unsigned i = 0 ; i < var_degree.size() ; ++i ) {
-    std::cout << " " << var_degree[i];
-  }
-  std::cout << " ) tensor{ variables(" << tensor.variable_count()
-            << ") dimension(" << tensor.dimension() 
-            << ") }" << std::endl ;
-}
-
-//----------------------------------------------------------------------------
-
-template< class Device , template< unsigned , typename , class > class TensorType >
-void test_product_tensor( const std::vector<int> & var_degree )
-{
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
-
-  tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
-
-  // tensor.print( std::cout );
-
-  // Verification?
-}
-
-//----------------------------------------------------------------------------
-
-template< typename ScalarType , class Device ,
-          template< unsigned , typename , class > class TensorType >
-std::pair<size_t,double>
-test_product_tensor_matrix(
-  const std::vector<int> & var_degree ,
-  const int nGrid ,
-  const int iterCount ,
-  const bool print_flag = false )
-{
-  typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type** ,
-                             KokkosArray::LayoutLeft ,
-                             Device > block_vector_type ;
-
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-
-  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
-
-  typedef KokkosArray::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
-  typedef typename matrix_type::graph_type graph_type ;
-
-  //------------------------------
-  // Generate graph for "FEM" box structure:
-
-  std::vector< std::vector<size_t> > graph ;
-
-  const size_t outer_length = nGrid * nGrid * nGrid ;
-  const size_t graph_length = unit_test::generate_fem_graph( nGrid , graph );
-
-  //------------------------------
-  // Generate CRS block-tensor matrix:
-
-  matrix_type matrix ;
-
-  matrix.block = KokkosArray::create_product_tensor< tensor_type >( var_degree );
-  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
-
-  const size_t inner_length      = matrix.block.dimension();
-  const size_t inner_matrix_size = matrix.block.dimension();
-
-  matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
-
-  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
-  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
-
-  typename block_vector_type::HostMirror hM = KokkosArray::create_mirror( matrix.values );
-  
-  for ( size_t i = 0 ; i < graph_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1 + i ;
-    }
-  }
-  
-  KokkosArray::deep_copy( matrix.values , hM );
-
-  //------------------------------
-  // Generate input multivector:
-  
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1 + j + 10 * i ;
-    }
-  }
-
-  KokkosArray::deep_copy( x , hx );
-
-  //------------------------------
-
-  KokkosArray::Impl::Timer clock ;
-  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    KokkosArray::multiply( matrix , x , y );
-  }
-  Device::fence();
-
-  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
-
-  //------------------------------
-
-  if ( print_flag ) {
-    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
-
-    KokkosArray::deep_copy( hy , y );
-
-    std::cout << std::endl << "test_product_tensor_matrix" << std::endl ;
-    for ( size_t i = 0 ; i < outer_length ; ++i ) {
-      std::cout << "hy(:," << i << ") =" ;
-      for ( size_t j = 0 ; j < inner_length ; ++j ) {
-        std::cout << " " << hy(j,i);
-      }
-      std::cout << std::endl ;
-    }
-  }
-
-  return std::pair<size_t,double>( outer_length * inner_length , seconds_per_iter );
-}
-
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , class Device >
@@ -274,15 +29,7 @@ test_product_tensor_diagonal_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::SparseProductTensor > tensor_type ;
-
   //------------------------------
-
-  typedef KokkosArray::Impl::Multiply<
-            typename tensor_type::tensor_type ,
-            KokkosArray::SymmetricDiagonalSpec< KokkosArray::Host > ,
-            void > multiply_type ;
 
   typedef KokkosArray::BlockCrsMatrix< KokkosArray::SymmetricDiagonalSpec< Device > ,
                                   value_type , Device > matrix_type ;
@@ -1163,12 +910,6 @@ void performance_test_driver_all( const int pdeg ,
     const std::vector<double> perf_matrix =
       test_product_tensor_diagonal_matrix<double,Device>( var_degree , nGrid , nIter );
 
-    // const std::pair<size_t,double> perf_tensor =
-    //   test_product_tensor_matrix<double,Device,KokkosArray::SparseProductTensor>( var_degree , nGrid , nIter , print );
-
-    // const std::pair<size_t,double> perf_crs_tensor =
-    //   test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
-
     const std::vector<double> perf_crs_tensor =
       test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter );
 
@@ -1263,8 +1004,8 @@ void performance_test_driver_poly( const int pdeg ,
 
     const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
-    const std::pair<size_t,double> perf_crs_tensor =
-      test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter );
 
     const std::vector<double> perf_original_mat_free_block =
       test_original_matrix_free_vec<double,Device>( var_degree , nGrid , nIter , print , test_block );
@@ -1278,8 +1019,8 @@ void performance_test_driver_poly( const int pdeg ,
 	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
 	      << perf_crs_tensor.second << " , "
-	      << perf_original_mat_free_block[1] / perf_crs_tensor.second << " , "
-              << perf_original_mat_free_block[3] / perf_crs_tensor.second << " , "
+	      << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
+              << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
 
 	      << std::endl ;
   }

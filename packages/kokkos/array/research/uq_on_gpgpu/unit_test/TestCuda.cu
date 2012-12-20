@@ -147,10 +147,6 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block)
 //  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Cuda>();
 //  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Cuda>();
 
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
-
   unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 5 );
   unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 2 , 1 );

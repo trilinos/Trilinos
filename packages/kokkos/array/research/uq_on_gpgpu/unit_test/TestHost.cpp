@@ -141,33 +141,6 @@ int mainHost(bool test_flat, bool test_orig, bool test_block)
 //  unit_test::test_diagonal<KokkosArray::Host>();
 //  unit_test::test_other<KokkosArray::Host>();
 
-  unit_test::test_integration<1>();
-  unit_test::test_integration<2>();
-  unit_test::test_integration<3>();
-  unit_test::test_integration<4>();
-  unit_test::test_integration<5>();
-  unit_test::test_integration<6>();
-  unit_test::test_integration<7>();
-  unit_test::test_integration<8>();
-  unit_test::test_integration<9>();
-  unit_test::test_integration<10>();
-  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Host>();
-  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Host>();
-  unit_test::test_triple_product_legendre_polynomial<5,KokkosArray::Host>();
-
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 1 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 2 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 3 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 4 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 5 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 6 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 7 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 1 , 8 ) );
-
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
-
   unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 2 );
   unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 5 );
   unit_test::test_block_crs_matrix<KokkosArray::Host>( 2 , 1 );
