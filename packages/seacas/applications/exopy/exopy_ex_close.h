@@ -1,7 +1,6 @@
 #include "Python.h" // must be included first
 #include "exodusII.h"
 #include "netcdf.h"
-#include "exopy_ref.h"
 
 static PyObject * exopy_ex_close(PyObject *self, PyObject *args) {
   /* ex_close(exoid) */
@@ -14,8 +13,10 @@ static PyObject * exopy_ex_close(PyObject *self, PyObject *args) {
 
   error = ex_close(exoid);
 
-  // Do this so error is raised pointing to this function
-  if ( PyErr_Occurred() ) { return NULL; }
+  if ( error < 0 ) {
+    PyErr_SetString(PyExc_RuntimeError, "error in exopy_ex_close()");
+    return NULL;
+  }
 
   return Py_BuildValue("i", error);
 }

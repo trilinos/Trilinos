@@ -1,33 +1,27 @@
 #include "Python.h" // must be included first
 #include "exodusII.h"
 #include "netcdf.h"
-#include "exopy_ref.h"
 
 static PyObject * exopy_ex_open(PyObject *self, PyObject *args) {
-  /* ex_open(path,mode,comp_ws_ref,io_ws_ref,version_ref) */
+  /* (exoid,comp_ws,io_ws,version) = ex_open(path,mode,comp_ws_ref,io_ws_ref,version_ref) */
 
-  int exoid, mode;
+  int exoid, mode, comp_ws_in, io_ws_in;
   const char *path;
 
-  ref *comp_ws_ref, *io_ws_ref, *version_ref;
-
-  if ( !PyArg_ParseTuple(args, "siOOO", &path, &mode,
-                         &comp_ws_ref, &io_ws_ref, &version_ref) ) {
+  if ( !PyArg_ParseTuple(args, "siii", &path, &mode, &comp_ws_in, &io_ws_in) ) {
     return NULL;
   }
 
-  int comp_ws = Ref_AsInt(comp_ws_ref);
-  int io_ws = Ref_AsInt(io_ws_ref);
-  float version = Ref_AsFloat(version_ref);
+  int comp_ws = comp_ws_in;
+  int io_ws = io_ws_in;
+  float version;
 
   exoid = ex_open(path, mode, &comp_ws, &io_ws, &version);
 
-  comp_ws_ref->value = PyInt_FromLong(comp_ws);
-  io_ws_ref->value   = PyInt_FromLong(io_ws);
-  version_ref->value = PyFloat_FromDouble(version);
+  if ( exoid < 0 ) {
+    PyErr_SetString(PyExc_RuntimeError, "error in exopy_ex_open()");
+    return NULL;
+  }
 
-  // Do this so error is raised pointing to this function
-  if ( PyErr_Occurred() ) { return NULL; }
-
-  return Py_BuildValue("i", exoid);
+  return Py_BuildValue("(iiif)", exoid, comp_ws, io_ws, version);
 }
