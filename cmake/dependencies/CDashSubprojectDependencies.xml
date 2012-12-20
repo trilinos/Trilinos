@@ -656,7 +656,7 @@
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="TO"/>
     <Dependency name="Anasazi" type="ILO"/>
-    <Dependency name="Zoltan2" type="ILO"/>
+    <Dependency name="Zoltan2" type="LO"/>
     <Dependency name="Ifpack2" type="LO"/>
     <Dependency name="Stratimikos" type="LO"/>
     <EmailAddresses>

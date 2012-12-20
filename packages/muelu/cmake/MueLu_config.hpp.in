@@ -45,6 +45,8 @@
 
 #cmakedefine HAVE_MUELU_ZOLTAN
 
+#cmakedefine HAVE_MUELU_ZOLTAN2
+
 /* Optional TPL */
 
 #cmakedefine HAVE_MUELU_BOOST
