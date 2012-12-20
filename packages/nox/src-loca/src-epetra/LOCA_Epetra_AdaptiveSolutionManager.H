@@ -62,58 +62,42 @@ class AdaptiveSolutionManager : public NOX::Epetra::AdaptiveSolutionManager
 public:
 
   AdaptiveSolutionManager (
-           const Teuchos::RCP<Teuchos::ParameterList>& params,
-           const Teuchos::RCP<const Epetra_Map> &map_,
-           const Teuchos::RCP<const Epetra_Map> &overlapMap_,
-           const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_);
+           const Teuchos::RCP<const Epetra_Map>& map_,
+           const Teuchos::RCP<const Epetra_Map>& overlapMap_,
+           const Teuchos::RCP<const Epetra_CrsGraph>& overlapJacGraph_);
 
   virtual ~AdaptiveSolutionManager () {}
 
-  //! Get initial solution
-
-  virtual Teuchos::RCP<LOCA::Epetra::Group>& getSolutionGroup(){ return grp;}
+  virtual Teuchos::RCP<const Epetra_Vector> updateSolution();
 
   //! Build the LOCA solution group
   virtual Teuchos::RCP<LOCA::Epetra::Group> 
        buildSolutionGroup() = 0;
 
+  //! Remap "old" solution into new data structures
   virtual void projectCurrentSolution();
-
-  virtual void initialize(
-       Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-        Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface,
-       Teuchos::RCP<Teuchos::ParameterList>& piroParams,
-       Teuchos::RCP<LOCA::ParameterVector>& pVector,
-       Teuchos::RCP<LOCA::GlobalData>& globalData,
-       bool createPrec);
 
   //! Accessor functions
 
-  virtual Teuchos::RCP<NOX::Epetra::LinearSystem>& getLinearSystem(){ return linsys;}
+  virtual void getConvergenceData(int& KrylovIters, int& lastSolveKrylocIters, int& linSolves, double& tolAchieved) const;
 
-  virtual Teuchos::RCP<LOCA::GlobalData> getGlobalDataNonConst() { return globalData; }
+  virtual Teuchos::RCP<Teuchos::ParameterList> getAdaptParamsNonConst() { return adaptParams; }
 
-  virtual Teuchos::RCP<const LOCA::GlobalData> getGlobalData() const { return globalData; }
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getAdaptParams() const { return adaptParams; }
 
 protected:
  
       //! The solution group
       Teuchos::RCP<LOCA::Epetra::Group> grp;
 
-      //! The interface to the model evaluator
-      Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface;
-
-      //! The LOCA parameter set
-      Teuchos::RCP<LOCA::ParameterVector> pVector;
-
-      //! The LOCA global data
-      Teuchos::RCP<LOCA::GlobalData> globalData;
-
       //! The linear system used for the solution in the group
       Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
 
-      //! The model we are solving
-      Teuchos::RCP<EpetraExt::ModelEvaluator> model;
+      //! The adaptation parameter list
+      Teuchos::RCP<Teuchos::ParameterList> adaptParams;
+
+      //! The parent of the solution parameter list
+      Teuchos::RCP<Teuchos::ParameterList> piroParams;
 
 };
 

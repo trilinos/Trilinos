@@ -51,11 +51,10 @@
 using Teuchos::rcp;
 
 LOCA::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
-           const Teuchos::RCP<Teuchos::ParameterList>& params,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
-   NOX::Epetra::AdaptiveSolutionManager(params, map_, overlapMap_, overlapJacGraph_)
+   NOX::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_)
 {
 }
 
@@ -69,25 +68,38 @@ projectCurrentSolution()
   // Note that this must be called after the currentSolution vector is formed for the new mesh, but prior to
   // building the new solution group (grp).
 
+  // currentSolution has been resized to hold the DOFs on the new mesh, but it is un-initialized.
+
+  // grp->getX() is the current solution on the old mesh
+
+  // TO provide an example, assume that the meshes are identical and we can just copy the data between them (a Copy Remesh)
+
+    TEUCHOS_TEST_FOR_EXCEPT( currentSolution->length() != grp->getX().length());
+
     *currentSolution = grp->getX();
+
+}
+
+Teuchos::RCP<const Epetra_Vector>
+LOCA::Epetra::AdaptiveSolutionManager::updateSolution(){
+
+  // Copy new solution from group into current solution
+  *currentSolution = grp->getX();
+
+  return Teuchos::rcpFromRef(currentSolution->getEpetraVector());
+
 }
 
 void
-LOCA::Epetra::AdaptiveSolutionManager::initialize(
-       Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
-       Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface_,
-       Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
-       Teuchos::RCP<LOCA::ParameterVector>& pVector_,
-       Teuchos::RCP<LOCA::GlobalData>& globalData_,
-       bool createPrec_){
+LOCA::Epetra::AdaptiveSolutionManager::
+getConvergenceData(int& KrylovIters, int& lastSolveKrylovIters, int& linSolves, double& tolAchieved) const {
 
-  model = model_;
-  interface = interface_;
-  piroParams = piroParams_;
-  pVector = pVector_;
-  globalData = globalData_;
-  createPrec = createPrec_;
+    KrylovIters = linsys->getLinearItersTotal();
+    lastSolveKrylovIters = linsys->getLinearItersLastSolve();
+    linSolves = linsys->getNumLinearSolves();
+    tolAchieved = linsys->getAchievedTol();
 
 }
+
 
 

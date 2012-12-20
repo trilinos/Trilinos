@@ -43,6 +43,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_NOXSolver_Def.hpp
                      Piro_Epetra_LOCASolver.hpp
                      Piro_Epetra_LOCAAdaptiveSolver.hpp
+                     Piro_Epetra_AdaptiveSolutionManager.hpp
                      Piro_Epetra_VelocityVerletSolver.hpp
                      Piro_Epetra_TrapezoidRuleSolver.hpp
                      Piro_Epetra_MatrixFreeDecorator.hpp
@@ -50,6 +51,7 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp
+                     Piro_Epetra_AdaptiveSolutionManager.cpp
                      Piro_Epetra_VelocityVerletSolver.cpp
                      Piro_Epetra_TrapezoidRuleSolver.cpp
                      Piro_Epetra_MatrixFreeDecorator.cpp

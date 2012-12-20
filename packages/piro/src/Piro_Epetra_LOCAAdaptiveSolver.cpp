@@ -46,23 +46,23 @@
 #include "LOCA_Epetra_ModelEvaluatorInterface.H"
 
 
-Piro::Epetra::LOCAAdaptiveSolver::LOCAAdaptiveSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
-                          Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
-                          Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager> solnManager_,
+Piro::Epetra::LOCAAdaptiveSolver::LOCAAdaptiveSolver(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
+                          const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
+                          const Teuchos::RCP<Piro::Epetra::AdaptiveSolutionManager>& solnManager_,
                           Teuchos::RCP<NOX::Epetra::Observer> observer_,
                           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData_
 ) :
   piroParams(piroParams_),
   model(model_),
-  solnManager(solnManager_),
   observer(observer_),
+  solnManager(solnManager_),
   saveEigData(saveEigData_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
 
   Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
 
-  jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
 
   if (jacobianSource == "Matrix-Free") {
     if (piroParams->isParameter("Matrix-Free Perturbation")) {
@@ -113,18 +113,22 @@ Piro::Epetra::LOCAAdaptiveSolver::LOCAAdaptiveSolver(Teuchos::RCP<Teuchos::Param
       ("User-Defined Save Eigen Data Name", "Piro Strategy"), saveEigData);
   }
 
-  solnManager->initialize(model, interface, piroParams, pVector, globalData,
+  solnManager->initialize(model, interface, pVector, globalData,
     outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_WPrec));
 
 
-  // Create the solver
+  // Create the stepper
 
-  stepper = Teuchos::rcp(new LOCA::Epetra::AdaptiveStepper(solnManager, noxStatusTests));
+  stepper = Teuchos::rcp(new LOCA::Epetra::AdaptiveStepper(piroParams, solnManager, globalData, noxStatusTests));
 
 }
 
 Piro::Epetra::LOCAAdaptiveSolver::~LOCAAdaptiveSolver()
 {
+
+  // Release solnManager RCPs
+  solnManager->destroySolutionGroup();
+
   LOCA::destroyGlobalData(globalData);
 
   // Release saveEigenData RCP
@@ -132,6 +136,7 @@ Piro::Epetra::LOCAAdaptiveSolver::~LOCAAdaptiveSolver()
       piroParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
   eigParams.set( eigParams.get
       ("User-Defined Save Eigen Data Name", "Piro Strategy"), Teuchos::null);
+
 }
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCAAdaptiveSolver::get_x_map() const
@@ -224,8 +229,6 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
   utils.out() << "eval pVector   " << setprecision(10) << *pVector << endl;
   interface->setParameters(*pVector);
 
-  Teuchos::RCP<NOX::Epetra::Vector>& currentSolution = solnManager->getCurrentSolution();
-
   // Solve
 
   LOCA::Abstract::Iterator::IteratorStatus status = stepper->run();
@@ -239,14 +242,8 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     outArgs.setFailed();
   }
 
-  Teuchos::RCP<LOCA::Epetra::Group>& grp = solnManager->getSolutionGroup();
-
-  Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys = solnManager->getLinearSystem();
-
-  // Get the NOX and Epetra_Vector with the final solution from the solver
-  (*currentSolution)=grp->getX();
-  Teuchos::RCP<const Epetra_Vector> finalSolution = 
-    Teuchos::rcp(&(currentSolution->getEpetraVector()), false);
+  // Get current solution from solution manager
+  Teuchos::RCP<const Epetra_Vector> finalSolution = solnManager->updateSolution();
 
   // Print solution
   if (utils.isPrintType(NOX::Utils::Details)) {
@@ -277,9 +274,14 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
 
-    int KrylovIters = linsys->getLinearItersTotal() - totalKrylovIters;
-    int lastSolveKrylovIters = linsys->getLinearItersLastSolve();
-    int linSolves = linsys->getNumLinearSolves() - totalLinSolves;
+    int lastSolveKrylovIters;
+    double achtol;
+    int curKIters;
+    int curLSolves;
+
+    solnManager->getConvergenceData(curKIters, lastSolveKrylovIters, curLSolves, achtol);
+    int KrylovIters = curKIters - totalKrylovIters;
+    int linSolves = curLSolves - totalLinSolves;
 
     totalNewtonIters += NewtonIters;
     totalKrylovIters += KrylovIters;
@@ -290,7 +292,7 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
      << stepNum << " : NumLinSolves, Krylov, Kr/Solve; LastKrylov, LastTol: " 
 	 << linSolves << "  " << KrylovIters << "  " 
 	 << (double) KrylovIters / (double) linSolves << "  " 
-         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << endl;
+         << lastSolveKrylovIters << " " <<  achtol << endl;
 
     if (stepNum > 1)
      utils.out() << "Convergence Stats: running total: NumLinSolves, Krylov, Kr/Solve, Kr/Step: " 
@@ -412,8 +414,7 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 	NOX::Epetra::MultiVector dxdp_nox(dxdp, NOX::DeepCopy,  
 					  NOX::Epetra::MultiVector::CreateView);
 	
-	grp->computeJacobian();
-	grp->applyJacobianInverseMultiVector(*piroParams, dfdp_nox, dxdp_nox);
+	solnManager->applyJacobianInverseMultiVector(dfdp_nox, dxdp_nox);
 	dxdp_nox.scale(-1.0);
 	
 	// (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
@@ -438,6 +439,16 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 
   // return the final solution as an additional g-vector, if requested
   Teuchos::RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+
+  // GAH - FIXME resize gx as problem changes
+  if(gx_out->MyLength() != finalSolution->MyLength()){
+
+    std::cout << "FIXME - must resize gx: not returning final solution." << std::endl;
+
+    return;
+ }
+
+   
   if (gx_out != Teuchos::null)  *gx_out = *finalSolution; 
 }
 

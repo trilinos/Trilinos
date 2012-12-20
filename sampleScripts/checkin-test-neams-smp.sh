@@ -108,8 +108,10 @@ EXTRA_ARGS=$@
 
 ../../checkin-test.py \
 --make-options="-j 16" \
+--ss-extra-builds=MPI_DEBUG_SS \
 --ctest-options="-j 16" \
 --ctest-timeout=1200 \
 --send-email-to="" \
 --no-eg-git-version-check \
 $EXTRA_ARGS
+

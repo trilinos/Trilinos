@@ -71,11 +71,14 @@
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 
 LOCA::Epetra::AdaptiveStepper::AdaptiveStepper(
-          Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager>& solnManager_,
+          const Teuchos::RCP<Teuchos::ParameterList>& pList,
+          const Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager>& solnManager_,
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
           const Teuchos::RCP<NOX::StatusTest::Generic>& nt) :
+
   LOCA::Abstract::Iterator(),
   mgr(solnManager_),
-  globalData(),
+  globalData(global_data),
   parsedParams(),
   predictor(),
   curGroupPtr(),
@@ -83,8 +86,8 @@ LOCA::Epetra::AdaptiveStepper::AdaptiveStepper(
   eigensolver(),
   saveEigenData(),
   bifGroupPtr(),
-  noxStatusTestPtr(),
-  paramListPtr(),
+  noxStatusTestPtr(nt),
+  paramListPtr(pList),
   stepperList(),
   solverPtr(),
   curPredictorPtr(),
@@ -107,29 +110,9 @@ LOCA::Epetra::AdaptiveStepper::AdaptiveStepper(
   return_failed_on_max_steps(true)
 {
 
-  reset(solnManager_->getGlobalDataNonConst(), 
-              nt, solnManager_->getPiroParamsNonConst());
-  reSize();
-
-}
-
-
-LOCA::Epetra::AdaptiveStepper::~AdaptiveStepper()
-{
-}
-
-bool
-LOCA::Epetra::AdaptiveStepper::reset(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
-		    const Teuchos::RCP<Teuchos::ParameterList>& p )
-{
-  globalData = global_data;
-  paramListPtr = p;
-  noxStatusTestPtr = nt;
-
   // Parse parameter list
   parsedParams = Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+
   parsedParams->parseSublists(paramListPtr);
 
   // Get stepper sublist
@@ -138,31 +121,8 @@ LOCA::Epetra::AdaptiveStepper::reset(
   // Reset base class
   LOCA::Abstract::Iterator::resetIterator(*stepperList);
 
-  // Create predictor strategy
-  Teuchos::RCP<Teuchos::ParameterList> predictorParams = 
-    parsedParams->getSublist("Predictor");
-  predictor = globalData->locaFactory->createPredictorStrategy(
-							      parsedParams,
-							      predictorParams);
-
-  // Create eigensolver
-  Teuchos::RCP<Teuchos::ParameterList> eigenParams = 
-    parsedParams->getSublist("Eigensolver");
-  eigensolver = globalData->locaFactory->createEigensolverStrategy(
-								parsedParams,
-								eigenParams);
-
-  // Create strategy to save eigenvectors/values
-  saveEigenData = globalData->locaFactory->createSaveEigenDataStrategy(
-								parsedParams,
-								eigenParams);
-
-  // Create step size strategy
-  Teuchos::RCP<Teuchos::ParameterList> stepsizeParams = 
-    parsedParams->getSublist("Step Size");
-   stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
-							     parsedParams,
-							     stepsizeParams);
+  // Build the LOCA Factory needed to create the various strategies for stepping
+  buildLOCAFactory();
 
   // Get the continuation parameter starting value
   if (stepperList->isParameter("Initial Value"))
@@ -229,21 +189,58 @@ LOCA::Epetra::AdaptiveStepper::reset(
   bifurcationParams = 
     parsedParams->getSublist("Bifurcation");
 
-  return true;
+  setSolutionGroup(mgr->buildSolutionGroup(), startValue);
+
+  printInitializationInfo();
+
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters))
+    paramListPtr->print(globalData->locaUtils->out());
+
 }
 
-void
-LOCA::Epetra::AdaptiveStepper::reSize(){
 
-  setSolutionGroup(mgr->buildSolutionGroup());
+LOCA::Epetra::AdaptiveStepper::~AdaptiveStepper()
+{
+}
+
+
+void
+LOCA::Epetra::AdaptiveStepper::buildLOCAFactory(){
+
+  // Create predictor strategy
+  Teuchos::RCP<Teuchos::ParameterList> predictorParams = 
+    parsedParams->getSublist("Predictor");
+  predictor = globalData->locaFactory->createPredictorStrategy(
+							      parsedParams,
+							      predictorParams);
+
+  // Create eigensolver
+  Teuchos::RCP<Teuchos::ParameterList> eigenParams = 
+    parsedParams->getSublist("Eigensolver");
+  eigensolver = globalData->locaFactory->createEigensolverStrategy(
+								parsedParams,
+								eigenParams);
+
+  // Create strategy to save eigenvectors/values
+  saveEigenData = globalData->locaFactory->createSaveEigenDataStrategy(
+								parsedParams,
+								eigenParams);
+
+  // Create step size strategy
+  Teuchos::RCP<Teuchos::ParameterList> stepsizeParams = 
+    parsedParams->getSublist("Step Size");
+   stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
+							     parsedParams,
+							     stepsizeParams);
+
 
 }
 
 void
 LOCA::Epetra::AdaptiveStepper::setSolutionGroup(
-  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess){
+  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess, const double curTimeValue){
 
-  initialGuess->setParam(conParamName, startValue);
+  initialGuess->setParam(conParamName, curTimeValue);
 
   // Get the continuation parameter index
   const LOCA::ParameterVector& pv = initialGuess->getParams();
@@ -264,7 +261,7 @@ LOCA::Epetra::AdaptiveStepper::setSolutionGroup(
 							parsedParams,
 							firstStepperParams,
 							bifGroupPtr, 
-              predictor,
+                            predictor,
 							conParamIDs);
 
   // Set step size
@@ -277,17 +274,13 @@ LOCA::Epetra::AdaptiveStepper::setSolutionGroup(
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
 
-  printInitializationInfo();
-
-  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters))
-    paramListPtr->print(globalData->locaUtils->out());
-
   return;
 
 }
 
 bool
 LOCA::Epetra::AdaptiveStepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigensolverList ) {
+
    // overwrite the eigensolver parameter list
    const Teuchos::RCP<Teuchos::ParameterList> & eigenParams = parsedParams->getSublist("Eigensolver");
    *eigenParams = *newEigensolverList;
@@ -509,55 +502,29 @@ LOCA::Epetra::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepSt
   double value = curGroupPtr->getContinuationParameter();
 
 // Project the current solution into the solution vector corresponding to the new mesh
+// This must be called prior to the call of buildSolutionGroup() below, or the current
+// solution will be lost.
 
-//  mgr->projectCurrentSolution(curGroupPtr->getX());
-//  mgr->projectCurrentSolution(curGroupPtr);
   mgr->projectCurrentSolution();
 
 // The new solution group is created by the solution manager, using the current discretization
 
   Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> newSolnGroup = mgr->buildSolutionGroup();
 
-  newSolnGroup->setParam(conParamName, value); 
+// Re-build the LOCA factory that creates the stepping criteria for the adapted problem
 
-  // Get the continuation parameter index
-  const LOCA::ParameterVector& pv = newSolnGroup->getParams();
-  conParamIDs[0] = pv.getIndex(conParamName);
+  buildLOCAFactory();
 
-  // Rebuild constrained group
-  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> constraintsGrp
-    = buildConstrainedGroup(newSolnGroup);
+// Re-build the solution group at the larger size needed for the adapted mesh
 
-  // Rebuild bifurcation group
-  bifGroupPtr = globalData->locaFactory->createBifurcationStrategy(
-						       parsedParams,
-						       bifurcationParams,
-					       constraintsGrp);
-
-  // Rebuild continuation strategy
-  curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							firstStepperParams,
-							bifGroupPtr, 
-              predictor,
-							conParamIDs);
-
-  // Set step size
-  curGroupPtr->setStepSize(0.0);
-
-  // Set previous solution vector in current solution group
-  curGroupPtr->setPrevX(curGroupPtr->getX());
-
-  // Create solver using newSolnGroup conditions
-  solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-				       parsedParams->getSublist("NOX"));
+  setSolutionGroup(newSolnGroup, value);
 
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
 
   printRelaxationStep();
 
-  // Perform solve of newSolnGroup conditions
+  // Perform solve of newSolnGroup conditions - this is the "relaxation" (equilibration) solve
   solverStatus = solverPtr->solve();
 
   // Allow continuation group to postprocess the step
@@ -716,8 +683,8 @@ LOCA::Epetra::AdaptiveStepper::iterate()
       && stepStatus != LOCA::Abstract::Iterator::Unsuccessful
       && adaptManager->queryAdaptationCriteria()) {
 
-      // Start adapting the mesh
-      if(!adaptManager->startMeshAdaptation())
+      // Adapt the mesh and problem size
+      if(!mgr->adaptProblem())
 
         return LOCA::Abstract::Iterator::Failed; // Abort if mesh manipulation fails
 
@@ -730,14 +697,12 @@ LOCA::Epetra::AdaptiveStepper::iterate()
       if(preStatus == LOCA::Abstract::Iterator::Unsuccessful)
         return LOCA::Abstract::Iterator::Failed;
 
-      // Commit any remaining changes and move forward
-
-      adaptManager->finalizeMeshAdaptation();
-
     }
-    else
+    else {
 
       preStatus = preprocess(stepStatus);
+
+    }
 
     compStatus = compute(preStatus);
 

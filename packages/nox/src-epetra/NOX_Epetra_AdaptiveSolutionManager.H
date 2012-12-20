@@ -69,20 +69,17 @@ class AdaptiveSolutionManager
 public:
 
   AdaptiveSolutionManager (
-           const Teuchos::RCP<Teuchos::ParameterList>& params,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_);
 
   virtual ~AdaptiveSolutionManager () {}
 
-//! Accessor function to Epetra_Import the solution from other PEs for output
-  virtual Epetra_Vector* getOverlapSolution(const Epetra_Vector& solution);
+  //! Apply adaptation method to mesh and problem. Returns true if adaptation is performed successfully.
+  virtual bool adaptProblem() = 0;
 
-  //! Function to set the active AdaptManager
-  
-  virtual void setAdaptManager(const Teuchos::RCP<NOX::Epetra::AdaptManager> & adaptManager_)
-        {adaptManager = adaptManager_;}
+  //! Accessor function to Epetra_Import the solution from other PEs for output
+  virtual Epetra_Vector* getOverlapSolution(const Epetra_Vector& solution);
 
   //! Function to get the active AdaptManager
   virtual Teuchos::RCP<NOX::Epetra::AdaptManager> getAdaptManager()
@@ -98,8 +95,6 @@ public:
   //! Accessor functions
 
   virtual Teuchos::RCP<const Epetra_Vector> getInitialSolution() const { return initial_x; }
-
-  virtual Teuchos::RCP<NOX::Epetra::Vector>& getCurrentSolution(){ return currentSolution;}
 
   virtual Teuchos::RCP<Epetra_Vector>& get_initial_x(){return initial_x;}
 
@@ -121,13 +116,6 @@ public:
 
   virtual Teuchos::RCP<Epetra_Export>& get_exporter(){return exporter;}
 
-  virtual Teuchos::RCP<Teuchos::ParameterList> getPiroParamsNonConst() { return piroParams; }
-
-  virtual Teuchos::RCP<Teuchos::ParameterList> getAdaptParamsNonConst() { return adaptParams; }
-
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getPiroParams() const { return piroParams; }
-
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getAdaptParams() const { return adaptParams; }
 
 protected:
 
@@ -164,14 +152,6 @@ protected:
       //! Current solution vector
       Teuchos::RCP<NOX::Epetra::Vector> currentSolution;
 
-      //! The parent of the solution parameter list
-      Teuchos::RCP<Teuchos::ParameterList> piroParams;
-
-      //! The adaptation parameter list
-      Teuchos::RCP<Teuchos::ParameterList> adaptParams;
-
-      //! Preconditioning flag
-      bool createPrec;
 
 };
 

@@ -56,7 +56,7 @@
 
 #include <NOX_Epetra_MultiVector.H>
 #include <NOX_Epetra_Observer.H>
-#include <LOCA_Epetra_AdaptiveSolutionManager.H>
+#include <Piro_Epetra_AdaptiveSolutionManager.hpp>
 
 
 #ifdef HAVE_MPI
@@ -78,10 +78,9 @@ class LOCAAdaptiveSolver
   /** \name Constructors/initializers */
   //@{
 
-  /** \brief Takes the number of elements in the discretization . */
-  LOCAAdaptiveSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
-            Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-            Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager> solnManager,
+  LOCAAdaptiveSolver(const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
+            const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
+            const Teuchos::RCP<Piro::Epetra::AdaptiveSolutionManager>& solnManager,
             Teuchos::RCP<NOX::Epetra::Observer> observer = Teuchos::null,
             Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData = Teuchos::null
             );
@@ -127,22 +126,20 @@ class LOCAAdaptiveSolver
   private:
 
    //These are set in the constructor and used in evalModel
-   mutable Teuchos::RCP<Teuchos::ParameterList> piroParams;
+   Teuchos::RCP<Teuchos::ParameterList> piroParams;
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
    Teuchos::RCP<NOX::Epetra::Observer> observer;
    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData;
-   Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager> solnManager;
+   Teuchos::RCP<Piro::Epetra::AdaptiveSolutionManager> solnManager;
    NOX::Utils utils;
 
    Teuchos::RCP<LOCA::Epetra::AdaptiveStepper> stepper;
    Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface;
    Teuchos::RCP<LOCA::ParameterVector> pVector;
+   Teuchos::RCP<LOCA::GlobalData> globalData;
+
    int num_p;
    int num_g;
-
-   std::string jacobianSource;
-
-   Teuchos::RCP<LOCA::GlobalData> globalData;
 
 };
 

@@ -80,20 +80,13 @@ namespace Epetra {
 
   public:
 
-    AdaptiveStepper(Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager>& mgr,
+    AdaptiveStepper(const Teuchos::RCP<Teuchos::ParameterList>& pList,
+      const Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager>& mgr,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
       const Teuchos::RCP<NOX::StatusTest::Generic>& nt);
 
     //! Destructor
     virtual ~AdaptiveStepper();
-
-    //! Resize data structures to correspond to adapted mesh
-    virtual void reSize();
-
-    //! Reset the AdaptiveStepper to start a new continuation run.
-    virtual bool 
-    reset(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-          const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
-          const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Replaces the eigensolver parameter list.
     bool
@@ -134,46 +127,50 @@ namespace Epetra {
 
   protected:
 
-    void setSolutionGroup(const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess);
+    void setSolutionGroup(const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess, 
+      const double value);
+
+    //! Build LOCA Factory needed to support stepping strategy
+    void buildLOCAFactory();
 
     //! Initialize iterator
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
 
     //! Finalize iterator
     virtual LOCA::Abstract::Iterator::IteratorStatus
-    finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus);
+      finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus);
 
     //! Preprocess step
     virtual LOCA::Abstract::Iterator::StepStatus
-    preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
+      preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Adaptation step
     virtual LOCA::Abstract::Iterator::StepStatus
-    adapt(LOCA::Abstract::Iterator::StepStatus stepStatus);
+      adapt(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Compute step
     virtual LOCA::Abstract::Iterator::StepStatus
-    compute(LOCA::Abstract::Iterator::StepStatus stepStatus);
+      compute(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Postprocess step
     virtual LOCA::Abstract::Iterator::StepStatus
-    postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
+      postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Check stopping criteria.
     LOCA::Abstract::Iterator::IteratorStatus
-    stop(LOCA::Abstract::Iterator::StepStatus stepStatus);
+      stop(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Perform iteration
     virtual LOCA::Abstract::Iterator::IteratorStatus iterate();
 
     //! Builds a constrained group is specified through parameter lists
     Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
-    buildConstrainedGroup(
-      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
+      buildConstrainedGroup(
+        const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
 
     //! Compute a new step size based on results from the previous step
     LOCA::Abstract::Iterator::StepStatus
-    computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
+      computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 		    double& stepSize);
 
     //! Print to the screen the initialization information
@@ -207,6 +204,7 @@ namespace Epetra {
 
   protected:
 
+    //! Adaptive solution manager provides interface to remesh/resize functions
     Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager> mgr;
 
     //! Global data

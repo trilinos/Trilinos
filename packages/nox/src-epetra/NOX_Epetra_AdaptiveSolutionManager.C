@@ -50,14 +50,10 @@
 using Teuchos::rcp;
 
 NOX::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
-           const Teuchos::RCP<Teuchos::ParameterList>& params,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_){
 
-   if(params->isSublist("Adaptation")) // If the user has specified adaptation on input, grab the sublist
-
-      adaptParams = Teuchos::sublist(params, "Adaptation", true);
 
    resizeMeshDataArrays(map_, overlapMap_, overlapJacGraph_);
 

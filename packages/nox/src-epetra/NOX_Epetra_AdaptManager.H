@@ -59,7 +59,7 @@ class AdaptManager
 public:
 
   AdaptManager () :
-    meshModInProgress(false), time(0.0), iter(0) {};
+    time(0.0), iter(0) {};
 
   virtual ~AdaptManager () {};
 
@@ -67,15 +67,12 @@ public:
   // A return type of true means that the mesh should be adapted
   virtual bool queryAdaptationCriteria() = 0;
 
-  //! Method called by Piro NOXSolver as a hook to kick off mesh adaptation
-  // A return type of true means that mesh adaptation completed without error
-  virtual bool startMeshAdaptation() = 0;
+  //! Apply adaptation method to mesh and problem. Returns true if adaptation is performed successfully.
+  virtual bool adaptMesh() = 0;
 
-  //! Returns true if the mesh adaptation step is in progress
-  bool adaptInProgress(){ return meshModInProgress; }
-
-  //! Called to note that all adaptation changes are complete
-  void finalizeMeshAdaptation(){ meshModInProgress = false; }
+  //! Transfer solution between meshes.
+  virtual void solutionTransfer(const Epetra_Vector& oldSolution,
+        Epetra_Vector& newSolution) = 0;
 
   //! Track the time state of the mesh
   void setTime(const double time_){ time = time_; }
@@ -85,7 +82,6 @@ public:
 
 protected:
 
-  bool meshModInProgress;
   double time;
   int iter;
 
