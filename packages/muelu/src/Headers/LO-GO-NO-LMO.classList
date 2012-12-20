@@ -14,3 +14,4 @@ CoupledAggregationFactory
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
 ZoltanInterface
+Zoltan2Interface

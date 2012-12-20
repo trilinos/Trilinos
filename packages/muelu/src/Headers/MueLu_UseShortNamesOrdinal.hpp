@@ -10,16 +10,8 @@ typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregate
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationInfo;
 #endif
 
-#ifdef MUELU_CHEAPAGGREGATIONALGORITHM_SHORT
-typedef MueLu::CheapAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CheapAggregationAlgorithm;
-#endif
-
 #ifdef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
 typedef MueLu::EmergencyAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EmergencyAggregationAlgorithm;
-#endif
-
-#ifdef MUELU_EXPERIMENTALAGGREGATIONFACTORY_SHORT
-typedef MueLu::ExperimentalAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ExperimentalAggregationFactory;
 #endif
 
 #ifdef MUELU_GRAPH_SHORT
@@ -68,6 +60,10 @@ typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,Local
 
 #ifdef MUELU_ZOLTANINTERFACE_SHORT
 typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
+#endif
+
+#ifdef MUELU_ZOLTAN2INTERFACE_SHORT
+typedef MueLu::Zoltan2Interface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Zoltan2Interface;
 #endif
 
 #ifdef MUELU_AMESOSSMOOTHER_SHORT
