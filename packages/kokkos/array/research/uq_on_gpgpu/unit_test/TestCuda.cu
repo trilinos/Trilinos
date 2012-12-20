@@ -138,7 +138,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block)
 {
   typedef unsigned long long int IntType ;
 
-  KokkosArray::Cuda::initialize();
+  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
 
 //  unit_test::test_dense<KokkosArray::Cuda>();
 //  unit_test::test_diagonal<KokkosArray::Cuda>();

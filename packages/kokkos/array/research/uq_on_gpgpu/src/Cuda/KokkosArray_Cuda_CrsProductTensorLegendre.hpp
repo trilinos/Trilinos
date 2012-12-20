@@ -58,7 +58,7 @@
 //----------------------------------------------------------------------------
 
 
-#if 0
+#if 1
 
 namespace KokkosArray {
 namespace Impl {
@@ -203,7 +203,7 @@ public:
         }
       }
 
-      // Coalesced write by the whold block to global memory
+      // Coalesced write by the whole block to global memory
       for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
         m_y( i , blockIdx.x ) = sh_y[i];
       }
@@ -215,10 +215,12 @@ public:
   Multiply( const matrix_type & A ,
             const vector_type & x ,
             const vector_type & y )
-  : m_A( A ), m_x( x ), m_y( y )
+  : m_A( A ), m_x( x ), m_y( y ) {}
+
+  void run() const
   {
-    const size_type row_count        = A.graph.row_map.dimension(0) - 1 ;
-    const size_type tensor_dimension = A.block.dimension();
+    const size_type row_count        = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_dimension = m_A.block.dimension();
     const size_type tensor_dim_align = tensor_dimension ;
 
     // Shared memory:
@@ -282,7 +284,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 1
+#elif 0
 
 namespace KokkosArray {
 namespace Impl {
@@ -326,8 +328,8 @@ public:
   __device__
   void operator()(void) const
   {
-    // Number of bases in the stochastic system and padding to warp size.
-    const size_type tensor_dim = m_A.block.dimension();
+    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_dim           = m_A.block.dimension();
     const size_type tensor_max_row_width = m_A.block.max_row_width();
 
     // Shared memory:
@@ -351,27 +353,25 @@ public:
     const size_type nid = CudaTraits::WarpSize * blockDim.y ;
     const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
 
-    // Tensor row:
+    // Tensor row for this warp:
 
-    const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
+    // const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
 
     // Each warp's tensor row offsets:
 
-    {
-      const unsigned row_first = blockDim.y * blockIdx.x ;
-      const unsigned row_end   = row_first + blockDim.y < tensor_dim
-                               ? row_first + blockDim.y : tensor_dim ;
-      const unsigned row_count = row_end - row_first ;
+    const unsigned tensor_row_beg   = blockDim.y * blockIdx.x ;
+    const unsigned tensor_row_end   = tensor_row_beg + blockDim.y < tensor_dim
+                                    ? tensor_row_beg + blockDim.y : tensor_dim ;
+    const unsigned tensor_row_count = tensor_row_end - tensor_row_beg ;
 
-      if ( tid < 2 * row_count + 1 ) {
-        sh_tcoord[tid] = m_A.block.m_entry_offset( row_first + tid );
-      }
-      else if ( tid < 2 * blockDim.y + 1 ) {
-        sh_tcoord[tid] = 0 ;
-      }
-
-      __syncthreads(); // Wait for read of tensor column offset data
+    if ( tid < 2 * tensor_row_count + 1 ) {
+      sh_tcoord[tid] = m_A.block.m_entry_offset( tensor_row_beg + tid );
     }
+    else if ( tid < 2 * blockDim.y + 1 ) {
+      sh_tcoord[tid] = 0 ;
+    }
+
+    __syncthreads(); // Wait for read of tensor column offset data
 
     // Tensor columns for this warp:
 
@@ -398,67 +398,71 @@ public:
     // Each warp computes a row of the stochastic block 
     // for coalesced reads and no need for explicit synchronization.
 
-    // Loop over columns in the discrete (finite element) system.
+    for ( size_type iyOuter = blockIdx.y ; iyOuter < row_count ; iyOuter += gridDim.y ) {
 
-    const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.y + 1 ];
-          size_type iBlockEntry    = m_A.graph.row_map[ blockIdx.y ];
+      // Loop over columns in the discrete (finite element) system.
 
-    VectorScalar y = 0 ;
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ iyOuter + 1 ];
+            size_type iBlockEntry    = m_A.graph.row_map[ iyOuter ];
 
-    for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+      VectorScalar y = 0 ;
 
-      { // Read stochastic coefficients from the vector and matrix into shared memory.
-        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry );
+      for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 
-        const VectorScalar * const x = & m_x(        0 , iBlockColumn );
-        const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
+        { // Read stochastic coefficients from the vector and matrix into shared memory.
+          const size_type iBlockColumn = m_A.graph.entries( iBlockEntry );
 
-        // Wait for X and A to be used in the previous iteration before reading new values.
-        __syncthreads();
+          const VectorScalar * const x = & m_x(        0 , iBlockColumn );
+          const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
 
-        // Coalesced read by the whole block from global memory:
-        for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
-          sh_x[i] = x[i] ; // m_x(        i , iBlockColumn );
-          sh_A[i] = A[i] ; // m_A.values( i , iBlockEntry );
+          // Wait for X and A to be used in the previous iteration before reading new values.
+          __syncthreads();
+
+          // Coalesced read by the whole block from global memory:
+          for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
+            sh_x[i] = x[i] ; // m_x(        i , iBlockColumn );
+            sh_A[i] = A[i] ; // m_A.values( i , iBlockEntry );
+          }
+
+          __syncthreads();
+          // Wait for X and A to be read before using these values in the next iteration.
         }
 
-        __syncthreads();
-        // Wait for X and A to be read before using these values in the next iteration.
+        size_type i = threadIdx.x ;
+
+        // Loop through sparse tensor diagonal contributions:
+
+        for ( ; i < iCountDiag ; i += blockDim.x ) {
+          const unsigned j = sh_warp_tcoord[i] ;
+          y += sh_warp_tvalue[i] * sh_A[j] * sh_x[j] ;
+        }
+
+        // Loop through sparse tensor off-diagonal contributions:
+
+        for ( ; i < iCountAll ; i += blockDim.x ) {
+          const unsigned kj = sh_warp_tcoord[i];
+          const unsigned j  = kj & 0x0ffff ;
+          const unsigned k  = kj >> 16 ;
+          y += sh_warp_tvalue[i] * ( sh_A[j] * sh_x[k] + sh_A[k] * sh_x[j] );
+        }
       }
 
-      size_type i = threadIdx.x ;
+      // Reduction of 'y' within the warp
 
-      // Loop through sparse tensor diagonal contributions:
+      sh_work[ tid ] = y ;
 
-      for ( ; i < iCountDiag ; i += blockDim.x ) {
-        const unsigned j = sh_warp_tcoord[i] ;
-        y += sh_warp_tvalue[i] * sh_A[j] * sh_x[j] ;
+      if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+16];
+      if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 8];
+      if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 4];
+      if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 2];
+      if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
+
+      __syncthreads(); // Wait for warps to complete
+
+      if ( tid < tensor_row_count ) {
+        // Coalesced write:
+        m_y( tensor_row_beg + tid , iyOuter ) = sh_work[ tid * blockDim.x ];
       }
-
-      // Loop through sparse tensor off-diagonal contributions:
-
-      for ( ; i < iCountAll ; i += blockDim.x ) {
-        const unsigned kj = sh_warp_tcoord[i];
-        const unsigned j  = kj & 0x0ffff ;
-        const unsigned k  = kj >> 16 ;
-        y += sh_warp_tvalue[i] * ( sh_A[j] * sh_x[k] + sh_A[k] * sh_x[j] );
-      }
-    }
-
-    // Reduction of 'y' within the warp
-
-    sh_work[ tid ] = y ;
-
-    if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+16];
-    if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 8];
-    if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 4];
-    if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 2];
-    if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
-
-    // Each warp write its result:
-
-    if ( iyInner < tensor_dim && 0 == threadIdx.x ) {
-      m_y( iyInner , blockIdx.y ) = sh_work[tid];
     }
   }
 
@@ -467,11 +471,13 @@ public:
   Multiply( const matrix_type & A ,
             const vector_type & x ,
             const vector_type & y )
-  : m_A( A ), m_x( x ), m_y( y )
+  : m_A( A ), m_x( x ), m_y( y ) {}
+
+  void run() const
   {
-    const size_type row_count            = A.graph.row_map.dimension(0) - 1 ;
-    const size_type tensor_dim           = A.block.dimension();
-    const size_type tensor_max_row_width = A.block.max_row_width();
+    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_dim           = m_A.block.dimension();
+    const size_type tensor_max_row_width = m_A.block.max_row_width();
 
     // Shared memory:
     //   sh_work[ CudaTraits::WarpSize * blockDim.y ]
@@ -540,7 +546,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-KokkosArray::Impl::CudaTexture<double> 
+KokkosArray::Impl::CudaTexture<double>::texture_type
   multiply_crs_product_tensor_legendre_A ,
   multiply_crs_product_tensor_legendre_X ;
 
@@ -549,8 +555,15 @@ namespace Impl {
 
 /** \brief
  *
- *  grid.x = inner dimension
- *  grid.y = outer dimension
+ *  finite_elem_row = blockIdx.y ;
+ *  stochastic_row  = threadIdx.y + blockDim.y * blockIdx.x ;
+ *
+ *  Read all of tensor product for the stochastic row into shared memory.
+ *
+ *  Access all of stochastic block coefficients for A and x
+ *  through texture cache.  These are random accesses so when
+ *  the stochastic dimension is "small" and the accesses are "close"
+ *  performance is improved.
  *
  */
 
@@ -582,108 +595,130 @@ public:
   __device__
   void operator()(void) const
   {
-    // Number of bases in the stochastic system and padding to warp size.
-    const size_type tensor_dim = m_A.block.dimension();
-    const size_type tensor_dim_align = tensor_dim ;
+    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_dim           = m_A.block.dimension();
+    const size_type tensor_max_row_width = m_A.block.max_row_width();
 
     // Shared memory:
     //   sh_work[ CudaTraits::WarpSize * blockDim.y ]
-    //   sh_y[ tensor_dim_align ]
-    //   sh_offset[ 2 * tensor_dim_align + 1 ]
+    //   sh_tvalue[ maximum_tensor_row_width * blockDim.y ]
+    //   sh_tcoord[ maximum_tensor_row_width * blockDim.y ]
+    //   sh_offset[ 2 * blockDim.y + 1 ]
 
-    volatile VectorScalar * const sh_work = kokkos_impl_cuda_shared_memory<VectorScalar>();
-    VectorScalar * const sh_y = (VectorScalar *)( sh_work + blockDim.x * blockDim.y );
-    unsigned     * const sh_offset = (unsigned *)( sh_y + tensor_dim_align );
+    volatile double * const sh_work = kokkos_impl_cuda_shared_memory<double>();
+    double          * const sh_tvalue = (double *)(   sh_work   + blockDim.x * blockDim.y );
+    unsigned        * const sh_tcoord = (unsigned *)( sh_tvalue + tensor_max_row_width );
+    unsigned        * const sh_offset = (unsigned *)( sh_tcoord + tensor_max_row_width );
+
+    double   * const sh_warp_tvalue = sh_tvalue + tensor_max_row_width * threadIdx.y ;
+    unsigned * const sh_warp_tcoord = sh_tcoord + tensor_max_row_width * threadIdx.y ;
 
     // Block size and thread id within the entire block:
 
-    const size_type nid = CudaTraits::WarpSize * blockDim.y ;
+    // const size_type nid = CudaTraits::WarpSize * blockDim.y ;
     const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
 
-    // blockIdx.x == row in the stochastic system
-    // blockIdx.y == row in the deterministic (finite element) system
+    // Tensor row for this warp:
 
-    // Load the tensor row into shared memory
+    // const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
 
-    if ( 3 < tid ) {
-      sh_offset[tid] = m_A.block.entry_offset( blockIdx.x + tid );
+    // Each warp's tensor row offsets:
+
+    const unsigned tensor_row_beg   = blockDim.y * blockIdx.x ;
+    const unsigned tensor_row_end   = tensor_row_beg + blockDim.y < tensor_dim
+                                    ? tensor_row_beg + blockDim.y : tensor_dim ;
+    const unsigned tensor_row_count = tensor_row_end - tensor_row_beg ;
+
+    if ( tid < 2 * tensor_row_count + 1 ) {
+      sh_offset[tid] = m_A.block.m_entry_offset( tensor_row_beg + tid );
+    }
+    else if ( tid < 2 * blockDim.y + 1 ) {
+      sh_offset[tid] = 0 ;
     }
 
-    __syncthreads();
+    __syncthreads(); // Wait for read of tensor column offset data
 
-    const size_type iBegOffDiag = sh_offset[1] - sh_offset[0];
-    const size_type iEnd        = sh_offset[2] - sh_offset[0];
+    // Tensor columns for this warp:
 
-    {
-      const double   * const a = & m_A.block.m_value(      sh_offset[0] );
-      const unsigned * const c = & m_A.block.m_coordinate( sh_offset[0] );
+    const size_type iBeg       = sh_offset[ 2 * threadIdx.y ];
+    const size_type iCountDiag = sh_offset[ 2 * threadIdx.y + 1 ] > iBeg 
+                               ? sh_offset[ 2 * threadIdx.y + 1 ] - iBeg : 0 ;
+    const size_type iCountAll  = sh_offset[ 2 * threadIdx.y + 2 ] > iBeg 
+                               ? sh_offset[ 2 * threadIdx.y + 2 ] - iBeg : 0 ;
 
-      for ( size_type i = tid ; i < iEnd ; i += blockDim.x ) {
-        sh_tensor_coord[i] = c[i];
-        sh_tensor_value[i] = a[i];
+    // Each warp loads its tensor row into shared memory:
+
+    if ( iCountAll ) {
+      const double   * const a = & m_A.block.m_value(iBeg);
+      const unsigned * const c = & m_A.block.m_coordinate(iBeg);
+
+      for ( size_type i = threadIdx.x ; i < iCountAll ; i += blockDim.x ) {
+        sh_warp_tcoord[i] = c[i];
+        sh_warp_tvalue[i] = a[i];
       }
     }
 
-    __syncthreads();
+    // Each warp computes a row of the stochastic block 
+    // for coalesced reads and no need for explicit synchronization.
 
-    // Loop over columns in the discrete (finite element) system.
+    for ( size_type iyOuter = blockIdx.y ; iyOuter < row_count ; iyOuter += gridDim.y ) {
 
-    const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.y + 1 ];
-          size_type iBlockEntry    = m_A.graph.row_map[ blockIdx.y ];
+      // Loop over columns in the discrete (finite element) system.
 
-    double y = 0 ;
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ iyOuter + 1 ];
+            size_type iBlockEntry    = m_A.graph.row_map[ iyOuter ];
 
-    for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+      double y = 0 ;
 
-      // Offset into A and x 
-      const size_type ix = m_strideX * m_A.graph.entries( iBlockEntry );
-      const size_type iA = m_strideA * iBlockEntry ;
+      for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 
-      // Loop through sparse tensor diagonal contributions:
+        // Offset into A and x 
+        const size_type ix = m_strideX * m_A.graph.entries( iBlockEntry );
+        const size_type iA = m_strideA * iBlockEntry ;
 
-      size_type i = 0 ;
+        size_type i = threadIdx.x ;
 
-      for ( ; i < iBegOffDiag ; i += blockDim.x ) {
-        const unsigned j = sh_tensor_coord[i] ;
-        const double aj = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + j );
-        const double xj = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + j );
-        y += sh_tensor_value[i] * aj * xj ;
+        // Loop through sparse tensor diagonal contributions:
+
+        for ( ; i < iCountDiag ; i += blockDim.x ) {
+          const unsigned j = sh_warp_tcoord[i] ;
+
+          y += sh_warp_tvalue[i] *
+               CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + j ) *
+               CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + j );
+        }
+
+        // Loop through sparse tensor off-diagonal contributions:
+
+        for ( ; i < iCountAll ; i += blockDim.x ) {
+          const unsigned kj = sh_warp_tcoord[i];
+          const unsigned j  = kj & 0x0ffff ;
+          const unsigned k  = kj >> 16 ;
+
+          y += sh_warp_tvalue[i] *
+               ( CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + j ) *
+                 CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + k ) +
+                 CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + k ) *
+                 CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + j ) );
+        }
       }
 
-      // Loop through sparse tensor off-diagonal contributions:
+      // Reduction of 'y' within the warp
 
-      for ( ; i < iEnd ; i += blockDim.x ) {
-        const unsigned kj = sh_tensor_coord[i];
-        const unsigned j  = kj & 0x0ffff ;
-        const unsigned k  = kj >> 16 ;
-        const double aj = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + j );
-        const double ak = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_A , iA + k );
-        const double xj = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + j );
-        const double xk = CudaTexture<double>::fetch( multiply_crs_product_tensor_legendre_X , ix + k );
-        y += sh_tensor_value[i] * ( aj * xk + ak * xj );
+      sh_work[ tid ] = y ;
+
+      if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+16];
+      if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 8];
+      if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 4];
+      if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 2];
+      if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
+
+      __syncthreads(); // Wait for warps to complete
+
+      if ( tid < tensor_row_count ) {
+        // Coalesced write:
+        m_y( tensor_row_beg + tid , iyOuter ) = sh_work[ tid * blockDim.x ];
       }
-    }
-
-    // Reduction of 'y' within the warp
-
-    sh_work[ tid ] = y ;
-
-    if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+16];
-    if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 8];
-    if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 4];
-    if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 2];
-    if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
-
-    // Reduction of 'y' across warps ...
-
-
-
-
-
-    // Single value for this block.
-
-    if ( 0 == tid ) {
-      m_y( blockIdx.x , blockIdx.y ) = sh_y[0];
     }
   }
 
@@ -693,26 +728,53 @@ public:
             const vector_type & x ,
             const vector_type & y )
   : m_A( A ), m_x( x ), m_y( y )
+  , m_strideA( A.values.shape().Stride )
+  , m_strideX( x.shape().Stride )
   {
-    const size_type row_count        = A.graph.row_map.dimension(0) - 1 ;
-    const size_type tensor_dimension = A.block.dimension();
-    const size_type tensor_dim_align = tensor_dimension ;
+    KokkosArray::Impl::CudaTexture<double>::bind( multiply_crs_product_tensor_legendre_A ,
+                                                  m_A.values.ptr_on_device() ,
+                                                  m_strideA * m_A.values.dimension_1() );
+
+    KokkosArray::Impl::CudaTexture<double>::bind( multiply_crs_product_tensor_legendre_X ,
+                                                  m_x.ptr_on_device() ,
+                                                  m_strideX * m_x.dimension_1() );
+  }
+
+  ~Multiply()
+  {
+    KokkosArray::Cuda::fence();
+    KokkosArray::Impl::CudaTexture<double>::unbind( multiply_crs_product_tensor_legendre_A );
+    KokkosArray::Impl::CudaTexture<double>::unbind( multiply_crs_product_tensor_legendre_X );
+  }
+
+  void run() const
+  {
+    const size_type row_count            = m_A.graph.row_map.dimension_0() - 1 ;
+    const size_type tensor_dim           = m_A.block.dimension();
+    const size_type tensor_max_row_width = m_A.block.max_row_width();
 
     // Shared memory:
-    //   sh_work[ blockDim.x * blockDim.y ]
-    //   sh_tensor_value[ maximum_tensor_row_width ]
-    //   sh_tensor_coord[ maximum_tensor_row_width ]
-    //   sh_offset[ 3 ]
+    //   sh_work[ CudaTraits::WarpSize * blockDim.y ]
+    //   sh_tvalue[ maximum_tensor_row_width * blockDim.y ]
+    //   sh_tcoord[ maximum_tensor_row_width * blockDim.y ]
+    //   sh_offset[ 2 * blockDim.y + 1 ]
     //
 
-    const int shmem =
+    const int nsh_warp = sizeof(double)   * CudaTraits::WarpSize  // sh_work
+                       + sizeof(double)   * tensor_max_row_width  // sh_tvalue
+                       + sizeof(unsigned) * tensor_max_row_width  // sh_tcoord
+                       + sizeof(unsigned) * 2                     // sh_offset
+                       ;
+
+    const int nsh_base = sizeof(unsigned)                        // sh_offset
                        ;
 
     enum { ShCapacity = KokkosArray::Impl::CudaTraits::SharedMemoryCapacity };
 
-    // Verify capacity...
+    // Only need as many threads as there are non-zeros in a row of the tensor.
 
-    int nWarp = ( maximum_tensor_dimension + CudaTraits::WarpSize - 1 ) / CudaTraits::WarpSize ;
+    int nWarp = std::min( (int) ( ShCapacity - nsh_base ) / nsh_warp ,
+                          (int) ( tensor_max_row_width + CudaTraits::WarpSize - 1 ) / CudaTraits::WarpSize );
 
     if ( nWarp < 1 ) {
       std::ostringstream msg ;
@@ -725,9 +787,11 @@ public:
 
     nWarp = std::min( nWarp , (int) cuda_internal_maximum_warp_count() );
 
+    const int shmem = nsh_base + nsh_warp * nWarp ;
+
     const dim3 dBlock( CudaTraits::WarpSize , nWarp , 1 );
 
-    const dim3 dGrid( tensor_dimension , row_count , 1 );
+    const dim3 dGrid( ( tensor_dim + nWarp - 1 ) / nWarp , row_count , 1 );
 
 #if 0
 
@@ -737,11 +801,8 @@ public:
               << "  block(" << dBlock.x << "," << dBlock.y << ")" << std::endl
               << "  shmem(" << shmem << ")" << std::endl
               << "  row_count(" << row_count << ")" << std::endl
-              << "  tensor_dimension(" << tensor_dimension << ")" << std::endl
-              << "  tensor_dim_align(" << tensor_dim_align << ")" << std::endl
               ;
 #endif
-
     cuda_parallel_launch_local_memory< Multiply ><<< dGrid , dBlock , shmem >>>( *this );
     // Impl::CudaParallelLaunch< Multiply >( *this, dGrid , dBlock , shmem );
   }

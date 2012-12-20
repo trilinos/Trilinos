@@ -294,8 +294,11 @@ public:
   : m_A( arg_A )
   , m_x( arg_x )
   , m_y( arg_y )
+  {}
+
+  void run() const
   {
-    parallel_for( arg_y.dimension_1() , *this );
+    parallel_for( m_y.dimension_1() , *this );
   }
 };
 

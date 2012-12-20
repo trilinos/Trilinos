@@ -85,9 +85,11 @@ test_product_tensor_legendre(
 
   //------------------------------
 
+  const KokkosArray::Impl::Multiply< matrix_type , vector_type , vector_type > op( matrix , x , y );
+
   KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    KokkosArray::Impl::Multiply< matrix_type , vector_type , vector_type >( matrix , x , y );
+    op.run();
   }
   Device::fence();
 
