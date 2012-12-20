@@ -162,10 +162,20 @@ namespace Xpetra {
     EpetraVector(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVector(vec) { } // TODO: removed const of Epetra::Vector
 
     //! Get the underlying Epetra vector
-    Epetra_Vector * getEpetra_Vector() const {  return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
+    Epetra_Vector * getEpetra_Vector() const { return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
     //RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVector::getEpetra_MultiVector()->getVectorNonConst(0); }
 
+    //! This constructor creates a Vector which is a view of column j of the MultiVector 'mv'.
+    //! It implements the logic of MultiVector::getVector/getVectorNonConst() for Epetra MultiVector.
+    //! The newly created Xpetra::EpetraVector will remain valid after the disappearance of the references to 'mv' in user code.
+    EpetraVector(const RCP<Epetra_MultiVector> &mv, size_t j);
+
     //@}
+
+  private:
+
+    // This private member is only used by the constructor EpetraVector(const RCP<EpetraMultiVector> &mv, size_t j). The actual private member holding the Epetra vector (vec_) is in the base class (Xpetra:EpetraMultiVector)
+    const RCP<const Epetra_MultiVector> internalRefToBaseMV_;
 
   }; // EpetraVector class
 

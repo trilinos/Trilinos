@@ -161,6 +161,15 @@ namespace Xpetra {
 //       }
     }
 
+  EpetraVector::EpetraVector(const RCP<Epetra_MultiVector> &mv, size_t j)
+    : EpetraMultiVector(rcp((*mv)(j), false)), // view of the vector number j. false == I do not own the data.
+      internalRefToBaseMV_(mv)                 // keep an internal reference to the initial MultiVector to avoid desallocation of the view.
+  {
+    // The view of the internal data of 'mv' is only valid until the destruction of 'mv'.
+    // The new vector hold an internal reference to 'mv' in order to keep the view valid after disappearance of 'mv' references in user code.
+    // This implements the logic of subArray rcp (as required by the Tpetra interface).
+  }
+
   // TODO: move that elsewhere
   Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
     XPETRA_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");

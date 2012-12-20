@@ -49,6 +49,8 @@
 #include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_Exceptions.hpp"
 
+#include "Xpetra_EpetraVector.hpp"
+
 namespace Xpetra {
 
   EpetraMultiVector::EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
@@ -81,12 +83,15 @@ namespace Xpetra {
     vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra(map), rawArrayOfRawPtrs, NumVectors));
   }
 
+
   Teuchos::RCP< const Vector< double, int, int > > EpetraMultiVector::getVector(size_t j) const {
-    XPETRA_MONITOR("EpetraVector::getVector"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+    XPETRA_MONITOR("EpetraMultiVector::getVector");
+    return rcp(new EpetraVector(vec_, j)); // See constructor EpetraVector(const RCP<EpetraMultiVector> &mv, size_t j) for more info
   }
 
   Teuchos::RCP< Vector< double, int, int > > EpetraMultiVector::getVectorNonConst(size_t j) {
-    XPETRA_MONITOR("EpetraVector::getVectorNonConst"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+    XPETRA_MONITOR("EpetraMultiVector::getVector");
+    return rcp(new EpetraVector(vec_, j)); // See constructor EpetraVector(const RCP<EpetraMultiVector> &mv, size_t j) for more info
   }
 
   Teuchos::ArrayRCP<const double> EpetraMultiVector::getData(size_t j) const {
