@@ -245,23 +245,34 @@ namespace {
     }
 
     static void
-    testPermutedMultiVectorOutput (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+    testPermutedMultiVectorOutput (Teuchos::FancyOStream& out,
+				   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 				   const Teuchos::RCP<NT>& node)
     {
       using Teuchos::getFancyOStream;
       using Teuchos::FancyOStream;
       using Teuchos::RCP;
       using Teuchos::rcpFromRef;
+      using std::endl;
+
+      //RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cerr));
 
       RCP<const MapType> map = createTestMap (comm, node);
       RCP<const MV> X_orig = createTestVector (map);
+
+      // Test that writing out the multivector and reading it back in
+      // doesn't change the multivector.
       const std::string outStr = writeMultiVectorToString (*X_orig);
       RCP<const MV> X_outIn = readMultiVectorFromString (outStr, map);
 
-      RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cerr));
-      
-      X_orig->describe (*out, Teuchos::VERB_EXTREME);
-      X_outIn->describe (*out, Teuchos::VERB_EXTREME);
+      // Before we finalize the test, print out the multivectors in
+      // different ways, so we can debug any test failures.
+      out << "Here is the original multivector:" << endl;
+      X_orig->describe (out, Teuchos::VERB_EXTREME);
+      out << "Here is the printout from the original multivector:" << endl 
+	   << outStr << endl;
+      out << "Here is the multivector read in from the printout:" << endl;
+      X_outIn->describe (out, Teuchos::VERB_EXTREME);
 
       assertMultiVectorsEqual (X_orig, X_outIn);
     }
@@ -309,5 +320,5 @@ TEUCHOS_UNIT_TEST( Tpetra_MatrixMarket, MultiVector_Output_Perm )
   }
   // Run the actual test.
   //RCP<const map_type> map = Test<map_type>::createTestMap (comm, node);
-  Test<map_type>::testPermutedMultiVectorOutput (comm, node);
+  Test<map_type>::testPermutedMultiVectorOutput (out, comm, node);
 }
