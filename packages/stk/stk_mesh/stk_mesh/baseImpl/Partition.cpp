@@ -20,6 +20,9 @@
 // and experimentation.
 #define PARTITION_MAINTAIN_SINGLE_BUCKET_CAPACITY_ON_COMPRESS        0
 
+// Testing this!
+#define PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -236,7 +239,6 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
       // The current 'last' bucket in a partition is to be deleted.
       // The previous 'last' bucket becomes the new 'last' bucket in the partition.
       Bucket *new_last = m_buckets[num_buckets - 2];
-      m_repository->m_need_sync_from_partitions[m_rank] = true;
       m_buckets[0]->set_last_bucket_in_partition(new_last);
       delete m_buckets.back();
       m_buckets.pop_back();
@@ -244,12 +246,11 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
 #ifndef PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
     else
     {
-      m_repository->m_need_sync_from_partitions[m_rank] = true;
       delete m_buckets.back();
       m_buckets.pop_back();
     }
 #endif
-
+    m_repository->m_need_sync_from_partitions[m_rank] = true;
   }
 
   e_k.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
