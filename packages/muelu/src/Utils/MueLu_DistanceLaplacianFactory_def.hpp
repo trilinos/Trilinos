@@ -85,9 +85,10 @@ namespace MueLu {
     RCP<MultiVector> coordinates = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
 
     // Import coordinates of columns indices in local rows.
-    RCP<MultiVector> coordinatesWithGhostInfo = MultiVectorFactory::Build(A->getColMap(),coordinates->getNumVectors());
+    RCP<const Map> colMap = A->getColMap();
+    RCP<MultiVector> coordinatesWithGhostInfo = MultiVectorFactory::Build(colMap,coordinates->getNumVectors());
     RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Import> importer = ImportFactory::Build(rowMap, A->getColMap());
+    RCP<const Import> importer = ImportFactory::Build(rowMap, colMap);
     coordinatesWithGhostInfo->doImport(*coordinates, *importer, Xpetra::INSERT);
 
     // Allocate proper amount of space for new matrix
@@ -114,11 +115,13 @@ namespace MueLu {
 
     ArrayRCP<SC> valPtr = ArrayRCP<SC>(A->getNodeMaxNumRowEntries(),zero);
 
+    Array<GO> globalIndices(A->getNodeMaxNumRowEntries());
     for (size_t i=0; i<A->getNodeNumRows(); ++i) {
       A->getLocalRowView(i, indices, values);
       SC sum=zero;
       LO diagIndex=0;
       for (LO j=0; j<indices.size(); ++j) {
+        globalIndices[j] = colMap->getGlobalElement((indices[j]));
         LO colInd = indices[j];
         if ((size_t)colInd != i) {
           SC xdelta = xcoord[i]-xcoord[colInd];
@@ -136,7 +139,7 @@ namespace MueLu {
       valPtr[diagIndex]=sum;
 
       DL->insertGlobalValues(rowMap->getGlobalElement(i),
-                             indices,
+                             globalIndices.view(0,indices.size()),
                              valPtr.view(0,indices.size()));
     } //for (size_t i=0; ...
 
