@@ -92,18 +92,19 @@
 <!-- -->
 <!-- -->
 
-    <ParameterList name="myAggregationFact">
-<!--
-      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="Ordering"                type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"    type="int"    value="5"/>
--->
+    <ParameterList name="CoupledAggregationFact">
       <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
       <Parameter name="Ordering"                type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
       <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
       <Parameter name="MinNodesPerAggregate"    type="int"    value="2"/>
+    </ParameterList>
+
+    <ParameterList name="UncoupledAggregationFact">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="Ordering"                type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+      <Parameter name="MinNodesPerAggregate"    type="int"    value="5"/>
     </ParameterList>
 
     <ParameterList name="SymGaussSeidel">
@@ -141,7 +142,7 @@
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother"   type="string" value="Chebyshev"/>
-      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
+      <Parameter name="Aggregates" type="string" value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"  type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
@@ -152,7 +153,7 @@
       <Parameter name="A"           type="string" value="myRebalanceAFact"/>
       <Parameter name="P"           type="string" value="myRebalanceProlongatorFact"/>
       <Parameter name="R"           type="string" value="myRebalanceRestrictionFact"/>
-      <Parameter name="Aggregates"  type="string" value="myAggregationFact"/>
+      <Parameter name="Aggregates"  type="string" value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"   type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"    type="string" value="myRepartitionFact"/>
