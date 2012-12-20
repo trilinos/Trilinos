@@ -117,6 +117,9 @@ private:
 
   impl::Partition    *m_partition;
 
+  bool m_owned;
+  bool m_shared;
+
 
 
 
@@ -145,6 +148,9 @@ public:
   stk::topology topology() const { return m_topology; }
 
   void parent_topology( EntityRank parent_rank, std::vector<stk::topology> & parent_topologies) const;
+
+  bool owned() const { return m_owned; }
+  bool shared() const { return m_shared; }
 
   //--------------------------------
   // Container-like types and methods:

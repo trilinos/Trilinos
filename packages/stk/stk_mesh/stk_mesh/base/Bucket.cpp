@@ -88,6 +88,8 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_field_data(NULL)
   , m_field_data_end(NULL)
   , m_partition(NULL)
+  , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
+  , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
 {
   //calculate the size of the field_data
 
