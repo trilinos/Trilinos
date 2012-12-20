@@ -3045,7 +3045,7 @@ namespace Tpetra {
         typedef node_type NT;
 
 	// If true, print the global row index in front of each row.
-	const bool printGlobalRowIndex = true;
+	const bool printGlobalRowIndex = false;
 
         // If true, when making the "gather" Map, use the same index
         // base as X's Map.  Otherwise, just use the default index
