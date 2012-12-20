@@ -97,7 +97,7 @@ public:
   /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
   typedef std::vector<CellTopology> PartCellTopologyVector;
 
-  enum
+  enum EntityRankValue
   {
     NODE_RANK = stk::topology::NODE_RANK,
     EDGE_RANK = stk::topology::EDGE_RANK,
