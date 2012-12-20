@@ -12,7 +12,7 @@ import os
 checkinTestFilePath = os.path.abspath(sys.argv[0])
 checkinTestFileRealPath = os.path.realpath(checkinTestFilePath)
 scriptsDir = os.path.dirname(checkinTestFileRealPath)+"/python"
-print "scriptsDir='"+scriptsDir+"'"
+#print "scriptsDir='"+scriptsDir+"'"
 sys.path.insert(0, scriptsDir)
 
 
