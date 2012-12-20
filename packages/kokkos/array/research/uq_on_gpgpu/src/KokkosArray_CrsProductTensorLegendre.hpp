@@ -53,6 +53,8 @@
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_ProductTensorLegendre.hpp>
 
+#if 0
+
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
@@ -203,6 +205,8 @@ struct CrsProductTensorLegendre {
     deep_copy( m_value ,        host_value );
   }
 
+  /** \brief  This data structure's implementation of c += a * b */
+
   template< typename ScalarTypeA ,
             typename ScalarTypeB ,
             typename ScalarTypeC >
@@ -236,6 +240,200 @@ struct CrsProductTensorLegendre {
 };
 
 } // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+
+#elif 1
+
+namespace KokkosArray {
+
+template< typename TensorScalar , class Device >
+struct CrsProductTensorLegendre {
+  typedef View< unsigned* ,     Device >  array_unsigned_type ;
+  typedef View< TensorScalar* , Device >  array_scalar_type ;
+
+  typedef typename array_unsigned_type::HostMirror array_unsigned_host_type ;
+  typedef typename array_scalar_type  ::HostMirror array_scalar_host_type ;
+
+  array_unsigned_type  m_entry_offset ;
+  array_unsigned_type  m_coordinate ;
+  array_scalar_type    m_value ;
+  unsigned             m_dimension ;
+  unsigned             m_max_row_width ;
+  unsigned             m_multiply_flops ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned dimension() const { return m_dimension ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned max_row_width() const { return m_max_row_width ; }
+
+  CrsProductTensorLegendre()
+  : m_entry_offset()
+  , m_coordinate()
+  , m_value()
+  , m_dimension(0)
+  , m_max_row_width(0)
+  , m_multiply_flops(0)
+  {}
+
+  CrsProductTensorLegendre( const CrsProductTensorLegendre & rhs )
+  : m_entry_offset( rhs.m_entry_offset )
+  , m_coordinate(   rhs.m_coordinate )
+  , m_value(        rhs.m_value )
+  , m_dimension(    rhs.m_dimension )
+  , m_max_row_width(rhs.m_max_row_width )
+  , m_multiply_flops(rhs.m_multiply_flops)
+  {}
+
+  CrsProductTensorLegendre & operator = ( const CrsProductTensorLegendre & rhs )
+  {
+    m_entry_offset = rhs.m_entry_offset ;
+    m_coordinate   = rhs.m_coordinate ;
+    m_value        = rhs.m_value ;
+    m_dimension    = rhs.m_dimension ;
+    m_max_row_width= rhs.m_max_row_width ;
+    m_multiply_flops=rhs.m_multiply_flops;
+    return *this ;
+  }
+
+  CrsProductTensorLegendre( const std::vector<unsigned> & variable_poly_degree ,
+                            const unsigned maximum_poly_degree )
+  : m_entry_offset()
+  , m_coordinate()
+  , m_value()
+  , m_dimension(0)
+  , m_max_row_width(0)
+  , m_multiply_flops(0)
+  {
+    enum { Blocking = 32 };
+    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
+
+    const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+      combinatorial( maximum_poly_degree ,
+                     variable_poly_degree );
+
+    m_dimension = combinatorial.bases_count();
+
+    if ( ( 1 << 16 ) < m_dimension ) {
+      throw std::runtime_error("CrsProductTensorLegendre tensor dimension too large");
+    }
+
+    unsigned entry_count = 0 ;
+
+    m_multiply_flops = m_dimension ;
+
+    for ( unsigned i = 0 ; i < m_dimension ; ++i ) {
+
+      unsigned row_entry_count = 0 ;
+
+      for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
+        for ( unsigned k = j ; k < m_dimension ; ++k ) {
+          if ( combinatorial.is_non_zero(i,j,k) ) { ++row_entry_count ; m_multiply_flops += 5 ; }
+        }
+      }
+
+      if ( row_entry_count % Align ) { row_entry_count += Align - row_entry_count % Align ; }
+
+      m_max_row_width = std::max( m_max_row_width , row_entry_count );
+
+      entry_count += row_entry_count ;
+    }
+
+    m_entry_offset = array_unsigned_type( "CrsProductTensorLegendre::entry_offset" , 2 * m_dimension + 1 );
+    m_coordinate   = array_unsigned_type( "CrsProductTensorLegendre::coordinate" , entry_count );
+    m_value        = array_scalar_type(   "CrsProductTensorLegendre::value" , entry_count );
+
+    array_unsigned_host_type host_entry_offset = create_mirror_view( m_entry_offset );
+    array_unsigned_host_type host_coordinate   = create_mirror_view( m_coordinate );
+    array_scalar_host_type   host_value        = create_mirror_view( m_value );
+
+    entry_count = 0 ;
+
+    for ( unsigned i = 0 ; i < m_dimension ; ++i ) {
+
+      host_entry_offset(2*i)   = entry_count ;
+      host_entry_offset(2*i+1) = entry_count ;
+
+      for ( unsigned jBlock = 0 ; jBlock < m_dimension ; ) {
+
+        const unsigned jEnd = std::min( jBlock + Blocking , m_dimension );
+
+        for ( unsigned kBlock = jBlock ; kBlock < m_dimension ; ) {
+
+          const unsigned kEnd = std::min( kBlock + Blocking , m_dimension );
+
+          for ( unsigned j = jBlock ; j < jEnd ; ++j ) {
+          for ( unsigned k = std::max( kBlock , j ) ; k < kEnd ; ++k ) {
+            if ( combinatorial.is_non_zero(i,j,k) ) {
+              // Diagonal term is treated as an off-diagonal
+              //   c[i] += combinatorial(i,j,j) * 0.5 * ( a[j] * b[j] + a[j] * b[j] );
+              host_coordinate( entry_count ) = ( k << 16 ) | j ;
+              host_value(      entry_count ) = combinatorial(i,j,k) * ( j == k ? 0.5 : 1.0 );
+              ++entry_count ;
+
+              if ( host_value.dimension_0() < entry_count ) {
+                throw std::runtime_error("CrsProductTensorLegendre Blocking error limit");
+              }
+            }
+          }}
+
+          kBlock = kEnd ;
+        }
+        jBlock = jEnd ;
+      }
+
+      if ( entry_count % Align ) { entry_count += Align - entry_count % Align ; }
+
+      host_entry_offset(2*i+2) = entry_count ;
+    }
+
+    if ( host_value.dimension_0() != entry_count ) {
+      throw std::runtime_error("CrsProductTensorLegendre Blocking error equal");
+    }
+
+    deep_copy( m_entry_offset , host_entry_offset );
+    deep_copy( m_coordinate ,   host_coordinate );
+    deep_copy( m_value ,        host_value );
+  }
+
+  /** \brief  This data structure's implementation of c += a * b */
+
+  template< typename ScalarTypeA ,
+            typename ScalarTypeB ,
+            typename ScalarTypeC >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void multiply_add( const ScalarTypeA a[] ,
+                     const ScalarTypeB b[] ,
+                           ScalarTypeC c[] ) const
+  {
+    for ( unsigned ic = 0 ; ic < m_dimension ; ++ic ) {
+      const unsigned iBeg        = m_entry_offset(2*ic);
+      const unsigned iBegOffDiag = m_entry_offset(2*ic+1);
+      const unsigned iEnd        = m_entry_offset(2*ic+2);
+
+      ScalarTypeC tmp = 0 ;
+
+      for ( unsigned i = iBeg ; i < iBegOffDiag ; ++i ) {
+        const unsigned j = m_coordinate(i);
+        tmp += m_value(i) * a[j] * b[j] ;
+      }
+
+      for ( unsigned i = iBegOffDiag ; i < iEnd ; ++i ) {
+        const unsigned kj = m_coordinate(i);
+        const unsigned j  = kj & 0x0ffff ;
+        const unsigned k  = kj >> 16 ;
+        tmp += m_value(i) * ( a[j] * b[k] + a[k] * b[j] );
+      }
+
+      c[ic] += tmp ;
+    }
+  }
+};
+
+} // namespace KokkosArray
+
+#endif
 
 //----------------------------------------------------------------------------
 

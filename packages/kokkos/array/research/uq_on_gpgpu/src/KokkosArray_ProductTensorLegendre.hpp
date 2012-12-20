@@ -186,6 +186,31 @@ public:
 };
 
 //----------------------------------------------------------------------------
+/** \brief  Nonzeros of a matrix-expansion row.
+ *
+ *  Matrix A would be formed as per the following expansion:
+ *
+ *  for ( unsigned col = 0 ; col < dimension ; ++col ) {
+ *    A(row,col) = 0 ;
+ *    for ( unsigned k = 0 ; k < dimension ; ++k ) {
+ *      A(row,col) += tensor(row,col,k) * a[k] ;
+ *    }
+ *  }}
+ *
+ *  for ( unsigned col = 0 ; col < dimension ; ++col ) {
+ *    y[row] += A(row,col) * x[col] ;
+ *  }
+ */
+inline
+unsigned matrix_nonzero( const TripleProductTensorLegendreCombinatorialEvaluation & tensor ,
+                         const unsigned row , const unsigned col )
+{
+  unsigned k = 0 ;
+  while ( k < tensor.bases_count() && ! tensor.is_non_zero(row,col,k) ) ++k ;
+  return k < tensor.bases_count() ;
+}
+
+//----------------------------------------------------------------------------
 
 } // namespace KokkosArray
 
