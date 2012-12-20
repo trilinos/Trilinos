@@ -914,7 +914,6 @@
     <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Xpetra" type="ITO"/>
-    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="TO"/>
@@ -923,9 +922,6 @@
     <Dependency name="ML" type="TO"/>
     <Dependency name="Belos" type="TO"/>
     <Dependency name="Anasazi" type="TO"/>
-    <Dependency name="Stratimikos" type="ITO"/>
-    <Dependency name="Teko" type="ITO"/>
-    <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="didasko-regression@software.sandia.gov"/>
     </EmailAddresses>
