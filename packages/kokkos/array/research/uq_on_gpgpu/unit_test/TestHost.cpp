@@ -80,7 +80,7 @@ void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, 
 
   // All methods compared against flat-original
   if (test_flat) {
-    nGrid = 12 ;
+    nGrid = 5 ;
     nIter = 1 ; 
     print = false ;
     performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,

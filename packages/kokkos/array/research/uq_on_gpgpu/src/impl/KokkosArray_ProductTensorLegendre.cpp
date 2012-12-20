@@ -74,7 +74,6 @@ TripleProductTensorLegendre::TripleProductTensorLegendre()
     double value[N] ;
     bases.evaluate( MaximumPolyDegree , gauss.points[ig] , value );
 
-    unsigned entry_count = 0 ;
     for ( unsigned i = 0 ; i <= MaximumPolyDegree ; ++i ) {
     for ( unsigned j = i ; j <= MaximumPolyDegree ; ++j ) {
     for ( unsigned k = j ; k <= MaximumPolyDegree ; ++k ) {
@@ -140,7 +139,7 @@ void product_tensor_bases( const std::vector<unsigned> & poly_deg_var ,
       product_tensor_bases( poly_deg_var , poly_deg_total - p , poly_deg_target , ivar + 1 , iv ,
                             bases_map );
     }
-    else if ( poly_deg_total == p ) {
+    else if ( (int) poly_deg_total == p ) {
 
       // No variables exceeded poly_deg_target
       // At least one variable must be equal to poly_deg_target
@@ -185,8 +184,8 @@ struct CompareProductTensorRowCount {
 
 TripleProductTensorLegendreCombinatorialEvaluation::
 TripleProductTensorLegendreCombinatorialEvaluation(
-  const unsigned                  maximum_polynomial_degree ,
-  const std::vector< unsigned > & variable_polynomial_degree )
+  const std::vector< unsigned > & variable_polynomial_degree ,
+  unsigned maximum_polynomial_degree )
   : m_tensor()
   , m_bases_map()
   , m_variable_count( variable_polynomial_degree.size() )
@@ -195,6 +194,14 @@ TripleProductTensorLegendreCombinatorialEvaluation(
 {
   // Generate a combinatorial bases map to start the ordering process.
   // This ordering will be used when two rows' have equal non-zero density.
+
+  // At least capture pair-wise covariance:
+  maximum_polynomial_degree = std::max( maximum_polynomial_degree , 2u );
+
+  for ( unsigned i = 0 ; i < variable_polynomial_degree.size() ; ++i ) {
+    maximum_polynomial_degree = std::max( maximum_polynomial_degree ,
+                                          variable_polynomial_degree[i] );
+  }
 
   std::vector< unsigned char > tmp_bases_map ;
 

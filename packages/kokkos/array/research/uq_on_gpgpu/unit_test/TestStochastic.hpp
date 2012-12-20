@@ -5,6 +5,7 @@
 
 #include <impl/KokkosArray_Timer.hpp>
 #include <TestProductTensorLegendre.hpp>
+#include <TestGenerateTensor.hpp>
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
 #include "Stokhos_LegendreBasis.hpp"
@@ -264,10 +265,9 @@ test_product_tensor_matrix(
 template< typename ScalarType , class Device >
 std::vector<double>
 test_product_tensor_diagonal_matrix(
-  const std::vector<int> & var_degree ,
+  const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount ,
-  const bool print_flag = false )
+  const int iterCount )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type**,
@@ -288,62 +288,87 @@ test_product_tensor_diagonal_matrix(
                                   value_type , Device > matrix_type ;
 
   typedef typename matrix_type::graph_type  graph_type ;
+
   //------------------------------
   // Generate FEM graph:
 
-  std::vector< std::vector<size_t> > graph ;
+  std::vector< std::vector<size_t> > fem_graph ;
 
-  const size_t outer_length = nGrid * nGrid * nGrid ;
-  const size_t graph_length = unit_test::generate_fem_graph( nGrid , graph );
+  const size_t fem_length = nGrid * nGrid * nGrid ;
+  const size_t fem_graph_length = unit_test::generate_fem_graph( nGrid , fem_graph );
 
   //------------------------------
   // Generate product tensor from variables' degrees
 
-  const tensor_type tensor =
-    KokkosArray::create_product_tensor< tensor_type >( var_degree );
+  const std::vector<unsigned> var_degree( arg_var_degree.begin() , arg_var_degree.end() );
 
-  const size_t inner_length = tensor.dimension();
+  const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+    tensor( var_degree );
+
+  const size_t stoch_length = tensor.bases_count();
+
+  //------------------------------
+
+  block_vector_type x = block_vector_type( "x" , stoch_length , fem_length );
+  block_vector_type y = block_vector_type( "y" , stoch_length , fem_length );
+
+  typename block_vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
+  typename block_vector_type::HostMirror hy_result = KokkosArray::create_mirror( y );
+
+  for ( size_t iColFEM = 0 ;   iColFEM < fem_length ;   ++iColFEM ) {
+  for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
+    hx(iColStoch,iColFEM) =
+      generate_vector_coefficient( fem_length , stoch_length ,
+                                   iColFEM , iColStoch );
+  }}
+
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
   // Generate CRS matrix of blocks with symmetric diagonal storage
 
   matrix_type matrix ;
 
-  matrix.block  = KokkosArray::SymmetricDiagonalSpec< Device >( inner_length );
-  matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test product tensor graph") , graph );
-  matrix.values = block_vector_type( "matrix" , matrix.block.matrix_size() , graph_length );
-
-  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
-  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
-
-  typename block_vector_type::HostMirror hM =
-    KokkosArray::create_mirror( matrix.values );
+  matrix.block  = KokkosArray::SymmetricDiagonalSpec< Device >( stoch_length );
+  matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test product tensor graph") , fem_graph );
+  matrix.values = block_vector_type( "matrix" , matrix.block.matrix_size() , fem_graph_length );
 
   {
-    std::vector< value_type > a( inner_length );
+    typename block_vector_type::HostMirror hM =
+      KokkosArray::create_mirror( matrix.values );
 
-    for ( size_t i = 0 ; i < graph_length ; ++i ) {
-      for ( size_t j = 0 ; j < inner_length ; ++j ) {
-        a[j] = 1 + j + 10 * i ;
+    for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
+      for ( size_t iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
+
+        double y = 0 ;
+
+        for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+          const size_t iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+
+          for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
+
+            const size_t offset = matrix.block.matrix_offset( iRowStoch , iColStoch );
+
+            double value = 0 ;
+
+            for ( size_t k = 0 ; k < stoch_length ; ++k ) {
+              value += tensor( iRowStoch , iColStoch , k ) *
+                       generate_matrix_coefficient( fem_length , stoch_length ,
+                                                    iRowFEM , iColFEM , k );
+            }
+
+            y += value * hx(iColStoch,iColFEM);
+
+            hM( offset , iEntryFEM ) = value ;
+          }
+        }
+
+        hy_result( iRowStoch , iRowFEM ) = y ;
       }
-      // Tensor expansion:
-      multiply_type::apply( tensor.tensor() , & a[0] , & hM(0,i) );
     }
+
+    KokkosArray::deep_copy( matrix.values , hM );
   }
-
-  KokkosArray::deep_copy( matrix.values , hM );
-
-  //------------------------------
-
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1 + j + 10 * i ;
-    }
-  }
-
-  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
@@ -354,28 +379,34 @@ test_product_tensor_diagonal_matrix(
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
-  const double flops = 2.0*1e-9*graph_length*inner_length*inner_length / seconds_per_iter;
+  const double flops = 2.0*1e-9*fem_graph_length*stoch_length*stoch_length / seconds_per_iter;
 
-  //------------------------------
+ //------------------------------
+  // Verify result
 
-  if ( print_flag ) {
-    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+  {
+    const double tol = 1.0e-13 ;
 
-    KokkosArray::deep_copy( hy , y );
+    KokkosArray::deep_copy( hx , y );
 
-    std::cout << std::endl << "test_product_tensor_diagonal_matrix"
-              << std::endl ;
-    for ( size_t i = 0 ; i < outer_length ; ++i ) {
-      std::cout << "hy(:," << i << ") =" ;
-      for ( size_t j = 0 ; j < inner_length ; ++j ) {
-        std::cout << " " << hy(j,i);
+    for ( size_t iRowFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
+      for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
+        const double mag   = std::abs( hy_result(iRowStoch,iRowFEM) );
+        const double error = std::abs( hx(iRowStoch,iRowFEM) - hy_result(iRowStoch,iRowFEM) );
+        if ( tol < error && tol < error / mag ) {
+          std::cout << "test_product_tensor_diagonal_matrix error:"
+                    << " y(" << iRowStoch << "," << iRowFEM << ") = " << hx(iRowStoch,iRowFEM)
+                    << " , error = " << ( hx(iRowStoch,iRowFEM) - hy_result(iRowStoch,iRowFEM) )
+                    << std::endl ;
+        }
       }
-      std::cout << std::endl ;
     }
   }
 
+  //------------------------------
+
   std::vector<double> perf(3);
-  perf[0] = outer_length * inner_length ;
+  perf[0] = fem_length * stoch_length ;
   perf[1] = seconds_per_iter;
   perf[2] = flops;
   return perf;
@@ -392,8 +423,7 @@ std::vector<double>
 test_product_flat_commuted_matrix(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount ,
-  const bool print_flag = false )
+  const int iterCount )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
@@ -415,16 +445,10 @@ test_product_flat_commuted_matrix(
   //------------------------------
   // Tensor evaluation:
 
-  std::vector<unsigned> var_degree( arg_var_degree.size() , 0u );
-
-  unsigned maximum_degree = 2 ; // Minimum degree to capture pair-wise covariance
-  for ( unsigned i = 0 ; i < arg_var_degree.size() ; ++i ) {
-    var_degree[i] = arg_var_degree[i];
-    maximum_degree = std::max( maximum_degree , var_degree[i] );
-  }
+  const std::vector<unsigned> var_degree( arg_var_degree.begin() , arg_var_degree.end() );
 
   const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
-    tensor( maximum_degree , var_degree );
+    tensor( var_degree );
 
   const size_t stoch_length = tensor.bases_count();
 
@@ -488,8 +512,8 @@ test_product_flat_commuted_matrix(
     const size_t iColFEM   = iCol / stoch_length ;
     const size_t iColStoch = iCol % stoch_length ;
 
-    hx(iCol) = ( 100.0 + double(iColFEM)   / double(fem_length) ) +
-               (   1.0 + double(iColStoch) / double(stoch_length) );
+    hx(iCol) = generate_vector_coefficient( fem_length , stoch_length ,
+                                            iColFEM , iColStoch );
   }
 
   KokkosArray::deep_copy( x , hx );
@@ -518,12 +542,10 @@ test_product_flat_commuted_matrix(
         const size_t iColFEM   = iCol / stoch_length ;
         const size_t iColStoch = iCol % stoch_length ;
 
-        const double A_fem = ( 10.0 + double(iRowFEM) / double(fem_length) ) +
-                             (  5.0 + double(iColFEM) / double(fem_length) );
-
         double value = 0 ;
         for ( unsigned k = 0 ; k < stoch_length ; ++k ) {
-          const double A_fem_k = A_fem + ( 1.0 + double(k) / double(stoch_length) );
+          const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length ,
+                                                              iRowFEM, iColFEM, k );
           value += tensor(iRowStoch,iColStoch,k) * A_fem_k ;
         }
         hM( iEntry ) = value ;
@@ -590,8 +612,7 @@ std::vector<double>
 test_product_flat_original_matrix(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount ,
-  const bool print_flag = false )
+  const int iterCount )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
@@ -613,16 +634,10 @@ test_product_flat_original_matrix(
   //------------------------------
   // Tensor evaluation:
 
-  std::vector<unsigned> var_degree( arg_var_degree.size() , 0u );
-
-  unsigned maximum_degree = 2 ; // Minimum degree to capture pair-wise covariance
-  for ( unsigned i = 0 ; i < arg_var_degree.size() ; ++i ) {
-    var_degree[i] = arg_var_degree[i];
-    maximum_degree = std::max( maximum_degree , var_degree[i] );
-  }
+  const std::vector<unsigned> var_degree( arg_var_degree.begin() , arg_var_degree.end() );
 
   const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
-    tensor( maximum_degree , var_degree );
+    tensor( var_degree );
 
   const size_t stoch_length = tensor.bases_count();
 
@@ -685,8 +700,8 @@ test_product_flat_original_matrix(
     const size_t iColStoch = iCol / fem_length ;
     const size_t iColFEM   = iCol % fem_length ;
 
-    hx(iCol) = ( 100.0 + double(iColFEM)   / double(fem_length) ) +
-               (   1.0 + double(iColStoch) / double(stoch_length) );
+    hx(iCol) = generate_vector_coefficient( fem_length , stoch_length ,
+                                            iColFEM , iColStoch );
   }
 
   KokkosArray::deep_copy( x , hx );
@@ -715,12 +730,11 @@ test_product_flat_original_matrix(
         const size_t iColStoch = iCol / fem_length ;
         const size_t iColFEM   = iCol % fem_length ;
 
-        const double A_fem = ( 10.0 + double(iRowFEM) / double(fem_length) ) +
-                             (  5.0 + double(iColFEM) / double(fem_length) );
-
         double value = 0 ;
         for ( unsigned k = 0 ; k < stoch_length ; ++k ) {
-          const double A_fem_k = A_fem + ( 1.0 + double(k) / double(stoch_length) );
+          const double A_fem_k =
+            generate_matrix_coefficient( fem_length , stoch_length ,
+                                         iRowFEM , iColFEM , k );
           value += tensor(iRowStoch,iColStoch,k) * A_fem_k ;
         }
         hM( iEntry ) = value ;
@@ -1074,91 +1088,6 @@ test_original_matrix_free_vec(
 #endif
 
 //----------------------------------------------------------------------------
-// A plain CRS matrix
-
-template< typename ScalarType , class Device >
-std::pair<size_t,double>
-test_flat_matrix(
-  const int nGrid ,
-  const int iterCount ,
-  const bool print_flag = false )
-{
-  typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type[] , Device > vector_type ;
-
-  //------------------------------
-
-  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
-
-  //------------------------------
-  // Generate FEM graph:
-
-  std::vector< std::vector<size_t> > fem_graph ;
-
-  const size_t length = nGrid * nGrid * nGrid ;
-  const size_t graph_length =
-    unit_test::generate_fem_graph( nGrid , fem_graph );
-
-  //------------------------------
-
-  matrix_type matrix ;
-
-  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
-
-  matrix.values = vector_type( "matrix" , graph_length );
-  vector_type x = vector_type( "x" , length );
-  vector_type y = vector_type( "y" , length );
-
-  {
-    typename vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
-
-    for ( size_t i = 0 ; i < graph_length ; ++i ) {
-      hM(i) = 1 + i ;
-    }
-
-    KokkosArray::deep_copy( matrix.values , hM );
-  }
-
-  //------------------------------
-
-  typename vector_type::HostMirror hx = KokkosArray::create_mirror( x );
-
-  for ( size_t i = 0 ; i < length ; ++i ) {
-    hx(i) = 1 + i ;
-  }
-
-  KokkosArray::deep_copy( x , hx );
-
-  //------------------------------
-
-  KokkosArray::Impl::Timer clock ;
-  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    KokkosArray::multiply( matrix , x , y );
-  }
-  Device::fence();
-
-  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
-
-  //------------------------------
-
-  if ( print_flag ) {
-    typename vector_type::HostMirror hy = KokkosArray::create_mirror( y );
-
-    KokkosArray::deep_copy( hy , y );
-
-    std::cout << std::endl << "test_flat_matrix"
-              << std::endl ;
-    for ( size_t i = 0 ; i < length ; ++i ) {
-      std::cout << "hy(," << i << ") = " << hy(i) << std::endl ;
-    }
-  }
-
-  return std::pair<size_t,double>( length , seconds_per_iter );
-}
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class Device >
@@ -1170,17 +1099,20 @@ void performance_test_driver_all( const int pdeg ,
 				  const bool print ,
 				  const bool test_block )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t fem_nonzeros = unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
 
   std::cout.precision(8);
 
   //------------------------------
 
-   std::vector< std::vector<size_t> > fem_graph ;
-  const size_t graph_length =
-    unit_test::generate_fem_graph( nGrid , fem_graph );
-  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
+  std::cout << std::endl << "\"FEM NNZ = " << fem_nonzeros << "\"" << std::endl;
 
   std::cout << std::endl
 	    << "\"#nGrid\" , "
@@ -1208,12 +1140,28 @@ void performance_test_driver_all( const int pdeg ,
             << std::endl ;
 
   for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
+
     std::vector<int> var_degree( nvar , pdeg );
 
-    const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+    //------------------------------
+    // Tensor evaluation:
+
+    const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+      tensor( std::vector<unsigned>( nvar , unsigned(pdeg) ) );
+
+    const size_t stoch_length = tensor.bases_count();
+    size_t stoch_nonzero = 0 ;
+
+    for ( size_t i = 0 ; i < stoch_length ; ++i ) {
+    for ( size_t j = i ; j < stoch_length ; ++j ) {
+    for ( size_t k = j ; k < stoch_length ; ++k ) {
+      if ( tensor.is_non_zero(i,j,k) ) ++stoch_nonzero ;
+    }}}
+
+    //------------------------------
 
     const std::vector<double> perf_matrix =
-      test_product_tensor_diagonal_matrix<double,Device>( var_degree , nGrid , nIter , print );
+      test_product_tensor_diagonal_matrix<double,Device>( var_degree , nGrid , nIter );
 
     // const std::pair<size_t,double> perf_tensor =
     //   test_product_tensor_matrix<double,Device,KokkosArray::SparseProductTensor>( var_degree , nGrid , nIter , print );
@@ -1221,14 +1169,14 @@ void performance_test_driver_all( const int pdeg ,
     // const std::pair<size_t,double> perf_crs_tensor =
     //   test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
 
-    const std::pair<size_t,double> perf_crs_tensor =
-      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter , print );
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter );
 
     const std::vector<double> perf_flat_commuted =
-      test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter , print );
+      test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter );
 
     const std::vector<double> perf_flat_original =
-      test_product_flat_original_matrix<double,Device>( var_degree , nGrid , nIter , print );
+      test_product_flat_original_matrix<double,Device>( var_degree , nGrid , nIter );
 
     if ( perf_flat_commuted[0] != perf_flat_original[0] ||
          perf_flat_commuted[3] != perf_flat_original[3] ) {
@@ -1248,8 +1196,8 @@ void performance_test_driver_all( const int pdeg ,
 #endif
 
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
-	      << tensor.dimension() << " , "
-	      << tensor.tensor().entry_count() << " , "
+	      << tensor.bases_count() << " , "
+	      << stoch_nonzero << " , "
 	      << perf_flat_original[0] << " , "
 	      << perf_flat_original[1] << " , "
 	      << perf_flat_original[1] / perf_flat_original[1] << " , "
@@ -1264,10 +1212,10 @@ void performance_test_driver_all( const int pdeg ,
 	      << perf_flat_original[1] / perf_matrix[1] << " , "
               << perf_matrix[2] << " , "
       //<< perf_flat_original.second / perf_tensor.second << " , "
-	      << perf_flat_original[1] / perf_crs_tensor.second << " , "
-	      << perf_crs_tensor.second << " , "
+	      << perf_flat_original[1] / perf_crs_tensor[1] << " , "
+	      << perf_crs_tensor[1] << " , "
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
-	      << perf_original_mat_free_block[3] / perf_crs_tensor.second << " , "
+	      << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
 #endif
 	      << std::endl ;
   }

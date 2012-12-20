@@ -72,7 +72,8 @@ struct CrsProductTensorLegendre {
   array_scalar_type    m_value ;
   unsigned             m_dimension ;
   unsigned             m_max_row_width ;
-  unsigned             m_multiply_flops ;
+  unsigned             m_nonzero_count ;
+  unsigned             m_multiply_add_flops ;
 
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned dimension() const { return m_dimension ; }
@@ -80,13 +81,20 @@ struct CrsProductTensorLegendre {
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned max_row_width() const { return m_max_row_width ; }
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned multiply_add_flops() const { return m_multiply_add_flops ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned nonzero_count() const { return m_nonzero_count ; }
+
   CrsProductTensorLegendre()
   : m_entry_offset()
   , m_coordinate()
   , m_value()
   , m_dimension(0)
   , m_max_row_width(0)
-  , m_multiply_flops(0)
+  , m_nonzero_count(0)
+  , m_multiply_add_flops(0)
   {}
 
   CrsProductTensorLegendre( const CrsProductTensorLegendre & rhs )
@@ -95,7 +103,8 @@ struct CrsProductTensorLegendre {
   , m_value(        rhs.m_value )
   , m_dimension(    rhs.m_dimension )
   , m_max_row_width(rhs.m_max_row_width )
-  , m_multiply_flops(rhs.m_multiply_flops)
+  , m_nonzero_count(rhs.m_nonzero_count )
+  , m_multiply_add_flops(rhs.m_multiply_add_flops)
   {}
 
   CrsProductTensorLegendre & operator = ( const CrsProductTensorLegendre & rhs )
@@ -105,7 +114,8 @@ struct CrsProductTensorLegendre {
     m_value        = rhs.m_value ;
     m_dimension    = rhs.m_dimension ;
     m_max_row_width= rhs.m_max_row_width ;
-    m_multiply_flops=rhs.m_multiply_flops;
+    m_nonzero_count= rhs.m_nonzero_count ;
+    m_multiply_add_flops=rhs.m_multiply_add_flops;
     return *this ;
   }
 
@@ -116,7 +126,8 @@ struct CrsProductTensorLegendre {
   , m_value()
   , m_dimension(0)
   , m_max_row_width(0)
-  , m_multiply_flops(0)
+  , m_nonzero_count(0)
+  , m_multiply_add_flops(0)
   {
     enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
 
@@ -132,21 +143,30 @@ struct CrsProductTensorLegendre {
 
     unsigned entry_count = 0 ;
 
-    m_multiply_flops = m_dimension ;
+    // Add to output vector:
+    m_multiply_add_flops = m_dimension ;
 
     for ( unsigned i = 0 ; i < m_dimension ; ++i ) {
 
       unsigned row_entry_count = 0 ;
 
       for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
-        if ( combinatorial.is_non_zero(i,j,j) ) { ++row_entry_count ; m_multiply_flops += 3 ; }
+        if ( combinatorial.is_non_zero(i,j,j) ) {
+          ++row_entry_count ;
+          ++m_nonzero_count ;
+          m_multiply_add_flops += 3 ;
+        }
       }
 
       if ( row_entry_count % Align ) { row_entry_count += Align - row_entry_count % Align ; }
 
       for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
         for ( unsigned k = j+1 ; k < m_dimension ; ++k ) {
-          if ( combinatorial.is_non_zero(i,j,k) ) { ++row_entry_count ; m_multiply_flops += 5 ; }
+          if ( combinatorial.is_non_zero(i,j,k) ) {
+            ++row_entry_count ;
+            ++m_nonzero_count ;
+            m_multiply_add_flops += 5 ;
+          }
         }
       }
 
@@ -260,7 +280,8 @@ struct CrsProductTensorLegendre {
   array_scalar_type    m_value ;
   unsigned             m_dimension ;
   unsigned             m_max_row_width ;
-  unsigned             m_multiply_flops ;
+  unsigned             m_nonzero_count ;
+  unsigned             m_multiply_add_flops ;
 
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned dimension() const { return m_dimension ; }
@@ -268,13 +289,20 @@ struct CrsProductTensorLegendre {
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned max_row_width() const { return m_max_row_width ; }
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned multiply_add_flops() const { return m_multiply_add_flops ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned nonzero_count() const { return m_nonzero_count ; }
+
   CrsProductTensorLegendre()
   : m_entry_offset()
   , m_coordinate()
   , m_value()
   , m_dimension(0)
   , m_max_row_width(0)
-  , m_multiply_flops(0)
+  , m_nonzero_count(0)
+  , m_multiply_add_flops(0)
   {}
 
   CrsProductTensorLegendre( const CrsProductTensorLegendre & rhs )
@@ -283,7 +311,8 @@ struct CrsProductTensorLegendre {
   , m_value(        rhs.m_value )
   , m_dimension(    rhs.m_dimension )
   , m_max_row_width(rhs.m_max_row_width )
-  , m_multiply_flops(rhs.m_multiply_flops)
+  , m_nonzero_count(rhs.m_nonzero_count )
+  , m_multiply_add_flops(rhs.m_multiply_add_flops)
   {}
 
   CrsProductTensorLegendre & operator = ( const CrsProductTensorLegendre & rhs )
@@ -293,25 +322,27 @@ struct CrsProductTensorLegendre {
     m_value        = rhs.m_value ;
     m_dimension    = rhs.m_dimension ;
     m_max_row_width= rhs.m_max_row_width ;
-    m_multiply_flops=rhs.m_multiply_flops;
+    m_nonzero_count= rhs.m_nonzero_count ;
+    m_multiply_add_flops=rhs.m_multiply_add_flops;
     return *this ;
   }
 
+  explicit
   CrsProductTensorLegendre( const std::vector<unsigned> & variable_poly_degree ,
-                            const unsigned maximum_poly_degree )
+                            const unsigned maximum_poly_degree = 2 )
   : m_entry_offset()
   , m_coordinate()
   , m_value()
   , m_dimension(0)
   , m_max_row_width(0)
-  , m_multiply_flops(0)
+  , m_nonzero_count(0)
+  , m_multiply_add_flops(0)
   {
     enum { Blocking = 32 };
     enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
 
     const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
-      combinatorial( maximum_poly_degree ,
-                     variable_poly_degree );
+      combinatorial( variable_poly_degree , maximum_poly_degree );
 
     m_dimension = combinatorial.bases_count();
 
@@ -321,7 +352,8 @@ struct CrsProductTensorLegendre {
 
     unsigned entry_count = 0 ;
 
-    m_multiply_flops = m_dimension ;
+    // Adding to the output vector.
+    m_multiply_add_flops = m_dimension ;
 
     for ( unsigned i = 0 ; i < m_dimension ; ++i ) {
 
@@ -329,9 +361,12 @@ struct CrsProductTensorLegendre {
 
       for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
         for ( unsigned k = j ; k < m_dimension ; ++k ) {
-          if ( combinatorial.is_non_zero(i,j,k) ) { ++row_entry_count ; m_multiply_flops += 5 ; }
+          if ( combinatorial.is_non_zero(i,j,k) ) { ++row_entry_count ; m_multiply_add_flops += 5 ; }
         }
       }
+
+      m_nonzero_count      += row_entry_count ;
+      m_multiply_add_flops += 5 * row_entry_count ; // Two additions and three multiplies:
 
       if ( row_entry_count % Align ) { row_entry_count += Align - row_entry_count % Align ; }
 

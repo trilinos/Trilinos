@@ -46,7 +46,7 @@
 
 namespace unit_test {
 void product_tensor_legendre();
-};
+}
 
 extern int mainHost(bool test_flat, bool test_orig, bool test_block);
 extern int mainCuda(bool test_flat, bool test_orig, bool test_block);

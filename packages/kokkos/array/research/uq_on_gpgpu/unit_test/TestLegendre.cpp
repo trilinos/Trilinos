@@ -80,7 +80,7 @@ void gauss_legendre_poly( const unsigned ng , const unsigned p , const double c 
 
   double y = 0 ;
 
-  for ( int i = 0 ; i < ng ; ++i ) {
+  for ( int i = 0 ; i < (int) ng ; ++i ) {
     y += wgt[i] * poly( pt[i] , c , p+1 , 1 );
   }
 
@@ -273,7 +273,7 @@ void product_tensor_bases( const unsigned nvar ,
   std::vector<unsigned> vdeg( nvar , poly_deg );
 
   KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation 
-    combinatorial( poly_deg_max , vdeg );
+    combinatorial( vdeg , poly_deg_max );
 
   //------------------------------------
   // Triple products of the bases:

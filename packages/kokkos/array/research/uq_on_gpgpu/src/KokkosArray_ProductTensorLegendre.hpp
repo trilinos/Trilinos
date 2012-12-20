@@ -141,9 +141,10 @@ private:
 
 public:
 
+  explicit
   TripleProductTensorLegendreCombinatorialEvaluation(
-    const unsigned                  maximum_polynomial_degree ,
-    const std::vector< unsigned > & variable_polynomial_degree );
+    const std::vector< unsigned > & variable_polynomial_degree ,
+    unsigned maximum_polynomial_degree = 2 /* unless a variable is greater */ );
 
   inline
   unsigned bases_count() const
