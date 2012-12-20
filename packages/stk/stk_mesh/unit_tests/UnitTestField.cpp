@@ -246,6 +246,72 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
     print_bucket_array( f2 , k );
     print_bucket_array( f3 , k );
   }
+
+}
+
+STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
+{
+  stk::ParallelMachine pm = MPI_COMM_SELF ;
+  std::ostringstream oss; // to test printing of things w/out spamming cout
+
+  // specifications for some test fields
+  typedef stk::mesh::Field<double>                rank_zero_field;
+  typedef stk::mesh::Field<double,ATAG>           rank_one_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG>      rank_two_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG,CTAG> rank_three_field;
+
+  const std::string name0("test_field_0");
+  const std::string name1("test_field_1");
+  const std::string name2("test_field_2");
+  const std::string name3("test_field_3");
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta_data( spatial_dimension );
+  stk::mesh::BulkData bulk_data( meta_data , pm );
+
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
+  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
+  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  name2 );
+  rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
+
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
+  stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
+  stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
+
+  stk::mesh::put_field( f0 , NODE_RANK , p0 );
+  stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
+  stk::mesh::put_field( f2 , NODE_RANK , p2 , 10 , 20 );
+  stk::mesh::put_field( f3 , NODE_RANK , p3 , 10 , 20 , 30 );
+
+  meta_data.commit();
+
+  // SCALAR FIELDS:
+  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::NODE_RANK), 1u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::ELEMENT_RANK), 0u );
+
+  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::NODE_RANK), 10u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::ELEMENT_RANK), 0u );
+
+  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::NODE_RANK), 200u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::ELEMENT_RANK), 0u );
+
+  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::NODE_RANK), 6000u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::ELEMENT_RANK), 0u );
+
+  STKUNIT_EXPECT_EQUAL( f0.rank(), 0u ); // Field Rank NOT entity rank
+  STKUNIT_EXPECT_EQUAL( f1.rank(), 1u );
+  STKUNIT_EXPECT_EQUAL( f2.rank(), 2u );
+  STKUNIT_EXPECT_EQUAL( f3.rank(), 3u );
+
 }
 
 STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
