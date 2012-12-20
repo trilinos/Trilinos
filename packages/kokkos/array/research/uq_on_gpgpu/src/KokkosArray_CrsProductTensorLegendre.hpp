@@ -53,7 +53,7 @@
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_ProductTensorLegendre.hpp>
 
-#if 0
+#if 1
 
 namespace KokkosArray {
 
@@ -119,8 +119,9 @@ struct CrsProductTensorLegendre {
     return *this ;
   }
 
+  explicit
   CrsProductTensorLegendre( const std::vector<unsigned> & variable_poly_degree ,
-                            const unsigned maximum_poly_degree )
+                            const unsigned maximum_poly_degree = 2 )
   : m_entry_offset()
   , m_coordinate()
   , m_value()
@@ -132,8 +133,7 @@ struct CrsProductTensorLegendre {
     enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
 
     const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
-      combinatorial( maximum_poly_degree ,
-                     variable_poly_degree );
+      combinatorial( variable_poly_degree , maximum_poly_degree );
 
     m_dimension = combinatorial.bases_count();
 
