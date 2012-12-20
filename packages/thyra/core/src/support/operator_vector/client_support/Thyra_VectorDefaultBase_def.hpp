@@ -359,6 +359,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
   ) const
 {
   using Teuchos::dyn_cast;
+  using Teuchos::tuple;
   const Range1D rng = rng_in.full_range() ? Range1D(0,this->space()->dim()-1) : rng_in;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
