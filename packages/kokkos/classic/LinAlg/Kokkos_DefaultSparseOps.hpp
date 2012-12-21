@@ -800,6 +800,12 @@ namespace Kokkos {
                             MultiVector< RangeScalar,Node> &X) const;
 
     template <class DomainScalar, class RangeScalar, class OffsetType>
+    void gaussSeidelPrivate (const MultiVector<DomainScalar,Node> &Y,
+			     MultiVector< RangeScalar,Node> &X,
+			     const MultiVector<Scalar,Node> &D,
+			     const bool backward = false) const;
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
     void multiplyPrivate(Teuchos::ETransp trans,
                          RangeScalar alpha,
                          const MultiVector<DomainScalar,Node> &X,
@@ -1009,6 +1015,104 @@ namespace Kokkos {
     return;
   }
 
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidelPrivate (const MultiVector<DomainScalar,Node> &Y,
+		      MultiVector<RangeScalar,Node> &X,
+		      const MultiVector<Scalar,Node> &D,
+		      const bool backward) const
+  {
+    if (isEmpty_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(unit_diag_ != Teuchos::UNIT_DIAG, std::runtime_error,
+        "DefaultHostSparseOps: Gauss-Seidel with empty matrix is only valid for an implicit unit diagonal.");
+      // solve I * X = Y for X = Y
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign (X,Y);
+      return;
+    }
+    const size_t numCols = Y.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
+
+    // Get the raw pointers to all the arrays.
+    ArrayRCP<const OffsetType> ptr_wrapped;
+    getOffsets (ptr_wrapped);
+    const OffsetType* const ptr = ptr_wrapped.getRawPtr ();
+    const Ordinal* const ind = inds_.getRawPtr ();
+    const Scalar* const val = vals_.getRawPtr ();
+    const DomainScalar* const y = Y.getValues ().getRawPtr ();
+    const size_t y_stride = Y.getStride ();
+    RangeScalar* const x = X.getValuesNonConst ().getRawPtr ();
+    const size_t x_stride = X.getStride ();
+    const Scalar* const d = D.getValues ().getRawPtr ();
+    const Ordinal numRows = numRows_;
+
+    if (numCols == 1) {
+      RangeScalar x_temp;
+
+      if (! backward) { // forward mode
+	for (Ordinal i = 0; i < numRows; ++i) {
+	  x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+	    const Ordinal j = ind[k];
+	    const Scalar A_ij = val[k];
+	    x_temp += A_ij * x[j];
+	  }
+	  x[i] = d[i] * (y[i] - x_temp);
+	}
+      } else { // backward mode
+	for (Ordinal i = 0; i < numRows; ++i) {
+	  x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+	    const Ordinal j = ind[k];
+	    const Scalar A_ij = val[k];
+	    x_temp += A_ij * x[j];
+	  }
+	  x[i] = d[i] * (y[i] - x_temp);
+	}
+      }
+    }
+    else {
+      std::vector<RangeScalar> temp (numCols); 
+      RangeScalar* x_temp = &temp[numCols]; // Safe, since we know numCols > 0.
+
+      if (! backward) { // forward mode
+	for (Ordinal i = 0; i < numRows; ++i) {
+	  for (size_t c = 0; c < numCols; ++c) {
+	    x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+	  }
+	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+	    const Ordinal j = ind[k];
+	    const Scalar A_ij = val[k];
+	    for (size_t c = 0; c < numCols; ++c) {
+	      x_temp[c] += A_ij * x[j + x_stride*c];
+	    }
+	  }
+	  for (size_t c = 0; c < numCols; ++c) {
+	    x[i + x_stride*c] = d[i] * (y[i + y_stride*c] - x_temp[c]);
+	  }
+	}
+      } else { // backward mode
+	for (Ordinal i = 0; i < numRows; ++i) {
+	  for (size_t c = 0; c < numCols; ++c) {
+	    x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+	  }
+	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+	    const Ordinal j = ind[k];
+	    const Scalar A_ij = val[k];
+	    for (size_t c = 0; c < numCols; ++c) {
+	      x_temp[c] += A_ij * x[j + x_stride*c];
+	    }
+	  }
+	  for (size_t c = 0; c < numCols; ++c) {
+	    x[i + x_stride*c] = d[i] * (y[i + y_stride*c] - x_temp[c]);
+	  }
+	}
+      }
+    }
+  }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
