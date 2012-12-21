@@ -435,6 +435,83 @@ struct ScalarTraits<unsigned long long int>
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
+#ifdef HAVE_TEUCHOS___INT64
+
+template<>
+struct ScalarTraits<__int64>
+{
+  typedef __int64 magnitudeType;
+  typedef __int64 halfPrecision;
+  typedef __int64 doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(__int64 a) { return static_cast<__int64>(std::fabs(static_cast<double>(a))); }
+  static inline __int64 zero()  { return 0; }
+  static inline __int64 one()   { return 1; }
+  static inline __int64 conjugate(__int64 x) { return x; }
+  static inline __int64 real(__int64 x) { return x; }
+  static inline __int64 imag(__int64) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline __int64 random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "__int64"; }
+  static inline __int64 squareroot(__int64 x) { return (__int64) std::sqrt((double) x); }
+  static inline __int64 pow(__int64 x, __int64 y) { return (__int64) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in __int64, the cast
+  // from __int64 to double may not be exact.
+  static inline __int64 log(__int64 x) { return static_cast<__int64> (std::log (static_cast<double> (x))); }
+  static inline __int64 log10(__int64 x) { return static_cast<__int64> (std::log10 (static_cast<double> (x))); }
+};
+
+template<>
+struct ScalarTraits<unsigned __int64>
+{
+  typedef unsigned __int64 magnitudeType;
+  typedef unsigned __int64 halfPrecision;
+  typedef unsigned __int64 doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(unsigned __int64 a) { return static_cast<unsigned __int64>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned __int64 zero()  { return 0; }
+  static inline unsigned __int64 one()   { return 1; }
+  static inline unsigned __int64 conjugate(unsigned __int64 x) { return x; }
+  static inline unsigned __int64 real(unsigned __int64 x) { return x; }
+  static inline unsigned __int64 imag(unsigned __int64) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline unsigned __int64 random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "unsigned __int64"; }
+  static inline unsigned __int64 squareroot(unsigned __int64 x) { return (unsigned __int64) std::sqrt((double) x); }
+  static inline unsigned __int64 pow(unsigned __int64 x, unsigned __int64 y) { return (unsigned __int64) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in unsigned __int64,
+  // the cast from unsigned __int64 to double may not be exact.
+  static inline unsigned __int64 log(unsigned __int64 x) { return static_cast<unsigned __int64> (std::log (static_cast<double> (x))); }
+  static inline unsigned __int64 log10(unsigned __int64 x) { return static_cast<unsigned __int64> (std::log10 (static_cast<double> (x))); }
+};
+
+#endif // HAVE_TEUCHOS___INT64
+
+
 #ifndef __sun
 extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 #endif

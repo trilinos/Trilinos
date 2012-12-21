@@ -343,6 +343,13 @@ int main( int argc, char* argv[] ) {
     if(!result) success = false;
 #endif
 
+#ifdef HAVE_TEUCHOS___INT64
+    result = testOrdinalTraits<__int64>(*out);
+    if(!result) success = false;
+
+    result = testOrdinalTraits<unsigned __int64>(*out);
+    if(!result) success = false;
+#endif
 
 // #ifdef HAVE_TEUCHOS_COMPLEX
 //     result = testScalarTraits<std::complex<double> >(*out);

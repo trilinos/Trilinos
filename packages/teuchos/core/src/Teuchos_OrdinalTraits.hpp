@@ -176,6 +176,30 @@ struct OrdinalTraits<long long int> {
 };
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+#ifdef HAVE_TEUCHOS___INT64
+
+template<>
+struct OrdinalTraits<__int64> {
+  static const bool hasMachineParameters = false;
+  static inline __int64 zero() {return(static_cast<__int64>(0));}
+  static inline __int64 one() {return(static_cast<__int64>(1));}
+  static inline __int64 invalid() {return(std::numeric_limits<__int64>::max());}
+  static inline __int64 max() {return(std::numeric_limits<__int64>::max()-1);}
+  static inline std::string name() {return("__int64");}
+};
+
+template<>
+struct OrdinalTraits<unsigned __int64> {
+  static const bool hasMachineParameters = false;
+  static inline unsigned __int64 zero() {return(static_cast<unsigned __int64>(0));}
+  static inline unsigned __int64 one() {return(static_cast<unsigned __int64>(1));}
+  static inline unsigned __int64 invalid() {return(std::numeric_limits<unsigned __int64>::max());}
+  static inline unsigned __int64 max() {return(std::numeric_limits<unsigned __int64>::max()-1);}
+  static inline std::string name() {return("unsigned __int64");}
+};
+
+#endif // HAVE_TEUCHOS___INT64
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
