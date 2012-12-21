@@ -780,6 +780,28 @@ namespace Kokkos {
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
 
+    /// \brief Gauss-Seidel on the linear system Y = A X.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param Y [in] Input multivector.
+    /// \param X [out] Result multivector.
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param backward [in] If true, do backward Gauss-Seidel; 
+    ///   if false (the default), do forward Gauss-Seidel.
+    template <class DomainScalar, class RangeScalar>
+    void 
+    gaussSeidel (const MultiVector<DomainScalar,Node> &Y,
+		 MultiVector< RangeScalar,Node> &X,
+		 const MultiVector<Scalar,Node> &D,
+		 //const RangeScalar& dampingFactor = Teuchos::ScalarTraits<RangeScalar>::one (),
+		 const bool backward = false) const;
     //@}
 
   protected:
@@ -1074,7 +1096,10 @@ namespace Kokkos {
 	}
       }
     }
-    else {
+    else { // numCols > 1
+      // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
+      // multiple columns becomes important, we can add unrolled
+      // implementations.  The implementation below is not unrolled.
       std::vector<RangeScalar> temp (numCols); 
       RangeScalar* x_temp = &temp[numCols]; // Safe, since we know numCols > 0.
 
@@ -1142,6 +1167,39 @@ namespace Kokkos {
       solvePrivate<DomainScalar,RangeScalar,Ordinal>(trans,Y,X);
     }
     return;
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void 
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidel (const MultiVector<DomainScalar,Node> &Y,
+	       MultiVector< RangeScalar,Node> &X,
+	       const MultiVector<Scalar,Node> &D,
+	       //const RangeScalar& dampingFactor,
+	       const bool backward) const
+  {
+    std::string tfecfFuncName("gaussSeidel(trans,Y,X)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        isInitialized_ == false,
+        std::runtime_error, " The solve was not fully initialized."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumCols() != (size_t)Y.getNumCols(),
+        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)X.getNumRows() < (size_t)numRows_,
+        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
+                            "Likely cause is that the column map was not provided to "
+                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
+    );
+    if (big_ptrs_ != null) {
+      gaussSeidelPrivate<DomainScalar,RangeScalar,size_t> (Y, X, backward);
+    }
+    else {
+      gaussSeidelPrivate<DomainScalar,RangeScalar,Ordinal> (Y, X, backward);
+    }
   }
 
 
