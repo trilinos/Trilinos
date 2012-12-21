@@ -54,7 +54,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::accumulate( data.begin(), data.end(), 0ll );
     }
     double elapsedtime = timer.elapsed();
@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
     boost::timer timer;
     unsigned* begin = &data.front();
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::accumulate( begin, begin+data.size(), 0ll );
     }
     double elapsedtime = timer.elapsed();
@@ -75,7 +75,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       for( std::vector<unsigned>::iterator it = data.begin(), iend = data.end(); it != iend; ++it ) {
         sum += *it;
       }
@@ -87,7 +87,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       unsigned* it = &data.front();
       for( unsigned* iend = it+data.size(); it != iend; ++it ) {
         sum += *it;
@@ -100,7 +100,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       for( std::size_t i = 0, size = data.size(); i != size; ++i ) {
         sum += data[i];
       }
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       for( int i = 0, size = data.size(); i != size; ++i ) {
         sum += data[i];
       }
@@ -124,7 +124,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::for_each( data.begin(), data.end(), sum_func() ).sum;
     }
     double elapsedtime = timer.elapsed();
@@ -135,7 +135,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
     boost::timer timer;
     unsigned* begin = &data.front();
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::for_each( begin, begin+data.size(), sum_func() ).sum;
     }
     double elapsedtime = timer.elapsed();
@@ -145,7 +145,7 @@ STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
   {
     boost::timer timer;
     long long sum = 0;
-    for (size_t i = 0; i < num_repetitions; ++i) {
+    for (size_t n = 0; n < num_repetitions; ++n) {
       BOOST_FOREACH( unsigned i, data ) {
         sum += i;
       }
