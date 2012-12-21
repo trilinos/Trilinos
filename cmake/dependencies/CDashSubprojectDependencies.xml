@@ -907,7 +907,6 @@
   <SubProject name="Didasko">
     <Dependency name="Teuchos" type="TO"/>
     <Dependency name="ThreadPool" type="ITO"/>
-    <Dependency name="RTOp" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -920,8 +919,6 @@
     <Dependency name="Amesos" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
-    <Dependency name="Belos" type="TO"/>
-    <Dependency name="Anasazi" type="TO"/>
     <EmailAddresses>
       <Email address="didasko-regression@software.sandia.gov"/>
     </EmailAddresses>
