@@ -3,12 +3,11 @@
 import exopy
 
 path = 'Cyl_Hex.exo'
-mode = int(0)
-comp_ws = int(0)
-io_ws = int(0)
-(exoid,comp_ws,io_ws,version) = exopy.ex_open(path,mode,comp_ws,io_ws)
+#mode = int(0)
+#comp_ws = int(0)
+#io_ws = int(0)
+(exoid,comp_ws,io_ws,version) = exopy.ex_open(path) #exopy.ex_open(path,mode,comp_ws,io_ws)
 print "exoid = ", exoid
-print "mode = ", mode
 print "comp_ws =", comp_ws
 print "io_ws =", io_ws
 print "version =", version

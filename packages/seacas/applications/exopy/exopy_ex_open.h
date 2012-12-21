@@ -5,10 +5,10 @@
 static PyObject * exopy_ex_open(PyObject *self, PyObject *args) {
   /* (exoid,comp_ws,io_ws,version) = ex_open(path,mode,comp_ws_ref,io_ws_ref,version_ref) */
 
-  int exoid, mode, comp_ws_in, io_ws_in;
+  int exoid, mode=0, comp_ws_in=0, io_ws_in=0;
   const char *path;
 
-  if ( !PyArg_ParseTuple(args, "siii", &path, &mode, &comp_ws_in, &io_ws_in) ) {
+  if ( !PyArg_ParseTuple(args, "s|iii", &path, &mode, &comp_ws_in, &io_ws_in) ) {
     return NULL;
   }
 
