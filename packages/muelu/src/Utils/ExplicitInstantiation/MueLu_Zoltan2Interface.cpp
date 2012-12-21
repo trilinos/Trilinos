@@ -1,6 +1,6 @@
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#include "MueLu_ZoltanInterface_def.hpp"
+#include "MueLu_Zoltan2Interface_def.hpp"
 
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
