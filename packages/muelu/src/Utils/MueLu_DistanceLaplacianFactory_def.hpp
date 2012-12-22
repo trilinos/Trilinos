@@ -130,7 +130,7 @@ namespace MueLu {
           SC distance = Teuchos::ScalarTraits<SC>::squareroot(xdelta*xdelta + ydelta*ydelta + zdelta*zdelta);
           TEUCHOS_TEST_FOR_EXCEPTION(distance==zero, Exceptions::RuntimeError,
                                      "MueLu::DistanceLaplacian: distance between two distinct nodes is zero");
-          valPtr[j] = -1*Teuchos::ScalarTraits<SC>::one() / distance;
+          valPtr[j] = -Teuchos::ScalarTraits<SC>::one() / distance; // compile fix for SC = std::complex<double>
           sum -= valPtr[j];
         } else {
           diagIndex=j;
