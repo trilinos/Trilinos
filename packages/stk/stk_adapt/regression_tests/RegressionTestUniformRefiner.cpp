@@ -2452,8 +2452,8 @@ namespace stk
 
                 wedgeFixture.createMesh(pm,
                                         //4, 3, 2,
-                                        //8, 6, 4,
-                                        2, 2, 2,
+                                        8, 6, 4,
+                                        //2, 2, 2,
                                         0, 1,
                                         0, 1,
                                         0, 1,
@@ -2475,7 +2475,7 @@ namespace stk
 
             eMesh.commit();
 
-            if (1)
+            if (0)
               {
                 // delete the second element
                 eMesh.get_bulk_data()->modification_begin();
