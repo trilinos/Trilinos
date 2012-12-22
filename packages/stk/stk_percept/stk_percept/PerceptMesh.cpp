@@ -9,6 +9,7 @@
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
+#include <stk_percept/GeometryVerifier.hpp>
 
 #include <Ioss_NullEntity.h>
 #include <Ioss_SubSystem.h>
@@ -4310,6 +4311,12 @@ namespace stk {
       min_max_ave[2] /= nele;
 
       return min_max_ave[1];
+    }
+
+    bool PerceptMesh::check_mesh_volumes(bool print_table, double badJac,  bool dump_all_elements )
+    {
+      GeometryVerifier gv(dump_all_elements, badJac);
+      return gv.isGeometryBad(*get_bulk_data(), print_table);
     }
 
     bool PerceptMesh::is_in_geometry_parts(const std::string& geometry_file_name, stk::mesh::Bucket& bucket)

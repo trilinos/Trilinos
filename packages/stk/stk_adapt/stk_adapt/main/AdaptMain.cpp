@@ -490,6 +490,7 @@ namespace stk {
       std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";
       int print_info=0;
       int remove_original_elements = 1;
+      int verify_meshes = 0;
       int number_refines = 1;
       int proc_rank_field = 0;
       int query_only = 0;
@@ -561,6 +562,7 @@ namespace stk {
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
       run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
+      run_environment.clp.setOption("verify_meshes"            , &verify_meshes            , "verify positive volumes for input and output meshes");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
@@ -916,6 +918,17 @@ namespace stk {
 #endif
                         eMesh.commit();
 
+                        if (verify_meshes)
+                          {
+                            bool print_table=true;
+                            double badJac=1.e-10;
+                            bool dump_all_elements=false;
+                            if (!eMesh.get_rank()) std::cout << "Verify input mesh..." << std::endl;
+                            if (eMesh.check_mesh_volumes(print_table, badJac, dump_all_elements))
+                              {
+                                throw std::runtime_error("ERROR: verify_meshes shows a bad input mesh");
+                              }
+                          }
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
@@ -1079,6 +1092,17 @@ namespace stk {
                             t1 =  stk::wall_time();
                             cpu1 = stk::cpu_time();
 
+                            if (verify_meshes)
+                              {
+                                bool print_table=true;
+                                double badJac=1.e-10;
+                                bool dump_all_elements=false;
+                                if (!eMesh.get_rank()) std::cout << "Verify output mesh..." << std::endl;
+                                if (eMesh.check_mesh_volumes(print_table, badJac, dump_all_elements))
+                                  {
+                                    throw std::runtime_error("ERROR: verify_meshes shows a bad output mesh");
+                                  }
+                              }
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
                             if (streaming_size) eMesh.setStreamingSize(m_M);

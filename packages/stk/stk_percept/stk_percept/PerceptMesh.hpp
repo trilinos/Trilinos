@@ -417,6 +417,9 @@ namespace stk {
       ///   the average J from the vertex-based (corner-based) Jacobians.
       double hmesh_stretch_eigens(double min_max_ave[3]);
 
+
+      /// check if element volumes are positive
+      bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, bool dump_all_elements=false);
       
 #ifndef SWIG
       //========================================================================================================================
