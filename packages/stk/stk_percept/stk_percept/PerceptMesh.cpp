@@ -4313,7 +4313,7 @@ namespace stk {
       return min_max_ave[1];
     }
 
-    bool PerceptMesh::check_mesh_volumes(bool print_table, double badJac,  bool dump_all_elements )
+    bool PerceptMesh::check_mesh_volumes(bool print_table, double badJac,  int dump_all_elements )
     {
       GeometryVerifier gv(dump_all_elements, badJac);
       return gv.isGeometryBad(*get_bulk_data(), print_table);

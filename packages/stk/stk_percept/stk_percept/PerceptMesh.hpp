@@ -419,7 +419,7 @@ namespace stk {
 
 
       /// check if element volumes are positive
-      bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, bool dump_all_elements=false);
+      bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, int dump_all_elements=0);
       
 #ifndef SWIG
       //========================================================================================================================

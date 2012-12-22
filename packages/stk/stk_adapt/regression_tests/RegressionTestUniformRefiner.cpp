@@ -2434,7 +2434,7 @@ namespace stk
         percept::PerceptMesh eMesh(3u);
 
         unsigned p_size = eMesh.get_parallel_size();
-        unsigned p_rank = eMesh.get_parallel_size();
+        unsigned p_rank = eMesh.get_parallel_rank();
         if (p_size == 1 || p_size == 3)
           {
 
@@ -2452,8 +2452,8 @@ namespace stk
 
                 wedgeFixture.createMesh(pm,
                                         //4, 3, 2,
-                                        8, 6, 4,
-                                        //2, 2, 2,
+                                        //8, 6, 4,
+                                        2, 2, 2,
                                         0, 1,
                                         0, 1,
                                         0, 1,
@@ -2475,7 +2475,7 @@ namespace stk
 
             eMesh.commit();
 
-            if (0)
+            if (1)
               {
                 // delete the second element
                 eMesh.get_bulk_data()->modification_begin();
@@ -2487,6 +2487,8 @@ namespace stk
                 eMesh.get_bulk_data()->modification_end();
               }
 
+
+            eMesh.save_as(output_files_loc+"swept-wedge-hex_0.e");
 
             UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();

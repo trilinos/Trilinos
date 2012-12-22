@@ -30,12 +30,11 @@ namespace stk
     class GeometryVerifier
     {
       //typedef std::set<std::pair<char > invalid_edge_set_type;
-      bool m_dump;
+      int m_dump;
       double m_badJacobian;  // default and settable value for bad jacobian
       double getEquiVol(CellTopology& cell_topo);
-
     public:
-      GeometryVerifier(bool dump=false, double badJac=1.e-10);
+      GeometryVerifier(int dump=0, double badJac=1.e-10);
       bool isGeometryBad(stk::mesh::BulkData& bulk, bool printTable=false);
     };
 

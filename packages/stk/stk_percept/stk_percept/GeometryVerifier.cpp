@@ -155,7 +155,7 @@ namespace stk
 
     typedef std::map<const char*, jacData, ltstr> jac_data_map;
 
-    GeometryVerifier::GeometryVerifier(bool dump, double badJac) : m_dump(dump), m_badJacobian(badJac) {}
+    GeometryVerifier::GeometryVerifier(int dump, double badJac) : m_dump(dump), m_badJacobian(badJac) {}
 
     double GeometryVerifier::getEquiVol(CellTopology& cell_topo)
     {
@@ -376,6 +376,10 @@ namespace stk
 
                   double cellVolActual = volume(iCell);
                   double cellVol = cellVolActual/volEqui; // scaled so that equilateral cell has vol=1.0
+                  if (m_dump > 0)
+                    {
+                      std::cout << "element id= " << elem.identifier()  << " volume= " << cellVolActual << std::endl;
+                    }
 
                   for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
                     {
@@ -405,7 +409,7 @@ namespace stk
                     }
                 }
 
-              if (m_dump)
+              if (m_dump > 1)
                 {
                   for (unsigned iCell = 0; iCell < numCells; iCell++)
                     {
