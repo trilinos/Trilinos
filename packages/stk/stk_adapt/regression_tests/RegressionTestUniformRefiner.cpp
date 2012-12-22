@@ -2435,7 +2435,7 @@ namespace stk
 
         unsigned p_size = eMesh.get_parallel_size();
         unsigned p_rank = eMesh.get_parallel_rank();
-        if (p_size == 1 || p_size == 3)
+        if (p_size == 1)
           {
 
             //         void createMesh(stk::ParallelMachine parallel_machine,
