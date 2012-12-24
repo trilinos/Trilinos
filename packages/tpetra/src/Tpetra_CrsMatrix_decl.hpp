@@ -373,6 +373,14 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    template <class Node2>
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &plist)
+    {
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+      return null;
+    }
+
     //! Destructor.
     virtual ~CrsMatrix();
 
@@ -1389,7 +1397,6 @@ namespace Tpetra {
   {
     using Teuchos::rcp;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-
     return rcp (new matrix_type (map, maxNumEntriesPerRow, DynamicProfile, params));
   }
 

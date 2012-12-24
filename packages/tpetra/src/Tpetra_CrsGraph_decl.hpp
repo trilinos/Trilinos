@@ -78,14 +78,14 @@ namespace Tpetra {
 
    \tparam LocalOrdinal The type of local indices.  Same as the \c
      LocalOrdinal template parameter of \c Map objects used by this
-     matrix.  (In Epetra, this is just \c int.)  The default type is
+     graph.  (In Epetra, this is just \c int.)  The default type is
      \c int, which should suffice for most users.  This type must be
      big enough to store the local (per process) number of rows or
      columns.
 
    \tparam GlobalOrdinal The type of global indices.  Same as the \c
      GlobalOrdinal template parameter of \c Map objects used by this
-     matrix.  (In Epetra, this is just \c int.  One advantage of
+     graph.  (In Epetra, this is just \c int.  One advantage of
      Tpetra over Epetra is that you can use a 64-bit integer type here
      if you want to solve big problems.)  The default type is
      <tt>LocalOrdinal</tt>.  This type must be big enough to store the
@@ -99,7 +99,7 @@ namespace Tpetra {
      The actual default type depends on your Trilinos build options.
 
    \tparam LocalMatOps Type implementing local sparse
-     matrix-(multi)vector multiply and local sparse triangular solve.
+     graph-(multi)vector multiply and local sparse triangular solve.
      It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
      The default \c LocalMatOps type should suffice for most users.
      The actual default type depends on your Trilinos build options.
@@ -270,6 +270,13 @@ namespace Tpetra {
               const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
+
+    template <class Node2>
+    RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node2> >
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &plist)
+    {
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+    }
 
     //! Destructor.
     virtual ~CrsGraph();
@@ -1040,6 +1047,24 @@ namespace Tpetra {
     bool insertLocalIndicesWarnedEfficiency_;
 
   }; // class CrsGraph
+
+  /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
+
+      \return A dynamically allocated (DynamicProfile) graph with specified number of nonzeros per row (defaults to zero).
+
+      \relatesalso CrsGraph
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+                   size_t maxNumEntriesPerRow = 0,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  {
+    using Teuchos::rcp;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
+    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+  }
+
 
 } // namespace Tpetra
 

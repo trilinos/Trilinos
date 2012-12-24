@@ -58,6 +58,7 @@ namespace {
   using Teuchos::arcpClone;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
+  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::global_size_t;
   using std::sort;
@@ -1064,6 +1065,59 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< rgraph_node_type           , Node>::value) == true, true );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
+  {
+    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef Map<LO,GO,N1>      Map1;
+    typedef CrsGraph<LO,GO,N1> Graph1;
+    typedef Map<LO,GO,N2>      Map2;
+    typedef CrsGraph<LO,GO,N2> Graph2;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    //const int myImageID = comm->getRank();
+    const size_t        numLocal  = 10;
+    const global_size_t numGlobal = numImages*numLocal;
+
+    RCP<N1> n1 = getNode<N1>();
+    RCP<N2> n2 = getNode<N2>();
+
+    // create a contiguous uniform distributed map with numLocal entries per node
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
+    RCP<Graph1>       A1 = createCrsGraph(map1,1);
+    // test this before and after fillComplete() on the parent CrsGraph
+    // makes no difference, but we want to ensure that it works
+    int t=0;
+    while (t < 2)
+    {
+      {
+        RCP<ParameterList> plClone = parameterList();
+        // default is "true"
+        // plClone->set("fillComplete on clone",true);
+        RCP<Graph2> A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      }
+      {
+        RCP<ParameterList> plClone = parameterList();
+        plClone->set("fillComplete on clone",true);
+        RCP<Graph2> A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      }
+      {
+        RCP<ParameterList> plClone = parameterList();
+        plClone->set("fillComplete on clone",false);
+        RCP<Graph2> A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+        A2->fillComplete();
+        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+      }
+      A1->fillComplete();
+      ++t;
+    }
+
+  }
+
   //
   // INSTANTIATIONS
   //
@@ -1088,7 +1142,12 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE )
 
+#define NC_TESTS(N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
+
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
+
+    TPETRA_INSTANTIATE_N(NC_TESTS)
 }

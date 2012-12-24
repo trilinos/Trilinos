@@ -359,7 +359,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    // create a contiguous uniform distributed map with two entries per node
+    // create a contiguous uniform distributed map with numLocal entries per node
     const size_t        numLocal  = 5;
     const global_size_t numGlobal = numImages*numLocal;
     const GO indexBase = 10;
@@ -390,8 +390,9 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, NodeConversion, LO, GO, N1, N2 )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, NodeConversion, LO, GO, N2 )
   {
+    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1> Map1;
     typedef Map<LO,GO,N2> Map2;
     // create a comm
@@ -404,10 +405,14 @@ namespace {
     RCP<N1> n1 = getNode<N1>();
     RCP<N2> n2 = getNode<N2>();
 
-    // create a contiguous uniform distributed map with two entries per node
+    // create a contiguous uniform distributed map with numLocal entries per node
     RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
     RCP<const Map2> map2 = map1->clone(n2);
     TEST_EQUALITY( map2->getNode(), n2 );
+    RCP<const Map1> map1b = map2->clone(n1);
+    TEST_EQUALITY( map1b->getNode(), n1 );
+    TEST_EQUALITY_CONST( map1->isCompatible(*map1b), true );
+    TEST_EQUALITY_CONST( map1->isSameAs(*map1b), true );
   }
 
 
@@ -425,13 +430,13 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
-#define NN_TESTS(LO,GO,N1,N2) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, NodeConversion, LO, GO, N1, N2 )
+#define NC_TESTS(N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, NodeConversion, int, int, N )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
 
-  TPETRA_INSTANTIATE_LGNN(NN_TESTS)
+  TPETRA_INSTANTIATE_N(NC_TESTS)
 
 }

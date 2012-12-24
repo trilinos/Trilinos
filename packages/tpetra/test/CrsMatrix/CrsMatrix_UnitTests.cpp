@@ -2100,6 +2100,59 @@ namespace {
     TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon2), <, 1e-10)
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NodeConversion, SCALAR, LO, GO, N2 )
+  {
+    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef Map<LO,GO,N1>              Map1;
+    typedef CrsMatrix<SCALAR,LO,GO,N1> Mat1;
+    typedef Map<LO,GO,N2>              Map2;
+    typedef CrsMatrix<SCALAR,LO,GO,N2> Mat2;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    //const int myImageID = comm->getRank();
+    const size_t        numLocal  = 10;
+    const global_size_t numGlobal = numImages*numLocal;
+
+    RCP<N1> n1 = getNode<N1>();
+    RCP<N2> n2 = getNode<N2>();
+
+    // create a contiguous uniform distributed map with numLocal entries per node
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
+    RCP<Mat1>       A1 = createCrsMatrix<SCALAR>(map1,1);
+    // test this before and after fillComplete() on the parent CrsMatrix
+    // makes no difference, but we want to ensure that it works
+    int t=0;
+    while (t < 2)
+    {
+      {
+        RCP<ParameterList> plClone = parameterList();
+        // default is "true"
+        // plClone->set("fillComplete on clone",true);
+        RCP<Mat2>       A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      }
+      {
+        RCP<ParameterList> plClone = parameterList();
+        plClone->set("fillComplete on clone",true);
+        RCP<Mat2>       A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      }
+      {
+        RCP<ParameterList> plClone = parameterList();
+        plClone->set("fillComplete on clone",false);
+        RCP<Mat2>       A2 = A1->clone(n2,plClone);
+        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+        A2->fillComplete();
+        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+      }
+      A1->fillComplete();
+      ++t;
+    }
+
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -2130,8 +2183,13 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE )
 
+#define NC_TESTS(N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NodeConversion, double, int, int, N2 )
+
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+
+  TPETRA_INSTANTIATE_N(NC_TESTS)
 
 }
