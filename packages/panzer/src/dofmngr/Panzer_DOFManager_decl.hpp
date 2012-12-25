@@ -77,7 +77,7 @@ public:
   //! Adds a Connection Manager that will be associated with this DOFManager.
   void setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm);
 
-  Teuchos::RCP<const ConnManager<LO,GO> > getConnManager() const
+  Teuchos::RCP<ConnManager<LO,GO> > getConnManager() const
   { return connMngr_; }
 
   /** \brief Add a field to the DOF manager.
