@@ -147,7 +147,7 @@ namespace panzer_stk {
 	Teuchos::ParameterList& p = pl->sublist("Assembly");
 	p.set<unsigned long>("Workset Size", 1);
 	p.set<std::string>("Field Order","");
-	p.set<bool>("Use DOFManager2",false);
+	p.set<bool>("Use DOFManager FEI",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -231,7 +231,7 @@ namespace panzer_stk {
     std::size_t workset_size = assembly_params.get<unsigned long>("Workset Size");
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
-    bool use_dofmanager2  = assembly_params.get<bool>("Use DOFManager2"); // use FEI if false, otherwise use internal dof manager
+    bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
     bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
@@ -376,7 +376,7 @@ namespace panzer_stk {
        // use a flat DOF manager
 
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-       globalIndexerFactory.setUseDOFManager2(use_dofmanager2);
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;

@@ -70,10 +70,10 @@ public:
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder="") const;
 
-   void setUseDOFManager2(bool flag)
+   void setUseDOFManagerFEI(bool flag)
    { useDOFManagerFEI_ = flag; }
 
-   bool getUseDOFManager2() const
+   bool getUseDOFManagerFEI() const
    { return useDOFManagerFEI_; }
 
 protected:
