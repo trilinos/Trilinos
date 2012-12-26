@@ -50,7 +50,7 @@
 #define EPETRA_BLOCKMAP_NEW_LID
 
 //=============================================================================
-Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm, bool IsLongLong) 
+Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, long long IndexBase, const Epetra_Comm & Comm, bool IsLongLong) 
   : Comm_(Comm.Clone()),
     Directory_(0),
     LID_(0),

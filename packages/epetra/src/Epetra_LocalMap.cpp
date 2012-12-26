@@ -58,7 +58,7 @@ Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase,
 #endif
 //============================================================================
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase, 
+Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, long long indexBase, 
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
 	: Epetra_Map(numMyElements, numMyElements, indexBase, comm) 

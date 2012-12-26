@@ -83,7 +83,8 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
-  int indexBase = 0, ierr = 0;
+  long long indexBase = 0;
+  int ierr = 0;
 
   int numMyNodes = 2;
   long long* myNodes = new long long[numMyNodes];
@@ -163,7 +164,8 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
-  int indexBase = 0, ierr = 0;
+  long long indexBase = 0;
+  int ierr = 0;
   int numMyNodes = 3;
   long long* myNodes = new long long[numMyNodes];
 
@@ -240,7 +242,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   int numElems = 4;
   int numNodesPerElem = 4;
 
-  int indexBase = 0;
+  long long indexBase = 0;
 
   //Create a map using epetra-defined linear distribution.
   Epetra_Map map(numNodes, indexBase, Comm);
@@ -575,7 +577,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
     RowIndices[1] = 4;
     RowIndices[2] = 5;
   }
-  Epetra_Map      RangeMap((long long) -1, 3, RowIndices, 0, Comm);
+  Epetra_Map      RangeMap((long long) -1, 3, RowIndices, 0LL, Comm);
   Epetra_Map & RowMap = RangeMap;
 
   // Define a second map that gives col 0 to proc 0 and col 1 to proc 1 
@@ -586,7 +588,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   else {
     ColIndices[0] = 1;
   }
-  Epetra_Map      DomainMap((long long) -1, 1, ColIndices, 0, Comm);
+  Epetra_Map      DomainMap((long long) -1, 1, ColIndices, 0LL, Comm);
 
   // Construct a graph where both processors only insert into local
   // elements
@@ -636,7 +638,7 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
 {
   int mypid = Comm.MyPID();
   int numlocalrows = 3;
-  Epetra_Map rowmap((long long) -1, numlocalrows, 0, Comm);
+  Epetra_Map rowmap((long long) -1, numlocalrows, 0LL, Comm);
 
   long long numglobalrows = numlocalrows*Comm.NumProc();
 
@@ -647,7 +649,7 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   long long* cols = new long long[numcols];
   for(int j=0; j<numcols; ++j) cols[j] = j;
 
-  Epetra_Map domainmap((long long) -1, numcols, 0, Comm);
+  Epetra_Map domainmap((long long) -1, numcols, 0LL, Comm);
 
   long long firstlocalrow = numlocalrows*mypid;
   long long lastlocalrow = numlocalrows*(mypid+1)-1;

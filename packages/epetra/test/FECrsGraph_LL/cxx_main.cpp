@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   int NumMyElements = 4;
   long long NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
+  long long IndexBase = 0;
   
   Epetra_Map Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 

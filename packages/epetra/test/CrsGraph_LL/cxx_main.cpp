@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map& Map = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map& Map = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0LL, Comm);
   
   // Get update list and number of local equations from newly created Map
   long long* MyGlobalElements = new long long[Map.NumMyElements()];
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
     int NumMyEquations1 = NumMyElements1;
     long long NumGlobalEquations1 = NumMyEquations1*NumProc;
 
-    Epetra_Map& Map1 = *new Epetra_Map(NumGlobalEquations1, NumMyElements1, 1, Comm);
+    Epetra_Map& Map1 = *new Epetra_Map(NumGlobalEquations1, NumMyElements1, 1LL, Comm);
     
     // Get update list and number of local equations from newly created Map
     long long* MyGlobalElements1 = new long long[Map1.NumMyElements()];
@@ -405,7 +405,7 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 
 	// initialize Map
 	const int NumMyElements = 10;
-	const int IndexBase = 0;
+	const long long IndexBase = 0;
 	Epetra_Map Map1((long long) -1, NumMyElements, IndexBase, Comm);
 	// initialize Graphs
 	const int NumIndicesPerRow = 5;
@@ -550,7 +550,7 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose) {
 	// create initial Map and Graph
 	const int NumIndicesPerRow = 10;
 	const long long NumGlobalElements = 50;
-	const int IndexBase = 0;
+	const long long IndexBase = 0;
 	Epetra_Map Map1(NumGlobalElements, IndexBase, Comm);
 	Epetra_CrsGraph Graph1(Copy, Map1, NumIndicesPerRow);
 	int g1count = Graph1.ReferenceCount();

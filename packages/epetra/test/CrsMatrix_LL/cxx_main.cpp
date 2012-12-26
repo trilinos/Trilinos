@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0LL, Comm);
   
   // Get update list and number of local equations from newly created Map
   long long* MyGlobalElements = new long long[Map.NumMyElements()];
@@ -414,7 +414,7 @@ int main(int argc, char *argv[])
     int NumMyEquations1 = NumMyElements1;
     int NumGlobalEquations1 = NumMyEquations1*NumProc;
 
-    Epetra_Map Map1((long long)-1, NumMyElements1, 0, Comm);
+    Epetra_Map Map1((long long)-1, NumMyElements1, 0LL, Comm);
     
     // Get update list and number of local equations from newly created Map
     long long* MyGlobalElements1 = new long long[Map1.NumMyElements()];
@@ -525,11 +525,11 @@ int main(int argc, char *argv[])
   int NumMyElements2 = 7;
   int NumMyRows2 = 1;//This value should not be changed without editing the
 		// code below.
-  Epetra_Map RowMap((long long)-1,NumMyRows2,0,Comm);
-  Epetra_Map ColMap((long long)NumMyElements2,NumMyElements2,0,Comm);
+  Epetra_Map RowMap((long long)-1,NumMyRows2,0LL,Comm);
+  Epetra_Map ColMap((long long)NumMyElements2,NumMyElements2,0LL,Comm);
   // The DomainMap needs to be different from the ColMap for the test to 
   // be meaningful.
-  Epetra_Map DomainMap((long long)NumMyElements2,0,Comm);
+  Epetra_Map DomainMap((long long)NumMyElements2,0LL,Comm);
   int NumMyRangeElements2 = 0;
   // We need to distribute the elements differently for the range map also.
   if (MyPID % 2 == 0)
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
   if (NumProc % 2 == 1 && MyPID == NumProc-1)
     NumMyRangeElements2 = NumMyRows2; //If number of procs is odd, put
 			// the last NumMyElements2 elements on the last proc
-  Epetra_Map RangeMap((long long)-1,NumMyRangeElements2,0,Comm);
+  Epetra_Map RangeMap((long long)-1,NumMyRangeElements2,0LL,Comm);
   Epetra_CrsMatrix A2(Copy,RowMap,ColMap,NumMyElements2);
   double * Values2 = new double[NumMyElements2];
   int * Indices2 = new int[NumMyElements2]; 
@@ -750,7 +750,7 @@ cout << A2;
   int NumMyRows3 = 2; // Changing this requires further changes below
   long long * myGlobalElements = new long long[NumMyRows3];
   for (int i=0; i<NumMyRows3; i++) myGlobalElements[i] = MyPID+i;
-  Epetra_Map RowMap3((long long)NumProc*2, NumMyRows3, myGlobalElements, 0, Comm);
+  Epetra_Map RowMap3((long long)NumProc*2, NumMyRows3, myGlobalElements, 0LL, Comm);
   int NumMyElements3 = 5;
   Epetra_CrsMatrix A3(Copy, RowMap3, NumMyElements3);
   double * Values3 = new double[NumMyElements3];
@@ -762,8 +762,8 @@ cout << A2;
   for (int i=0; i<NumMyRows3; i++) {
     A3.InsertGlobalValues(myGlobalElements[i],NumMyElements3,Values3,Indices3);
   }
-  Epetra_Map RangeMap3((long long)NumProc+1, 0, Comm);
-  Epetra_Map DomainMap3((long long)NumMyElements3, 0, Comm);
+  Epetra_Map RangeMap3((long long)NumProc+1, 0LL, Comm);
+  Epetra_Map DomainMap3((long long)NumMyElements3, 0LL, Comm);
   EPETRA_TEST_ERR(A3.FillComplete(DomainMap3, RangeMap3,false),ierr);
   if (verbose1) cout << A3;
   Epetra_Vector xRange3(RangeMap3,false);
@@ -1067,7 +1067,7 @@ int check_graph_sharing(Epetra_Comm& Comm)
   int localProc = Comm.MyPID();
   long long firstElem = localProc*numLocalElems;
   int err;
-  Epetra_Map map((long long)-1, numLocalElems, 0, Comm);
+  Epetra_Map map((long long)-1, numLocalElems, 0LL, Comm);
 
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, map, 1);
 

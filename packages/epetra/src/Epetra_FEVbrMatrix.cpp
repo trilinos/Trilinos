@@ -293,7 +293,7 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
 
   //We'll use the arbitrary distribution constructor of BlockMap.
 
-  Epetra_BlockMap sourceMap(-1, numNonlocalBlockRows_, nonlocalBlockRows_,
+  Epetra_BlockMap sourceMap(-1, numNonlocalBlockRows_, nonlocalBlockRows_, // CJ TODO FIXME long long
           pointRowsPerNonlocalBlockRow,
           RowMap().IndexBase(), RowMap().Comm());
 
@@ -334,7 +334,7 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
     }
   }
 
-  Epetra_BlockMap colMap(-1, numCols, cols,
+  Epetra_BlockMap colMap(-1, numCols, cols, // CJ TODO FIXME long long
        pointColsPerBlockCol,
        RowMap().IndexBase(), RowMap().Comm());
 

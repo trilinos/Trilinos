@@ -248,7 +248,7 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
   }
 
   Epetra_Map one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-       usermap.IndexBase(), usermap.Comm());
+       usermap.IndexBase(), usermap.Comm()); // CJ TODO FIXME long long
 
   delete [] myOwnedElems;
   delete [] owner_procs;
@@ -294,7 +294,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
     if (isRoot) numMyElements = usermap.MaxAllGID64()+1; // FIXME long long
-    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm);
+    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm); // CJ TODO FIXME long long
     return(newmap);
   }
 
@@ -307,9 +307,9 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   int numMyElements = usermap.NumMyElements();
   Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
   Epetra_IntVector allGids(allGidsMap);
-  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i);
+  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i); // CJ TODO FIXME long long
   
-  int numGlobalElements = usermap.NumGlobalElements64();
+  int numGlobalElements = usermap.NumGlobalElements64(); // CJ TODO FIXME long long
   if (root!=-1) {
     int n1 = 0; if (isRoot) n1 = numGlobalElements;
     Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
@@ -317,7 +317,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
     Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
     return(rootMap);
   }
   else {
@@ -327,7 +327,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
     Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
 
     return(rootMap);
   }
@@ -377,7 +377,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
   }
 
   Epetra_BlockMap one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-         sizes, usermap.IndexBase(), usermap.Comm());
+         sizes, usermap.IndexBase(), usermap.Comm()); // CJ TODO FIXME long long
 
   delete [] myOwnedElems;
   delete [] owner_procs;

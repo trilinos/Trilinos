@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   cout << Comm <<endl;
 
   // Construct a Map that puts same number of equations on each processor
-  Epetra_Map Map((long long) -1, NumMyElements, 0, Comm);
+  Epetra_Map Map((long long) -1, NumMyElements, 0LL, Comm);
   long long NumGlobalElements = Map.NumGlobalElements64();
 
   // Create a Epetra_Matrix
