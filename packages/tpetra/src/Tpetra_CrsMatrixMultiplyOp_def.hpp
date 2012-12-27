@@ -204,7 +204,9 @@ namespace Tpetra {
       } else if (direction == Backward) {
 	localDirection = Kokkos::Backward;
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'direction' enum does not have any of its valid values: Forward, Backward, or Symmetric.");
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'direction' "
+          "enum does not have any of its valid values: Forward, Backward, or "
+          "Symmetric.");
       }
       matrix_->template localGaussSeidel<OpScalar,OpScalar> (*B_in, *X_colMap, D, dampingFactor, localDirection);
     }
