@@ -109,11 +109,12 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    typedef Teuchos::ScalarTraits<OpScalar> STS;
+    typedef OpScalar OS;
+    typedef Teuchos::ScalarTraits<OS> STS;
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<OpScalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     // We don't need the Export object because this method assumes
     // that the row, domain, and range Maps are the same.  We do need
@@ -240,13 +241,20 @@ namespace Tpetra {
           "enum does not have any of its valid values: Forward, Backward, or "
           "Symmetric.");
       }
-      matrix_->template localGaussSeidel<OpScalar,OpScalar> (*B_in, *X_colMap, D, dampingFactor, localDirection);
+      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						 dampingFactor, localDirection);
     }
     else { // direction == Symmetric
-      matrix_->template localGaussSeidel<OpScalar,OpScalar> (*B_in, *X_colMap, D, dampingFactor, Kokkos::Forward);
+      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						 dampingFactor, Kokkos::Forward);
       // Communicate again before the Backward sweep.
       X_colMap->doImport (*X_in, *importer, INSERT);
-      matrix_->template localGaussSeidel<OpScalar,OpScalar> (*B_in, *X_colMap, D, dampingFactor, Kokkos::Backward);
+      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						 dampingFactor, Kokkos::Backward);
+    }
+
+    if (copiedInput) { // Copy back from X_in to X.
+      X = *X_in;
     }
   }
 
