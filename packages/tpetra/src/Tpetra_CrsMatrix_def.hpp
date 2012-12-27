@@ -2173,6 +2173,22 @@ namespace Tpetra {
     sameScalarMultiplyOp_->apply(X,Y,mode,alpha,beta);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+	       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+	       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+	       const Scalar& dampingFactor,
+	       const ESweepDirection direction) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == false, std::runtime_error,
+      typeName(*this) << "::gaussSeidel: cannot call this method until "
+      "fillComplete() has been called.");
+    sameScalarMultiplyOp_->gaussSeidel (B, X, D, dampingFactor, direction);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -2208,6 +2224,26 @@ namespace Tpetra {
       // Y = alpha*op(M) + beta*Y
       lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
     }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class DomainScalar, class RangeScalar>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  localGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+		    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+		    const RangeScalar& dampingFactor,
+		    const Kokkos::ESweepDirection direction) const
+  {
+    Kokkos::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
+    const Kokkos::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
+    const Kokkos::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
+
+    lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
 
 

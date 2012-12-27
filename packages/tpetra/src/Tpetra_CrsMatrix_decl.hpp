@@ -768,6 +768,38 @@ namespace Tpetra {
                    RangeScalar alpha,
                    RangeScalar beta) const;
 
+    /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Kokkos::Forward or
+    ///   Kokkos::Backward.  ("Symmetric" requires interprocess
+    ///   communication (before each sweep), which is not part of the
+    ///   local kernel.)
+    template <class DomainScalar, class RangeScalar>
+    void 
+    localGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+		      MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+		      const RangeScalar& dampingFactor,
+		      const Kokkos::ESweepDirection direction) const;
+
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
@@ -806,6 +838,70 @@ namespace Tpetra {
                Teuchos::ETransp mode = Teuchos::NO_TRANS,
                Scalar alpha = ScalarTraits<Scalar>::one(),
                Scalar beta = ScalarTraits<Scalar>::zero()) const;
+
+    /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
+    ///
+    /// "Hybrid" means Successive Over-Relaxation (SOR) or
+    /// Gauss-Seidel within an (MPI) process, but Jacobi between
+    /// processes.  Gauss-Seidel is a special case of SOR, where the
+    /// damping factor is one.
+    ///
+    /// The Forward or Backward sweep directions have their usual SOR
+    /// meaning within the process.  Interprocess communication occurs
+    /// once before the sweep, as it normally would in Jacobi.
+    ///
+    /// The Symmetric sweep option means two sweeps: first Forward,
+    /// then Backward.  Interprocess communication occurs before each
+    /// sweep, as in Jacobi.  Thus, Symmetric results in two
+    /// interprocess communication steps.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param dampingFactor [in] SOR damping factor.  A damping
+    ///   factor of one results in Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward, Backward, or
+    ///   Symmetric.
+    ///
+    /// This method has the following requirements:
+    /// 
+    /// 1. X is in the domain Map of the matrix.
+    /// 2. The domain and row Maps of the matrix are the same.
+    /// 3. The column Map contains the domain Map, and both start at the same place.
+    /// 4. The row Map is uniquely owned.
+    /// 5. D is in the row Map of the matrix.
+    /// 6. X is actually a view of a column Map multivector.
+    /// 7. Neither B nor D alias X.
+    ///
+    /// #1 is just the usual requirement for operators: the input
+    /// multivector must always be in the domain Map.  The
+    /// Gauss-Seidel kernel imposes additional requirements, since it
+    /// 
+    /// - overwrites the input multivector with the output (which implies #2), and
+    /// - uses the same local indices for the input and output multivector (which implies #2 and #3).
+    ///
+    /// #3 is reasonable if the matrix constructed the column Map,
+    /// because the method that does this (CrsGraph::makeColMap) puts
+    /// the local GIDs (those in the domain Map) in front and the
+    /// remote GIDs (not in the domain Map) at the end of the column
+    /// Map.  However, if you constructed the column Map yourself, you
+    /// are responsible for maintaining this invariant.  #6 lets us do
+    /// the Import from the domain Map to the column Map in place.
+    ///
+    /// The Gauss-Seidel kernel also assumes that each process has the
+    /// entire value (not a partial value to sum) of all the diagonal
+    /// elements in the rows in its row Map.  (We guarantee this anyway
+    /// though the separate D vector.)  This is because each element of
+    /// the output multivector depends nonlinearly on the diagonal
+    /// elements.  Shared ownership of off-diagonal elements would
+    /// produce different results.
+    void 
+    gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+		 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+		 const Scalar& dampingFactor,
+		 const ESweepDirection direction) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;

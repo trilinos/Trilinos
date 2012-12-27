@@ -271,4 +271,13 @@ namespace Tpetra {
   }
 }
 
+namespace Tpetra {
+  //! Sweep direction for Gauss-Seidel or Successive Over-Relaxation (SOR).
+  enum ESweepDirection {
+    Forward = 0,
+    Backward,
+    Symmetric
+  };
+}
+
 #endif // TPETRA_CONFIGDEFS_HPP

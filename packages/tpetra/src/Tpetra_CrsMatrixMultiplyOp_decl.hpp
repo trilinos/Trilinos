@@ -85,6 +85,37 @@ namespace Tpetra {
       void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                  Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
+      /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
+      ///
+      /// "Hybrid" means Jacobi for interprocess communication, but
+      /// Successive Over-Relaxation (SOR) or Gauss-Seidel for
+      /// intraprocess computation.  Gauss-Seidel is a special case of
+      /// SOR, where the damping factor is one.
+      ///
+      /// The Forward or Backward sweep directions have their usual
+      /// SOR meaning within the process.  Interprocess communication
+      /// occurs once before the sweep, as it would in Jacobi.
+      ///
+      /// The Symmetric sweep direction means first Forward, then
+      /// Backward.  Before each sweep is an interprocess
+      /// communication, as in Jacobi.  Thus, Symmetric results in two
+      /// interprocess communication steps.
+      ///
+      /// \param B [in] Right-hand side(s).
+      /// \param X [in/out] On input: initial guess(es).  On output:
+      ///   result multivector(s).
+      /// \param D [in] Inverse of diagonal entries of the matrix A.
+      /// \param dampingFactor [in] SOR damping factor.  A damping
+      ///   factor of one results in Gauss-Seidel.
+      /// \param direction [in] Sweep direction: Forward, Backward, or
+      ///   Symmetric.
+      void 
+      gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+		   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+		   const Scalar& dampingFactor,
+		   const ESweepDirection direction) const;
+
       //! Indicates whether this operator supports inverting the adjoint operator.
       //! This is true.
       bool hasTransposeApply() const;
