@@ -52,11 +52,47 @@
 (setq sgml-indent-data t)
 (setq sgml-indent-step 2)
 
-;; Load custom Thyra C++ styles
-(require 'cpp-thyra-styles)
-
 ;; Set my style to the Thyra style!
+(require 'cpp-thyra-styles)
 (setq c-set-style "thyra")
 
 ;;; Load the C++ function menu
-(require 'cpp-func-menu)
+;;;(require 'cpp-func-menu)
+(setq load-home-init-file t) ; don't load init file from ~/.xemacs/init.el
+
+;;; Customize emacs font colors
+;;;
+;;; To discover what face-type some work is, move cursor over it and do
+;;; 'M-x describe-face'.  That will tell you what the naem is and what to add
+;;; to the list below.  You can see the names of different colors by going in the
+;;; emacs menu to 'Edit'->'Text Properties'->'Display Colors'.  You can see all
+;;; the faces by doing 'M-x list-faces-display' which shows you the names and
+;;; the current colors.  Through this and a lot of experimentation, I arrived at the
+;;; color scheme below which is pretty readable.
+(cond ((fboundp 'global-font-lock-mode)
+  ;; Customize face attributes
+  (setq font-lock-face-attributes
+    ;; Symbol-for-Face Foreground Background Bold Italic Underline
+    '((font-lock-comment-face  "DarkGreen")
+     (font-lock-comment-delimiter-face "DarkGreen")
+     (font-lock-string-face   "Brown")
+     (font-lock-keyword-face  "Blue")
+     (font-lock-preprocessor-face  "DodgerBlue3")
+     (font-lock-constant-face      "Black")
+     (font-lock-function-name-face "Purple")
+     (font-lock-variable-name-face "DarkMagenta")
+     (font-lock-type-face     "DarkOrange4")
+     (font-lock-reference-face     "Black")
+     (minibuffer-prompt     "DarkViolet")
+     (escape-glyph    "DarkViolet")
+     (escape-glyph    "DarkViolet")
+     (link    "DarkViolet")
+     (custom-link    "DarkViolet")
+     (sh-heredoc   "Brown")
+     ))
+  ;; Load the font-lock package.
+  (require 'font-lock)
+  ;; Maximum colors
+  (setq font-lock-maximum-decoration t)
+  ;; Turn on font-lock in all modes that support it
+  (global-font-lock-mode t)))
