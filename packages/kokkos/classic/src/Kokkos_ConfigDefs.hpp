@@ -70,4 +70,15 @@ namespace Kokkos {
 namespace KokkosExamples {
 }
 
+
+namespace Kokkos {
+
+//! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
+enum ESweepDirection {
+  Forward = 0,
+  Backward
+};
+
+} // namespace Kokkos
+
 #endif /* KOKKOS_CONFIGDEFS_H */
