@@ -126,6 +126,26 @@ namespace Tpetra {
       "gaussSeidel requires that the row, domain, and range Maps be the same.  "
       "This cannot be the case, because the matrix has a nontrivial Export object.");
 
+#ifdef TEUCHOS_DEBUG
+    {
+      RCP<const map_type> domainMap = matrix_->getDomainMap ();
+      // The relation 'isSameAs' is transitive.  It's also a
+      // collective, so we don't have to do a "shared" test for
+      // exception (i.e., a global reduction on the test value).
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! domainMap->isSameAs (* matrix_->getRangeMap ()) ||
+        ! domainMap->isSameAs (* matrix_->getGraph ()->getRowMap ()),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the row, domain, and "
+	"range Maps of the matrix be the same.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! X.getMap ()->isSameAs (*domainMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector X "
+	"be in the domain Map of the matrix.");
+    }
+#endif // TEUCHOS_DEBUG
+
     RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
     // The Gauss-Seidel / SOR kernel expects multivectors of constant
