@@ -225,6 +225,13 @@ namespace Tpetra {
       // avoid making a new view.  It would also let me check the
       // precondition that X be a domain Map view of a column Map
       // multivector.
+      //
+      // FIXME (mfh 27 Dec 2012) I can't currently make a view using a
+      // Map which is a superset of the MV's current Map.  This is
+      // because the offsetView* methods check getLocalLength(), which
+      // simply asks the MV's current Map for the number of elements
+      // owned by that process.  It should instead ask the local
+      // (Kokkos) MV for its number of rows.
       X_colMap = X_in->offsetViewNonConst (colMap, 0);
       X_colMap->doImport (*X_in, *importer, INSERT);
     }

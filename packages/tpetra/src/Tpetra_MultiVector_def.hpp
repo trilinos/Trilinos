@@ -1423,9 +1423,18 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
-    TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == " << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: " << this->getMap()->description());
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    const bool tooManyElts = subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_);
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_),
+        std::runtime_error,
+        "Tpetra::MultiVector::offsetView: Invalid input Map.  Input Map owns "
+	<< subMap->getNodeNumElements() << " elements on process " << myRank 
+	<< ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+	<< MVT::getNumRows (lclMV_) << " on this process.");
+    }
     const size_t numVecs = this->getNumVectors(),
                 myStride = MVT::getStride(lclMV_),
                   newLen = subMap->getNodeNumElements();
@@ -1435,17 +1444,17 @@ namespace Tpetra {
     //   b) we are encapsulating in a const MV before returning
     ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
     ArrayRCP<Scalar>      ncbuf = arcp_const_cast<Scalar> (cbuf);
-    RCP<CMV> constViewMV;
+    RCP<const MV> constViewMV;
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      constViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      constViewMV = rcp (new MV (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      constViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      constViewMV = rcp (new MV (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return constViewMV;
   }
@@ -1463,29 +1472,33 @@ namespace Tpetra {
     using Teuchos::rcp;
 
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
-      "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == "
-      << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: "
-      << this->getMap()->description());
+
+    const bool tooManyElts = subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_);
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_),
+        std::runtime_error,
+        "Tpetra::MultiVector::offsetViewNonConst: Invalid input Map.  Input "
+	"Map owns " << subMap->getNodeNumElements() << " elements on process " 
+	<< myRank << ".  offset = " << offset << ".  Yet, the MultiVector "
+	"contains only " << MVT::getNumRows (lclMV_) << " on this process.");
+    }
     const size_t numVecs = this->getNumVectors(),
                 myStride = MVT::getStride(lclMV_),
                   newLen = subMap->getNodeNumElements();
-    // this is const, so the lclMV_ is const, so that we can only get const buffers
-    // we will cast away the const; this is okay, because
-    //   a) the constructor doesn't modify the data, and
-    //   b) we are encapsulating in a const MV before returning
     ArrayRCP<Scalar> buf = MVT::getValuesNonConst(lclMV_);
     RCP<MV> subViewMV;
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      subViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      subViewMV = rcp (new MV (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      subViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      subViewMV = rcp (new MV (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return subViewMV;
   }
