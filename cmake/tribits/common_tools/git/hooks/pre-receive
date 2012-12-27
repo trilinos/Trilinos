@@ -1,7 +1,5 @@
 #!/bin/sh
 #
-# An example hook script for the "pre-receive" event.
-#
 # The "pre-receive" script is run before receive-pack has accepted a pack
 # and the repository has been updated.  It is passed arguments in through
 # stdin in the form
@@ -13,12 +11,6 @@
 # the hook exits with zero, updating of individual refs can still be prevented 
 # by the update hook.
 #
-
-# Hooks for sierra repositories are controlled within the /git/hooks.git
-# repository. Please do not modify this file unless you are within that
-# repository.
-#export PATH=/usr/local/Python/2.5.1/bin:$PATH
-#export PYTHONPATH=/data0/sierra/trac/lib:/data0/sierra/trac/lib/python2.5/site-packages:/data0/sierra/lib/svn-python:/data0/sierra/lib:/data0/sierra/lib/python2.5:/data0/sierra/lib/python2.5/site-packages:$PYTHONPATH
 
 while read oldrev newrev refname; do
     # We invoke the different pre-receive hooks separately

@@ -9,18 +9,19 @@
 # were a member of the right group, then run-git-or-special-cmd
 # would set an environment variable that this script would interpret.
 
-# Used in some of the messages
-server=software.sandia.gov
 
 GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+
 
 in_import() {
     test -e "$GIT_DIR/pending"
 }
 
+
 forced() {
     test -n "$GNOME_GIT_FORCE"
 }
+
 
 check_commit() {
     commit=$1
@@ -62,6 +63,7 @@ EOF
     esac
 
 }
+
 
 check_ref_update() {
     oldrev=$1
@@ -221,7 +223,7 @@ You are trying to push the remote tracking branch:
 
   $refname
 
-to $server.
+to remote repo.
 ---
 EOF
 	    exit 1
@@ -234,7 +236,7 @@ You are trying to push the ref:
 
   $refname
 
-to $server. This isn't a branch or tag.
+to remote repo.  This isn't a branch or tag.
 ---
 EOF
 	    exit 1
@@ -244,6 +246,7 @@ EOF
     return 0
 }
 
+
 if [ $# = 3 ] ; then
     check_ref_update $@
 else
@@ -252,4 +255,6 @@ else
     done
 fi
 
+
+# If you get here, the script has passed!
 exit 0
