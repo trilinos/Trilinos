@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_percept_HeterogeneousFixture_hpp
-#define stk_percept_HeterogeneousFixture_hpp
+#ifndef stk_percept_TetWedgeFixture_hpp
+#define stk_percept_TetWedgeFixture_hpp
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -48,13 +48,13 @@ namespace stk {
      *  copied from stk_mesh and modified
      */
 
-    class HeterogeneousFixture {
+    class TetWedgeFixture {
     public:
 
 
-      ~HeterogeneousFixture();
+      ~TetWedgeFixture();
 
-      HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit = true, bool do_sidesets=false);
+      TetWedgeFixture( stk::ParallelMachine comm, bool doCommit = true, bool do_sidesets=false);
 
       void populate();
 
@@ -62,14 +62,8 @@ namespace stk {
       stk::mesh::MetaData m_metaData;
       stk::mesh::BulkData m_bulkData;
 
-      stk::mesh::Part & m_block_hex;
       stk::mesh::Part & m_block_wedge;
       stk::mesh::Part & m_block_tet;
-      stk::mesh::Part & m_block_pyramid;
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      stk::mesh::Part & m_block_quad_shell;
-      stk::mesh::Part & m_block_tri_shell;
-#endif
       stk::mesh::Part * m_sideset_quad;
       stk::mesh::Part * m_sideset_quad_subset;
       stk::mesh::Part * m_sideset_tri;
@@ -84,7 +78,7 @@ namespace stk {
       ElementNodePointerFieldType & m_element_node_coordinates_field;
     };
 
-    bool verifyMesh( const HeterogeneousFixture & mesh );
+    bool verifyMesh( const TetWedgeFixture & mesh );
 
   } //namespace percept
 } //namespace stk

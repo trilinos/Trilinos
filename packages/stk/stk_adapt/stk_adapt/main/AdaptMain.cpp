@@ -922,7 +922,7 @@ namespace stk {
                           {
                             bool print_table=true;
                             double badJac=1.e-10;
-                            bool dump_all_elements=false;
+                            int dump_all_elements = verify_meshes - 1;
                             if (!eMesh.get_rank()) std::cout << "Verify input mesh..." << std::endl;
                             if (eMesh.check_mesh_volumes(print_table, badJac, dump_all_elements))
                               {

@@ -2660,7 +2660,9 @@ namespace stk {
                             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                                                                   << " with topo= " << getToTopoPartName() << std::endl;
                             stk::mesh::set_cell_topology< ToTopology  >( *block_to );
-                            stk::io::put_io_part_attribute(*block_to);
+                            if (block_to->attribute<Ioss::GroupingEntity>() == 0) {
+                              stk::io::put_io_part_attribute(*block_to);
+                            }
                           }
 
 
@@ -2842,6 +2844,7 @@ namespace stk {
 #include "UniformRefinerPattern_Tri3_Quad4_3.hpp"
 #include "UniformRefinerPattern_Tet4_Hex8_4.hpp"
 #include "UniformRefinerPattern_Wedge6_Hex8_6.hpp"
+#include "URP_Tet4_Wedge6_Hex8.hpp"
 
 // local refinement - for testing only right now
 #include "RefinerPattern_Tri3_Tri3_2.hpp"
@@ -2909,6 +2912,7 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Quadrilateral<4>, 3, Specialization >        Tri3_Quad4_3;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Hexahedron<8>,    4 >                        Tet4_Hex8_4;
     typedef  UniformRefinerPattern<shards::Wedge<6>,         shards::Hexahedron<8>,    6 >                        Wedge6_Hex8_6;
+    typedef  URP_Tet4_Wedge6_Hex8 Tet4_Wedge6_Hex8;
 
     // local refinement - for testing only right now
 

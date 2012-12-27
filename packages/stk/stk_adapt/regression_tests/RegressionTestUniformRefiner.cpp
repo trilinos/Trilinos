@@ -53,6 +53,7 @@
 
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/BeamFixture.hpp>
+#include <stk_percept/fixtures/TetWedgeFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/PyramidFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
@@ -1128,6 +1129,71 @@ namespace stk
             // end_demo
           }
 
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, tetwedge_hex)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+              stk::percept::TetWedgeFixture mesh(MPI_COMM_WORLD, false, true);
+
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
+              //em1.print_info("heterogeneous", 4);
+
+              em1.save_as(input_files_loc+"tetwedge_0.e");
+              em1.close();
+            }
+
+            std::string input_mesh = input_files_loc+"tetwedge_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            // refine the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1(3);
+
+                eMesh1.open(input_files_loc+"tetwedge_0.e");
+
+                Tet4_Wedge6_Hex8 break_pattern(eMesh1);
+                int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+                eMesh1.commit();
+
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                //breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.save_as(output_files_loc+"tetwedge_1.e");
+                eMesh1.close();
+              }
+          }
+        // end_demo
       }
 
       //======================================================================================================================

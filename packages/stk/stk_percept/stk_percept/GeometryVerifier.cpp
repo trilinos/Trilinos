@@ -358,8 +358,15 @@ namespace stk
                   onesLeft.initialize(1.0);
 
                   // compute weighted measure
-                  FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
-
+                  // unfortunately, Intrepid fixes-up the sign of the result - which is what we *don't* want when checking for negative volumes...
+                  //FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
+                  for (unsigned iCell = 0; iCell < numCells; iCell++)
+                    {
+                      for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
+                        {
+                          weightedMeasure(iCell, iCubPt) = jacobian_det(iCell, iCubPt) * cub_weights(iCubPt);
+                        }
+                    }
                   // integrate to get volume
                   FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
                 }
@@ -378,7 +385,7 @@ namespace stk
                   double cellVol = cellVolActual/volEqui; // scaled so that equilateral cell has vol=1.0
                   if (m_dump > 0)
                     {
-                      std::cout << "element id= " << elem.identifier()  << " volume= " << cellVolActual << std::endl;
+                      std::cout << cell_topo.getName() << ":: id= " << elem.identifier()  << " volume= " << cellVolActual << std::endl;
                     }
 
                   for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
@@ -413,10 +420,11 @@ namespace stk
                 {
                   for (unsigned iCell = 0; iCell < numCells; iCell++)
                     {
+                      mesh::Entity elem = bucket[iCell];
                       for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
                         {
                           stk::PrintTable table;
-                          std::ostringstream msg; msg << "Jacobian"<<" iCell= "<<iCell<<" iCubPt= "<<iCubPt << " Det= " << jacobian_det(iCell, iCubPt);
+                          std::ostringstream msg; msg << "Jacobian"<<" iCell= "<<iCell<< " id= " << elem.identifier() << " iCubPt= "<<iCubPt << " Det= " << jacobian_det(iCell, iCubPt) << " Vol= " << volume(iCell);
                           table.setTitle(msg.str());
 
                           for (unsigned id = 0; id < spaceDim; id++)
