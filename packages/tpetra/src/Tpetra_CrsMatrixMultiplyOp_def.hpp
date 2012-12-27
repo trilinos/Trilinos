@@ -129,20 +129,32 @@ namespace Tpetra {
 #ifdef TEUCHOS_DEBUG
     {
       RCP<const map_type> domainMap = matrix_->getDomainMap ();
+      RCP<const map_type> rangeMap = matrix_->getRangeMap ();
+      RCP<const map_type> rowMap = matrix_->getGraph ()->getRowMap ();
+
       // The relation 'isSameAs' is transitive.  It's also a
       // collective, so we don't have to do a "shared" test for
       // exception (i.e., a global reduction on the test value).
       TEUCHOS_TEST_FOR_EXCEPTION(
-        ! domainMap->isSameAs (* matrix_->getRangeMap ()) ||
-        ! domainMap->isSameAs (* matrix_->getGraph ()->getRowMap ()),
+        ! domainMap->isSameAs (*rangeMap) || ! domainMap->isSameAs (*rowMap),
         std::runtime_error,
         "Tpetra::CrsMatrix::gaussSeidel requires that the row, domain, and "
 	"range Maps of the matrix be the same.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! X.getMap ()->isSameAs (*domainMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector X "
-	"be in the domain Map of the matrix.");
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input / output "
+	"multivector X be in the domain Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! B.getMap ()->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector B "
+	"be in the range Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! D.getMap ()->isSameAs (*rowMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector D "
+	"be in the row Map of the matrix.");
     }
 #endif // TEUCHOS_DEBUG
 
