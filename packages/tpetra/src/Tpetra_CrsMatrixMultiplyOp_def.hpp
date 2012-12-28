@@ -103,7 +103,8 @@ namespace Tpetra {
 	       MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
 	       const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
 	       const OpScalar& dampingFactor,
-	       const ESweepDirection direction) const
+	       const ESweepDirection direction,
+	       const int numSweeps) const
   {
     using Teuchos::null;
     using Teuchos::RCP;
@@ -115,6 +116,12 @@ namespace Tpetra {
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
     typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> MV;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numSweeps < 0, std::invalid_argument, 
+      "gaussSeidel: numSweeps = " << numSweeps << " < 0.");
+    if (numSweeps == 0) {
+      return;
+    }
 
     // We don't need the Export object because this method assumes
     // that the row, domain, and range Maps are the same.  We do need
@@ -233,31 +240,41 @@ namespace Tpetra {
       // owned by that process.  It should instead ask the local
       // (Kokkos) MV for its number of rows.
       X_colMap = X_in->offsetViewNonConst (colMap, 0);
-      X_colMap->doImport (*X_in, *importer, INSERT);
     }
 
-    // Do local Gauss-Seidel.
-    if (direction != Symmetric) {
-      Kokkos::ESweepDirection localDirection;
-      if (direction == Forward) {
-	localDirection = Kokkos::Forward;
-      } else if (direction == Backward) {
-	localDirection = Kokkos::Backward;
-      } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'direction' "
-          "enum does not have any of its valid values: Forward, Backward, or "
-          "Symmetric.");
-      }
-      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						 dampingFactor, localDirection);
+    // Translate from global to local sweep direction.
+    Kokkos::ESweepDirection localDirection;
+    if (direction == Forward) {
+      localDirection = Kokkos::Forward;
+    } else if (direction == Backward) {
+      localDirection = Kokkos::Backward;
+    } else if (direction == Symmetric) {
+      // We'll control local sweep direction manually.
+      localDirection = Kokkos::Forward;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'direction' "
+	"enum does not have any of its valid values: Forward, Backward, or "
+	"Symmetric.");
     }
-    else { // direction == Symmetric
-      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						 dampingFactor, Kokkos::Forward);
-      // Communicate again before the Backward sweep.
-      X_colMap->doImport (*X_in, *importer, INSERT);
-      matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						 dampingFactor, Kokkos::Backward);
+
+    for (int sweep = 0; sweep < numSweeps; ++sweep) {
+      if (! importer.is_null ()) {
+	X_colMap->doImport (*X_in, *importer, INSERT);
+      }
+
+      // Do local Gauss-Seidel.
+      if (direction != Symmetric) {
+	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						   dampingFactor, localDirection);
+      }
+      else { // direction == Symmetric
+	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						   dampingFactor, Kokkos::Forward);
+	// Communicate again before the Backward sweep.
+	X_colMap->doImport (*X_in, *importer, INSERT);
+	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
+						   dampingFactor, Kokkos::Backward);
+      }
     }
 
     if (copiedInput) { // Copy back from X_in to X.

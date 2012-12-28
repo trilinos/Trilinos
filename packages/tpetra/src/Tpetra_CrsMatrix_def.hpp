@@ -2182,12 +2182,13 @@ namespace Tpetra {
 	       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
 	       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
 	       const Scalar& dampingFactor,
-	       const ESweepDirection direction) const
+	       const ESweepDirection direction,
+	       const int numSweeps) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == false, std::runtime_error,
       typeName(*this) << "::gaussSeidel: cannot call this method until "
       "fillComplete() has been called.");
-    sameScalarMultiplyOp_->gaussSeidel (B, X, D, dampingFactor, direction);
+    sameScalarMultiplyOp_->gaussSeidel (B, X, D, dampingFactor, direction, numSweeps);
   }
 
   /////////////////////////////////////////////////////////////////////////////

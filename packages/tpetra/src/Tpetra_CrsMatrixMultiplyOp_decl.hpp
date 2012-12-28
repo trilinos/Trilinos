@@ -109,12 +109,16 @@ namespace Tpetra {
       ///   factor of one results in Gauss-Seidel.
       /// \param direction [in] Sweep direction: Forward, Backward, or
       ///   Symmetric.
+      /// \param numSweeps [in] Number of sweeps.  We count each
+      ///   Symmetric sweep (including both its Forward and its
+      ///   Backward sweep) as one.
       void 
       gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
 		   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
 		   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
 		   const Scalar& dampingFactor,
-		   const ESweepDirection direction) const;
+		   const ESweepDirection direction,
+		   const int numSweeps) const;
 
       //! Indicates whether this operator supports inverting the adjoint operator.
       //! This is true.

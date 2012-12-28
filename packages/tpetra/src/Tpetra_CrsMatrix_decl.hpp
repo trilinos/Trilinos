@@ -863,6 +863,11 @@ namespace Tpetra {
     ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
     ///   Symmetric.
+    /// \param numSweeps [in] Number of sweeps.  We count each
+    ///   Symmetric sweep (including both its Forward and its Backward
+    ///   sweep) as one.
+    ///
+    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
     ///
     /// This method has the following requirements:
     /// 
@@ -878,8 +883,10 @@ namespace Tpetra {
     /// multivector must always be in the domain Map.  The
     /// Gauss-Seidel kernel imposes additional requirements, since it
     /// 
-    /// - overwrites the input multivector with the output (which implies #2), and
-    /// - uses the same local indices for the input and output multivector (which implies #2 and #3).
+    /// - overwrites the input multivector with the output (which
+    ///   implies #2), and
+    /// - uses the same local indices for the input and output
+    ///   multivector (which implies #2 and #3).
     ///
     /// #3 is reasonable if the matrix constructed the column Map,
     /// because the method that does this (CrsGraph::makeColMap) puts
@@ -901,7 +908,8 @@ namespace Tpetra {
 		 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
 		 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
 		 const Scalar& dampingFactor,
-		 const ESweepDirection direction) const;
+		 const ESweepDirection direction,
+		 const int numSweeps) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
