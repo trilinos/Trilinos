@@ -42,6 +42,7 @@
 #ifndef __Teuchos_MatrixMarket_SetScientific_hpp
 #define __Teuchos_MatrixMarket_SetScientific_hpp
 
+#include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <string>
@@ -141,6 +142,70 @@ namespace Teuchos {
         //! The output stream's original flags.
         std::ios_base::fmtflags originalFlags_;
       };
+
+      // Specialization for Scalar=int.  Specializations for built-in
+      // integer types let Tpetra::MatrixMarket::Reader or
+      // Tpetra::MatrixMarket::Writer work with a Tpetra::CrsMatrix
+      // whose Scalar template parameter is a built-in integer type.
+      // These specializations are trivial because there are no
+      // decimal digits to print.
+      template<>
+      class SetScientific<int> {
+      public:
+        typedef int scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+      // Specialization for Scalar=unsigned int.
+      template<>
+      class SetScientific<unsigned int> {
+      public:
+        typedef unsigned int scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+      // Specialization for Scalar=long.
+      template<>
+      class SetScientific<long> {
+      public:
+        typedef long scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+      // Specialization for Scalar=unsigned long.
+      template<>
+      class SetScientific<unsigned long> {
+      public:
+        typedef unsigned long scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+      // Specialization for Scalar=long long.
+      template<>
+      class SetScientific<long long> {
+      public:
+        typedef long long scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+      // Specialization for Scalar=unsigned long long.
+      template<>
+      class SetScientific<unsigned long long> {
+      public:
+        typedef unsigned long long scalar_type;
+        SetScientific (std::ostream& out) {}
+        ~SetScientific () {}
+      };
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
 
     } // namespace details
   } // namespace MatrixMarket
