@@ -63,7 +63,7 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    APPEND_SET(EXTRA_LINK_ARGS "-undefined dynamic_lookup")
+    SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
 ENDIF(APPLE)
 
@@ -90,7 +90,7 @@ SET(HEADERS ${HEADERS}
 
 #
 # Core PyTrilinos headers and sources
-APPEND_SET(HEADERS
+LIST(APPEND HEADERS
   PyTrilinos_NumPyImporter.h
   PyTrilinos_PythonException.h
   PyTrilinos_Util.h
@@ -98,7 +98,7 @@ APPEND_SET(HEADERS
   numpy_include.h
   )
 
-APPEND_SET(SOURCES
+LIST(APPEND SOURCES
   PyTrilinos_NumPyImporter.cpp
   PyTrilinos_PythonException.cpp
   PyTrilinos_Util.cpp
@@ -109,11 +109,11 @@ APPEND_SET(SOURCES
 # PyTrilinos + Teuchos headers and sources
 IF(PyTrilinos_ENABLE_Teuchos)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_Teuchos_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     PyTrilinos_Teuchos_Util.cpp
     )
 
@@ -123,7 +123,7 @@ ENDIF(PyTrilinos_ENABLE_Teuchos)
 # PyTrilinos + Epetra headers and sources
 IF(PyTrilinos_ENABLE_Epetra)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     Epetra_NumPyFEVector.h
     Epetra_NumPyIntSerialDenseMatrix.h
     Epetra_NumPyIntSerialDenseVector.h
@@ -136,7 +136,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     PyTrilinos_Epetra_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     Epetra_NumPyFEVector.cpp
     Epetra_NumPyIntSerialDenseMatrix.cpp
     Epetra_NumPyIntSerialDenseVector.cpp
@@ -155,11 +155,11 @@ ENDIF(PyTrilinos_ENABLE_Epetra)
 # PyTrilinos + EpetraExt headers and sources
 IF(PyTrilinos_ENABLE_EpetraExt)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_EpetraExt_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     PyTrilinos_EpetraExt_Util.cpp
     )
 
@@ -169,7 +169,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_ML_Util.h
     )
 
@@ -182,7 +182,7 @@ ADD_CUSTOM_COMMAND(
   OUTPUT ${SWIG_RUNTIME}
   COMMAND ${SWIG_EXECUTABLE} -python -external-runtime
   )
-APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
+LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
 
 #
 # Define the targets for the PyTrilinos library
@@ -207,8 +207,8 @@ SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
   )
-APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
-APPEND_SET(CMAKE_SWIG_FLAGS -noproxydel)
+LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
+LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
 
 #
 # Determine the install directory
