@@ -69,6 +69,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createNonContigMapWithNode;
+  using Tpetra::createMultiVector;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Teuchos::Array;
@@ -84,9 +85,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::reduceAll;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::REDUCE_MIN;
   using Teuchos::ScalarTraits;
   using Teuchos::tuple;
   using Teuchos::TypeNameTraits;
+  using std::cerr;
   using std::endl;
 
   typedef ScalarType scalar_type;
@@ -112,6 +116,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // CrsGraph specialization corresponding to crs_matrix_type (the
   // CrsMatrix specialization).
   typedef Tpetra::CrsGraph<LO, GO, NT, typename crs_matrix_type::mat_solve_type> crs_graph_type;
+
+  // MultiVector specialization corresponding to crs_matrix_type.
+  typedef Tpetra::MultiVector<ST, LO, GO, NT> multivector_type;
+  // Vector specialization corresponding to crs_matrix_type.
+  typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
+
 
   ////////////////////////////////////////////////////////////////////  
   // HERE BEGINS THE TEST.
@@ -258,11 +268,93 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     matrix->fillComplete (domainMap, rangeMap);
   }
 
-  const bool dumpMatrix = true;
+  const bool dumpMatrix = false;
   if (dumpMatrix) {
     const std::string filename ("A.mtx");
+    const std::string scalarType = Teuchos::TypeNameTraits<ST>::name ();
+    const std::string matName = "A-" + scalarType;
     typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-    writer_type::writeSparseFile (filename, matrix, "A", "Gauss-Seidel test matrix");
+    writer_type::writeSparseFile (filename, matrix, matName, "Gauss-Seidel test matrix");
+  }
+
+  if (myRank == 0) {
+    cerr << "Extracting diagonal" << endl;
+  }
+  RCP<vector_type> D = rcp (new vector_type (rowMap));
+  matrix->getLocalDiagCopy (*D);
+
+  if (myRank == 0) {
+    cerr << "Making vectors" << endl;
+  }
+
+  // Make (multi)vectors for the initial guess (which will also be the
+  // solution vector), the right-hand side, and the residual.  We're
+  // only testing a single right-hand side for now.  Make all the
+  // vectors first in the column Map, with the actual vector given to
+  // Gauss-Seidel in the domain / range Map.
+
+  RCP<const map_type> colMap = graph->getColMap ();
+  RCP<multivector_type> X_colMap = createMultiVector<ST, LO, GO, NT> (colMap, 1);
+  RCP<multivector_type> X_exact_colMap = createMultiVector<ST, LO, GO, NT> (colMap, 1);
+  RCP<multivector_type> B_colMap = createMultiVector<ST, LO, GO, NT> (colMap, 1);
+  RCP<multivector_type> R_colMap = createMultiVector<ST, LO, GO, NT> (colMap, 1);
+  RCP<multivector_type> X = X_colMap->offsetViewNonConst (domainMap, 0);
+  RCP<multivector_type> X_exact = X_exact_colMap->offsetViewNonConst (domainMap, 0);
+  RCP<multivector_type> B = B_colMap->offsetViewNonConst (rangeMap, 0);
+  RCP<multivector_type> R = R_colMap->offsetViewNonConst (rangeMap, 0);
+
+  // Set the exact solution and right-hand side.
+  X_exact->randomize ();
+  matrix->apply (*X_exact, *B);
+
+  const int maxNumIters = 10;
+  Array<magnitude_type> residNorms (maxNumIters);
+
+  if (myRank == 0) {
+    cerr << "Iterating" << endl;
+  }
+
+  int localSuccess = 1;
+  int globalSuccess = 1;
+  int smallestFailingRank = 0;
+  for (int iter = 0; iter < maxNumIters; ++iter) {
+    // R = B - A * X
+    matrix->apply (*X, *R); // R = A * X
+    R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+    // residNorms[iter] = \|R\|_2
+    Array<magnitude_type> normTemp (1);
+    R->norm2 (normTemp);
+    residNorms[iter] = normTemp[0];
+
+    std::string exMsg;
+    try {
+      matrix->gaussSeidel (*B, *X, *D, STS::one(), Tpetra::Symmetric, 1);
+    }
+    catch (std::exception& e) {
+      exMsg = e.what ();
+      localSuccess = 0;
+    }
+    reduceAll (*comm, REDUCE_SUM, localSuccess, outArg (globalSuccess));
+    reduceAll (*comm, REDUCE_SUM, localSuccess, outArg (globalSuccess));
+    if (globalSuccess < numProcs) {
+      // Compute min rank that failed.  For procs that didn't fail,
+      // set their "rank" to numProcs.
+      const int inRank = (localSuccess == 1) ? numProcs : myRank;
+      reduceAll (*comm, REDUCE_MIN, inRank, outArg (smallestFailingRank));
+      // The min-failing-rank process prints the error message.
+      if (myRank == smallestFailingRank) {
+	cerr << "Proc " << myRank << " (possibly among others) failed.  "
+	     << "Here is its exception message: " << exMsg;
+      }
+      comm->barrier ();
+      comm->barrier ();
+      comm->barrier ();
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "");
+    }      
+    if (myRank == 0) {
+      cerr << "Iteration " << iter+1 << " of " << maxNumIters 
+	   << ": ||R||_2 = " << normTemp[0] << endl;
+    }
   }
 
 #if 0
