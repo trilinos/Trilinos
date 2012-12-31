@@ -81,7 +81,8 @@ namespace stk {
           }
 
         VectorFieldType *spacing_field_v = static_cast<VectorFieldType *>(spacing_field);
-        stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_v));
+        stk::mesh::Selector sel(m_eMesh.get_fem_meta_data()->universal_part());
+        stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_v, &sel));
 
         VectorFieldType *spacing_field_counter_v = static_cast<VectorFieldType *>(spacing_field_counter);
         stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_counter_v));

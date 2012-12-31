@@ -108,16 +108,18 @@ void parallel_reduce( const BulkData & mesh ,
 
 //----------------------------------------------------------------------
 
-template< class ReduceOp ,
+/// with Selector 
+template< class ReduceOp , 
           class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 struct ParallelReduceField {
   typedef Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> field_type ;
 
   const field_type & field ;
+  const stk::mesh::Selector * selector ;
 
-  ParallelReduceField( const field_type & f ) : field(f) {}
-  ParallelReduceField( const ParallelReduceField & p ) : field(p.field) {}
+  ParallelReduceField( const field_type & f, const stk::mesh::Selector * s = 0 ) : field(f), selector(s) {}
+  ParallelReduceField( const ParallelReduceField & p ) : field(p.field), selector(p.selector) {}
 
   void operator()( const BulkData& mesh, CommAll & sparse ) const ;
 
@@ -125,10 +127,10 @@ private:
   ParallelReduceField & operator = ( const ParallelReduceField & );
 };
 
-template< class ReduceOp ,
+  template< class ReduceOp ,
           class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
-void ParallelReduceField< ReduceOp , Type ,  Tag1,  Tag2,  Tag3 ,
+void ParallelReduceField< ReduceOp ,  Type ,  Tag1,  Tag2,  Tag3 ,
                                      Tag4 ,  Tag5,  Tag6,  Tag7 >::
 operator()(const BulkData& mesh, CommAll & sparse ) const
 {
@@ -138,7 +140,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
   for ( std::vector<EntityCommListInfo>::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
     Entity entity = i->entity;
-    if (entity.is_valid()) {
+    if (entity.is_valid() && (0 == selector || (*selector)(entity.bucket()) ) ) {
       array_type array( field , entity );
       Type * const ptr_beg = array.contiguous_data();
       Type * const ptr_end = ptr_beg + array.size();
@@ -164,31 +166,33 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
 
 //----------------------------------------------------------------------
 
+
+/// with Selector
 template< class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 ParallelReduceField<Sum<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
 inline
-sum( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f )
+sum( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f, Selector * selector=0 )
 {
-  return ParallelReduceField<Sum<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f );
+  return ParallelReduceField<Sum<1>, Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f, selector );
 }
 
 template< class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 ParallelReduceField<Max<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
 inline
-max( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f )
+max( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f, Selector * selector=0 )
 {
-  return ParallelReduceField<Max<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f );
+  return ParallelReduceField<Max<1>, Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f, selector );
 }
 
 template< class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 ParallelReduceField<Min<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
 inline
-min( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f )
+min( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f, Selector * selector=0 )
 {
-  return ParallelReduceField<Min<1>,Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f );
+  return ParallelReduceField<Min<1>, Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f, selector );
 }
 
 } // namespace mesh
