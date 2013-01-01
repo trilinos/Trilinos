@@ -361,7 +361,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator pl = RowColPairs.begin();
   while(pl != RowColPairs.end() )
   {
-    GlobalOrdinal ik = (*pl).first;
+    //GlobalOrdinal ik = (*pl).first;
     GlobalOrdinal jk = (*pl).second;
 
     gColVec->sumIntoGlobalValue(jk,1.0);
