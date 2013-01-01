@@ -103,6 +103,7 @@ public:
     EDGE_RANK = stk::topology::EDGE_RANK,
     FACE_RANK = stk::topology::FACE_RANK,
     ELEMENT_RANK = stk::topology::ELEMENT_RANK,
+    CONSTRAINT_RANK = stk::topology::CONSTRAINT_RANK,
     INVALID_RANK = stk::topology::INVALID_RANK
   };
 
