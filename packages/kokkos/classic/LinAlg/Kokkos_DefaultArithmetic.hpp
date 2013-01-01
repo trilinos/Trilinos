@@ -327,6 +327,39 @@ namespace Kokkos {
                       const ArrayRCP<typename MV::ScalarType> &values,
                       size_t stride);
 
+    /// Tell \c A about its dimensions and original dimensions, and
+    /// give it a pointer to its data.
+    ///
+    /// Use this version of initializeValues when the MV to initialize
+    /// is actually a view of another MV.  Keeping the original
+    /// dimensions lets you do error checking correctly, especially
+    /// when going from a subset view (a view of a subset of rows) to
+    /// a superset of the subset.  This is an important case for
+    /// Tpetra, e.g., when making domain Map vectors that are actually
+    /// views of column Map vectors, then getting the original column
+    /// Map vector back.  (This makes things like Import and local
+    /// Gauss-Seidel more efficient.)
+    ///
+    /// \param A [out] The multivector to tell about its dimensions and data.
+    /// \param numRows [in] Number of rows in A.
+    /// \param numCols [in] Number of columns in A.
+    /// \param values [in] Pointer to A's data.  This is a matrix
+    ///   stored in column-major format.  
+    /// \param stride [in] Stride between columns of the matrix.
+    /// \param origNumRows [in] Original number of rows in the
+    ///   multivector (of which A is to be a view).
+    /// \param origNumCols [in] Original number of rows in the
+    ///   multivector (of which A is to be a view).
+    ///
+    /// \pre <tt>stride >= numRows</tt> 
+    /// \pre <tt>stride >= origNumRows</tt> 
+    static void 
+    initializeValues (MV &A, size_t numRows, size_t numCols,
+                      const ArrayRCP<typename MV::ScalarType> &values,
+                      size_t stride,
+		      size_t origNumRows,
+		      size_t origNumCols);
+
     //! Get a const pointer to A's data; the same pointer set by initializeValues().
     static ArrayRCP<const typename MV::ScalarType> getValues (const MV &A);
 
@@ -349,6 +382,20 @@ namespace Kokkos {
 
     //! The (column) stride of \c A.
     static size_t getStride (const MV &A);
+
+    /// \brief "Original" number of rows (of the multivector of
+    ///   which A is a view).
+    ///
+    /// If A is <i>not</i> a view of another multivector, then this
+    /// method just returns the number of rows.
+    static size_t getOrigNumRows (const MV &A);
+
+    /// \brief "Original" number of columns (of the multivector of
+    ///   which A is a view).
+    ///
+    /// If A is <i>not</i> a view of another multivector, then this
+    /// method just returns the number of columns.
+    static size_t getOrigNumCols (const MV &A);
 
     //! The Kokkos Node instance with which \c A was created.
     static RCP<typename MV::NodeType> getNode (const MV &A);
@@ -1058,6 +1105,18 @@ namespace Kokkos {
         A.initializeValues(numRows,numCols,values,stride);
       }
 
+      static void 
+      initializeValues (MultiVector<Scalar,Node> &A, 
+			size_t numRows, 
+			size_t numCols,
+			const ArrayRCP<Scalar> &values,
+			size_t stride,
+			size_t origNumRows,
+			size_t origNumCols)
+      {
+        A.initializeValues(numRows,numCols,values,stride,origNumRows,origNumCols);
+      }
+
       inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
         return A.getValues();
       }
@@ -1084,6 +1143,14 @@ namespace Kokkos {
 
       inline static size_t getStride(const MultiVector<Scalar,Node> &A) {
         return A.getStride();
+      }
+
+      inline static size_t getOrigNumRows (const MultiVector<Scalar,Node> &A) {
+        return A.getOrigNumRows ();
+      }
+
+      inline static size_t getOrigNumCols (const MultiVector<Scalar,Node> &A) {
+        return A.getOrigNumCols ();
       }
 
       inline static RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {

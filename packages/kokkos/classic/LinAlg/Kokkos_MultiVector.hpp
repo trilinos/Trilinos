@@ -76,7 +76,9 @@ namespace Kokkos {
       : node_(node)
       , numRows_(0)
       , numCols_(0)
-      , stride_(0) {
+      , stride_(0)
+      , origNumRows_(0)
+      , origNumCols_(0) {
       }
 
       //! Copy constructor.
@@ -85,7 +87,9 @@ namespace Kokkos {
       , contigValues_(source.contigValues_)
       , numRows_(source.numRows_)
       , numCols_(source.numCols_)
-      , stride_(source.stride_) {
+      , stride_(source.stride_)
+      , origNumRows_(source.origNumRows_)
+      , origNumCols_(source.origNumCols_) {
       }
 
       //! MultiVector Destructor
@@ -98,21 +102,17 @@ namespace Kokkos {
 
       //@{
 
-      //! Initialize using a two-dimensional array
-      /*!
-        This interface supports multivectors that are stored as 2D arrays, or subsections of one.
-        \param numRows (In)  Number of rows in multivector (length of each vector).
-        \param numCols (In)  Number of columns in multivector (number of vectors).
-        \param values (In)  Pointer to the first entry in the multivector.  Subsequent column 
-        entries are spaced a distance of getColInc().  Subsequent row entries
-        are spaced by getRowInc() increments.
-        \param rowInc (In) The increment between two elements in a row of the multivector.  
-        Typically this value should be set to numRows.
-        \param colInc (In) The increment between two elements in a column of the multivector.  
-        Typically this value should be set to 1, which is the default value.
-
-        \return Integer error code, set to 0 if successful.
-        */
+      /// \brief Initialize a multivector that is not a view of another multivector.
+      ///
+      /// \param numRows [in] Number of rows in the multivector.
+      /// \param numCols [in] Number of columns in the multivector.
+      /// \param values [in] Array of the multivector's entries,
+      ///   stored in column-major order with stride \c stride between
+      ///   columns.  If you are familiar with the BLAS or LAPACK,
+      ///   <tt>stride</tt> here corresponds to "LDA" (<i>l</i>eading
+      ///   <i>d</i>imension of the matrix A).
+      /// \param stride [in] The stride (number of entries between)
+      ///   adjacent columns of the multivector.
       void initializeValues(size_t numRows, size_t numCols, 
                             const ArrayRCP<Scalar> &values,
                             size_t stride) {
@@ -120,8 +120,40 @@ namespace Kokkos {
         numCols_ = numCols;
         stride_ = stride;
         contigValues_ = values;
-      };
+	origNumRows_ = numRows;
+	origNumCols_ = numCols;
+      }
 
+      /// \brief Initialize a multivector that <i>is</i> a view of another multivector.
+      ///
+      /// \param numRows [in] Number of rows in the multivector.
+      /// \param numCols [in] Number of columns in the multivector.
+      /// \param values [in] Array of the multivector's entries,
+      ///   stored in column-major order with stride \c stride between
+      ///   columns.  If you are familiar with the BLAS or LAPACK,
+      ///   <tt>stride</tt> here corresponds to "LDA" (<i>l</i>eading
+      ///   <i>d</i>imension of the matrix A).
+      /// \param stride [in] The stride (number of entries between)
+      ///   adjacent columns of the multivector.
+      /// \param origNumRows [in] Number of rows in the "original"
+      ///   multivector (of which this multivector will be a view).
+      /// \param origNumCols [in] Number of columns in the "original"
+      ///   multivector (of which this multivector will be a view).
+      void 
+      initializeValues (size_t numRows, 
+			size_t numCols,
+			const ArrayRCP<Scalar> &values,
+			size_t stride,
+			size_t origNumRows,
+			size_t origNumCols)
+      {
+        numRows_ = numRows;
+        numCols_ = numCols;
+        stride_ = stride;
+        contigValues_ = values;
+	origNumRows_ = origNumRows;
+	origNumCols_ = origNumCols;
+      }
       //@}
 
       //! @name Multivector entry access methods
@@ -198,6 +230,22 @@ namespace Kokkos {
       //! Increment between entries in a row of the multivector, normally = numRows().
       size_t getStride() const {return(stride_);};
 
+      /// \brief "Original" number of rows (of the multivector of
+      ///   which <tt>*this</tt> is a view).
+      ///
+      /// If this multivector is <i>not</i> a view of another
+      /// multivector, then this method just returns the number of
+      /// rows.
+      size_t getOrigNumRows() const {return(origNumRows_);};
+
+      /// \brief "Original" number of columns (of the multivector of
+      ///   which <tt>*this</tt> is a view).
+      ///
+      /// If this multivector is <i>not</i> a view of another
+      /// multivector, then this method just returns the number of
+      /// columns.
+      size_t getOrigNumCols() const{return(origNumCols_);};
+
       //@}
 
     protected:
@@ -206,7 +254,7 @@ namespace Kokkos {
       ArrayRCP<Scalar> contigValues_;
 
       bool dataInitialized_;
-      size_t numRows_, numCols_, stride_;
+      size_t numRows_, numCols_, stride_, origNumRows_, origNumCols_;
   };
 
 } // namespace Kokkos
