@@ -217,15 +217,19 @@ namespace Kokkos {
 	TEUCHOS_TEST_FOR_EXCEPTION(
           offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
 	  std::invalid_argument,
-	  Teuchos::typeName (*this) << "::offsetView: offset row or column are out of bounds.  "
-	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
-	  << ", but your requested offset row and column are " << offsetRow << ", " << offsetCol << ".");
+	  Teuchos::typeName (*this) << "::offsetView: offset row or column are "
+	  "out of bounds.  The original multivector has dimensions " 
+	  << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested offset row and column are " 
+	  << offsetRow << ", " << offsetCol << ".");
 	TEUCHOS_TEST_FOR_EXCEPTION(
-          newNumRows >= this->getOrigNumRows () || newNumCols >= this->getOrigNumCols (),
+          newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
 	  std::invalid_argument,
-	  Teuchos::typeName (*this) << "::offsetView: new dimensions are out of bounds.  "
-	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
-	  << ", but your requested new dimensions are " << newNumRows << " x " << newNumCols << ".");
+	  Teuchos::typeName (*this) << "::offsetView: new dimensions are out "
+	  "of bounds.  The original multivector has dimensions " 
+	  << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested new dimensions are " 
+	  << newNumRows << " x " << newNumCols << ".");
 
 	// Starting position of the view of the data.
 	const size_t startPos = offsetRow + this->getStride () * offsetCol;
@@ -258,15 +262,19 @@ namespace Kokkos {
 	TEUCHOS_TEST_FOR_EXCEPTION(
           offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
 	  std::invalid_argument,
-	  Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or column are out of bounds.  "
-	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
-	  << ", but your requested offset row and column are " << offsetRow << ", " << offsetCol << ".");
+	  Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
+	  "column are out of bounds.  The original multivector has dimensions "
+	  << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested offset row and column are " 
+	  << offsetRow << ", " << offsetCol << ".");
 	TEUCHOS_TEST_FOR_EXCEPTION(
-          newNumRows >= this->getOrigNumRows () || newNumCols >= this->getOrigNumCols (),
+          newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
 	  std::invalid_argument,
-	  Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions are out of bounds.  "
-	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
-	  << ", but your requested new dimensions are " << newNumRows << " x " << newNumCols << ".");
+	  Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions "
+	  "are out of bounds.  The original multivector has dimensions " 
+	  << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested new dimensions are " 
+	  << newNumRows << " x " << newNumCols << ".");
 
 	// Starting position of the view of the data.
 	const size_t startPos = offsetRow + this->getStride () * offsetCol;
