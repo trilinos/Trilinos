@@ -172,15 +172,7 @@ namespace Kokkos {
         return contigValues_;
       }
 
-      //! Returns a pointer to an array of values for the ith column of the multivector.
-      /*! Extract a pointer to the values in the ith column of the multivector.  Note that
-        the values are not copied by this method.  Memory allocation is 
-        handled by the multivector object itself.  Also, if the getIsStrided() method returns
-        true, then the getColInc() should be used to access values in the ith column
-        of the multivector, especially if getColInc() != 1.
-
-        \param i (In) The column that should be returned.
-        */
+      //! Return a nonconst view of the data in the i-th column of the multivector.
       ArrayRCP<Scalar>
       getValuesNonConst(size_t i) {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
@@ -192,15 +184,7 @@ namespace Kokkos {
         return contigValues_.persistingView(stride_*i,numRows_);
       };
 
-      //! Returns a pointer to an array of values for the ith column of the multivector.
-      /*! Extract a pointer to the values in the ith column of the multivector.  Note that
-        the values are not copied by this method.  Memory allocation is 
-        handled by the multivector object itself.  Also, if the getIsStrided() method returns
-        true, then the getColInc() should be used to access values in the ith column
-        of the multivector, especially if getColInc() != 1.
-
-        \param i (In) The column that should be returned.
-        */
+      //! Return a const view of the data in the i-th column of the multivector.
       ArrayRCP<const Scalar>
       getValues(size_t i) const {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
@@ -213,9 +197,93 @@ namespace Kokkos {
       };
 
       //@}
+      //! @name View "constructors"
+      //@{
 
+      /// \brief A const offset view of the multivector.
+      ///
+      /// \param newNumRows [in] Number of rows in the view.
+      /// \param newNumCols [in] Number of columns in the view.
+      /// \param offsetRow [in] Zero-based index of the starting row of the view.
+      /// \param offsetCol [in] Zero-based index of the starting column of the view.
+      const MultiVector<Scalar,Node>
+      offsetView (size_t newNumRows,
+		  size_t newNumCols,
+		  size_t offsetRow,
+		  size_t offsetCol) const
+      {
+	MultiVector<Scalar,Node> B (this->getNode ());
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+          offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+	  std::invalid_argument,
+	  Teuchos::typeName (*this) << "::offsetView: offset row or column are out of bounds.  "
+	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested offset row and column are " << offsetRow << ", " << offsetCol << ".");
+	TEUCHOS_TEST_FOR_EXCEPTION(
+          newNumRows >= this->getOrigNumRows () || newNumCols >= this->getOrigNumCols (),
+	  std::invalid_argument,
+	  Teuchos::typeName (*this) << "::offsetView: new dimensions are out of bounds.  "
+	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested new dimensions are " << newNumRows << " x " << newNumCols << ".");
+
+	// Starting position of the view of the data.
+	const size_t startPos = offsetRow + this->getStride () * offsetCol;
+	// Length of the view of the data.
+	const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+	B.initializeValues (newNumRows,
+			    newNumCols,
+			    contigValues_.persistingView (startPos, len),
+			    this->getStride (),
+			    this->getOrigNumRows (),
+			    this->getOrigNumCols ());
+	return B;
+      }
+
+      /// \brief A nonconst offset view of the multivector.
+      ///
+      /// \param newNumRows [in] Number of rows in the view.
+      /// \param newNumCols [in] Number of columns in the view.
+      /// \param offsetRow [in] Zero-based index of the starting row of the view.
+      /// \param offsetCol [in] Zero-based index of the starting column of the view.
+      MultiVector<Scalar,Node>
+      offsetViewNonConst (size_t newNumRows,
+			  size_t newNumCols,
+			  size_t offsetRow,
+			  size_t offsetCol)
+      {
+	MultiVector<Scalar,Node> B (this->getNode ());
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+          offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+	  std::invalid_argument,
+	  Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or column are out of bounds.  "
+	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested offset row and column are " << offsetRow << ", " << offsetCol << ".");
+	TEUCHOS_TEST_FOR_EXCEPTION(
+          newNumRows >= this->getOrigNumRows () || newNumCols >= this->getOrigNumCols (),
+	  std::invalid_argument,
+	  Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions are out of bounds.  "
+	  "The original multivector has dimensions " << this->getOrigNumRows () << " x " << this->getOrigNumCols () 
+	  << ", but your requested new dimensions are " << newNumRows << " x " << newNumCols << ".");
+
+	// Starting position of the view of the data.
+	const size_t startPos = offsetRow + this->getStride () * offsetCol;
+	// Length of the view of the data.
+	const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+	B.initializeValues (newNumRows,
+			    newNumCols,
+			    contigValues_.persistingView (startPos, len),
+			    this->getStride (),
+			    this->getOrigNumRows (),
+			    this->getOrigNumCols ());
+	return B;
+      }
+
+      //@}
       //! @name MultiVector Attribute access methods
-
       //@{
 
       //! Node accessor
