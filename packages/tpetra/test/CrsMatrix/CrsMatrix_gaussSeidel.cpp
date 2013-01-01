@@ -293,17 +293,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   }
 
   if (myRank == 0) {
-    cerr << "Extracting diagonal" << endl;
+    cerr << "Extracting inverse diagonal" << endl;
   }
   RCP<vector_type> D = rcp (new vector_type (rowMap));
-  matrix->getLocalDiagCopy (*D);
+  matrix->getLocalDiagCopy (*D); // Get the diagonal entries.
   {
+    // Check whether any diagonal entries are zero, and invert the
+    // entries in place.  It's faster to do the latter with a Kokkos
+    // kernel, but this is good enough as a test.
     typedef typename ArrayRCP<const ST>::size_type size_type;
     size_type zeroDiagEltIndex = -1;
-    ArrayRCP<const ST> D_data = D->getData ();
+    ArrayRCP<ST> D_data = D->getDataNonConst ();
     for (size_type k = 0; k < D_data.size (); ++k) {
       if (D_data[k] == STS::zero ()) {
 	zeroDiagEltIndex = k;
+      } else {
+	D_data[k] = STS::one() / D_data[k];
       }
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -338,26 +343,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   matrix->apply (*X_exact, *B);
 
   const int maxNumIters = 10;
-  Array<magnitude_type> residNorms (maxNumIters);
+  Array<magnitude_type> residNorms (maxNumIters+1);
 
+
+  // Compute initial residual R = B - A * X and ||R||_2.
+  matrix->apply (*X, *R); // R = A * X
+  R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+  residNorms[0] = norm2 (*R);
+
+  // Compute norms of X, D, and B.
+  // The norms of D and B must not change.
+  const magnitude_type X_norm_orig = norm2 (*X);
+  const magnitude_type D_norm_orig = norm2 (*D);
+  const magnitude_type B_norm_orig = norm2 (*B);
   if (myRank == 0) {
-    cerr << "Iterating" << endl;
+    cerr << "Before iterating:" << endl
+	 << "- ||R||_2 = " << residNorms[0] << endl
+	 << "- ||X||_2 = " << X_norm_orig << endl
+	 << "- ||B||_2 = " << B_norm_orig << endl  
+	 << "- ||D||_2 = " << D_norm_orig << endl;      
   }
+
+  // Monitor the norms of (X,) D, and B.  If the norms of D or B
+  // change, that means Gauss-Seidel is broken (or we mixed up the
+  // order of its arguments).
+  magnitude_type X_norm = X_norm_orig;
+  magnitude_type D_norm = D_norm_orig;
+  magnitude_type B_norm = B_norm_orig;
 
   int localSuccess = 1;
   int globalSuccess = 1;
   int smallestFailingRank = 0;
   for (int iter = 0; iter < maxNumIters; ++iter) {
-    // R = B - A * X
-    matrix->apply (*X, *R); // R = A * X
-    R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
-    // residNorms[iter] = \|R\|_2
-    residNorms[iter] = norm2 (*R);
-    if (myRank == 0) {
-      cerr << "Iteration " << iter+1 << " of " << maxNumIters << ":" << endl
-	   << "- ||R||_2 = " << residNorms[iter] << endl;
-    }
-
     std::string exMsg;
     try {
       matrix->gaussSeidel (*B, *X, *D, STS::one(), Tpetra::Symmetric, 1);
@@ -382,41 +399,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, exMsg);
     }
 
-    const magnitude_type X_norm = norm2 (*X);
-    const magnitude_type D_norm = norm2 (*D);
-    const magnitude_type B_norm = norm2 (*B);
+    // Compute the new residual R = B - A * X.  This is not part of
+    // Gauss-Seidel itself, but we use it to measure convergence.
+    matrix->apply (*X, *R); // R = A * X
+    R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
+    residNorms[iter+1] = norm2 (*R);
+
+    X_norm = norm2 (*X);
+    D_norm = norm2 (*D);
+    B_norm = norm2 (*B);
     if (myRank == 0) {
-      cerr << "- ||X||_2 = " << X_norm << endl;
-      cerr << "- ||B||_2 = " << B_norm << endl;      
-      cerr << "- ||D||_2 = " << D_norm << endl;      
+      cerr << "After iteration " << iter+1 << " of " << maxNumIters << ":" << endl
+	   << "- ||R||_2 = " << residNorms[iter+1] << endl
+	   << "- ||X||_2 = " << X_norm << endl
+	   << "- ||B||_2 = " << B_norm << endl  
+	   << "- ||D||_2 = " << D_norm << endl;      
     }
   }
 
-#if 0
-  bool globalSuccess = true;
-  {
-    int globalSuccess_int = 1;
-    reduceAll (*comm, Teuchos::REDUCE_MIN, localSuccess ? 1 : 0, outArg (globalSuccess_int));
-    globalSuccess = (globalSuccess_int != 0);
-  }
+  // The test passes if
+  //
+  // 1. The norms of B and D did not change.
+  // 2. The residual norm decreased.
+  //
+  // It would be better if we had a specific decrease rate in mind,
+  // but we'll leave that for later.
+  //
+  // FIXME (mfh 01 Jan 2013) This test assumes that norms are computed
+  // deterministically.  This is not necessarily correct, even when
+  // running in MPI-only (no hybrid parallelism) mode.  There are a
+  // few different ways we could fix this.  Please don't just
+  // introduce an arbitrary "small" tolerance; read up on rounding
+  // error and do the right thing.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    B_norm != B_norm_orig,
+    std::logic_error,
+    "Gauss-Seidel changed the norm of B!  That means either the Gauss-Seidel "
+    "implementation is broken, or we mixed up the order of its arguments.  "
+    "Original ||B||_2 = " << B_norm_orig << "; new ||B||_2 = " << B_norm << ".");
 
-  if (! globalSuccess) {
-    // Print out the failure messages on all processes.
-    for (int p = 0; p < numProcs; ++p) {
-      if (p == myRank) {
-	out << failMsg.str () << endl;
-	out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
-	//      std::flush (out);
-      }
-      // Do some barriers to allow output to finish.
-      comm->barrier ();
-      comm->barrier ();
-      comm->barrier ();
-    }
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_norm != D_norm_orig,
+    std::logic_error,
+    "Gauss-Seidel changed the norm of D (the vector of diagonal entries of the "
+    "matrix)!  That means either the Gauss-Seidel implementation is broken, or "
+    "we mixed up the order of its arguments.  Original ||D||_2 = " 
+    << D_norm_orig << "; new ||D||_2 = " << D_norm << ".");
 
-  TEST_EQUALITY_CONST(globalSuccess, true);
-#endif // 0
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    maxNumIters > 0 && residNorms[maxNumIters] > residNorms[0],
+    std::logic_error,
+    "Gauss-Seidel failed to reduce the residual norm after " << maxNumIters 
+    << " iterations!  Original ||R||_2 = " << residNorms[0] << "; final "
+    "||R||_2 = " << residNorms[maxNumIters] << ".");
 }
 
 //////////////////////////////////////////////////////////////////////
