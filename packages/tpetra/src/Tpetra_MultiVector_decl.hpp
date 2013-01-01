@@ -867,6 +867,18 @@ namespace Tpetra {
 		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
                  EPrivateComputeViewConstructor /* dummy */);
 
+    /// \brief Advanced constructor for noncontiguous views.
+    ///
+    /// This version of the noncontiguous view constructor takes a
+    /// previously constructed Kokkos::MultiVector, which is the
+    /// correct view of the local data.  The local multivector should
+    /// have been made using the appropriate offsetView* method of
+    /// Kokkos::MultiVector.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 Teuchos::ArrayView<const size_t> whichVectors,
+                 EPrivateComputeViewConstructor /* dummy */);
+
     //@}
     //! @name Implementation of Tpetra::DistObject
     //@{

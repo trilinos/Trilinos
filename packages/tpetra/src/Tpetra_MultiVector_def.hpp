@@ -184,10 +184,6 @@ namespace Tpetra {
     createViewsRaisedEfficiencyWarning_ (false),
     createViewsNonConstRaisedEfficiencyWarning_ (false)
   {
-    using Teuchos::as;
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       localMultiVector.getNumRows () < localNumElts, 
@@ -299,6 +295,45 @@ namespace Tpetra {
     }
     else {
       MVT::initializeValues(lclMV_,0,WhichVectors.size(),Teuchos::null,0);
+    }
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               Teuchos::ArrayView<const size_t> WhichVectors,
+               EPrivateComputeViewConstructor /* dummy */) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (localMultiVector),
+    whichVectors_ (WhichVectors),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    const size_t localNumElts = map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      localMultiVector.getNumRows () < localNumElts, 
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts 
+      << " on process " << map->getComm ()->getRank () << ", but the given "
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows () 
+      << " rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      WhichVectors.size () == 0,
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: WhichVectors.size() == 0.  "
+      "The noncontiguous column view constructor only makes sense for a "
+      "nonzero number of columns to view.");
+
+    // Optimization for the case of a single column: just make a
+    // contiguous ("constant stride") view of the one column.
+    if (WhichVectors.size () == 1) {
+      const size_t offsetRow = 0;
+      const size_t offsetCol = WhichVectors[0];
+      lclMV_ = lclMV_.offsetViewNonConst (localNumElts, 1, offsetRow, offsetCol);
+      whichVectors_.clear (); // This being empty defines "constant stride."
     }
   }
 
@@ -1443,43 +1478,34 @@ namespace Tpetra {
   offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
               size_t offset) const
   {
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
-
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    const bool tooManyElts = subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_);
+
+    const size_t newNumRows = subMap->getNodeNumElements();
+    const bool tooManyElts = newNumRows + offset > lclMV_.getOrigNumRows ();
     if (tooManyElts) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_),
+        newNumRows + offset > MVT::getNumRows (lclMV_),
         std::runtime_error,
         "Tpetra::MultiVector::offsetView: Invalid input Map.  Input Map owns "
 	<< subMap->getNodeNumElements() << " elements on process " << myRank 
 	<< ".  offset = " << offset << ".  Yet, the MultiVector contains only "
-	<< MVT::getNumRows (lclMV_) << " on this process.");
+	<< lclMV_.getOrigNumRows () << " on this process.");
     }
-    const size_t numVecs = this->getNumVectors(),
-                myStride = MVT::getStride(lclMV_),
-                  newLen = subMap->getNodeNumElements();
-    // this is const, so the lclMV_ is const, so that we can only get const buffers
-    // we will cast away the const; this is okay, because
-    //   a) the constructor doesn't modify the data, and
-    //   b) we are encapsulating in a const MV before returning
-    ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
-    ArrayRCP<Scalar>      ncbuf = arcp_const_cast<Scalar> (cbuf);
     RCP<const MV> constViewMV;
     if (isConstantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      constViewMV = rcp (new MV (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
+	lclMV_.offsetView (newNumRows, lclMV_.getNumCols (), offset, 0);
+      constViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
-      // use same which index, but with an offset start pointer
-      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
-      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      constViewMV = rcp (new MV (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      // Compute the max column being viewed.  This tells us where to stop the view.
+      const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
+      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
+	lclMV_.offsetView (newNumRows, maxCol+1, offset, 0);
+      constViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return constViewMV;
   }
@@ -1491,39 +1517,34 @@ namespace Tpetra {
   offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
                       size_t offset)
   {
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
-
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    const bool tooManyElts = subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_);
+    const size_t newNumRows = subMap->getNodeNumElements();
+    const bool tooManyElts = newNumRows + offset > lclMV_.getOrigNumRows ();
     if (tooManyElts) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        subMap->getNodeNumElements() + offset > MVT::getNumRows (lclMV_),
+        newNumRows + offset > MVT::getNumRows (lclMV_),
         std::runtime_error,
-        "Tpetra::MultiVector::offsetViewNonConst: Invalid input Map.  Input "
-	"Map owns " << subMap->getNodeNumElements() << " elements on process " 
-	<< myRank << ".  offset = " << offset << ".  Yet, the MultiVector "
-	"contains only " << MVT::getNumRows (lclMV_) << " on this process.");
+        "Tpetra::MultiVector::offsetViewNonconst: Invalid input Map.  Input Map owns "
+	<< subMap->getNodeNumElements() << " elements on process " << myRank 
+	<< ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+	<< lclMV_.getOrigNumRows () << " on this process.");
     }
-    const size_t numVecs = this->getNumVectors(),
-                myStride = MVT::getStride(lclMV_),
-                  newLen = subMap->getNodeNumElements();
-    ArrayRCP<Scalar> buf = MVT::getValuesNonConst(lclMV_);
     RCP<MV> subViewMV;
     if (isConstantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      subViewMV = rcp (new MV (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
+	lclMV_.offsetViewNonConst (newNumRows, lclMV_.getNumCols (), offset, 0);
+      subViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
-      // use same which index, but with an offset start pointer
-      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
-      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      subViewMV = rcp (new MV (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      // Compute the max column being viewed.  This tells us where to stop the view.
+      const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
+      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
+	lclMV_.offsetViewNonConst (newNumRows, maxCol+1, offset, 0);
+      subViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return subViewMV;
   }
