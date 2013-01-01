@@ -76,6 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_const_cast;
+  using Teuchos::broadcast;
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -335,21 +336,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
       localSuccess = 0;
     }
     reduceAll (*comm, REDUCE_SUM, localSuccess, outArg (globalSuccess));
-    reduceAll (*comm, REDUCE_SUM, localSuccess, outArg (globalSuccess));
     if (globalSuccess < numProcs) {
       // Compute min rank that failed.  For procs that didn't fail,
       // set their "rank" to numProcs.
       const int inRank = (localSuccess == 1) ? numProcs : myRank;
       reduceAll (*comm, REDUCE_MIN, inRank, outArg (smallestFailingRank));
-      // The min-failing-rank process prints the error message.
-      if (myRank == smallestFailingRank) {
-	cerr << "Proc " << myRank << " (possibly among others) failed.  "
-	     << "Here is its exception message: " << exMsg;
-      }
-      comm->barrier ();
-      comm->barrier ();
-      comm->barrier ();
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "");
+      // The min-failing-rank process broadcasts the error message's
+      // length and the message itself to all the other processes.
+      int msgLen = as<int> (exMsg.size ());
+      broadcast (*comm, smallestFailingRank, outArg (msgLen));
+      exMsg.reserve (msgLen);
+      char* const exMsgRaw = const_cast<char*> (exMsg.c_str ());
+      broadcast (*comm, smallestFailingRank, msgLen, exMsgRaw);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, exMsg);
     }      
     if (myRank == 0) {
       cerr << "Iteration " << iter+1 << " of " << maxNumIters 
@@ -391,9 +390,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, NODE )
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+//TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+//TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+
+typedef Kokkos::SerialNode serial_node_type;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, int, long, double, serial_node_type )
 
 
 
