@@ -394,9 +394,9 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   // that will be definitely moved to the diagonal after permutation.
 
 #ifdef DEBUG_OUTPUT
-  for (typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::const_iterator p = RowColPairs.begin(); p != RowColPairs.end(); ++p) {
-    std::cout << "proc: " << myRank << " r/c: " << (*p).first << "/" << (*p).second << std::endl;
-  }
+  //  for (typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::const_iterator p = RowColPairs.begin(); p != RowColPairs.end(); ++p) {
+  //    std::cout << "proc: " << myRank << " r/c: " << (*p).first << "/" << (*p).second << std::endl;
+  //  }
   //    for (typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::const_iterator p = RowColPairs.begin(); p != RowColPairs.end(); ++p)
   //    {
   ////      if((*p).first != (*p).second) std::cout << "difference: " << (*p).first << " " << (*p).second << std::endl;
@@ -433,6 +433,14 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   lColIdStatus->putScalar(0.0);
   ColIdUsed->putScalar(0.0);   // no column ids are used
 
+  // count wide-range permutations
+  // a wide-range permutation is defined as a permutation of rows/columns which do not
+  // belong to the same node
+  LocalOrdinal lWideRangeRowPermutations = 0;
+  GlobalOrdinal gWideRangeRowPermutations = 0;
+  LocalOrdinal lWideRangeColPermutations = 0;
+  GlobalOrdinal gWideRangeColPermutations = 0;
+
   // run 1: mark all "identity" permutations
   typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = RowColPairs.begin();
   while(p != RowColPairs.end() )
@@ -450,6 +458,11 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       lQperm->replaceLocalValue(ljk, ik); // use column map
       ColIdUsed->replaceGlobalValue(ik,1.0); // ik is now used
       p = RowColPairs.erase(p);
+
+      // detect wide range permutations
+      if(floor(ik/nDofsPerNode) != floor(jk/nDofsPerNode)) {
+        lWideRangeColPermutations++;
+      }
     }
     else
       p++;
@@ -479,6 +492,10 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     if(RowIdStatusArray[lik] == 0.0) {
       RowIdStatusArray[lik] = 1.0; // use this row id
       Pperm->replaceLocalValue(lik, qFreeGRowIdx.front());
+      // detect wide range permutations
+      if(floor(qFreeGRowIdx.front()/nDofsPerNode) != floor(RowIdStatus->getMap()->getGlobalElement(lik)/nDofsPerNode)) {
+        lWideRangeRowPermutations++;
+      }
       qFreeGRowIdx.pop();
     }
   }
@@ -508,15 +525,23 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     if(cntUnusedColIdx == 0) break;
 
     if(ColIdStatusArray[ljk] == 0.0) {
-      //ColIdStatusArray[ljk] = 1.0; // use this row id
-      ColIdStatus->replaceLocalValue(ljk,1.0); // use this row id
-      Qperm->replaceLocalValue(ljk, qUnusedGColIdx.front());
+      lColIdStatusArray[ljk] = 1.0; // use this row id
+      //ColIdStatus->replaceLocalValue(ljk,1.0); // use this row id
+      //Qperm->replaceLocalValue(ljk, qUnusedGColIdx.front());
+      lQperm->replaceLocalValue(ljk, qUnusedGColIdx.front());
       ColIdUsed->replaceGlobalValue(qUnusedGColIdx.front(),1.0); // ljk is now used, too
+      // detect wide range permutations
+      if(floor(qUnusedGColIdx.front()/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
+        lWideRangeColPermutations++;
+      }
       qUnusedGColIdx.pop();
       cntUnusedColIdx--;
       cntFreeColIdx--;
     }
   }
+
+  Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX);
+  ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
 
   // count, how many unused column idx are needed on current processor
   // to complete Qperm
@@ -616,15 +641,20 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
 
       if(ColIdStatusArray[ljk] == 0.0) {
-        //ColIdStatusArray[ljk] = 1.0; // use this row id
-        ColIdStatus->replaceLocalValue(ljk,1.0);
-        // check if lQperm or Qperm... (TODO is this a bug??)
-        Qperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
+        ColIdStatusArray[ljk] = 1.0; // use this row id
+        //Qperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
+        lQperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
         ColIdUsed->replaceGlobalValue(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter],1.0);
+        // detect wide range permutations
+        if(floor(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
+          lWideRangeColPermutations++;
+        }
         array_iter++;
         //cntUnusedColIdx--; // check me
       }
     }
+    Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX);
+    ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
   } // end if global_cntFreeColIdx > 0
   /////////////////// Qperm should be fine now...
 
@@ -732,12 +762,12 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
 
   currentLevel.Set("#RowPermutations", gNumRowPermutations, this);
   currentLevel.Set("#ColPermutations", gNumColPermutations, this);
-  currentLevel.Set("#WideRangeRowPermutations", -1 /*gWideRangeRowPermutations*/, this);
-  currentLevel.Set("#WideRangeColPermutations", -1 /*gWideRangeColPermutations*/, this);
+  currentLevel.Set("#WideRangeRowPermutations", gWideRangeRowPermutations, this);
+  currentLevel.Set("#WideRangeColPermutations", gWideRangeColPermutations, this);
 
   GetOStream(Statistics0, 0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
   GetOStream(Statistics0, 0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
-  //GetOStream(Runtime1, 0) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
+  GetOStream(Runtime1, 0) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
 
 #else
 #warning PermutationFactory not compiling/working for Scalar==complex.
