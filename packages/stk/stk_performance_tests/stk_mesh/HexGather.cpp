@@ -65,7 +65,7 @@ void gather_hex( const Selector & element_select,
 
 }
 
-TEST( hex_gather, hex_gather )
+TEST( hex_gather, old_hex_gather )
 {
   double start_time = stk::cpu_time();
   unsigned ex=100, ey=100, ez=100;
