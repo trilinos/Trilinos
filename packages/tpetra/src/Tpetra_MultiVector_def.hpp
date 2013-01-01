@@ -176,6 +176,31 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               EPrivateComputeViewConstructor /* dummy */) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (localMultiVector),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    using Teuchos::as;
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+
+    const size_t localNumElts = map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      localMultiVector.getNumRows () < localNumElts, 
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts 
+      << " on process " << map->getComm ()->getRank () << ", but the given "
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows () 
+      << " rows.");
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                const Teuchos::ArrayRCP<Scalar>& view,
                size_t LDA,
                size_t NumVectors,
