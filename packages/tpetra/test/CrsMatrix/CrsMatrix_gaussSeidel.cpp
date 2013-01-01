@@ -61,10 +61,23 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
+namespace {
+  template<class MV>
+  typename Teuchos::ScalarTraits<typename MV::scalar_type>::magnitudeType
+  norm2 (const MV& x) 
+  {
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+    Teuchos::Array<magnitude_type> normTemp (1);
+    x.norm2 (normTemp);
+    return normTemp[0];
+  }
+} // namespace (anonymous)
+
 //
 // Tests for Tpetra::CrsMatrix::gaussSeidel().
 //
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
@@ -73,6 +86,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Teuchos::Array;
+  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_const_cast;
@@ -283,6 +297,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   }
   RCP<vector_type> D = rcp (new vector_type (rowMap));
   matrix->getLocalDiagCopy (*D);
+  {
+    typedef typename ArrayRCP<const ST>::size_type size_type;
+    size_type zeroDiagEltIndex = -1;
+    ArrayRCP<const ST> D_data = D->getData ();
+    for (size_type k = 0; k < D_data.size (); ++k) {
+      if (D_data[k] == STS::zero ()) {
+	zeroDiagEltIndex = k;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      zeroDiagEltIndex != -1,
+      std::logic_error,
+      "On Process " << comm->getRank () << ", diagonal element " 
+      << zeroDiagEltIndex << ", possibly among others, is zero.");
+  }
 
   if (myRank == 0) {
     cerr << "Making vectors" << endl;
@@ -323,9 +352,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     matrix->apply (*X, *R); // R = A * X
     R->update (STS::one(), *B, -STS::one()); // R = 1*B - 1*R
     // residNorms[iter] = \|R\|_2
-    Array<magnitude_type> normTemp (1);
-    R->norm2 (normTemp);
-    residNorms[iter] = normTemp[0];
+    residNorms[iter] = norm2 (*R);
+    if (myRank == 0) {
+      cerr << "Iteration " << iter+1 << " of " << maxNumIters << ":" << endl
+	   << "- ||R||_2 = " << residNorms[iter] << endl;
+    }
 
     std::string exMsg;
     try {
@@ -349,10 +380,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
       char* const exMsgRaw = const_cast<char*> (exMsg.c_str ());
       broadcast (*comm, smallestFailingRank, msgLen, exMsgRaw);
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, exMsg);
-    }      
+    }
+
+    const magnitude_type X_norm = norm2 (*X);
+    const magnitude_type D_norm = norm2 (*D);
+    const magnitude_type B_norm = norm2 (*B);
     if (myRank == 0) {
-      cerr << "Iteration " << iter+1 << " of " << maxNumIters 
-	   << ": ||R||_2 = " << normTemp[0] << endl;
+      cerr << "- ||X||_2 = " << X_norm << endl;
+      cerr << "- ||B||_2 = " << B_norm << endl;      
+      cerr << "- ||D||_2 = " << D_norm << endl;      
     }
   }
 
