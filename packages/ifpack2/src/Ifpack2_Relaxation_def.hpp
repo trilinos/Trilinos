@@ -588,7 +588,7 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
     // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
     if (IsParallel_) {
-      *Y = *Y2;
+      Y = *Y2;
     }
   }
 
@@ -791,7 +791,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 
     // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
     if (IsParallel_) {
-      *Y = *Y2;
+      Y = *Y2;
     }
   }
 
