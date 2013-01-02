@@ -67,6 +67,7 @@ INCLUDE(PrintNonemptyVar)
 INCLUDE(PrintVar)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(SetDefault)
+INCLUDE(MessageWrapper)
 
 #
 # Function that creates error message about missing/misspelled package.
@@ -115,7 +116,7 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME  LIST_TYPE)
         TRIBITS_ABORT_ON_MISSING_PACKAGE("${DEP_PKG}" "${PACKAGE_NAME}" "${PROJECT_NAME}_SE_PACKAGES")
       ELSE()
         IF (${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE)
-          MESSAGE("WARNING: ${DEP_PKG} is being ignored since its directory"
+          MESSAGE_WRAPPER("WARNING: ${DEP_PKG} is being ignored since its directory"
             " is missing and ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
             " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
         ENDIF()
