@@ -16,7 +16,7 @@
 namespace stk
 {
 
-/* return current memory usage in megabytes */
+// return current memory usage in bytes
 size_t get_memory_usage_now()
 {
   size_t memory = 0;
@@ -64,7 +64,7 @@ size_t get_memory_usage_now()
   return memory;
 }
 
-/* return current resident set size in megabytes */
+// return current resident set size in bytes
 void get_memory_usage(size_t & now, size_t & hwm)
 {
 #if defined (PROCFS)
