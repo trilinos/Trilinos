@@ -66,12 +66,35 @@ INCLUDE(TribitsListHelpers)
 # Helper functions
 #
 
+
+#
+# Macro used in Dependencies.cmake files to allow some upstream dependent packages
+# to be missing.
+#
+# Usage:
+#
+#   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pack_1> <pack_2> ...)
+#
+# If the missing upstream SE package <pack_i> is optional, then the effect
+# will be to simply ignore the missing package and remove it from the
+# dependency list.  However, if the missing upstream SE package <pack_i> is
+# required, then in addition to ignoring the missing package, the current SE
+# (sub)package will also e hard disabled,
+# i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.
+#
+# This function is typically used in packages in external TriBITS repos that
+#  depend on other packages in other exteral TriBITS repos that might be
+#  missing.
+#
+# NOTE: Using this function effectively turns off error checking for
+#  misspelled package names so it is important to only use it when it
+#  absolutely is needed.
+#
 MACRO(TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${ARGN})
     SET(${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE TRUE)
   ENDFOREACH()
 ENDMACRO()
-
 
 
 #
