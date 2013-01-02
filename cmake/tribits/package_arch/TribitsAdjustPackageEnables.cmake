@@ -68,6 +68,7 @@ INCLUDE(PrintVar)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(SetDefault)
 INCLUDE(MessageWrapper)
+INCLUDE(DualScopeSet)
 
 #
 # Function that creates error message about missing/misspelled package.
@@ -99,8 +100,8 @@ ENDFUNCTION()
 
 FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIONAL)
 
-  MESSAGE("\nPACKAGE_ARCH_SET_DEP_PACKAGES: ${PACKAGE_NAME}"
-    "  ${LIB_OR_TEST}  ${REQUIRED_OR_OPTIONAL})")
+  #MESSAGE("\nPACKAGE_ARCH_SET_DEP_PACKAGES: ${PACKAGE_NAME}"
+  #  "  ${LIB_OR_TEST}  ${REQUIRED_OR_OPTIONAL})")
 
   SET(LIST_TYPE  ${LIB_OR_TEST}_${REQUIRED_OR_OPTIONAL}_DEP_PACKAGES)
 
@@ -122,6 +123,12 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
           MESSAGE_WRAPPER("WARNING: ${DEP_PKG} is being ignored since its directory"
             " is missing and ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
             " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
+          IF (REQUIRED_OR_OPTIONAL STREQUAL "REQUIRED")
+            SET(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
+            MESSAGE_WRAPPER("WARNING: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
+              " ${DEP_PKG} is a required missing package!") 
+            DUAL_SCOPE_SET(${SE_PACKAGE_ENABLE_VAR} OFF)
+          ENDIF()
         ENDIF()
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
