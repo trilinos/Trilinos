@@ -113,6 +113,51 @@ parameter, rather than a Tpetra::RowMatrix specialization.  (This
 matters if you are using a nondefault value of the fifth template
 parameter of Tpetra::CrsMatrix.)
 
+\section Ifpack_Relaxation_Create Creating a Relaxation preconditioner
+
+The following code snippet shows how to create a Relaxation
+preconditioner.
+
+\code
+#include "Ifpack2_Relaxation.hpp"
+
+...
+using Teuchos::ParameterList;
+using Teuchos::RCP;
+typedef double ST;
+typedef int    LO;
+typedef int    GO;
+typedef Tpetra::CrsMatrix<ST, LO, GO> crs_matrix_type;
+typedef Ifpack2::Preconditioner<ST, LO, GO> precond_type;
+...
+
+// Create the sparse matrix A somehow.  It must be fill complete
+// before you may create an Ifpack2 preconditioner from it.
+RCP<crs_matrix_type> A = ...;
+
+// Create the relaxation.  You could also do this using
+// Ifpack2::Factory (the preconditioner factory) if you like.
+precond_type prec (A);
+
+// Make the list of relaxation parameters.
+Teuchos::ParameterList params;
+// Do symmetric SOR / Gauss-Seidel.
+params.set ("relaxation: type", "Symmetric Gauss-Seidel");
+// Two sweeps (of symmetric SOR / Gauss-Seidel) per apply() call.
+params.set ("relaxation: sweeps", 2);
+// ... Set any other parameters you want to set ...
+
+// Set parameters.
+prec.setParameters (params);
+
+// Prepare the relaxation instance for use.
+prec.initialize ();
+prec.compute ();
+
+// Now prec may be used as a preconditioner or smoother,
+// by calling its apply() method, just like any Tpetra::Operator.
+\endcode
+
 \section Ifpack_Relaxation_Algorithms Algorithms
 
 We now briefly describe the relaxation algorithms this class
@@ -120,49 +165,62 @@ implements.  Consider a linear system of type
 \f[
 A x = b,
 \f]
-where \f$A\f$ is a square matrix, and \f$x, b\f$ are two compatible
-vectors. We begin with the decomposition
-\f[
-A = D - E - F
-\f]
-where \f$D\f$ is the diagonal of \f$A\f$, \f$-E\f$ is the strict lower
-part of \f$A\f$, and \f$-F\f$ is the strict upper part of \f$A\f$.  We
-assume that the diagonal entries of \f$A\f$ are all nonzero.
+where \f$A\f$ is a square matrix, and \f$x\f$, \f$b\f$ are two vectors
+of compatible dimensions.  Suppose that \f$x^{(0)}\f$ is the starting
+vector and \f$x^{(k)}\f$ is the approximate solution for \f$x\f$
+computed by iteration $k+1$.  Here, \f$x^{(k)}_i\f$ is the $i$-th
+element of vector \f$x^{(k)}\f$.
 
-Given an starting solution \f$x_0\f$, an iteration of the (damped) Jacobi
-method can be written in matrix form as follows:
+The Jacobi method computes
 \f[
-x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
+x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
-
-Users may specify the number of sweeps (\f$k_{max}\f$) and the damping
-parameter \f$\omega \f$. If only one sweep is used, then this class
-simply applies the inverse of the diagonal of \f$A\f to the input
-vector.
-
-Given a starting solution \f$x_0\f$, an iteration of the (damped)
-Gauss-Seidel method can be written in matrix form as follows:
+The "damped" Jacobi method generalizes Jacobi.  It introduces a
+damping parameter \f$\omega \f$, and computes
 \f[
-(D - E) x_{k+1} = \omega F x_k + b,
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter. Equivalently,
-the Gauss-Seidel preconditioner can be defined as
-\f[
-P_{GS}^{-1} = (D - E)^{-1}.
-\f]
-Clearly, the roles of \f$E\f$ and \f$F\f$ can be interchanged.  Users
-may interchange \f$E\f$ and \f$F\f$ by setting the "relaxation: backward mode"
-option.
 
-For a list of supported parameters, please refer to the documentation
-of the setParameters() method.
+The "damped Gauss-Seidel method" is actually successive over-relaxation
+(SOR), with Gauss-Seidel as a special case when the damping parameter
+\f$\omega = 1\f$.  We implement has two different sweep directions: Forward and
+Backward.  The Forward sweep direction computes
+\f[
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j < i} A_{ij} x^{(k+1)}_j - \sum_{j > i} A_{ij} x^{(k)}_j ),
+\f]
+and the Backward sweep direction computes
+\f[
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j > i} A_{ij} x^{(k+1)}_j - \sum_{j < i} A_{ij} x^{(k)}_j ),
+\f]
+Users may set the sweep direction via the "relaxation: backward mode"
+option.  See the documentation of setParameters() for details.
+
+Gauss-Seidel / SOR also comes in a symmetric version.  This method
+first does a Forward sweep, then a Backward sweep.  Only the symmetric
+version of this preconditioner is guaranteed to be symmetric (or Hermitian,
+if the matrix's data are complex).
+
+Users may set the relaxation method via the "relaxation: type"
+parameter.  For all relaxation methods, users may specify the number
+of sweeps per call to apply() and the damping parameter \f$\omega \f$.
+For a list of all supported parameters, please refer to the
+documentation of the setParameters() method.  For advice on picking
+\f$\omega \f$ for a preconditioner, please refer to the following
+book: "Templates for the Solution of Linear Systems: Building Blocks
+for Iterative Methods, 2nd Edition," R. Barrett et al., SIAM, 1994.
+
+Note that this class does not actually use the formulae above to apply
+Jacobi or SOR.  For example, we optimize the formulae to avoid branches.
 */
 template<class MatrixType>
-class Relaxation : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-
+class Relaxation :
+  virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                         typename MatrixType::local_ordinal_type,
+                                         typename MatrixType::global_ordinal_type,
+                                         typename MatrixType::node_type>
+{
 public:
-  //! \name Typedefs
+  //! @name Typedefs
   //@{
 
   //! The type of the entries of the input MatrixType.
@@ -200,7 +258,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
-  //! \name Constructors and destructors
+  //! @name Constructors and destructors
   //@{
 
   /// \brief Constructor.
@@ -242,7 +300,7 @@ public:
   virtual ~Relaxation();
 
   //@}
-  // \name Preconditioner computation methods
+  //! @name Preconditioner computation methods
   //@{
 
   /// \brief Set the relaxation / preconditioner parameters.
@@ -319,7 +377,7 @@ public:
   }
 
   //@}
-  //! \name Implementation of the Tpetra::Operator interface
+  //! @name Implementation of the Tpetra::Operator interface
   //@{
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
@@ -369,7 +427,7 @@ public:
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
-  //! \name Mathematical functions
+  //! @name Mathematical functions
   //@{
 
   /// \brief Computes and returns the estimated condition number.
@@ -389,7 +447,7 @@ public:
                                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
-  //! \name Attribute accessor methods
+  //! @name Attribute accessor methods
   //@{
 
   /// \brief The computed estimated condition number, or -1 if not previously computed.
@@ -492,7 +550,7 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
-  /// \name Internal data and parameters
+  //! @name Internal data and parameters
   //@{
 
   //! The matrix for which to construct the preconditioner or smoother.
