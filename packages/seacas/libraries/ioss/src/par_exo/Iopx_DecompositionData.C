@@ -1276,7 +1276,7 @@ namespace Iopx {
 	std::vector<INT> connectivity(overlap*element_nodes);
 	size_t blk_start = max(b_start, p_start) - b_start + 1;
 	//std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
-	ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
+	ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
 	size_t el = 0;
 	for (size_t elem = 0; elem < overlap; elem++) {
 	  pointer.push_back(adjacency.size());
@@ -1779,7 +1779,7 @@ namespace Iopx {
     if (spatialDimension > 2)
       z.resize(nodeCount);
     
-    ex_get_n_coord(exodusId, nodeOffset+1, nodeCount, TOPTR(x), TOPTR(y), TOPTR(z));
+    ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount, TOPTR(x), TOPTR(y), TOPTR(z));
 
     // The total vector size I need to send data in is node_comm_send.size()*3
     std::vector<double> coord_send(node_comm_send.size() * spatialDimension);
@@ -2129,22 +2129,22 @@ namespace Iopx {
 	      
     int ierr = 0;
     if (field.get_name() == "mesh_model_coordinates_x") {
-      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
-			    TOPTR(tmp), NULL, NULL);
+      ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
+				  TOPTR(tmp), NULL, NULL);
       if (ierr >= 0)
 	communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
-      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
-			    NULL, TOPTR(tmp), NULL);
+      ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
+				  NULL, TOPTR(tmp), NULL);
       if (ierr >= 0)
 	communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
-      ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
-			    NULL, NULL, TOPTR(tmp));
+      ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
+				  NULL, NULL, TOPTR(tmp));
       if (ierr >= 0)
 	communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
@@ -2166,15 +2166,15 @@ namespace Iopx {
       // * Other method uses 6*ioss_node_count extra memory; 1 read;
       // and 1 communicate_node_data call.
       //
-      // * NOTE: The read difference is not real since the ex_get_n_coord
+      // * NOTE: The read difference is not real since the ex_get_partial_coord
       // function does 3 reads internally.
 
       for (size_t d = 0; d < spatialDimension; d++) {
 	double* coord[3];
 	coord[0] = coord[1] = coord[2] = NULL;
 	coord[d] = TOPTR(tmp);
-	ierr = ex_get_n_coord(exodusId, nodeOffset+1, nodeCount,
-			      coord[0], coord[1], coord[2]);
+	ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
+				    coord[0], coord[1], coord[2]);
 	if (ierr < 0)
 	  return ierr;
 	
@@ -2210,7 +2210,7 @@ namespace Iopx {
 
     assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     std::vector<INT> file_conn(count * nnpe);
-    ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
+    ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
     communicate_block_data(TOPTR(file_conn), data, blk_seq, nnpe);
 
     for (size_t i=0; i < blk.iossCount * nnpe; i++) {
@@ -2611,7 +2611,7 @@ namespace Iopx {
 					   int64_t num_entity, std::vector<double> &ioss_data) const
   {
     std::vector<double> file_data(nodeCount);
-    int ierr = ex_get_n_var(exodusId, step, EX_NODAL, var_index, id, nodeOffset+1, nodeCount, TOPTR(file_data));
+    int ierr = ex_get_partial_var(exodusId, step, EX_NODAL, var_index, id, nodeOffset+1, nodeCount, TOPTR(file_data));
     
     if (ierr >= 0)
       communicate_node_data(TOPTR(file_data), TOPTR(ioss_data), 1);
@@ -2622,7 +2622,7 @@ namespace Iopx {
   int DecompositionData<INT>::get_node_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
   {
     std::vector<double> file_data(nodeCount*comp_count);
-    int ierr = ex_get_n_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, TOPTR(file_data));
+    int ierr = ex_get_partial_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, TOPTR(file_data));
     
     if (ierr >= 0)
       communicate_node_data(TOPTR(file_data), ioss_data, comp_count);
@@ -2633,7 +2633,7 @@ namespace Iopx {
   int DecompositionData<INT>::get_one_node_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const
   {
     std::vector<double> file_data(nodeCount);
-    int ierr = ex_get_n_one_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, attr_index, TOPTR(file_data));
+    int ierr = ex_get_partial_one_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, attr_index, TOPTR(file_data));
     
     if (ierr >= 0)
       communicate_node_data(TOPTR(file_data), ioss_data, 1);
@@ -2650,7 +2650,7 @@ namespace Iopx {
     size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count);
-    int ierr = ex_get_n_var(exodusId, step, EX_ELEM_BLOCK, var_index, id, offset+1, count, TOPTR(file_data));
+    int ierr = ex_get_partial_var(exodusId, step, EX_ELEM_BLOCK, var_index, id, offset+1, count, TOPTR(file_data));
 
     if (ierr >= 0)
       communicate_block_data(TOPTR(file_data), TOPTR(ioss_data), blk_seq, 1);
@@ -2667,7 +2667,7 @@ namespace Iopx {
     size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count*comp_count);
-    int ierr = ex_get_n_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data)); 
+    int ierr = ex_get_partial_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data)); 
 
     if (ierr >= 0)
       communicate_block_data(TOPTR(file_data), ioss_data, blk_seq, comp_count);
@@ -2684,7 +2684,7 @@ namespace Iopx {
     size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count);
-    int ierr = ex_get_n_one_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, attr_index, TOPTR(file_data));
+    int ierr = ex_get_partial_one_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, attr_index, TOPTR(file_data));
 
     if (ierr >= 0)
       communicate_block_data(TOPTR(file_data), ioss_data, blk_seq, 1);

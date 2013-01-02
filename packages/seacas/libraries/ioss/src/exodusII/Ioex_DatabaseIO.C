@@ -4963,7 +4963,7 @@ namespace Ioex {
 	  int ierr;
 	  if (type == EX_SIDE_SET) {
 	    size_t offset = ge->get_property("set_offset").get_int();
-	    ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, TOPTR(temp));
+	    ierr = ex_put_partial_var(get_file_pointer(), step, type, var_index, id, offset+1, count, TOPTR(temp));
 	  } else {
 	    ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, TOPTR(temp));
 	  }
@@ -5382,8 +5382,8 @@ namespace Ioex {
 	    for (size_t i = 0; i < num_to_get; i++) {
 	      real_ids[i] = static_cast<double>(ids[i]);
 	    }
-	    //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, TOPTR(real_ids));
-	    int ierr = ex_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
+	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id,
+						    offset+1, entity_count, TOPTR(real_ids));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -5404,7 +5404,8 @@ namespace Ioex {
 	    int ierr;
 	    size_t df_offset = fb->get_property("set_df_offset").get_int();
 	    size_t df_count  = fb->get_property("distribution_factor_count").get_int();
-	    ierr = ex_put_n_side_set_df(get_file_pointer(), id, df_offset+1, df_count, static_cast<double*>(data));
+	    ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id,
+						df_offset+1, df_count, static_cast<double*>(data));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -5439,8 +5440,8 @@ namespace Ioex {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count,
-					   TOPTR(element), TOPTR(side));
+	      int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id,
+					    offset+1, entity_count, TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    } else {
 	      Ioss::Int64Vector element(num_to_get);
@@ -5452,8 +5453,8 @@ namespace Ioex {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count,
-					   TOPTR(element), TOPTR(side));
+	      int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id,
+					    offset+1, entity_count, TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    }
 
@@ -5484,7 +5485,8 @@ namespace Ioex {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	      int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id,
+					    offset+1, entity_count, TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    } else {
 	      Ioss::Int64Vector element(num_to_get);
@@ -5496,7 +5498,8 @@ namespace Ioex {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	      int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id,
+					    offset+1, entity_count, TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    }
 
