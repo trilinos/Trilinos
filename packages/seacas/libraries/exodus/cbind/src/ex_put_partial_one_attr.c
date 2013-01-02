@@ -203,6 +203,9 @@ int ex_put_partial_one_attr( int   exoid,
   stride[0] = 1;
   stride[1] = num_attr;
   
+  if (count[0] == 0)
+    start[0] = 0;
+  
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vars_float(exoid, attrid, start, count, stride, attrib);
   } else {
