@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -49,14 +49,14 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 
-/*! \file Tpetra_CrsMatrixMultiplyOp_decl.hpp 
+/*! \file Tpetra_CrsMatrixMultiplyOp_decl.hpp
 
     The declarations for the class Tpetra::CrsMatrixMultiplyOp and related non-member constructors.
  */
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS  
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
   template <class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class CrsMatrix;
@@ -67,7 +67,7 @@ namespace Tpetra {
   class CrsMatrixMultiplyOp : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Constructor/Destructor Methods
-      //@{ 
+      //@{
 
       //! Constructor
       CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
@@ -78,11 +78,11 @@ namespace Tpetra {
       //@}
 
       //! @name Methods implementing Operator
-      //@{ 
+      //@{
 
       //! Computes this matrix-vector multilication Y = A X.
       //! This calls multiply<Scalar,Scalar>() on the underlying CrsMatrix object.
-      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
       /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
@@ -101,10 +101,13 @@ namespace Tpetra {
       /// communication, as in Jacobi.  Thus, Symmetric results in two
       /// interprocess communication steps.
       ///
-      /// \param B [in] Right-hand side(s).
+      /// \param B [in] Right-hand side(s), in the range Map of the
+      ///   matrix.
       /// \param X [in/out] On input: initial guess(es).  On output:
-      ///   result multivector(s).
-      /// \param D [in] Inverse of diagonal entries of the matrix A.
+      ///   result multivector(s).  This must be a domain Map view of
+      ///   a column Map multivector.
+      /// \param D [in] Inverse of diagonal entries of the matrix A,
+      ///   in the row Map of the matrix.
       /// \param dampingFactor [in] SOR damping factor.  A damping
       ///   factor of one results in Gauss-Seidel.
       /// \param direction [in] Sweep direction: Forward, Backward, or
@@ -112,13 +115,49 @@ namespace Tpetra {
       /// \param numSweeps [in] Number of sweeps.  We count each
       ///   Symmetric sweep (including both its Forward and its
       ///   Backward sweep) as one.
-      void 
+      ///
+      /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
+      /// \pre No other argument aliases X.
+      void
       gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-		   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-		   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-		   const Scalar& dampingFactor,
-		   const ESweepDirection direction,
-		   const int numSweeps) const;
+                   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                   const Scalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps) const;
+
+      /// \brief Non-overwrite version of gaussSeidel().
+      ///
+      /// This method is just like gaussSeidel(), except that it does
+      /// not overwrite its input multivector X.  Instead, it puts the
+      /// result in an output multivector Y.  The initial contents of
+      /// Y are ignored.  X need only be in the domain Map and Y in
+      /// the range Map; this method does not require that these be
+      /// views of column Map multivectors.
+      ///
+      /// \param Y [out] Result of Gauss-Seidel; in the range Map.
+      /// \param X [in] Initial guess(es), in the domain Map.
+      /// \param B [in] Right-hand side(s), in the range Map.
+      /// \param D [in] Inverse of diagonal entries of the matrix A,
+      ///   in the row Map.
+      /// \param dampingFactor [in] SOR damping factor.  A damping
+      ///   factor of one results in Gauss-Seidel.
+      /// \param direction [in] Sweep direction: Forward, Backward, or
+      ///   Symmetric.
+      /// \param numSweeps [in] Number of sweeps.  We count each
+      ///   Symmetric sweep (including both its Forward and its
+      ///   Backward sweep) as one.
+      ///
+      /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
+      /// \pre No other argument aliases Y.
+      void
+      gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                       const Scalar& dampingFactor,
+                       const ESweepDirection direction,
+                       const int numSweeps) const;
 
       //! Indicates whether this operator supports inverting the adjoint operator.
       //! This is true.
@@ -133,7 +172,7 @@ namespace Tpetra {
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
       //@}
-    
+
     protected:
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
@@ -148,10 +187,10 @@ namespace Tpetra {
 #endif
 
       // private methods for transpose or non-transpose
-      void applyTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+      void applyTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                           Scalar alpha, Scalar beta) const;
 
-      void applyNonTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+      void applyNonTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                              Scalar alpha, Scalar beta) const;
   };
 
