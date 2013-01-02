@@ -48,7 +48,7 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity entit
 
   for (; !entity.relations().empty();) {
     stk::mesh::Entity related_entity = (entity.relations().back().entity());
-    stk::mesh::RelationIdentifier rel_id = entity.relations().back().identifier();
+    stk::mesh::RelationIdentifier rel_id = entity.relations().back().relation_ordinal();
     stk::mesh::EntityRank related_entity_rank = related_entity.entity_rank();
 
     mesh.destroy_relation( entity, related_entity, rel_id );

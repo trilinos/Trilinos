@@ -1404,7 +1404,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
       const mesh::Entity elem = side_elem[j].entity();
 
       if ( elem.bucket().member( meta_data.locally_owned_part() ) &&
-           (num_side_elem == 1 || stk::mesh::element_side_polarity(elem, side, side_elem[j].identifier())) ) {
+           (num_side_elem == 1 || stk::mesh::element_side_polarity(elem, side, side_elem[j].relation_ordinal())) ) {
         rel = &side_elem[j];
       }
     }
@@ -1416,7 +1416,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
     }
 
     elem_side_ids.push_back(rel->entity().identifier());
-    elem_side_ids.push_back(rel->identifier() + 1) ; // Ioss is 1-based, mesh is 0-based.
+    elem_side_ids.push_back(rel->relation_ordinal() + 1) ; // Ioss is 1-based, mesh is 0-based.
   }
 
   const size_t num_side_written = io.put_field_data("element_side",elem_side_ids);

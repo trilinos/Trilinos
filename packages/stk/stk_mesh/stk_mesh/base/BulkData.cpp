@@ -316,7 +316,7 @@ bool BulkData::destroy_entity( Entity entity )
   while ( ! entity.relations().empty() ) {
     destroy_relation( entity ,
                       entity.relations().back().entity(),
-                      entity.relations().back().identifier());
+                      entity.relations().back().relation_ordinal());
   }
 
   // We need to save these items and call remove_entity AFTER the call to

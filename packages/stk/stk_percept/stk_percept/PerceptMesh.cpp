@@ -3203,7 +3203,7 @@ namespace stk {
                                       {
                                         stk::mesh::Entity node_1 = elem_nodes_1[i].entity();
                                         stk::mesh::Entity node_2 = elem_nodes_2[i].entity();
-                                        if (elem_nodes_1[i].identifier() != elem_nodes_2[i].identifier())
+                                        if (elem_nodes_1[i].relation_ordinal() != elem_nodes_2[i].relation_ordinal())
                                           {
                                             msg += "| entity relations identifier diff |\n";
                                             diff = true;
@@ -3556,7 +3556,7 @@ namespace stk {
           for (unsigned irels = 0; irels < rels.size(); irels++)
             {
               stk::mesh::Entity vol_elem = rels[irels].entity();
-              if ( ! get_bulk_data()->destroy_relation(vol_elem, elem, rels[irels].identifier()))
+              if ( ! get_bulk_data()->destroy_relation(vol_elem, elem, rels[irels].relation_ordinal()))
                 {
                   throw std::logic_error("PerceptMesh::delete_side_sets couldn't remove element, destroy_relation returned false for elem.");
                 }
@@ -4230,7 +4230,7 @@ namespace stk {
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
               out << (inode != 0? ", ": "") << node.identifier();
-              out << "<" << elem_nodes[inode].identifier() << ">";
+              out << "<" << elem_nodes[inode].relation_ordinal() << ">";
             }
           out << "] ";
           if (!id_only)
@@ -4453,7 +4453,7 @@ namespace stk {
       stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
       if (element == parent)
         {
-          if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
+          if (element_to_family_tree_relations[FAMILY_TREE_PARENT].relation_ordinal() != 0)
             {
               throw std::runtime_error("isChildElement:: bad identifier in isChildElement");
             }
@@ -4514,7 +4514,7 @@ namespace stk {
           stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
           if (element == parent)
             {
-              if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
+              if (element_to_family_tree_relations[FAMILY_TREE_PARENT].relation_ordinal() != 0)
                 {
                   throw std::runtime_error("isChildElementLeaf:: bad identifier ");
                 }
@@ -4572,7 +4572,7 @@ namespace stk {
           stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
           if (element == parent)
             {
-              if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
+              if (element_to_family_tree_relations[FAMILY_TREE_PARENT].relation_ordinal() != 0)
                 {
                   throw std::runtime_error("isParentElement:: bad identifier ");
                 }

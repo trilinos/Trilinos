@@ -312,7 +312,7 @@ void BulkData::internal_propagate_part_changes(
 
   for ( ; ! rel.empty() ; ++rel ) {
     const unsigned rel_type  = rel->entity_rank();
-    const unsigned rel_ident = rel->identifier();
+    const unsigned rel_ident = rel->relation_ordinal();
 
     if ( rel_type < etype ) { // a 'to' entity
 
@@ -342,7 +342,7 @@ void BulkData::internal_propagate_part_changes(
             // Relation from to_rel->entity() to e_to
             induced_part_membership( to_rel->entity(), empty,
                                      e_to.entity_rank(),
-                                     to_rel->identifier(),
+                                     to_rel->relation_ordinal(),
                                      to_add );
           }
         }

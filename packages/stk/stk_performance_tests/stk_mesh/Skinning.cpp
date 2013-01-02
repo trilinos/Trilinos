@@ -147,7 +147,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     for (; relations_pair.first != relations_pair.second;) {
       --relations_pair.second;
       stk::mesh::Entity current_entity = (relations_pair.second->entity());
-      size_t side_ordinal = relations_pair.second->identifier();
+      size_t side_ordinal = relations_pair.second->relation_ordinal();
 
       if (mesh.in_receive_ghost(current_entity.key())) {
         // TODO deleteing the ghost triggers a logic error at the

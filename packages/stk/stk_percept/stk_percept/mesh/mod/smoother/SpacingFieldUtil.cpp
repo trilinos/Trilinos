@@ -158,7 +158,7 @@ namespace stk {
               double A_ = 0.0;
               jacA(A_, m_eMesh, element, m_eMesh.get_coordinates_field(), topology_data);
 
-              unsigned inode = node_elems[i_element].identifier();
+              unsigned inode = node_elems[i_element].relation_ordinal();
               const mesh::PairIterRelation elem_nodes = element.relations( m_eMesh.node_rank() );
               VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
               VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");

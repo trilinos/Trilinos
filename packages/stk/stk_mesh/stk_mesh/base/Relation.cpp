@@ -32,11 +32,11 @@ operator << ( std::ostream & s , const Relation & rel )
 
   if ( e.is_valid() ) {
     const MetaData & meta_data = MetaData::get(e);
-    s << "[" << rel.identifier() << "]->" ;
+    s << "[" << rel.relation_ordinal() << "]->" ;
     print_entity_key( s , meta_data , e.key() );
   }
   else {
-    s << "[" << rel.identifier() << "]->" << rel.entity_rank();
+    s << "[" << rel.relation_ordinal() << "]->" << rel.entity_rank();
   }
 
   return s ;
@@ -238,7 +238,7 @@ void induced_part_membership( const Entity entity ,
 
     induced_part_membership( rel->entity() , omit ,
                              entity.entity_rank() ,
-                             rel->identifier() ,
+                             rel->relation_ordinal() ,
                              induced_parts,
                              include_supersets);
   }

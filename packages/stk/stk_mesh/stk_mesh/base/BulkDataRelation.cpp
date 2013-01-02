@@ -172,7 +172,7 @@ void BulkData::declare_relation( Entity entity ,
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity e = i->entity();
-    const unsigned n = i->identifier();
+    const unsigned n = i->relation_ordinal();
     if ( e.entity_rank() < erank ) {
       declare_relation( entity , e , n );
     }
@@ -227,9 +227,9 @@ bool BulkData::destroy_relation( Entity e_from ,
     // these relations to the 'keep' vector
     for ( PairIterRelation i = e_to.relations(); !i.empty(); ++i ) {
       if (e_to.entity_rank() < i->entity_rank()) { // Need to look at back rels only
-        if ( !( i->entity() == e_from && i->identifier() == local_id ) ) {
+        if ( !( i->entity() == e_from && i->relation_ordinal() == local_id ) ) {
           induced_part_membership( i->entity(), empty, e_to.entity_rank(),
-                                   i->identifier(), keep,
+                                   i->relation_ordinal(), keep,
                                    false /*Do not look at supersets*/);
         }
       }
@@ -238,12 +238,12 @@ bool BulkData::destroy_relation( Entity e_from ,
     // Find the relation this is being deleted and add the parts that are
     // induced from that relation (and that are not in 'keep') to 'del'
     for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == e_to && i->identifier() == local_id ) {
+      if ( i->entity() == e_to && i->relation_ordinal() == local_id ) {
         induced_part_membership( e_from, keep, e_to.entity_rank(),
-                                 i->identifier(), del,
+                                 i->relation_ordinal(), del,
                                  false /*Do not look at supersets*/);
         clear_field_relations( e_from , e_to.entity_rank() ,
-                               i->identifier() );
+                               i->relation_ordinal() );
         break; // at most 1 relation can match our specification
       }
     }
@@ -255,9 +255,9 @@ bool BulkData::destroy_relation( Entity e_from ,
   else {
     // Just clear the field, part membership will be handled by modification end
     for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == e_to && i->identifier() == local_id ) {
+      if ( i->entity() == e_to && i->relation_ordinal() == local_id ) {
         clear_field_relations( e_from , e_to.entity_rank() ,
-                               i->identifier() );
+                               i->relation_ordinal() );
         break; // at most 1 relation can match our specification
       }
     }

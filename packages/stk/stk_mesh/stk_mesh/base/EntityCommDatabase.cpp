@@ -68,7 +68,7 @@ void pack_entity_info( CommBuffer & buf , const Entity entity )
 
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
     buf.pack<EntityKey>( relations[i].entity().key() );
-    buf.pack<unsigned>( relations[i].identifier() );
+    buf.pack<unsigned>( relations[i].relation_ordinal() );
     buf.pack<unsigned>( relations[i].attribute() );
   }
 }

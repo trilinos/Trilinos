@@ -586,7 +586,7 @@ MyNodalForceScatterAlg::apply(
 
       stk::mesh::Entity elem = iter->entity();
 
-      int local_node = iter->identifier();
+      int local_node = iter->relation_ordinal();
 
       int elem_offset = local_node*num_dof;
 

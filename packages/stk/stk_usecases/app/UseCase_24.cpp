@@ -419,7 +419,7 @@ void use_case_24_boundary_algorithm(
 	//================================================
 
         const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK);
-	const int localFaceNumber = face_elem[0].identifier();
+	const int localFaceNumber = face_elem[0].relation_ordinal();
         const CellTopologyData *topo = mesh::get_cell_topology(elem).getCellTopologyData();
 	std::vector<int> skipNode(elem_nodes.size(),0);
 

@@ -86,7 +86,7 @@ public:
   unsigned entity_rank() const ;
 
   /** \brief  The local relation identifier */
-  RelationIdentifier identifier() const ;
+  RelationIdentifier relation_ordinal() const ;
 
   /** \brief  The referenced entity */
   Entity entity() const;
@@ -207,7 +207,7 @@ private:
   }
 
   RelationIdentifier getOrdinal() const {
-    return identifier();
+    return relation_ordinal();
   }
 
   void setOrdinal(RelationIdentifier ordinal) {
@@ -263,7 +263,7 @@ unsigned Relation::entity_rank() const
 { return m_raw_relation.value >> id_digits; }
 
 inline
-RelationIdentifier Relation::identifier() const
+RelationIdentifier Relation::relation_ordinal() const
 { return unsigned( m_raw_relation.value & id_mask ); }
 
 struct LessRelation {
@@ -1049,8 +1049,8 @@ bool Relation::operator < ( const Relation & rhs ) const
   else if (getRelationType() != rhs.getRelationType()) {
     result = getRelationType() < rhs.getRelationType();
   }
-  else if (identifier() != rhs.identifier()) {
-    result = identifier() < rhs.identifier();
+  else if (relation_ordinal() != rhs.relation_ordinal()) {
+    result = relation_ordinal() < rhs.relation_ordinal();
   }
 #else
   if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
@@ -1082,7 +1082,7 @@ inline
 void Relation::setMeshObj(Entity object)
 {
   if (object.is_valid()) {
-    m_raw_relation = Relation::raw_relation_id( object.entity_rank(), identifier() );
+    m_raw_relation = Relation::raw_relation_id( object.entity_rank(), relation_ordinal() );
   }
   m_target_entity = object.m_entityImpl;
 }

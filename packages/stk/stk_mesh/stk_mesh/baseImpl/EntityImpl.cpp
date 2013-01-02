@@ -98,7 +98,7 @@ bool EntityImpl::destroy_relation( Entity e_to, const RelationIdentifier local_i
   bool destroyed_relations = false;
   for ( RelationVector::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
-    if ( i->entity() == e_to && i->identifier() == local_id ) {
+    if ( i->entity() == e_to && i->relation_ordinal() == local_id ) {
       i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
       destroyed_relations = true;
       break;

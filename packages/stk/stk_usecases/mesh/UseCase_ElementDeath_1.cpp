@@ -308,7 +308,7 @@ void find_sides_to_be_created(
       stk::mesh::PairIterRelation existing_sides = entity.relations(side_rank);
 
       for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->identifier() != side_ordinal ;
+          existing_sides.first->relation_ordinal() != side_ordinal ;
           ++existing_sides.first);
 
       //reached the end -- a new side needs to be created

@@ -311,7 +311,7 @@ void use_case_13_algorithm(
 
         // Which way is the side oriented, natural for #1 or #2 ?
 
-        if ( outward_orientation( elem1, side, side_elems[0].identifier()) ){
+        if ( outward_orientation( elem1, side, side_elems[0].relation_ordinal()) ){
           side_data[0] = elem2_data[0] - elem1_data[0] ;
           side_data[1] = elem2_data[1] - elem1_data[1] ;
           side_data[2] = elem2_data[2] - elem1_data[2] ;
@@ -380,21 +380,21 @@ mesh::Entity get_side_neighbor(
     if ( NULL != neighbor ) {
       std::cout << "neighbors( " ;
       std::cout << " Element[ " ;
-      std::cout << elem.identifier();
+      std::cout << elem.relation_ordinal();
       std::cout << " ]{" ;
       for ( int i = 0 ; i < elem_nodes.size() ; ++i ) {
-        std::cout << " " << elem_nodes[i].entity()->identifier();
+        std::cout << " " << elem_nodes[i].entity()->relation_ordinal();
       }
       std::cout << " } , Element[ " ;
-      std::cout << neighbor->identifier();
+      std::cout << neighbor->relation_ordinal();
       std::cout << " ]{" ;
       for ( int i = 0 ; i < neighbor_nodes.size() ; ++i ) {
-        std::cout << " " << neighbor_nodes[i].entity()->identifier();
+        std::cout << " " << neighbor_nodes[i].entity()->relation_ordinal();
       }
       std::cout << " } , Share { " ;
       for ( unsigned j = 0 ; j < side_top.node_count ; ++j ) {
         mesh::Entity const next_node = elem_nodes[ node_map[j] ].entity();
-        std::cout << " " << next_node->identifier();
+        std::cout << " " << next_node->relation_ordinal();
       }
       std::cout << " } )" ;
       std::cout << std::endl ;

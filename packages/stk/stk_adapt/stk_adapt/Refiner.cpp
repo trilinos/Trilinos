@@ -2653,7 +2653,7 @@ namespace stk {
                   if (!rels.size())
                     break;
                   stk::mesh::Entity to_rel = rels[0].entity();
-                  stk::mesh::RelationIdentifier to_id = rels[0].identifier();
+                  stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
 
                   bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side, to_id);
                   if (!del)
@@ -2855,7 +2855,7 @@ namespace stk {
                   if (debug) std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
                     {
-                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
+                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].relation_ordinal();
                       if (rel_id > 1)
                         throw std::logic_error("connectSides:: logic 1");
                       k_element_side = (rel_id == 0 ? 1 : 0);
@@ -2874,14 +2874,14 @@ namespace stk {
               if (existing_side == side_elem)
                 {
                   ++exists;
-                  rel_id = elem_sides[iside].identifier();
+                  rel_id = elem_sides[iside].relation_ordinal();
                 }
 
-              if (elem_sides[iside].identifier() == k_element_side ) {
+              if (elem_sides[iside].relation_ordinal() == k_element_side ) {
                 std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true); 
                 std::cout << " side= " << side_elem.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, side_elem.bucket()); m_eMesh.print(side_elem, true, true); 
                 std::cout << " existing_side= " << existing_side.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, existing_side.bucket()); m_eMesh.print(existing_side, true, true); 
-                VERIFY_OP_ON(elem_sides[iside].identifier(), !=, k_element_side, "Relation already exists!");
+                VERIFY_OP_ON(elem_sides[iside].relation_ordinal(), !=, k_element_side, "Relation already exists!");
               }
 
             }
@@ -3008,7 +3008,7 @@ namespace stk {
           if (rels.size())
             {
               stk::mesh::Entity to_rel = rels[0].entity();
-              stk::mesh::RelationIdentifier to_id = rels[0].identifier();
+              stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
               bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side_elem, to_id);
               if (!del)
                 throw std::logic_error("connectSides:: destroy_relation failed");
@@ -3025,7 +3025,7 @@ namespace stk {
                   //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
                     {
-                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
+                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].relation_ordinal();
                       if (rel_id > 1)
                         throw std::logic_error("connectSides:: logic 1");
                       k_element_side = (rel_id == 0 ? 1 : 0);

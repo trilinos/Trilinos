@@ -110,7 +110,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
     for (; rel.first != rel.second; ++rel) {
       if ( right_element == rel.first->entity() ) {
-        right_ordinal = rel.first->identifier();
+        right_ordinal = rel.first->relation_ordinal();
       }
     }
   }

@@ -704,10 +704,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
       stk::mesh::field_data( fixture.m_coord_gather_field , elem );
     for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
-      STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
+      STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].relation_ordinal() );
       stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
         stk::mesh::field_data( fixture.m_coord_field , elem_nodes[j].entity() );
-      STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
+      STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].relation_ordinal() ] );
     }
     if ( 8u == elem_nodes.size() ) {
       STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));

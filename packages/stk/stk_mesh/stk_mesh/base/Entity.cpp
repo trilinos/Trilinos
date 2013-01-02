@@ -102,7 +102,7 @@ struct IgnoreIdOrder
       result = lhs.getRelationType() < rhs.getRelationType();
     }
     else {
-      result = lhs.identifier() < rhs.identifier();
+      result = lhs.relation_ordinal() < rhs.relation_ordinal();
     }
     return result;
   }

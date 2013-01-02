@@ -82,7 +82,7 @@ bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdent
   PairIterRelation relations = entity.relations(subcell_rank);
 
   for (; !relations.empty(); ++relations) {
-    if (relations->identifier() == subcell_id) {
+    if (relations->relation_ordinal() == subcell_id) {
       found = true;
       break;
     }

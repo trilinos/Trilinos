@@ -158,7 +158,7 @@ void add_owned_sides_to_map(
       // search through existing sides
       PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->identifier() != side_ordinal ;
+          existing_sides.first->relation_ordinal() != side_ordinal ;
           ++existing_sides.first);
 
       // a relation the side was not found
@@ -211,7 +211,7 @@ void add_non_owned_sides_to_map(
       // search through existing sides
       PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->identifier() != side_ordinal ;
+          existing_sides.first->relation_ordinal() != side_ordinal ;
           ++existing_sides.first);
 
       // a relation to the side was not found

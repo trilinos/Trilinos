@@ -544,13 +544,13 @@ void Partition::internal_propagate_relocation( Entity entity )
     {
       Entity e_to = rel->entity();
 
-      set_field_relations( entity, e_to, rel->identifier() );
+      set_field_relations( entity, e_to, rel->relation_ordinal() );
     }
     else if ( erank < rel_rank )
     {
       Entity e_from = rel->entity();
 
-      set_field_relations( e_from, entity, rel->identifier() );
+      set_field_relations( e_from, entity, rel->relation_ordinal() );
     }
   }
 }

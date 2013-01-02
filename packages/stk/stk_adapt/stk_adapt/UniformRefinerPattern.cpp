@@ -209,7 +209,7 @@ namespace stk {
           // make the parent be the first relation; children are at the end
           // from->to
 #if DEBUG_MULTI_LEVEL
-          std::cout << "tmp super->parent " << family_tree->identifier() << " -> " << parent_elem.identifier() << " " << parent_elem << std::endl;
+          std::cout << "tmp super->parent " << family_tree->relation_ordinal() << " -> " << parent_elem.relation_ordinal() << " " << parent_elem << std::endl;
 #endif
           eMesh.get_bulk_data()->declare_relation(family_tree, parent_elem, FAMILY_TREE_PARENT);
           //eMesh.get_bulk_data()->declare_relation( parent_elem, *family_tree, ptft_size-1);
@@ -222,11 +222,11 @@ namespace stk {
             {
               std::cout
                 << "ptft_size= " << ptft_size << " family_tree= " << family_tree
-                << " family_tree_id= " << family_tree->identifier() << std::endl;
+                << " family_tree_id= " << family_tree->relation_ordinal() << std::endl;
               for (unsigned k = 0; k < ptft_size; k++)
                 {
                   stk::mesh::Entity ft = parent_to_family_tree_relations[k].entity();
-                  std::cout << "ft= " << ft << " ft_id= " << ft->identifier() << std::endl;
+                  std::cout << "ft= " << ft << " ft_id= " << ft->relation_ordinal() << std::endl;
                 }
             }
           VERIFY_OP_ON(family_tree, ==, parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity(),"err2");
@@ -272,7 +272,7 @@ namespace stk {
 
 #if DEBUG_MULTI_LEVEL
       std::cout << "tmp parent_to_family_tree_relations_size_0 = " << parent_to_family_tree_relations_size_0 << " parent_to_family_tree_relations_size_1= " << parent_to_family_tree_relations_size_1 << std::endl;
-      std::cout << "tmp super->child " << family_tree->identifier() << " -> " << newElement.identifier() << " [" << (ordinal+1) << "]" << newElement << std::endl;
+      std::cout << "tmp super->child " << family_tree->relation_ordinal() << " -> " << newElement.relation_ordinal() << " [" << (ordinal+1) << "]" << newElement << std::endl;
 #endif
 
       // error check
@@ -281,7 +281,7 @@ namespace stk {
           mesh::PairIterRelation family_tree_relations = family_tree.relations(parent_elem.entity_rank());
           for (unsigned i = 1; i < family_tree_relations.size(); i++)
             {
-              if (family_tree_relations[i].identifier() == (ordinal + 1))
+              if (family_tree_relations[i].relation_ordinal() == (ordinal + 1))
                 {
                   std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal ["
                             << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size() << std::endl;
@@ -535,7 +535,7 @@ namespace stk {
           if (rels.size())
             {
               stk::mesh::Entity to_rel = rels[0].entity();
-              stk::mesh::RelationIdentifier to_id = rels[0].identifier();
+              stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
               bool del = eMesh.get_bulk_data()->destroy_relation( to_rel, side_elem, to_id);
               if (!del)
                 throw std::logic_error("connectSides:: destroy_relation failed");
@@ -552,7 +552,7 @@ namespace stk {
                   //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
                     {
-                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
+                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].relation_ordinal();
                       if (rel_id > 1)
                         throw std::logic_error("connectSides:: logic 1");
                       k_element_side = (rel_id == 0 ? 1 : 0);

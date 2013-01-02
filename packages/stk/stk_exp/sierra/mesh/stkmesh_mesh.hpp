@@ -72,7 +72,7 @@ add_relation(mesh_traits<stk::mesh::BulkData>::entity_key entity_from,
 
   stk::mesh::PairIterRelation rels = entity_from.relations(entity_to.entity_rank());
   for ( ; !rels.empty(); ++rels) {
-    if (rels->identifier() == relation_position && rels->entity() == entity_to) {
+    if (rels->relation_ordinal() == relation_position && rels->entity() == entity_to) {
       return *rels;
     }
   }
@@ -86,7 +86,7 @@ mesh_traits<stk::mesh::BulkData>::relation_position
 get_relation_position(const mesh_traits<stk::mesh::BulkData>::relation_descriptor& relation,
                       stk::mesh::BulkData& mesh)
 {
-  return relation.identifier();
+  return relation.relation_ordinal();
 }
 
 // Remove this relation from the mesh.

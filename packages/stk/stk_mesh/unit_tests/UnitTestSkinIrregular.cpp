@@ -280,7 +280,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 0);
+        STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 0);
 
         ++shell_side_relations;
 
@@ -292,7 +292,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 1);
+        STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 1);
 
       }
     }
@@ -314,7 +314,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 0);
+        STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 0);
 
         ++shell_side_relations;
 
@@ -326,7 +326,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 1);
+        STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 1);
 
       }
     }
@@ -404,7 +404,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
       stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
-        unsigned local_side_id = element_side_relations->identifier();
+        unsigned local_side_id = element_side_relations->relation_ordinal();
         bool correct_side_skinned = local_side_id > 0 && local_side_id < 6;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
@@ -420,7 +420,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
       stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 1);
       for (; !element_side_relations.empty(); ++element_side_relations) {
-        unsigned local_side_id = element_side_relations->identifier();
+        unsigned local_side_id = element_side_relations->relation_ordinal();
         bool correct_side_skinned = local_side_id == 0;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Shell local side id: " << local_side_id << std::endl;
@@ -501,7 +501,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
       stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
       for (; !element_side_relations.empty(); ++element_side_relations) {
-        unsigned local_side_id = element_side_relations->identifier();
+        unsigned local_side_id = element_side_relations->relation_ordinal();
         bool correct_side_skinned = local_side_id < 6;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
@@ -517,10 +517,10 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
       stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 2);
       for (; !element_side_relations.empty(); ++element_side_relations) {
-        unsigned local_side_id = element_side_relations->identifier();
+        unsigned local_side_id = element_side_relations->relation_ordinal();
         bool correct_side_skinned = local_side_id < 2;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
-        std::cout << "Shell local side id: " << element_side_relations->identifier() << std::endl;
+        std::cout << "Shell local side id: " << element_side_relations->relation_ordinal() << std::endl;
       }
     }
   }
@@ -617,7 +617,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
       stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
-        unsigned local_side_id = element_side_relations->identifier();
+        unsigned local_side_id = element_side_relations->relation_ordinal();
         bool correct_side_skinned = local_side_id > 0 && local_side_id < 6;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
@@ -653,10 +653,10 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
         //local_side_id 0.
         //shell 3 should have it's side on local_side_1d 1
         if (shell_id != 4) {
-          STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 0);
+          STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 0);
         }
         else {
-          STKUNIT_EXPECT_TRUE( shell_side_relations->identifier() == 1);
+          STKUNIT_EXPECT_TRUE( shell_side_relations->relation_ordinal() == 1);
         }
       }
     }
