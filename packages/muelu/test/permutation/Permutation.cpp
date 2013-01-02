@@ -100,6 +100,7 @@ Teuchos::RCP<const Epetra_CrsMatrix> GetEpetraMatrix(std::string name, const Teu
 
 bool runPermutationTest(const std::string input_filename, const std::string expected_filename, const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
 
+#ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
@@ -185,7 +186,7 @@ bool runPermutationTest(const std::string input_filename, const std::string expe
     }
 
   }
-
+#endif
   *out << "-- FAILED --: " << input_filename << " no result file found" << std::endl;
   return false; // no result for comparison available
 }
@@ -198,11 +199,15 @@ int main(int argc, char *argv[]) {
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  //runPermutationTest(MatrixFileName, ExpectedFileName, comm);
-  runPermutationTest("test1.txt", "exp1.txt", comm);
-  runPermutationTest("test2.txt", "exp2.txt", comm);
-  runPermutationTest("test3.txt", "exp3.txt", comm);
-
+  bool bSuccess = true;
+#ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
+  //runPermutationTest(MatrixFileName, ExpectedFileName, comm)
+  if(runPermutationTest("test1.txt", "exp1.txt", comm) == false) bSuccess = false;
+  if(runPermutationTest("test2.txt", "exp2.txt", comm) == false) bSuccess = false;
+  if(runPermutationTest("test3.txt", "exp3.txt", comm) == false) bSuccess = false;
+#endif
+  if(bSuccess == false)
+    return EXIT_FAILURE;
   return EXIT_SUCCESS;
 }
 
