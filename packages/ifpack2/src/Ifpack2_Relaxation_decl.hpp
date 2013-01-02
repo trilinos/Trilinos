@@ -62,7 +62,7 @@ enum RelaxationType {
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
-\tparam MatrixType A specialization of Tpetra::RowMatrix or Tpetra::CrsMatrix.
+\tparam MatrixType A specialization of Tpetra::CrsMatrix.
 
 \section Ifpack_Relaxation_Summary Summary
 
@@ -84,7 +84,7 @@ methods include an "L1" option, which can improve convergence by
 weighting contributions near process boundaries differently.  For more
 details, please refer to the following publication:
 
-A. H. Baker, R. D. Falgout, T. V. Kolev, and U. M. Yang.  
+A. H. Baker, R. D. Falgout, T. V. Kolev, and U. M. Yang.
 "Multigrid Smoothers for Ultraparallel Computing."
 <i>SIAM J. Sci. Comput.</i>, Vol. 33, No. 5. (2011),
 pp. 2864-2887.
@@ -112,7 +112,52 @@ Tpetra::CrsMatrix specialization as the \c MatrixType template
 parameter, rather than a Tpetra::RowMatrix specialization.  (This
 matters if you are using a nondefault value of the fifth template
 parameter of Tpetra::CrsMatrix.)
- 
+
+\section Ifpack_Relaxation_Create Creating a Relaxation preconditioner
+
+The following code snippet shows how to create a Relaxation
+preconditioner.
+
+\code
+#include "Ifpack2_Relaxation.hpp"
+
+...
+using Teuchos::ParameterList;
+using Teuchos::RCP;
+typedef double ST;
+typedef int    LO;
+typedef int    GO;
+typedef Tpetra::CrsMatrix<ST, LO, GO> crs_matrix_type;
+typedef Ifpack2::Preconditioner<ST, LO, GO> precond_type;
+...
+
+// Create the sparse matrix A somehow.  It must be fill complete
+// before you may create an Ifpack2 preconditioner from it.
+RCP<crs_matrix_type> A = ...;
+
+// Create the relaxation.  You could also do this using
+// Ifpack2::Factory (the preconditioner factory) if you like.
+precond_type prec (A);
+
+// Make the list of relaxation parameters.
+Teuchos::ParameterList params;
+// Do symmetric SOR / Gauss-Seidel.
+params.set ("relaxation: type", "Symmetric Gauss-Seidel");
+// Two sweeps (of symmetric SOR / Gauss-Seidel) per apply() call.
+params.set ("relaxation: sweeps", 2);
+// ... Set any other parameters you want to set ...
+
+// Set parameters.
+prec.setParameters (params);
+
+// Prepare the relaxation instance for use.
+prec.initialize ();
+prec.compute ();
+
+// Now prec may be used as a preconditioner or smoother,
+// by calling its apply() method, just like any Tpetra::Operator.
+\endcode
+
 \section Ifpack_Relaxation_Algorithms Algorithms
 
 We now briefly describe the relaxation algorithms this class
@@ -120,49 +165,62 @@ implements.  Consider a linear system of type
 \f[
 A x = b,
 \f]
-where \f$A\f$ is a square matrix, and \f$x, b\f$ are two compatible
-vectors. We begin with the decomposition
-\f[
-A = D - E - F
-\f]
-where \f$D\f$ is the diagonal of \f$A\f$, \f$-E\f$ is the strict lower
-part of \f$A\f$, and \f$-F\f$ is the strict upper part of \f$A\f$.  We
-assume that the diagonal entries of \f$A\f$ are all nonzero.
+where \f$A\f$ is a square matrix, and \f$x\f$, \f$b\f$ are two vectors
+of compatible dimensions.  Suppose that \f$x^{(0)}\f$ is the starting
+vector and \f$x^{(k)}\f$ is the approximate solution for \f$x\f$
+computed by iteration $k+1$.  Here, \f$x^{(k)}_i\f$ is the $i$-th
+element of vector \f$x^{(k)}\f$.
 
-Given an starting solution \f$x_0\f$, an iteration of the (damped) Jacobi
-method can be written in matrix form as follows:
+The Jacobi method computes
 \f[
-x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
+x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
-
-Users may specify the number of sweeps (\f$k_{max}\f$) and the damping
-parameter \f$\omega \f$. If only one sweep is used, then this class
-simply applies the inverse of the diagonal of \f$A\f to the input
-vector.
-
-Given a starting solution \f$x_0\f$, an iteration of the (damped)
-Gauss-Seidel method can be written in matrix form as follows:
+The "damped" Jacobi method generalizes Jacobi.  It introduces a
+damping parameter \f$\omega \f$, and computes
 \f[
-(D - E) x_{k+1} = \omega F x_k + b,
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
 \f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter. Equivalently,
-the Gauss-Seidel preconditioner can be defined as
-\f[
-P_{GS}^{-1} = (D - E)^{-1}.
-\f]
-Clearly, the roles of \f$E\f$ and \f$F\f$ can be interchanged.  Users
-may interchange \f$E\f$ and \f$F\f$ by setting the "relaxation: backward mode"
-option.
 
-For a list of supported parameters, please refer to the documentation 
-of the setParameters() method.
+The "damped Gauss-Seidel method" is actually successive over-relaxation
+(SOR), with Gauss-Seidel as a special case when the damping parameter
+\f$\omega = 1\f$.  We implement has two different sweep directions: Forward and
+Backward.  The Forward sweep direction computes
+\f[
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j < i} A_{ij} x^{(k+1)}_j - \sum_{j > i} A_{ij} x^{(k)}_j ),
+\f]
+and the Backward sweep direction computes
+\f[
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j > i} A_{ij} x^{(k+1)}_j - \sum_{j < i} A_{ij} x^{(k)}_j ),
+\f]
+Users may set the sweep direction via the "relaxation: backward mode"
+option.  See the documentation of setParameters() for details.
+
+Gauss-Seidel / SOR also comes in a symmetric version.  This method
+first does a Forward sweep, then a Backward sweep.  Only the symmetric
+version of this preconditioner is guaranteed to be symmetric (or Hermitian,
+if the matrix's data are complex).
+
+Users may set the relaxation method via the "relaxation: type"
+parameter.  For all relaxation methods, users may specify the number
+of sweeps per call to apply() and the damping parameter \f$\omega \f$.
+For a list of all supported parameters, please refer to the
+documentation of the setParameters() method.  For advice on picking
+\f$\omega \f$ for a preconditioner, please refer to the following
+book: "Templates for the Solution of Linear Systems: Building Blocks
+for Iterative Methods, 2nd Edition," R. Barrett et al., SIAM, 1994.
+
+Note that this class does not actually use the formulae above to apply
+Jacobi or SOR.  For example, we optimize the formulae to avoid branches.
 */
 template<class MatrixType>
-class Relaxation : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-
+class Relaxation :
+  virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                         typename MatrixType::local_ordinal_type,
+                                         typename MatrixType::global_ordinal_type,
+                                         typename MatrixType::node_type>
+{
 public:
-  //! \name Typedefs
+  //! @name Typedefs
   //@{
 
   //! The type of the entries of the input MatrixType.
@@ -200,18 +258,50 @@ public:
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
-  //! \name Constructors and Destructors
-  //@{ 
+  //! @name Constructors and destructors
+  //@{
 
-  //! Relaxation constructor with given Tpetra::RowMatrix input.
+  /// \brief Constructor.
+  ///
+  /// \param Matrix [in] The matrix for which to make the constructor.
+  ///   Tpetra::RowMatrix is the base class of Tpetra::CrsMatrix, so
+  ///   you may give either a Tpetra::RowMatrix or a Tpetra::CrsMatrix
+  ///   here.
+  ///
+  /// The results of apply() are undefined if you change the diagonal
+  /// entries of the sparse matrix after invoking this constructor.
+  /// In particular, the compute() method may extract the diagonal
+  /// entries and precompute their inverses, in order to speed up
+  /// Gauss-Seidel or to implement the L1 version of various
+  /// relaxation methods.  If you plan to change the diagonal entries
+  /// of the matrix after making a Relaxation instance with that
+  /// matrix, you must destroy the old Relaxation instance and create
+  /// a new one after changing the diagonal entries.
+  ///
+  /// The "explicit" keyword just means that you must invoke the
+  /// Relaxation constructor explicitly; you aren't allowed to use it
+  /// as an implicit conversion ("cast").  For example, you may do
+  /// this (namespaces and Tpetra template parameters omitted for
+  /// brevity):
+  /// \code
+  /// RCP<const CrsMatrix<...> > A = ...;
+  /// Relaxation<CrsMatrix<...> > R (A);
+  /// \endcode
+  /// but you may not do this:
+  /// \code
+  /// void foo (const Relaxation<CrsMatrix<...> >& R);
+  ///
+  /// RCP<const CrsMatrix<...> > A = ...;
+  /// foo (A);
+  /// \endcode
   explicit Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix);
 
-  //! Relaxation Destructor.
+  //! Destructor.
   virtual ~Relaxation();
 
   //@}
-
-  //@{ \name Preconditioner computation methods
+  //! @name Preconditioner computation methods
+  //@{
 
   /// \brief Set the relaxation / preconditioner parameters.
   ///
@@ -258,7 +348,9 @@ public:
   ///
   /// The last two parameters govern the L1 variant of Gauss-Seidel.
   /// The "relaxation: use l1" (bool) parameter, if true, turns on the
-  /// L1 variant.  It is false by default.  The "relaxation: l1 eta"
+  /// L1 variant.  (In "l1", the first character is a lower-case L,
+  /// and the second character is the numeral 1 (one).)  This
+  /// parameter's value is false by default.  The "relaxation: l1 eta"
   /// (magnitude_type) parameter is the \f$\eta \f$ parameter
   /// associated with that method; its default value is 1.5.  Recall
   /// that "magnitude_type" is the type of the absolute value of a
@@ -285,21 +377,24 @@ public:
   }
 
   //@}
+  //! @name Implementation of the Tpetra::Operator interface
+  //@{
 
-  //! @name Methods implementing a Tpetra::Operator interface.
-  //@{ 
-
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
-
-    \return Integer error code, set to 0 if successful.
-
-    \warning This routine is NOT AztecOO compliant.
-  */
+  /// \brief Apply the preconditioner to X, returning the result in Y.
+  ///
+  /// This method computes Y = beta*Y + alpha*M*X, where M*X
+  /// represents the action of the preconditioner on the input
+  /// multivector X.
+  ///
+  /// \param X [in] The multivector input of the preconditioner.
+  /// \param Y [in/out] The multivector output of the preconditioner.
+  /// \param mode [in] Whether to apply the transpose or conjugate
+  ///   transpose of the preconditioner.  Not all preconditioners
+  ///   support options other than the default (no transpose); please
+  ///   call hasTransposeApply() to determine whether nondefault
+  ///   options are supported.
+  /// \param alpha [in] Scaling factor for the preconditioned input.
+  /// \param beta [in] Scaling factor for the output.
   void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -312,183 +407,207 @@ public:
   //! Returns the Tpetra::Map object associated with the range of this operator.
   const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
 
+  //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
   bool hasTransposeApply() const;
 
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*! 
-    \param 
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
+  /// \brief Apply the preconditioner to X, returning the result in Y.
+  ///
+  /// This method computes Y = M*X, where M*X represents the action of
+  /// the preconditioner on the input multivector X.
+  ///
+  /// \param X [in] The multivector input of the preconditioner.
+  /// \param Y [in/out] The multivector output of the preconditioner.
+  /// \param mode [in] Whether to apply the transpose or conjugate
+  ///   transpose of the preconditioner.  Not all preconditioners
+  ///   support options other than the default (no transpose); please
+  ///   call hasTransposeApply() to determine whether nondefault
+  ///   options are supported.
   void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
-
+  //! @name Mathematical functions
   //@{
-  //! \name Mathematical functions.
 
-  //! Computes the estimated condition number and returns the value.
-  magnitude_type computeCondEst(CondestType CT = Cheap, 
+  /// \brief Computes and returns the estimated condition number.
+  ///
+  /// We use an iterative process to estimate the condition number.
+  /// You can control the number of iterations we use, the iteration
+  /// tolerance, and how hard to work at estimating.
+  ///
+  /// \param CondestType [in] How hard to work at estimating the
+  ///   condition number.  \c Cheap means not very hard.
+  /// \param MaxIters [in] Maximum number of iterations for estimating
+  ///   the condition number.
+  /// \param Tol [in] Iteration tolerance.
+  magnitude_type computeCondEst(CondestType CT = Cheap,
                                local_ordinal_type MaxIters = 1550,
                                magnitude_type Tol = 1e-9,
                                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
+  //! @name Attribute accessor methods
+  //@{
 
-  //@{ 
-  //! \name Attribute accessor methods
-
-  //! Returns the computed estimated condition number, or -1.0 if no computed.
+  /// \brief The computed estimated condition number, or -1 if not previously computed.
+  ///
+  /// If you haven't yet called computeCondEst(), then this method returns -1.
   magnitude_type getCondEst() const;
 
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  //! The communicator over which the matrix and vectors are distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
-  //! Returns a reference to the matrix to be preconditioned.
+  //! The matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
 
-  //! Returns the number of flops in the computation phase.
+  //! Total number of floating-point operations over all calls to compute().
   double getComputeFlops() const;
 
-  //! Returns the number of flops for the application of the preconditioner.
+  //! Total number of floating-point operations over all calls to apply().
   double getApplyFlops() const;
 
-  //! Returns the number of calls to initialize().
+  //! Total number of calls to initialize().
   int getNumInitialize() const;
 
-  //! Returns the number of calls to compute().
+  //! Total number of calls to compute().
   int getNumCompute() const;
 
-  //! Returns the number of calls to apply().
+  //! Total number of calls to apply().
   int getNumApply() const;
 
-  //! Returns the time spent in initialize().
+  //! Total time in seconds spent in all calls to initialize().
   double getInitializeTime() const;
 
-  //! Returns the time spent in compute().
+  //! Total time in seconds spent in all calls to compute().
   double getComputeTime() const;
 
-  //! Returns the time spent in apply().
+  //! Total time in seconds spent in all calls to apply().
   double getApplyTime() const;
 
   //@}
-
-  //! @name Overridden from Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable interface
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
+  //! A simple one-line description of this object.
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
+  //! Print the object with some verbosity level to a Teuchos::FancyOStream.
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
 private:
 
-  // @{ Internal methods
+  //! @name Unimplemented methods that you are syntactically forbidden to call.
+  //@{
 
-  //! Copy constructor (should never be used)
-  Relaxation(const Relaxation<MatrixType>& RHS);
+  //! Copy constructor (not implemented; you are not allowed to call this).
+  Relaxation (const Relaxation<MatrixType>& RHS);
 
-  //! operator= (should never be used)
-  Relaxation<MatrixType>& operator=(const Relaxation<MatrixType>& RHS);
+  //! Assignment operator (not implemented; you are not allowed to call this).
+  Relaxation<MatrixType>& operator= (const Relaxation<MatrixType>& RHS);
 
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
+  //@}
+  //! @name Internal methods
+  //@{
+
+  //! Apply Jacobi to X, returning the result in Y.
   void ApplyInverseJacobi(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
-  //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
+  //! Apply Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
   void ApplyInverseGS_CrsMatrix(
         const MatrixType& A,
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
-  //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
+  //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply symmetric Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
   void ApplyInverseSGS_CrsMatrix(
         const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
+  //! @name Internal data and parameters
+  //@{
 
-  // @{ Internal data and parameters
-
-  //! reference to the matrix to be preconditioned
+  //! The matrix for which to construct the preconditioner or smoother.
   const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  //! Reference to the communicator object
+  //! Communicator over whose processes the matrix and vectors are distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
-  //! Importer for parallel GS and SGS
+  //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
-  //! Number of application of the preconditioner (should be greater than 0).
+  //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
-  //! Which type of point relaxation approach to use
+  //! Which relaxation method to use.
   int PrecType_;
   //! Minimum diagonal value
   scalar_type MinDiagonalValue_;
-  //! Damping factor.
+  //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
-  //! Backward-Mode Gauss Seidel 
+  //! If true, do backward-mode Gauss-Seidel.
   bool DoBackwardGS_;
-  //! Do L1 Jacobi/GS/SGS
+  //! If true, do the L1 version of Jacobi, Gauss-Seidel, or symmetric Gauss-Seidel.
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   magnitude_type L1Eta_;
   //! Condition number estimate
   magnitude_type Condest_;
-  //! If \c true, the preconditioner has been computed successfully.
+  //! If \c true, the preconditioner has been initialized successfully.
   bool IsInitialized_;
   //! If \c true, the preconditioner has been computed successfully.
   bool IsComputed_;
-  //! Contains the number of successful calls to initialize().
+  //! The number of successful calls to initialize().
   int NumInitialize_;
-  //! Contains the number of successful call to compute().
+  //! the number of successful calls to compute().
   int NumCompute_;
-  //! Contains the number of successful call to apply().
+  //! The number of successful calls to apply().
   mutable int NumApply_;
-  //! Contains the time for all successful calls to initialize().
+  //! Total time in seconds for all successful calls to initialize().
   double InitializeTime_;
-  //! Contains the time for all successful calls to compute().
+  //! Total time in seconds for all successful calls to compute().
   double ComputeTime_;
-  //! Contains the time for all successful calls to apply().
+  //! Total time in seconds for all successful calls to apply().
   mutable double ApplyTime_;
-  //! Contains the number of flops for compute().
+  //! The total number of floating-point operations for all successful calls to compute().
   double ComputeFlops_;
-  //! Contain sthe number of flops for apply().
+  //! The total number of floating-point operations for all successful calls to apply().
   mutable double ApplyFlops_;
-  //! Number of local rows.
+  //! Number of local rows in the sparse matrix.
   size_t NumMyRows_;
-  //! Number of global rows.
+  //! Number of global rows in the sparse matrix.
   global_size_t NumGlobalRows_;
-  //! Number of global nonzeros.
+  //! Number of global nonzeros in the sparse matrix.
   global_size_t NumGlobalNonzeros_;
 
   //@}
