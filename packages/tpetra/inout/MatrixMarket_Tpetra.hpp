@@ -111,75 +111,75 @@ namespace Tpetra {
 #endif // HAVE_MPI
 
       template<class IntType>
-      void 
-      gather (const IntType sendbuf[], const int sendcnt, 
-	      IntType recvbuf[], const int recvcnt, 
-	      const int root, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+      void
+      gather (const IntType sendbuf[], const int sendcnt,
+              IntType recvbuf[], const int recvcnt,
+              const int root, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
       {
-	using Teuchos::RCP;
-	using Teuchos::rcp_dynamic_cast;
+        using Teuchos::RCP;
+        using Teuchos::rcp_dynamic_cast;
 #ifdef HAVE_MPI
-	using Teuchos::MpiComm;
+        using Teuchos::MpiComm;
 
-	// Get the raw MPI communicator, so we don't have to wrap MPI_Gather in Teuchos.
-	RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
-	if (! mpiComm.is_null ()) {
-	  MPI_Datatype sendtype = getMpiDatatype<IntType> ();
-	  MPI_Datatype recvtype = sendtype;
-	  MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
-	  const int err = MPI_Gather (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)), 
-				      sendcnt, 
-				      sendtype,
-				      reinterpret_cast<void*> (recvbuf), 
-				      recvcnt, 
-				      recvtype,
-				      root, 
-				      rawMpiComm);
-	  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Gather failed");
-	  return;
-	}
-#endif // HAVE_MPI	
-	TEUCHOS_TEST_FOR_EXCEPTION(recvcnt > sendcnt, std::invalid_argument, "Can't receive more than you send, for the serial communicator case.");
-	// Serial communicator case: just copy.  recvcnt is the
-	// amount to receive, so it's the amount to copy.
-	std::copy (sendbuf, sendbuf + recvcnt, recvbuf);
+        // Get the raw MPI communicator, so we don't have to wrap MPI_Gather in Teuchos.
+        RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
+        if (! mpiComm.is_null ()) {
+          MPI_Datatype sendtype = getMpiDatatype<IntType> ();
+          MPI_Datatype recvtype = sendtype;
+          MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+          const int err = MPI_Gather (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)),
+                                      sendcnt,
+                                      sendtype,
+                                      reinterpret_cast<void*> (recvbuf),
+                                      recvcnt,
+                                      recvtype,
+                                      root,
+                                      rawMpiComm);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Gather failed");
+          return;
+        }
+#endif // HAVE_MPI
+        TEUCHOS_TEST_FOR_EXCEPTION(recvcnt > sendcnt, std::invalid_argument, "Can't receive more than you send, for the serial communicator case.");
+        // Serial communicator case: just copy.  recvcnt is the
+        // amount to receive, so it's the amount to copy.
+        std::copy (sendbuf, sendbuf + recvcnt, recvbuf);
       }
 
       template<class IntType>
-      void 
-      gatherv (const IntType sendbuf[], const int sendcnt, 
-	       IntType recvbuf[], const int recvcnts[], const int displs[],
-	       const int root, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+      void
+      gatherv (const IntType sendbuf[], const int sendcnt,
+               IntType recvbuf[], const int recvcnts[], const int displs[],
+               const int root, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
       {
-	using Teuchos::RCP;
-	using Teuchos::rcp_dynamic_cast;
+        using Teuchos::RCP;
+        using Teuchos::rcp_dynamic_cast;
 #ifdef HAVE_MPI
-	using Teuchos::MpiComm;
+        using Teuchos::MpiComm;
 
-	// Get the raw MPI communicator, so we don't have to wrap MPI_Gather in Teuchos.
-	RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
-	if (! mpiComm.is_null ()) {
-	  MPI_Datatype sendtype = getMpiDatatype<IntType> ();
-	  MPI_Datatype recvtype = sendtype;
-	  MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
-	  const int err = MPI_Gatherv (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)), 
-				       sendcnt, 
-				       sendtype,
-				       reinterpret_cast<void*> (recvbuf),
-				       const_cast<int*> (recvcnts), 
-				       const_cast<int*> (displs), 
-				       recvtype,
-				       root, 
-				       rawMpiComm);
-	  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Gatherv failed");
-	  return;
-	}
-#endif // HAVE_MPI	
-	TEUCHOS_TEST_FOR_EXCEPTION(recvcnts[0] > sendcnt, std::invalid_argument, "Can't receive more than you send, for the serial communicator case.");
-	// Serial communicator case: just copy.  recvcnts[0] is the
-	// amount to receive, so it's the amount to copy.  Start
-	// writing to recvbuf at the offset displs[0].
-	std::copy (sendbuf, sendbuf + recvcnts[0], recvbuf + displs[0]);
+        // Get the raw MPI communicator, so we don't have to wrap MPI_Gather in Teuchos.
+        RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
+        if (! mpiComm.is_null ()) {
+          MPI_Datatype sendtype = getMpiDatatype<IntType> ();
+          MPI_Datatype recvtype = sendtype;
+          MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+          const int err = MPI_Gatherv (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)),
+                                       sendcnt,
+                                       sendtype,
+                                       reinterpret_cast<void*> (recvbuf),
+                                       const_cast<int*> (recvcnts),
+                                       const_cast<int*> (displs),
+                                       recvtype,
+                                       root,
+                                       rawMpiComm);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Gatherv failed");
+          return;
+        }
+#endif // HAVE_MPI
+        TEUCHOS_TEST_FOR_EXCEPTION(recvcnts[0] > sendcnt, std::invalid_argument, "Can't receive more than you send, for the serial communicator case.");
+        // Serial communicator case: just copy.  recvcnts[0] is the
+        // amount to receive, so it's the amount to copy.  Start
+        // writing to recvbuf at the offset displs[0].
+        std::copy (sendbuf, sendbuf + recvcnts[0], recvbuf + displs[0]);
       }
 
       // Given an arbitrary Map, compute a Map containing all the GIDs
@@ -189,89 +189,89 @@ namespace Tpetra {
       Teuchos::RCP<const MapType>
       computeGatherMap (Teuchos::RCP<const MapType> map)
       {
-	using Tpetra::createOneToOne;
-	using Teuchos::Array;
-	using Teuchos::ArrayRCP;
-	using Teuchos::ArrayView;
-	using Teuchos::as;
-	using Teuchos::Comm;
-	using Teuchos::RCP;
-	typedef typename MapType::local_ordinal_type LO;
-	typedef typename MapType::global_ordinal_type GO;
-	typedef typename MapType::node_type NT;
+        using Tpetra::createOneToOne;
+        using Teuchos::Array;
+        using Teuchos::ArrayRCP;
+        using Teuchos::ArrayView;
+        using Teuchos::as;
+        using Teuchos::Comm;
+        using Teuchos::RCP;
+        typedef typename MapType::local_ordinal_type LO;
+        typedef typename MapType::global_ordinal_type GO;
+        typedef typename MapType::node_type NT;
 
-	RCP<const MapType> oneToOneMap;
-	if (map->isContiguous ()) {
-	  oneToOneMap = map;
-	}
-	else {
-	  oneToOneMap = createOneToOne<LO, GO, NT> (map);
-	}
+        RCP<const MapType> oneToOneMap;
+        if (map->isContiguous ()) {
+          oneToOneMap = map;
+        }
+        else {
+          oneToOneMap = createOneToOne<LO, GO, NT> (map);
+        }
 
-	RCP<const MapType> gatherMap;
-	RCP<const Comm<int> > comm = map->getComm ();
-	const int numProcs = comm->getSize ();
-	const int myRank = comm->getRank ();
+        RCP<const MapType> gatherMap;
+        RCP<const Comm<int> > comm = map->getComm ();
+        const int numProcs = comm->getSize ();
+        const int myRank = comm->getRank ();
 
-	if (numProcs > 1) {
-	  const int rootProc = 0;
+        if (numProcs > 1) {
+          const int rootProc = 0;
 
-	  // Gather each process' count of Map elements to Proc 0,
-	  // into the recvCounts array.  This will tell Proc 0 how
-	  // many GIDs to expect from each process when calling
-	  // MPI_Gatherv.  Counts and offsets are all int, because
-	  // that's what MPI uses.  Teuchos::as will at least prevent
-	  // bad casts to int in a debug build.
-	  //
-	  // Yeah, it's not memory scalable.  Guess what: We're going
-	  // to bring ALL the data to Proc 0, not just the receive
-	  // counts.  The first MPI_Gather is only the beginning...
-	  // Seriously, if you want to make this memory scalable, the
-	  // right thing to do (after the Export to the one-to-one
-	  // Map) is to go round robin through the processes, having
-	  // each send a chunk of data (with its GIDs, to get the
-	  // order of rows right) at a time, and overlapping writing
-	  // to the file (resp. reading from it) with receiving (resp.
-	  // sending) the next chunk.
-	  const int myEltCount = as<int> (oneToOneMap->getGlobalNumElements ());
-	  const int numProcs = comm->getSize ();
-	  Array<int> recvCounts (numProcs);
-	  gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
+          // Gather each process' count of Map elements to Proc 0,
+          // into the recvCounts array.  This will tell Proc 0 how
+          // many GIDs to expect from each process when calling
+          // MPI_Gatherv.  Counts and offsets are all int, because
+          // that's what MPI uses.  Teuchos::as will at least prevent
+          // bad casts to int in a debug build.
+          //
+          // Yeah, it's not memory scalable.  Guess what: We're going
+          // to bring ALL the data to Proc 0, not just the receive
+          // counts.  The first MPI_Gather is only the beginning...
+          // Seriously, if you want to make this memory scalable, the
+          // right thing to do (after the Export to the one-to-one
+          // Map) is to go round robin through the processes, having
+          // each send a chunk of data (with its GIDs, to get the
+          // order of rows right) at a time, and overlapping writing
+          // to the file (resp. reading from it) with receiving (resp.
+          // sending) the next chunk.
+          const int myEltCount = as<int> (oneToOneMap->getGlobalNumElements ());
+          const int numProcs = comm->getSize ();
+          Array<int> recvCounts (numProcs);
+          gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
 
-	  ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
-	  const int numMyGlobalElts = as<int> (myGlobalElts.size ());
-	  // Only Proc 0 needs to receive and store all the GIDs (from
-	  // all processes).
-	  ArrayRCP<GO> allGlobalElts;
-	  if (myRank == 0) {
-	    allGlobalElts = arcp<GO> (oneToOneMap->getGlobalNumElements ());
-	    std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
-	  }
-	  const int numAllGlobalElts = as<int> (allGlobalElts.size ());
+          ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
+          const int numMyGlobalElts = as<int> (myGlobalElts.size ());
+          // Only Proc 0 needs to receive and store all the GIDs (from
+          // all processes).
+          ArrayRCP<GO> allGlobalElts;
+          if (myRank == 0) {
+            allGlobalElts = arcp<GO> (oneToOneMap->getGlobalNumElements ());
+            std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
+          }
+          //const int numAllGlobalElts = as<int> (allGlobalElts.size ());
 
-	  // Displacements for gatherv() in this case (where we are
-	  // gathering into a contiguous array) are an exclusive
-	  // partial sum (first entry is zero, second starts the
-	  // partial sum) of recvCounts.
-	  Array<int> displs (numProcs, 0);
-	  std::partial_sum (recvCounts.begin (), recvCounts.end () - 1, displs.begin () + 1);
-	  gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts, 
-		       allGlobalElts.getRawPtr (), recvCounts.getRawPtr (), displs.getRawPtr (), 
-		       rootProc, comm);
+          // Displacements for gatherv() in this case (where we are
+          // gathering into a contiguous array) are an exclusive
+          // partial sum (first entry is zero, second starts the
+          // partial sum) of recvCounts.
+          Array<int> displs (numProcs, 0);
+          std::partial_sum (recvCounts.begin (), recvCounts.end () - 1, displs.begin () + 1);
+          gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
+                       allGlobalElts.getRawPtr (), recvCounts.getRawPtr (), displs.getRawPtr (),
+                       rootProc, comm);
 
-	  // Create a Map with all the GIDs, in the same order as in
-	  // the one-to-one Map, but owned by Proc 0.
-	  ArrayView<const GO> allElts;
-	  if (myRank == 0) {
-	    allElts = allGlobalElts ();
-	  }
-	  gatherMap = createNonContigMapWithNode<LO,GO,NT> (allElts, comm, map->getNode ());
-	}
-	else {
-	  gatherMap = oneToOneMap;
-	}
-	
-	return gatherMap;
+          // Create a Map with all the GIDs, in the same order as in
+          // the one-to-one Map, but owned by Proc 0.
+          ArrayView<const GO> allElts;
+          if (myRank == 0) {
+            allElts = allGlobalElts ();
+          }
+          gatherMap = createNonContigMapWithNode<LO,GO,NT> (allElts, comm, map->getNode ());
+        }
+        else {
+          gatherMap = oneToOneMap;
+        }
+
+        return gatherMap;
       }
 
     } // namespace (anonymous)
@@ -2184,22 +2184,22 @@ namespace Tpetra {
         const global_size_t numRows = static_cast<global_size_t> (dims[0]);
         const size_t numCols = static_cast<size_t> (dims[1]);
 
-	// Make a "Proc 0 owns everything" Map that we will use to
-	// read in the multivector entries in the correct order on
-	// Proc 0.
+        // Make a "Proc 0 owns everything" Map that we will use to
+        // read in the multivector entries in the correct order on
+        // Proc 0.
         RCP<const map_type> pRank0Map; // "Proc 0 owns everything" Map
         if (pMap.is_null()) {
-	  // The user didn't supply a Map.  Make a contiguous
-	  // distributed Map for them, using the read-in multivector
-	  // dimensions.
+          // The user didn't supply a Map.  Make a contiguous
+          // distributed Map for them, using the read-in multivector
+          // dimensions.
           pMap = createUniformContigMapWithNode<LO, GO, Node> (numRows, pComm, pNode);
-	  pRank0Map = createContigMapWithNode<LO, GO, Node> (numRows,
-							     (myRank == 0 ? numRows : 0),
-							     pComm, pNode);
+          pRank0Map = createContigMapWithNode<LO, GO, Node> (numRows,
+                                                             (myRank == 0 ? numRows : 0),
+                                                             pComm, pNode);
         }
-	else { // The user supplied a Map.
-	  pRank0Map = computeGatherMap<map_type> (pMap);
-	}
+        else { // The user supplied a Map.
+          pRank0Map = computeGatherMap<map_type> (pMap);
+        }
 
         // Make a multivector X owned entirely by Rank 0.
         RCP<multivector_type> X =
@@ -2273,16 +2273,16 @@ namespace Tpetra {
                 }
               }
 
-	      // mfh 19 Dec 2012: Ignore everything up to the initial
-	      // colon.  writeDense() has the option to print out the
-	      // global row index in front of each entry, followed by
-	      // a colon and space.
-	      {
-		const size_t pos = line.substr (start, size).find (':');
-		if (pos != std::string::npos) {
-		  start = pos+1;
-		}
-	      }
+              // mfh 19 Dec 2012: Ignore everything up to the initial
+              // colon.  writeDense() has the option to print out the
+              // global row index in front of each entry, followed by
+              // a colon and space.
+              {
+                const size_t pos = line.substr (start, size).find (':');
+                if (pos != std::string::npos) {
+                  start = pos+1;
+                }
+              }
               std::istringstream istr (line.substr (start, size));
               // Does the line contain anything at all?  Can we
               // safely read from the input stream wrapping the
@@ -3027,12 +3027,12 @@ namespace Tpetra {
                   const std::string& matrixName,
                   const std::string& matrixDescription)
       {
-	using Tpetra::createOneToOne;
-	using Tpetra::createNonContigMapWithNode;
+        using Tpetra::createOneToOne;
+        using Tpetra::createNonContigMapWithNode;
         using Teuchos::as;
         using Teuchos::rcp;
         using Teuchos::rcp_const_cast;
-	using Teuchos::rcp_dynamic_cast;
+        using Teuchos::rcp_dynamic_cast;
         using std::endl;
         typedef typename Teuchos::ScalarTraits<scalar_type> STS;
         typedef typename STS::magnitudeType magnitude_type;
@@ -3044,13 +3044,13 @@ namespace Tpetra {
         typedef global_ordinal_type GO;
         typedef node_type NT;
 
-	// If true, print the global row index in front of each row.
-	const bool printGlobalRowIndex = false;
+        // If true, print the global row index in front of each row.
+        const bool printGlobalRowIndex = false;
 
         // If true, when making the "gather" Map, use the same index
         // base as X's Map.  Otherwise, just use the default index
         // base for the gather Map.
-        const bool keepTheSameIndexBase = false;
+        //const bool keepTheSameIndexBase = false;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
@@ -3067,14 +3067,14 @@ namespace Tpetra {
 
         // Make the "gather" map, where Proc 0 owns all rows of X, and
         // the other procs own no rows.
-        const size_t localNumRows = (myRank == 0) ? numRows : 0;
+        //const size_t localNumRows = (myRank == 0) ? numRows : 0;
         RCP<NT> node = map->getNode();
         // RCP<const map_type> gatherMap = keepTheSameIndexBase ?
         //   rcp_const_cast<const map_type> (rcp (new map_type (numRows, localNumRows, map->getIndexBase(), comm, node))) :
         //   createContigMapWithNode<LO, GO, NT> (numRows, localNumRows, comm, node);
 
-	// FIXME (mfh 20 Dec 2012) What about keepTheSameIndexBase?
-	RCP<const map_type> gatherMap = computeGatherMap<map_type> (map);
+        // FIXME (mfh 20 Dec 2012) What about keepTheSameIndexBase?
+        RCP<const map_type> gatherMap = computeGatherMap<map_type> (map);
 
         // Create an Import object to import X's data into a
         // multivector Y owned entirely by Proc 0.  In the Import
@@ -3116,10 +3116,10 @@ namespace Tpetra {
           // Print the entries of the matrix, in column-major order.
           for (global_size_t j = 0; j < numCols; ++j) {
             for (global_size_t i = 0; i < numRows; ++i) {
-	      if (printGlobalRowIndex) {
-		const GO globalRowIndex = Y->getMap ()->getGlobalElement (as<LO> (i));
-		out << globalRowIndex << ": ";
-	      }
+              if (printGlobalRowIndex) {
+                const GO globalRowIndex = Y->getMap ()->getGlobalElement (as<LO> (i));
+                out << globalRowIndex << ": ";
+              }
 
               const scalar_type Y_ij = Y_view[j][i];
               if (STS::isComplex) {
