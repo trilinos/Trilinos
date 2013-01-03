@@ -106,14 +106,14 @@ namespace Ioex {
 	}
       }
       else if (db_usage == Ioss::WRITE_RESULTS) {
-	if (properties.exists("COMPOSE_RESULTS_FILE")) {
+	if (properties.exists("COMPOSE_RESULTS")) {
 	  decompose = true;
 	} else if (check_external_composition_property(communicator, db_usage)) {
 	  decompose = true;
 	}
       }
       else if (db_usage == Ioss::WRITE_RESTART) {
-	if (properties.exists("COMPOSE_RESTART_FILE")) {
+	if (properties.exists("COMPOSE_RESTART")) {
 	  decompose = true;
 	} else if (check_external_composition_property(communicator, db_usage)) {
 	  decompose = true;
@@ -185,11 +185,11 @@ namespace {
 	std::vector<std::string> property;
 	Ioss::tokenize(prop_val[i], "=", property);
 	std::string prop = Ioss::Utils::uppercase(property[0]);
-	if (db_usage == Ioss::WRITE_RESULTS && prop == "COMPOSE_RESULTS_FILE") {
+	if (db_usage == Ioss::WRITE_RESULTS && prop == "COMPOSE_RESULTS") {
 	  compose = true;
 	  break;
 	}
-	else if (db_usage == Ioss::WRITE_RESTART && prop == "COMPOSE_RESTART_FILE") {
+	else if (db_usage == Ioss::WRITE_RESTART && prop == "COMPOSE_RESTART") {
 	  compose = true;
 	  break;
 	}
