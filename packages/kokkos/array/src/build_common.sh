@@ -47,7 +47,7 @@ CUDA | Cuda | cuda )
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc -arch=sm_20"
+  NVCC="nvcc -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR}"
   NVCC="${NVCC} -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR}"
