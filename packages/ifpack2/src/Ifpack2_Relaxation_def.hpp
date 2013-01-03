@@ -476,15 +476,22 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
   }
 
-  // Flops:
-  // - matrix vector              (2 * NumGlobalNonzeros_)
-  // - update                     (2 * NumGlobalRows_)
-  // - Multiply:
-  //   - DampingFactor            (NumGlobalRows_)
-  //   - Diagonal                 (NumGlobalRows_)
-  //   - A + B                    (NumGlobalRows_)
-  //   - 1.0                      (NumGlobalRows_)
-  ApplyFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+  // For each column of output, for each pass over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
@@ -592,94 +599,44 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     }
   }
 
-  ApplyFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+  // See flop count discussion in implementation of ApplyInverseGS_CrsMatrix().
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseGS_CrsMatrix (const MatrixType& A,
+                          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  size_t NumVectors = X.getNumVectors();
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  Teuchos::ArrayView<const local_ordinal_type> Indices;
-  Teuchos::ArrayView<const scalar_type> Values;
+  const Tpetra::ESweepDirection direction =
+    DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
 
-  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
-  if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
-  }
-  else
-    Y2 = Teuchos::rcp( &Y, false );
+  // For each column of output, for each sweep over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
 
-  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-
-    // only one data exchange per sweep
-    if (IsParallel_)
-      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
-
-    if(!DoBackwardGS_){
-      /* Forward Mode */
-      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-
-        local_ordinal_type col;
-        scalar_type diag = d_ptr[i];
-
-        A.getLocalRowView(i, Indices, Values);
-        size_t NumEntries = Indices.size();
-
-        for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-          scalar_type dtemp = 0.0;
-
-          for (size_t k = 0; k < NumEntries; ++k) {
-            col = Indices[k];
-            dtemp += Values[k] * y2_ptr[m][col];
-          }
-
-          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-        }
-      }
-    }
-    else {
-      /* Backward Mode */
-      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-        local_ordinal_type col;
-        scalar_type diag = d_ptr[i];
-
-        A.getLocalRowView(i, Indices, Values);
-        size_t NumEntries = Indices.size();
-
-        for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-          scalar_type dtemp = 0.0;
-          for (size_t k = 0; k < NumEntries; ++k) {
-            col = Indices[k];
-            dtemp += Values[k] * y2_ptr[m][col];
-          }
-
-          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-
-        }
-      }
-    }
-
-    if (IsParallel_) {
-      for (size_t m = 0 ; m < NumVectors ; ++m)
-        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
-          y_ptr[m][i] = y2_ptr[m][i];
-    }
-  }
-
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  ApplyFlops_ += NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
@@ -795,90 +752,46 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
     }
   }
 
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  // See flop count discussion in implementation of ApplyInverseSGS_CrsMatrix().
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseSGS_CrsMatrix (const MatrixType& A,
+                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  size_t NumVectors = X.getNumVectors();
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  Teuchos::ArrayView<const local_ordinal_type> Indices;
-  Teuchos::ArrayView<const scalar_type> Values;
+  const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
 
-  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
-  if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
-  }
-  else
-    Y2 = Teuchos::rcp( &Y, false );
+  // For each column of output, for each sweep over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+  //
+  // Each sweep of symmetric Gauss-Seidel / SOR counts as two sweeps,
+  // one forward and one backward.
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
 
-  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-
-    // only one data exchange per sweep
-    if (IsParallel_)
-      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
-
-
-    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-
-      scalar_type diag = d_ptr[i];
-
-      A.getLocalRowView(i, Indices, Values);
-      size_t NumEntries = Indices.size();
-
-      for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
-
-        for (size_t k = 0; k < NumEntries; ++k) {
-
-          local_ordinal_type col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
-        }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-      }
-    }
-
-    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-      scalar_type diag = d_ptr[i];
-
-      A.getLocalRowView(i, Indices, Values);
-      size_t NumEntries = Indices.size();
-
-      for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
-        for (size_t k = 0; k < NumEntries; ++k) {
-
-          local_ordinal_type col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
-        }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-
-      }
-    }
-
-    if (IsParallel_) {
-      for (size_t m = 0 ; m < NumVectors ; ++m)
-        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
-          y_ptr[m][i] = y2_ptr[m][i];
-    }
-  }
-
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
