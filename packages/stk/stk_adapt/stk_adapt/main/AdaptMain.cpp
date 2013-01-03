@@ -92,7 +92,7 @@ namespace stk {
         return mult_nodes*num_nodes + mult_hex8*num_hex8 + mult_tet4*num_tet4;
       }
 
-      MemorySizeType estimate_memory(std::vector<RefinementInfoByType>& refInfo)
+      MemorySizeType estimate_memory(std::vector<RefinementInfoByType>& refInfo, bool use_new=true)
       {
         num_hex8=0ul;
         num_tet4=0ul;
@@ -114,10 +114,17 @@ namespace stk {
                 switch(refInfo[i].m_topology.getKey())
                   {
                   case shards::Hexahedron<8>::key:
-                    num_hex8 += refInfo[i].m_numNewElemsLast;
+                    if (use_new)
+                      num_hex8 += refInfo[i].m_numNewElemsLast;
+                    else
+                      num_hex8 += refInfo[i].m_numOrigElemsLast;
+
                     break;
                   case shards::Tetrahedron<4>::key:
-                    num_tet4 += refInfo[i].m_numNewElemsLast;
+                    if (use_new)
+                      num_tet4 += refInfo[i].m_numNewElemsLast;
+                    else
+                      num_tet4 += refInfo[i].m_numOrigElemsLast;
                     break;
                   default:
                     break;
@@ -128,7 +135,7 @@ namespace stk {
         return estimate_memory();
       }
 
-      static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file, std::string input_file)
+      static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file, std::string input_file, bool use_new=true)
       {
         //const stk::ParallelMachine& comm = eMesh.get_bulk_data()->parallel();
 
@@ -153,15 +160,16 @@ namespace stk {
             if (memory_multipliers_file.size())
               memMults.read_simple(memory_multipliers_file);
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
-            MemorySizeType estMem = memMults.estimate_memory(refInfo);
+            MemorySizeType estMem = memMults.estimate_memory(refInfo, use_new);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem)
+                if (0)
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " actMem[MB]= " << MegaByte(tot_mem)
                           << " estMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
 
-                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
+                std::cout << "(*MemEstMM: {nn,ntet,nhex,mem,estMem} " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << ", " << memMults.num_hex8 << ", " << MegaByte(tot_mem)
                           << ", " << MegaByte(estMem) << "}" << std::endl;
               }
 
@@ -178,12 +186,14 @@ namespace stk {
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem)
-                          << " estMem[MB]= " << MegaByte(estMem)
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 
+                  //<< " memory[MB]= " << MegaByte(tot_mem)
+                          << " estimatedMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
 
-                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
-                          << ", " << MegaByte(estMem) << "}" << std::endl;
+                if (0)
+                  std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
+                            << ", " << MegaByte(estMem) << "}" << std::endl;
               }
 
           }
@@ -573,10 +583,13 @@ namespace stk {
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
       run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
-                                    "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200");
-                                    //" filename with a comma-separated string of class names and memory multipliers, one per line, \n  eg Node,80\nField,10\nHexahedron<8>,90");
-      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
-                                    " if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements.\n  If query_only=0, gather memory data and write to the file.");
+                                    "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200\n"
+                                    "  If not set, use internal estimates for memory multipliers.");
+      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    , 
+                                    " use internal or memory_multipliers_file values to estimate memory needed.\n"
+                                    "   if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements, if memory_multipliers_file is set.\n"
+                                    "   if query_only=1, and no memory_multipliers_file is set, use internal values for memory_multipliers.\n"
+                                    "   If query_only=0, print actual memory data and estimates.");
 
 #if ALLOW_MEM_TEST
       run_environment.clp.setOption("test_memory_elements"     , &test_memory_elements     , " give a number of elements");
@@ -1018,7 +1031,6 @@ namespace stk {
                             breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
                             //breaker.setIgnoreSideSets(true);
 
-
                             for (int iBreak = 0; iBreak < number_refines; iBreak++)
                               {
                                 if (!eMesh.get_rank())
@@ -1043,17 +1055,31 @@ namespace stk {
                                                 std::string("after refine pass: ")+toString(iBreak));
                                   }
 
-                                if (estimate_memory_usage && !query_only)
+                                if (estimate_memory_usage)
                                   {
-                                    MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(),
-                                                                         std::string("after refine pass: ")+toString(iBreak));
-                                    std::cout << "P[" << p_rank << "] tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
-                                    MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
-                                  }
-                                if (estimate_memory_usage && query_only)
-                                  {
-                                    RefinementInfoByType::estimateNew(breaker.getRefinementInfoByType(), iBreak);
-                                    MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                                    if (query_only)
+                                      {
+                                        if (number_refines == 1)
+                                          {
+                                            MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(),
+                                                                                 std::string("after mesh read"));
+                                            if (!p_rank)
+                                              std::cout << "P[" << p_rank << "] tmp srk mem after mesh read= " << MegaByte(tot_mem) << std::endl;
+                                            bool use_new = false;
+                                            MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh, use_new);
+                                          }
+
+                                        RefinementInfoByType::estimateNew(breaker.getRefinementInfoByType(), iBreak);
+                                        MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                                      }
+                                    else
+                                      {
+                                        MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(),
+                                                                             std::string("after refine pass: ")+toString(iBreak));
+                                        if (!p_rank)
+                                          std::cout << "P[" << p_rank << "] tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
+                                        MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                                      }
                                   }
 
                               } // iBreak

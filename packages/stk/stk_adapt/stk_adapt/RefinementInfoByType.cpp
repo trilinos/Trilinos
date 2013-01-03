@@ -29,6 +29,7 @@ namespace stk {
               numOrig = (RefinementInfoCount)((double)numOrig * refFactorOld);
               refinementInfoByType[irank].m_numOrigElemsLast = numOrig;
               refinementInfoByType[irank].m_numNewElemsLast = numNew;
+              //std::cout << "irank= " << irank << " topo= " << refinementInfoByType[irank].m_topology.getName() << " numOrig= " << numOrig << " numNew = " << numNew << std::endl;
             }
         }
     }
