@@ -118,6 +118,9 @@ namespace panzer {
    
        matcher_obj = parser.buildMatcher("xy-coord left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(matcher_obj));
+
+       matcher_obj = parser.buildMatcher("(xy)z-quarter-coord left;right");
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<QuarterPlaneMatcher> >(matcher_obj));
    
        TEST_THROW(parser.buildMatcher("dog-coord left;right"),std::logic_error);
     }
@@ -126,17 +129,19 @@ namespace panzer {
     {
        RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("top_list"));
        
-       pl->set("Count",3);
+       pl->set("Count",4);
        pl->set("Periodic Condition 1","y-coord left;right");
        pl->set("Periodic Condition 2","x-coord top;bottom");
        pl->set("Periodic Condition 3","yz-coord fake_a;fake_b");
+       pl->set("Periodic Condition 4","(zy)x-quarter-coord fake_a;fake_b");
       
        parser.setParameterList(pl);
 
-       TEST_EQUALITY(parser.getMatchers().size(),3);
+       TEST_EQUALITY(parser.getMatchers().size(),4);
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[0]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[1]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(parser.getMatchers()[2]));
+       TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<QuarterPlaneMatcher> >(parser.getMatchers()[3]));
     }
   }
 
@@ -459,7 +464,6 @@ namespace panzer {
        mesh_factory.setParameterList(pl);
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
-
     // mesh->writeToExodus("what.exo");
 
     panzer_stk::PlaneMatcher top_matcher(0,2);
@@ -562,6 +566,112 @@ namespace panzer {
        TEST_EQUALITY(conn3[5],5);
        TEST_EQUALITY(conn3[6],2);
        TEST_EQUALITY(conn3[7],1);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(periodic_mesh, conn_manager_hex_quarter)
+  {
+    using Teuchos::RCP;
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+    TEUCHOS_ASSERT(Comm.NumProc()==2);
+    int myRank = Comm.MyPID(); 
+
+    panzer_stk::CubeHexMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",1);
+       pl->set("Y Blocks",1);
+       pl->set("Z Blocks",1);
+       pl->set("X Elements",2);
+       pl->set("Y Elements",2);
+       pl->set("Z Elements",2);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+    // mesh->writeToExodus("what.exo");
+
+    panzer_stk::QuarterPlaneMatcher quarter_matcher(0,2,1); // (xz)y
+    mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("back","left",quarter_matcher));
+
+    // connection manager
+    /////////////////////////////////////////////
+    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+
+    RCP<const panzer::FieldPattern> fp
+         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+    connMngr->buildConnectivity(*fp);
+
+    if(myRank==0) {
+       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+
+       TEST_EQUALITY(conn0[0],0);
+       TEST_EQUALITY(conn0[1],9);
+       TEST_EQUALITY(conn0[2],12);
+       TEST_EQUALITY(conn0[3],3);
+       TEST_EQUALITY(conn0[4],9);
+       TEST_EQUALITY(conn0[5],10);
+       TEST_EQUALITY(conn0[6],13);
+       TEST_EQUALITY(conn0[7],12);
+
+       TEST_EQUALITY(conn1[0],9);
+       TEST_EQUALITY(conn1[1],10);
+       TEST_EQUALITY(conn1[2],13);
+       TEST_EQUALITY(conn1[3],12);
+       TEST_EQUALITY(conn1[4],18);
+       TEST_EQUALITY(conn1[5],19);
+       TEST_EQUALITY(conn1[6],22);
+       TEST_EQUALITY(conn1[7],21);
+
+       TEST_EQUALITY(conn2[0],3);
+       TEST_EQUALITY(conn2[1],12);
+       TEST_EQUALITY(conn2[2],15);
+       TEST_EQUALITY(conn2[3],6);
+       TEST_EQUALITY(conn2[4],12);
+       TEST_EQUALITY(conn2[5],13);
+       TEST_EQUALITY(conn2[6],16);
+       TEST_EQUALITY(conn2[7],15);
+
+       TEST_EQUALITY(conn3[0],12);
+       TEST_EQUALITY(conn3[1],13);
+       TEST_EQUALITY(conn3[2],16);
+       TEST_EQUALITY(conn3[3],15);
+       TEST_EQUALITY(conn3[4],21);
+       TEST_EQUALITY(conn3[5],22);
+       TEST_EQUALITY(conn3[6],25);
+       TEST_EQUALITY(conn3[7],24);
+    }
+    else {
+       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(4));
+
+       TEST_EQUALITY(conn0[0],9);
+       TEST_EQUALITY(conn0[1],18);
+       TEST_EQUALITY(conn0[2],21);
+       TEST_EQUALITY(conn0[3],12);
+       TEST_EQUALITY(conn0[4],10);
+       TEST_EQUALITY(conn0[5],11);
+       TEST_EQUALITY(conn0[6],14);
+       TEST_EQUALITY(conn0[7],13);
+       // passed
+
+       TEST_EQUALITY(conn1[0],12);
+       TEST_EQUALITY(conn1[1],21);
+       TEST_EQUALITY(conn1[2],24);
+       TEST_EQUALITY(conn1[3],15);
+       TEST_EQUALITY(conn1[4],13);
+       TEST_EQUALITY(conn1[5],14);
+       TEST_EQUALITY(conn1[6],17);
+       TEST_EQUALITY(conn1[7],16);
     }
   }
 
