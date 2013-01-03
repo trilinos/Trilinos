@@ -552,7 +552,7 @@ test_original_matrix_free_block(
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
   typedef Stokhos::LegendreBasis<int,value_type> basis_type;
   typedef Stokhos::CompletePolynomialBasis<int,value_type> product_basis_type;
-  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
 
   using Teuchos::rcp;
   using Teuchos::RCP;
@@ -619,31 +619,34 @@ test_original_matrix_free_block(
 
     // Original matrix-free multiply algorithm using a block apply
     n_apply = 0;
-    Cijk_type::k_iterator k_begin = Cijk->k_begin();
-    Cijk_type::k_iterator k_end = Cijk->k_end();
-    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    typename Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    typename Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
       int nj = Cijk->num_j(k_it);
       if (nj > 0) {
 	int k = index(k_it);
-	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
-	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	typename Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	typename Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
 	std::vector<int> j_indices(nj);
 	int jdx = 0;
-	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	for (typename Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+	     ++j_it) {
 	  j_indices[jdx++] = index(j_it);
 	}
         KokkosArray::multiply( matrix[k] , x , tmp, j_indices , test_block );
         n_apply += nj;
 	jdx = 0;
-	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	for (typename Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+	     ++j_it) {
 	  const vec_type tmp_view( tmp , jdx++ );
-	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
-	  Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
-	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	  typename Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  typename Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
+	  for (typename Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; 
+	       ++i_it) {
 	    int i = index(i_it);
 	    value_type c = value(i_it);
 	    const vec_type y_view( y , i );
-	    KokkosArray::update( 1.0 , y_view , c , tmp_view );
+	    KokkosArray::update( value_type(1.0) , y_view , c , tmp_view );
 	  }
 	}
       }
@@ -693,7 +696,7 @@ test_original_matrix_free_vec(
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
   typedef Stokhos::LegendreBasis<int,value_type> basis_type;
   typedef Stokhos::CompletePolynomialBasis<int,value_type> product_basis_type;
-  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
 
   using Teuchos::rcp;
   using Teuchos::RCP;
@@ -768,17 +771,18 @@ test_original_matrix_free_vec(
 
     // Original matrix-free multiply algorithm using a block apply
     n_apply = 0;
-    Cijk_type::k_iterator k_begin = Cijk->k_begin();
-    Cijk_type::k_iterator k_end = Cijk->k_end();
-    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    typename Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    typename Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
       int nj = Cijk->num_j(k_it);
       if (nj > 0) {
 	int k = index(k_it);
-	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
-	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	typename Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	typename Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
 	std::vector<vec_type> xx(nj), yy(nj);
 	int jdx = 0;
-	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	for (typename Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+	     ++j_it) {
 	  int j = index(j_it);
 	  xx[jdx] = x[j];
 	  yy[jdx] = tmp[j];
@@ -787,13 +791,15 @@ test_original_matrix_free_vec(
         KokkosArray::multiply( matrix[k] , xx , yy, test_block );
         n_apply += nj;
 	jdx = 0;
-	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
-	  Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
-	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	for (typename Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+	     ++j_it) {
+	  typename Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  typename Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
+	  for (typename Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; 
+	       ++i_it) {
 	    int i = index(i_it);
 	    value_type c = value(i_it);
-	    KokkosArray::update( 1.0 , y[i] , c , yy[jdx] );
+	    KokkosArray::update( value_type(1.0) , y[i] , c , yy[jdx] );
 	  }
 	  jdx++;
 	}

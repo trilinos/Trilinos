@@ -681,7 +681,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    //int myRank = Comm.MyPID(); 
 
     // panzer::pauseToAttach();
 
