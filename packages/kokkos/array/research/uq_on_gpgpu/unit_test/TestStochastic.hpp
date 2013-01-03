@@ -1018,7 +1018,7 @@ void performance_test_driver_poly( const int pdeg ,
 	      << perf_original_mat_free_block[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
-	      << perf_crs_tensor.second << " , "
+	      << perf_crs_tensor[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
               << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
 
