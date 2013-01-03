@@ -23,7 +23,7 @@ struct topology_data
   static const bool is_valid = false;
   static const topology::rank_t rank = topology::INVALID_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const bool has_homogeneous_edges = false;
+  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 0;
@@ -41,7 +41,6 @@ struct topology_data
                                 , false // 3d
                               > spatial_dimension_vector;
 
-  typedef boost::mpl::vector_c<topology::topology_t> edge_topology_vector;
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
   typedef boost::mpl::vector<> edge_node_ordinals_vector;
@@ -66,7 +65,7 @@ struct topology_data<topology::NODE>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::NODE_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const bool has_homogeneous_edges = false;
+  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 0;
@@ -84,7 +83,6 @@ struct topology_data<topology::NODE>
                                 , true  // 3d
                               > spatial_dimension_vector;
 
-  typedef boost::mpl::vector_c<topology::topology_t> edge_topology_vector;
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
   typedef boost::mpl::vector<> edge_node_ordinals_vector;
@@ -109,7 +107,7 @@ struct topology_data<topology::PARTICLE>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::NODE_RANK;
-  static const bool has_homogeneous_edges = false;
+  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 1;
@@ -127,7 +125,6 @@ struct topology_data<topology::PARTICLE>
                                 , true  // 3d
                               > spatial_dimension_vector;
 
-  typedef boost::mpl::vector_c<topology::topology_t> edge_topology_vector;
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
   typedef boost::mpl::vector<> edge_node_ordinals_vector;
@@ -159,7 +156,7 @@ struct topology_data<topology::LINE_2>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::EDGE_RANK;
   static const topology::rank_t side_rank = topology::NODE_RANK;
-  static const bool has_homogeneous_edges = false;
+  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 1;
@@ -177,7 +174,6 @@ struct topology_data<topology::LINE_2>
                                 , true  // 3d
                               > spatial_dimension_vector;
 
-  typedef boost::mpl::vector_c<topology::topology_t> edge_topology_vector;
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
   typedef boost::mpl::vector<> edge_node_ordinals_vector;
@@ -265,15 +261,11 @@ struct topology_data<topology::BEAM_2>
 
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
+  static const topology::topology_t edge_topology = topology::LINE_2;
 
-  static const bool has_homogeneous_edges = true;
   static const bool is_shell = false;
   static const int dimension = 2;
   static const int num_edges = 1;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1>
@@ -290,15 +282,11 @@ struct topology_data<topology::BEAM_3>
 
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
-  static const bool has_homogeneous_edges = true;
   static const bool is_shell = false;
   static const int dimension = 2;
   static const int num_edges = 1;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1, 2>
@@ -328,8 +316,8 @@ struct topology_data<topology::SHELL_LINE_2>
 
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
+  static const topology::topology_t edge_topology = topology::LINE_2;
 
-  static const bool has_homogeneous_edges = true;
   static const bool is_shell = true;
   static const int dimension = 2;
   static const int num_edges = 2;
@@ -340,11 +328,6 @@ struct topology_data<topology::SHELL_LINE_2>
                                 , true  // 2d
                                 , false // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1>
@@ -362,8 +345,8 @@ struct topology_data<topology::SHELL_LINE_3>
 
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
-  static const bool has_homogeneous_edges = true;
   static const bool is_shell = true;
   static const int dimension = 2;
   static const int num_edges = 2;
@@ -374,11 +357,6 @@ struct topology_data<topology::SHELL_LINE_3>
                                 , true  // 2d
                                 , false // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1, 2>
@@ -435,7 +413,7 @@ struct topology_data<topology::TRI_3>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::FACE_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 2;
@@ -452,12 +430,6 @@ struct topology_data<topology::TRI_3>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -505,11 +477,7 @@ struct topology_data<topology::TRI_6>
   static const topology::topology_t value = topology::TRI_6;
   static const int num_nodes = 6;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1,  3>
@@ -769,7 +737,7 @@ struct topology_data<topology::QUAD_4>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::FACE_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 2;
@@ -786,13 +754,6 @@ struct topology_data<topology::QUAD_4>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -825,12 +786,7 @@ struct topology_data<topology::QUAD_8>
   static const topology::topology_t value = topology::QUAD_8;
   static const int num_nodes = 8;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<int, 0, 1,  4>
@@ -1059,7 +1015,7 @@ struct topology_data<topology::TET_4>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = true;
   static const bool is_shell = false;
   static const int dimension = 3;
@@ -1076,15 +1032,6 @@ struct topology_data<topology::TET_4>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_3
@@ -1150,14 +1097,7 @@ struct topology_data<topology::TET_10>
   static const topology::topology_t value = topology::TET_10;
   static const int num_nodes = 10;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_6
@@ -1213,7 +1153,7 @@ struct topology_data<topology::PYRAMID_5>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 3;
@@ -1230,17 +1170,6 @@ struct topology_data<topology::PYRAMID_5>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_3
@@ -1283,16 +1212,7 @@ struct topology_data<topology::PYRAMID_13>
   static const topology::topology_t value = topology::PYRAMID_13;
   static const int num_nodes = 13;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_6
@@ -1371,7 +1291,7 @@ struct topology_data<topology::WEDGE_6>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 3;
@@ -1388,18 +1308,6 @@ struct topology_data<topology::WEDGE_6>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_4
@@ -1443,17 +1351,7 @@ struct topology_data<topology::WEDGE_15>
   static const topology::topology_t value = topology::WEDGE_15;
   static const int num_nodes = 15;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_8
@@ -1495,18 +1393,6 @@ struct topology_data<topology::WEDGE_18>
 {
   static const topology::topology_t value = topology::WEDGE_18;
   static const int num_nodes = 18;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_9
@@ -1618,7 +1504,7 @@ struct topology_data<topology::HEX_8>
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool has_homogeneous_edges = true;
+  static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = true;
   static const bool is_shell = false;
   static const int dimension = 3;
@@ -1635,21 +1521,6 @@ struct topology_data<topology::HEX_8>
                                 , false // 2d
                                 , true  // 3d
                               > spatial_dimension_vector;
-
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                                , topology::LINE_2
-                              > edge_topology_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_4
@@ -1698,20 +1569,7 @@ struct topology_data<topology::HEX_20>
   static const topology::topology_t value = topology::HEX_20;
   static const int num_nodes = 20;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                                , topology::LINE_3
-                              > edge_topology_vector;
+  static const topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_8

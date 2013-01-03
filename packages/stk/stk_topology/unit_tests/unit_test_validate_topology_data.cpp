@@ -33,33 +33,6 @@ struct check_permutations<TopologyData,PermutationVector,NumNodes,Permutation,Pe
 
 
 
-template <typename TopologyData, int Edge = 0, int NumEdges = TopologyData::num_edges >
-struct check_edges
-{
-
-  typedef typename mpl::at_c<typename TopologyData::edge_topology_vector, Edge>::type edge_topology_;
-  typedef topology_data< edge_topology_::value > edge_topology;
-
-  typedef typename mpl::at_c<typename TopologyData::edge_node_ordinals_vector, Edge>::type edge_nodes;
-
-  static const bool value =    (edge_topology::num_nodes == mpl::size< edge_nodes >::value)
-                            && check_edges<TopologyData,Edge+1>::value;
-
-  BOOST_MPL_ASSERT_MSG(   value
-                        , EDGE_NODE_ORDINALS_NUM_NODES_ERROR
-                        , (TopologyData)
-                      );
-
-};
-
-template <typename TopologyData, int Edge>
-struct check_edges<TopologyData,Edge,Edge>
-{
-  static const bool value = true;
-};
-
-
-
 template <typename TopologyData, int Face = 0, int NumFaces = TopologyData::num_faces >
 struct check_faces
 {
@@ -88,12 +61,6 @@ struct check_faces<TopologyData,Face,Face>
 template <typename TopologyData>
 struct validate_topology_data
 {
-  static const bool edge_topology = TopologyData::num_edges == mpl::size<typename TopologyData::edge_topology_vector>::value;
-  BOOST_MPL_ASSERT_MSG(   edge_topology
-                        , EDGE_TOPOLOGY_SIZE_ERROR
-                        , (TopologyData)
-                      );
-
   static const bool edge_node_ordinals = TopologyData::num_edges == mpl::size<typename TopologyData::edge_node_ordinals_vector>::value;
   BOOST_MPL_ASSERT_MSG(   edge_node_ordinals
                         , EDGE_NODE_ORDINALS_SIZE_ERROR
@@ -120,17 +87,13 @@ struct validate_topology_data
 
   static const bool check_permutations_nodes = check_permutations<TopologyData, typename TopologyData::permutation_node_ordinals_vector, TopologyData::num_nodes>::value;
 
-  static const bool check_edge_nodes = check_edges<TopologyData>::value;
-
   static const bool check_face_nodes = check_faces<TopologyData>::value;
 
-  static const bool value =    edge_topology
-                            && edge_node_ordinals
+  static const bool value =    edge_node_ordinals
                             && face_topology
                             && face_node_ordinals
                             && permutation_node_ordinals
                             && check_permutations_nodes
-                            && check_edge_nodes
                             && check_face_nodes
                            ;
 

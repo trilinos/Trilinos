@@ -40,9 +40,7 @@
   }                                                    \
   } /*namespace stk*/
 
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_edges,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_sides,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(rank,stk::topology::rank_t)
 STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
@@ -51,15 +49,13 @@ STKTOPOLOGY_SIMPLE_MEMBER(num_nodes,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_sides,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
 STKTOPOLOGY_SIMPLE_MEMBER(base,stk::topology)
+STKTOPOLOGY_SIMPLE_MEMBER(edge_topology,stk::topology)
 
 STKTOPOLOGY_ORDINAL_MEMBER(defined_on_spatial_dimension,bool)
-STKTOPOLOGY_ORDINAL_MEMBER(edge_topology,stk::topology)
 STKTOPOLOGY_ORDINAL_MEMBER(face_topology,stk::topology)
-STKTOPOLOGY_ORDINAL_MEMBER(side_topology,stk::topology)
 
 #undef STKTOPOLOGY_SIMPLE_MEMBER
 #undef STKTOPOLOGY_ORDINAL_MEMBER
@@ -160,10 +156,12 @@ void verbose_print_topology(std::ostream &out, topology t)
 
   out << std::setw(shiftwidth) << "num edges: " << t.num_edges() << std::endl;
   if (t.num_edges() > 0) {
+    const int num_edge_nodes = t.edge_topology().num_nodes();
+    out << std::setw(shiftwidth) << t.edge_topology() << std::endl;
     for (int i=0, e=t.num_edges(); i<e; ++i) {
-      out << std::setw(shiftwidth) << t.edge_topology(i) << " " << i << ": (";
+      out << std::setw(shiftwidth) << " " << i << ": (";
       t.edge_node_ordinals(i,node_ordinals);
-      for (int j=0, ne = t.edge_topology(i).num_nodes(); j < ne; ++j) {
+      for (int j=0, ne = num_edge_nodes; j < ne; ++j) {
         out << node_ordinals[j] << ", ";
       }
       out << "\b\b)  " << std::endl;

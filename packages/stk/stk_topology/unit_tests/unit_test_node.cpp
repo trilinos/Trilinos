@@ -8,9 +8,7 @@ STKUNIT_UNIT_TEST( stk_topology, node)
   topology t = topology::NODE;
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
-  STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_faces());
-  STKUNIT_EXPECT_FALSE(t.has_homogeneous_sides());
   STKUNIT_EXPECT_FALSE(t.is_shell());
 
   STKUNIT_EXPECT_EQ(t.rank(),topology::NODE_RANK);
@@ -22,7 +20,6 @@ STKUNIT_UNIT_TEST( stk_topology, node)
   STKUNIT_EXPECT_EQ(t.num_vertices(),0);
   STKUNIT_EXPECT_EQ(t.num_edges(),0);
   STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_sides(),0);
   STKUNIT_EXPECT_EQ(t.num_permutations(),0);
   STKUNIT_EXPECT_EQ(t.num_positive_permutations(),0);
 

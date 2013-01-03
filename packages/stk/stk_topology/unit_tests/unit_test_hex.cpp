@@ -6,9 +6,7 @@ STKUNIT_UNIT_TEST( stk_topology, hex8)
   stk::topology hex8 = stk::topology::HEX_8;
 
   STKUNIT_EXPECT_TRUE(hex8.is_valid());
-  STKUNIT_EXPECT_TRUE(hex8.has_homogeneous_edges());
   STKUNIT_EXPECT_TRUE(hex8.has_homogeneous_faces());
-  STKUNIT_EXPECT_TRUE(hex8.has_homogeneous_sides());
   STKUNIT_EXPECT_FALSE(hex8.is_shell());
 
   STKUNIT_EXPECT_EQ(hex8.rank(),stk::topology::ELEMENT_RANK);
@@ -22,7 +20,6 @@ STKUNIT_UNIT_TEST( stk_topology, hex8)
   STKUNIT_EXPECT_EQ(hex8.num_vertices(),num_nodes);
   STKUNIT_EXPECT_EQ(hex8.num_edges(),num_edges);
   STKUNIT_EXPECT_EQ(hex8.num_faces(),num_faces);
-  STKUNIT_EXPECT_EQ(hex8.num_sides(),num_faces);
 
   STKUNIT_EXPECT_FALSE(hex8.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_FALSE(hex8.defined_on_spatial_dimension(2));

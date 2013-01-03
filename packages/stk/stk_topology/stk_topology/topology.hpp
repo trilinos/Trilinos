@@ -92,14 +92,8 @@ struct topology
   /// get the name of this topology
   const char * name() const { return topology_names[m_value]; }
 
-  /// does this topology have homogeneous edges
-  bool has_homogeneous_edges() const;
-
   /// does this topology have homogeneous faces
   bool has_homogeneous_faces() const;
-
-  /// does this topology have homogeneous faces
-  bool has_homogeneous_sides() const;
 
   /// is this topology a shell topology (i.e. an element with only two sides)
   bool is_shell() const;
@@ -125,9 +119,6 @@ struct topology
   /// how many faces does this topology have
   int num_faces() const;
 
-  /// how many sides does this topology have
-  int num_sides() const;
-
   /// how many different node permutations does this topology have
   int num_permutations() const;
 
@@ -141,13 +132,10 @@ struct topology
   topology base() const;
 
   /// what is the topology of the given edge
-  topology edge_topology(int edge_ordinal = 0) const;
+  topology edge_topology() const;
 
   /// what is the topology of the given face
   topology face_topology(int face_ordinal = 0) const;
-
-  /// what is the topology of the given side
-  topology side_topology(int side_ordinal = 0) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
@@ -156,10 +144,6 @@ struct topology
   /// fill the output ordinals with the ordinals that make up the given face
   template <typename OrdinalOutputIterator>
   void face_node_ordinals(int face_ordinal, OrdinalOutputIterator output_ordinals) const;
-
-  /// fill the output ordinals with the ordinals that make up the given side
-  template <typename OrdinalOutputIterator>
-  void side_node_ordinals(int side_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output ordinals with the ordinals that make up the given permutation
   template <typename OrdinalOutputIterator>
@@ -174,11 +158,6 @@ struct topology
   /// input 'nodes' is expected to be of length num_nodes.
  template <typename NodeArray, typename NodeOutputIterator>
   void face_nodes(const NodeArray & nodes, int face_ordinal, NodeOutputIterator output_nodes) const;
-
-  /// fill the output nodes with the nodes that make up the given side
- /// input 'nodes' is expected to be of length num_nodes.
-  template <typename NodeArray, typename NodeOutputIterator>
-  void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given permutation
   /// input 'nodes' is expected to be of length num_nodes.
@@ -248,7 +227,7 @@ struct topology
     switch(sub_rank)
     {
     case NODE_RANK: return NODE;
-    case EDGE_RANK: return edge_topology(sub_ordinal);
+    case EDGE_RANK: return edge_topology();
     case FACE_RANK: return face_topology(sub_ordinal);
     default: break;
     }
