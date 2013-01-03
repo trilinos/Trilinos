@@ -64,7 +64,7 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
   DoL1Method_(false),
-  L1Eta_ (defaultL1eta ()),
+  L1Eta_ (defaultL1eta<scalar_type> ()),
   Condest_(-Teuchos::ScalarTraits<scalar_type>::one ()), // -1.0
   IsInitialized_(false),
   IsComputed_(false),
