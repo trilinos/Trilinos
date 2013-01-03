@@ -77,19 +77,21 @@ namespace {
       using Tpetra::createNonContigMapWithNode;
       using Teuchos::ArrayView;
 
+      // Elements of the Map owned by Proc 0.  No other processes in
+      // the communicator own anything.  Don't put this in an inner
+      // scope, since it has to persist up to Map creation.
+      const GO procZeroEltList[] = {0, 1, 2,
+                                    12, 13, 14,
+                                    6, 7, 8,
+                                    18, 19, 20,
+                                    3, 4, 5,
+                                    15, 16, 17,
+                                    9, 10, 11,
+                                    21, 22, 23};
+      const size_type numProcZeroElts = 24;
+
       ArrayView<const GO> eltList;
       if (comm->getRank () == 0) {
-        // Elements of the Map owned by Proc 0.  No other processes in the
-        // communicator own anything.
-        const GO procZeroEltList[] = {0, 1, 2,
-                                      12, 13, 14,
-                                      6, 7, 8,
-                                      18, 19, 20,
-                                      3, 4, 5,
-                                      15, 16, 17,
-                                      9, 10, 11,
-                                      21, 22, 23};
-        const size_type numProcZeroElts = 24;
         eltList = ArrayView<const GO> (procZeroEltList, numProcZeroElts);
       }
       else  {
@@ -239,8 +241,8 @@ namespace {
         std::copy (badColumns.begin(), badColumns.end(),
                    std::ostream_iterator<size_t> (os, " "));
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Column"
-                                   << (numBad != 1 ? "s" : "") << " [" << os.str() << "] of X and Y have "
-                                   "norms that differ relatively by more than " << tol << ".");
+          << (numBad != 1 ? "s" : "") << " [" << os.str() << "] of X and Y have "
+          "norms that differ relatively by more than " << tol << ".");
       }
     }
 
