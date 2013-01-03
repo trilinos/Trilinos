@@ -294,8 +294,9 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
     // Use the Allreduce function to find min/max GID 
     long long *tmp_send = new long long[2];
     long long *tmp_recv = new long long[2];
-    if (BlockMapData_->NumMyElements_ > 0)
-      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative signs lets us do one reduction
+    if (BlockMapData_->NumMyElements_ > 0 ||
+        BlockMapData_->NumGlobalElements_ == 0) // This test restores behavior for empty map
+      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
     else
       tmp_send[0] = -(std::numeric_limits<int_type>::max())-1;
     tmp_send[1] =   BlockMapData_->MaxMyGID_;
@@ -432,8 +433,9 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
     CheckValidNGE(NumGlobal_Elements);
     
     // Use the MaxAll function to find min/max GID 
-    if (BlockMapData_->NumMyElements_ > 0)
-      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative signs lets us do one reduction
+    if (BlockMapData_->NumMyElements_ > 0 ||
+        BlockMapData_->NumGlobalElements_ == 0) // This test restores behavior for empty map
+      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
     else
       tmp_send[0] = -(std::numeric_limits<int_type>::max())-1;
     tmp_send[1] =   BlockMapData_->MaxMyGID_;
