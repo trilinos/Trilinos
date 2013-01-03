@@ -72,6 +72,7 @@ INCLUDE(TribitsETISupport)
 INCLUDE(UnitTestHelpers)
 INCLUDE(GlobalSet)
 INCLUDE(GlobalNullSet)
+INCLUDE(AppendStringVar)
 
 #####################################################################
 #
@@ -95,6 +96,48 @@ INCLUDE(GlobalNullSet)
 # we can keep variables that are set in one unit test from affecting the
 # others.
 #
+
+
+FUNCTION(UNIT_TEST_APPEND_STRING_VAR)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing APPEND_STRING_VAR()")
+  MESSAGE("***\n")
+
+  MESSAGE("APPEND_STRING_VAR(): Testing simple concatenation")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "begin\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "middle1" " middile2" " middle3\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "end\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "begin\nmiddle1 middile2 middle3\nend\n")
+
+  MESSAGE("APPEND_STRING_VAR(): Testing with [] and {} which messes up ;")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "[\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "{middle1" " middile2" " middle3}\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "]\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "[\n;{middle1; middile2; middle3}\n;]\n")
+
+  MESSAGE("APPEND_STRING_VAR_EXT(): Testing with [] and {} which ignores ;")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "[\n" )
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "{middle1 middile2 middle3}\n" )
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "]\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "[\n{middle1 middile2 middle3}\n]\n")
+
+ENDFUNCTION()
 
 
 FUNCTION(UNITEST_PACKAGE_ARCH_MISC)
@@ -1638,6 +1681,7 @@ SET( PACKAGE_ADD_TEST_ADD_TEST_SKIP TRUE )
 # Don't let PACKAGE_ADD_ADVANCED_TEST(...) actually call ADD_TEST(...).
 SET( PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST TRUE )
 
+UNIT_TEST_APPEND_STRING_VAR()
 UNITEST_PACKAGE_ARCH_MISC()
 
 # Set the default test categories
@@ -1687,4 +1731,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(192)
+UNITTEST_FINAL_RESULT(195)
