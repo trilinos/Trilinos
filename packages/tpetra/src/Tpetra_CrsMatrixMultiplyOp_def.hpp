@@ -128,19 +128,22 @@ namespace Tpetra {
     Kokkos::ESweepDirection localDirection;
     if (direction == Forward) {
       localDirection = Kokkos::Forward;
-    } else if (direction == Backward) {
+    }
+    else if (direction == Backward) {
       localDirection = Kokkos::Backward;
-    } else if (direction == Symmetric) {
+    }
+    else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
       localDirection = Kokkos::Forward;
-    } else {
+    }
+    else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         "gaussSeidel: The 'direction' enum does not have any of its valid "
         "values: Forward, Backward, or Symmetric.");
     }
 
     if (numSweeps == 0) {
-      return;
+      return; // Nothing to do.
     }
 
     // We don't need the Export object because this method assumes
@@ -276,7 +279,9 @@ namespace Tpetra {
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Forward);
         // Communicate again before the Backward sweep.
-        X_colMap->doImport (*X_in, *importer, INSERT);
+        if (! importer.is_null ()) {
+          X_colMap->doImport (*X_in, *importer, INSERT);
+        }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Backward);
       }
