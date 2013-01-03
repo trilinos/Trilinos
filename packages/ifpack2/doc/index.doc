@@ -1,45 +1,138 @@
 /*! 
-    \mainpage Trilinos/Ifpack2: Templated Preconditioning Package
+\mainpage Trilinos/Ifpack2: Incomplete factorizations, relaxations, and domain decomposition for Tpetra objects
 
-   \section tifpack_intro Introduction to Ifpack2
+\section Ifpack2_intro What is Ifpack2?
 
-Ifpack2 provides templated preconditioning algorithms using linear algebra
-objects (matrices, operators, multivectors) provided by the Tpetra package.
+Ifpack2 provides incomplete factorizations, relaxations, and domain
+decomposition operators for linear algebra objects (sparse matrices,
+operators, and dense vectors and multivectors) provided by the Tpetra
+package.  You may use these operators however you wish: for example as
+preconditioners in an iterative solver, or as smoothers for algebraic
+multigrid.
 
-Ifpack2 will (when finished) provide the same functionality as the Ifpack
-package (which uses Epetra linear algebra objects).
+Ifpack2 aims at offering the same functionality as the Ifpack package,
+though it does not promise backwards compatibility.  Ifpack only works
+for Epetra linear algebra objects; Ifpack2 only works for Tpetra
+objects.
 
-\section startup Overview of Ifpack2
+\section Ifpack2_why Why Ifpack2?
 
-\subsection types Templated Types in Ifpack2
+Why do you want to use Ifpack2?  First, if you are using Tpetra, you
+need to use Ifpack2 if you want incomplete factorizations,
+relaxations, or domain decomposition.  Second, Ifpack2 gives you the
+same advantages as Tpetra.  You can solve problems with more than two
+billion unknowns, by using 64-bit global indices, yet save memory at
+the same time by only storing 32-bit local indices.  You can use
+matrices and vectors with any sensible data type, not just \c double.
+For example, you can use \c float to save memory, or an
+extended-precision type like <tt>dd_real</tt> or <tt>qd_real</tt> to
+improve robustness for difficult problems.  Ifpack2 even works with
+complex-valued data, like <tt>std::complex<float></tt> and
+<tt>std::complex<double></tt>.  Finally, Ifpack2's algorithms use and
+produce Tpetra objects, so you can exploit Tpetra's hybrid (MPI +
+threads) parallelism features without effort.
 
-All classes in Ifpack2 utilize templates. Most of the preconditioner classes
-are templated on the type of the input matrix. This allows the user to provide
-any Tpetra matrix (i.e., templated on any of the Scalar/Ordinal/Node/etc types
-that are possible with Tpetra).
+\section Ifpack2_methods Methods that Ifpack2 implements
 
-\subsection precs Ifpack2 Preconditioners
+\subsection Ifpack2_methods_relax Relaxations and smoothers
 
-All Ifpack2 preconditioners inherit the base class Ifpack2::Preconditioner.
-
-The preconditioners that are supported in the current release are:
+Ifpack2 implements the following relaxations, smoothers, and related
+preconditioners:
 <ul>
-<li> Ifpack2::Diagonal
-<li> Ifpack2::Relaxation
-<li> Ifpack2::Chebyshev
-<li> Ifpack2::ILUT
-<li> Ifpack2::RILUK
+<li> Diagonal scaling 
+<li> Jacobi (with optional damping)
+<li> Gauss-Seidel
+<li> Successive Over-Relaxation (SOR)
+<li> Symmetric versions of Gauss-Seidel and SOR
+<li> Chebyshev iteration (as a smoother)
 </ul>
 
-\subsection trilinos Trilinos and Ifpack2
+Gauss-Seidel is actually a special case of SOR, when the damping
+parameter \f$\omega = 1\f$.  Ifpack2 calls them both "Gauss-Seidel."
+You may specify the sweep direction: forward, backward, or symmetric
+(first forward, then backward).  We do not currently implement other
+sweep directions or parallelization schemes (such as red-black
+ordering), but you may reorder the rows yourself if you have a
+specific sweep direction in mind.
 
-Ifpack2 preconditioners can be used with the solver algorithms in the
-Trilinos/Belos package.
+Ifpack2's implementation of (Gauss-Seidel and) SOR is actually a
+"hybrid" relaxation.  This means that it only performs SOR within an
+MPI process, but does Jacobi-type updates between MPI processes.
+While this can reduce effectiveness of the algorithms as
+preconditioners or smoothers, Ifpack2 implements an "L1" option to
+improve convergence despite this.  For details, please refer to the
+following publication:
 
-\subsection Examples
+A. H. Baker, R. D. Falgout, T. V. Kolev, and U. M. Yang.
+"Multigrid Smoothers for Ultraparallel Computing."
+<i>SIAM J. Sci. Comput.</i>, Vol. 33, No. 5 (2011),
+pp. 2864-2887.
 
-A test program (tifpack/test/belos) is provided which demonstrates creating
-and using Ifpack2 preconditioners with Belos solvers. The test program is
-entirely driven by XML input files, which specify the matrix file to be used,
-as well as parameters for the preconditioner, and the belos solver, etc.
+For diagonal scaling, see the Ifpack2::Diagonal class.  The
+Ifpack2::Relaxation class implements Jacobi, Gauss-Seidel, SOR, and
+the symmetric variants of the latter two.  The Ifpack2::Chebyshev
+class implements Chebyshev iteration.
+
+\subsection Ifpack2_methods_fact Incomplete factorizations
+
+Ifpack2 implements two different incomplete factorizations: ILUT
+(Ifpack2::ILUT) and RILU(k) (Ifpack2::RILUK).  ILUT is a
+threshold-based incomplete LU factorization, and RILU(k) is a
+"relaxed" incomplete LU with level k fill.  
+
+Both of these only perform the factorization on a matrix in a single
+MPI process.
+
+Our ILUT implementation factors each MPI process' part of the matrix
+independently, and treats multiple processes via nonoverlapping domain
+decomposition.  Our RILU(k) implementation's factorization reaches
+across processes by overlapping off-process entries up to a specified
+integer level of overlap, and factoring them redundantly on each
+process.  For details on each algorithm and its options, please refer
+to the specific class' documentation.  Also, for ILUT, please refer to
+the following publication:
+
+Youcef Saad, "ILUT: A dual threshold incomplete LU factorization,"
+Numer. Linear Algebra Appl., Vol. 1 (1994), pp. 387-402.
+
+\subsection Ifpack2_methods_dom Domain decomposition
+
+Finally, Ifpack2 implements additive Schwarz domain decomposition, via
+the Ifpack2::AdditiveSchwarz class.  The user may specify any
+subdomain solver they wish.
+
+\section Ifpack2_interface Interface to Ifpack2 methods
+
+All Ifpack2 operators inherit from the base class
+Ifpack2::Preconditioner.  This in turn inherits from Tpetra::Operator.
+Thus, you may use an Ifpack2 operator anywhere that a Tpetra::Operator
+works.  For example, you may use Ifpack2 operators directly as
+preconditioners in Trilinos' Belos package of iterative solvers.
+
+You may either create an Ifpack2 operator directly, by using the class
+and options that you want, or by using Ifpack2::Factory.
+Ifpack2::Factory is templated on a specialization of
+Tpetra::CrsMatrix.  The Factory will use that template parameter to
+get all the information that it needs to make a preconditioner of the
+right type.  All the specific Ifpack2 operators are also templated on
+a specialization of Tpetra::CrsMatrix.  Some of them only accept a
+Tpetra::CrsMatrix instance as input, while others also may accept a
+Tpetra::RowMatrix (the base class of Tpetra::CrsMatrix).  Some Ifpack2
+methods prefer a Tpetra::CrsMatrix, because they can use faster
+computational kernels in that case.  Those methods may try to guess
+whether your Tpetra::RowMatrix is really a Tpetra::CrsMatrix.
+
+\section Ifpack2_examples Examples
+
+The ifpack2/test/belos directory includes a test program which shows
+how to create Ifpack2 operators and use them as preconditioners with
+Belos iterative solvers.  See belos_solve.cpp and
+belos_extprec_solve.cpp in that directory.  The test program is
+entirely driven by XML input files, which specify the matrix file to
+be used, as well as parameters for the preconditioner, and the Belos
+iterative solver type to use.
+
+If you build Belos with examples enabled, the example will build as
+Ifpack2_tif_belos.exe and will be installed in the
+packages/ifpack2/test/belos directory.
 */
