@@ -49,9 +49,10 @@ namespace unit_test {
 void product_tensor_legendre();
 }
 
-extern int mainHost(bool test_flat, bool test_orig, bool test_block);
+extern int mainHost(bool test_flat, bool test_orig, bool test_block, 
+		    bool check);
 extern int mainCuda(bool test_flat, bool test_orig, bool test_block, 
-		    int device_id);
+		    bool check, int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
+  bool check = true;
   int device = 0;
 
   // Parse command line arguments
@@ -88,6 +90,10 @@ int main(int argc, char *argv[])
       test_orig = true;
     else if (s == "no-orig")
       test_orig = false;
+    else if (s == "check")
+      check = true;
+    else if (s == "no-check")
+      check = false;
     else if (s == "device") {
       ++i;
       device = std::atoi(argv[i]);
@@ -103,7 +109,7 @@ int main(int argc, char *argv[])
   if (print_usage) {
     std::cout << "Usage:" << std::endl
 	      << "\t" << argv[0] 
-	      << " [no-][cuda|host|block|flat|orig] [device device_id]" 
+	      << " [no-][cuda|host|block|flat|orig|check] [device device_id]" 
 	      << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
@@ -113,9 +119,9 @@ int main(int argc, char *argv[])
 #if 1
 
   if (test_host)
-    mainHost(test_flat, test_orig, test_block);
+    mainHost(test_flat, test_orig, test_block, check);
   if (test_cuda)
-    mainCuda(test_flat, test_orig, test_block, device);
+    mainCuda(test_flat, test_orig, test_block, check, device);
 
 #endif
 

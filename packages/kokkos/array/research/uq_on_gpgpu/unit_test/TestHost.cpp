@@ -70,7 +70,7 @@
 namespace unit_test {
 
 template<>
-void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, bool test_block)
+void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, bool test_block, bool check)
 {
   typedef KokkosArray::Host Device;
 
@@ -84,9 +84,9 @@ void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, 
     nIter = 1 ; 
     print = false ;
     performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
-    					 test_block );
+    					 test_block , check );
     performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
-					 test_block );
+					 test_block , check );
   }
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
@@ -96,9 +96,9 @@ void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, 
     nIter = 1 ; 
     print = false ;
     performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-					  test_block );
+					  test_block , check );
     performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
-					  test_block );
+					  test_block , check );
   }
 #endif
 
@@ -130,7 +130,7 @@ void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, 
 
 }
 
-int mainHost(bool test_flat, bool test_orig, bool test_block)
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 {
   const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
   const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() / 2 ;
@@ -163,7 +163,7 @@ int mainHost(bool test_flat, bool test_orig, bool test_block)
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
   unit_test::performance_test_driver<KokkosArray::Host>(
-    test_flat, test_orig, test_block);
+    test_flat, test_orig, test_block, check);
 
   KokkosArray::Host::finalize();
 

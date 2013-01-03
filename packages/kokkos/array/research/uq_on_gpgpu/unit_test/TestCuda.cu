@@ -74,7 +74,7 @@
 namespace unit_test {
 
 template<>
-void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, bool test_block)
+void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, bool test_block, bool check)
 {
   typedef KokkosArray::Cuda Device;
 
@@ -90,9 +90,9 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
     nIter = 1 ; 
     print = false ;
     performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
-    					 test_block );
+    					 test_block , check );
     performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
-					 test_block );
+					 test_block , check );
   }
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
@@ -102,9 +102,9 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
     nIter = 1 ; 
     print = false ;
     performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-    					  test_block );
+    					  test_block , check );
     performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
-					  test_block );
+					  test_block , check );
   }
 #endif
 
@@ -136,7 +136,8 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
 
 }
 
-int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id)
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id)
 {
   typedef unsigned long long int IntType ;
 
@@ -180,7 +181,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id)
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
   unit_test::performance_test_driver<KokkosArray::Cuda>(
-    test_flat, test_orig, test_block);
+    test_flat, test_orig, test_block, check);
 
   KokkosArray::Cuda::finalize();
 
