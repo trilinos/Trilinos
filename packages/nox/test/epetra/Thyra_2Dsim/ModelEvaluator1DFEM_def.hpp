@@ -424,7 +424,7 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
     // U(0)=1
     if (comm_->MyPID() == 0) {
       if (nonnull(f)) 
-	(*f)[0]= (*(Thyra::get_Epetra_Vector(*x_owned_map_,inArgs.get_x())))[0] - 1.0;
+	(*f)[0]= u[0] - 1.0;
       if (nonnull(J)) {
 	int column=0;
 	double jac=1.0;
