@@ -87,6 +87,7 @@ namespace panzer {
 
   class BilinearPointEvaluator : public PointEvaluation<panzer::Traits::Residual::ScalarT> {
   public:
+    virtual ~BilinearPointEvaluator() {}
     virtual void evaluateContainer(const Intrepid::FieldContainer<double> & points,
                                    PHX::MDField<panzer::Traits::Residual::ScalarT> & field) const
     {

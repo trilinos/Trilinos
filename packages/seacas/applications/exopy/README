@@ -11,4 +11,4 @@ python setup.py install --user
 ## Run test
 
 cd test
-python ./testOpen.py
+python ./test.py

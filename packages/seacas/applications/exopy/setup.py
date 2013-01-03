@@ -16,7 +16,7 @@ codePath = os.getcwd()[:relativeLocLen]
 exopy_Mac = \
   Extension('exopy',
             ['exopy.c'],
-            libraries = ['exodus', 'netcdf', 'hl', 'hdf5', 'mpich', 'mpl', 'tmpe', 'pmpich'],
+            libraries = ['exodus', 'netcdf', 'hl', 'hdf5', 'mpich', 'tmpe', 'pmpich', 'mpl'],
             include_dirs = [
               ( codePath + '/seacas/libraries/exodus/cbind/include' ),
               ( codePath + '/TPLs_src/netcdf/src/include' ),
