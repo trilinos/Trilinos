@@ -290,8 +290,9 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     for (int i=0; i<myRank-1; i++)
       nMyOffset += numGlobalMultColRequests[i]; // calculate offset to store the weights on the corresponding place in procOverlappingWeights
 
-    std::vector<GlobalOrdinal> procMultRequestedColIds(globalMultColRequests,0.0);
-    std::vector<GlobalOrdinal> global_procMultRequestedColIds(globalMultColRequests,0.0);
+    GlobalOrdinal zero=0;
+    std::vector<GlobalOrdinal> procMultRequestedColIds(globalMultColRequests,zero);
+    std::vector<GlobalOrdinal> global_procMultRequestedColIds(globalMultColRequests,zero);
 
     // loop over all local column GIDs that are also requested by other procs
     for(size_t i = 0; i < multipleColRequests.size(); i++) {
@@ -664,8 +665,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
 
   for(size_t row=0; row<A->getNodeNumRows(); row++) {
-    Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,PpermData[row]); // column idx for Perm^T
-    Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,QpermData[row]); // column idx for Qperm
+    Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(PpermData[row])); // column idx for Perm^T
+    Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(QpermData[row])); // column idx for Qperm
     Teuchos::ArrayRCP<Scalar> valout(1,1.0);
     permPTmatrix->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indoutP.view(0,indoutP.size()), valout.view(0,valout.size()));
     permQTmatrix->insertGlobalValues (A->getRowMap()->getGlobalElement(row), indoutQ.view(0,indoutQ.size()), valout.view(0,valout.size()));
