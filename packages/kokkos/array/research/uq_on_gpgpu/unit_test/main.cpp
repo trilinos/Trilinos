@@ -43,13 +43,15 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 
 namespace unit_test {
 void product_tensor_legendre();
 }
 
 extern int mainHost(bool test_flat, bool test_orig, bool test_block);
-extern int mainCuda(bool test_flat, bool test_orig, bool test_block);
+extern int mainCuda(bool test_flat, bool test_orig, bool test_block, 
+		    int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -59,10 +61,12 @@ int main(int argc, char *argv[])
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
+  int device = 0;
 
   // Parse command line arguments
   bool print_usage = false;
-  for (int i=1; i<argc; ++i) {
+  int i=1;
+  while (i<argc) {
     std::string s(argv[i]);
     if (s == "cuda")
       test_cuda = true;
@@ -84,18 +88,24 @@ int main(int argc, char *argv[])
       test_orig = true;
     else if (s == "no-orig")
       test_orig = false;
+    else if (s == "device") {
+      ++i;
+      device = std::atoi(argv[i]);
+    }
     else if (s == "-h" || s == "--help")
       print_usage = true;
     else {
       std::cout << "Invalid argument:  " << s << std::endl;
       print_usage = true;
     }
-    if (print_usage) {
-      std::cout << "Usage:" << std::endl
-		<< "\t" << argv[0] << " [no-][cuda|host|block|flat|orig]" 
-		<< std::endl << "Defaults are all enabled." << std::endl;
-     return -1;
-    }
+    ++i;
+  }
+  if (print_usage) {
+    std::cout << "Usage:" << std::endl
+	      << "\t" << argv[0] 
+	      << " [no-][cuda|host|block|flat|orig] [device device_id]" 
+	      << std::endl << "Defaults are all enabled." << std::endl;
+    return -1;
   }
 
   unit_test::product_tensor_legendre();
@@ -105,7 +115,7 @@ int main(int argc, char *argv[])
   if (test_host)
     mainHost(test_flat, test_orig, test_block);
   if (test_cuda)
-    mainCuda(test_flat, test_orig, test_block);
+    mainCuda(test_flat, test_orig, test_block, device);
 
 #endif
 

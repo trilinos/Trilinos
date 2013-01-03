@@ -82,6 +82,8 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
   int nIter; 
   bool print;
 
+  
+
   // All methods compared against flat-original
   if (test_flat) {
     nGrid = 5 ;
@@ -100,7 +102,7 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
     nIter = 1 ; 
     print = false ;
     performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-					  test_block );
+    					  test_block );
     performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
 					  test_block );
   }
@@ -134,11 +136,18 @@ void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, 
 
 }
 
-int mainCuda(bool test_flat, bool test_orig, bool test_block)
+int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id)
 {
   typedef unsigned long long int IntType ;
 
   KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+
+  cudaSetDevice(device_id);
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device_id);
+  std::cout << std::endl 
+	    << "Device " << device_id << ": " << deviceProp.name 
+	    << std::endl;
 
 //  unit_test::test_dense<KokkosArray::Cuda>();
 //  unit_test::test_diagonal<KokkosArray::Cuda>();
