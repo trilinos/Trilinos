@@ -115,6 +115,117 @@ namespace stk {
 
     }
 
+    void JacobianUtil::grad_util_pyramid_3d(const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
+    {
+      for (int i=0; i < nnode; i++)
+        for (int j=0; j < spd; j++)
+          grad[i][j]=0.0;
+
+      const double h = 0.5;		/* h = 1 / (2*height) */
+
+      /* Calculate M = A*inv(W). */
+      //matr[0] = x1[0] - x0[0];
+      grad[indices[1]][0] += dMdA(0,0)*(+1); grad[indices[0]][0] += dMdA(0,0)*(-1);
+      //matr[1] = x2[0] - x0[0];
+      grad[indices[2]][0] += dMdA(0,1)*(+1); grad[indices[0]][0] += dMdA(0,1)*(-1);
+      //matr[2] = (2.0*x3[0] - x1[0] - x2[0])*h;
+      grad[indices[3]][0] += dMdA(0,2)*(+2.0*h); grad[indices[1]][0] += dMdA(0,2)*(-1.0*h); grad[indices[2]][0] += dMdA(0,2)*(-1.0*h);
+  
+      //matr[3] = x1[1] - x0[1];
+      grad[indices[1]][1] += dMdA(1,0)*(+1); grad[indices[0]][1] += dMdA(1,0)*(-1);
+      //matr[4] = x2[1] - x0[1];
+      grad[indices[2]][1] += dMdA(1,1)*(+1); grad[indices[0]][1] += dMdA(1,1)*(-1);
+      //matr[5] = (2.0*x3[1] - x1[1] - x2[1])*h;
+      grad[indices[3]][1] += dMdA(1,2)*(+2.0*h); grad[indices[1]][1] += dMdA(1,2)*(-1.0*h); grad[indices[2]][1] += dMdA(1,2)*(-1.0*h);
+  
+      //matr[6] = x1[2] - x0[2];
+      grad[indices[1]][2] += dMdA(2,0)*(+1); grad[indices[0]][2] += dMdA(2,0)*(-1);
+      //matr[7] = x2[2] - x0[2];
+      grad[indices[2]][2] += dMdA(2,1)*(+1); grad[indices[0]][2] += dMdA(2,1)*(-1);
+      //matr[8] = (2.0*x3[2] - x1[2] - x2[2])*h;
+      grad[indices[3]][2] += dMdA(2,2)*(+2.0*h); grad[indices[1]][2] += dMdA(2,2)*(-1.0*h); grad[indices[2]][2] += dMdA(2,2)*(-1.0*h);
+    }
+
+    void JacobianUtil::grad_util_tet_3d(const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
+    {
+      for (int i=0; i < nnode; i++)
+        for (int j=0; j < spd; j++)
+          grad[i][j]=0.0;
+
+      /* Calculate M = A*inv(W). */
+      //matr[0] = x1[0] - x0[0];
+      grad[indices[1]][0] += dMdA(0,0)*(+1); grad[indices[0]][0] += dMdA(0,0)*(-1);
+      //matr[1] = (2.0*x2[0] - (x1[0] + x0[0]))*isqrt3;
+      grad[indices[2]][0] += dMdA(0,1)*(+2.0*isqrt3); grad[indices[1]][0] += dMdA(0,1)*(-1.0*isqrt3); grad[indices[0]][0] += dMdA(0,1)*(-1.0*isqrt3);
+      //matr[2] = (3.0*x3[0] - x2[0] - (x1[0] + x0[0]))*isqrt6;
+      grad[indices[3]][0] += dMdA(0,2)*(+3.0*isqrt6); grad[indices[2]][0] += dMdA(0,2)*(-1.0*isqrt6); grad[indices[1]][0] += dMdA(0,2)*(-1.0*isqrt6); grad[indices[0]][0] += dMdA(0,2)*(-1.0*isqrt6);
+
+      //matr[3] = x1[1] - x0[1];
+      grad[indices[1]][1] += dMdA(1,0)*(+1); grad[indices[0]][1] += dMdA(1,0)*(-1);
+      //matr[4] = (2.0*x2[1] - (x1[1] + x0[1]))*isqrt3;
+      grad[indices[2]][1] += dMdA(1,1)*(+2.0*isqrt3); grad[indices[1]][1] += dMdA(1,1)*(-1.0*isqrt3); grad[indices[0]][1] += dMdA(1,1)*(-1.0*isqrt3);
+      //matr[5] = (3.0*x3[1] - x2[1] - (x1[1] + x0[1]))*isqrt6;
+      grad[indices[3]][1] += dMdA(1,2)*(+3.0*isqrt6); grad[indices[2]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[1]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[0]][1] += dMdA(1,2)*(-isqrt6);
+
+      //matr[6] = x1[2] - x0[2];
+      grad[indices[1]][2] += dMdA(2,0)*(+1); grad[indices[0]][2] += dMdA(2,0)*(-1);
+      //matr[7] = (2.0*x2[2] - (x1[2] + x0[2]))*isqrt3;
+      grad[indices[2]][2] += dMdA(2,1)*(+2.0*isqrt3); grad[indices[1]][2] += dMdA(2,1)*(-1.0*isqrt3); grad[indices[0]][2] += dMdA(2,1)*(-1.0*isqrt3);
+      //matr[8] = (3.0*x3[2] - x2[2] - (x1[2] + x0[2]))*isqrt6;
+      grad[indices[3]][2] += dMdA(2,2)*(+3.0*isqrt6); grad[indices[2]][2] += dMdA(2,2)*(-1.0*isqrt6); grad[indices[1]][2] += dMdA(2,2)*(-1.0*isqrt6); grad[indices[0]][2] += dMdA(2,2)*(-1.0*isqrt6);
+
+    }
+
+    void JacobianUtil::grad_util_wedge_3d(const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
+    {
+      for (int i=0; i < nnode; i++)
+        for (int j=0; j < spd; j++)
+          grad[i][j]=0.0;
+
+      /* Calculate M = A*inv(W). */
+      //matr[0] = x1[0] - x0[0];
+      grad[indices[1]][0] += dMdA(0,0)*(+1); grad[indices[0]][0] += dMdA(0,0)*(-1);
+      //matr[1] = (2.0*x2[0] - (x1[0] + x0[0]))*isqrt3;
+      grad[indices[2]][0] += dMdA(0,1)*(+2.0*isqrt3); grad[indices[1]][0] += dMdA(0,1)*(-1.0*isqrt3); grad[indices[0]][0] += dMdA(0,1)*(-1.0*isqrt3);
+      //matr[2] = x3[0] - x0[0];
+      grad[indices[3]][0] += dMdA(0,2)*(+1); grad[indices[0]][0] += dMdA(0,2)*(-1);
+
+      //matr[3] = x1[1] - x0[1];
+      grad[indices[1]][1] += dMdA(1,0)*(+1); grad[indices[0]][1] += dMdA(1,0)*(-1);
+      //matr[4] = (2.0*x2[1] - (x1[1] + x0[1]))*isqrt3;
+      grad[indices[2]][1] += dMdA(1,1)*(+2.0*isqrt3); grad[indices[1]][1] += dMdA(1,1)*(-1.0*isqrt3); grad[indices[0]][1] += dMdA(1,1)*(-1.0*isqrt3);
+      //matr[5] = x3[1] - x0[1];
+      grad[indices[3]][1] += dMdA(1,2)*(+1); grad[indices[0]][1] += dMdA(1,2)*(-1);
+
+      //matr[6] = x1[2] - x0[2];
+      grad[indices[1]][2] += dMdA(2,0)*(+1); grad[indices[0]][2] += dMdA(2,0)*(-1);
+      //matr[7] = (2.0*x2[2] - (x1[2] + x0[2]))*isqrt3;
+      grad[indices[2]][2] += dMdA(2,1)*(+2.0*isqrt3); grad[indices[1]][2] += dMdA(2,1)*(-1.0*isqrt3); grad[indices[0]][2] += dMdA(2,1)*(-1.0*isqrt3);
+      //matr[8] = x3[2] - x0[2];
+      grad[indices[3]][2] += dMdA(2,2)*(+1); grad[indices[0]][2] += dMdA(2,2)*(-1);
+
+    }
+
+    void JacobianUtil::grad_util_tri_2d(const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
+    {
+      for (int i=0; i < nnode; i++)
+        for (int j=0; j < spd; j++)
+          grad[i][j]=0.0;
+
+
+      /* Calculate M = [A*inv(W) n] */
+      //matr[0] = x[1][0] - x[0][0];
+      grad[indices[1]][0] += dMdA(0,0)*(+1); grad[indices[0]][0] += dMdA(0,0)*(-1);
+      //matr[1] = (2.0*x[2][0] - x[1][0] - x[0][0])*isqrt3;
+      grad[indices[2]][0] += dMdA(0,1)*(+2.0*isqrt3); grad[indices[1]][0] += dMdA(0,1)*(-1.0*isqrt3); grad[indices[0]][0] += dMdA(0,1)*(-1.0*isqrt3);
+
+      //matr[3] = x[1][1] - x[0][1];
+      grad[indices[1]][1] += dMdA(1,0)*(+1); grad[indices[0]][1] += dMdA(1,0)*(-1);
+      //matr[4] = (2.0*x[2][1] - x[1][1] - x[0][1])*isqrt3;
+      grad[indices[2]][1] += dMdA(1,1)*(+2.0*isqrt3); grad[indices[1]][1] += dMdA(1,1)*(-1.0*isqrt3); grad[indices[0]][1] += dMdA(1,1)*(-1.0*isqrt3);
+
+    }
+
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
     bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
@@ -146,7 +257,7 @@ namespace stk {
           x2d[0] = VERTEX(v_i[0]);
           x2d[1] = VERTEX(v_i[1]);
           x2d[2] = VERTEX(v_i[2]);
-          metric_valid = jacobian_matrix_2D(m, J, x2d);
+          metric_valid = jacobian_matrix_tri_2D(m, J, x2d);
           for (i = 0; i < 3; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
 
@@ -162,22 +273,22 @@ namespace stk {
           break;
 
         case shards::Tetrahedron<4>::key:
-          metric_valid = jacobian_matrix_3D(m, m_J[0],
-                                            VERTEX(v_i[0]),
-                                            VERTEX(v_i[1]),
-                                            VERTEX(v_i[2]),
-                                            VERTEX(v_i[3]) );
+          metric_valid = jacobian_matrix_tet_3D(m, m_J[0],
+                                                VERTEX(v_i[0]),
+                                                VERTEX(v_i[1]),
+                                                VERTEX(v_i[2]),
+                                                VERTEX(v_i[3]) );
           m_detJ[0] = m;
           for (i = 1; i < 4; i++) { m_detJ[i] = m; m_J[i] = m_J[0]; }
           break;
 
         case shards::Pyramid<5>::key:
           for (i = 0; i < 4; ++i) {
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
-                                              VERTEX(v_i[ i     ]),
-                                              VERTEX(v_i[(i+1)%4]),
-                                              VERTEX(v_i[(i+3)%4]),
-                                              VERTEX(v_i[ 4     ]));
+            metric_valid = jacobian_matrix_pyramid_3D(m_detJ[i], m_J[i],
+                                                      VERTEX(v_i[ i     ]),
+                                                      VERTEX(v_i[(i+1)%4]),
+                                                      VERTEX(v_i[(i+3)%4]),
+                                                      VERTEX(v_i[ 4     ]));
           }
           // FIXME
           m_J[4] = (m_J[0]+m_J[1]+m_J[2]+m_J[3]);
@@ -188,11 +299,11 @@ namespace stk {
 
         case shards::Wedge<6>::key:
           for (i = 0; i < 6; ++i) {
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
-                                              VERTEX(v_i[locs_prism[i][0]]),
-                                              VERTEX(v_i[locs_prism[i][1]]),
-                                              VERTEX(v_i[locs_prism[i][2]]),
-                                              VERTEX(v_i[locs_prism[i][3]]));
+            metric_valid = jacobian_matrix_wedge_3D(m_detJ[i], m_J[i],
+                                                    VERTEX(v_i[locs_prism[i][0]]),
+                                                    VERTEX(v_i[locs_prism[i][1]]),
+                                                    VERTEX(v_i[locs_prism[i][2]]),
+                                                    VERTEX(v_i[locs_prism[i][3]]));
           }
           m = average_metrics(m_detJ, 6);
           break;
@@ -273,7 +384,7 @@ namespace stk {
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate(), and TargetMetricUtil
     /// fills the mGrad member variable given the array of (member variable) m_dMetric_dA terms
     bool JacobianUtil::grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
-                                        const CellTopologyData * topology_data )
+                                         const CellTopologyData * topology_data )
     {
       static DenseMatrix<3,3> J;
 
@@ -297,7 +408,7 @@ namespace stk {
           //n[0] = 0; n[1] = 0; n[2] = 1;
           for (i = 0; i < 3; i++) {
             //void JacobianUtil::grad_util(const DenseMatrix<3,3>& dMetric_dA, double grad[NNODES_MAX][3], int nnode, int spd, int *indices, int nind)
-            grad_util_2d(m_dMetric_dA[i], m_grad[i], 3, 2, indices_tri, 3);
+            grad_util_tri_2d(m_dMetric_dA[i], m_grad[i], 3, 2, indices_tri, 3);
           }
           break;
 
@@ -311,14 +422,14 @@ namespace stk {
 
         case shards::Tetrahedron<4>::key:
           for (i = 0; i < 4; ++i) {
-            grad_util(m_dMetric_dA[i], m_grad[i], 4, 3, indices_tet, 4);
+            grad_util_tet_3d(m_dMetric_dA[i], m_grad[i], 4, 3, indices_tet, 4);
           }
           break;
 
         case shards::Pyramid<5>::key:
           for (i = 0; i < 4; ++i) {
             const int indices_pyr[4] = {i, (i+1)%4, (i+3)%4, 4};
-            grad_util(m_dMetric_dA[i], m_grad[i], 5, 3, indices_pyr, 4);
+            grad_util_pyramid_3d(m_dMetric_dA[i], m_grad[i], 5, 3, indices_pyr, 4);
           }
           // FIXME
           for ( i=0; i < 5; i++)
@@ -339,7 +450,7 @@ namespace stk {
         case shards::Wedge<6>::key:
           for (i = 0; i < 6; ++i) {
             const int *indices_prism = locs_prism[i];
-            grad_util(m_dMetric_dA[i], m_grad[i], 6, 3, indices_prism, 4);
+            grad_util_wedge_3d(m_dMetric_dA[i], m_grad[i], 6, 3, indices_prism, 4);
           }
           break;
 

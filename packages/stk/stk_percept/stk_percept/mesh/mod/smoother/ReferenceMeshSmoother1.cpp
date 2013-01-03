@@ -1031,7 +1031,7 @@ namespace stk {
                 PRINT_1( "tmp srk 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
                 return total_metric(0.0,1.0, total_valid);
               }
-            debug_print(0);
+            //debug_print(0);
 
             //do_print_elem_val = true;
             double metric_1 = total_metric( 1.e-6, 1.0, total_valid);
@@ -1041,6 +1041,11 @@ namespace stk {
             metric_1 = total_metric( -1.e-6, 1.0, total_valid);
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
 
+            if (false && (m_dmax < 1.e-3 && m_stage == 1 && m_untangled))
+              {
+                PRINT_1( "tmp srk 2nd allowing convergence... m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
+                return total_metric(0.0,1.0, total_valid);
+              }
             throw std::runtime_error("can't reduce metric");
           }
 
