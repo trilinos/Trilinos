@@ -32,6 +32,22 @@
 
 #include "Ifpack2_Relaxation_decl.hpp"
 
+namespace {
+  //! Default value of the "L1 eta" parameter of Ifpack2::Relaxation.
+  template<class ScalarType>
+  ScalarType
+  defaultL1eta ()
+  {
+    typedef Teuchos::ScalarTraits<ScalarType> STS;
+
+    const ScalarType two = STS::one() + STS::one() + STS::one();
+    const ScalarType three = two + STS::one();
+
+    return three / two; // 1.5
+  }
+} // namespace (anonymous)
+
+
 namespace Ifpack2 {
 
 //==========================================================================
@@ -42,20 +58,20 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Relaxation") ) ),
   NumSweeps_(1),
   PrecType_(Ifpack2::JACOBI),
-  MinDiagonalValue_(0.0),
-  DampingFactor_(1.0),
+  MinDiagonalValue_(Teuchos::ScalarTraits<scalar_type>::zero ()), // 0.0
+  DampingFactor_(Teuchos::ScalarTraits<scalar_type>::one ()), // 1.0
   IsParallel_(false),
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
   DoL1Method_(false),
-  L1Eta_(1.5),
-  Condest_(-1.0),
+  L1Eta_ (defaultL1eta ()),
+  Condest_(-Teuchos::ScalarTraits<scalar_type>::one ()), // -1.0
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
   NumCompute_(0),
   NumApply_(0),
-  InitializeTime_(0.0),
+  InitializeTime_(0.0), // Times are double anyway, so no need for ScalarTraits.
   ComputeTime_(0.0),
   ApplyTime_(0.0),
   ComputeFlops_(0.0),
@@ -64,8 +80,10 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
-      Teuchos::typeName(*this) << "::Relaxation(): input matrix reference was null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (),
+    std::runtime_error,
+    "Ifpack2::Relaxation(): The constructor needs a non-null input matrix.");
 }
 
 //==========================================================================
@@ -91,17 +109,20 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 
   Ifpack2::getParameter(List, "relaxation: type", PT);
 
-  if (PT == "Jacobi")
+  if (PT == "Jacobi") {
     PrecType_ = Ifpack2::JACOBI;
-  else if (PT == "Gauss-Seidel")
+  }
+  else if (PT == "Gauss-Seidel") {
     PrecType_ = Ifpack2::GS;
-  else if (PT == "Symmetric Gauss-Seidel")
+  }
+  else if (PT == "Symmetric Gauss-Seidel") {
     PrecType_ = Ifpack2::SGS;
+  }
   else {
-    std::ostringstream osstr;
-    osstr << "Ifpack2::Relaxation::setParameters: unsupported parameter-value for 'relaxation: type' (" << PT << ")";
-    std::string str = osstr.str();
-    throw std::runtime_error(str);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true,
+      std::invalid_argument,
+      "Ifpack2::Relaxation::setParameters: unsupported value for 'relaxation: type' parameter (\"" << PT << "\")");
   }
 
   Ifpack2::getParameter(List, "relaxation: sweeps",NumSweeps_);
