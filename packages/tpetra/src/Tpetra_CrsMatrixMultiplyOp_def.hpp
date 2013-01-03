@@ -154,7 +154,7 @@ namespace Tpetra {
       "gaussSeidel requires that the row, domain, and range Maps be the same.  "
       "This cannot be the case, because the matrix has a nontrivial Export object.");
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     {
       RCP<const map_type> domainMap = matrix_->getDomainMap ();
       RCP<const map_type> rangeMap = matrix_->getRangeMap ();
@@ -184,7 +184,7 @@ namespace Tpetra {
         "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector D "
         "be in the row Map of the matrix.");
     }
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_TEUCHOS_DEBUG
 
     RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
@@ -296,8 +296,7 @@ namespace Tpetra {
             class LocalMatOps>
   void
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  gaussSeidelCopy (MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                   const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+  gaussSeidelCopy (MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                    const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                    const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                    const OpScalar& dampingFactor,
@@ -341,11 +340,6 @@ namespace Tpetra {
       return;
     }
 
-    // This version of Gauss-Seidel assumes that the matrix is square,
-    // that the row Map is nonoverlapping, and that the column, row,
-    // and range Maps share the same local indices (LIDs).  It does
-    // not overwrite the input X.  X and Y must not alias one another.
-
     RCP<const import_type> importer = matrix_->getGraph()->getImporter();
     RCP<const export_type> exporter = matrix_->getGraph()->getExporter();
 
@@ -354,7 +348,7 @@ namespace Tpetra {
     RCP<const map_type> rowMap = matrix_->getGraph ()->getRowMap ();
     RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     {
       // The relation 'isSameAs' is transitive.  It's also a
       // collective, so we don't have to do a "shared" test for
@@ -362,44 +356,44 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! X.getMap ()->isSameAs (*domainMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the input "
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
         "multivector X be in the domain Map of the matrix.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! B.getMap ()->isSameAs (*rangeMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector B "
-        "be in the range Map of the matrix.");
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "B be in the range Map of the matrix.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! D.getMap ()->isSameAs (*rowMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector D "
-        "be in the row Map of the matrix.");
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "D be in the row Map of the matrix.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! rowMap->isSameAs (*rangeMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the input "
-        "multivector X be in the domain Map of the matrix.");
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the row Map and the "
+        "range Map be the same (in the sense of Tpetra::Map::isSameAs).");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! domainMap->isSameAs (*rangeMap),
         std::runtime_error,
-        "Tpetra::CrsMatrix::gaussSeidel requires that the domain and range "
-        "Maps of the matrix be the same.");
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the domain Map and "
+        "the range Map of the matrix be the same.");
     }
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_TEUCHOS_DEBUG
 
-    // Make an overlap multivector Y_colMap, and a domain Map view
-    // Y_domainMap of it.  Both have constant stride by construction.
-    RCP<MV> Y_colMap = rcp (new MV (colMap, Y.getNumVectors ()));
-    RCP<MV> Y_domainMap = Y_colMap->offsetViewNonConst (domainMap, 0);
+    // Make an overlap multivector X_colMap, and a domain Map view
+    // X_domainMap of it.  Both have constant stride by construction.
+    RCP<MV> X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+    RCP<MV> X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
-    // Copy X into Y_domainMap (a domain Map view of a column Map
-    // multivector Y_colMap).  The Gauss-Seidel kernel will work in
-    // Y_domainMap.  When done, we'll copy back into Y.  The copy
+    // Copy X into X_domainMap (a domain Map view of a column Map
+    // multivector X_colMap).  The Gauss-Seidel kernel will work in
+    // X_domainMap.  When done, we'll copy back into X.  The copy
     // assumes the the domain and range Maps are the same.
-    *Y_domainMap = X;
+    *X_domainMap = X;
 
     // The Gauss-Seidel / SOR kernel expects multivectors of constant
-    // stride.  Y_colMap is by construction, but B might not be.  If
+    // stride.  X_colMap is by construction, but B might not be.  If
     // it's not, we have to make a copy.
     RCP<const MV> B_in;
     if (B.isConstantStride()) {
@@ -419,27 +413,27 @@ namespace Tpetra {
 
     for (int sweep = 0; sweep < numSweeps; ++sweep) {
       if (! importer.is_null ()) {
-        Y_colMap->doImport (*Y_domainMap, *importer, INSERT);
+        X_colMap->doImport (*X_domainMap, *importer, INSERT);
       }
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-        matrix_->template localGaussSeidel<OS,OS> (*B_in, *Y_colMap, D,
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, localDirection);
       }
       else { // direction == Symmetric
-        matrix_->template localGaussSeidel<OS,OS> (*B_in, *Y_colMap, D,
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Forward);
         // Communicate again before the Backward sweep.
-        Y_colMap->doImport (*Y_domainMap, *importer, INSERT);
-        matrix_->template localGaussSeidel<OS,OS> (*B_in, *Y_colMap, D,
+        X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Backward);
       }
     }
 
-    // Copy back from Y_domainMap to Y.
+    // Copy back from X_domainMap to X.
     // This assumes that the domain and range Maps are the same.
-    Y = *Y_domainMap;
+    X = *X_domainMap;
   }
 
 

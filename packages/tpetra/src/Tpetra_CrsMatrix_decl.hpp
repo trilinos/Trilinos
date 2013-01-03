@@ -911,17 +911,16 @@ namespace Tpetra {
                  const ESweepDirection direction,
                  const int numSweeps) const;
 
-    /// \brief Non-overwrite version of gaussSeidel().
+    /// \brief Version of gaussSeidel(), with fewer requirements on X.
     ///
-    /// This method is just like gaussSeidel(), except that it does
-    /// not overwrite its input multivector X.  Instead, it puts the
-    /// result in an output multivector Y.  The initial contents of
-    /// Y are ignored.  X need only be in the domain Map and Y in
-    /// the range Map; this method does not require that these be
-    /// views of column Map multivectors.
+    /// This method is just like gaussSeidel(), except that X need
+    /// only be in the domain Map.  This method does not require that
+    /// X be a domain Map view of a column Map multivector.  As a
+    /// result, this method must copy X into a domain Map multivector
+    /// before operating on it.
     ///
-    /// \param Y [out] Result of Gauss-Seidel; in the range Map.
-    /// \param X [in] Initial guess(es), in the domain Map.
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
     /// \param B [in] Right-hand side(s), in the range Map.
     /// \param D [in] Inverse of diagonal entries of the matrix,
     ///   in the row Map.
@@ -934,10 +933,9 @@ namespace Tpetra {
     ///   Backward sweep) as one.
     ///
     /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
-    /// \pre No other argument aliases Y.
+    /// \pre No other argument aliases X.
     void
-    gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+    gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                      const Scalar& dampingFactor,

@@ -2196,8 +2196,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+  gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                    const Scalar& dampingFactor,
@@ -2207,7 +2206,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == false, std::runtime_error,
       typeName(*this) << "::gaussSeidelCopy: cannot call this method until "
       "fillComplete() has been called.");
-    sameScalarMultiplyOp_->gaussSeidelCopy (Y, X, B, D, dampingFactor,
+    sameScalarMultiplyOp_->gaussSeidelCopy (X, B, D, dampingFactor,
                                             direction, numSweeps);
   }
 
