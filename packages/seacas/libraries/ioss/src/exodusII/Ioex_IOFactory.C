@@ -111,7 +111,6 @@ namespace Ioex {
 	} else if (check_external_composition_property(communicator, db_usage)) {
 	  decompose = true;
 	}
-	decompose = true;
       }
       else if (db_usage == Ioss::WRITE_RESTART) {
 	if (properties.exists("COMPOSE_RESTART_FILE")) {
