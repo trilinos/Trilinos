@@ -424,8 +424,10 @@ namespace Tpetra {
       else { // direction == Symmetric
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Forward);
-        // Communicate again before the Backward sweep.
-        X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        // Communicate again before the Backward sweep, if necessary.
+        if (! importer.is_null ()) {
+          X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor, Kokkos::Backward);
       }
