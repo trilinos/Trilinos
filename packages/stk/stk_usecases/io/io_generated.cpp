@@ -38,6 +38,7 @@ namespace {
 	      const std::string &filename,
 	      const std::string &type,
 	      const std::string &decomp_method,
+	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
 	      int  db_integer_size);
@@ -55,7 +56,7 @@ int main(int argc, char** argv)
   int compression_level = 0;
   bool compression_shuffle = false;
   int db_integer_size = 4;
-
+  bool compose_output = false;
 
   //----------------------------------
   // Process the broadcast command line arguments
@@ -72,6 +73,7 @@ int main(int argc, char** argv)
     ("dimension", bopt::value<size_t>(&spatial_dimension), "problem spatial dimension" )
     ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
     ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data" )
+    ("compose_output", bopt::value<bool>(&compose_output), "create a single output file" )
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
@@ -95,7 +97,7 @@ int main(int argc, char** argv)
     type = "dof";
   }
   driver(use_case_environment.m_comm, spatial_dimension,
-	 working_directory, mesh, type, decomp_method,
+	 working_directory, mesh, type, decomp_method, compose_output, 
 	 compression_level, compression_shuffle, db_integer_size);
 
   return 0;
@@ -108,6 +110,7 @@ namespace {
 	      const std::string &filename,
 	      const std::string &type,
 	      const std::string &decomp_method,
+	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
 	      int  db_integer_size)
@@ -125,6 +128,10 @@ namespace {
       mesh_data.m_property_manager.add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
     }
 
+    if (compose_output) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESULTS", true));
+      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESTART", true));
+    }
     if (compression_level > 0) {
       mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
       use_netcdf4 = true;
