@@ -354,11 +354,11 @@ namespace KokkosExamples {
     ///   kernel once per sweep direction anyway.
     template <class DomainScalar, class RangeScalar>
     void
-    gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-                 MultiVector< RangeScalar,Node> &X,
-                 const MultiVector<Scalar,Node> &D,
+    gaussSeidel (const Kokkos::MultiVector<DomainScalar,Node> &B,
+                 Kokkos::MultiVector<RangeScalar,Node> &X,
+                 const Kokkos::MultiVector<Scalar,Node> &D,
                  const RangeScalar& dampingFactor,
-                 const ESweepDirection direction) const
+                 const Kokkos::ESweepDirection direction) const
     {}
 
     //@}
