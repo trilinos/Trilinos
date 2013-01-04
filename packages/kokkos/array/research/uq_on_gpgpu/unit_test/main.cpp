@@ -49,10 +49,12 @@ namespace unit_test {
 void product_tensor_legendre();
 }
 
-extern int mainHost(bool test_flat, bool test_orig, bool test_block, 
-		    bool check);
-extern int mainCuda(bool test_flat, bool test_orig, bool test_block, 
-		    bool check, int device_id);
+template <typename scalar>
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool check);
+
+template <typename scalar>
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -63,6 +65,7 @@ int main(int argc, char *argv[])
   bool test_flat = true;
   bool test_orig = true;
   bool check = true;
+  bool single = false;
   int device = 0;
 
   // Parse command line arguments
@@ -94,6 +97,10 @@ int main(int argc, char *argv[])
       check = true;
     else if (s == "no-check")
       check = false;
+    else if (s == "single")
+      single = true;
+    else if (s == "double")
+      single = false;
     else if (s == "device") {
       ++i;
       device = std::atoi(argv[i]);
@@ -109,7 +116,7 @@ int main(int argc, char *argv[])
   if (print_usage) {
     std::cout << "Usage:" << std::endl
 	      << "\t" << argv[0] 
-	      << " [no-][cuda|host|block|flat|orig|check] [device device_id]" 
+	      << " [no-][cuda|host|block|flat|orig|check] [single|double] [device device_id]" 
 	      << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
@@ -118,10 +125,18 @@ int main(int argc, char *argv[])
 
 #if 1
 
-  if (test_host)
-    mainHost(test_flat, test_orig, test_block, check);
-  if (test_cuda)
-    mainCuda(test_flat, test_orig, test_block, check, device);
+  if (test_host) {
+    if (single)
+      mainHost<float>(test_flat, test_orig, test_block, check);
+    else
+      mainHost<double>(test_flat, test_orig, test_block, check);
+  }
+  if (test_cuda) {
+    if (single)
+      mainCuda<float>(test_flat, test_orig, test_block, check, device);
+    else
+      mainCuda<double>(test_flat, test_orig, test_block, check, device);
+  }
 
 #endif
 

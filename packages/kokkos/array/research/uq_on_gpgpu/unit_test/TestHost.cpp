@@ -69,67 +69,71 @@
 
 namespace unit_test {
 
-template<>
-void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, bool test_block, bool check)
-{
-  typedef KokkosArray::Host Device;
+template<typename Scalar>
+struct performance_test_driver<Scalar,KokkosArray::Host> {
 
-  int nGrid;
-  int nIter; 
-  bool print;
+  static void run(bool test_flat, bool test_orig, bool test_block, bool check) {
+    typedef KokkosArray::Host Device;
 
-  // All methods compared against flat-original
-  if (test_flat) {
-    nGrid = 5 ;
-    nIter = 1 ; 
-    print = false ;
-    performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
-    					 test_block , check );
-    performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
-					 test_block , check );
-  }
-
+    int nGrid;
+    int nIter; 
+    bool print;
+    
+    // All methods compared against flat-original
+    if (test_flat) {
+      nGrid = 5 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_all<Scalar,Device>( 
+	3 , 1 ,  9 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_all<Scalar,Device>( 
+	5 , 1 ,  5 , nGrid , nIter , print , test_block , check );
+    }
+    
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
-  // Just polynomial methods compared against original
-  if (test_orig) {
-    nGrid = 64 ;
-    nIter = 1 ; 
-    print = false ;
-    performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-					  test_block , check );
-    performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
-					  test_block , check );
-  }
+    // Just polynomial methods compared against original
+    if (test_orig) {
+      nGrid = 64 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_poly<Scalar,Device>( 
+	3 , 1 , 12 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_poly<Scalar,Device>( 
+	5 , 1 ,  6 , nGrid , nIter , print , test_block , check );
+    }
 #endif
-
-  //------------------------------
-
-  /*
-  std::cout << std::endl
-            << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
-            << std::endl
-	    << "\"nGrid\" , "
-            << "\"VectorSize\" , "
-            << "\"MXV-Time\""
-            << std::endl ;
-
-  for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
-
-    const std::pair<size_t,double> perf_flat =
+    
+    //------------------------------
+    
+    /*
+      std::cout << std::endl
+      << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
+      << std::endl
+      << "\"nGrid\" , "
+      << "\"VectorSize\" , "
+      << "\"MXV-Time\""
+      << std::endl ;
+      
+      for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
+      
+      const std::pair<size_t,double> perf_flat =
       test_flat_matrix<double,Device>( n_grid , nIter , print );
+      
+      std::cout << n_grid << " , "
+      << perf_flat.first << " , "
+      << perf_flat.second
+      << std::endl ;
+      }
+    */
 
-    std::cout << n_grid << " , "
-	      << perf_flat.first << " , "
-              << perf_flat.second
-              << std::endl ;
+    //------------------------------
   }
-  */
 
-  //------------------------------
-}
+};
 
 }
 
+template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 {
   const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
@@ -162,7 +166,7 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Host>(
+  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
     test_flat, test_orig, test_block, check);
 
   KokkosArray::Host::finalize();
@@ -170,5 +174,5 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
   return 0 ;
 }
 
-
-
+template int mainHost<float>(bool, bool, bool, bool);
+template int mainHost<double>(bool, bool, bool, bool);

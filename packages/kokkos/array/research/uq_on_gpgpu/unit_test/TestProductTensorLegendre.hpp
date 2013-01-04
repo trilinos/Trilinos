@@ -119,7 +119,7 @@ test_product_tensor_legendre(
 
             const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length , iRowFEM , iColFEM , k );
 
-            if ( 1.0e-15 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
+            if ( 1.0e-6 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
               std::cout << "test_product_tensor_legendre error: Matrix entry"
                         << "  A(" << k << ",(" << iRowFEM << "," << iColFEM << ")) = " << hM(k,iEntryFEM) 
                         << " , error = " << hM(k,iEntryFEM) - A_fem_k
