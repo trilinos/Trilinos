@@ -349,8 +349,17 @@ namespace Kokkos {
     {
       MultiVector<Scalar,Node> B (this->getNode ());
 
+      const size_t origNumRows = this->getOrigNumRows ();
+      const size_t origNumCols = this->getOrigNumCols ();
+      // mfh 04 Jan 2013: Thanks to Jonathan Hu for pointing out the
+      // necessary test to allow a view of a 0 x C or R x 0
+      // multivector when the offset(s) corresponding to the zero
+      // dimension(s) is/are also zero.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        (origNumRows == 0 && offsetRow > 0) ||
+        (origNumRows > 0 && offsetRow >= origNumRows) ||
+        (origNumCols == 0 && offsetCol > 0) ||
+        (origNumCols > 0 && offsetCol >= origNumCols),
         std::invalid_argument,
         Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
         "column are out of bounds.  The original multivector has dimensions "
