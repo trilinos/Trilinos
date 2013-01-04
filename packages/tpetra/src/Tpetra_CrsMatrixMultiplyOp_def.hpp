@@ -115,7 +115,7 @@ namespace Tpetra {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       numSweeps < 0,
@@ -199,8 +199,8 @@ namespace Tpetra {
     // a problem with our kernel, not the user's problem, but it's
     // still a good idea to warn them.
 
-    RCP<MV> X_in;
-    RCP<MV> X_colMap;
+    RCP<OSMV> X_in;
+    RCP<OSMV> X_colMap;
     bool copiedInput;
     if (X.isConstantStride()) {
       X_in = rcpFromRef (X);
@@ -210,7 +210,7 @@ namespace Tpetra {
       // Don't just make a copy of X; make a column Map multivector,
       // make a domain Map view of it, and copy X into the domain Map
       // view.
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      X_colMap = rcp (new OSMV (colMap, X.getNumVectors ()));
       X_in = X_colMap->offsetViewNonConst (X.getMap (), 0);
       *X_in = X; // deep copy
       copiedInput = true;
@@ -224,12 +224,12 @@ namespace Tpetra {
         "as an efficiency warning for your information.");
     }
 
-    RCP<const MV> B_in;
+    RCP<const OSMV> B_in;
     if (B.isConstantStride()) {
       B_in = rcpFromRef (B);
     }
     else {
-      B_in = rcp (new MV (B));
+      B_in = rcp (new OSMV (B));
       TPETRA_EFFICIENCY_WARNING(
         ! B.isConstantStride (),
         std::runtime_error,
@@ -257,11 +257,11 @@ namespace Tpetra {
       // multivector.
       //
       // FIXME (mfh 27 Dec 2012) I can't currently make a view using a
-      // Map which is a superset of the MV's current Map.  This is
+      // Map which is a superset of the OSMV's current Map.  This is
       // because the offsetView* methods check getLocalLength(), which
-      // simply asks the MV's current Map for the number of elements
+      // simply asks the OSMV's current Map for the number of elements
       // owned by that process.  It should instead ask the local
-      // (Kokkos) MV for its number of rows.
+      // (Kokkos) OSMV for its number of rows.
       X_colMap = X_in->offsetViewNonConst (colMap, 0);
     }
 
@@ -317,7 +317,7 @@ namespace Tpetra {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       numSweeps < 0,
@@ -388,8 +388,8 @@ namespace Tpetra {
 
     // Make an overlap multivector X_colMap, and a domain Map view
     // X_domainMap of it.  Both have constant stride by construction.
-    RCP<MV> X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
-    RCP<MV> X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+    RCP<OSMV> X_colMap = rcp (new OSMV (colMap, X.getNumVectors ()));
+    RCP<OSMV> X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
     // Copy X into X_domainMap (a domain Map view of a column Map
     // multivector X_colMap).  The Gauss-Seidel kernel will work in
@@ -400,12 +400,12 @@ namespace Tpetra {
     // The Gauss-Seidel / SOR kernel expects multivectors of constant
     // stride.  X_colMap is by construction, but B might not be.  If
     // it's not, we have to make a copy.
-    RCP<const MV> B_in;
+    RCP<const OSMV> B_in;
     if (B.isConstantStride()) {
       B_in = rcpFromRef (B);
     }
     else {
-      B_in = rcp (new MV (B));
+      B_in = rcp (new OSMV (B));
       TPETRA_EFFICIENCY_WARNING(
         ! B.isConstantStride (),
         std::runtime_error,

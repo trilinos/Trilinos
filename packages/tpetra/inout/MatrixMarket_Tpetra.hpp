@@ -234,7 +234,6 @@ namespace Tpetra {
           // to the file (resp. reading from it) with receiving (resp.
           // sending) the next chunk.
           const int myEltCount = as<int> (oneToOneMap->getGlobalNumElements ());
-          const int numProcs = comm->getSize ();
           Array<int> recvCounts (numProcs);
           gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
 
