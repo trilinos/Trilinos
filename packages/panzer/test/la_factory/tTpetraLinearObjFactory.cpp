@@ -126,7 +126,6 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
 
       // auxiliary information needed to construct basis object
       int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
 
@@ -150,7 +149,6 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
    
@@ -182,7 +180,6 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
    
