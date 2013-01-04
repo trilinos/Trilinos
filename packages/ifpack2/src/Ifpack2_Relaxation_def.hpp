@@ -32,53 +32,37 @@
 
 #include "Ifpack2_Relaxation_decl.hpp"
 
-namespace {
-  //! Default value of the "L1 eta" parameter of Ifpack2::Relaxation.
-  template<class ScalarType>
-  ScalarType
-  defaultL1eta ()
-  {
-    typedef Teuchos::ScalarTraits<ScalarType> STS;
-
-    const ScalarType two = STS::one() + STS::one() + STS::one();
-    const ScalarType three = two + STS::one();
-
-    return three / two; // 1.5
-  }
-} // namespace (anonymous)
-
-
 namespace Ifpack2 {
 
 //==========================================================================
 template<class MatrixType>
 Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A)
 : A_(A),
-  Comm_(A->getRowMap()->getComm()),
-  Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Relaxation") ) ),
-  NumSweeps_(1),
-  PrecType_(Ifpack2::JACOBI),
-  MinDiagonalValue_(Teuchos::ScalarTraits<scalar_type>::zero ()), // 0.0
-  DampingFactor_(Teuchos::ScalarTraits<scalar_type>::one ()), // 1.0
-  IsParallel_(false),
-  ZeroStartingSolution_(true),
-  DoBackwardGS_(false),
-  DoL1Method_(false),
-  L1Eta_ (defaultL1eta<scalar_type> ()),
-  Condest_(-Teuchos::ScalarTraits<scalar_type>::one ()), // -1.0
-  IsInitialized_(false),
-  IsComputed_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0), // Times are double anyway, so no need for ScalarTraits.
-  ComputeTime_(0.0),
-  ApplyTime_(0.0),
-  ComputeFlops_(0.0),
-  ApplyFlops_(0.0),
-  NumMyRows_(0),
-  NumGlobalRows_(0),
-  NumGlobalNonzeros_(0)
+  Comm_ (A->getRowMap ()->getComm ()),
+  Time_ (Teuchos::rcp (new Teuchos::Time("Ifpack2::Relaxation"))),
+  NumSweeps_ (1),
+  PrecType_ (Ifpack2::JACOBI),
+  MinDiagonalValue_ (Teuchos::as<scalar_type> (0.0)),
+  DampingFactor_ (Teuchos::as<scalar_type> (1.0)),
+  IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
+  ZeroStartingSolution_ (true),
+  DoBackwardGS_ (false),
+  DoL1Method_ (false),
+  L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
+  Condest_ (Teuchos::as<magnitude_type> (-1)),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0), // Times are double anyway, so no need for ScalarTraits.
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0),
+  ComputeFlops_ (0.0),
+  ApplyFlops_ (0.0),
+  NumMyRows_ (0),
+  NumGlobalRows_ (0),
+  NumGlobalNonzeros_ (0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (),
