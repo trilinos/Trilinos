@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMESOS2SMOOTHER_FWDDECL_HPP
-#define MUELU_AMESOS2SMOOTHER_FWDDECL_HPP
+#ifndef MUELU_AMESOS2SMOOTHER_FWD_HPP
+#define MUELU_AMESOS2SMOOTHER_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
@@ -59,4 +59,4 @@ namespace MueLu {
 #endif
 
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
-#endif // MUELU_AMESOS2SMOOTHER_FWDDECL_HPP
+#endif // MUELU_AMESOS2SMOOTHER_FWD_HPP
