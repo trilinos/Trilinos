@@ -103,7 +103,8 @@ namespace stk
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                                         << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
               }
@@ -163,14 +164,16 @@ namespace stk
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 2.0/12.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0/12.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                                         << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
               }
 
           }
 
-        if (0 && p_size <= 2)
+        /// triangles
+        if (1 && p_size <= 2)
           {
             // create a 12x12 quad mesh with sidesets
             const unsigned n = 12;
@@ -191,10 +194,12 @@ namespace stk
             double hmesh = eMesh.hmesh_stretch_eigens(min_max_ave);
 
             const double tol=1.e-6;
-            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(hmesh, 2.0/12.0, tol);
-            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[0], 2.0/12.0, tol);
-            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[1], 2.0/12.0, tol);
-            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[2], 2.0/12.0, tol);
+            const double sqp = 1./6.*std::sqrt(1./6.*(5.+std::sqrt(13.)));
+            const double sqm = 1./6.*std::sqrt(1./6.*(5.-std::sqrt(13.)));
+            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(hmesh, sqp, tol);
+            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[0], sqp, tol);
+            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[1], sqp, tol);
+            STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(min_max_ave[2], sqp, tol);
 
             stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
             VectorFieldType* coordField = eMesh.get_coordinates_field();
@@ -221,20 +226,16 @@ namespace stk
                         JacobianUtil jac;
                         jac.stretch_eigens(eMesh, element, eigens, coordField, cell_topo_data);
                         
-//                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
-//                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 2.0/12.0, tol);
-//                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0/12.0, tol);
-                        if (1) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
+                        STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
+                        STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], sqp, tol);
+                        STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], sqm, tol);
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                                         << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
               }
-
           }
-
-
       }
-
-
 
     }
   }

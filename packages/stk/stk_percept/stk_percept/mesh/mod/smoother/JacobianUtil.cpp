@@ -165,7 +165,7 @@ namespace stk {
       //matr[4] = (2.0*x2[1] - (x1[1] + x0[1]))*isqrt3;
       grad[indices[2]][1] += dMdA(1,1)*(+2.0*isqrt3); grad[indices[1]][1] += dMdA(1,1)*(-1.0*isqrt3); grad[indices[0]][1] += dMdA(1,1)*(-1.0*isqrt3);
       //matr[5] = (3.0*x3[1] - x2[1] - (x1[1] + x0[1]))*isqrt6;
-      grad[indices[3]][1] += dMdA(1,2)*(+3.0*isqrt6); grad[indices[2]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[1]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[0]][1] += dMdA(1,2)*(-isqrt6);
+      grad[indices[3]][1] += dMdA(1,2)*(+3.0*isqrt6); grad[indices[2]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[1]][1] += dMdA(1,2)*(-1.0*isqrt6); grad[indices[0]][1] += dMdA(1,2)*(-1.0*isqrt6);
 
       //matr[6] = x1[2] - x0[2];
       grad[indices[1]][2] += dMdA(2,0)*(+1); grad[indices[0]][2] += dMdA(2,0)*(-1);
