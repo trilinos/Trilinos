@@ -46,6 +46,9 @@
 #ifndef MUELU_VARIABLECONTAINER_FWD_HPP
 #define MUELU_VARIABLECONTAINER_FWD_HPP
 
+
+
+
 namespace MueLu {
   class VariableContainer;
 }
@@ -53,5 +56,7 @@ namespace MueLu {
 #ifndef MUELU_VARIABLECONTAINER_SHORT
 #define MUELU_VARIABLECONTAINER_SHORT
 #endif
+
+
 
 #endif // MUELU_VARIABLECONTAINER_FWD_HPP

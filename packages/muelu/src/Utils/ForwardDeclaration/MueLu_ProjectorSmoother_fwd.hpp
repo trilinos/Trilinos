@@ -46,6 +46,9 @@
 #ifndef MUELU_PROJECTORSMOOTHER_FWD_HPP
 #define MUELU_PROJECTORSMOOTHER_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class ProjectorSmoother;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_PROJECTORSMOOTHER_SHORT
 #define MUELU_PROJECTORSMOOTHER_SHORT
 #endif
+
+
 
 #endif // MUELU_PROJECTORSMOOTHER_FWD_HPP

@@ -58,5 +58,6 @@ namespace MueLu {
 #define MUELU_IFPACK2SMOOTHER_SHORT
 #endif
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
+#endif
+
 #endif // MUELU_IFPACK2SMOOTHER_FWD_HPP

@@ -46,6 +46,9 @@
 #ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class EmergencyAggregationAlgorithm;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
 #define MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
 #endif
+
+
 
 #endif // MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP

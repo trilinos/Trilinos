@@ -46,6 +46,9 @@
 #ifndef MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class SmallAggregationAlgorithm;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 #define MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 #endif
+
+
 
 #endif // MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP

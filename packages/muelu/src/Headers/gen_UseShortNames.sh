@@ -17,7 +17,7 @@ for i in LO-GO-NO-LMO Non-Templated
   classList=$classListDir/$i.classList
   tmpl=$i.tmpl
 
-  for className in `cat $classList | grep -v \#`
+  for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
     do
     uppercaseClassName=$(echo $className | tr '[a-z]' '[A-Z]')
     cat $tmpl | sed "s/\$TMPL_UPPERCASECLASS/$uppercaseClassName/g" | sed "s/\$TMPL_CLASS/$className/g" >> MueLu_UseShortNamesOrdinal.hpp
@@ -37,7 +37,7 @@ i=SC-LO-GO-NO-LMO
 classList=$classListDir/$i.classList
 tmpl=$i.tmpl
 
-for className in `cat $classList | grep -v \#`
+for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
   do
   uppercaseClassName=$(echo $className | tr '[a-z]' '[A-Z]')
   cat $tmpl | sed "s/\$TMPL_UPPERCASECLASS/$uppercaseClassName/g" | sed "s/\$TMPL_CLASS/$className/g" >> MueLu_UseShortNamesScalar.hpp

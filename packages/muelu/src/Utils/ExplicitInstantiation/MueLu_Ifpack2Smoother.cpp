@@ -44,9 +44,8 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_ExplicitInstantiation.hpp"
-
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_Ifpack2Smoother_def.hpp"
 

@@ -46,6 +46,9 @@
 #ifndef MUELU_CGSOLVER_FWD_HPP
 #define MUELU_CGSOLVER_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class CGSolver;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_CGSOLVER_SHORT
 #define MUELU_CGSOLVER_SHORT
 #endif
+
+
 
 #endif // MUELU_CGSOLVER_FWD_HPP

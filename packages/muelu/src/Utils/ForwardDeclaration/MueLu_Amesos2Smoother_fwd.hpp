@@ -58,5 +58,6 @@ namespace MueLu {
 #define MUELU_AMESOS2SMOOTHER_SHORT
 #endif
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
+#endif
+
 #endif // MUELU_AMESOS2SMOOTHER_FWD_HPP

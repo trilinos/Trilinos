@@ -1,6 +1,6 @@
 AggregationExportFactory
 AmalgamationFactory
-Amesos2Smoother
+Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 BlockedCoarseMapFactory
 BlockedGaussSeidelSmoother
 BlockedPFactory
@@ -22,7 +22,7 @@ GaussSeidelSmoother
 GenericRFactory
 Hierarchy
 HierarchyManager
-Ifpack2Smoother
+Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 MapTransferFactory
 MergedSmoother
 MLParameterListInterpreter
@@ -40,7 +40,7 @@ ProjectorSmoother
 RAPFactory
 RebalanceAcFactory
 RebalanceTransferFactory
-RepartitionFactory
+RepartitionFactory - #ifdef HAVE_MPI
 SaPFactory
 SchurComplementFactory
 Smoother

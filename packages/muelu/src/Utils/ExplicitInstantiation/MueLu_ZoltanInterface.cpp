@@ -43,11 +43,11 @@
 // ***********************************************************************
 //
 // @HEADER
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_ZoltanInterface_def.hpp"
-
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 template class MueLu::ZoltanInterface<int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
