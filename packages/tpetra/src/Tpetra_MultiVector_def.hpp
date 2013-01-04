@@ -2177,7 +2177,7 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ?
       VectorIndex : whichVectors_[VectorIndex];
-    lclMV_.sumIntoLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
+    lclMV_.replaceLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
