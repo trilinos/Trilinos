@@ -52,6 +52,15 @@ SOREV = 5
 
 DEFINES = $(PICFLAGS) $(NET_DEF)
 
+#if defined(BuildParallelAwareExodus)
+PARSRCS = ex_create_par.c ex_open_par.c
+PAROBJS = ${PARSRCS:.c=.o}
+$(PAROBJS): ../include/exodusII.h ../include/exodusII_int.h ../include/exodusII_par.h
+
+CC = $(CCPAR)
+#define LibraryCcCmd $(CCPAR)
+#endif
+
 SRCS =	ex_close.c \
 	ex_conv.c \
 	ex_copy.c \
@@ -71,8 +80,8 @@ SRCS =	ex_close.c \
 	ex_get_concat_side_sets.c \
 	ex_get_conn.c \
 	ex_get_coord.c \
-	ex_get_coord_names.c \
 	ex_get_coordinate_frames.c \
+	ex_get_coord_names.c \
 	ex_get_eb_info_global.c \
 	ex_get_elem_attr.c \
 	ex_get_elem_attr_names.c \
@@ -87,10 +96,9 @@ SRCS =	ex_close.c \
 	ex_get_elem_var_tab.c \
 	ex_get_elem_var_time.c \
 	ex_get_entity_count_per_polyhedra.c \
-	ex_get_glob_var_time.c \
 	ex_get_glob_vars.c \
+	ex_get_glob_var_time.c \
 	ex_get_id_map.c \
-	ex_get_partial_id_map.c \
 	ex_get_ids.c \
 	ex_get_info.c \
 	ex_get_init.c \
@@ -100,6 +108,9 @@ SRCS =	ex_close.c \
 	ex_get_loadbal_param.c \
 	ex_get_map.c \
 	ex_get_map_param.c \
+	ex_get_name.c \
+	ex_get_names.c \
+	ex_get_n_attr.c \
 	ex_get_n_conn.c \
 	ex_get_n_coord.c \
 	ex_get_n_elem_attr.c \
@@ -110,12 +121,6 @@ SRCS =	ex_close.c \
 	ex_get_n_node_num_map.c \
 	ex_get_n_node_set.c \
 	ex_get_n_node_set_df.c \
-	ex_get_n_one_attr.c \
-	ex_get_n_side_set.c \
-	ex_get_n_side_set_df.c \
-	ex_get_n_var.c \
-	ex_get_name.c \
-	ex_get_names.c \
 	ex_get_nodal_var.c \
 	ex_get_nodal_var_time.c \
 	ex_get_node_cmap.c \
@@ -125,25 +130,46 @@ SRCS =	ex_close.c \
 	ex_get_node_set_dist_fact.c \
 	ex_get_node_set_ids.c \
 	ex_get_node_set_param.c \
-	ex_get_ns_param_global.c \
+	ex_get_n_one_attr.c \
 	ex_get_nset_var.c \
 	ex_get_nset_var_tab.c \
+	ex_get_n_side_set.c \
+	ex_get_n_side_set_df.c \
+	ex_get_ns_param_global.c \
 	ex_get_num_map.c \
+	ex_get_n_var.c \
 	ex_get_object_truth_vector.c \
 	ex_get_one_attr.c \
 	ex_get_one_elem_attr.c \
+	ex_get_partial_attr.c \
+	ex_get_partial_conn.c \
+	ex_get_partial_coord.c \
+	ex_get_partial_elem_attr.c \
+	ex_get_partial_elem_conn.c \
 	ex_get_partial_elem_map.c \
+	ex_get_partial_elem_num_map.c \
+	ex_get_partial_elem_var.c \
+	ex_get_partial_id_map.c \
+	ex_get_partial_nodal_var.c \
+	ex_get_partial_node_num_map.c \
+	ex_get_partial_node_set.c \
+	ex_get_partial_node_set_df.c \
 	ex_get_partial_num_map.c \
+	ex_get_partial_one_attr.c \
+	ex_get_partial_set_dist_fact.c \
+	ex_get_partial_side_set.c \
+	ex_get_partial_side_set_df.c \
+	ex_get_partial_var.c \
 	ex_get_processor_elem_maps.c \
 	ex_get_processor_node_maps.c \
-	ex_get_prop.c \
 	ex_get_prop_array.c \
+	ex_get_prop.c \
 	ex_get_prop_names.c \
 	ex_get_qa.c \
 	ex_get_set.c \
-	ex_get_sets.c \
 	ex_get_set_dist_fact.c \
 	ex_get_set_param.c \
+	ex_get_sets.c \
 	ex_get_side_set.c \
 	ex_get_side_set_dist_fact.c \
 	ex_get_side_set_ids.c \
@@ -151,20 +177,20 @@ SRCS =	ex_close.c \
 	ex_get_side_set_node_list.c \
 	ex_get_side_set_node_list_len.c \
 	ex_get_side_set_param.c \
-	ex_get_ss_param_global.c \
 	ex_get_sset_var.c \
 	ex_get_sset_var_tab.c \
+	ex_get_ss_param_global.c \
 	ex_get_time.c \
 	ex_get_truth_table.c \
 	ex_get_var.c \
+	ex_get_variable_name.c \
+	ex_get_variable_names.c \
+	ex_get_variable_param.c \
 	ex_get_var_name.c \
 	ex_get_var_names.c \
 	ex_get_var_param.c \
 	ex_get_var_tab.c \
 	ex_get_var_time.c \
-	ex_get_variable_name.c \
-	ex_get_variable_names.c \
-	ex_get_variable_param.c \
 	ex_inquire.c \
 	ex_ne_util.c \
 	ex_open.c \
@@ -186,8 +212,8 @@ SRCS =	ex_close.c \
 	ex_put_concat_var_param.c \
 	ex_put_conn.c \
 	ex_put_coord.c \
-	ex_put_coord_names.c \
 	ex_put_coordinate_frames.c \
+	ex_put_coord_names.c \
 	ex_put_eb_info_global.c \
 	ex_put_elem_attr.c \
 	ex_put_elem_attr_names.c \
@@ -211,6 +237,8 @@ SRCS =	ex_close.c \
 	ex_put_loadbal_param_cc.c \
 	ex_put_map.c \
 	ex_put_map_param.c \
+	ex_put_name.c \
+	ex_put_names.c \
 	ex_put_n_coord.c \
 	ex_put_n_elem_attr.c \
 	ex_put_n_elem_conn.c \
@@ -219,12 +247,6 @@ SRCS =	ex_close.c \
 	ex_put_n_node_num_map.c \
 	ex_put_n_node_set.c \
 	ex_put_n_node_set_df.c \
-	ex_put_n_one_attr.c \
-	ex_put_n_side_set.c \
-	ex_put_n_side_set_df.c \
-	ex_put_n_var.c \
-	ex_put_name.c \
-	ex_put_names.c \
 	ex_put_nodal_var.c \
 	ex_put_nodal_var_slab.c \
 	ex_put_node_cmap.c \
@@ -233,62 +255,60 @@ SRCS =	ex_close.c \
 	ex_put_node_set.c \
 	ex_put_node_set_dist_fact.c \
 	ex_put_node_set_param.c \
-	ex_put_ns_param_global.c \
+	ex_put_n_one_attr.c \
 	ex_put_nset_var.c \
 	ex_put_nset_var_tab.c \
+	ex_put_n_side_set.c \
+	ex_put_n_side_set_df.c \
+	ex_put_ns_param_global.c \
 	ex_put_num_map.c \
+	ex_put_n_var.c \
 	ex_put_one_attr.c \
 	ex_put_one_elem_attr.c \
+	ex_put_partial_attr.c \
+	ex_put_partial_coord.c \
+	ex_put_partial_elem_attr.c \
+	ex_put_partial_elem_conn.c \
 	ex_put_partial_elem_map.c \
+	ex_put_partial_elem_num_map.c \
 	ex_put_partial_id_map.c \
+	ex_put_partial_nodal_var.c \
+	ex_put_partial_node_num_map.c \
+	ex_put_partial_node_set.c \
+	ex_put_partial_node_set_df.c \
 	ex_put_partial_num_map.c \
+	ex_put_partial_one_attr.c \
+	ex_put_partial_set.c \
 	ex_put_partial_set_dist_fact.c \
+	ex_put_partial_side_set.c \
+	ex_put_partial_side_set_df.c \
+	ex_put_partial_var.c \
 	ex_put_processor_elem_maps.c \
 	ex_put_processor_node_maps.c \
-	ex_put_prop.c \
 	ex_put_prop_array.c \
+	ex_put_prop.c \
 	ex_put_prop_names.c \
 	ex_put_qa.c \
 	ex_put_set.c \
-	ex_put_sets.c \
 	ex_put_set_dist_fact.c \
 	ex_put_set_param.c \
+	ex_put_sets.c \
 	ex_put_side_set.c \
 	ex_put_side_set_dist_fact.c \
 	ex_put_side_set_param.c \
-	ex_put_ss_param_global.c \
 	ex_put_sset_var.c \
 	ex_put_sset_var_tab.c \
+	ex_put_ss_param_global.c \
 	ex_put_time.c \
 	ex_put_truth_table.c \
 	ex_put_var.c \
+	ex_put_variable_name.c \
+	ex_put_variable_names.c \
+	ex_put_variable_param.c \
 	ex_put_var_name.c \
 	ex_put_var_names.c \
 	ex_put_var_param.c \
 	ex_put_var_tab.c \
-	ex_put_variable_name.c \
-	ex_put_variable_names.c \
-	ex_put_variable_param.c \
-        ex_get_partial_attr.c \
-        ex_get_partial_conn.c \
-        ex_get_partial_coord.c \
-        ex_get_partial_elem_attr.c \
-        ex_get_partial_elem_num_map.c \
-        ex_get_partial_elem_var.c \
-        ex_get_partial_nodal_var.c \
-        ex_get_partial_node_set.c \
-        ex_get_partial_one_attr.c \
-        ex_get_partial_side_set.c \
-        ex_get_partial_set_dist_fact.c \
-        ex_get_partial_var.c \
-        ex_put_partial_coord.c \
-        ex_put_partial_attr.c \
-        ex_put_partial_elem_conn.c \
-        ex_put_partial_elem_num_map.c \
-        ex_put_partial_nodal_var.c \
-        ex_put_partial_one_attr.c \
-        ex_put_partial_set.c \
-        ex_put_partial_var.c \
 	ex_update.c \
 	ex_utils.c
 
@@ -296,10 +316,9 @@ OBJS   = ${SRCS:.c=.o}
 
 #include <Library.tmpl> 
 
-LibraryTargetSubdirsCopy(libexodus.a,$(OBJS),../../) 
+LibraryTargetSubdirsCopy(libexodus.a,$(OBJS) $(PAROBJS),../../) 
 
 
 $(OBJS): ../include/exodusII.h ../include/exodusII_int.h
-
 DependTarget()
 LibraryObjectRule()
