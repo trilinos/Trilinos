@@ -227,6 +227,9 @@ MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 # directory.  This needs to be done before the following loop over the
 # PyTrilinos modules, because of the call to GET_DIRECTORY_PROPERTY().
 ADD_SUBDIRECTORY(PyTrilinos)
+
+#
+# Add the STK subdirectory
 if (HAVE_STK AND TPL_ENABLE_MPI)
     ADD_SUBDIRECTORY(stk)
 endif ()
