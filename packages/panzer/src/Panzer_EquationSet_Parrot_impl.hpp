@@ -17,12 +17,9 @@ EquationSet_Parrot(const EquationSetBase & eqSet,
   // ********************
   const std::vector<std::string> dofNames = eqSet.getDOFNames();
   for(std::size_t i=0;i<dofNames.size();i++) {
-    this->m_dof_names->push_back(dofNames[i]);
-    this->m_dof_gradient_names->push_back(dofNames[i]);
+    this->addProvidedDOF(dofNames[i]);
+    this->addDOFGrad(dofNames[i],dofNames[i]);
   }
-
-  // this->m_residual_names 
-  // this->m_scatter_name 
 
   // ********************
   // Build Basis Functions and Integration Rules
