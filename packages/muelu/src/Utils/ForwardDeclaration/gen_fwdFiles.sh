@@ -1,9 +1,11 @@
 #!/bin/bash
 
+classListDir=../ClassList/
+
 for i in Non-Templated LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
   do
 
-  classList=$i.classList
+  classList=$classListDir/$i.classList
   tmpl=$i.tmpl
 
   for className in `cat $classList | grep -v \#`

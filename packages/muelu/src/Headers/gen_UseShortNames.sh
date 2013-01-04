@@ -4,6 +4,8 @@
 # Ordinal
 #
 
+classListDir=../Utils/ClassList/
+
 echo "// Type definitions for templated classes (generally graph-related) that do not require a scalar." > MueLu_UseShortNamesOrdinal.hpp
 echo >> MueLu_UseShortNamesOrdinal.hpp
 echo "#include <Xpetra_UseShortNamesOrdinal.hpp>" >> MueLu_UseShortNamesOrdinal.hpp
@@ -12,7 +14,7 @@ echo >> MueLu_UseShortNamesOrdinal.hpp
 for i in LO-GO-NO-LMO Non-Templated
   do
 
-  classList=$i.classList
+  classList=$classListDir/$i.classList
   tmpl=$i.tmpl
 
   for className in `cat $classList | grep -v \#`
@@ -32,7 +34,7 @@ echo "#include <Xpetra_UseShortNamesScalar.hpp>" >> MueLu_UseShortNamesScalar.hp
 echo >> MueLu_UseShortNamesScalar.hpp
 
 i=SC-LO-GO-NO-LMO
-classList=$i.classList
+classList=$classListDir/$i.classList
 tmpl=$i.tmpl
 
 for className in `cat $classList | grep -v \#`

@@ -1,10 +1,13 @@
 #!/bin/bash
 
+classListDir=../ClassList/
+
 for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
 do
-  for classList in $i.*classList
+  for classList in $classListDir/$i.*classList
   do
-    tmpl=`echo $classList | sed 's/classList/tmpl/'`
+    tmpl=`basename $classList`
+    tmpl=`echo $tmpl | sed 's/classList/tmpl/'`
 
     for className in `cat $classList | grep -v \#`
     do

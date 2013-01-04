@@ -54,8 +54,16 @@ typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Co
 typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ConstraintFactory;
 #endif
 
+#ifdef MUELU_DEMOFACTORY_SHORT
+typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DemoFactory;
+#endif
+
 #ifdef MUELU_DIRECTSOLVER_SHORT
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
+#endif
+
+#ifdef MUELU_DISTANCELAPLACIANFACTORY_SHORT
+typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
 #endif
 
 #ifdef MUELU_EMINPFACTORY_SHORT
@@ -216,14 +224,6 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
-#endif
-
-#ifdef MUELU_UTILS_SHORT
-typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
-#endif
-
-#ifdef MUELU_DISTANCELAPLACIANFACTORY_SHORT
-typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT
