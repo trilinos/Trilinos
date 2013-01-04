@@ -15,6 +15,139 @@
 
 namespace unit_test {
 
+template <typename Scalar> struct ScalarTolerances {};
+
+template <> struct ScalarTolerances<float> {
+  typedef float scalar_type;
+  static scalar_type sparse_cijk_tol() { return 1e-5; }
+};
+
+template <> struct ScalarTolerances<double> {
+  typedef double scalar_type;
+  static scalar_type sparse_cijk_tol() { return 1e-12; }
+};
+
+template< typename ScalarType , class Device ,
+          template< unsigned , typename , class > class TensorType >
+std::vector<double>
+test_product_tensor_matrix(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool check ,
+  const bool print_flag = false )
+{
+  typedef ScalarType value_type ;
+  typedef KokkosArray::View< value_type** ,
+                             KokkosArray::LayoutLeft ,
+                             Device > block_vector_type ;
+
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+
+  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
+
+  typedef KokkosArray::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef typename matrix_type::graph_type graph_type ;
+
+  //------------------------------
+  // Generate graph for "FEM" box structure:
+
+  std::vector< std::vector<size_t> > graph ;
+
+  const size_t outer_length = nGrid * nGrid * nGrid ;
+  const size_t graph_length = unit_test::generate_fem_graph( nGrid , graph );
+
+  //------------------------------
+  // Generate CRS block-tensor matrix:
+
+  matrix_type matrix ;
+
+  matrix.block = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+
+  const size_t inner_length      = matrix.block.dimension();
+  const size_t inner_matrix_size = matrix.block.dimension();
+
+  matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
+
+  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
+  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
+
+  typename block_vector_type::HostMirror hM = KokkosArray::create_mirror( matrix.values );
+
+  // Loop over spatial rows
+  size_t outer_nz = 0;
+  for ( size_t iOuterRow = 0 ; iOuterRow < outer_length ; ++iOuterRow ) {
+
+    //Loop over non-zeros in a row
+    const size_t iOuterNZ = graph[iOuterRow].size();
+    for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterNZ ; ++iOuterEntry ) {
+      //const size_t iOuterCol = graph[iOuterRow][iOuterEntry];
+  
+      // Build PC expansion for this nonzero
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+	hM(j,outer_nz) = 1 + j + 0.10 * outer_nz ;
+      }
+      outer_nz++;
+    }
+  }
+  
+  // for ( size_t i = 0 ; i < graph_length ; ++i ) {
+  //   for ( size_t j = 0 ; j < inner_length ; ++j ) {
+  //     hM(j,i) = 1 + j + 10 * i ;
+  //   }
+  // }
+  
+  KokkosArray::deep_copy( matrix.values , hM );
+
+  //------------------------------
+  // Generate input multivector:
+  
+  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+
+  for ( size_t i = 0 ; i < outer_length ; ++i ) {
+    for ( size_t j = 0 ; j < inner_length ; ++j ) {
+      hx(j,i) = 1 + j + 10 * i ;
+    }
+  }
+
+  KokkosArray::deep_copy( x , hx );
+
+  //------------------------------
+
+  KokkosArray::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    KokkosArray::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+
+  //------------------------------
+
+  if ( print_flag ) {
+    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+
+    KokkosArray::deep_copy( hy , y );
+
+    std::cout << std::endl << "test_product_tensor_matrix" << std::endl ;
+    for ( size_t i = 0 ; i < outer_length ; ++i ) {
+      std::cout << "hy(:," << i << ") =" ;
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+        std::cout << " " << hy(j,i);
+      }
+      std::cout << std::endl ;
+    }
+  }
+
+  std::vector<double> perf(2) ;
+
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter ;
+
+  return perf ;
+}
+
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , class Device >
@@ -716,7 +849,8 @@ test_original_matrix_free_vec(
   for (size_t i=0; i<num_KL; i++)
     bases[i] = Teuchos::rcp(new basis_type(var_degree[i],true));
   RCP<const product_basis_type> basis = 
-    rcp(new product_basis_type(bases, 1e-12));
+    rcp(new product_basis_type(
+	  bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
   const size_t outer_length = basis->size();
   RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(outer_length);
 
@@ -1010,6 +1144,9 @@ void performance_test_driver_poly( const int pdeg ,
 	    << "\"Original-Matrix-Free-Block-MXV-Time\" , "
 	    << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
+	    // << "\"Block-Legendre-Tensor MXV-Time\" , "
+	    // << "\"Block-Legendre-Tensor MXV-Speedup\" , "
+            // << "\"Block-Legendre-Tensor MXV-GFLOPS\" , "
 	    << "\"Block-Crs-Tensor MXV-Time\" , "
 	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
@@ -1021,7 +1158,10 @@ void performance_test_driver_poly( const int pdeg ,
     const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
     const std::vector<double> perf_crs_tensor =
-      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
+      test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , check );
+
+    // const std::vector<double> perf_legendre_tensor =
+    //   test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_original_mat_free_block =
       test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
@@ -1034,6 +1174,9 @@ void performance_test_driver_poly( const int pdeg ,
 	      << perf_original_mat_free_block[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
+	      // << perf_legendre_tensor[1] << " , "
+	      // << perf_original_mat_free_block[1] / perf_legendre_tensor[1] << " , "
+              // << perf_original_mat_free_block[3] / perf_legendre_tensor[1] << " , "
 	      << perf_crs_tensor[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
               << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
