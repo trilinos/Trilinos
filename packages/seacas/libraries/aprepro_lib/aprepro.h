@@ -64,6 +64,7 @@ namespace SEAMS {
     bool info_msg;
     bool debugging;
     bool interactive;
+    bool immutable;
     bool trace_parsing;    // enable debug output in the bison parser
 
     aprepro_options() :
@@ -72,6 +73,7 @@ namespace SEAMS {
       info_msg(false),
       debugging(false),
       interactive(false),
+      immutable(false),
       trace_parsing(false)
     {}
   };
@@ -107,8 +109,12 @@ namespace SEAMS {
       STRING_VARIABLE = 2,
       UNDEFINED_VARIABLE = 5,
       FUNCTION = 3,
-      STRING_FUNCTION = 4
+      STRING_FUNCTION = 4,
+      IMMUTABLE_VARIABLE = 11,
+      IMMUTABLE_STRING_VARIABLE = 12
     };
+    
+    bool state_is_immutable() const {return stateImmutable;}
     
     /** Return an  std::ostringstream reference to get the results of
 	the parse_* call (* = stream, file, or string).
@@ -169,6 +175,8 @@ namespace SEAMS {
     void init_table(char comment);
     std::vector<symrec*> sym_table;
     std::ostringstream parsingResults;
+  public:
+    bool stateImmutable;
   };
 
 } // namespace SEAMS

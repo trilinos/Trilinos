@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.09 (2011/01/03)";
+  const char* version_string = "3.10 (2012/12/07)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -30,7 +30,7 @@ namespace SEAMS {
   Aprepro *aprepro;  // A global for use in the library.  Clean this up...
   
   Aprepro::Aprepro()
-    : sym_table(HASHSIZE)
+    : sym_table(HASHSIZE), stateImmutable(false)
   {
     ap_file_list.push(file_rec());
     init_table('#');
@@ -148,6 +148,12 @@ namespace SEAMS {
 	break;
       case STRING_VARIABLE:
 	parser_type = Parser::token::SVAR;
+	break;
+      case IMMUTABLE_VARIABLE:
+	parser_type = Parser::token::IMMVAR;
+	break;
+      case IMMUTABLE_STRING_VARIABLE:
+	parser_type = Parser::token::IMMSVAR;
 	break;
       case UNDEFINED_VARIABLE:
 	parser_type = Parser::token::UNDVAR;
