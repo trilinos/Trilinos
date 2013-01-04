@@ -214,7 +214,7 @@ namespace Kokkos {
     }
 
     //@}
-    //! @name Element access methods (very slow on GPU Nodes)
+    //! @name Element update / replace methods (VERY SLOW on GPU Nodes)
     //@{
 
     /// \brief <tt>X(i,j) = X(i,j) + newVal</tt>, where X is this multivector.
@@ -422,6 +422,7 @@ namespace Kokkos {
   // methods faster on CPU Nodes.
   //
 
+  // Partial specialization for SerialNode.
   template<class Scalar>
   class MultiVector<Scalar, SerialNode> {
   public:
@@ -617,70 +618,601 @@ namespace Kokkos {
     size_t origNumCols_;
   };
 
-#if 0
-  template<class Scalar>
-  void
-  MultiVector<Scalar, SerialNode>::
-  sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] += newVal;
-  }
-
-  template<class Scalar>
-  void
-  MultiVector<Scalar, SerialNode>::
-  replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] = newVal;
-  }
-
 #if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+  // Partial specialization for TPINode.
   template<class Scalar>
-  void
-  MultiVector<Scalar, TPINode>::
-  sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] += newVal;
-  }
+  class MultiVector<Scalar, TPINode> {
+  public:
+    typedef Scalar ScalarType;
+    typedef TPINode NodeType;
 
-  template<class Scalar>
-  void
-  MultiVector<Scalar, TPINode>::
-  replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] = newVal;
-  }
+    MultiVector (RCP<TPINode> node)
+      : node_(node)
+      , numRows_(0)
+      , numCols_(0)
+      , stride_(0)
+      , origNumRows_(0)
+      , origNumCols_(0) {
+    }
+
+    MultiVector (const MultiVector& source)
+      : node_(source.node_)
+      , contigValues_(source.contigValues_)
+      , numRows_(source.numRows_)
+      , numCols_(source.numCols_)
+      , stride_(source.stride_)
+      , origNumRows_(source.origNumRows_)
+      , origNumCols_(source.origNumCols_) {
+    }
+
+    ~MultiVector() {
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = numRows;
+      origNumCols_ = numCols;
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride,
+                      size_t origNumRows,
+                      size_t origNumCols)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = origNumRows;
+      origNumCols_ = origNumCols;
+    }
+
+    ArrayRCP<Scalar> getValuesNonConst () {
+      return contigValues_;
+    }
+
+    ArrayRCP<const Scalar> getValues () const {
+      return contigValues_;
+    }
+
+    ArrayRCP<Scalar>
+    getValuesNonConst(size_t i) {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    ArrayRCP<const Scalar>
+    getValues (size_t i) const {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    void
+    sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] += newVal;
+    }
+
+    void
+    replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] = newVal;
+    }
+
+    const MultiVector<Scalar,TPINode>
+    offsetView (size_t newNumRows,
+                size_t newNumCols,
+                size_t offsetRow,
+                size_t offsetCol) const
+    {
+      MultiVector<Scalar,TPINode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: offset row or column are "
+        "out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: new dimensions are out "
+        "of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    MultiVector<Scalar,TPINode>
+    offsetViewNonConst (size_t newNumRows,
+                        size_t newNumCols,
+                        size_t offsetRow,
+                        size_t offsetCol)
+    {
+      MultiVector<Scalar,TPINode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
+        "column are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions "
+        "are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    RCP<TPINode> getNode() const { return node_; }
+    size_t getNumRows() const { return numRows_; }
+    size_t getNumCols() const { return numCols_; }
+    size_t getStride() const { return stride_; }
+    size_t getOrigNumRows() const { return origNumRows_; }
+    size_t getOrigNumCols() const { return origNumCols_; }
+
+  private:
+    RCP<TPINode> node_;
+    ArrayRCP<Scalar> contigValues_;
+    size_t numRows_;
+    size_t numCols_;
+    size_t stride_;
+    size_t origNumRows_;
+    size_t origNumCols_;
+  };
 #endif // defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
 
-#if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-  template<class Scalar>
-  void
-  MultiVector<Scalar, TBBNode>::
-  sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] += newVal;
-  }
 
+#if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
+  // Partial specialization for TBBNode.
   template<class Scalar>
-  void
-  MultiVector<Scalar, TBBNode>::
-  replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] = newVal;
-  }
+  class MultiVector<Scalar, TBBNode> {
+  public:
+    typedef Scalar ScalarType;
+    typedef TBBNode NodeType;
+
+    MultiVector (RCP<TBBNode> node)
+      : node_(node)
+      , numRows_(0)
+      , numCols_(0)
+      , stride_(0)
+      , origNumRows_(0)
+      , origNumCols_(0) {
+    }
+
+    MultiVector (const MultiVector& source)
+      : node_(source.node_)
+      , contigValues_(source.contigValues_)
+      , numRows_(source.numRows_)
+      , numCols_(source.numCols_)
+      , stride_(source.stride_)
+      , origNumRows_(source.origNumRows_)
+      , origNumCols_(source.origNumCols_) {
+    }
+
+    ~MultiVector() {
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = numRows;
+      origNumCols_ = numCols;
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride,
+                      size_t origNumRows,
+                      size_t origNumCols)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = origNumRows;
+      origNumCols_ = origNumCols;
+    }
+
+    ArrayRCP<Scalar> getValuesNonConst () {
+      return contigValues_;
+    }
+
+    ArrayRCP<const Scalar> getValues () const {
+      return contigValues_;
+    }
+
+    ArrayRCP<Scalar>
+    getValuesNonConst(size_t i) {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    ArrayRCP<const Scalar>
+    getValues (size_t i) const {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    void
+    sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] += newVal;
+    }
+
+    void
+    replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] = newVal;
+    }
+
+    const MultiVector<Scalar,TBBNode>
+    offsetView (size_t newNumRows,
+                size_t newNumCols,
+                size_t offsetRow,
+                size_t offsetCol) const
+    {
+      MultiVector<Scalar,TBBNode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: offset row or column are "
+        "out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: new dimensions are out "
+        "of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    MultiVector<Scalar,TBBNode>
+    offsetViewNonConst (size_t newNumRows,
+                        size_t newNumCols,
+                        size_t offsetRow,
+                        size_t offsetCol)
+    {
+      MultiVector<Scalar,TBBNode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
+        "column are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions "
+        "are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    RCP<TBBNode> getNode() const { return node_; }
+    size_t getNumRows() const { return numRows_; }
+    size_t getNumCols() const { return numCols_; }
+    size_t getStride() const { return stride_; }
+    size_t getOrigNumRows() const { return origNumRows_; }
+    size_t getOrigNumCols() const { return origNumCols_; }
+
+  private:
+    RCP<TBBNode> node_;
+    ArrayRCP<Scalar> contigValues_;
+    size_t numRows_;
+    size_t numCols_;
+    size_t stride_;
+    size_t origNumRows_;
+    size_t origNumCols_;
+  };
 #endif // defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
 
+
 #if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
+  // Partial specialization for OpenMPNode.
   template<class Scalar>
-  void
-  MultiVector<Scalar, OpenMPNode>::
-  sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] += newVal;
-  }
+  class MultiVector<Scalar, OpenMPNode> {
+  public:
+    typedef Scalar ScalarType;
+    typedef OpenMPNode NodeType;
 
-  template<class Scalar>
-  void
-  MultiVector<Scalar, OpenMPNode>::
-  replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
-    contigValues_[i + j*getStride()] = newVal;
-  }
+    MultiVector (RCP<OpenMPNode> node)
+      : node_(node)
+      , numRows_(0)
+      , numCols_(0)
+      , stride_(0)
+      , origNumRows_(0)
+      , origNumCols_(0) {
+    }
+
+    MultiVector (const MultiVector& source)
+      : node_(source.node_)
+      , contigValues_(source.contigValues_)
+      , numRows_(source.numRows_)
+      , numCols_(source.numCols_)
+      , stride_(source.stride_)
+      , origNumRows_(source.origNumRows_)
+      , origNumCols_(source.origNumCols_) {
+    }
+
+    ~MultiVector() {
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = numRows;
+      origNumCols_ = numCols;
+    }
+
+    void
+    initializeValues (size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride,
+                      size_t origNumRows,
+                      size_t origNumCols)
+    {
+      numRows_ = numRows;
+      numCols_ = numCols;
+      stride_ = stride;
+      contigValues_ = values;
+      origNumRows_ = origNumRows;
+      origNumCols_ = origNumCols;
+    }
+
+    ArrayRCP<Scalar> getValuesNonConst () {
+      return contigValues_;
+    }
+
+    ArrayRCP<const Scalar> getValues () const {
+      return contigValues_;
+    }
+
+    ArrayRCP<Scalar>
+    getValuesNonConst(size_t i) {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    ArrayRCP<const Scalar>
+    getValues (size_t i) const {
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        contigValues_.is_null () || ! inRange,
+        std::runtime_error,
+        Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+#endif
+      return contigValues_.persistingView (stride_*i, numRows_);
+    }
+
+    void
+    sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] += newVal;
+    }
+
+    void
+    replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
+      contigValues_[i + j*getStride()] = newVal;
+    }
+
+    const MultiVector<Scalar,OpenMPNode>
+    offsetView (size_t newNumRows,
+                size_t newNumCols,
+                size_t offsetRow,
+                size_t offsetCol) const
+    {
+      MultiVector<Scalar,OpenMPNode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: offset row or column are "
+        "out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetView: new dimensions are out "
+        "of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    MultiVector<Scalar,OpenMPNode>
+    offsetViewNonConst (size_t newNumRows,
+                        size_t newNumCols,
+                        size_t offsetRow,
+                        size_t offsetCol)
+    {
+      MultiVector<Scalar,OpenMPNode> B (this->getNode ());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        offsetRow >= this->getOrigNumRows () || offsetCol >= this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
+        "column are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested offset row and column are "
+        << offsetRow << ", " << offsetCol << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
+        std::invalid_argument,
+        Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions "
+        "are out of bounds.  The original multivector has dimensions "
+        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
+        << ", but your requested new dimensions are "
+        << newNumRows << " x " << newNumCols << ".");
+
+      // Starting position of the view of the data.
+      const size_t startPos = offsetRow + this->getStride () * offsetCol;
+      // Length of the view of the data.
+      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+
+      B.initializeValues (newNumRows,
+                          newNumCols,
+                          contigValues_.persistingView (startPos, len),
+                          this->getStride (),
+                          this->getOrigNumRows (),
+                          this->getOrigNumCols ());
+      return B;
+    }
+
+    RCP<OpenMPNode> getNode() const { return node_; }
+    size_t getNumRows() const { return numRows_; }
+    size_t getNumCols() const { return numCols_; }
+    size_t getStride() const { return stride_; }
+    size_t getOrigNumRows() const { return origNumRows_; }
+    size_t getOrigNumCols() const { return origNumCols_; }
+
+  private:
+    RCP<OpenMPNode> node_;
+    ArrayRCP<Scalar> contigValues_;
+    size_t numRows_;
+    size_t numCols_;
+    size_t stride_;
+    size_t origNumRows_;
+    size_t origNumCols_;
+  };
 #endif // defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-
-#endif // 0
 
 } // namespace Kokkos
 
