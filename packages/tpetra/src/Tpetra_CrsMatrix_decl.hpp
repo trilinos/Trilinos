@@ -192,7 +192,7 @@ namespace Tpetra {
    is provided by Epetra_FECrsMatrix.
 
    \section Tpetra_DistObject_MultDist Note for developers on DistObject
-  
+
    DistObject only takes a single Map as input to its constructor.
    MultiVector is an example of a subclass for which a single Map
    suffices to describe its data distribution.  In that case,
@@ -206,7 +206,7 @@ namespace Tpetra {
    whose column indices are not in that process' column Map.  This
    means that CrsMatrix may perform extra communication, though the
    Import and Export operations are still correct.
-  
+
    This is necessary if the CrsMatrix does not yet have a column Map.
    Other processes might have added new entries to the matrix; the
    calling process has to see them in order to accept them.  However,
@@ -447,7 +447,7 @@ namespace Tpetra {
     ///   (row,column) pairs that do not exist in the graph.
     ///
     /// \param globalRow [in] The global index of the row in which to
-    ///   sum into the matrix entries.  
+    ///   sum into the matrix entries.
     /// \param cols [in] One or more column indices.
     /// \param vals [in] One or more values corresponding to those
     ///   column indices.  <tt>vals[k]</tt> corresponds to
@@ -793,12 +793,12 @@ namespace Tpetra {
     ///   communication (before each sweep), which is not part of the
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     localGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-		      MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-		      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-		      const RangeScalar& dampingFactor,
-		      const Kokkos::ESweepDirection direction) const;
+                      MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                      const RangeScalar& dampingFactor,
+                      const Kokkos::ESweepDirection direction) const;
 
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
@@ -870,7 +870,7 @@ namespace Tpetra {
     /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
     ///
     /// This method has the following requirements:
-    /// 
+    ///
     /// 1. X is in the domain Map of the matrix.
     /// 2. The domain and row Maps of the matrix are the same.
     /// 3. The column Map contains the domain Map, and both start at the same place.
@@ -882,7 +882,7 @@ namespace Tpetra {
     /// #1 is just the usual requirement for operators: the input
     /// multivector must always be in the domain Map.  The
     /// Gauss-Seidel kernel imposes additional requirements, since it
-    /// 
+    ///
     /// - overwrites the input multivector with the output (which
     ///   implies #2), and
     /// - uses the same local indices for the input and output
@@ -903,27 +903,60 @@ namespace Tpetra {
     /// the output multivector depends nonlinearly on the diagonal
     /// elements.  Shared ownership of off-diagonal elements would
     /// produce different results.
-    void 
+    void
     gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-		 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-		 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-		 const Scalar& dampingFactor,
-		 const ESweepDirection direction,
-		 const int numSweeps) const;
+                 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                 const Scalar& dampingFactor,
+                 const ESweepDirection direction,
+                 const int numSweeps) const;
 
-    //! Indicates whether this operator supports applying the adjoint operator.
+    /// \brief Version of gaussSeidel(), with fewer requirements on X.
+    ///
+    /// This method is just like gaussSeidel(), except that X need
+    /// only be in the domain Map.  This method does not require that
+    /// X be a domain Map view of a column Map multivector.  As a
+    /// result, this method must copy X into a domain Map multivector
+    /// before operating on it.
+    ///
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param B [in] Right-hand side(s), in the range Map.
+    /// \param D [in] Inverse of diagonal entries of the matrix,
+    ///   in the row Map.
+    /// \param dampingFactor [in] SOR damping factor.  A damping
+    ///   factor of one results in Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward, Backward, or
+    ///   Symmetric.
+    /// \param numSweeps [in] Number of sweeps.  We count each
+    ///   Symmetric sweep (including both its Forward and its
+    ///   Backward sweep) as one.
+    ///
+    /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
+    /// \pre No other argument aliases X.
+    void
+    gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                     const Scalar& dampingFactor,
+                     const ESweepDirection direction,
+                     const int numSweeps) const;
+
+    //! Whether apply() allows applying the transpose or conjugate transpose.
     bool hasTransposeApply() const;
 
-    //! \brief Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
+    /// \brief The domain Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-    //! Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
+    /// \brief The range Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
     //@}
-    //! @name Overridden from Teuchos::Describable
+    //! @name Implementation of Teuchos::Describable interface
     //@{
 
     //! A simple one-line description of this object.
@@ -933,7 +966,7 @@ namespace Tpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-    //! @name Methods implementing Tpetra::DistObject
+    //! @name Implementation of Tpetra::DistObject interface
     //@{
 
     bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source);
@@ -1025,13 +1058,13 @@ namespace Tpetra {
       const LO lrow = this->getRowMap()->getLocalElement(globalRow);
 
       if (lrow == LOT::invalid()) {
-	// The exception test macro doesn't let you pass an additional
-	// argument to the exception's constructor, so we don't use it.
-	std::ostringstream os;
-        os << "transformGlobalValues: The given global row index " 
-	   << globalRow << " is not owned by the calling process (rank "
-	   << this->getRowMap()->getComm()->getRank() << ").";
-	throw Details::InvalidGlobalRowIndex<GO> (os.str (), globalRow);
+        // The exception test macro doesn't let you pass an additional
+        // argument to the exception's constructor, so we don't use it.
+        std::ostringstream os;
+        os << "transformGlobalValues: The given global row index "
+           << globalRow << " is not owned by the calling process (rank "
+           << this->getRowMap()->getComm()->getRank() << ").";
+        throw Details::InvalidGlobalRowIndex<GO> (os.str (), globalRow);
       }
 
       RowInfo rowInfo = staticGraph_->getRowInfo(lrow);

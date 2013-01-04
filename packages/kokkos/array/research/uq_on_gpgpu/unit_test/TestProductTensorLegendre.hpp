@@ -15,7 +15,8 @@ std::vector<double>
 test_product_tensor_legendre(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount )
+  const int iterCount ,
+  const bool check )
 {
   typedef KokkosArray::View< VectorScalar** ,
                              KokkosArray::LayoutLeft ,
@@ -118,7 +119,7 @@ test_product_tensor_legendre(
 
             const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length , iRowFEM , iColFEM , k );
 
-            if ( 1.0e-15 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
+            if ( 1.0e-6 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
               std::cout << "test_product_tensor_legendre error: Matrix entry"
                         << "  A(" << k << ",(" << iRowFEM << "," << iColFEM << ")) = " << hM(k,iEntryFEM) 
                         << " , error = " << hM(k,iEntryFEM) - A_fem_k
@@ -153,6 +154,7 @@ test_product_tensor_legendre(
   //------------------------------
   // Verify result
 
+  if (check)
   {
     const double tol = 1.0e-13 ;
     const size_t error_max = 10 ;

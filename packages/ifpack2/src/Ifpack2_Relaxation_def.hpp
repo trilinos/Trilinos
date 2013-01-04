@@ -32,6 +32,22 @@
 
 #include "Ifpack2_Relaxation_decl.hpp"
 
+namespace {
+  //! Default value of the "L1 eta" parameter of Ifpack2::Relaxation.
+  template<class ScalarType>
+  ScalarType
+  defaultL1eta ()
+  {
+    typedef Teuchos::ScalarTraits<ScalarType> STS;
+
+    const ScalarType two = STS::one() + STS::one() + STS::one();
+    const ScalarType three = two + STS::one();
+
+    return three / two; // 1.5
+  }
+} // namespace (anonymous)
+
+
 namespace Ifpack2 {
 
 //==========================================================================
@@ -42,20 +58,20 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Relaxation") ) ),
   NumSweeps_(1),
   PrecType_(Ifpack2::JACOBI),
-  MinDiagonalValue_(0.0),
-  DampingFactor_(1.0),
+  MinDiagonalValue_(Teuchos::ScalarTraits<scalar_type>::zero ()), // 0.0
+  DampingFactor_(Teuchos::ScalarTraits<scalar_type>::one ()), // 1.0
   IsParallel_(false),
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
   DoL1Method_(false),
-  L1Eta_(1.5),
-  Condest_(-1.0),
+  L1Eta_ (defaultL1eta<scalar_type> ()),
+  Condest_(-Teuchos::ScalarTraits<scalar_type>::one ()), // -1.0
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
   NumCompute_(0),
   NumApply_(0),
-  InitializeTime_(0.0),
+  InitializeTime_(0.0), // Times are double anyway, so no need for ScalarTraits.
   ComputeTime_(0.0),
   ApplyTime_(0.0),
   ComputeFlops_(0.0),
@@ -64,8 +80,10 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
-      Teuchos::typeName(*this) << "::Relaxation(): input matrix reference was null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (),
+    std::runtime_error,
+    "Ifpack2::Relaxation(): The constructor needs a non-null input matrix.");
 }
 
 //==========================================================================
@@ -91,17 +109,20 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 
   Ifpack2::getParameter(List, "relaxation: type", PT);
 
-  if (PT == "Jacobi")
+  if (PT == "Jacobi") {
     PrecType_ = Ifpack2::JACOBI;
-  else if (PT == "Gauss-Seidel")
+  }
+  else if (PT == "Gauss-Seidel") {
     PrecType_ = Ifpack2::GS;
-  else if (PT == "Symmetric Gauss-Seidel")
+  }
+  else if (PT == "Symmetric Gauss-Seidel") {
     PrecType_ = Ifpack2::SGS;
+  }
   else {
-    std::ostringstream osstr;
-    osstr << "Ifpack2::Relaxation::setParameters: unsupported parameter-value for 'relaxation: type' (" << PT << ")";
-    std::string str = osstr.str();
-    throw std::runtime_error(str);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true,
+      std::invalid_argument,
+      "Ifpack2::Relaxation::setParameters: unsupported value for 'relaxation: type' parameter (\"" << PT << "\")");
   }
 
   Ifpack2::getParameter(List, "relaxation: sweeps",NumSweeps_);
@@ -476,15 +497,22 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
   }
 
-  // Flops:
-  // - matrix vector              (2 * NumGlobalNonzeros_)
-  // - update                     (2 * NumGlobalRows_)
-  // - Multiply:
-  //   - DampingFactor            (NumGlobalRows_)
-  //   - Diagonal                 (NumGlobalRows_)
-  //   - A + B                    (NumGlobalRows_)
-  //   - 1.0                      (NumGlobalRows_)
-  ApplyFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+  // For each column of output, for each pass over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
@@ -592,94 +620,44 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     }
   }
 
-  ApplyFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+  // See flop count discussion in implementation of ApplyInverseGS_CrsMatrix().
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseGS_CrsMatrix (const MatrixType& A,
+                          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  size_t NumVectors = X.getNumVectors();
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  Teuchos::ArrayView<const local_ordinal_type> Indices;
-  Teuchos::ArrayView<const scalar_type> Values;
+  const Tpetra::ESweepDirection direction =
+    DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
 
-  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
-  if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
-  }
-  else
-    Y2 = Teuchos::rcp( &Y, false );
+  // For each column of output, for each sweep over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
 
-  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-
-    // only one data exchange per sweep
-    if (IsParallel_)
-      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
-
-    if(!DoBackwardGS_){
-      /* Forward Mode */
-      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-
-        local_ordinal_type col;
-        scalar_type diag = d_ptr[i];
-
-        A.getLocalRowView(i, Indices, Values);
-        size_t NumEntries = Indices.size();
-
-        for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-          scalar_type dtemp = 0.0;
-
-          for (size_t k = 0; k < NumEntries; ++k) {
-            col = Indices[k];
-            dtemp += Values[k] * y2_ptr[m][col];
-          }
-
-          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-        }
-      }
-    }
-    else {
-      /* Backward Mode */
-      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-        local_ordinal_type col;
-        scalar_type diag = d_ptr[i];
-
-        A.getLocalRowView(i, Indices, Values);
-        size_t NumEntries = Indices.size();
-
-        for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-          scalar_type dtemp = 0.0;
-          for (size_t k = 0; k < NumEntries; ++k) {
-            col = Indices[k];
-            dtemp += Values[k] * y2_ptr[m][col];
-          }
-
-          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-
-        }
-      }
-    }
-
-    if (IsParallel_) {
-      for (size_t m = 0 ; m < NumVectors ; ++m)
-        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
-          y_ptr[m][i] = y2_ptr[m][i];
-    }
-  }
-
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  ApplyFlops_ += NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
@@ -795,90 +773,46 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
     }
   }
 
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  // See flop count discussion in implementation of ApplyInverseSGS_CrsMatrix().
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
+
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseSGS_CrsMatrix (const MatrixType& A,
+                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  size_t NumVectors = X.getNumVectors();
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  Teuchos::ArrayView<const local_ordinal_type> Indices;
-  Teuchos::ArrayView<const scalar_type> Values;
+  const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
 
-  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
-  if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
-  }
-  else
-    Y2 = Teuchos::rcp( &Y, false );
+  // For each column of output, for each sweep over the matrix:
+  //
+  // - One + and one * for each matrix entry
+  // - One / and one + for each row of the matrix
+  // - If the damping factor is not one: one * for each row of the
+  //   matrix.  (It's not fair to count this if the damping factor is
+  //   one, since the implementation could skip it.  Whether it does
+  //   or not is the implementation's choice.)
+  //
+  // Each sweep of symmetric Gauss-Seidel / SOR counts as two sweeps,
+  // one forward and one backward.
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
+  // Floating-point operations due to the damping factor, per matrix
+  // row, per direction, per columm of output.
+  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
+  const size_t numVectors = X.getNumVectors ();
 
-  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-
-    // only one data exchange per sweep
-    if (IsParallel_)
-      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
-
-
-    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-
-      scalar_type diag = d_ptr[i];
-
-      A.getLocalRowView(i, Indices, Values);
-      size_t NumEntries = Indices.size();
-
-      for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
-
-        for (size_t k = 0; k < NumEntries; ++k) {
-
-          local_ordinal_type col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
-        }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-      }
-    }
-
-    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-      scalar_type diag = d_ptr[i];
-
-      A.getLocalRowView(i, Indices, Values);
-      size_t NumEntries = Indices.size();
-
-      for (size_t m = 0 ; m < NumVectors ; ++m) {
-
-        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
-        for (size_t k = 0; k < NumEntries; ++k) {
-
-          local_ordinal_type col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
-        }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
-
-      }
-    }
-
-    if (IsParallel_) {
-      for (size_t m = 0 ; m < NumVectors ; ++m)
-        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
-          y_ptr[m][i] = y2_ptr[m][i];
-    }
-  }
-
-  ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
+    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
 }
 
 //==========================================================================

@@ -126,6 +126,10 @@ namespace panzer {
     const panzer::InputEquationSet& getInputEquationSet() const;
 
   protected:
+
+    //! Returns true if transient support should be enabled in the equation set
+    bool buildTransientSupport() const;
+
     // The set of functions below are for use by derived classes to specify the 
     // provided degree of freedom (and associated residual name), in addition
     // to enabling the, gradient, curl and time derivative for those.
@@ -218,10 +222,6 @@ namespace panzer {
     
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
     Teuchos::RCP< std::vector<std::string> > m_dof_names;
-    Teuchos::RCP< std::vector<std::string> > m_dof_gradient_names;
-    Teuchos::RCP< std::vector<std::string> > m_dof_curl_names;
-    Teuchos::RCP< std::vector<std::string> > m_dof_time_derivative_names;
-    Teuchos::RCP< std::vector<std::string> > m_residual_names;
     std::string m_scatter_name;
     Teuchos::RCP<Teuchos::ParameterList> m_eval_plist;
     Teuchos::RCP<const FieldLayoutLibrary> m_field_layout_lib;

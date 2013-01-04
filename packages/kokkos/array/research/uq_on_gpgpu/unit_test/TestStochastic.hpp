@@ -22,7 +22,8 @@ std::vector<double>
 test_product_tensor_diagonal_matrix(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount )
+  const int iterCount ,
+  const bool check )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type**,
@@ -131,6 +132,7 @@ test_product_tensor_diagonal_matrix(
  //------------------------------
   // Verify result
 
+  if (check)
   {
     const double tol = 1.0e-13 ;
 
@@ -170,7 +172,8 @@ std::vector<double>
 test_product_flat_commuted_matrix(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount )
+  const int iterCount ,
+  const bool check )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
@@ -322,6 +325,7 @@ test_product_flat_commuted_matrix(
   //------------------------------
   // Verify result
 
+  if (check)
   {
     const double tol = 1.0e-13 ;
 
@@ -359,7 +363,8 @@ std::vector<double>
 test_product_flat_original_matrix(
   const std::vector<int> & arg_var_degree ,
   const int nGrid ,
-  const int iterCount )
+  const int iterCount ,
+  const bool check )
 {
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
@@ -511,6 +516,7 @@ test_product_flat_original_matrix(
   //------------------------------
   // Verify result
 
+  if (check)
   {
     const double tol = 1.0e-13 ;
 
@@ -545,8 +551,9 @@ test_original_matrix_free_block(
   const std::vector<int> & var_degree ,
   const int nGrid ,
   const int iterCount ,
-  const bool print_flag = false ,
-  const bool test_block = false )
+  const bool print_flag ,
+  const bool test_block ,
+  const bool check )
 {
   typedef ScalarType value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -689,8 +696,9 @@ test_original_matrix_free_vec(
   const std::vector<int> & var_degree ,
   const int nGrid ,
   const int iterCount ,
-  const bool print_flag = false ,
-  const bool test_block = false )
+  const bool print_flag ,
+  const bool test_block ,
+  const bool check )
 {
   typedef ScalarType value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -843,14 +851,15 @@ test_original_matrix_free_vec(
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class Device >
+template< class Scalar, class Device >
 void performance_test_driver_all( const int pdeg ,
 				  const int minvar ,
 				  const int maxvar ,
 				  const int nGrid ,
 				  const int nIter ,
 				  const bool print ,
-				  const bool test_block )
+				  const bool test_block ,
+				  const bool check )
 {
   //------------------------------
   // Generate FEM graph:
@@ -914,16 +923,16 @@ void performance_test_driver_all( const int pdeg ,
     //------------------------------
 
     const std::vector<double> perf_matrix =
-      test_product_tensor_diagonal_matrix<double,Device>( var_degree , nGrid , nIter );
+      test_product_tensor_diagonal_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_crs_tensor =
-      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter );
+      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_flat_commuted =
-      test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter );
+      test_product_flat_commuted_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_flat_original =
-      test_product_flat_original_matrix<double,Device>( var_degree , nGrid , nIter );
+      test_product_flat_original_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
 
     if ( perf_flat_commuted[0] != perf_flat_original[0] ||
          perf_flat_commuted[3] != perf_flat_original[3] ) {
@@ -939,7 +948,7 @@ void performance_test_driver_all( const int pdeg ,
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_vec<double,Device>( var_degree , nGrid , nIter , print , test_block );
+      test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
 #endif
 
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
@@ -971,17 +980,18 @@ void performance_test_driver_all( const int pdeg ,
 }
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
-template< class Device >
+template< class Scalar, class Device >
 void performance_test_driver_poly( const int pdeg ,
 				   const int minvar ,
 				   const int maxvar ,
 				   const int nGrid ,
 				   const int nIter ,
 				   const bool print ,
-				   const bool test_block)
+				   const bool test_block ,
+				   const bool check )
 {
   typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
+  typedef KokkosArray::StochasticProductTensor< Scalar , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
 
   std::cout.precision(8);
 
@@ -1011,10 +1021,10 @@ void performance_test_driver_poly( const int pdeg ,
     const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
     const std::vector<double> perf_crs_tensor =
-      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter );
+      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_vec<double,Device>( var_degree , nGrid , nIter , print , test_block );
+      test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
 
     std::cout << nGrid << " , "
 	      << nvar << " , " << pdeg << " , "
@@ -1035,10 +1045,11 @@ void performance_test_driver_poly( const int pdeg ,
 }
 #endif
 
-template< class Device >
-void performance_test_driver(bool test_flat, bool test_orig, bool test_block)
-{
-}
+template< class Scalar, class Device >
+struct performance_test_driver {
+  static void run(bool test_flat, bool test_orig, bool test_block,
+		  bool check) {}
+};
 
 //----------------------------------------------------------------------------
 
