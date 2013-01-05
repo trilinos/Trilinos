@@ -1,10 +1,11 @@
 #!/bin/bash
+
 IFS=$'\n'
 
 classListDir=../ClassList/
 
 for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
-do
+  do
 
   classList=$classListDir/$i.classList
   tmpl=$i.tmpl

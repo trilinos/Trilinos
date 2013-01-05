@@ -54,11 +54,11 @@
 // Sacado headers must be included first so that overloaded operators
 // are defined in the muelu template code
 #include "Stokhos_Sacado.hpp"
-#include "MueLu_AmalgamationFactory_def.hpp"
+#include "MueLu_FakeSmootherPrototype_def.hpp"
 
 typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::AmalgamationFactory<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::FakeSmootherPrototype<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 
 #endif
 
