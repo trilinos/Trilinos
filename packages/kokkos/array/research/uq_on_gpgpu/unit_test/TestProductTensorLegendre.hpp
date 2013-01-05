@@ -100,44 +100,47 @@ test_product_tensor_legendre(
     }
   }
 
+  KokkosArray::deep_copy( matrix.values , hM );
 
-  for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
-    for ( size_t iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
+  //------------------------------
 
-      double y = 0 ;
+  if (check) {
+    for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
+      for ( size_t iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
 
-      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < fem_graph[ iRowFEM ].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+	double y = 0 ;
 
-        const size_t iColFEM = fem_graph[iRowFEM][iRowEntryFEM] ;
+	for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < fem_graph[ iRowFEM ].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
 
-        for ( size_t iRowEntryStoch = 0 ; iRowEntryStoch < stoch_graph[iRowStoch].size() ; ++iRowEntryStoch ) {
+	  const size_t iColFEM = fem_graph[iRowFEM][iRowEntryFEM] ;
 
-          const size_t iColStoch = stoch_graph[iRowStoch][iRowEntryStoch];
+	  for ( size_t iRowEntryStoch = 0 ; iRowEntryStoch < stoch_graph[iRowStoch].size() ; ++iRowEntryStoch ) {
 
-          double value = 0 ;
-          for ( unsigned k = 0 ; k < stoch_length ; ++k ) {
+	    const size_t iColStoch = stoch_graph[iRowStoch][iRowEntryStoch];
 
-            const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length , iRowFEM , iColFEM , k );
+	    double value = 0 ;
+	    for ( unsigned k = 0 ; k < stoch_length ; ++k ) {
 
-            if ( 1.0e-6 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
-              std::cout << "test_product_tensor_legendre error: Matrix entry"
-                        << "  A(" << k << ",(" << iRowFEM << "," << iColFEM << ")) = " << hM(k,iEntryFEM) 
-                        << " , error = " << hM(k,iEntryFEM) - A_fem_k
-                        << std::endl ;
-            }
+	      const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length , iRowFEM , iColFEM , k );
 
-            value += tensor(iRowStoch,iColStoch,k) * A_fem_k ;
-          }
+	      if ( 1.0e-6 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
+		std::cout << "test_product_tensor_legendre error: Matrix entry"
+			  << "  A(" << k << ",(" << iRowFEM << "," << iColFEM << ")) = " << hM(k,iEntryFEM) 
+			  << " , error = " << hM(k,iEntryFEM) - A_fem_k
+			  << std::endl ;
+	      }
+	      
+	      value += tensor(iRowStoch,iColStoch,k) * A_fem_k ;
+	    }
+	    
+	    y += value * hx( iColStoch , iColFEM );
+	  }
+	}
 
-          y += value * hx( iColStoch , iColFEM );
-        }
+	hy_result( iRowStoch , iRowFEM ) = y ;
       }
-
-      hy_result( iRowStoch , iRowFEM ) = y ;
     }
   }
-
-  KokkosArray::deep_copy( matrix.values , hM );
 
   //------------------------------
 

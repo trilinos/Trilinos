@@ -597,7 +597,6 @@ public:
   {
     const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
     const size_type tensor_dimension = A.block.dimension();
-    //const size_type tensor_entry_max = A.block.entry_maximum();
     // const size_type rem = tensor_dimension % 32;
     // const size_type tensor_align = 
     //   rem > 0 ? tensor_dimension + rem : tensor_dimension ;
@@ -617,7 +616,7 @@ public:
     const size_type shmem = 
       sizeof(VectorScalar) * ((2*block_size+1) * tensor_align + dBlock.x*dBlock.y);
 
-#if 0
+#if 1
 
     std::cout << "Multiply< BlockCrsMatrix< CrsProductTensor ... > >::apply"
               << std::endl 
@@ -627,7 +626,7 @@ public:
               << "  shmem(" << shmem/1024 << " kB)" << std::endl
               << "  row_count(" << row_count << ")" << std::endl
               << "  tensor_dimension(" << tensor_dimension << ")" << std::endl
-              << "  tensor_entry_max(" << tensor_entry_max << ")" << std::endl
+              << "  tensor_entry_max(" << A.block.entry_maximum() << ")" << std::endl
               ;
 #endif
     cudaProfilerStart();

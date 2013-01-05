@@ -1144,9 +1144,9 @@ void performance_test_driver_poly( const int pdeg ,
 	    << "\"Original-Matrix-Free-Block-MXV-Time\" , "
 	    << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
-	    // << "\"Block-Legendre-Tensor MXV-Time\" , "
-	    // << "\"Block-Legendre-Tensor MXV-Speedup\" , "
-            // << "\"Block-Legendre-Tensor MXV-GFLOPS\" , "
+	    << "\"Block-Legendre-Tensor MXV-Time\" , "
+	    << "\"Block-Legendre-Tensor MXV-Speedup\" , "
+            << "\"Block-Legendre-Tensor MXV-GFLOPS\" , "
 	    << "\"Block-Crs-Tensor MXV-Time\" , "
 	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
@@ -1160,8 +1160,8 @@ void performance_test_driver_poly( const int pdeg ,
     const std::vector<double> perf_crs_tensor =
       test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , check );
 
-    // const std::vector<double> perf_legendre_tensor =
-    //   test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
+    const std::vector<double> perf_legendre_tensor =
+      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_original_mat_free_block =
       test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
@@ -1174,9 +1174,9 @@ void performance_test_driver_poly( const int pdeg ,
 	      << perf_original_mat_free_block[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
-	      // << perf_legendre_tensor[1] << " , "
-	      // << perf_original_mat_free_block[1] / perf_legendre_tensor[1] << " , "
-              // << perf_original_mat_free_block[3] / perf_legendre_tensor[1] << " , "
+	      << perf_legendre_tensor[1] << " , "
+	      << perf_original_mat_free_block[1] / perf_legendre_tensor[1] << " , "
+              << perf_original_mat_free_block[3] / perf_legendre_tensor[1] << " , "
 	      << perf_crs_tensor[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
               << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
