@@ -53,6 +53,7 @@
 
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/BeamFixture.hpp>
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 #include <stk_percept/fixtures/TetWedgeFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/PyramidFixture.hpp>
@@ -3288,6 +3289,47 @@ namespace stk
         // end_demo
       }
 #endif
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, tet_hmesh)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+              // create the mesh
+
+              stk::percept::SingleTetFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.save_as("single_tet_0.e");
+            }
+
+            {
+              percept::PerceptMesh eMesh;
+              eMesh.open("single_tet_0.e");
+              Tet4_Tet4_8 break_tet_tet(eMesh);
+              eMesh.commit();
+
+              UNIFORM_REFINER breaker(eMesh, break_tet_tet);
+              breaker.doBreak();
+              eMesh.save_as("single_tet_1.e");
+            }
+          }
+      }
 
       //=============================================================================
       //=============================================================================

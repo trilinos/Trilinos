@@ -409,7 +409,7 @@ namespace stk {
                                        double min_max_ave[3]);
 
       /// compute edge length min, max and average between pairs of vertices that form element edges
-      double hmesh_edge_lengths(stk::mesh::Entity element, double min_max_ave[3]);
+      double hmesh_edge_lengths(double min_max_ave[3]);
 
       /// return sorted (largest first) eigenvalues of U (stretch matrix) of the polar decomposition
       ///   of Jacobian, J = R U, where R is a rotation.  These represent stretch w.r.t. principal
@@ -615,7 +615,7 @@ namespace stk {
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
-      double edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field = 0);
+      double edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field = 0, double* min_edge_length=0, double* max_edge_length=0,  const CellTopologyData * topology_data_in = 0);
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);

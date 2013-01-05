@@ -2550,10 +2550,10 @@ namespace stk {
 
 
 
-    double PerceptMesh::edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field_in )
+    double PerceptMesh::edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field_in , double* min_edge_length_in, double* max_edge_length_in,  const CellTopologyData * topology_data_in )
     {
       stk::mesh::FieldBase &coord_field = (coord_field_in ? *coord_field_in : *get_coordinates_field());
-      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(entity);
+      const CellTopologyData * const cell_topo_data = (topology_data_in ? topology_data_in : PerceptMesh::get_cell_topology(entity));
 
       shards::CellTopology cell_topo(cell_topo_data);
 
@@ -2592,6 +2592,8 @@ namespace stk {
               max_edge_length = std::max(max_edge_length, edge_length);
             }
         }
+      if (min_edge_length_in) *min_edge_length_in = min_edge_length;
+      if (max_edge_length_in) *max_edge_length_in = max_edge_length;
       return edge_length_ave;
     }
 
@@ -4300,6 +4302,46 @@ namespace stk {
                   min_max_ave[0] = std::min(min_max_ave[0], max_eigen);
                   min_max_ave[1] = std::max(min_max_ave[1], max_eigen);
                   min_max_ave[2] += max_eigen;
+                  nele += 1.0;
+                }
+            }
+        }
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceMin<1>( & min_max_ave[0] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceMax<1>( & min_max_ave[1] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & min_max_ave[2] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & nele ) );
+      min_max_ave[2] /= nele;
+
+      return min_max_ave[1];
+    }
+
+    double PerceptMesh::hmesh_edge_lengths(double min_max_ave[3])
+    {
+      min_max_ave[0] = std::numeric_limits<double>::max();
+      min_max_ave[1] = -1;
+      min_max_ave[2] = 0.0;
+      double nele = 0.0;
+      stk::mesh::FieldBase *coord_field = get_coordinates_field();
+
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( element_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          stk::mesh::Bucket & bucket = **k ;
+          const unsigned num_elements_in_bucket = bucket.size();
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          shards::CellTopology cell_topo(cell_topo_data);
+
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity element = bucket[iElement];
+              if (!isGhostElement(element))
+                {
+                  double max_edge_length = 0.0, min_edge_length = 0.0;
+                  edge_length_ave(element, coord_field, &min_edge_length, &max_edge_length, cell_topo_data);
+                  double ele_hmesh = max_edge_length;
+                  min_max_ave[0] = std::min(min_max_ave[0], ele_hmesh);
+                  min_max_ave[1] = std::max(min_max_ave[1], ele_hmesh);
+                  min_max_ave[2] += ele_hmesh;
                   nele += 1.0;
                 }
             }

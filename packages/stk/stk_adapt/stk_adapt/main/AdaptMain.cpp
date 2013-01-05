@@ -68,6 +68,7 @@ namespace stk {
       MemMultType mult_nodes;
 
       MemoryMultipliers(MemMultType mult_hex8=1490, MemMultType mult_tet4=702, MemMultType mult_nodes=0):
+        //MemoryMultipliers(MemMultType mult_hex8=381, MemMultType mult_tet4=538, MemMultType mult_nodes=1017):
         num_hex8(0ul),
         num_tet4(0ul),
         num_nodes(0ul),
@@ -164,8 +165,8 @@ namespace stk {
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                if (0)
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " actMem[MB]= " << MegaByte(tot_mem)
+                if (1)
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " actualMem[MB]= " << MegaByte(tot_mem)
                           << " estMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
 
@@ -524,6 +525,9 @@ namespace stk {
       //std::string streaming_instruction="";
       int streaming_W = 0;
       int streaming_iW = 0;
+      std::string compute_hmesh = "";
+
+      double hmesh_factor = 0.0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc =
@@ -573,6 +577,7 @@ namespace stk {
       run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("verify_meshes"            , &verify_meshes            , "verify positive volumes for input and output meshes");
+      run_environment.clp.setOption("compute_hmesh"            , &compute_hmesh            , "compute mesh parameter using method eigens|edges");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
@@ -942,6 +947,28 @@ namespace stk {
                                 throw std::runtime_error("ERROR: verify_meshes shows a bad input mesh");
                               }
                           }
+                        if (compute_hmesh.size() != 0)
+                          {
+                            double hmesh=0.0;
+                            double min_max_ave[3];
+                            if (compute_hmesh == "eigens")
+                              {
+                                hmesh = eMesh.hmesh_stretch_eigens(min_max_ave);
+                              }
+                            else if (compute_hmesh == "edges")
+                              {
+                                hmesh = eMesh.hmesh_edge_lengths(min_max_ave);
+                              }
+                            else
+                              {
+                                throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
+                              }
+                            if (!p_rank) {
+                              std::cout << "Before refine, Mesh size (h-parameter) = " << hmesh << std::endl;
+                              stk::percept::pout() << "Before refine, Mesh size (h-parameter) = " << hmesh << "\n";
+                            }
+                            hmesh_factor = hmesh;
+                          }
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
@@ -1128,6 +1155,28 @@ namespace stk {
                                   {
                                     throw std::runtime_error("ERROR: verify_meshes shows a bad output mesh");
                                   }
+                              }
+                            if (compute_hmesh.size() != 0)
+                              {
+                                double hmesh=0.0;
+                                double min_max_ave[3];
+                                if (compute_hmesh == "eigens")
+                                  {
+                                    hmesh = eMesh.hmesh_stretch_eigens(min_max_ave);
+                                  }
+                                else if (compute_hmesh == "edges")
+                                  {
+                                    hmesh = eMesh.hmesh_edge_lengths(min_max_ave);
+                                  }
+                                else
+                                  {
+                                    throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
+                                  }
+                                hmesh_factor /= hmesh;
+                                if (!p_rank) {
+                                  std::cout << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor << std::endl;
+                                  stk::percept::pout() << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor << "\n";
+                                }
                               }
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;

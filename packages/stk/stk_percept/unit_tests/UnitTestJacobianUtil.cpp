@@ -13,6 +13,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 
@@ -236,6 +237,8 @@ namespace stk
               }
           }
       }
+
+
 
     }
   }

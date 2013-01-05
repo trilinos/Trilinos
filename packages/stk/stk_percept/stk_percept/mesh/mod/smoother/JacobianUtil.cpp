@@ -510,6 +510,16 @@ namespace stk {
       return metric_valid;
     }
 
+    void JacobianUtil::edge_lengths(PerceptMesh& eMesh, stk::mesh::Entity element, 
+                                    double& min_edge_length, double& max_edge_length, double& ave_edge_length,
+                                    stk::mesh::FieldBase *coord_field ,
+                                    const CellTopologyData * topology_data_in  )
+    {
+      if (!topology_data_in) topology_data_in = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!coord_field) coord_field = eMesh.get_coordinates_field();
+      ave_edge_length = eMesh.edge_length_ave(element, coord_field,  &min_edge_length, &max_edge_length, topology_data_in);
+    }
+
     void JacobianUtil::stretch_eigens(PerceptMesh& eMesh, stk::mesh::Entity element, 
                                       double stretch_eigens[3],
                                       stk::mesh::FieldBase *coord_field ,
@@ -528,16 +538,19 @@ namespace stk {
           Jt = transpose(m_J[i]);
           product(Jt, m_J[i], Ui);
           eigen_3x3(Ui, eigen);
-          for (int j = 0; j < 3; j++) stretch_eigens[j] += std::sqrt(eigen[j])/double(m_num_nodes);
+          for (int j = 0; j < 3; j++) {
+            if (eigen[j] < -1.e-8)
+              {
+                std::cout << "eigens not positive" << eigen[j];
+              }
+            VERIFY_OP_ON(eigen[j], >=, -1.e-8, "eigens not positive");
+            stretch_eigens[j] += std::sqrt(std::fabs(eigen[j]))/double(m_num_nodes);
+          }
         }
 
-      for (int i = 0; i < 3; i++)
+      for (int i = 1; i < 3; i++)
         {
-          VERIFY_OP_ON(stretch_eigens[i], >=, 0.0, "eigens not positive");
-          if (i > 0)
-            {
-              VERIFY_OP_ON(stretch_eigens[i], <=,  stretch_eigens[i-1], "eigens not sorted");
-            }
+          VERIFY_OP_ON(stretch_eigens[i], <=,  stretch_eigens[i-1], "eigens not sorted");
         }
     }
 
