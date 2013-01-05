@@ -43,12 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
-#include "MueLu_ExplicitInstantiation.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_EminPFactory_def.hpp"
 
@@ -73,6 +70,4 @@ template class MueLu::EminPFactory<std::complex<double>, int, int, Kokkos::Defau
 # endif
 #endif
 
-#endif // #ifdef HAVE_MUELU_EXPERIMENTAL
-
-
+#endif
