@@ -267,20 +267,20 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # to byte-compile and the installation rules requires a little bit
   # of logic.
   #
-  # PyTrilinos.NOX.Epetra
-  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  # PyTrilinos.NOX.NestedEpetra
+  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py')"
-      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/NestedEpetra/${MODULE_NAME}.py"
       VERBATIM)
     INSTALL(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
@@ -342,7 +342,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR})
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE}.pyc")
   #
-  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"

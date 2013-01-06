@@ -28,33 +28,11 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_abstract_docstring
-"
-PyTrilinos.NOX.Abstract is the python interface to namespace Abstract
-of the Trilinos package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of NOX.Abstract is to provide base classes from which
-concrete NOX interfaces can be derived.  Currently, the only concrete
-implementation is for Epetra, in the NOX.Epetra module.
-
-NOX.Abstract provides the following user-level classes:
-
-    * Group            - Class defining a collection of objects needed by NOX
-    * PrePostOperator  - Pre- and post-iteration operators
-    * MultiVector      - Multivector class
-    * Vector           - Vector class
-"
-%enddef
-
-%module(package      = "PyTrilinos.NOX",
-	directors    = "1",
+%module(directors    = "1",
 	autodoc      = "1",
-	implicitconv = "1",
-	docstring    = %nox_abstract_docstring) Abstract
+	implicitconv = "1") Abstract
 
 // This is where all of the wrapping directives for the NOX.Abstract
-// module are kept.  It is also %include-d from the
-// NOX.Abstract_RelPath.i interface file.
+// module are kept.  It is also %include-d from the NOX.Abstract.i
+// interface file.
 %include "NOX.Abstract_Content.i"
