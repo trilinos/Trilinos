@@ -121,7 +121,8 @@ namespace stk {
           }
 
         std::vector<moab::TetTupleInt> new_tets;
-        moab::SimplexTemplateRefiner str(true);
+        bool choose_best_tets = true;
+        moab::SimplexTemplateRefiner str(choose_best_tets);
         str.refine_3_simplex(new_tets, edge_marks, 1,
                              node_coords[0], 0, tet_elem_nodes[0].identifier(),
                              node_coords[1], 0, tet_elem_nodes[1].identifier(),
