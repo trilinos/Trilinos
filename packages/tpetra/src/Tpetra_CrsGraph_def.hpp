@@ -1260,7 +1260,6 @@ namespace Tpetra {
     IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
     rptr = rowinds.begin();
     if (hint < rowinfo.numEntries && rowinds[hint] == ind) {
-      std::cout << "index " << ind << " found by hint " << hint << std::endl;
       return hint;
     }
     if (isSorted()) {
@@ -1294,7 +1293,6 @@ namespace Tpetra {
     IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
     rptr = rowinds.begin();
     if (hint < rowinfo.numEntries && rowinds[hint] == ind) {
-      std::cout << "index " << ind << " found by hint " << hint << std::endl;
       return hint;
     }
     if (isSorted()) {
