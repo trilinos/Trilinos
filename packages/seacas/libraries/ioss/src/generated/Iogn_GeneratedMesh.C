@@ -636,6 +636,20 @@ namespace Iogn {
     return count;
   }
 
+  void GeneratedMesh::owning_processor(int *owner, int64_t num_node)
+  {
+    for (size_t i=0; i < num_node; i++) {
+      owner[i] = myProcessor;
+    }
+
+    if (myProcessor != 0) {
+      int64_t count = (numX+1) * (numY+1);
+      for (int64_t i=0; i < count; i++) {
+	owner[i] = myProcessor-1;
+      }
+    }
+  }
+	  
   void GeneratedMesh::node_communication_map(Int64Vector &map, std::vector<int> &proc)
   {
     int64_t count = (numX+1) * (numY+1);
