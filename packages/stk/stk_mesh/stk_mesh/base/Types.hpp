@@ -170,7 +170,6 @@ typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 //----------------------------------------------------------------------
 
-
 } // namespace mesh
 } // namespace stk
 

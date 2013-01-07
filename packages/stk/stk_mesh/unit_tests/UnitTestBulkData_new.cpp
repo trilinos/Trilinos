@@ -712,10 +712,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     if ( 8u == elem_nodes.size() ) {
       STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
       STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
-      STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
-      STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
-      STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
-      STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy,iz+1));
+      STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy,iz+1));
       STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
       STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
     }

@@ -620,6 +620,9 @@ private:
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::Partition;
+
+  friend void create_edges( BulkData & mesh, const Selector & element_selector );
+
 #endif /* DOXYGEN_COMPILE */
 };
 

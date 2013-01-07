@@ -213,16 +213,16 @@ void EntityRepository::declare_relation( Entity e_from,
   }
 }
 
-void EntityRepository::update_entity_key(EntityKey new_key, Entity entity)
+void EntityRepository::update_entity_key(EntityKey new_key, EntityKey old_key)
 {
-  EntityKey old_key = entity.key();
+  EntityMap::iterator old_itr = m_entities.find( old_key );
+  ThrowAssert(old_itr != m_entities.end());
+  Entity entity = old_itr->second;
 
   ThrowAssert(m_entities.find(new_key) == m_entities.end());
   m_entities.insert(std::make_pair(new_key, entity));
   entity.m_entityImpl->update_key(new_key);
 
-  EntityMap::iterator old_itr = m_entities.find( old_key );
-  ThrowAssert(old_itr != m_entities.end());
   m_entities.erase(old_itr);
 }
 

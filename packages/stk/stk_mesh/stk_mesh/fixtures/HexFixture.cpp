@@ -136,10 +136,10 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       elem_node[0] = node_id( ix   , iy   , iz   );
       elem_node[1] = node_id( ix+1 , iy   , iz   );
-      elem_node[2] = node_id( ix+1 , iy   , iz+1 );
-      elem_node[3] = node_id( ix   , iy   , iz+1 );
-      elem_node[4] = node_id( ix   , iy+1 , iz   );
-      elem_node[5] = node_id( ix+1 , iy+1 , iz   );
+      elem_node[2] = node_id( ix+1 , iy+1 , iz   );
+      elem_node[3] = node_id( ix   , iy+1 , iz   );
+      elem_node[4] = node_id( ix   , iy   , iz+1 );
+      elem_node[5] = node_id( ix+1 , iy   , iz+1 );
       elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
       elem_node[7] = node_id( ix   , iy+1 , iz+1 );
 
@@ -160,7 +160,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         data[0] = nx ;
         data[1] = ny ;
-        data[2] = -(Scalar)nz ;
+        data[2] = nz ;
       }
     }
   }

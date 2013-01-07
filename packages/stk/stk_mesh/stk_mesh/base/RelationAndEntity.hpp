@@ -1216,6 +1216,11 @@ void impl::EntityImpl::clear_state()
   m_state = Unchanged;
 }
 
+inline
+size_t hash_value( Entity entity) {
+  return hash_value(entity.key());
+}
+
 } // namespace mesh
 } // namespace stk
 

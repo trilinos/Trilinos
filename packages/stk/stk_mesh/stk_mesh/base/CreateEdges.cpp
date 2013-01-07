@@ -18,414 +18,401 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
+
+#include <boost/array.hpp>
+#include <boost/unordered_map.hpp>
+
 namespace stk {
 namespace mesh {
 
+
+
 namespace {
 
-struct EntitySubcellComponent {
-  public:
-    EntitySubcellComponent()
-      : entity()
-      , subcell_rank(0)
-      , subcell_id(0)
-  {}
+struct shared_edge_type
+{
+  stk::topology::topology_t topology;
+  EntityKey                 nodes[2];
+  EntityKey                 local_key;
+  EntityKey                 global_key;
 
-    EntitySubcellComponent(
-        Entity arg_entity,
-        EntityRank   arg_subcell_rank,
-        unsigned     arg_subcell_id
-        )
-      : entity(arg_entity)
-      , subcell_rank(arg_subcell_rank)
-      , subcell_id(arg_subcell_id)
-  {}
+  friend inline bool operator < (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    if (l.topology < r.topology)   return true;
+    if (l.topology > r.topology)   return false;
+    if ( l.nodes[0] < r.nodes[0] ) return true;
+    if ( l.nodes[0] > r.nodes[0] ) return false;
 
-    Entity entity;
-    EntityRank subcell_rank;
-    unsigned   subcell_id;
+    return l.nodes[1] < r.nodes[1];
+  }
+
+  friend inline bool operator > (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    return r < l;
+  }
+
+  friend inline bool operator == (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    return    (l.topology == r.topology)
+           && (l.nodes[0] == r.nodes[0])
+           && (l.nodes[1] == r.nodes[1]);
+  }
+
+  friend inline bool operator != (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    return !(l==r);
+  }
+
+  friend inline bool operator <= (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    return (l<r) || (l==r);
+  }
+
+  friend inline bool operator >= (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    return (l>r) || (l==r);
+  }
 };
 
-void get_entities_with_given_subcell(
-  const CellTopologyData * subcell_topology,
-  const EntityRank subcell_rank,
-  const EntityVector & subcell_nodes,
-  const EntityRank entities_rank,
-  std::vector< EntitySubcellComponent> & entities_with_subcell
-                                     )
+typedef boost::unordered_map<EntityVector,Entity> edge_map_type;
+typedef std::vector<EntityKey> EntityKeyVector;
+typedef std::vector< shared_edge_type > shared_edge_map_type;
+
+struct create_edge_impl
 {
-  // Get all entities that have relations to all the subcell nodes
-  EntityVector entities;
-  get_entities_through_relations(subcell_nodes,
-                                 entities_rank,
-                                 entities);
+  typedef void result_type;
 
-  // For all such entities, add id info for the subcell if the subcell
-  // nodes compose a valid subcell of the entity
-  for (EntityVector::const_iterator eitr = entities.begin();
-       eitr != entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(
-      *eitr,
-      subcell_rank,
-      subcell_topology,
-      subcell_nodes);
-    if ( local_subcell_num != -1) {
-      entities_with_subcell.push_back(EntitySubcellComponent(*eitr, subcell_rank, local_subcell_num));
-    }
-  }
-}
 
-// Check if entity has a specific relation to an entity of subcell_rank
-bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
-{
-  bool found = false;
-  PairIterRelation relations = entity.relations(subcell_rank);
+  create_edge_impl(   size_t               & next_edge
+                    , edge_map_type        & edge_map
+                    , shared_edge_map_type & shared_edge_map
+                    , Bucket               & bucket
+                  )
+    : m_next_edge(next_edge)
+    , m_edge_map(edge_map)
+    , m_shared_edge_map(shared_edge_map)
+    , m_bucket(bucket)
+  {}
 
-  for (; !relations.empty(); ++relations) {
-    if (relations->relation_ordinal() == subcell_id) {
-      found = true;
-      break;
-    }
-  }
-
-  return found;
-}
-
-size_t internal_count_edges_to_create( BulkData & mesh)
-{
-  size_t edges_to_request = 0;
-
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
-
-  Selector select_owned = MetaData::get(mesh).locally_owned_part();
-
-  BucketVector element_buckets;
-
-  get_buckets( select_owned, mesh.buckets(element_rank), element_buckets);
-
-  for (BucketVector::iterator bitr = element_buckets.begin();
-      bitr != element_buckets.end();
-      ++bitr)
+  template <typename Topology>
+  void operator()(Topology t)
   {
-    Bucket & b = **bitr;
-    const CellTopology topo = get_cell_topology(b);
+    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    BulkData & mesh = m_bucket.mesh();
+    PartVector add_parts;
+
+    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
 
 
-    for (size_t i = 0; i<b.size(); ++i) {
+    boost::array<Entity,Topology::num_nodes> elem_nodes;
+    EntityVector edge_nodes(EdgeTopology::num_nodes);
+    EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
 
-      Entity elem = b[i];
+    for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
+      Entity elem = m_bucket[ielem];
+      {
+        PairIterRelation nodes = elem.node_relations();
+        for (int n=0; n<Topology::num_nodes; ++n) {
+          elem_nodes[n] = nodes[n].entity();
+        }
+      }
 
-      const unsigned num_edges = topo.getSubcellCount(edge_rank);
+      PairIterRelation elem_edges = elem.relations(stk::topology::EDGE_RANK);
 
-      for (size_t edge_id = 0; edge_id < num_edges; ++edge_id ) {
+      for (int e=0; e < Topology::num_edges; ++e) {
 
-        if ( ! relation_exist( elem, edge_rank, edge_id) ) { //
+        while(!elem_edges.empty() && elem_edges->relation_ordinal() < static_cast<RelationIdentifier>(e) ) {
+          ++elem_edges;
+        }
 
+        //element already has this edge defined
+        if (!elem_edges.empty() && elem_edges->relation_ordinal() == static_cast<RelationIdentifier>(e) ) {
+          continue;
+        }
 
-          EntityVector edge_nodes;
+        Topology::edge_nodes(elem_nodes, e, edge_nodes.begin());
 
-          const CellTopologyData * edge_topology =
-            get_subcell_nodes(
-                elem,
-                edge_rank,
-                edge_id,
-                edge_nodes
-                );
+        //sort edge nodes into lexicographical smallest permutation
+        if (edge_nodes[1].key() < edge_nodes[0].key()) {
+          std::swap(edge_nodes[0], edge_nodes[1]);
+        }
 
-          std::vector<EntitySubcellComponent> adjacent_elements;
+        typename edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
-          get_entities_with_given_subcell(
-              edge_topology,
-              edge_rank,
-              edge_nodes,
-              element_rank,
-              adjacent_elements
-              );
-
-          std::reverse( edge_nodes.begin(), edge_nodes.end());
-
-          get_entities_with_given_subcell(
-              edge_topology,
-              edge_rank,
-              edge_nodes,
-              element_rank,
-              adjacent_elements
-              );
-
-          bool current_elem_has_lowest_id = true;
-          //does this process own the element with the lowest id?
-
-          for (std::vector<EntitySubcellComponent>::iterator adjacent_itr = adjacent_elements.begin();
-              adjacent_itr != adjacent_elements.end();
-              ++adjacent_itr)
-          {
-            if (adjacent_itr->entity.identifier() < elem.identifier()) {
-              current_elem_has_lowest_id = false;
-              break;
-            }
+        Entity edge;
+        if (iedge == m_edge_map.end()) {
+          EntityId edge_id = m_next_edge++;
+          edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
+          m_edge_map[edge_nodes] = edge;
+          bool shared_edge = true;
+          for (int n=0; n<EdgeTopology::num_nodes; ++n) {
+            Entity node = edge_nodes[n];
+            mesh.declare_relation(edge,node,n);
+            shared_edge = shared_edge && node.bucket().shared();
           }
-
-          // This process owns the lowest element so
-          // needs to generate a request to create
-          // the subcell
-          if (current_elem_has_lowest_id) {
-            ++edges_to_request;
+          if (shared_edge) {
+            shared_edge_type sedge;
+            sedge.topology = EdgeTopology::value;
+            for (int n=0; n<EdgeTopology::num_nodes; ++n) {
+              sedge.nodes[n] = edge_nodes[n].key();
+            }
+            sedge.local_key   = edge.key();
+            sedge.global_key  = edge.key();
+            m_shared_edge_map.push_back( sedge );
           }
         }
+        else {
+          edge = iedge->second;
+        }
+        mesh.declare_relation(elem,edge,e);
+      }
+    }
+
+
+  }
+
+  //members
+  size_t                & m_next_edge;
+  edge_map_type         & m_edge_map;
+  shared_edge_map_type  & m_shared_edge_map;
+  Bucket                & m_bucket;
+};
+
+struct connect_face_impl
+{
+  typedef void result_type;
+
+
+  connect_face_impl(  edge_map_type & edge_map
+                    , Bucket        & bucket
+                  )
+    : m_edge_map(edge_map)
+    , m_bucket(bucket)
+  {}
+
+  template <typename Topology>
+  void operator()(Topology t)
+  {
+    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    BulkData & mesh = m_bucket.mesh();
+
+    boost::array<Entity,Topology::num_nodes> face_nodes;
+    EntityVector edge_nodes(EdgeTopology::num_nodes);
+
+    for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
+      Entity face = m_bucket[iface];
+      {
+        PairIterRelation nodes = face.node_relations();
+        for (int n=0; n<Topology::num_nodes; ++n) {
+          face_nodes[n] = nodes[n].entity();
+        }
+      }
+
+      PairIterRelation face_edges = face.relations(stk::topology::EDGE_RANK);
+
+      for (int e=0; e < Topology::num_edges; ++e) {
+
+        while(!face_edges.empty() && face_edges->relation_ordinal() < static_cast<RelationIdentifier>(e) ) {
+          ++face_edges;
+        }
+
+        //faceent already has this edge defined
+        if (!face_edges.empty() && face_edges->relation_ordinal() == static_cast<RelationIdentifier>(e) ) {
+          continue;
+        }
+
+        Topology::edge_nodes(face_nodes, e, edge_nodes.begin());
+
+        //sort edge nodes into lexicographical smallest permutation
+        if (edge_nodes[1] < edge_nodes[0]) {
+          std::swap(edge_nodes[0], edge_nodes[1]);
+        }
+
+        //the edge should already exist
+        typename edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
+
+        ThrowAssert(iedge != m_edge_map.end());
+
+        Entity edge = iedge->second;
+        mesh.declare_relation(face,edge,e);
+      }
+    }
+
+
+  }
+
+  //members
+  edge_map_type         & m_edge_map;
+  Bucket                & m_bucket;
+};
+
+} //namespace
+
+void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & shared_edge_map, impl::EntityRepository & entity_repo)
+{
+  //sort the edges for ease of lookup
+  std::sort(shared_edge_map.begin(), shared_edge_map.end());
+
+  std::vector< shared_edge_map_type >  shared_edges( mesh.parallel_size());
+
+  for (shared_edge_map_type::const_iterator itr = shared_edge_map.begin(),
+                                            end = shared_edge_map.end();
+                                            itr != end;
+                                            ++itr )
+  {
+    //find process that share this edge;
+
+    PairIterEntityComm left_shared = mesh.entity_comm_sharing( itr->nodes[0] );
+    PairIterEntityComm right_shared = mesh.entity_comm_sharing( itr->nodes[1] );
+
+    EntityCommInfoVector shared_processes;
+
+    std::set_intersection( left_shared.first, left_shared.second,
+                           right_shared.first, right_shared.second,
+                           std::back_inserter(shared_processes)
+                         );
+
+    for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
+                                        comm_end = shared_processes.end();
+                                        comm_itr != comm_end;
+                                        ++comm_itr )
+    {
+      if (comm_itr->proc > mesh.parallel_rank())
+        shared_edges[comm_itr->proc].push_back(*itr);
+    }
+  }
+
+  CommAll comm( mesh.parallel() );
+
+  //pack send buffers
+  for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
+    if (allocation_pass==1) {
+     comm.allocate_buffers( mesh.parallel_size() /4, 0);
+    }
+
+    for (int proc=mesh.parallel_rank()+1, parallel_size = mesh.parallel_size(); proc<parallel_size; ++proc) {
+      for (size_t e=0, num_shared = shared_edges[proc].size(); e < num_shared; ++e) {
+        shared_edge_type const & sedge = shared_edges[proc][e];
+        comm.send_buffer(proc).pack<stk::topology::topology_t>(sedge.topology)
+        .pack<EntityKey>(sedge.nodes[0])
+        .pack<EntityKey>(sedge.nodes[1])
+        .pack<EntityKey>(sedge.local_key);
       }
     }
   }
-  return edges_to_request;
-}
 
-void request_edges(
-   BulkData & mesh,
-   size_t edges_to_request,
-   EntityVector & requested_edges)
-{
-  MetaData & fem_meta = MetaData::get(mesh);
-  const size_t num_ranks = fem_meta.entity_rank_count();
-  std::vector<size_t> entities_to_request(num_ranks, 0);
+  comm.communicate();
 
-  entities_to_request[MetaData::EDGE_RANK] = edges_to_request;
+  for ( unsigned ip = mesh.parallel_rank() ; ip > 0 ; ) {
+    --ip;
+    CommBuffer & buf = comm.recv_buffer( ip );
+    while ( buf.remaining() ) {
+      shared_edge_type sedge;
 
-  requested_edges.clear();
-  requested_edges.resize(num_ranks);
+      buf.unpack<stk::topology::topology_t>(sedge.topology)
+         .unpack<EntityKey>(sedge.nodes[0])
+         .unpack<EntityKey>(sedge.nodes[1])
+         .unpack<EntityKey>(sedge.global_key);
 
-  EntityVector requested_entities_flat_vector;
-  mesh.generate_new_entities(entities_to_request, requested_edges);
-}
+      shared_edge_map_type::iterator shared_itr = std::lower_bound(shared_edge_map.begin(), shared_edge_map.end(), sedge);
 
-void internal_create_edges( BulkData & mesh, const PartVector & arg_add_parts, size_t edges_to_request)
-{
-  MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
-
-
-  Selector select_owned = fem_meta.locally_owned_part();
-
-  BucketVector element_buckets;
-
-  get_buckets( select_owned, mesh.buckets(element_rank), element_buckets);
-
-
-  mesh.modification_begin();
-
-
-  EntityVector requested_edges;
-
-  request_edges(
-      mesh,
-      edges_to_request,
-      requested_edges
-      );
-
-  size_t current_edge = 0;
-
-    for (BucketVector::iterator bitr = element_buckets.begin();
-        bitr != element_buckets.end();
-        ++bitr)
-    {
-      Bucket & b = **bitr;
-      const CellTopology topo = get_cell_topology(b);
-
-
-        for (size_t i = 0; i<b.size(); ++i) {
-
-          Entity elem = b[i];
-
-          const unsigned num_edges = topo.getSubcellCount(edge_rank);
-
-          for (size_t edge_id = 0; edge_id < num_edges; ++edge_id ) {
-
-            if ( ! relation_exist( elem, edge_rank, edge_id) ) { //
-
-              EntityVector edge_nodes;
-
-              const CellTopologyData * edge_topology =
-                get_subcell_nodes(
-                    elem,
-                    edge_rank,
-                    edge_id,
-                    edge_nodes
-                    );
-
-              std::vector<EntitySubcellComponent> adjacent_elements;
-
-              get_entities_with_given_subcell(
-                  edge_topology,
-                  edge_rank,
-                  edge_nodes,
-                  element_rank,
-                  adjacent_elements
-                  );
-
-              std::reverse( edge_nodes.begin(), edge_nodes.end());
-
-              get_entities_with_given_subcell(
-                  edge_topology,
-                  edge_rank,
-                  edge_nodes,
-                  element_rank,
-                  adjacent_elements
-                  );
-
-              bool current_elem_has_lowest_id = true;
-              //does this process own the element with the lowest id?
-
-              for (std::vector<EntitySubcellComponent>::iterator adjacent_itr = adjacent_elements.begin();
-                  adjacent_itr != adjacent_elements.end();
-                  ++adjacent_itr)
-              {
-                if (adjacent_itr->entity.identifier() < elem.identifier()) {
-                  current_elem_has_lowest_id = false;
-                  break;
-                }
-              }
-
-              // This process owns the lowest element so
-              // needs to generate a request to create
-              // the edge
-              if (current_elem_has_lowest_id) {
-                Entity edge = requested_edges[current_edge++];
-
-                //declare the node relations for this edge
-                for (size_t n = 0; n<edge_nodes.size(); ++n) {
-                  Entity node = edge_nodes[n];
-                  mesh.declare_relation( edge, node, n);
-                }
-
-                mesh.declare_relation( elem, edge, edge_id);
-
-                PartVector empty_remove_parts;
-
-                PartVector add_parts = arg_add_parts;
-                add_parts.push_back( & fem_meta.get_cell_topology_root_part(topo.getCellTopologyData(edge_rank,edge_id)));
-
-                mesh.change_entity_parts(edge, add_parts, empty_remove_parts);
-              }
-            }
-          }
-        }
-    }
-
-  mesh.modification_end();
-}
-
-void connect_edges( BulkData & mesh )
-{
-  MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
-
-  Selector select_owned_or_shared = fem_meta.locally_owned_part() | fem_meta.globally_shared_part();
-
-  BucketVector element_buckets;
-
-  // Add the relationship to the correct entities. So far, we've added the
-  // edges/side to the sharing element w/ lowest id, but all other elements
-  // that contain that edge/side still need to have the relationship set up.
-  // We do that below...
-
-  mesh.modification_begin();
-
-  for (EntityRank entity_rank = element_rank; entity_rank > edge_rank; --entity_rank) {
-
-    BucketVector entity_buckets;
-
-    get_buckets(select_owned_or_shared, mesh.buckets(entity_rank),entity_buckets);
-
-    for (BucketVector::iterator bitr = entity_buckets.begin();
-        bitr != entity_buckets.end();
-        ++bitr)
-    {
-      Bucket & b = **bitr;
-      const CellTopology topo = get_cell_topology(b);
-
-      for (size_t i = 0; i<b.size(); ++i) {
-        Entity entity = b[i];
-
-        const unsigned num_edges = topo.getSubcellCount(edge_rank);
-
-        for (size_t edge_id = 0; edge_id < num_edges; ++edge_id ) {
-
-          if ( !relation_exist(entity, edge_rank, edge_id) ) {
-
-            EntityVector subcell_nodes;
-
-            const CellTopologyData * edge_topology =
-              get_subcell_nodes(
-                  entity,
-                  edge_rank,
-                  edge_id,
-                  subcell_nodes
-                  );
-
-            std::vector<EntitySubcellComponent> adjacent_entities;
-
-            // add polarity information to newly created relations
-            // polarity information is required to correctly attached
-            // degenerate elements to the correct faces and edges
-
-            get_entities_with_given_subcell(
-                edge_topology,
-                edge_rank,
-                subcell_nodes,
-                edge_rank,
-                adjacent_entities
-                );
-
-            std::reverse( subcell_nodes.begin(), subcell_nodes.end());
-
-            get_entities_with_given_subcell(
-                edge_topology,
-                edge_rank,
-                subcell_nodes,
-                edge_rank,
-                adjacent_entities
-                );
-
-
-            if ( !adjacent_entities.empty()) {
-              mesh.declare_relation( entity, adjacent_entities[0].entity, edge_id);
-            }
-          }
-        }
+      //update the global global_key
+      if (shared_itr != shared_edge_map.end() && *shared_itr == sedge) {
+        shared_itr->global_key = sedge.global_key;
       }
     }
   }
-  mesh.modification_end();
+
+  //update the entity keys
+
+
+  for (size_t i=0, e=shared_edge_map.size(); i<e; ++i) {
+    if (shared_edge_map[i].global_key != shared_edge_map[i].local_key) {
+      entity_repo.update_entity_key(shared_edge_map[i].global_key, shared_edge_map[i].local_key);
+    }
+  }
+
 }
 
-} // un-named namespace
 
-void create_edges( BulkData & mesh, const PartVector & arg_add_parts)
+
+void create_edges( BulkData & mesh, const Selector & element_selector )
 {
-  ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
-                  "stk::mesh::skin_mesh is not SYNCHRONIZED");
 
-  // to handle degenerate topologies we anticipate the following order of operations
-  //
-  // connect_edges
-  // count degenerate entities to create
-  // create degenerate entities
-  // connect_edges
-  // count non degenerate entities to create
-  // create non degenerate entities
-  // connect_edges
-  //
-  // to complete the connectivity (with degenerate elements) we require that
-  // polarity information to be stored on each relation
+  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
 
-  //connect_edges(mesh);
+  mesh.modification_begin();
 
-  size_t edges_to_request = internal_count_edges_to_create( mesh );
+  {
+    shared_edge_map_type shared_edge_map;
 
-  internal_create_edges( mesh, arg_add_parts, edges_to_request);
+    {
+      edge_map_type        edge_map;
+      //populate the edge_map with existing edges
+      {
+        BucketVector const & edge_buckets = mesh.buckets(stk::topology::EDGE_RANK);
 
-  connect_edges(mesh);
+        for (size_t i=0, ie=edge_buckets.size(); i<ie; ++i) {
+          Bucket &b = *edge_buckets[i];
+
+          const int num_nodes = b.topology().num_nodes();
+          EntityVector edge_nodes(num_nodes);
+
+          for (size_t j=0, je=b.size(); j<je; ++j) {
+            Entity edge = b[j];
+            PairIterRelation nodes_rel = edge.node_relations();
+
+            for (int n=0; n<num_nodes; ++n) {
+              edge_nodes[n] = nodes_rel[n].entity();
+            }
+
+            edge_map[edge_nodes] = edge;
+          }
+
+        }
+      }
+
+      // create edges and connect them to elements
+      {
+        BucketVector element_buckets;
+
+        get_buckets( element_selector & mesh.mesh_meta_data().locally_owned_part(), mesh.buckets(stk::topology::ELEMENT_RANK), element_buckets);
+
+        //create the edges for the elements in each bucket
+        for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
+          Bucket &b = *element_buckets[i];
+
+          create_edge_impl functor( next_edge, edge_map, shared_edge_map, b);
+          stk::topology::apply_functor< create_edge_impl > apply(functor);
+          apply( b.topology() );
+        }
+      }
+
+      // connect existing faces to edges
+      if (mesh.mesh_meta_data().spatial_dimension() == 3u) {
+
+        BucketVector face_buckets;
+
+        get_buckets( element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()), mesh.buckets(stk::topology::FACE_RANK), face_buckets);
+
+        //create the edges for the faces in each bucket
+        for (size_t i=0, e=face_buckets.size(); i<e; ++i) {
+          Bucket &b = *face_buckets[i];
+
+          connect_face_impl functor(edge_map, b);
+          stk::topology::apply_functor< connect_face_impl > apply(functor);
+          apply( b.topology() );
+        }
+      }
+    }
+
+    //update global ids of shared edges
+    update_shared_edges_global_ids( mesh, shared_edge_map, mesh.m_entity_repo );
+  }
+
+  mesh.modification_end();
 }
 
 }

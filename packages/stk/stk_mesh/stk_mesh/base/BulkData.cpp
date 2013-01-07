@@ -274,7 +274,7 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
   EntityKey new_key(entity.entity_rank(),id);
   EntityKey old_key = entity.key();
 
-  m_entity_repo.update_entity_key(new_key, entity);
+  m_entity_repo.update_entity_key(new_key, old_key);
 }
 
 //----------------------------------------------------------------------

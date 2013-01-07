@@ -99,7 +99,7 @@ class EntityRepository {
                            const RelationIdentifier local_id,
                            unsigned sync_count );
 
-    void update_entity_key(EntityKey new_key, Entity entity);
+    void update_entity_key(EntityKey new_key, EntityKey old_key);
 
     void destroy_entity(Entity entity);
 

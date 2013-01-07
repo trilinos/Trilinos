@@ -27,13 +27,9 @@
 
 using stk::mesh::MetaData;
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x1x1 )
+STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_2x1 )
 {
-  const size_t NX = 3;
-  const size_t NY = 1;
-  const size_t NZ = 1;
-
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 2, 1);
 
   fixture.m_fem_meta.commit();
   fixture.generate_mesh();
@@ -42,19 +38,139 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
+    STKUNIT_EXPECT_EQ( counts[0] , 6u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 0u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 2u ); // elements
+  }
+
+  stk::mesh::create_edges(fixture.m_bulk_data);
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 6u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 7u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 2u ); // elements
+  }
+}
+
+STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_3x1 )
+{
+  stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 3, 1);
+
+  fixture.m_fem_meta.commit();
+  fixture.generate_mesh();
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 8u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 0u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 3u ); // elements
+  }
+
+  stk::mesh::create_edges(fixture.m_bulk_data);
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 8u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 10u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 3u ); // elements
+  }
+}
+
+STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_2x2 )
+{
+  stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 2, 2);
+
+  fixture.m_fem_meta.commit();
+  fixture.generate_mesh();
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 9u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 0u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 4u ); // elements
+  }
+
+  stk::mesh::create_edges(fixture.m_bulk_data);
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 9u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 12u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 4u ); // elements
+  }
+}
+
+STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Hex_2x1x1 )
+{
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
+
+  fixture.m_fem_meta.commit();
+  fixture.generate_mesh();
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 12u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 0u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 2u ); // elements
+  }
+
+  stk::mesh::create_edges(fixture.m_bulk_data);
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ( counts[0] , 12u ); // nodes
+    STKUNIT_EXPECT_EQ( counts[1] , 20u ); // edges
+    STKUNIT_EXPECT_EQ( counts[2] , 0u ); // faces
+    STKUNIT_EXPECT_EQ( counts[3] , 2u ); // elements
+  }
+}
+
+STKUNIT_UNIT_TEST( UnitTestCreateEdges , Hex_3x1x1 )
+{
+  using namespace stk::mesh;
+
+  fixtures::HexFixture fixture(MPI_COMM_WORLD, 3, 1, 1);
+
+  fixture.m_fem_meta.commit();
+  fixture.generate_mesh();
+
+  {
+    std::vector<size_t> counts ;
+    comm_mesh_counts( fixture.m_bulk_data , counts);
+
     STKUNIT_EXPECT_EQ( counts[0] , 16u ); // nodes
     STKUNIT_EXPECT_EQ( counts[1] , 0u );  // edges
     STKUNIT_EXPECT_EQ( counts[2] , 0u );  // faces
     STKUNIT_EXPECT_EQ( counts[3] , 3u ); // elements
   }
 
-  stk::mesh::PartVector empty_add_parts;
-
-  stk::mesh::create_edges(fixture.m_bulk_data, empty_add_parts);
+  create_edges(fixture.m_bulk_data);
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    comm_mesh_counts( fixture.m_bulk_data , counts);
 
     STKUNIT_EXPECT_EQ( counts[0] , 16u );
     STKUNIT_EXPECT_EQ( counts[1] , 28u );
@@ -63,7 +179,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x1x1 )
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x3x3 )
+STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
 {
   const size_t elem_rank = MetaData::ELEMENT_RANK;
   const size_t face_rank = MetaData::FACE_RANK;
@@ -89,9 +205,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x3x3 )
     STKUNIT_EXPECT_EQ( counts[elem_rank] , 27u ); // elements
   }
 
-  stk::mesh::PartVector empty_add_parts;
-
-  stk::mesh::create_edges(fixture.m_bulk_data, empty_add_parts);
+  stk::mesh::create_edges(fixture.m_bulk_data);
 
   {
     std::vector<size_t> counts ;
@@ -149,7 +263,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x3x3 )
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSkinAndCreateEdges3x3x3 )
+STKUNIT_UNIT_TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
 {
   const size_t elem_rank = MetaData::ELEMENT_RANK;
   const size_t face_rank = MetaData::FACE_RANK;
@@ -175,10 +289,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSkinAndCreateEdges3x3x3 )
     STKUNIT_EXPECT_EQ( counts[elem_rank] , 27u ); // elements
   }
 
-  stk::mesh::PartVector empty_add_parts;
-
   stk::mesh::skin_mesh(fixture.m_bulk_data, MetaData::ELEMENT_RANK, NULL);
-  stk::mesh::create_edges(fixture.m_bulk_data, empty_add_parts);
+  stk::mesh::create_edges(fixture.m_bulk_data);
 
   {
     std::vector<size_t> counts ;
@@ -234,7 +346,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSkinAndCreateEdges3x3x3 )
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x3 )
+STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3 )
 {
   const size_t elem_rank = MetaData::ELEMENT_RANK;
   const size_t edge_rank = MetaData::EDGE_RANK;
@@ -257,9 +369,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateEdges3x3 )
     STKUNIT_EXPECT_EQ( counts[elem_rank] , 9u ); // elements
   }
 
-  stk::mesh::PartVector empty_add_parts;
-
-  stk::mesh::create_edges(fixture.m_bulk_data, empty_add_parts);
+  stk::mesh::create_edges(fixture.m_bulk_data);
 
   {
     std::vector<size_t> counts ;
