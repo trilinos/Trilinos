@@ -911,34 +911,26 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         // relative to the cell DoF numbering.
         for (int cellRow = 0; cellRow < numFieldsG; ++cellRow) {
           int localRow  = elemToNode (cell, cellRow);
-          int globalRow = as<int> (globalNodeIds[localRow]);
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
-          ArrayView<ST> sourceTermContributionAV =
-            arrayView (&sourceTermContribution, 1);
 
 	  {
 	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
-	    rhsVector->sumIntoGlobalValue (globalRow, sourceTermContribution);
+	    rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
 	  }
 
-          // "CELL VARIABLE" loop for the workset cell: cellCol is
-          // relative to the cell DoF numbering.
-          for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-            const int localCol  = elemToNode(cell, cellCol);
-            int globalCol = as<int> (globalNodeIds[localCol]);
-            ArrayView<int> globalColAV = arrayView<int> (&globalCol, 1);
-            ST operatorMatrixContribution =
-              worksetStiffMatrix (worksetCellOrdinal, cellRow, cellCol);
-            ArrayView<ST> operatorMatrixContributionAV =
-              arrayView<ST> (&operatorMatrixContribution, 1);
-
-	    {
-	      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
-					     elem_matrix);
-	      StiffMatrix->sumIntoGlobalValues (globalRow, globalColAV,
-						operatorMatrixContributionAV);
-	    }
-          }// *** cell col loop ***
+          // "CELL VARIABLE" loop for the workset cell: sum entire element
+	  // stiff matrix contribution in one function call
+	  ArrayView<int> localColAV = 
+	    arrayView<int> (&elemToNode(cell,0), numFieldsG);
+	  ArrayView<ST> operatorMatrixContributionAV =
+	    arrayView<ST> (&worksetStiffMatrix(worksetCellOrdinal,cellRow,0), 
+			   numFieldsG);
+	  {
+	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
+					   elem_matrix);
+	    StiffMatrix->sumIntoLocalValues (localRow, localColAV,
+					     operatorMatrixContributionAV);
+	  }
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
