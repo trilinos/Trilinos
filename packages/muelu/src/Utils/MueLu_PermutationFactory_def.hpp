@@ -529,11 +529,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     if(cntUnusedColIdx == 0) break;
 
     if(ColIdStatusArray[ljk] == 0.0) {
-      //lColIdStatusArray[ljk] = 1.0; // use this row id
       ColIdStatusArray[ljk] = 1.0; // use this row id
-      //ColIdStatus->replaceLocalValue(ljk,1.0); // use this row id
       Qperm->replaceLocalValue(ljk, qUnusedGColIdx.front()); // loop over ColIdStatus (lives on domain map)
-      //lQperm->replaceLocalValue(ljk, qUnusedGColIdx.front());
       ColIdUsed->replaceGlobalValue(qUnusedGColIdx.front(),1.0); // ljk is now used, too
       // detect wide range permutations
       if(floor(qUnusedGColIdx.front()/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
@@ -648,7 +645,6 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       if(ColIdStatusArray[ljk] == 0.0) {
         ColIdStatusArray[ljk] = 1.0; // use this row id
         Qperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
-        //lQperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
         ColIdUsed->replaceGlobalValue(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter],1.0);
         // detect wide range permutations
         if(floor(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
@@ -658,8 +654,6 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
         //cntUnusedColIdx--; // check me
       }
     }
-    //Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX);
-    //ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
   } // end if global_cntFreeColIdx > 0
   /////////////////// Qperm should be fine now...
 
@@ -699,7 +693,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permP.mat", *permPmatrix);
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permQt.mat", *permQTmatrix);
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permPApermQt.mat", *permPApermQt);
-   */
+  */
   // build scaling matrix
   Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
   Teuchos::RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
