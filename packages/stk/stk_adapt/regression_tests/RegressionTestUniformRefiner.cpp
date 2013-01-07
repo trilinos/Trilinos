@@ -3334,6 +3334,52 @@ namespace stk
       //=============================================================================
       //=============================================================================
       //=============================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, tet_equi_hmesh)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+              // create the mesh
+
+              unsigned npts=4;
+              stk::percept::SingleTetFixture::Point points[] = {{0,0,0},{1,0,0},{0.5,std::sqrt(3)/2.,0.0},{0.5,1./(2.0*std::sqrt(3.)), std::sqrt(2./3.)}};
+              unsigned ntets=1;
+              stk::percept::SingleTetFixture::TetIds tetIds[] = {{1,2,3,4}}; // one-based
+  
+              stk::percept::SingleTetFixture mesh(pm, false, npts, points, ntets, tetIds);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.save_as("single_equi_tet_0.e");
+            }
+
+            {
+              percept::PerceptMesh eMesh;
+              eMesh.open("single_equi_tet_0.e");
+              Tet4_Tet4_8 break_tet_tet(eMesh);
+              eMesh.commit();
+
+              UNIFORM_REFINER breaker(eMesh, break_tet_tet);
+              breaker.doBreak();
+              eMesh.save_as("single_equi_tet_1.e");
+            }
+          }
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
 #if DO_SMOOTHING_TEST
 
       // A cube with an indented bump on the bottom, new parallel smoother, convert to tet

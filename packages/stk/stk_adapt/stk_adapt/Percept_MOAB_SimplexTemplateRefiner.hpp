@@ -168,7 +168,7 @@ namespace moab {
           for (int j=0; j < current_template[0]; j++)
             {
               max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords));
-              std::cout << "j= " << j << " max_qual= " << max_qual << std::endl;
+              //std::cout << "j= " << j << " max_qual= " << max_qual << std::endl;
             }
           // find alternates with the best (min) worst quality
           if (max_qual < best_qual)
@@ -177,7 +177,7 @@ namespace moab {
               iqual = i;
             }
         }
-      std::cout << "iqual= " << iqual << std::endl;
+      //std::cout << "iqual= " << iqual << std::endl;
       return alternates[iqual];
     }
 
