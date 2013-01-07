@@ -1090,11 +1090,13 @@ namespace Tpetra {
   {
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     const size_t numElts = Teuchos::as<size_t> (inds.size ());
+    size_t hint = 0; // hint is a guess as to wheter the index is
 
     for (size_t j = 0; j < numElts; ++j) {
-      const size_t k = findLocalIndex (rowInfo, inds[j]);
+      const size_t k = findLocalIndex (rowInfo, inds[j], hint);
       if (k != STINV) {
         rowVals[k] = f( rowVals[k], newVals[j] );
+	hint = k+1;
       }
     }
   }
@@ -1114,11 +1116,13 @@ namespace Tpetra {
   {
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     const size_t numElts = Teuchos::as<size_t> (inds.size ());
+    size_t hint = 0; // hint is a guess as to wheter the index is
 
     for (size_t j = 0; j < numElts; ++j) {
-      const size_t k = findGlobalIndex (rowInfo, inds[j]);
+      const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
       if (k != STINV) {
         rowVals[k] = f( rowVals[k], newVals[j] );
+	hint = k+1;
       }
     }
   }
