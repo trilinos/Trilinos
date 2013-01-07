@@ -10,3 +10,4 @@ SingleLevelFactoryBase
 TwoKeyMap
 TwoLevelFactoryBase
 VariableContainer
+SmootherFactoryBase

@@ -98,6 +98,10 @@ typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Hie
 typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyManager;
 #endif
 
+#ifdef MUELU_HIERARCHYFACTORY_SHORT
+typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyFactory;
+#endif
+
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ifpack2Smoother;
 #endif

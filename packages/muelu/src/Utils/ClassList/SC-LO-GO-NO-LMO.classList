@@ -22,6 +22,7 @@ GaussSeidelSmoother
 GenericRFactory
 Hierarchy
 HierarchyManager
+HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 MapTransferFactory
 MergedSmoother

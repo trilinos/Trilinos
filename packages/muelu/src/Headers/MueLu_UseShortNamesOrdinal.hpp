@@ -118,3 +118,7 @@ typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
 typedef MueLu::VariableContainer VariableContainer;
 #endif
 
+#ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
+typedef MueLu::SmootherFactoryBase SmootherFactoryBase;
+#endif
+
