@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -52,7 +52,7 @@
   #include "Teuchos_VerboseObject.hpp"
 #endif
 
-/*! \file Tpetra_CrsMatrixMultiplyOp_def.hpp 
+/*! \file Tpetra_CrsMatrixMultiplyOp_def.hpp
 
     The implementations for the members of Tpetra::CrsMatrixMultiplyOp and related non-member constructors.
  */
@@ -60,7 +60,7 @@
 namespace Tpetra {
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) 
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A)
   : matrix_(A) {
     // we don't require that A is fill complete; we will query for the importer/exporter at apply()-time
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
@@ -74,13 +74,13 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(
-              const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in, 
+              const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                     MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y_in,
-                    Teuchos::ETransp mode, OpScalar alpha, OpScalar beta) const 
+                    Teuchos::ETransp mode, OpScalar alpha, OpScalar beta) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error,
         Teuchos::typeName(*this) << "::apply(): underlying matrix is not fill-complete.");
     TEUCHOS_TEST_FOR_EXCEPTION(X_in.getNumVectors() != Y_in.getNumVectors(), std::runtime_error,
         Teuchos::typeName(*this) << "::apply(X,Y): X and Y must have the same number of vectors.");
@@ -97,14 +97,14 @@ namespace Tpetra {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   gaussSeidel (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-	       MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-	       const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-	       const OpScalar& dampingFactor,
-	       const ESweepDirection direction,
-	       const int numSweeps) const
+               MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+               const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+               const OpScalar& dampingFactor,
+               const ESweepDirection direction,
+               const int numSweeps) const
   {
     using Teuchos::null;
     using Teuchos::RCP;
@@ -115,12 +115,35 @@ namespace Tpetra {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numSweeps < 0, std::invalid_argument, 
-      "gaussSeidel: numSweeps = " << numSweeps << " < 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numSweeps < 0,
+      std::invalid_argument,
+      "gaussSeidel: The number of sweeps must be nonnegative, "
+      "but you provided numSweeps = " << numSweeps << " < 0.");
+
+    // Translate from global to local sweep direction.
+    // While doing this, validate the input.
+    Kokkos::ESweepDirection localDirection;
+    if (direction == Forward) {
+      localDirection = Kokkos::Forward;
+    }
+    else if (direction == Backward) {
+      localDirection = Kokkos::Backward;
+    }
+    else if (direction == Symmetric) {
+      // We'll control local sweep direction manually.
+      localDirection = Kokkos::Forward;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        "gaussSeidel: The 'direction' enum does not have any of its valid "
+        "values: Forward, Backward, or Symmetric.");
+    }
+
     if (numSweeps == 0) {
-      return;
+      return; // Nothing to do.
     }
 
     // We don't need the Export object because this method assumes
@@ -129,12 +152,12 @@ namespace Tpetra {
     RCP<const import_type> importer = matrix_->getGraph()->getImporter();
     RCP<const export_type> exporter = matrix_->getGraph()->getExporter();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! exporter.is_null (), 
+      ! exporter.is_null (),
       std::runtime_error,
       "gaussSeidel requires that the row, domain, and range Maps be the same.  "
       "This cannot be the case, because the matrix has a nontrivial Export object.");
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     {
       RCP<const map_type> domainMap = matrix_->getDomainMap ();
       RCP<const map_type> rangeMap = matrix_->getRangeMap ();
@@ -147,24 +170,24 @@ namespace Tpetra {
         ! domainMap->isSameAs (*rangeMap) || ! domainMap->isSameAs (*rowMap),
         std::runtime_error,
         "Tpetra::CrsMatrix::gaussSeidel requires that the row, domain, and "
-	"range Maps of the matrix be the same.");
+        "range Maps of the matrix be the same.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! X.getMap ()->isSameAs (*domainMap),
         std::runtime_error,
         "Tpetra::CrsMatrix::gaussSeidel requires that the input / output "
-	"multivector X be in the domain Map of the matrix.");
+        "multivector X be in the domain Map of the matrix.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! B.getMap ()->isSameAs (*rangeMap),
         std::runtime_error,
         "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector B "
-	"be in the range Map of the matrix.");
+        "be in the range Map of the matrix.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! D.getMap ()->isSameAs (*rowMap),
         std::runtime_error,
         "Tpetra::CrsMatrix::gaussSeidel requires that the input multivector D "
-	"be in the row Map of the matrix.");
+        "be in the row Map of the matrix.");
     }
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_TEUCHOS_DEBUG
 
     RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
@@ -176,8 +199,8 @@ namespace Tpetra {
     // a problem with our kernel, not the user's problem, but it's
     // still a good idea to warn them.
 
-    RCP<MV> X_in;
-    RCP<MV> X_colMap;
+    RCP<OSMV> X_in;
+    RCP<OSMV> X_colMap;
     bool copiedInput;
     if (X.isConstantStride()) {
       X_in = rcpFromRef (X);
@@ -187,34 +210,34 @@ namespace Tpetra {
       // Don't just make a copy of X; make a column Map multivector,
       // make a domain Map view of it, and copy X into the domain Map
       // view.
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      X_colMap = rcp (new OSMV (colMap, X.getNumVectors ()));
       X_in = X_colMap->offsetViewNonConst (X.getMap (), 0);
       *X_in = X; // deep copy
       copiedInput = true;
       TPETRA_EFFICIENCY_WARNING(
-        ! X.isConstantStride (), 
-	std::runtime_error, 
-	"gaussSeidel: The current implementation of the Gauss-Seidel kernel "
-	"requires that X and B both have constant stride.  Since X does not "
-	"have constant stride, we had to make a copy.  This is a limitation of "
-	"the current implementation and not your fault, but we still report it "
-	"as an efficiency warning for your information.");
+        ! X.isConstantStride (),
+        std::runtime_error,
+        "gaussSeidel: The current implementation of the Gauss-Seidel kernel "
+        "requires that X and B both have constant stride.  Since X does not "
+        "have constant stride, we had to make a copy.  This is a limitation of "
+        "the current implementation and not your fault, but we still report it "
+        "as an efficiency warning for your information.");
     }
 
-    RCP<const MV> B_in;
+    RCP<const OSMV> B_in;
     if (B.isConstantStride()) {
       B_in = rcpFromRef (B);
     }
     else {
-      B_in = rcp (new MV (B));
+      B_in = rcp (new OSMV (B));
       TPETRA_EFFICIENCY_WARNING(
-        ! B.isConstantStride (), 
-	std::runtime_error, 
-	"gaussSeidel: The current implementation of the Gauss-Seidel kernel "
-	"requires that X and B both have constant stride.  Since B does not "
-	"have constant stride, we had to make a copy.  This is a limitation of "
-	"the current implementation and not your fault, but we still report it "
-	"as an efficiency warning for your information.");
+        ! B.isConstantStride (),
+        std::runtime_error,
+        "gaussSeidel: The current implementation of the Gauss-Seidel kernel "
+        "requires that X and B both have constant stride.  Since B does not "
+        "have constant stride, we had to make a copy.  This is a limitation of "
+        "the current implementation and not your fault, but we still report it "
+        "as an efficiency warning for your information.");
     }
 
     // After this block of code, X_colMap is a view of X, distributed
@@ -223,9 +246,9 @@ namespace Tpetra {
       // The domain and column Maps are the same; no need to Import.
       // Don't assign to X_colMap if we've already made it above.
       if (! copiedInput) {
-	X_colMap = X_in;
+        X_colMap = X_in;
       }
-    } 
+    }
     else {
       // mfh 26 Dec 2012: Alas, I can't currently ask a MultiVector
       // whether it is a view of something else.  This would let me
@@ -234,15 +257,76 @@ namespace Tpetra {
       // multivector.
       //
       // FIXME (mfh 27 Dec 2012) I can't currently make a view using a
-      // Map which is a superset of the MV's current Map.  This is
+      // Map which is a superset of the OSMV's current Map.  This is
       // because the offsetView* methods check getLocalLength(), which
-      // simply asks the MV's current Map for the number of elements
+      // simply asks the OSMV's current Map for the number of elements
       // owned by that process.  It should instead ask the local
-      // (Kokkos) MV for its number of rows.
+      // (Kokkos) OSMV for its number of rows.
       X_colMap = X_in->offsetViewNonConst (colMap, 0);
     }
 
+    for (int sweep = 0; sweep < numSweeps; ++sweep) {
+      if (! importer.is_null ()) {
+        X_colMap->doImport (*X_in, *importer, INSERT);
+      }
+
+      // Do local Gauss-Seidel.
+      if (direction != Symmetric) {
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, localDirection);
+      }
+      else { // direction == Symmetric
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, Kokkos::Forward);
+        // Communicate again before the Backward sweep.
+        if (! importer.is_null ()) {
+          X_colMap->doImport (*X_in, *importer, INSERT);
+        }
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, Kokkos::Backward);
+      }
+    }
+
+    if (copiedInput) { // Copy back from X_in to X.
+      X = *X_in;
+    }
+  }
+
+
+  template <class OpScalar,
+            class MatScalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  void
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  gaussSeidelCopy (MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                   const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+                   const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                   const OpScalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps) const
+  {
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcpFromRef;
+    typedef OpScalar OS;
+    typedef Teuchos::ScalarTraits<OS> STS;
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numSweeps < 0,
+      std::invalid_argument,
+      "gaussSeidelCopy: The number of sweeps must be nonnegative, "
+      "but you provided numSweeps = " << numSweeps << " < 0.");
+
     // Translate from global to local sweep direction.
+    // While doing this, validate the input.
     Kokkos::ESweepDirection localDirection;
     if (direction == Forward) {
       localDirection = Kokkos::Forward;
@@ -252,43 +336,121 @@ namespace Tpetra {
       // We'll control local sweep direction manually.
       localDirection = Kokkos::Forward;
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'direction' "
-	"enum does not have any of its valid values: Forward, Backward, or "
-	"Symmetric.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        "gaussSeidelCopy: The 'direction' enum does not have any of its "
+        "valid values: Forward, Backward, or Symmetric.");
+    }
+
+    if (numSweeps == 0) {
+      return;
+    }
+
+    RCP<const import_type> importer = matrix_->getGraph()->getImporter();
+    RCP<const export_type> exporter = matrix_->getGraph()->getExporter();
+
+    RCP<const map_type> domainMap = matrix_->getDomainMap ();
+    RCP<const map_type> rangeMap = matrix_->getRangeMap ();
+    RCP<const map_type> rowMap = matrix_->getGraph ()->getRowMap ();
+    RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    {
+      // The relation 'isSameAs' is transitive.  It's also a
+      // collective, so we don't have to do a "shared" test for
+      // exception (i.e., a global reduction on the test value).
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! X.getMap ()->isSameAs (*domainMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "multivector X be in the domain Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! B.getMap ()->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "B be in the range Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! D.getMap ()->isSameAs (*rowMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "D be in the row Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! rowMap->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the row Map and the "
+        "range Map be the same (in the sense of Tpetra::Map::isSameAs).");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! domainMap->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the domain Map and "
+        "the range Map of the matrix be the same.");
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+
+    // Make an overlap multivector X_colMap, and a domain Map view
+    // X_domainMap of it.  Both have constant stride by construction.
+    RCP<OSMV> X_colMap = rcp (new OSMV (colMap, X.getNumVectors ()));
+    RCP<OSMV> X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+
+    // Copy X into X_domainMap (a domain Map view of a column Map
+    // multivector X_colMap).  The Gauss-Seidel kernel will work in
+    // X_domainMap.  When done, we'll copy back into X.  The copy
+    // assumes the the domain and range Maps are the same.
+    *X_domainMap = X;
+
+    // The Gauss-Seidel / SOR kernel expects multivectors of constant
+    // stride.  X_colMap is by construction, but B might not be.  If
+    // it's not, we have to make a copy.
+    RCP<const OSMV> B_in;
+    if (B.isConstantStride()) {
+      B_in = rcpFromRef (B);
+    }
+    else {
+      B_in = rcp (new OSMV (B));
+      TPETRA_EFFICIENCY_WARNING(
+        ! B.isConstantStride (),
+        std::runtime_error,
+        "gaussSeidelCopy: The current implementation requires that B have "
+        "constant stride.  Since B does not have constant stride, we had to "
+        "make a copy.  This is a limitation of the current implementation and "
+        "not your fault, but we still report it as an efficiency warning for "
+        "your information.");
     }
 
     for (int sweep = 0; sweep < numSweeps; ++sweep) {
       if (! importer.is_null ()) {
-	X_colMap->doImport (*X_in, *importer, INSERT);
+        X_colMap->doImport (*X_domainMap, *importer, INSERT);
       }
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						   dampingFactor, localDirection);
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, localDirection);
       }
       else { // direction == Symmetric
-	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						   dampingFactor, Kokkos::Forward);
-	// Communicate again before the Backward sweep.
-	X_colMap->doImport (*X_in, *importer, INSERT);
-	matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D, 
-						   dampingFactor, Kokkos::Backward);
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, Kokkos::Forward);
+        // Communicate again before the Backward sweep, if necessary.
+        if (! importer.is_null ()) {
+          X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        }
+        matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
+                                                   dampingFactor, Kokkos::Backward);
       }
     }
 
-    if (copiedInput) { // Copy back from X_in to X.
-      X = *X_in;
-    }
+    // Copy back from X_domainMap to X.
+    // This assumes that the domain and range Maps are the same.
+    X = *X_domainMap;
   }
+
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyNonTranspose(
-      const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in, 
+      const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
             MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
-            OpScalar alpha, OpScalar beta) const 
+            OpScalar alpha, OpScalar beta) const
   {
     typedef Teuchos::ScalarTraits<OpScalar> ST;
     using Teuchos::null;
@@ -308,7 +470,7 @@ namespace Tpetra {
 #endif
 
     const size_t numVectors = X_in.getNumVectors();
-    // because of Views, it is difficult to determine if X and Y point to the same data. 
+    // because of Views, it is difficult to determine if X and Y point to the same data.
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
     // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer = matrix_->getGraph()->getImporter();
@@ -325,7 +487,7 @@ namespace Tpetra {
 
     // currently, cannot multiply from multivector of non-constant stride
     if (X_in.isConstantStride() == false && importer == null) {
-      // generate a strided copy of X_in 
+      // generate a strided copy of X_in
       X = Teuchos::rcp(new MV(X_in));
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "X is not constant stride, duplicating X results in a strided copy" << std::endl;
@@ -391,7 +553,7 @@ namespace Tpetra {
     else {
       // can't multiply in-situ; can't mutiply into non-strided multivector
       if (Y_in.isConstantStride() == false || X.getRawPtr() == &Y_in) {
-        // generate a strided copy of Y 
+        // generate a strided copy of Y
         MV Y(Y_in);
         matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y, Teuchos::NO_TRANS, alpha, beta);
         Y_in = Y;
@@ -416,11 +578,11 @@ namespace Tpetra {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyTranspose(
-               const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in, 
+               const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
-               OpScalar alpha, OpScalar beta) const 
+               OpScalar alpha, OpScalar beta) const
   {
     typedef Teuchos::ScalarTraits<OpScalar> ST;
     using Teuchos::null;
@@ -440,7 +602,7 @@ namespace Tpetra {
 #endif
 
     const size_t numVectors = X_in.getNumVectors();
-    // because of Views, it is difficult to determine if X and Y point to the same data. 
+    // because of Views, it is difficult to determine if X and Y point to the same data.
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
     // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer = matrix_->getGraph()->getImporter();
@@ -457,7 +619,7 @@ namespace Tpetra {
 
     // currently, cannot multiply from multivector of non-constant stride
     if (X_in.isConstantStride() == false && importer==null) {
-      // generate a strided copy of X_in 
+      // generate a strided copy of X_in
       X = Teuchos::rcp(new MV(X_in));
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "X is not constant stride, duplicating X results in a strided copy" << std::endl;
@@ -549,19 +711,19 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool 
+  bool
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
     return true;
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
     return matrix_->getDomainMap();
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
     return matrix_->getRangeMap();
   }

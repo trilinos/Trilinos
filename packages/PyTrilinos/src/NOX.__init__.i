@@ -137,5 +137,6 @@ import StatusTest
 
 # Epetra namespace
 __all__.append('Epetra')
+import NestedEpetra as Epetra
 %}
 #endif

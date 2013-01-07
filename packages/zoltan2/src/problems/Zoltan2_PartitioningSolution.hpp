@@ -187,7 +187,7 @@ public:
        global number of parts.
        The value of the last element is the global number of processes.
 
-     Parts are only divided across processes if there are fewer parts
+     Parts are divided across processes only if there are fewer parts
      than processes and the caller did not define "num_local_parts" for
      each process.  In this case, parts are divided somewhat evenly
      across the processes.  This situation is more likely to arise in
@@ -197,7 +197,10 @@ public:
    non-NULL, then this method returns a NULL pointer.  The three are mutually 
    exclusive and collective exhaustive.
  */
-  const int *getPartDistribution() const { return &partDist_[0]; }
+  const int *getPartDistribution() const {
+    if (partDist_.size() > 0) return &partDist_[0];
+    else return NULL;
+  }
   
 /*! \brief Return a distribution by process.
 
@@ -215,7 +218,10 @@ public:
     then this method returns NULL pointer, and either 
     oneToOnePartDistribution() or getPartDistribution() describes the mapping.
  */
-  const partId_t *getProcDistribution() const { return &procDist_[0]; }
+  const partId_t *getProcDistribution() const {
+    if (procDist_.size() > 0) return &procDist_[0];
+    else return NULL;
+  }
 
 /*! \brief Get the number of criteria (the weight dimension).
     \return the number of criteria for which the solution has part sizes.

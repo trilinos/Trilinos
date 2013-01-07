@@ -1080,6 +1080,7 @@ public:
     std::ostringstream err;
     // Whether any tests have failed thus far.
     bool success = true;
+    (void) success; // Silence compiler warnings about unused variables.
 
     // Relative error of the current operation.
     magnitude_type relErr = STM::zero ();

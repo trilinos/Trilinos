@@ -70,6 +70,8 @@ TripleProductTensorLegendre::TripleProductTensorLegendre()
   for ( unsigned i = 0 ; i < N*N*N ; ++i ) tmp[i] = 0 ;
   for ( unsigned i = 0 ; i < N*N*N ; ++i ) m_map[i] = 0 ;
 
+  // Numerical integration of triple product values:
+
   for ( unsigned ig = 0 ; ig < gauss.N ; ++ig ) {
     double value[N] ;
     bases.evaluate( MaximumPolyDegree , gauss.points[ig] , value );
@@ -80,6 +82,28 @@ TripleProductTensorLegendre::TripleProductTensorLegendre()
       tmp[ offset(i,j,k) ] += gauss.weights[ig] * value[i] * value[j] * value[k] ;
     }}}
   }
+
+  // Verify algorithmic property for nonzero pattern:
+
+  for ( unsigned i = 0 ; i <= MaximumPolyDegree ; ++i ) {
+  for ( unsigned j = i ; j <= MaximumPolyDegree ; ++j ) {
+  for ( unsigned k = j ; k <= MaximumPolyDegree ; ++k ) {
+    const bool zero_val = std::abs( tmp[ offset(i,j,k) ] ) < tol ;
+    const bool zero_alg =
+      ( i + j < k ) || ( ( ( i + j ) & 1 ) != ( k & 1 ) ) ||
+      ( i + k < j ) || ( ( ( i + k ) & 1 ) != ( j & 1 ) ) ||
+      ( k + j < i ) || ( ( ( k + j ) & 1 ) != ( i & 1 ) );
+
+    if ( zero_val != zero_alg ) {
+      std::ostringstream msg ;
+      msg << "KokkosArray::TripleProductTensorLegendre FATAL ERROR: "
+          << "numerical integration does not match non-zero term algorithm <"
+          << i << "," << j << "," << k << ">" ;
+      throw std::runtime_error( msg.str() );
+    }
+  }}}
+
+  // Store locations and values for nonzero terms:
 
   m_terms[0] = 0 ; // For all zero terms
   m_terms[1] = tmp[ offset(0,0,0) ]; // For all <0,i,i> terms

@@ -46,6 +46,9 @@
 #ifndef MUELU_STEEPESTDESCENTSOLVER_FWD_HPP
 #define MUELU_STEEPESTDESCENTSOLVER_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class SteepestDescentSolver;
@@ -53,6 +56,8 @@ namespace MueLu {
 
 #ifndef MUELU_STEEPESTDESCENTSOLVER_SHORT
 #define MUELU_STEEPESTDESCENTSOLVER_SHORT
+#endif
+
 #endif
 
 #endif // MUELU_STEEPESTDESCENTSOLVER_FWD_HPP

@@ -26,6 +26,9 @@
 /* define if the compiler supports abi::__cxa_demangle(...) */
 #define HAVE_GCC_ABI_DEMANGLE
 
+/* Define if the (Windows) compiler has intrinsic datatype __int64 */
+/* #undef HAVE_TEUCHOS___INT64 */
+
 /* Not namespaced so should be depreciated. */
 #define HAVE_MPI
 

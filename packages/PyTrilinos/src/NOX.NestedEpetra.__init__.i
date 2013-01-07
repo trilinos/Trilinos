@@ -51,7 +51,7 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.Epetra",
+%module(package      = "PyTrilinos.NOX.NestedEpetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
@@ -365,11 +365,27 @@ using namespace NOX::Epetra;
 %include "EpetraExt.i"
 #endif
 
-// NOX import
-%import "NOX.Abstract.i"
+// NOX Abstract import.  If we were to simply do %import
+// "NOX.Abstract.i", we would get errors that the PyTrilinos module
+// does not have an object NOX when the generated Python module
+// defines the PyTrilinos.NOX.Epetra.Group class deriving from the
+// PyTrilinos.NOX.Abstract.Group.  The fix is to %import an Abstract
+// module that does not know it is in the PyTrilinos.NOX package.
+// That is the purpose of the NOX.Abstract_RelPath.i SWIG interface
+// file.  For the generated Python module to be able to find it, we
+// also have to update the sys.path list.
+%pythoncode
+%{
+import os
+import sys
+parentDir = os.path.dirname(os.path.abspath(__file__))
+parentDir = os.path.normpath(os.path.join(parentDir,".."))
+sys.path.append(parentDir)
+%}
+%import "NOX.Abstract_RelPath.i"
 
 // NOX::Epetra::Interface imports
-%import "NOX.Epetra.Interface.i"
+%import "NOX.NestedEpetra.Interface.i"
 
 //////////////////////////////
 // NOX.Epetra.Group support //

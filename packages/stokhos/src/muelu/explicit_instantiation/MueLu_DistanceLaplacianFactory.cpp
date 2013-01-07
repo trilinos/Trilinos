@@ -43,16 +43,23 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SOLVERFACTORY_FWD_HPP
-#define MUELU_SOLVERFACTORY_FWD_HPP
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class SolverFactory;
-}
 
-#ifndef MUELU_SOLVERFACTORY_SHORT
-#define MUELU_SOLVERFACTORY_SHORT
+
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
+
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+
+// Sacado headers must be included first so that overloaded operators
+// are defined in the muelu template code
+#include "Stokhos_Sacado.hpp"
+#include "MueLu_DistanceLaplacianFactory_def.hpp"
+
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+template class MueLu::DistanceLaplacianFactory<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+
 #endif
 
-#endif // MUELU_SOLVERFACTORY_FWD_HPP
+
