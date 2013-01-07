@@ -51,6 +51,7 @@
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
+#include <stk_percept/Util.hpp>
 
 //p #include "EntityRefiner.hpp"
 //p #include "SimplexTemplateTagAssigner.hpp"
@@ -71,7 +72,7 @@ namespace moab {
   class SimplexTemplateRefiner 
   {
   public:
-    SimplexTemplateRefiner() {}
+    SimplexTemplateRefiner(bool choose_best_tets=false) : m_choose_best_tets(choose_best_tets) {}
     virtual ~SimplexTemplateRefiner() {}
 
     /*p
@@ -123,7 +124,63 @@ namespace moab {
     }
     void *heap_tag_storage() { return 0; }
 
-    int best_tets( int* alternates, double*[14], int, int ) { return alternates[0]; }
+    /// returns tet quality - max edge len/min - 1.0 is ideal, smaller quality is better
+    double SQR(double x) { return x*x; }
+    double quality(int *indices, double *coords[14])
+    {
+      double edge_min=std::numeric_limits<double>::max();
+      double edge_max = 0;
+      for (int i=0; i < 3; i++)
+        {
+          for (int j=i+1; j < 4; j++)
+            {
+              double *ci = coords[indices[i]];
+              double *cj = coords[indices[j]];
+              double el2 = SQR(ci[0]-cj[0]) + SQR(ci[1]-cj[1]) + SQR(ci[2]-cj[2]) ;
+              edge_min = std::min(edge_min, el2);
+              edge_max = std::max(edge_max, el2);
+            }
+        }
+      return std::sqrt(edge_max/edge_min);
+    }
+
+
+    bool m_choose_best_tets;
+    int best_tets( int* alternates, double* coords[14], int, int ) { 
+      if (!m_choose_best_tets) return alternates[0];
+      int nalt=-1;
+      for (int i=0; i < 100; i++)
+        {
+          if (alternates[i] < 0) {
+            nalt = i;
+            break;
+          }
+        }
+      if (nalt < 0) throw std::runtime_error("hmm");
+      double best_qual=std::numeric_limits<double>::max();
+      int iqual=-1;
+      for (int i=0; i < nalt; i++)
+        {
+          int * current_template = SimplexTemplateRefiner::templates + alternates[i];
+          VERIFY_OP_ON(current_template[0], ==, 4, "bad template");
+          // find worst quality element
+          double max_qual=0;
+          for (int j=0; j < 4; j++)
+            {
+              max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords));
+              std::cout << "j= " << j << " max_qual= " << max_qual << std::endl;
+            }
+          // find alternates with the best (min) worst quality
+          if (max_qual < best_qual)
+            {
+              best_qual = max_qual;
+              iqual = i;
+            }
+        }
+      std::cout << "iqual= " << iqual << std::endl;
+      return alternates[iqual];
+    }
+
     /*p
       void assign_parametric_coordinates( int num_nodes, const double* src, double* tgt );
       static bool compare_Hopf_cross_string_dist( const double* v00, const double* v01, const double* v10, const double* v11 );

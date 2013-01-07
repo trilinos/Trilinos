@@ -13,6 +13,8 @@
 
 #include <stk_adapt/Percept_MOAB_SimplexTemplateRefiner.hpp>
 
+#include <stk_percept/Util.hpp>
+
 // Static arrays holding parametric coordinates of element vertices
 #if 0
 static double MBVertexParametric[] = { 0., 0., 0. };

@@ -258,7 +258,7 @@ namespace stk {
                                                                        << "   { " #val2 << " = " << val2 << " } \n"; \
                                                                msg_loc << " ERROR condition is: \n    " << #val1 " " #op " " #val2 << "\n"; \
                                                                std::cout << msg_loc.str() << std::endl; \
-                                                               Util::debug_stop(); \
+                                                               stk::percept::Util::debug_stop(); \
                                                                throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 
@@ -281,7 +281,7 @@ namespace stk {
 
 #define VERIFY(expr, val1, val2, message) do { if (VERIFY_ON) { if (!(expr)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                               std::cout << msg_loc.str() << std::endl; \
-                                              Util::debug_stop();       \
+                                              stk::percept::Util::debug_stop();       \
                                               throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 #define VERIFY_OP( val1, op, val2, message) do { if (VERIFY_ON) { if (!(val1 op val2)) { std::ostringstream msg_loc; \
@@ -291,19 +291,19 @@ namespace stk {
                                                         << "   { " #val2 << " = " << val2 << " } \n"; \
                                                 msg_loc << " ERROR condition is: \n    " << #val1 " " #op " " #val2 << "\n"; \
                                                 std::cout << msg_loc.str() << std::endl; \
-                                                Util::debug_stop();     \
+                                                stk::percept::Util::debug_stop();     \
                                                 throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 
 
 #define VERIFY_EQ1( val1, val2, message) do { if (VERIFY_ON) { if (!(val1==val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                              std::cout << msg_loc.str() << std::endl; \
-                                             Util::debug_stop();        \
+                                             stk::percept::Util::debug_stop();        \
                                              throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 #define VERIFY_NE( val1, val2, message) do { if (VERIFY_ON) { if (!(val1 != val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                             std::cout << msg_loc.str() << std::endl; \
-                                            Util::debug_stop();         \
+                                            stk::percept::Util::debug_stop();         \
                                             throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 #endif
