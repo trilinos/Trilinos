@@ -698,8 +698,17 @@ namespace Tpetra {
       template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
       void insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
 
+      /// \brief Transform the given values using local or global indices.
+      ///
+      /// \warning This method is DEPRECATED.  Please use transformLocalValues
+      ///   for local indices, and transformGlobalValues for global indices.
       template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
-      void transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
+      void TEUCHOS_DEPRECATED
+      transformValues (RowInfo rowInfo,
+                       const SLocalGlobalViews &inds,
+                       IterO rowVals,
+                       IterN newVals,
+                       BinaryFunction f) const;
 
       /// \brief Transform the given values using local indices.
       ///

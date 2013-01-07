@@ -1040,9 +1040,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::transformValues(RowInfo rowinfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const
+  void TEUCHOS_DEPRECATED
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  transformValues (RowInfo rowinfo,
+                   const SLocalGlobalViews &inds,
+                   IterO rowVals,
+                   IterN newVals,
+                   BinaryFunction f) const
   {
-    Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;
+    Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
+    (void)cta_lg;
+
     const size_t STINV = OrdinalTraits<size_t>::invalid();
     if (lg == GlobalIndices) {
       ArrayView<const GlobalOrdinal> search_ginds = inds.ginds;
