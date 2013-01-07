@@ -560,6 +560,7 @@ namespace Iopx {
   {
     try {
       free_file_pointer();
+      delete decomp;
     } catch (...) {
     }
   }

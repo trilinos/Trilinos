@@ -91,55 +91,56 @@ namespace Iopx {
       nodeCount(0), nodeOffset(0), importPreLocalNodeIndex(0)
       {}
       
-    virtual int int_size() const = 0;
-    virtual void decompose_model(int exodusId) = 0;
-    virtual size_t ioss_node_count() const = 0;
-    virtual size_t ioss_elem_count() const = 0;
+      virtual ~DecompositionDataBase() {}
+      virtual int int_size() const = 0;
+      virtual void decompose_model(int exodusId) = 0;
+      virtual size_t ioss_node_count() const = 0;
+      virtual size_t ioss_elem_count() const = 0;
     
-    MPI_Comm comm_;
+      MPI_Comm comm_;
       
-    int myProcessor;
-    int processorCount;
+      int myProcessor;
+      int processorCount;
       
-    size_t spatialDimension;
-    size_t globalNodeCount;
-    size_t globalElementCount;
+      size_t spatialDimension;
+      size_t globalNodeCount;
+      size_t globalElementCount;
     
-    // Values for the file decomposition 
-    size_t elementCount;
-    size_t elementOffset;
-    size_t importPreLocalElemIndex;
+      // Values for the file decomposition 
+      size_t elementCount;
+      size_t elementOffset;
+      size_t importPreLocalElemIndex;
 
-    size_t nodeCount;
-    size_t nodeOffset;
-    size_t importPreLocalNodeIndex;
+      size_t nodeCount;
+      size_t nodeOffset;
+      size_t importPreLocalNodeIndex;
     
-    std::vector<double> centroids_;
+      std::vector<double> centroids_;
 
-    std::vector<BlockDecompositionData> el_blocks;
-    std::vector<SetDecompositionData> node_sets;
-    std::vector<SetDecompositionData> side_sets;
+      std::vector<BlockDecompositionData> el_blocks;
+      std::vector<SetDecompositionData> node_sets;
+      std::vector<SetDecompositionData> side_sets;
 
-    const SetDecompositionData &get_decomp_set(ex_entity_type type, ex_entity_id id) const;
+      const SetDecompositionData &get_decomp_set(ex_entity_type type, ex_entity_id id) const;
 
-    template <typename T>
-      void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const;
+      template <typename T>
+	void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const;
       
-    template <typename T>
-      void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const;
+      template <typename T>
+	void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const;
 
-    void get_block_connectivity(int exodusId, void *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+      void get_block_connectivity(int exodusId, void *data, int64_t id, size_t blk_seq, size_t nnpe) const;
 
-    int get_set_mesh_double(int exodusId, ex_entity_type type, ex_entity_id id,
-			    const Ioss::Field& field, double *ioss_data) const ;
+      int get_set_mesh_double(int exodusId, ex_entity_type type, ex_entity_id id,
+			      const Ioss::Field& field, double *ioss_data) const ;
 
-    virtual size_t get_commset_node_size() const = 0;
+      virtual size_t get_commset_node_size() const = 0;
     
-    virtual int get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const = 0;
-    virtual int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const = 0;
-    virtual int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id   obj_id, size_t attr_count, double* attrib) const = 0;
-    virtual int get_var(int exodusId, int step, ex_entity_type type,
-			int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const = 0;
+      virtual int get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const = 0;
+      virtual int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const = 0;
+      virtual int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id   obj_id, size_t attr_count, double* attrib) const = 0;
+      virtual int get_var(int exodusId, int step, ex_entity_type type,
+			  int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const = 0;
   };
 
   template <typename INT>
@@ -150,7 +151,8 @@ namespace Iopx {
   {
   public:
     DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
-
+    ~DecompositionData() {}
+    
     int int_size() const {return sizeof(INT);}
 
     void decompose_model(int exodusId);
