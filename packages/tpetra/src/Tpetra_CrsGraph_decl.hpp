@@ -620,7 +620,6 @@ namespace Tpetra {
                             Distributor &distor,
                             CombineMode CM);
       //@}
-
       //! \name Advanced methods, at increased risk of deprecation.
       //@{
 
@@ -762,21 +761,76 @@ namespace Tpetra {
                             const Teuchos::ArrayView<const Scalar>& newVals,
                             BinaryFunction f) const;
 
+      //! \name Methods for sorting and merging column indices.
+      //@{
 
-      //
-      // Sorting and merging
-      //
-      bool                       isMerged() const;
-      void                       setSorted(bool sorted);
-      void                       setMerged(bool merged);
-      void                       sortAllIndices();
-      void                       sortRowIndices(RowInfo rowinfo);
-      template <class Scalar> void sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values);
-      void                                             mergeAllIndices();
-      void                                             mergeRowIndices(RowInfo rowinfo);
-      template <class Iter, class BinaryFunction> void mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
-      //
-      void setDomainRangeMaps(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
+      //! Whether duplicate column indices in each row have been merged.
+      bool isMerged () const;
+
+      //! Set indicesAreSorted_ to merged.  (Just set the Boolean.)
+      void setSorted (bool sorted);
+
+      //! Set noRedundancies_ to merged.  (Just set the Boolean.)
+      void setMerged (bool merged);
+
+      //! Sort the column indices in all the rows.
+      void sortAllIndices ();
+
+      //! Sort the column indices in the given row.
+      void sortRowIndices (RowInfo rowinfo);
+
+      /// \brief Sort the column indices and their values in the given row.
+      ///
+      /// \tparam Scalar The type of the values.  When calling this
+      ///   method from CrsMatrix, this should be the same as the
+      ///   <tt>Scalar</tt> template parameter of CrsMatrix.
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the row.
+      ///
+      /// \param values [in/out] On input: values for the given row.
+      ///   If indices is an array of the column indices in the row,
+      ///   then values and indices should have the same number of
+      ///   entries, and indices[k] should be the column index
+      ///   corresponding to values[k].  On output: the same values,
+      ///   but sorted in the same order as the (now sorted) column
+      ///   indices in the row.
+      template <class Scalar>
+      void sortRowIndicesAndValues (RowInfo rowinfo, ArrayView<Scalar> values);
+
+      /// Merge duplicate row indices in all of the rows.
+      ///
+      /// \pre The graph is locally indexed:
+      ///   <tt>isGloballyIndexed() == false</tt>.
+      ///
+      /// \pre The graph has not already been merged: <tt>isMerged()
+      ///   == false</tt>.  That is, this function would normally only
+      ///   be called after calling sortIndices().
+      void mergeAllIndices ();
+
+      /// Merge duplicate row indices in the given row.
+      ///
+      /// \pre The graph is not already storage optimized:
+      ///   <tt>isStorageOptimized() == false</tt>
+      void mergeRowIndices (RowInfo rowinfo);
+
+      template <class Iter, class BinaryFunction>
+      void mergeRowIndicesAndValues (RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
+
+      //@}
+
+      /// Set the domain and range Maps, and invalidate the Import
+      /// and/or Export objects if necessary.
+      ///
+      /// If the domain Map has changed, invalidate the Import object
+      /// (if there is one).  Likewise, if the range Map has changed,
+      /// invalidate the Export object (if there is one).
+      ///
+      /// \param domainMap [in] The new domain Map
+      /// \param rangeMap [in] The new range Map
+      void
+      setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
+                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
+
       void staticAssertions() const;
       // global consts
       void clearGlobalConstants();
@@ -813,9 +867,28 @@ namespace Tpetra {
       // debugging
       void checkInternalState() const;
 
-      // Tpetra support objects
-      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_, colMap_, rangeMap_, domainMap_;
+      //! The Map describing the distribution of rows of the graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_;
+      //! The Map describing the distribution of columns of the graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > colMap_;
+      //! The Map describing the range of the (matrix corresponding to the) graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
+      //! The Map describing the domain of the (matrix corresponding to the) graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap_;
+
+      /// \brief The Import from the domain Map to the column Map.
+      ///
+      /// This gets constructed by fillComplete.  It may be null if
+      /// the domain Map and the column Map are the same, since no
+      /// Import is necessary in that case for sparse matrix-vector
+      /// multiply.
       RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
+
+      /// \brief The Export from the row Map to the range Map.
+      ///
+      /// This gets constructed by fillComplete.  It may be null if
+      /// the row Map and the range Map are the same, since no Export
+      /// is necessary in that case for sparse matrix-vector multiply.
       RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
       // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
@@ -827,8 +900,9 @@ namespace Tpetra {
       global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
       size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
 
-      // allocate static or dynamic?
+      //! Whether the graph was allocated with static or dynamic profile.
       ProfileType pftype_;
+
       // requested allocation sizes; we have to preserve these, because we perform late-allocation
       // number of non-zeros to allocate per row; set to null after they are allocated.
       ArrayRCP<const size_t> numAllocPerRow_;
@@ -880,7 +954,7 @@ namespace Tpetra {
            noRedundancies_,
            haveGlobalConstants_;
 
-      // non-local data
+      //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
 
       bool haveRowInfo_;
