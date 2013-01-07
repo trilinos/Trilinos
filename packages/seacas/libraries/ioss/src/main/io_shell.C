@@ -79,6 +79,7 @@ namespace {
   {
     std::string working_directory;
     std::string decomp_method;
+    std::string compose_output;
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
@@ -175,6 +176,7 @@ int main(int argc, char *argv[])
   globals.netcdf4 = false;
   globals.compression_level = 0;
   globals.shuffle = false;
+  globals.compose_output = "none";
   
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
@@ -239,6 +241,10 @@ int main(int argc, char *argv[])
     else if (std::strcmp("--compress", argv[i]) == 0) {
       i++;
       globals.compression_level = std::strtol(argv[i++], NULL, 10);
+    }
+    else if (std::strcmp("--compose", argv[i]) == 0) {
+      i++;
+      globals.compose_output = Ioss::Utils::lowercase(std::string(argv[i++]));
     }
     else if (std::strcmp("--rcb", argv[i]) == 0) {
       globals.decomp_method = "RCB";
@@ -387,6 +393,7 @@ namespace {
     OUTPUT << "\t--debug : turn on debugging output\n";
     OUTPUT << "\t--compress {level} : specifies comrpession level [0..9]\n";
     OUTPUT << "\t--shuffle : enable shuffle filter for use with compression\n";
+    OUTPUT << "\t--compose {default|mpiio|mpiposix|pnetcdf} : create a single output file instead of file-per-processor. Use specified parallel-io method.\n";
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";
@@ -441,6 +448,13 @@ namespace {
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", globals.shuffle));
     }
       
+    if (globals.compose_output != "none") {
+      properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
+      properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
+      if (globals.compose_output != "default")
+	properties.add(Ioss::Property("PARALLEL_IO_MODE", globals.compose_output));
+    }
+
     if (globals.netcdf4) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
@@ -1104,6 +1118,7 @@ namespace {
     if (field_name == "ids_raw") return;
     if (field_name == "node_connectivity_status") return;
     if (field_name == "owning_processor") return;
+    if (field_name == "entity_processor_raw") return;
 
     if (data.size() < isize) {
       std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";
