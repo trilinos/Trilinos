@@ -72,7 +72,10 @@ fi
 
 if [ -n "${NVCC}" ] ;
 then
-  NVCC="${NVCC} --generate-line-info -Xptxas -v"
+  if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
+  then
+    NVCC="${NVCC} --generate-line-info -Xptxas -v"
+  fi
   NVCC_SOURCES="${NVCC_SOURCES} TestCuda.cu"
 
   ${NVCC} ${NVCC_FLAGS} ${INC_PATH} ${NVCC_SOURCES}

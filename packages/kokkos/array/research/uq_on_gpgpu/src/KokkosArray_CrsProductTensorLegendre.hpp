@@ -53,7 +53,7 @@
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_ProductTensorLegendre.hpp>
 
-#if 1
+#if 0
 
 namespace KokkosArray {
 
