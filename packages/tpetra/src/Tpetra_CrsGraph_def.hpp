@@ -789,11 +789,11 @@ namespace Tpetra {
     std::string tfecfFuncName("getRowInfo()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         rowMap_->isNodeLocalElement(myRow) == false,
-        std::logic_error, 
-	": The given (local) row index myRow = " << myRow 
-	<< " does not belong to the graph's row Map.  "
-	"This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
-	"Please report this to the Tpetra developers."
+        std::logic_error,
+        ": The given (local) row index myRow = " << myRow
+        << " does not belong to the graph's row Map.  "
+        "This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
+        "Please report this to the Tpetra developers."
     )
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         hasRowInfo() == false,
@@ -1068,6 +1068,55 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class BinaryFunction>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  transformLocalValues (RowInfo rowInfo,
+                        const Teuchos::ArrayView<Scalar>& rowVals,
+                        const Teuchos::ArrayView<const LocalOrdinal>& inds,
+                        const Teuchos::ArrayView<const Scalar>& newVals,
+                        BinaryFunction f) const
+  {
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+    const size_t numElts = Teuchos::as<size_t> (inds.size ());
+
+    for (size_t j = 0; j < numElts; ++j) {
+      const size_t k = findLocalIndex (rowInfo, inds[j]);
+      if (k != STINV) {
+        rowVals[k] = f( rowVals[k], newVals[j] );
+      }
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class BinaryFunction>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  transformGlobalValues (RowInfo rowInfo,
+                         const Teuchos::ArrayView<Scalar>& rowVals,
+                         const Teuchos::ArrayView<const GlobalOrdinal>& inds,
+                         const Teuchos::ArrayView<const Scalar>& newVals,
+                         BinaryFunction f) const
+  {
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+    const size_t numElts = Teuchos::as<size_t> (inds.size ());
+
+    for (size_t j = 0; j < numElts; ++j) {
+      const size_t k = findGlobalIndex (rowInfo, inds[j]);
+      if (k != STINV) {
+        rowVals[k] = f( rowVals[k], newVals[j] );
+      }
+    }
+  }
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortRowIndices(RowInfo rowinfo)
   {
     if (rowinfo.numEntries > 0) {
@@ -1098,8 +1147,8 @@ namespace Tpetra {
   {
     std::string tfecfFuncName("mergRowIndices()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error, 
-      ": The graph is already storage optimized, so we shouldn't be merging any indices." 
+      isStorageOptimized() == true, std::logic_error,
+      ": The graph is already storage optimized, so we shouldn't be merging any indices."
       " Please report this bug to the Tpetra developers.");
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
@@ -1126,8 +1175,8 @@ namespace Tpetra {
   {
     std::string tfecfFuncName("mergRowIndicesAndValues()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error, 
-      ": The graph is already storage optimized, so we shouldn't be merging any indices/values." 
+      isStorageOptimized() == true, std::logic_error,
+      ": The graph is already storage optimized, so we shouldn't be merging any indices/values."
       " Please report this bug to the Tpetra developers.");
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;

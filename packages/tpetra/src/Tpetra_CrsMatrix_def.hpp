@@ -1116,46 +1116,12 @@ namespace Tpetra {
                       const ArrayView<const LocalOrdinal> &indices,
                       const ArrayView<const Scalar> &values)
   {
-    // find the values for the specified indices
-    // if the row is not ours, throw an exception
-    // ignore values not in the matrix (indices not found)
-    // operate whether indices are local or global
-    const std::string tfecfFuncName("replaceLocalValues()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive(), std::runtime_error,
-      ": Fill must be active in order to call this method.  If you have already "
-      "called fillComplete(), you need to call resumeFill() before you can "
-      "replace values.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
-      std::runtime_error, ": values.size() must equal indices.size().");
-
-    const bool isLocalRow = getRowMap()->isNodeLocalElement(localRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! hasColMap(), std::runtime_error,
-      ": cannot replace local indices without a column map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isLocalRow, std::runtime_error,
-      ": specified local row " << localRow << " does not belong to this process.");
-
-    RowInfo rowInfo = staticGraph_->getRowInfo(localRow);
-    if (indices.size() > 0) {
-      if (isLocallyIndexed() == true) {
-        typename Graph::SLocalGlobalViews inds_view;
-        inds_view.linds = indices;
-        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
-      }
-      else if (isGloballyIndexed() == true) {
-        // must convert to global indices
-        const Map<LocalOrdinal,GlobalOrdinal,Node> &colMap = *getColMap();
-        Array<GlobalOrdinal> gindices(indices.size());
-        typename ArrayView<const LocalOrdinal>::iterator lindit = indices.begin();
-        typename Array<GlobalOrdinal>::iterator          gindit = gindices.begin();
-        while (lindit != indices.end()) {
-          // no need to filter: if it doesn't exist, it will be mapped to invalid(), which will not be found in the graph.
-          *gindit++ = colMap.getGlobalElement(*lindit++);
-        }
-        typename Graph::SLocalGlobalViews inds_view;
-        inds_view.ginds = gindices();
-        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
-      }
-    }
+    // secondArg is a binary function that returns its second
+    // argument.  This replaces entries in the given row with their
+    // corresponding entry of values.
+    typedef secondArg<Scalar, Scalar> f_type;
+    this->template transformLocalValues (localRow, indices,
+                                         values, f_type ());
   }
 
 
@@ -1170,12 +1136,12 @@ namespace Tpetra {
                        const ArrayView<const GlobalOrdinal> &indices,
                        const ArrayView<const Scalar>        &values)
   {
-    const std::string tfecfFuncName("replaceGlobalValues()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive(), std::runtime_error,
-      ": Fill must be active in order to call this method.  If you have already "
-      "called fillComplete(), you need to call resumeFill() before you can "
-      "replace values.");
-    this->template transformGlobalValues<secondArg<Scalar, Scalar> > (globalRow, indices, values, secondArg<Scalar, Scalar> ());
+    // secondArg is a binary function that returns its second
+    // argument.  This replaces entries in the given row with their
+    // corresponding entry of values.
+    typedef secondArg<Scalar, Scalar> f_type;
+    this->template transformGlobalValues (globalRow, indices,
+                                          values, f_type ());
   }
 
 
@@ -1192,7 +1158,9 @@ namespace Tpetra {
 
   {
     try {
-      this->template transformGlobalValues<std::plus<Scalar> > (globalRow, indices, values, std::plus<Scalar> ());
+      typedef std::plus<Scalar> f_type;
+      this->template transformGlobalValues (globalRow, indices,
+                                            values, f_type ());
     }
     catch (Details::InvalidGlobalRowIndex<GlobalOrdinal>& e) {
       // For nonlocal data, use insertGlobalValues().  Since globalRow
@@ -1204,51 +1172,29 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalValues(LocalOrdinal localRow,
-                         const ArrayView<const LocalOrdinal>  &indices,
-                         const ArrayView<const Scalar>        &values)
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  sumIntoLocalValues (LocalOrdinal localRow,
+                      const ArrayView<const LocalOrdinal>  &indices,
+                      const ArrayView<const Scalar>        &values)
   {
-    // find the values for the specified indices
-    // if the row is not ours, throw an exception
-    // ignore values not in the matrix (indices not found)
-    // operate whether indices are local or global
-    const std::string tfecfFuncName("sumIntoLocalValues()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                           std::runtime_error, " requires that fill is active.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),                    std::runtime_error, ": values.size() must equal indices.size().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error, ": specified local row does not belong to this processor.");
-    //
-    RowInfo rowInfo = staticGraph_->getRowInfo(localRow);
-    if (indices.size() > 0) {
-      if (isGloballyIndexed ()) {
-        // must convert local indices to global indices
-        const Map<LocalOrdinal,GlobalOrdinal,Node> &colMap = *getColMap();
-        Array<GlobalOrdinal> gindices(indices.size());
-        typename ArrayView<const LocalOrdinal>::iterator lindit = indices.begin();
-        typename Array<GlobalOrdinal>::iterator          gindit = gindices.begin();
-        while (lindit != indices.end()) {
-          // no need to filter: if it doesn't exist, it will be mapped to invalid(), which will not be found in the graph.
-          *gindit++ = colMap.getGlobalElement(*lindit++);
-        }
-        typename Graph::SLocalGlobalViews inds_view;
-        inds_view.ginds = gindices();
-        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
-      }
-      else if (isLocallyIndexed ()) {
-        typename Graph::SLocalGlobalViews inds_view;
-        inds_view.linds = indices;
-        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
-      }
-    }
+    typedef std::plus<Scalar> f_type;
+    this->template transformLocalValues (localRow, indices,
+                                         values, f_type ());
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<const Scalar> CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getView(RowInfo rowinfo) const
+  ArrayView<const Scalar>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getView (RowInfo rowinfo) const
   {
     ArrayView<const Scalar> view;
     if (values1D_ != null && rowinfo.allocSize > 0) {

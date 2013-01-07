@@ -700,6 +700,60 @@ namespace Tpetra {
 
       template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
       void transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
+
+      /// \brief Transform the given values using local indices.
+      ///
+      /// \param rowInfo [in] Information about a given row of the graph.
+      ///
+      /// \param rowVals [in/out] The values to be transformed.  They
+      ///   correspond to the row indicated by rowInfo.
+      ///
+      /// \param inds [in] The (local) indices in the row, for which
+      ///   to transform the corresponding values in rowVals.
+      ///
+      /// \param newVals [in] Values to use for transforming rowVals.
+      ///   It's probably OK for these to alias rowVals.
+      ///
+      /// \param f [in] A binary function used to transform rowVals.
+      ///
+      /// This method transforms the values using the expression
+      /// \code
+      /// newVals[k] = f( rowVals[k], newVals[j] );
+      /// \endcode
+      /// where k is the local index corresponding to
+      /// <tt>inds[j]</tt>.  It ignores elements of \c inds that are
+      /// not owned by the calling process.
+      template<class Scalar, class BinaryFunction>
+      void
+      transformLocalValues (RowInfo rowInfo,
+                            const Teuchos::ArrayView<Scalar>& rowVals,
+                            const Teuchos::ArrayView<const LocalOrdinal>& inds,
+                            const Teuchos::ArrayView<const Scalar>& newVals,
+                            BinaryFunction f) const;
+
+      /// \brief Transform the given values using global indices.
+      ///
+      /// \param rowInfo [in] Information about a given row of the graph.
+      ///
+      /// \param rowVals [in/out] The values to be transformed.  They
+      ///   correspond to the row indicated by rowInfo.
+      ///
+      /// \param inds [in] The (global) indices in the row, for which
+      ///   to transform the corresponding values in rowVals.
+      ///
+      /// \param newVals [in] Values to use for transforming rowVals.
+      ///   It's probably OK for these to alias rowVals.
+      ///
+      /// \param f [in] A binary function used to transform rowVals.
+      template<class Scalar, class BinaryFunction>
+      void
+      transformGlobalValues (RowInfo rowInfo,
+                            const Teuchos::ArrayView<Scalar>& rowVals,
+                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
+                            const Teuchos::ArrayView<const Scalar>& newVals,
+                            BinaryFunction f) const;
+
+
       //
       // Sorting and merging
       //
