@@ -6,6 +6,7 @@
 #include <string>
 #include <cctype>
 #include <limits>
+#include <vector>
 
 #include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/diag/String.hpp>
@@ -854,6 +855,18 @@ struct hash_nocase<String>
 
 template <class T>
 T convert_cast(const String &s);
+
+
+
+inline
+void convertCharArrayToStringVector(int numArgs, const char** charArray, std::vector<std::string> &stringVector)
+{
+    stringVector.resize(numArgs);
+    for(int i=0; i < numArgs; i++)
+    {
+        stringVector[i] = std::string(charArray[i]);
+    }
+}
 
 } // namespace sierra
 
