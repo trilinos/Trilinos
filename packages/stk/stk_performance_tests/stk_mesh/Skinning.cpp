@@ -10,6 +10,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
@@ -314,6 +315,7 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
   const size_t NX = p_size*10, NY = 20, NZ = 25;
 #endif
 
+  static const int TIMER_COUNT = 6;
   /* timings[0] = create mesh
    * timings[1] = intial skin mesh
    * timings[2] = detach mesh
@@ -321,7 +323,9 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
    * timings[4] = reskin mesh
    * timings[5] = sum(timings[0:4])
    */
-  double timings[6] = {0};
+  double timings[TIMER_COUNT] = {0};
+  double timing_sums[TIMER_COUNT] = {0};
+  const char* timer_names[TIMER_COUNT] = {"Create mesh", "Initial skin", "Detach mesh", "Delete skin", "Reskin", "Total time"};
   double start_time = 0;
 
   //recreate skin
@@ -414,6 +418,11 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
 
     stk::all_reduce(pm, stk::ReduceMax<5>(timings));
 
+    //compute sums
+    for (int i=0; i<TIMER_COUNT; ++i) {
+      timing_sums[i] += timings[i];
+    }
+
     if (p_rank == 0) {
       std::cout << "\n\n";
       switch (test_run) {
@@ -456,4 +465,6 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
 
     STKUNIT_EXPECT_EQUAL( num_skin_entities, expected_num_skin );
   }
+
+  stk::print_timers_and_memory(&timer_names[0], &timing_sums[0], TIMER_COUNT);
 }
