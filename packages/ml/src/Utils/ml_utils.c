@@ -2604,16 +2604,58 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * to
 
   if(rv!=0) {
     /* Case #4: Unknown Getrow (or failure in rowptr process).  Sample to estimate NZ */
-    maxrowlen = matrix->max_nz_per_row + 1;
+    maxrowlen = matrix->max_nz_per_row + 1; 
+    if(maxrowlen < 5) maxrowlen=50;
     cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
     values    = (double *) ML_allocate(maxrowlen * sizeof(double));
+    if(!cols || !values) {
+      printf("Not enough space to get a matrix row. A row length of \n");
+      printf("%d Was not sufficient\n",maxrowlen);
+      fflush(stdout);
+      exit(1);
+    }
 
     row=1;
-    matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &li);
-    row=(N-1)/2;
-    matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lj);
+    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &li)){
+      ML_free(cols); ML_free(values);
+      maxrowlen=2*maxrowlen+1;
+      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
+      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
+      if(!cols || !values) {
+	printf("Not enough space to get a matrix row. A row length of \n");
+	printf("%d Was not sufficient\n",maxrowlen);
+	fflush(stdout);
+	exit(1);
+      }
+    }
+
+    row=(N-1)/2;   
+    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lj)){
+      ML_free(cols); ML_free(values);
+      maxrowlen=2*maxrowlen+1;
+      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
+      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
+      if(!cols || !values) {
+	printf("Not enough space to get a matrix row. A row length of \n");
+	printf("%d Was not sufficient\n",maxrowlen);
+	fflush(stdout);
+	exit(1);
+      }
+    }
+    
     row=N-1;
-    matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lk);
+    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lk)){
+      ML_free(cols); ML_free(values);
+      maxrowlen=2*maxrowlen+1;
+      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
+      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
+      if(!cols || !values) {
+	printf("Not enough space to get a matrix row. A row length of \n");
+	printf("%d Was not sufficient\n",maxrowlen);
+	fflush(stdout);
+	exit(1);
+      }
+    }
     
     (*total_nz)=  (int) (N*(li+lj+lk)/3.0);
 
