@@ -146,40 +146,7 @@ namespace moab {
 
 
     bool m_choose_best_tets;
-    int best_tets( int* alternates, double* coords[14], int, int ) { 
-      if (!m_choose_best_tets) return alternates[0];
-      int nalt=-1;
-      for (int i=0; i < 100; i++)
-        {
-          if (alternates[i] < 0) {
-            nalt = i;
-            break;
-          }
-        }
-      if (nalt < 0) throw std::runtime_error("hmm");
-      double best_qual=std::numeric_limits<double>::max();
-      int iqual=-1;
-      for (int i=0; i < nalt; i++)
-        {
-          int * current_template = SimplexTemplateRefiner::templates + alternates[i];
-          //VERIFY_OP_ON(current_template[0], ==, 4, "bad template");
-          // find worst quality element
-          double max_qual=0;
-          for (int j=0; j < current_template[0]; j++)
-            {
-              max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords));
-              //std::cout << "j= " << j << " max_qual= " << max_qual << std::endl;
-            }
-          // find alternates with the best (min) worst quality
-          if (max_qual < best_qual)
-            {
-              best_qual = max_qual;
-              iqual = i;
-            }
-        }
-      //std::cout << "iqual= " << iqual << std::endl;
-      return alternates[iqual];
-    }
+    int best_tets( int* alternates, double* coords[14], int, int );
 
     /*p
       void assign_parametric_coordinates( int num_nodes, const double* src, double* tgt );
