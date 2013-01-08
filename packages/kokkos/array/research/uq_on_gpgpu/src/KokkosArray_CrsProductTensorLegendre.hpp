@@ -53,11 +53,18 @@
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_ProductTensorLegendre.hpp>
 
-#if 0
+//----------------------------------------------------------------------------
 
-namespace KokkosArray {
+#define CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SEPARATE_DIAGONAL  0
+#define CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_DIAGONAL_AS_HALF   1
+
+#define CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  0
 
 //----------------------------------------------------------------------------
+
+#if CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SEPARATE_DIAGONAL
+
+namespace KokkosArray {
 
 template< typename TensorScalar , class Device >
 struct CrsProductTensorLegendre {
@@ -263,7 +270,7 @@ struct CrsProductTensorLegendre {
 
 //----------------------------------------------------------------------------
 
-#elif 1
+#elif CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_DIAGONAL_AS_HALF
 
 namespace KokkosArray {
 

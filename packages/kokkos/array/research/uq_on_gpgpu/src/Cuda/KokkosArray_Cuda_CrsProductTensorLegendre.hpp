@@ -57,7 +57,18 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if 0
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_NONE                0  /* verified */
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_A_X          1  /* verified */
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_MULTI_A_X    2  /* verified */
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_BLOCK_A_X    3  /* verified */
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_TEXTURE_A_X         4
+
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  1
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_NONE
 
 namespace KokkosArray {
 namespace Impl {
@@ -130,7 +141,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 0
+#elif MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_MULTI_A_X
 
 namespace KokkosArray {
 namespace Impl {
@@ -181,8 +192,8 @@ public:
     // Shared memory:
     //   sh_work[ CudaTraits::WarpSize * blockDim.y ]
     //   sh_y[ tensor_dim_align ]
-    //   sh_x[ tensor_dim_align ]
-    //   sh_A[ tensor_dim_align ]
+    //   sh_x[ tensor_dim_align * m_block_size ]
+    //   sh_A[ tensor_dim_align * m_block_size ]
     //   sh_offset[ 2 * tensor_dim_align + 1 ]
 
     volatile VectorScalar * const sh_work = kokkos_impl_cuda_shared_memory<VectorScalar>();
@@ -206,6 +217,7 @@ public:
     // blockIdx.x == row in the deterministic (finite element) system
     const size_type iBlockEntryBeg = m_A.graph.row_map[ blockIdx.x ];
     const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
+
     size_type numBlock = (iBlockEntryEnd-iBlockEntryBeg) / m_block_size;
     const size_type remBlock = (iBlockEntryEnd-iBlockEntryBeg) % m_block_size;
     if (remBlock > 0) ++numBlock;
@@ -228,7 +240,7 @@ public:
 	  m_A.graph.entries( iBlockEntry + iBlock );
 
 	const VectorScalar * const x = & m_x(        0 , iBlockColumn );
-        const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
+        const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry + iBlock );
 
         // Wait for X and A to be used in the previous iteration before reading new values.
         __syncthreads();
@@ -261,11 +273,9 @@ public:
         const size_type iBegOffDiag = m_A.block.m_entry_offset( 2 * iyInner + 1 );
         const size_type iEnd        = m_A.block.m_entry_offset( 2 * iyInner + 2 );
 
-        size_type i = iBeg + threadIdx.x ;
-
         // Loop through sparse tensor diagonal contributions:
 
-        for ( ; i < iBegOffDiag ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x + iBeg ; i < iBegOffDiag ; i += blockDim.x ) {
           const unsigned j = m_A.block.m_coordinate(i);
 	  const MatrixScalar v = m_A.block.m_value(i);
 	  for ( size_type iBlock = 0; iBlock < block_size ; ++iBlock ) {
@@ -276,7 +286,7 @@ public:
 
         // Loop through sparse tensor off-diagonal contributions:
 
-        for ( ; i < iEnd ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x + iBegOffDiag ; i < iEnd ; i += blockDim.x ) {
           const unsigned kj = m_A.block.m_coordinate(i);
           const unsigned j  = kj & 0x0ffff ;
           const unsigned k  = kj >> 16 ;
@@ -375,7 +385,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 1
+#elif MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_A_X
 
 namespace KokkosArray {
 namespace Impl {
@@ -607,7 +617,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 0
+#elif MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_BLOCK_A_X
 
 namespace KokkosArray {
 namespace Impl {
@@ -688,7 +698,7 @@ public:
     const unsigned tensor_row_count = tensor_row_end - tensor_row_beg ;
 
     if ( tid < 2 * tensor_row_count + 1 ) {
-      sh_tcoord[tid] = m_A.block.m_entry_offset( tensor_row_beg + tid );
+      sh_tcoord[tid] = m_A.block.m_entry_offset( 2 * tensor_row_beg + tid );
     }
     else if ( tid < 2 * blockDim.y + 1 ) {
       sh_tcoord[tid] = 0 ;
@@ -751,18 +761,16 @@ public:
           // Wait for X and A to be read before using these values in the next iteration.
         }
 
-        size_type i = threadIdx.x ;
-
         // Loop through sparse tensor diagonal contributions:
 
-        for ( ; i < iCountDiag ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x ; i < iCountDiag ; i += blockDim.x ) {
           const unsigned j = sh_warp_tcoord[i] ;
           y += sh_warp_tvalue[i] * sh_A[j] * sh_x[j] ;
         }
 
         // Loop through sparse tensor off-diagonal contributions:
 
-        for ( ; i < iCountAll ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x + iCountDiag ; i < iCountAll ; i += blockDim.x ) {
           const unsigned kj = sh_warp_tcoord[i];
           const unsigned j  = kj & 0x0ffff ;
           const unsigned k  = kj >> 16 ;
@@ -864,7 +872,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 0
+#elif MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_TEXTURE_A_X
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -953,7 +961,7 @@ public:
     const unsigned tensor_row_count = tensor_row_end - tensor_row_beg ;
 
     if ( tid < 2 * tensor_row_count + 1 ) {
-      sh_offset[tid] = m_A.block.m_entry_offset( tensor_row_beg + tid );
+      sh_offset[tid] = m_A.block.m_entry_offset( 2 * tensor_row_beg + tid );
     }
     else if ( tid < 2 * blockDim.y + 1 ) {
       sh_offset[tid] = 0 ;
@@ -999,11 +1007,9 @@ public:
         const size_type ix = m_strideX * m_A.graph.entries( iBlockEntry );
         const size_type iA = m_strideA * iBlockEntry ;
 
-        size_type i = threadIdx.x ;
-
         // Loop through sparse tensor diagonal contributions:
 
-        for ( ; i < iCountDiag ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x ; i < iCountDiag ; i += blockDim.x ) {
           const unsigned j = sh_warp_tcoord[i] ;
 
           y += sh_warp_tvalue[i] *
@@ -1013,7 +1019,7 @@ public:
 
         // Loop through sparse tensor off-diagonal contributions:
 
-        for ( ; i < iCountAll ; i += blockDim.x ) {
+        for ( size_type i = threadIdx.x + iCountDiag ; i < iCountAll ; i += blockDim.x ) {
           const unsigned kj = sh_warp_tcoord[i];
           const unsigned j  = kj & 0x0ffff ;
           const unsigned k  = kj >> 16 ;
