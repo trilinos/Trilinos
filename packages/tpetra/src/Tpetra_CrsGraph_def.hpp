@@ -1090,15 +1090,14 @@ namespace Tpetra {
   {
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     const size_t numElts = Teuchos::as<size_t> (inds.size ());
-    size_t hint = 0; // hint is a guess as to wheter the index is
+    size_t hint = 0; // Guess for the current index k into rowVals
 
     // Get a view of the column indices in the row.  This amortizes
     // the cost of getting the view over all the entries of inds.
     ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
 
     for (size_t j = 0; j < numElts; ++j) {
-      //const size_t k = findLocalIndex (rowInfo, inds[j], colInds);
-      const size_t k = findLocalIndex (rowInfo, inds[j], hint);
+      const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
       if (k != STINV) {
         rowVals[k] = f( rowVals[k], newVals[j] );
         hint = k+1;
@@ -1264,31 +1263,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint) const
   {
-    typedef typename ArrayView<const LocalOrdinal>::iterator IT;
-    bool found = true;
-    // get a view of the row, if it wasn't passed by the caller
-    ArrayView<const LocalOrdinal> rowinds = getLocalView(rowinfo);
-    IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
-    rptr = rowinds.begin();
-    if (hint < rowinfo.numEntries && rowinds[hint] == ind) {
-      return hint;
-    }
-    if (isSorted()) {
-      // binary search
-      std::pair<IT,IT> p = std::equal_range(rptr,rptr+rowinfo.numEntries,ind);
-      if (p.first == p.second) found = false;
-      else locptr = p.first;
-    }
-    else {
-      // direct search
-      locptr = std::find(rptr,rptr+rowinfo.numEntries,ind);
-      if (locptr == rptr+rowinfo.numEntries) found = false;
-    }
-    size_t ret = OrdinalTraits<size_t>::invalid();
-    if (found) {
-      ret = (locptr - rptr);
-    }
-    return ret;
+    ArrayView<const LocalOrdinal> colInds = getLocalView (rowinfo);
+    return this->findLocalIndex (rowinfo, ind, colInds, hint);
   }
 
 
@@ -1302,10 +1278,20 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   findLocalIndex (RowInfo rowinfo,
                   LocalOrdinal ind,
-                  ArrayView<const LocalOrdinal> colInds) const
+                  ArrayView<const LocalOrdinal> colInds,
+                  size_t hint) const
   {
     typedef typename ArrayView<const LocalOrdinal>::iterator IT;
 
+    // If the hint was correct, then the hint is the offset to return.
+    if (hint < rowinfo.numEntries && colInds[hint] == ind) {
+      return hint;
+    }
+
+    // The hint was wrong, so we must search for the given column
+    // index in the column indices for the given row.  How we do the
+    // search depends on whether the graph's column indices are
+    // sorted.
     IT beg = colInds.begin ();
     IT end = beg + rowinfo.numEntries;
     IT ptr = beg + rowinfo.numEntries; // "null"
@@ -1329,11 +1315,12 @@ namespace Tpetra {
       }
     }
 
-    size_t ret = OrdinalTraits<size_t>::invalid ();
     if (found) {
-      ret = Teuchos::as<size_t> (ptr - beg);
+      return Teuchos::as<size_t> (ptr - beg);
     }
-    return ret;
+    else {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
   }
 
 

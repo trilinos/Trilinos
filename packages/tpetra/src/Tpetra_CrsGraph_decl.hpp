@@ -899,10 +899,21 @@ namespace Tpetra {
       /// \param ind [in] (Local) column index for which to find the offset.
       /// \param colInds [in] View of all the (local) column indices
       ///   for the given row.
+      /// \param hint [in] Hint for where to find \c ind in the column
+      ///   indices for the given row.  If colInds is the ArrayView of
+      ///   the (local) column indices for the given row, and if
+      ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
+      ///   The hint is ignored if it is out of range (that is,
+      ///   greater than or equal to the number of entries in the
+      ///   given row).
+      ///
+      /// See the documentation of the three-argument version of this
+      /// method for an explanation and justification of the hint.
       size_t
       findLocalIndex (RowInfo rowinfo,
                       LocalOrdinal ind,
-                      ArrayView<const LocalOrdinal> colInds) const;
+                      ArrayView<const LocalOrdinal> colInds,
+                      size_t hint = 0) const;
 
       /// \brief Find the column offset corresponding to the given (global) column index.
       ///
