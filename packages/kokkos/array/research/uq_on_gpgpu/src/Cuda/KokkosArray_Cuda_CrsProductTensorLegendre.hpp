@@ -57,7 +57,80 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if 1
+#if 0
+
+namespace KokkosArray {
+namespace Impl {
+
+/* Non-specialized algorithm to compare for correctness */
+
+template< typename MatrixScalar ,
+          typename VectorScalar >
+class Multiply<
+  BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Cuda > ,
+                  MatrixScalar , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > >
+{
+private:
+
+  typedef BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Cuda > ,
+                          MatrixScalar , Cuda > matrix_type ;
+  typedef View< VectorScalar** , LayoutLeft , Cuda > vector_type ;
+
+  const matrix_type m_A ;
+  const vector_type m_x ;
+  const vector_type m_y ;
+
+public:
+
+  typedef Cuda                             device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const size_type iy ) const
+  {
+    // Compute spatial row 'iy'
+
+    const size_type tensor_dim     = m_A.block.dimension();
+    const size_type iBlockEntryEnd = m_A.graph.row_map[ iy + 1 ];
+          size_type iBlockEntry    = m_A.graph.row_map[ iy ];
+
+    VectorScalar * const y = & m_y( 0 , iy );
+
+    for ( size_type iyInner = 0 ; iyInner < tensor_dim ; ++iyInner ) {
+      y[iyInner] = 0 ;
+    }
+
+    for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+      const VectorScalar * const x = & m_x( 0 , m_A.graph.entries( iBlockEntry ) );
+      const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
+
+      m_A.block.multiply_add( A , x , y );
+    }
+  }
+
+  Multiply( const matrix_type & arg_A ,
+            const vector_type & arg_x ,
+            const vector_type & arg_y )
+  : m_A( arg_A )
+  , m_x( arg_x )
+  , m_y( arg_y )
+  {}
+
+  void run() const
+  {
+    parallel_for( m_y.dimension_1() , *this );
+  }
+};
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#elif 0
 
 namespace KokkosArray {
 namespace Impl {
@@ -226,12 +299,14 @@ public:
         if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
 
         if ( 0 == threadIdx.x ) { // One thread in the warp saves to shared memory
-          sh_y[ iyInner ] = sh_work[ tid ];
+          sh_y[ iyInner ] += sh_work[ tid ];
         }
       }
 
       iBlockEntry += block_size;
     }
+
+    __syncthreads();
 
     // Coalesced write by the whole block to global memory
     for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
@@ -300,7 +375,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif 0
+#elif 1
 
 namespace KokkosArray {
 namespace Impl {
@@ -365,6 +440,12 @@ public:
     const size_type nid = CudaTraits::WarpSize * blockDim.y ;
     const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
 
+    { // Zero out values of 'y' for accumulation across discrete columns
+      for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
+        sh_y[i] = 0 ;
+      }
+    }
+
     { // Load the tensor offsets into shared memory
       const size_type n = 2 * tensor_dim + 1 ;
       for ( size_type i = tid ; i < n ; ++i ) {
@@ -412,18 +493,16 @@ public:
         const size_type iBegOffDiag = sh_offset[ 2 * iyInner + 1 ];
         const size_type iEnd        = sh_offset[ 2 * iyInner + 2 ];
 
-        size_type i = iBeg + threadIdx.x ;
-
         // Loop through sparse tensor diagonal contributions:
 
-        for ( ; i < iBegOffDiag ; i += blockDim.x ) {
+        for ( size_type i = iBeg + threadIdx.x ; i < iBegOffDiag ; i += blockDim.x ) {
           const unsigned j = m_A.block.m_coordinate(i);
           y += m_A.block.m_value(i) * sh_A[j] * sh_x[j] ;
         }
 
         // Loop through sparse tensor off-diagonal contributions:
 
-        for ( ; i < iEnd ; i += blockDim.x ) {
+        for ( size_type i = iBegOffDiag + threadIdx.x ; i < iEnd ; i += blockDim.x ) {
           const unsigned kj = m_A.block.m_coordinate(i);
           const unsigned j  = kj & 0x0ffff ;
           const unsigned k  = kj >> 16 ;
@@ -441,14 +520,16 @@ public:
         if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh_work[tid] += sh_work[tid+ 1];
 
         if ( 0 == threadIdx.x ) { // One thread in the warp saves to shared memory
-          sh_y[ iyInner ] = sh_work[ tid ];
+          sh_y[ iyInner ] += sh_work[ tid ];
         }
       }
+    }
 
-      // Coalesced write by the whole block to global memory
-      for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
-        m_y( i , blockIdx.x ) = sh_y[i];
-      }
+    __syncthreads();
+
+    // Coalesced write by the whole block to global memory
+    for ( size_type i = tid ; i < tensor_dim ; i += nid ) {
+      m_y( i , blockIdx.x ) = sh_y[i];
     }
   }
 
@@ -783,7 +864,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#else
+#elif 0
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

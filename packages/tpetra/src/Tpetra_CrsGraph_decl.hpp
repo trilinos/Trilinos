@@ -853,7 +853,33 @@ namespace Tpetra {
       ///
       /// \param rowinfo [in] Result of getRowInfo() for the given row.
       /// \param ind [in] (Local) column index for which to find the offset.
-      size_t findLocalIndex (RowInfo rowinfo, LocalOrdinal ind) const;
+      /// \param hint [in] Hint for where to find \c ind in the column
+      ///   indices for the given row.  If colInds is the ArrayView of
+      ///   the (local) column indices for the given row, and if
+      ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
+      ///   The hint is ignored if it is out of range (that is,
+      ///   greater than or equal to the number of entries in the
+      ///   given row).
+      ///
+      /// The hint optimizes for the case of calling this method
+      /// several times with the same row (as it would be in
+      /// transformLocalValues) when several index inputs occur in
+      /// consecutive sequence.  This may occur (for example) when
+      /// there are multiple degrees of freedom per mesh point, and
+      /// users are handling the assignment of degrees of freedom to
+      /// global indices manually (rather than letting BlockMap take
+      /// care of it).  In that case, users might choose to assign the
+      /// degrees of freedom for a mesh point to consecutive global
+      /// indices.  Epetra implements the hint for this reason.
+      ///
+      /// The hint only costs two comparisons (one to check range, and
+      /// the other to see if the hint was correct), and it can save
+      /// searching for the indices (which may take a lot more than
+      /// two comparisons).
+      size_t
+      findLocalIndex (RowInfo rowinfo,
+                      LocalOrdinal ind,
+                      size_t hint = 0) const;
 
       /// Find the column offset corresponding to the given (local)
       /// column index, given a view of the (local) column indices.
@@ -885,7 +911,7 @@ namespace Tpetra {
       /// column index \c ind, and returns the corresponding offset
       /// into the raw array of column indices (whether that be 1-D or
       /// 2-D storage).
-      size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind) const;
+      size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
 
       // local Kokkos objects
       void fillLocalGraph(const RCP<ParameterList> &params);

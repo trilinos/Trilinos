@@ -93,7 +93,7 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            bool& verbose,
                            bool& debug)
 {
-  cmdp.setOption ("nx", &nz, "Number of cells along the x dimension");
+  cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
   cmdp.setOption ("ny", &ny, "Number of cells along the y dimension");
   cmdp.setOption ("nz", &nz, "Number of cells along the z dimension");
   cmdp.setOption ("inputParams", &xmlInputParamsFile, "XML file of input "
