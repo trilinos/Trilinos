@@ -1088,8 +1088,12 @@ namespace Tpetra {
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     const size_t numElts = Teuchos::as<size_t> (inds.size ());
 
+    // Get a view of the column indices in the row.  This amortizes
+    // the cost of getting the view over all the entries of inds.
+    ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+
     for (size_t j = 0; j < numElts; ++j) {
-      const size_t k = findLocalIndex (rowInfo, inds[j]);
+      const size_t k = findLocalIndex (rowInfo, inds[j], colInds);
       if (k != STINV) {
         rowVals[k] = f( rowVals[k], newVals[j] );
       }
@@ -1270,6 +1274,51 @@ namespace Tpetra {
     size_t ret = OrdinalTraits<size_t>::invalid();
     if (found) {
       ret = (locptr - rptr);
+    }
+    return ret;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  size_t
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  findLocalIndex (RowInfo rowinfo,
+                  LocalOrdinal ind,
+                  ArrayView<const LocalOrdinal> colInds) const
+  {
+    typedef typename ArrayView<const LocalOrdinal>::iterator IT;
+
+    IT beg = colInds.begin ();
+    IT end = beg + rowinfo.numEntries;
+    IT ptr = beg + rowinfo.numEntries; // "null"
+    bool found = true;
+
+    if (isSorted ()) {
+      // binary search
+      std::pair<IT,IT> p = std::equal_range (beg, end, ind);
+      if (p.first == p.second) {
+        found = false;
+      }
+      else {
+        ptr = p.first;
+      }
+    }
+    else {
+      // direct search
+      ptr = std::find (beg, end, ind);
+      if (ptr == end) {
+        found = false;
+      }
+    }
+
+    size_t ret = OrdinalTraits<size_t>::invalid ();
+    if (found) {
+      ret = Teuchos::as<size_t> (ptr - beg);
     }
     return ret;
   }

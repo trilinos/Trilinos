@@ -842,14 +842,41 @@ namespace Tpetra {
       ArrayView<const GlobalOrdinal>  getGlobalView(RowInfo rowinfo) const;
       ArrayView<GlobalOrdinal>        getGlobalViewNonConst(RowInfo rowinfo);
 
-      /// \brief Find the column offset corresponding to the given (local) column index.
+      /// \brief Find the column offset corresponding to the given
+      ///   (local) column index.
       ///
       /// The name of this method is a bit misleading.  It does not
       /// actually find the column index.  Instead, it takes a local
       /// column index \c ind, and returns the corresponding offset
       /// into the raw array of column indices (whether that be 1-D or
       /// 2-D storage).
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the given row.
+      /// \param ind [in] (Local) column index for which to find the offset.
       size_t findLocalIndex (RowInfo rowinfo, LocalOrdinal ind) const;
+
+      /// Find the column offset corresponding to the given (local)
+      /// column index, given a view of the (local) column indices.
+      ///
+      /// The name of this method is a bit misleading.  It does not
+      /// actually find the column index.  Instead, it takes a local
+      /// column index \c ind, and returns the corresponding offset
+      /// into the raw array of column indices (whether that be 1-D or
+      /// 2-D storage).
+      ///
+      /// It is best to use this method if you plan to call it several
+      /// times for the same row, like in transformLocalValues().  In
+      /// that case, it amortizes the overhead of calling
+      /// getLocalView().
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the given row.
+      /// \param ind [in] (Local) column index for which to find the offset.
+      /// \param colInds [in] View of all the (local) column indices
+      ///   for the given row.
+      size_t
+      findLocalIndex (RowInfo rowinfo,
+                      LocalOrdinal ind,
+                      ArrayView<const LocalOrdinal> colInds) const;
 
       /// \brief Find the column offset corresponding to the given (global) column index.
       ///
