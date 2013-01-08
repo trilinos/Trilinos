@@ -2,3 +2,4 @@
 # most likely because of explicit specialization
 QR_Interface
 PermutationFactory
+PermutingSmoother
