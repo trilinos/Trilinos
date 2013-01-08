@@ -8,15 +8,22 @@
  */
 
 #include <cstdlib>
+#include <fstream>
 #include <stk_util/parallel/mpi_filebuf.hpp>
+#include <aprepro.h>
+#include <apr_tokenize.h>
 #include <assert.h>
 
 enum { buffer_default_length = 4096 };
 enum { buffer_putback_length =   16 };
 
-/*--------------------------------------------------------------------*/
+// --------------------------------------------------------------------
+namespace {
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+}
+// --------------------------------------------------------------------
 
-mpi_filebuf::mpi_filebuf()
+mpi_filebuf::mpi_filebuf(bool useAprepro, const std::string &apreproDefines)
   : std::streambuf(),
     comm( MPI_COMM_NULL ),
     comm_root( -1 ),
@@ -24,7 +31,12 @@ mpi_filebuf::mpi_filebuf()
     comm_output( 0 ),
     comm_buffer( NULL ),
     comm_buffer_len( buffer_default_length ),
-    comm_time(0.0)
+    comm_time(0.0),
+    use_aprepro(useAprepro),
+    aprepro_buffer(NULL),
+    aprepro_buffer_len(0),
+    aprepro_buffer_ptr(0),
+    aprepro_defines(apreproDefines)
 {}
 
 mpi_filebuf::~mpi_filebuf()
@@ -128,8 +140,36 @@ mpi_filebuf * mpi_filebuf::open(
     return (mpi_filebuf *) NULL ;
   }
 
+  // If input and use_aprepro, parse the file and store parsed results
+  // into buffer on root_processor.
+  if (use_aprepro && !comm_output) {
+    if (root_processor == rank) {
+      // Note that file is double-opened.  Aprepro uses an std::fstream
+      std::fstream infile(file_name, std::fstream::in);
+      if (!infile.good()) {
+	std::cerr << "APREPRO: Could not open file: " << file_name << std::endl;
+	return 0;
+      }
+
+      SEAMS::Aprepro aprepro;
+
+      add_aprepro_defines(aprepro, aprepro_defines);
+
+      bool result = aprepro.parse_stream(infile);
+      if (result) {
+	// Get size of buffer needed to store the parsed data...
+	std::string tmp = aprepro.parsing_results().str();
+	aprepro.clear_results();
+	aprepro_buffer_len = tmp.size();
+	aprepro_buffer_ptr = 0; // At beginning of buffer...
+	aprepro_buffer = (char*) std::malloc(aprepro_buffer_len);
+	memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
+      }
+    }
+  }
+
   //--------------------------------------------------------------------
-  // All memory allocated and root processor openned the file
+  // All memory allocated and root processor opened the file
   // Update the internal members accordingly.
 
   comm         = communicator ;
@@ -139,7 +179,6 @@ mpi_filebuf * mpi_filebuf::open(
   comm_output  = mode != 'r' ;
 
   // If output then set up put-buffer
-
   if ( comm_output ) setp( comm_buffer, comm_buffer + comm_buffer_len );
 
   comm_time += MPI_Wtime() - start_time ;
@@ -172,6 +211,13 @@ mpi_filebuf * mpi_filebuf::close()
     comm_output  = 0 ;
     comm_buffer  = NULL ;
 
+    if (aprepro_buffer != NULL) {
+      std::free(aprepro_buffer);
+      aprepro_buffer = NULL;
+      aprepro_buffer_ptr = 0;
+      aprepro_buffer_len = 0;
+    }
+    
     tmp = this ;
   }
 
@@ -188,43 +234,44 @@ int mpi_filebuf::underflow()
 {
   const double start_time = MPI_Wtime();
 
-  if ( NULL != comm_buffer && ! comm_output &&     // Open for read
-       ( gptr() == NULL || gptr() >= egptr() ) ) { // valid get buffer
-
-
+  if ( NULL != comm_buffer && ! comm_output &&
+       (gptr() == NULL || gptr() >= egptr()) ) { // valid get buffer
     // Length of the buffer, consistent on all processors
     // Entire buffer is offset to accomodate putbacks
-
     const size_t size = comm_buffer_len - buffer_putback_length ;
     char * const buf  = comm_buffer     + buffer_putback_length ;
 
-    int nread ;
-    int err ;
+    int nread = 0;
+    if (comm_root_fp != NULL) {
+      if (use_aprepro) {
+	// Copy from current location in aprepro_buffer into comm_buffer
+	nread = size;
+	if (aprepro_buffer_ptr + size > aprepro_buffer_len) {
+	  nread = aprepro_buffer_len - aprepro_buffer_ptr;
+	}
+	memcpy(buf, aprepro_buffer+aprepro_buffer_ptr, nread);
+	aprepro_buffer_ptr += nread;
+      } else {
+	// Root processor reads from the file and broadcasts the result
+	nread = std::fread(buf,1,size,comm_root_fp);
+      }
+    }
 
-    // Root processor reads from the file and broadcasts the result
-
-    if ( NULL != comm_root_fp ) nread = std::fread(buf,1,size,comm_root_fp);
-
-    if ( MPI_SUCCESS != ( err =
-	 MPI_Bcast( &nread, 1, MPI_INT, comm_root, comm ) ) )
+    int err = MPI_Bcast(&nread, 1, MPI_INT, comm_root, comm );
+    if (err != MPI_SUCCESS)
       MPI_Abort(comm,err);
 
     // If the read is successfull then update the get buffer pointers:
-
-    if ( 0 < nread ) {
-
+    if (nread > 0) {
       // Broadcast the read buffer to all processors:
-
-      if ( MPI_SUCCESS != ( err =
-	   MPI_Bcast( buf, nread, MPI_BYTE, comm_root, comm ) ) )
+      err = MPI_Bcast(buf, nread, MPI_BYTE, comm_root, comm);
+      if (err != MPI_SUCCESS)
 	MPI_Abort(comm,err);
 
       // Set the get buffer:
-
       setg( comm_buffer, buf, buf + nread );
 
       // Return the next character from the file:
-
       comm_time += MPI_Wtime() - start_time ;
 
       return *buf ;
@@ -472,4 +519,37 @@ int mpi_filebuf::sync()
 std::streambuf * mpi_filebuf::setbuf( char * s , std::streamsize n )
 {
   return this ;
+}
+
+namespace {
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)
+  {
+    // See if any variables were defined on the command line...
+    if (!defines.empty()) {
+      // Defines are space/comma-separated pairs of the form 'var=value'
+      // Split the string and then process each variable...
+      std::vector<std::string> tokens;
+      SEAMS::tokenize(defines, " ,\t", tokens);
+      for (size_t i=0; i<tokens.size(); i++) {
+	std::string token = tokens[i];
+	std::vector<std::string> define;
+	SEAMS::tokenize(token, "=", define);
+	if (define.size() == 2) {
+	  // Determine whether the define is string type or double/int...
+	  std::stringstream ss(define[1]);
+	  double d = 0;
+	  ss >> d;
+	  if (ss.fail()) {
+	    // Not a valid number; treat as a string
+	    aprepro.add_variable(define[0], define[1]);
+	  } else {
+	    aprepro.add_variable(define[0], d);
+	  }
+	} else {
+	  std::cerr << "APREPRO: Invalid format for predefined variable: '" << token << "'\n"
+		    << "         Required format is 'var=value' or 'var=\"value\"'\n";
+	}
+      }
+    }
+  }
 }

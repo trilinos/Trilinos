@@ -8,6 +8,7 @@
 #include <ios>
 #include <iostream>
 #include <cstdio>
+#include <string>
 #include <mpi.h>
 
 //: Specialize the ANSI Standard C++ streambuf class
@@ -35,7 +36,7 @@ class mpi_filebuf : public std::streambuf {
 public:
 
   //: Construct an MPI-parallel input/output file buffer
-  mpi_filebuf();
+  mpi_filebuf(bool aprepro=false, const std::string &aprepro_defines=std::string());
 
   //: GLOBAL: Open a file.
   // The file name is only significant on the root processsor.
@@ -93,12 +94,18 @@ private:
   mpi_filebuf & operator = ( const mpi_filebuf & ); // Not allowed
 
   MPI_Comm	comm ;            // Communicator
-  int	comm_root ;       // Rank of root processor
+  int	        comm_root ;       // Rank of root processor
   std::FILE *   comm_root_fp ;    // Root processor's file
-  int	comm_output ;     // Output file
+  int	        comm_output ;     // Output file
   char *	comm_buffer ;     // local buffer
   size_t	comm_buffer_len ; // length of buffer
   double	comm_time ;       // wall-time spent communicating
+
+  bool    use_aprepro;        // If true, process through aprepro (input only)
+  char *  aprepro_buffer;     // Buffer holding results of aprepro processing input file (root only)
+  size_t  aprepro_buffer_len; // Length of aprepro buffer.
+  size_t  aprepro_buffer_ptr; // Pointer to current location of data returned from aprepro_buffer.
+  const std::string aprepro_defines;
 };
 
 /*--------------------------------------------------------------------*/
