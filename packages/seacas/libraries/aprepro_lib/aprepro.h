@@ -52,6 +52,12 @@ namespace SEAMS {
     {
       value.var = 0;
     }
+
+    symrec(const std::string &my_name, int my_type, bool is_internal = false)
+      : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type), isInternal(is_internal), next(NULL)
+    {
+      value.var = 0;
+    }
   };
 
   /* Global options */
@@ -157,8 +163,11 @@ namespace SEAMS {
     std::stack<std::ostream*> outputStream;
     
     SEAMS::symrec *getsym(const char *) const;
-    SEAMS::symrec *putsym(const char *sym_name, SYMBOL_TYPE sym_type, bool is_internal);
+    SEAMS::symrec *putsym(const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal);
 
+    void add_variable(const std::string &sym_name, const std::string &sym_value);
+    void add_variable(const std::string &sym_name, double sym_value);
+    
     std::fstream *open_file(const std::string &file, const char *mode);
     std::fstream *check_open_file(const std::string &file, const char *mode);
     
