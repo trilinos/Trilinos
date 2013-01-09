@@ -431,11 +431,11 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
   default: // Fall through; let the code below handle it.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Invalid EBelosSolverType enum value " << solverType
+      << ".  Please report this bug to the Belos developers.");
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-    "Invalid EBelosSolverType enum value " << solverType
-    << ".  Please report this bug to the Belos developers.");
   // Compiler guard.  This may result in a warning on some compilers
   // for an unreachable statement, but it will prevent a warning on
   // other compilers for a "missing return statement at end of
