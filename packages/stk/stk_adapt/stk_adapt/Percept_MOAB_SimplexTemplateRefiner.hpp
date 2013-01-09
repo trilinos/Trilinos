@@ -1,9 +1,9 @@
 /** This class comes from MOAB, modified for STK Percept/Adapt
  *
- *  MOAB 4.1.0RC1 
- *   Released June 1, 2011 
+ *  MOAB 4.1.0RC1
+ *   Released June 1, 2011
  *
- *  http://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB 
+ *  http://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB
  *
  * Modifications center around exposing only the refine_3_simplex method as a static
  * method, and changing the algorithm to avoid introducing face nodes to disambiguate
@@ -17,16 +17,16 @@
 /*
  * MOAB, a Mesh-Oriented datABase, is a software component for creating,
  * storing and accessing finite element mesh data.
- * 
+ *
  * Copyright 2007 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Coroporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  */
 
 /**\class moab::SimplexTemplateRefiner
@@ -58,7 +58,7 @@
 
 //p #include "moab/Types.hpp" // for MB_DLL_EXPORT
 
-namespace moab { 
+namespace moab {
 
   typedef boost::tuple<int, int, int, int> TetTupleInt;
   //p
@@ -69,10 +69,11 @@ namespace moab {
 
   //p class MB_DLL_EXPORT SimplexTemplateRefiner : public EntityRefiner
 
-  class SimplexTemplateRefiner 
+  class SimplexTemplateRefiner
   {
   public:
-    SimplexTemplateRefiner(bool choose_best_tets=false) : m_choose_best_tets(choose_best_tets) {}
+    SimplexTemplateRefiner(bool choose_best_tets=false, bool use_best_quality=true) :
+      m_choose_best_tets(choose_best_tets), m_use_best_quality(use_best_quality) {}
     virtual ~SimplexTemplateRefiner() {}
 
     /*p
@@ -118,34 +119,23 @@ namespace moab {
                           double* v2, void* t2, EntityHandle h2,
                           double* v3, void* t3, EntityHandle h3 );
 
-    double *heap_coord_storage() { 
-      //return new double[3]; 
+    double *heap_coord_storage() {
+      //return new double[3];
       return 0;
     }
     void *heap_tag_storage() { return 0; }
 
-    /// returns tet quality - max edge len/min - 1.0 is ideal, smaller quality is better
-    double SQR(double x) { return x*x; }
-    double quality(int *indices, double *coords[14])
-    {
-      double edge_min=std::numeric_limits<double>::max();
-      double edge_max = 0;
-      for (int i=0; i < 3; i++)
-        {
-          for (int j=i+1; j < 4; j++)
-            {
-              double *ci = coords[indices[i]];
-              double *cj = coords[indices[j]];
-              double el2 = SQR(ci[0]-cj[0]) + SQR(ci[1]-cj[1]) + SQR(ci[2]-cj[2]) ;
-              edge_min = std::min(edge_min, el2);
-              edge_max = std::max(edge_max, el2);
-            }
-        }
-      return std::sqrt(edge_max/edge_min);
-    }
-
-
+    /// if true (false), choose from amongst the presented alternate methods of
+    ///   discretizing interior polyhedra, such as the octagon in the
+    ///   uniform refine case - if false, just arbitrarily choose the
+    ///   first alternate
     bool m_choose_best_tets;
+
+    /// if true (default), choose best alternate discretization by
+    ///   the resulting internal tets' quality - else, use the longest
+    ///   edge which is consistent with heuristics used in other codes
+    bool m_use_best_quality;
+
     int best_tets( int* alternates, double* coords[14], int, int );
 
     /*p
@@ -154,7 +144,7 @@ namespace moab {
     */
   };
 
-} // namespace moab 
+} // namespace moab
 
 #endif // MB_SIMPLEX_TEMPLATE_REFINER_HPP
 

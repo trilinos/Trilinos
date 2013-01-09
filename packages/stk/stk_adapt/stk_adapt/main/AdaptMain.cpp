@@ -187,7 +187,7 @@ namespace stk {
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8
                   //<< " memory[MB]= " << MegaByte(tot_mem)
                           << " estimatedMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
@@ -528,6 +528,7 @@ namespace stk {
       std::string compute_hmesh = "";
 
       double hmesh_factor = 0.0;
+      double hmesh_min_max_ave_factor[3] = {0,0,0};
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc =
@@ -590,7 +591,7 @@ namespace stk {
       run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
                                     "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200\n"
                                     "  If not set, use internal estimates for memory multipliers.");
-      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    , 
+      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
                                     " use internal or memory_multipliers_file values to estimate memory needed.\n"
                                     "   if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements, if memory_multipliers_file is set.\n"
                                     "   if query_only=1, and no memory_multipliers_file is set, use internal values for memory_multipliers.\n"
@@ -950,22 +951,30 @@ namespace stk {
                         if (compute_hmesh.size() != 0)
                           {
                             double hmesh=0.0;
-                            double min_max_ave[3];
                             if (compute_hmesh == "eigens")
                               {
-                                hmesh = eMesh.hmesh_stretch_eigens(min_max_ave);
+                                hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor);
                               }
                             else if (compute_hmesh == "edges")
                               {
-                                hmesh = eMesh.hmesh_edge_lengths(min_max_ave);
+                                hmesh = eMesh.hmesh_edge_lengths(hmesh_min_max_ave_factor);
                               }
                             else
                               {
                                 throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
                               }
                             if (!p_rank) {
-                              std::cout << "Before refine, Mesh size (h-parameter) = " << hmesh << std::endl;
-                              stk::percept::pout() << "Before refine, Mesh size (h-parameter) = " << hmesh << "\n";
+                              std::cout << "Before refine, Mesh size (h-parameter) = " << hmesh
+                                        << " (min = " << hmesh_min_max_ave_factor[0]
+                                        << " max = " << hmesh_min_max_ave_factor[1]
+                                        << " ave = " << hmesh_min_max_ave_factor[2]
+                                        << ") "
+                                        << std::endl;
+                              stk::percept::pout() << "Before refine, Mesh size (h-parameter) = " << hmesh
+                                                   << " (min = " << hmesh_min_max_ave_factor[0]
+                                                   << " max = " << hmesh_min_max_ave_factor[1]
+                                                   << " ave = " << hmesh_min_max_ave_factor[2]
+                                                   << ")\n " ;
                             }
                             hmesh_factor = hmesh;
                           }
@@ -1173,9 +1182,20 @@ namespace stk {
                                     throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
                                   }
                                 hmesh_factor /= hmesh;
+                                hmesh_min_max_ave_factor[0] /= min_max_ave[0];
+                                hmesh_min_max_ave_factor[1] /= min_max_ave[1];
+                                hmesh_min_max_ave_factor[2] /= min_max_ave[2];
                                 if (!p_rank) {
-                                  std::cout << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor << std::endl;
-                                  stk::percept::pout() << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor << "\n";
+                                  std::cout << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor
+                                            << "\n (new min = " << min_max_ave[0]
+                                            << " max = " << min_max_ave[1]
+                                            << " ave = " << min_max_ave[2]
+                                            << ") "
+                                            << "\n (old/new min = " << hmesh_min_max_ave_factor[0]
+                                            << " max = " << hmesh_min_max_ave_factor[1]
+                                            << " ave = " << hmesh_min_max_ave_factor[2]
+                                            << ") "
+                                            << std::endl;
                                 }
                               }
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";

@@ -47,17 +47,44 @@ namespace moab {
 
   double compute_edge_length_squared(double *c0, double *c1)
   {
-    return 
+    return
       (c0[0]-c1[0])*(c0[0]-c1[0])+
       (c0[1]-c1[1])*(c0[1]-c1[1])+
       (c0[2]-c1[2])*(c0[2]-c1[2]);
   }
 
-  int SimplexTemplateRefiner::best_tets( int* alternates, double* coords[14], int, int ) 
-  { 
+  inline double SQR(double x) { return x*x; }
+
+  /// returns tet quality:
+  ///   if use_best_quality, then return max edge len/min - 1.0 is ideal, smaller quality is better
+  ///   else, return the max edge length (consistent with standard practice heuristics of choosing
+  ///      the octagon's shortest diagonal)
+  inline double quality(int *indices, double *coords[14], bool use_best_quality=true)
+  {
+    double edge_min=std::numeric_limits<double>::max();
+    double edge_max = 0;
+    for (int i=0; i < 3; i++)
+      {
+        for (int j=i+1; j < 4; j++)
+          {
+            double *ci = coords[indices[i]];
+            double *cj = coords[indices[j]];
+            double el2 = SQR(ci[0]-cj[0]) + SQR(ci[1]-cj[1]) + SQR(ci[2]-cj[2]) ;
+            edge_min = std::min(edge_min, el2);
+            edge_max = std::max(edge_max, el2);
+          }
+      }
+    if (use_best_quality)
+      return std::sqrt(edge_max/edge_min);
+    else
+      return std::sqrt(edge_max);
+  }
+
+  int SimplexTemplateRefiner::best_tets( int* alternates, double* coords[14], int, int )
+  {
     if (!m_choose_best_tets) return alternates[0];
     // force better tets to be at least this factor better - helps with tie breaks for structured meshes
-    const double factor = 0.95; 
+    const double factor = 0.95;
     int nalt = -1;
     for (int i=0; i < 100; i++)
       {
@@ -77,7 +104,7 @@ namespace moab {
         double max_qual=0;
         for (int j=0; j < current_template[0]; j++)
           {
-            max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords));
+            max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords, m_use_best_quality));
             //std::cout << "j= " << j << " max_qual= " << max_qual << std::endl;
           }
         // find alternates with the best (min) worst quality
@@ -206,8 +233,8 @@ namespace moab {
 //     facept3c = this->heap_coord_storage();
 
     double* vertex_coords[14] = {
-      v0, v1, v2, v3, 
-      midpt0c, midpt1c, midpt2c, 
+      v0, v1, v2, v3,
+      midpt0c, midpt1c, midpt2c,
       midpt3c, midpt4c, midpt5c,
       facept0c, facept1c, facept2c, facept3c
     };
@@ -218,8 +245,8 @@ namespace moab {
     void* facept3t = this->heap_tag_storage();
 
     void* vertex_tags[14] = {
-      t0, t1, t2, t3, 
-      midpt0t, midpt1t, midpt2t, 
+      t0, t1, t2, t3,
+      midpt0t, midpt1t, midpt2t,
       midpt3t, midpt4t, midpt5t,
       facept0t, facept1t, facept2t, facept3t
     };
@@ -246,7 +273,7 @@ namespace moab {
 
     if (PERCEPT_DEBUG)
       std::cout << "tmp PM C,P= " << C << " " << P << std::endl;
-  
+
     // 1. Permute the tetrahedron into our canonical configuration
     for ( int i = 0; i < 14; ++ i )
       {
@@ -289,7 +316,7 @@ namespace moab {
     // cout << "Case " << C << "  Permutation " << P << endl;
     // 2. Generate tetrahedra based on the configuration.
     //    Note that case 0 is handled above (edgeCode == 0).
-  
+
     switch ( C )
       {
       case 1: // Ruprecht-Müller Case 1
@@ -300,7 +327,7 @@ namespace moab {
         MB_TESSELLATOR_INCR_SUBCASE_COUNT(0,0);
         break;
       case 2: // Ruprecht-Müller Case 2a
-        comparison_bits = 
+        comparison_bits =
           ( permlen[0] <= permlen[1] ? 1 : 0 ) | ( permlen[0] >= permlen[1] ? 2 : 0 ) |
           0;
 
@@ -314,7 +341,7 @@ namespace moab {
 
 #else
 
-#define V0(iedge) permuted_hash[tet_edges[iedge][0]] 
+#define V0(iedge) permuted_hash[tet_edges[iedge][0]]
 #define V1(iedge) permuted_hash[tet_edges[iedge][1]]
 
 #define VH(iedge) (V0(iedge) + V1(iedge))
@@ -381,7 +408,7 @@ namespace moab {
       case 4: // Ruprecht-Müller Case 3a
         //0<3<2<0 ?
 
-        comparison_bits = 
+        comparison_bits =
           ( permlen[0] <= permlen[3] ? 1 : 0 ) | ( permlen[0] >= permlen[3] ? 2 : 0 ) |
           ( permlen[2] <= permlen[3] ? 4 : 0 ) | ( permlen[2] >= permlen[3] ? 8 : 0 ) |
           ( permlen[0] <= permlen[2] ? 16 : 0 ) | ( permlen[0] >= permlen[2] ? 32 : 0 ) |
@@ -401,7 +428,7 @@ namespace moab {
 #else
             comparison_bits -=  3 ;
             if (CMP_VH(0,3))
-              comparison_bits |= 1; 
+              comparison_bits |= 1;
             else
               comparison_bits |= 2;
 #endif
@@ -420,9 +447,9 @@ namespace moab {
 #else
             comparison_bits -=  12 ;
             if (CMP_VH(2,3))
-              comparison_bits |= 4; 
+              comparison_bits |= 4;
             else
-              comparison_bits |= 8; 
+              comparison_bits |= 8;
 #endif
           }
         if ( ( comparison_bits_save & 48 ) == 48 )
@@ -439,7 +466,7 @@ namespace moab {
 #else
             comparison_bits -=  48 ;
             if (CMP_VH(0,2))
-              comparison_bits |= 16; 
+              comparison_bits |= 16;
             else
               comparison_bits |= 32;
 #endif
@@ -550,7 +577,7 @@ namespace moab {
         MB_TESSELLATOR_INCR_SUBCASE_COUNT(4,0);
         break;
       case 6: // Ruprecht-Müller Case 3c
-        comparison_bits = 
+        comparison_bits =
           ( permlen[0] <= permlen[1] ? 1 : 0 ) | ( permlen[0] >= permlen[1] ? 2 : 0 ) |
           ( permlen[0] <= permlen[3] ? 4 : 0 ) | ( permlen[0] >= permlen[3] ? 8 : 0 ) |
           0;
@@ -659,7 +686,7 @@ namespace moab {
           }
         break;
       case 7: // Ruprecht-Müller Case 3d
-        comparison_bits = 
+        comparison_bits =
           ( permlen[0] <= permlen[2] ? 1 : 0 ) | ( permlen[0] >= permlen[2] ? 2 : 0 ) |
           ( permlen[0] <= permlen[4] ? 4 : 0 ) | ( permlen[0] >= permlen[4] ? 8 : 0 ) |
           0;
@@ -766,7 +793,7 @@ namespace moab {
           }
         break;
       case 8: // Ruprecht-Müller Case 4a
-        comparison_bits = 
+        comparison_bits =
           ( permlen[4] <= permlen[5] ? 1 : 0 ) | ( permlen[4] >= permlen[5] ? 2 : 0 ) |
           ( permlen[3] <= permlen[4] ? 4 : 0 ) | ( permlen[3] >= permlen[4] ? 8 : 0 ) |
           0;
@@ -878,7 +905,7 @@ namespace moab {
           }
         break;
       case 9: // Ruprecht-Müller Case 4b
-        comparison_bits = 
+        comparison_bits =
           ( permlen[1] <= permlen[2] ? 1 : 0 ) | ( permlen[1] >= permlen[2] ? 2 : 0 ) |
           ( permlen[2] <= permlen[3] ? 4 : 0 ) | ( permlen[2] >= permlen[3] ? 8 : 0 ) |
           ( permlen[3] <= permlen[4] ? 16 : 0 ) | ( permlen[3] >= permlen[4] ? 32 : 0 ) |
@@ -1322,7 +1349,7 @@ namespace moab {
           }
         break;
       case 10: // Ruprecht-Müller Case 5
-        comparison_bits = 
+        comparison_bits =
           ( permlen[1] <= permlen[2] ? 1 : 0 ) | ( permlen[1] >= permlen[2] ? 2 : 0 ) |
           ( permlen[3] <= permlen[4] ? 4 : 0 ) | ( permlen[3] >= permlen[4] ? 8 : 0 ) |
           0;
@@ -1552,7 +1579,7 @@ namespace moab {
   /*
    * The array below is indexed by the edge code for a tetrahedron.
    * Looking up a row with a tet's edge code will return C and P.
-   * C is a configuration number and P is a permutation index. 
+   * C is a configuration number and P is a permutation index.
    *
    * C is based on the case number from Ruprecht and
    * Müller's (1998) paper on adaptive tetrahedra. (The case
@@ -1655,7 +1682,7 @@ namespace moab {
     };
 
 
-  /* Does this mean anything? If so, then you are either 
+  /* Does this mean anything? If so, then you are either
    * superstitious or much more clever than I (or both?).
    */
   /* permutation index, P:  0  1  2  3  4  5  6  7  8  9 10 11 */
@@ -1732,7 +1759,7 @@ namespace moab {
    * input tetrahedron.
    */
 
-  int SimplexTemplateRefiner::templates[] = 
+  int SimplexTemplateRefiner::templates[] =
     {
       // case 1_0
       2,
@@ -2234,5 +2261,5 @@ namespace moab {
 
     };
 
-} // namespace moab 
+} // namespace moab
 
