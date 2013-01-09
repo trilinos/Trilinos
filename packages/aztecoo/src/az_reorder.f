@@ -47,7 +47,7 @@ C
       subroutine az_rcm(root,xadj,adjncy,mask,perm,ccsize,deg)
 C-----------------------------------------------------------------
 C-----------------------------------------------------------------
-      integer adjncy(1),deg(1),mask(1),perm(1),xadj(1)
+      integer adjncy(*),deg(*),mask(*),perm(*),xadj(*)
       integer ccsize,fnbr,i,j,jstop,jstrt,k,l,lbegin
      .,              lnbr,lperm,lvlend,nbr,node,root
 C
@@ -114,7 +114,7 @@ C
       subroutine az_degree(root,xadj,adjncy,mask,deg,ccsize,ls)
 C------------------------------------------------------------------
 C------------------------------------------------------------------
-      integer adjncy(1),deg(1),ls(1),mask(1),xadj(1)
+      integer adjncy(*),deg(*),ls(*),mask(*),xadj(*)
       integer ccsize,i,ideg,j,jstop,jstrt,lbegin
      .,              lvlend,lvsize,nbr,node,root
 C
@@ -161,7 +161,7 @@ C
       subroutine az_fnroot(root,xadj,adjncy,mask,nlvl,xls,ls)
 C---------------------------------------------------------------------
 C---------------------------------------------------------------------
-      integer adjncy(1),ls(1),mask(1),xls(1),xadj(1)
+      integer adjncy(*),ls(*),mask(*),xls(*),xadj(*)
       integer ccsize,j,jstrt,k,kstop,kstrt,mindeg,nabor,ndeg
      .,                                nlvl,node,nunlvl,root
 C
@@ -204,7 +204,7 @@ C
       subroutine az_rootls(root,xadj,adjncy,mask,nlvl,xls,ls)
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
-      integer adjncy(1) ,ls(1),mask(1),xls(1),xadj(1)
+      integer adjncy(*) ,ls(*),mask(*),xls(*),xadj(*)
       integer i,j,jstop,jstrt,lbegin,ccsize,lvlend,lvsize
      .,                                nbr,nlvl,node,root
 C
