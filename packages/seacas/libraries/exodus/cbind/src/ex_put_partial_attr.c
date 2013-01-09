@@ -69,7 +69,8 @@ int ex_put_partial_attr (int   exoid,
 			 const void *attrib)
 {
   int status;
-  int attrid, blk_id_ndx;
+  int attrid;
+  int blk_id_ndx = 0;
   int numattrdim;
   size_t start[2], count[2];
   size_t num_attr;
@@ -172,6 +173,9 @@ int ex_put_partial_attr (int   exoid,
   case EX_ELEM_BLOCK:
     status = nc_inq_dimid(exoid, DIM_NUM_ATT_IN_BLK(blk_id_ndx), &numattrdim);
     break;
+  default:
+    /* No need for error message, handled in previous switch; just to quiet compiler. */
+    return (EX_FATAL);
   }
   
   if (status != NC_NOERR) {

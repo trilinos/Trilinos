@@ -2719,7 +2719,7 @@ namespace Ioex {
 	      Ioss::CommSet *css = get_region()->get_commset("commset_node");
 	      if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 		int64_t *idata = static_cast<int64_t*>(data);
-		for (size_t i=0; i < nodeCount; i++) {
+		for (int64_t i=0; i < nodeCount; i++) {
 		  idata[i] = myProcessor;
 		}
 
@@ -2735,7 +2735,7 @@ namespace Ioex {
 	      }
 	      else {
 		int *idata = static_cast<int*>(data);
-		for (size_t i=0; i < nodeCount; i++) {
+		for (int64_t i=0; i < nodeCount; i++) {
 		  idata[i] = myProcessor;
 		}
 
@@ -4847,7 +4847,7 @@ namespace Ioex {
 
 	  size_t begin_offset = (re_im*i)+complex_comp;
 	  size_t stride = re_im*comp_count;
-	  size_t num_out = 0;
+	  int64_t num_out = 0;
 
 	  if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
 	    num_out = nodeMap.map_field_to_db_scalar_order(static_cast<double*>(variables),

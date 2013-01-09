@@ -829,6 +829,13 @@ extern "C" {
 				ex_entity_id   blk_id,
 				const void *attrib);
 
+  EXODUS_EXPORT int ex_put_partial_attr (int   exoid,
+					 ex_entity_type blk_type,
+					 ex_entity_id   blk_id,
+					 int64_t   start_entity,
+					 int64_t   num_entity,
+					 const void *attrib);
+
   /*  Read Edge Face or Element Block Attributes */
   EXODUS_EXPORT int ex_get_attr(int exoid,
 				ex_entity_type obj_type,
@@ -939,6 +946,13 @@ extern "C" {
 					 ex_entity_type set_type,
 					 ex_entity_id   set_id,
 					 void *set_dist_fact);
+
+  EXODUS_EXPORT int ex_get_partial_set_dist_fact (int   exoid,
+						  ex_entity_type set_type,
+						  ex_entity_id   set_id,
+						  int64_t   offset,
+						  int64_t   num_to_put,
+						  void *set_dist_fact);
 
   /*  Write Concatenated Node Edge Face or Side Sets */
   EXODUS_EXPORT int ex_put_concat_sets(int exoid,

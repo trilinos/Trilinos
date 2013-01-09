@@ -413,7 +413,7 @@ int read_mesh(const std::string &exo_file,
     if (((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) ||
         ((problem->type == NODAL) && (weight->type & EL_BLK))) {
       
-      for(size_t cnt2=0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
+      for(int64_t cnt2=0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
 	mesh->elem_type[gelem_cnt] = blk_elem_type;
       
 	/* while going through the blocks, take care of the weighting */
@@ -436,7 +436,7 @@ int read_mesh(const std::string &exo_file,
 	  }
 	}
 
-	for(size_t cnt3=0; cnt3 < nodes_per_elem; cnt3++) {
+	for(int64_t cnt3=0; cnt3 < nodes_per_elem; cnt3++) {
 	  INT node = blk_connect[cnt3 + cnt2*nodes_per_elem] - 1;
 	  assert(node >= 0);
 	  mesh->connect[gelem_cnt][cnt3] = node;
@@ -476,10 +476,10 @@ int read_mesh(const std::string &exo_file,
       }
     } else {
       // No weights...
-      for(size_t cnt2=0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
+      for (int64_t cnt2=0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
 	mesh->elem_type[gelem_cnt] = blk_elem_type;
 
-	for(size_t cnt3=0; cnt3 < nodes_per_elem; cnt3++) {
+	for (int64_t cnt3=0; cnt3 < nodes_per_elem; cnt3++) {
 	  INT node = blk_connect[cnt2*nodes_per_elem + cnt3] - 1;
 	  assert(node >= 0);
 	  mesh->connect[gelem_cnt][cnt3] = node;

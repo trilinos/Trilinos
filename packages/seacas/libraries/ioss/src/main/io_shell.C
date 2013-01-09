@@ -1159,10 +1159,10 @@ namespace {
   {
     Ioss::NodeBlock *nb = region.get_node_block("nodeblock_1");
     if (nb->field_exists("owning_processor")) {
-      std::vector<INT> data;
-      nb->get_field_data("owning_processor", data);
+      std::vector<INT> my_data;
+      nb->get_field_data("owning_processor", my_data);
 
-      INT owned = std::count(data.begin(), data.end(), my_processor);
+      INT owned = std::count(my_data.begin(), my_data.end(), my_processor);
       nb->property_add(Ioss::Property("locally_owned_count", owned));
 
       // Set locally_owned_count property on all nodesets...
@@ -1174,7 +1174,7 @@ namespace {
 	owned = 0;
 	for (size_t n=0; n < ids.size(); n++) {
 	  INT id = ids[n];
-	  if (data[id-1] == my_processor)
+	  if (my_data[id-1] == my_processor)
 	    owned++;
 	}
 	ns->property_add(Ioss::Property("locally_owned_count", owned));

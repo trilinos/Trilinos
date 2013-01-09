@@ -151,7 +151,6 @@ int ex_create_par_int (const char *path,
   char errmsg[MAX_ERR_LENGTH];
   char *mode_name;
   int mode = 0;
-  char *option;
    
   int int64_status;
   int pariomode = 0;

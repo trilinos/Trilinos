@@ -638,7 +638,7 @@ namespace Iogn {
 
   void GeneratedMesh::owning_processor(int *owner, int64_t num_node)
   {
-    for (size_t i=0; i < num_node; i++) {
+    for (int64_t i=0; i < num_node; i++) {
       owner[i] = myProcessor;
     }
 

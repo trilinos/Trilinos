@@ -122,7 +122,7 @@ int ex_put_partial_id_map (int  exoid,
      */
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: The %s count is %d, but the %s dimension is not defined on file id %d.",
+	    "Error: The %s count is %ld, but the %s dimension is not defined on file id %d.",
 	    tname, num_entities, dnumentries, exoid);
     ex_err("ex_put_partial_id_map",errmsg,exerrval);
     return (EX_FATAL);

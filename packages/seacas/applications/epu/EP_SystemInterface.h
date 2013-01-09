@@ -68,8 +68,8 @@ namespace Excn {
 
       void subcycle(int cycles) {subcycle_ = cycles; }
       void processor_count(int count) {processorCount_ = count;}
-      void step_min(int step_min) {stepMin_ = step_min;}
-      void step_max(int step_max) {stepMax_ = step_max;}
+      void step_min(int my_step_min) {stepMin_ = my_step_min;}
+      void step_max(int my_step_max) {stepMax_ = my_step_max;}
       void step_interval(int interval) {stepInterval_ = interval;}
   
       std::string cwd() const {return cwd_;}
