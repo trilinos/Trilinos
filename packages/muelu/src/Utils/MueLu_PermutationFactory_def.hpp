@@ -73,7 +73,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
-#define DEBUG_OUTPUT 1
+#undef DEBUG_OUTPUT
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
