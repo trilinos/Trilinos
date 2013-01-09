@@ -896,6 +896,69 @@ namespace Stokhos {
 
   };
 
+  // Compute global index from a total-order-sorted multi-index
+  /*
+   * The strategy is based on the fact we can compute the number of terms
+   * of a total order expansion for any given order and dimension.  Thus 
+   * starting from the last dimension of the multi-index:
+   *     -- compute the order p of the multi-index from the current dimension
+   *        dim-d to the last
+   *     -- compute the number of terms in an order p-1 expansion of dimension
+   *        d
+   *     -- add this number of terms to the global index
+   * The logic here is independent of the values of the multi-index and 
+   * requires exactly 8*d + (3/2)*d*(d+1) integer operations and comparisons
+   */
+  template <typename ordinal_type>
+  ordinal_type 
+  totalOrderMapping(const Stokhos::MultiIndex<ordinal_type>& index) {
+    ordinal_type dim = index.dimension();
+    ordinal_type idx = ordinal_type(0);
+    ordinal_type p = ordinal_type(0);
+    ordinal_type den = ordinal_type(1);
+    for (ordinal_type d=1; d<=dim; ++d) {
+      p += index[dim-d];
+      
+      // offset = n_choose_k(p-1+d,d) = (p-1+d)! / ( (p-1)!*d! ) = 
+      //          ( p*(p+1)*...*(p+d-1) )/( 1*2*...*d )
+      den *= d;
+      ordinal_type num = 1;
+      for (ordinal_type i=p; i<p+d; ++i)
+	num *= i;
+
+      idx += num / den;
+    }
+    return idx;
+  }
+
+  // Compute global index from a lexicographic-sorted multi-index
+  /*
+   * For a given dimension d, let p be the sum of the orders for dimensions
+   * <= d.  Then the number of terms that agree with the first d entries
+   * is (max_order-p+dim-d)!/(max_order-p)!*(dim-d)! where max_order is
+   * the maximum order of the multi-index and dim is the dimension.  Thus
+   * we loop over each dimension d and compute the number of terms that come
+   * before that term that agree with the first d dimensions.
+   */
+  template <typename ordinal_type>
+  ordinal_type 
+  lexicographicMapping(const Stokhos::MultiIndex<ordinal_type>& index,
+		       ordinal_type max_order) {
+    ordinal_type dim = index.dimension();
+    ordinal_type idx = ordinal_type(0);
+    for (ordinal_type d=1; d<=dim; ++d) {
+      ordinal_type p = index[d-1];
+
+      ordinal_type offset = ordinal_type(0);
+      for (ordinal_type pp=0; pp<p; ++pp)
+	offset += Stokhos::n_choose_k(max_order-pp+dim-d,dim-d);
+
+      idx += offset;
+      max_order -= p;
+    }
+    return idx;
+  }
+
   /*! 
    * \brief Utilities for indexing a multi-variate complete polynomial basis 
    */

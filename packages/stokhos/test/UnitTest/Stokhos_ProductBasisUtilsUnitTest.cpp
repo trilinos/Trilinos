@@ -166,8 +166,8 @@ namespace ProductBasisUtilsUnitTest {
     
     // Print sorted index set
     std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
-    out << std::endl << "Sorted total order index set (dimension = " << setup.d
-	<< ", order = " << setup.p << "):" << std::endl;
+    out << std::endl << "Sorted lexicographic index set (dimension = " 
+	<< setup.d << ", order = " << setup.p << "):" << std::endl;
     std::copy(sortedIndexSet.begin(), sortedIndexSet.end(), out_iterator);  
 
     // Ensure orders of each index are increasing
@@ -514,6 +514,70 @@ namespace ProductBasisUtilsUnitTest {
       }
     }
 
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderMapping ) {
+    success = true;
+
+    // Build sorted index set of dimension d and order p
+    typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef Stokhos::TotalOrderLess<multiindex_type> less_type;
+    typedef std::set<multiindex_type, less_type> multiindex_set;
+    typedef multiindex_set::iterator iterator;
+    index_set_type indexSet(setup.d, 0, setup.p);
+    multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
+
+    // Loop over each index set element and test if mapping 
+    // computes proper global index
+    iterator i = sortedIndexSet.begin(); 
+    ordinal_type idx = 0;
+    while (i != sortedIndexSet.end()) {
+      ordinal_type idx_mapping = totalOrderMapping(*i);
+      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping 
+	  << ":  ";
+      if (idx == idx_mapping)
+	out << "passed";
+      else {
+	out << "failed";
+	success = false;
+      }
+      out << std::endl;
+      ++i;
+      ++idx;
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, LexographicMapping ) {
+    success = true;
+
+    // Build sorted index set of dimension d and order p
+    typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef Stokhos::LexographicLess<multiindex_type> less_type;
+    typedef std::set<multiindex_type, less_type> multiindex_set;
+    typedef multiindex_set::iterator iterator;
+    index_set_type indexSet(setup.d, 0, setup.p);
+    multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
+
+    // Loop over each index set element and test if mapping 
+    // computes proper global index
+    iterator i = sortedIndexSet.begin(); 
+    ordinal_type idx = 0;
+    while (i != sortedIndexSet.end()) {
+      ordinal_type idx_mapping = lexicographicMapping(*i,setup.p);
+      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping 
+	  << ":  ";
+      if (idx == idx_mapping)
+	out << "passed";
+      else {
+	out << "failed";
+	success = false;
+      }
+      out << std::endl;
+      ++i;
+      ++idx;
+    }
   }
 }
 

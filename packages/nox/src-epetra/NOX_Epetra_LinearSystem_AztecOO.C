@@ -1167,7 +1167,8 @@ createNewIfpackPreconditioner(Teuchos::ParameterList& p) const
     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
       p.get("Ifpack Preconditioner", "ILU"), 
       row, 
-      p.get("Overlap", 0) ));
+      p.get("Overlap", 0),
+      p.get("Override Serial Default", false) ));
     newIfpackPreconditionerPtr->SetParameters(teuchosParams);
     int err = newIfpackPreconditionerPtr->Initialize();
     if (err != 0)

@@ -56,9 +56,9 @@ OverlappingPartitioner<GraphType>::~OverlappingPartitioner()
 
 //==============================================================================
 template<class GraphType>
-size_t OverlappingPartitioner<GraphType>::numLocalParts() const 
+typename GraphType::local_ordinal_type OverlappingPartitioner<GraphType>::numLocalParts() const 
 {
-  return(NumLocalParts_);
+  return( NumLocalParts_);
 }
 
 //==============================================================================
