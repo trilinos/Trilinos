@@ -1098,8 +1098,7 @@ namespace Tpetra {
       if (indices.size () > 0) {
         ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
         if (isLocallyIndexed ()) {
-          staticGraph_->template transformLocalValues (rowInfo, curVals,
-                                                       indices, values, f);
+          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
         }
         else if (isGloballyIndexed ()) {
           // Convert the given local indices to global indices.
@@ -1113,8 +1112,7 @@ namespace Tpetra {
             // which transformGlobalValues() will ignore.
             *gindit++ = colMap.getGlobalElement (*lindit++);
           }
-          staticGraph_->template transformGlobalValues (rowInfo, curVals,
-                                                        gindices (), values, f);
+          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, gindices (), values, f);
         }
       }
     }
@@ -1203,12 +1201,10 @@ namespace Tpetra {
             // which transformLocalValues() will ignore.
             *lindit++ = colMap.getLocalElement (*gindit++);
           }
-          staticGraph_->template transformLocalValues (rowInfo, curVals,
-                                                       lindices (), values, f);
+          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, lindices (), values, f);
         }
         else if (isGloballyIndexed ()) {
-          staticGraph_->template transformGlobalValues (rowInfo, curVals,
-                                                        indices, values, f);
+          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
         }
       }
     }

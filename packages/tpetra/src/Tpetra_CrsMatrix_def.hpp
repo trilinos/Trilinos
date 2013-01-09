@@ -1120,8 +1120,8 @@ namespace Tpetra {
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
     typedef secondArg<Scalar, Scalar> f_type;
-    this->template transformLocalValues (localRow, indices,
-                                         values, f_type ());
+    this->template transformLocalValues<f_type> (localRow, indices,
+                                                 values, f_type ());
   }
 
 
@@ -1140,8 +1140,8 @@ namespace Tpetra {
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
     typedef secondArg<Scalar, Scalar> f_type;
-    this->template transformGlobalValues (globalRow, indices,
-                                          values, f_type ());
+    this->template transformGlobalValues<f_type> (globalRow, indices,
+                                                  values, f_type ());
   }
 
 
@@ -1159,8 +1159,8 @@ namespace Tpetra {
   {
     try {
       typedef std::plus<Scalar> f_type;
-      this->template transformGlobalValues (globalRow, indices,
-                                            values, f_type ());
+      this->template transformGlobalValues<f_type> (globalRow, indices,
+                                                    values, f_type ());
     }
     catch (Details::InvalidGlobalRowIndex<GlobalOrdinal>& e) {
       // For nonlocal data, use insertGlobalValues().  Since globalRow
@@ -1184,8 +1184,8 @@ namespace Tpetra {
                       const ArrayView<const Scalar>        &values)
   {
     typedef std::plus<Scalar> f_type;
-    this->template transformLocalValues (localRow, indices,
-                                         values, f_type ());
+    this->template transformLocalValues<f_type> (localRow, indices,
+                                                 values, f_type ());
   }
 
 
