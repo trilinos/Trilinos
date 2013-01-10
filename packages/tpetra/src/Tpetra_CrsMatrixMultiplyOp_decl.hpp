@@ -311,6 +311,55 @@ namespace Tpetra {
                        MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                        Scalar alpha,
                        Scalar beta) const;
+
+  private:
+    /// \brief Create a (or fetch a cached) column Map MultiVector.
+    ///
+    /// \param X_domainMap [in] A domain Map Multivector.  The
+    ///   returned MultiVector, if nonnull, will have the same number
+    ///   of columns as Y_domainMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the domain Map and the
+    /// column Map are the same (so that normally we wouldn't need the
+    /// column Map MultiVector), but the following (for example)
+    /// holds:
+    ///
+    /// 1. The kernel needs a constant stride input MultiVector, but
+    ///    the given input MultiVector is not constant stride.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getColumnMapMultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X_domainMap,
+                             const bool force = false) const;
+
+    /// \brief Create a (or fetch a cached) row Map MultiVector.
+    ///
+    /// \param Y_rangeMap [in] A range Map Multivector.  The returned
+    ///   MultiVector, if nonnull, will have the same number of
+    ///   columns as Y_rangeMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the range Map and the
+    /// row Map are the same (so that normally we wouldn't need the
+    /// row Map MultiVector), but one of the following holds:
+    ///
+    /// 1. The kernel needs a constant stride output MultiVector,
+    ///    but the given output MultiVector is not constant stride.
+    ///
+    /// 2. The kernel does not permit aliasing of its input and output
+    ///    MultiVector arguments, but they do alias each other.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getRowMapMultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y_rangeMap,
+                          const bool force = false) const;
   };
 
   /// \brief Non-member function to create a CrsMatrixMultiplyOp.
