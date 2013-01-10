@@ -268,7 +268,7 @@ SET(SOURCES
    src/ex_utils.c
 )
 
-if (TPL_ENABLE_MPI)
+if (${PACKAGE_NAME}_ENABLE_MPI)
 APPEND_GLOB(SOURCES src/*_par.c)
 ENDIF()
 
