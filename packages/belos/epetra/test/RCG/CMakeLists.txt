@@ -5,21 +5,25 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-    
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    rcg_hb
-    SOURCES test_rcg_hb.cpp createEpetraProblem.cpp
-    COMM serial mpi
-    ARGS
-      "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=10 --max-iters=4000"
-    STANDARD_PASS_OUTPUT 
-    )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/RCG
-    SOURCE_FILES bcsstk14.hb gr_30_30.hb
-    EXEDEPS rcg_hb
-    )
+  # mfh 10 Jan 2013: This RCG test is taking a long time and causing
+  # test timeouts.  It's not obviously broken, so I'm disabling the test
+  # for now until we can find a different test problem that doesn't take
+  # so long.
+  # TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  #   rcg_hb
+  #   SOURCES test_rcg_hb.cpp createEpetraProblem.cpp
+  #   COMM serial mpi
+  #   ARGS
+  #     "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=10 --max-iters=4000"
+  #   STANDARD_PASS_OUTPUT 
+  #   )
+
+  # TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
+  #   SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/RCG
+  #   SOURCE_FILES bcsstk14.hb gr_30_30.hb
+  #   EXEDEPS rcg_hb
+  #   )
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)
