@@ -89,6 +89,9 @@ namespace Xpetra {
 
 namespace MatrixMatrix {
 
+  // TODO: code factorization with MueLu_Utilities for conversion functions.
+  // TODO: _decl and _def
+
 #ifdef HAVE_XPETRA_EPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op) {
