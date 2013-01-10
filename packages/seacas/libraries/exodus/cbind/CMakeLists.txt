@@ -268,7 +268,7 @@ SET(SOURCES
    src/ex_utils.c
 )
 
-if (${PACKAGE_NAME}_ENABLE_MPI)
+if (SEACASExodus_ENABLE_MPI)
 APPEND_GLOB(SOURCES src/*_par.c)
 ENDIF()
 
