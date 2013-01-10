@@ -8,6 +8,7 @@
  */
 
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <stk_util/parallel/mpi_filebuf.hpp>
 #include <aprepro.h>
@@ -163,7 +164,7 @@ mpi_filebuf * mpi_filebuf::open(
 	aprepro_buffer_len = tmp.size();
 	aprepro_buffer_ptr = 0; // At beginning of buffer...
 	aprepro_buffer = (char*) std::malloc(aprepro_buffer_len);
-	memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
+	std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
       }
     }
   }
@@ -249,7 +250,7 @@ int mpi_filebuf::underflow()
 	if (aprepro_buffer_ptr + size > aprepro_buffer_len) {
 	  nread = aprepro_buffer_len - aprepro_buffer_ptr;
 	}
-	memcpy(buf, aprepro_buffer+aprepro_buffer_ptr, nread);
+	std::memcpy(buf, aprepro_buffer+aprepro_buffer_ptr, nread);
 	aprepro_buffer_ptr += nread;
       } else {
 	// Root processor reads from the file and broadcasts the result
