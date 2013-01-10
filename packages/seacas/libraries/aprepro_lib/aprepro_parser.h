@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 2.6.5.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Skeleton interface for Bison LALR(1) parsers in C++
    
@@ -54,7 +54,7 @@
 
 
 namespace SEAMS {
-/* Line 36 of lalr1.cc  */
+/* Line 33 of lalr1.cc  */
 #line 59 "aprepro_parser.h"
 
   /// A Bison parser.
@@ -65,7 +65,7 @@ namespace SEAMS {
 #ifndef YYSTYPE
     union semantic_type
     {
-/* Line 36 of lalr1.cc  */
+/* Line 33 of lalr1.cc  */
 #line 43 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
@@ -73,7 +73,7 @@ namespace SEAMS {
   char   *string;	/* For returning quoted strings		*/
 
 
-/* Line 36 of lalr1.cc  */
+/* Line 33 of lalr1.cc  */
 #line 78 "aprepro_parser.h"
     };
 #else
@@ -278,6 +278,7 @@ namespace SEAMS {
 
     /// \brief Reclaim the memory associated to a symbol.
     /// \param yymsg        Why this token is reclaimed.
+    ///                     If null, do not display the symbol, just free it.
     /// \param yytype       The symbol type.
     /// \param yyvaluep     Its semantic value.
     /// \param yylocationp  Its location.
@@ -307,8 +308,8 @@ namespace SEAMS {
   };
 
 } // SEAMS
-/* Line 36 of lalr1.cc  */
-#line 312 "aprepro_parser.h"
+/* Line 33 of lalr1.cc  */
+#line 313 "aprepro_parser.h"
 
 
 

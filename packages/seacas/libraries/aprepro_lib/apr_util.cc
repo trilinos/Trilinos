@@ -8,6 +8,10 @@
 #include "aprepro.h"
 #include "aprepro_parser.h"
 
+namespace {
+  std::vector<char*> allocations;
+}
+
 namespace SEAMS {
 extern Aprepro *aprepro;
 
@@ -30,6 +34,16 @@ void new_string(const char *from, char **to)
   int len=strlen(from);
   *to = new char[len+1];
   std::memcpy(*to, from, len+1);
+  allocations.push_back(*to);
+}
+
+void concat_string(const char *from1, const char *from2, char **to)
+{
+  int len=strlen(from1) + strlen(from2);
+  *to = new char[len+1];
+  std::memcpy(*to, from1, len+1);
+  std::strcat(*to, from2);
+  allocations.push_back(*to);
 }
 
   /* This function returns a pointer to a static character array.
@@ -131,4 +145,10 @@ void conv_string (char *string)
     }
 }
 
+void cleanup_memory()
+{
+  for (size_t i=0; i < allocations.size(); i++) {
+    delete [] allocations[i];
+  }
+}
 }

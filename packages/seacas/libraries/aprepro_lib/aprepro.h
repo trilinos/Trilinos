@@ -9,6 +9,7 @@
 #define SEAMS_DRIVER_H
 
 #include <string>
+#include <cstdlib>
 #include <vector>
 #include <stack>
 #include <ostream>
@@ -24,7 +25,7 @@ namespace SEAMS {
     std::string syntax;
     std::string info;
     int   type;
-    int   isInternal;  /* Only need a bit here; combine with type? */
+    bool  isInternal;  
     union {
       double var;
       double (*fnctptr)();
@@ -48,13 +49,15 @@ namespace SEAMS {
     symrec *next;
 
     symrec(const char *my_name, int my_type, bool is_internal = false)
-      : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type), isInternal(is_internal), next(NULL)
+      : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type),
+	isInternal(is_internal), next(NULL)
     {
       value.var = 0;
     }
 
     symrec(const std::string &my_name, int my_type, bool is_internal = false)
-      : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type), isInternal(is_internal), next(NULL)
+      : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type),
+	isInternal(is_internal), next(NULL)
     {
       value.var = 0;
     }

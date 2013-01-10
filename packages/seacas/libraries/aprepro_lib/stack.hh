@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 2.6.5.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Stack handling for Bison parsers in C++
    
@@ -42,7 +42,7 @@
 
 
 namespace SEAMS {
-/* Line 37 of stack.hh  */
+/* Line 34 of stack.hh  */
 #line 47 "stack.hh"
   template <class T, class S = std::deque<T> >
   class stack
@@ -127,7 +127,7 @@ namespace SEAMS {
   };
 
 } // SEAMS
-/* Line 119 of stack.hh  */
+/* Line 116 of stack.hh  */
 #line 132 "stack.hh"
 
 #endif /* !YY_SEAMS_STACK_HH_INCLUDED  */
