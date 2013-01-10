@@ -11,6 +11,7 @@
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/util/memory_util.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_performance_test_includes/calculate_centroid.hpp>
@@ -23,7 +24,10 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-namespace Fperf {
+namespace stk {
+namespace performance_tests {
+
+namespace {
 
 //This very simple test will visit all local elements, gather coordinates,
 //compute element-centroid (simple average of nodal coords) for each, and
@@ -81,6 +85,8 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
     }
   }
 }
+
+} // empty namespace
 
 TEST(hex_gather, hex_gather)
 {
@@ -142,15 +148,15 @@ TEST(hex_gather, hex_gather)
     }
   }
 
-  double test_time = stk::cpu_time() - start_time;
+  double gather_time = stk::cpu_time() - start_time;
+  double total_time = mesh_create_time + gather_time;
 
-  std::cout << "Time to create mesh: " << mesh_create_time << std::endl;
-  std::cout << "Time to compute centroids: " << test_time << std::endl;
+  static const int NUM_TIMERS = 3;
+  static const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
+  static const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
 
-  size_t now = 0;
-  size_t hwm = 0;
-  stk::get_memory_usage(now, hwm);
-  std::cout<<"Memory high-water-mark: "<<stk::human_bytes(hwm)<<std::endl;
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
 }
 
-} //namespace Fperf
+} //namespace performance_tests
+} //namespace stk

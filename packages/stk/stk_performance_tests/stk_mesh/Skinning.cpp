@@ -327,6 +327,8 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
   double timing_sums[TIMER_COUNT] = {0};
   const char* timer_names[TIMER_COUNT] = {"Create mesh", "Initial skin", "Detach mesh", "Delete skin", "Reskin", "Total time"};
   double start_time = 0;
+  size_t memory_max[2] = {0};
+  const char* memory_names[2] = {"Current memory", "Memory high water"};
 
   //recreate skin
   for ( int test_run = 0; test_run < 4; ++test_run) {
@@ -416,7 +418,19 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
       timings[5] += timings[i];
     }
 
+    size_t mem_now = 0, mem_hwm = 0;
+    stk::get_memory_usage(mem_now, mem_hwm);
+
     stk::all_reduce(pm, stk::ReduceMax<5>(timings));
+    stk::all_reduce(pm, stk::ReduceMax<1>(&mem_now));
+    stk::all_reduce(pm, stk::ReduceMax<1>(&mem_hwm));
+
+    if (mem_now > memory_max[0]) {
+      memory_max[0] = mem_now;
+    }
+    if (mem_hwm > memory_max[1]) {
+      memory_max[1] = mem_hwm;
+    }
 
     //compute sums
     for (int i=0; i<TIMER_COUNT; ++i) {
@@ -466,5 +480,7 @@ STKUNIT_UNIT_TEST( skinning, large_cube)
     STKUNIT_EXPECT_EQUAL( num_skin_entities, expected_num_skin );
   }
 
-  stk::print_timers_and_memory(&timer_names[0], &timing_sums[0], TIMER_COUNT);
+  if (p_rank == 0) {
+    stk::print_timers_and_memory(&timer_names[0], &timing_sums[0], TIMER_COUNT, &memory_names[0], &memory_max[0], 2);
+  }
 }
