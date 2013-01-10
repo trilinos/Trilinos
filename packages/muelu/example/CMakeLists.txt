@@ -5,6 +5,8 @@ ADD_SUBDIRECTORY(Simple)
 ADD_SUBDIRECTORY(ParameterList)
 ADD_SUBDIRECTORY(NativeInterface)
 
+ADD_SUBDIRECTORY(MultipleSolve)
+
 ADD_SUBDIRECTORY(Misc/Aggregation)
 ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
 ADD_SUBDIRECTORY(Misc/MultipleFactoryManager)

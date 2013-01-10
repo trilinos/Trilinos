@@ -86,7 +86,7 @@ namespace MueLuTests {
     TEST_EQUALITY(ggg, 3.14159265);
     TEST_EQUALITY(aLevel.IsAvailable("PI"), true);
 
-    aLevel.Delete("PI");
+    aLevel.Delete("PI", MueLu::NoFactory::get());
     TEST_EQUALITY(aLevel.IsAvailable("PI"), false);
 
     aLevel.Set("Hello MueLu", std::string("Greetings to MueMat"));
