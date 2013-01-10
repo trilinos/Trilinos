@@ -167,8 +167,8 @@ public:
  *
  *  The combinatorial-Legendre bases are ordered according to
  *  the number of non-zeros in the triple product associated with
- *  the bases.  Ordering is first by diagonal count (largest to smallest)
- *  and then by off-diagonal count (largest to smallest).
+ *  the bases.  Ordering is largest-to-smallest first by
+ *  total non-zero count and then by diagonal count.
  */
 
 class TripleProductTensorLegendreCombinatorialEvaluation {

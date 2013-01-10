@@ -62,9 +62,10 @@
 #define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_MULTI_A_X    2  /* verified */
 #define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_SHARED_BLOCK_A_X    3  /* verified */
 #define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_GLOBAL_BLOCK_A_X    4  /* verified */
-#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_TEXTURE_A_X         5
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_VARIABLE_BLOCK_A_X  5  /* verified */
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_TEXTURE_A_X         6
 
-#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  3
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  5
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -1097,6 +1098,303 @@ public:
 #endif
 
     cuda_parallel_launch_local_memory< Multiply ><<< dGrid , dBlock , shmem >>>( *this );
+    // Impl::CudaParallelLaunch< Multiply >( *this, dGrid , dBlock , shmem );
+  }
+};
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#elif MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT == MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_VARIABLE_BLOCK_A_X
+
+namespace KokkosArray {
+namespace Impl {
+
+/** \brief
+ *
+ *  finite_elem_row = blockIdx.y ;
+ *  stochastic_row  =  + gang_size[ blockIdx.x ]
+ *
+ *  Read all of tensor product for the stochastic row into shared memory.
+ *
+ *  Read A and x from global memory.
+ */
+
+template< typename MatrixScalar ,
+          typename VectorScalar >
+class Multiply<
+  BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Cuda > ,
+                  MatrixScalar , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > ,
+  View< VectorScalar** , LayoutLeft , Cuda > >
+{
+public:
+
+  typedef Cuda                    device_type ;
+  typedef device_type::size_type  size_type ;
+
+  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
+
+private:
+
+  const matrix_type m_A ;
+  const vector_type m_x ;
+  const vector_type m_y ;
+
+  View< unsigned * , Cuda > m_tensor_row_offset ;
+  size_type m_shmem ;
+
+  enum { WarpCount   = 8 };
+  enum { ThreadCount = WarpCount * CudaTraits::WarpSize };
+
+public:
+
+  __device__
+  void operator()(void) const
+  {
+    // Finite element and stochastic dimensions:
+    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_dim     = m_A.block.dimension();
+
+    // This block's span of tensor rows:
+    const size_type tensor_row_begin = m_tensor_row_offset( blockIdx.x );
+    const size_type tensor_row_next  = m_tensor_row_offset( blockIdx.x + 1 );
+    const size_type tensor_row_end   = tensor_row_next < tensor_dim
+                                     ? tensor_row_next : tensor_dim ;
+
+    // All threads within this block have the same gang_size
+    // which is a multiple of 2 and gang_size <= WarpSize.
+
+    const size_type gang_count = tensor_row_next - tensor_row_begin ;
+    const size_type gang_size  = blockDim.x  / gang_count ;
+    const size_type gang_rank  = threadIdx.x / gang_size ;
+    const size_type gang_tid   = threadIdx.x % gang_size ;
+
+    // Shared memory:
+    //   sh_work[ blockDim.x ]
+    //   sh_tvalue[ max_entry_count ]
+    //   sh_tcoord[ max_entry_count ]
+
+    volatile VectorScalar * const sh_work = kokkos_impl_cuda_shared_memory<VectorScalar>();
+    unsigned * const sh_toffset = (unsigned *)( sh_work );
+
+    // Read the offset array from the crs tensor:
+
+    if ( threadIdx.x <= 2 * gang_count ) {
+      const size_type jEnd = 2 * tensor_row_end ;
+      const size_type j    = 2 * tensor_row_begin + threadIdx.x ;
+      sh_toffset[ threadIdx.x ] = m_A.block.m_entry_offset( j < jEnd ? j : jEnd );
+    }
+
+    __syncthreads();
+
+    const size_type tensor_entry_begin = sh_toffset[0] ;
+    const size_type tensor_entry_count = sh_toffset[ 2 * gang_count ] - tensor_entry_begin ;
+    const size_type tensor_entry_gang_begin = sh_toffset[ 2 * gang_rank ] ;
+    const size_type tensor_entry_gang_count = sh_toffset[ 2 * ( gang_rank + 1 ) ] - tensor_entry_gang_begin ;
+
+    const size_type gang_limit = gang_size < tensor_entry_gang_count 
+                               ? gang_size : tensor_entry_gang_count ;
+
+    MatrixScalar * const sh_tvalue  = (MatrixScalar *)( sh_work + blockDim.x );
+    unsigned     * const sh_tcoord  = (unsigned *)( sh_tvalue + tensor_entry_count );
+
+    MatrixScalar * const sh_gang_tvalue = sh_tvalue + tensor_entry_gang_begin - tensor_entry_begin ;
+    unsigned     * const sh_gang_tcoord = sh_tcoord + tensor_entry_gang_begin - tensor_entry_begin ;
+
+    // Read coordinates and values from crs tensor:
+    {
+      const MatrixScalar * const a = & m_A.block.m_value( tensor_entry_begin );
+      const unsigned     * const c = & m_A.block.m_coordinate( tensor_entry_begin );
+
+      for ( size_type i = threadIdx.x ; i < tensor_entry_count ; i += blockDim.x ) {
+        sh_tvalue[i] = a[i] ;
+        sh_tcoord[i] = c[i] ;
+      }
+    }
+
+    __syncthreads(); // Wait for read of tensor data
+
+    // Each gang computes a row of the stochastic block 
+    // for coalesced reads and no need for explicit synchronization.
+
+    for ( size_type iyOuter = blockIdx.y ; iyOuter < fem_row_count ; iyOuter += gridDim.y ) {
+
+      // Loop over columns in the discrete (finite element) system.
+
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ iyOuter + 1 ];
+            size_type iBlockEntry    = m_A.graph.row_map[ iyOuter ];
+
+      VectorScalar y = 0 ;
+
+      for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+
+        // Read stochastic coefficients from the vector and matrix into shared memory.
+        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry );
+
+        const VectorScalar * const x = & m_x(        0 , iBlockColumn );
+        const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
+
+        // Loop through sparse tensor off-diagonal contributions:
+
+        for ( size_type i = gang_tid ; i < tensor_entry_gang_count ; i += gang_size ) {
+          const unsigned kj = sh_gang_tcoord[i];
+          const unsigned j  = kj & 0x0ffff ;
+          const unsigned k  = kj >> 16 ;
+          y += sh_gang_tvalue[i] * ( A[j] * x[k] + A[k] * x[j] );
+        }
+      }
+
+      // Reduction of 'y' within the gang (power of two and <= WarpSize)
+
+      sh_work[ threadIdx.x ] = y ;
+
+      if ( gang_tid +  1 < gang_limit ) {
+      if ( gang_tid +  2 < gang_limit ) {
+      if ( gang_tid +  4 < gang_limit ) {
+      if ( gang_tid +  8 < gang_limit ) {
+      if ( gang_tid + 16 < gang_limit ) {
+        sh_work[ threadIdx.x ] += sh_work[ threadIdx.x + 16 ]; }
+        sh_work[ threadIdx.x ] += sh_work[ threadIdx.x +  8 ]; }
+        sh_work[ threadIdx.x ] += sh_work[ threadIdx.x +  4 ]; }
+        sh_work[ threadIdx.x ] += sh_work[ threadIdx.x +  2 ]; }
+        sh_work[ threadIdx.x ] += sh_work[ threadIdx.x +  1 ]; }
+
+      __syncthreads(); // Wait for warps to complete
+
+      if ( tensor_row_begin + threadIdx.x < tensor_row_end ) {
+        const size_type b = threadIdx.x * gang_size ;
+
+        // If the gang size exceeds the warp size must reduce across warps.
+        for ( size_type n = 32 ; n < gang_limit ; n += 32 ) {
+          sh_work[ b ] += sh_work[ b + n ];
+        }
+
+        // Coalesced write:
+        m_y( tensor_row_begin + threadIdx.x , iyOuter ) = sh_work[ b ];
+      }
+    }
+  }
+
+  //------------------------------------
+
+  Multiply( const matrix_type & A ,
+            const vector_type & x ,
+            const vector_type & y )
+  : m_A( A ), m_x( x ), m_y( y )
+  , m_tensor_row_offset()
+  , m_shmem(0)
+  {
+    enum { ShCapacity = KokkosArray::Impl::CudaTraits::SharedMemoryCapacity };
+
+    const size_type target_shmem   = ShCapacity / 4 ;
+    const size_type tensor_dim     = m_A.block.dimension();
+    const size_type max_gang_count = ThreadCount / 2 ;
+
+    // Analyze the tensor to partition rows into blocks of roughly equal
+    // nonzero count.
+    // Limit the size of a gang to a warp for fast reductions.
+
+    typename tensor_type::array_unsigned_host_type
+      tensor_entry_offset = create_mirror( m_A.block.m_entry_offset );
+
+    deep_copy( tensor_entry_offset , m_A.block.m_entry_offset );
+
+    std::vector<unsigned> tensor_row_offset(1,0u);
+
+    for ( size_type tensor_row = 0 ; tensor_row < tensor_dim ; ) {
+      // Power of two gang_size thus a power of two gang_count
+      // so that gang_size * gang_count == ThreadCount
+
+      const size_type row_entry_begin = tensor_entry_offset(2*tensor_row);
+
+      size_type gang_count = 1 ;
+
+      for ( ; gang_count < max_gang_count &&
+              tensor_row + gang_count < tensor_dim ; gang_count <<= 1 ) {
+
+        const size_type tensor_row_end = std::min( tensor_dim , tensor_row + ( gang_count << 1 ) );
+
+        const size_type row_entry_end   = tensor_entry_offset(2*tensor_row_end);
+        const size_type row_entry_count = row_entry_end - row_entry_begin ;
+        const size_type block_shmem
+          = sizeof(VectorScalar) * ThreadCount    // sh_work[ threads ]
+          + sizeof(MatrixScalar) * row_entry_count // sh_tvalue[ entries ]
+          + sizeof(unsigned)     * row_entry_count // sh_tcoord[ entries ]
+          ;
+
+        if ( target_shmem < block_shmem ) break ;
+      }
+
+      const size_type tensor_row_next = tensor_row + gang_count ;
+
+      {
+        const size_type tensor_row_end  = std::min( tensor_dim , tensor_row_next );
+        const size_type row_entry_end   = tensor_entry_offset(2*tensor_row_end);
+        const size_type row_entry_count = row_entry_end - row_entry_begin ;
+
+        const size_type block_shmem
+          = sizeof(VectorScalar) * ThreadCount    // sh_work[ threads ]
+          + sizeof(MatrixScalar) * row_entry_count // sh_tvalue[ entries ]
+          + sizeof(unsigned)     * row_entry_count // sh_tcoord[ entries ]
+          ;
+
+        m_shmem = std::max( m_shmem , block_shmem );
+      }
+
+      tensor_row = tensor_row_next ;
+
+      tensor_row_offset.push_back( tensor_row );
+    }
+
+    m_tensor_row_offset = View< unsigned * , Cuda >( "tensor_row_work_offset" , tensor_row_offset.size() );
+
+    View< unsigned * , Cuda >::HostMirror h_tensor_row_offset = create_mirror( m_tensor_row_offset );
+
+    for ( size_type i = 0 ; i < h_tensor_row_offset.dimension_0() ; ++i ) {
+      h_tensor_row_offset(i) = tensor_row_offset[i] ;
+    }
+
+    deep_copy( m_tensor_row_offset , h_tensor_row_offset );
+
+#if 0
+
+    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+
+    std::cout << "Multiply< BlockCrsMatrix< CrsProductTensorLegendre ... > >"
+              << std::endl 
+              << "  grid(" << m_tensor_row_offset.dimension_0() - 1
+              << "," << fem_row_count << ")" << std::endl
+              << "  block(" << ThreadCount << ")" << std::endl
+              << "  shmem(" << m_shmem << ")" << std::endl
+              << "  fem_row_count(" << fem_row_count << ")" << std::endl
+              << "  tensor_dim(" << tensor_dim << ")" << std::endl
+              << "  tensor_blocking("
+              ;
+    for ( unsigned i = 0 ; i < tensor_row_offset.size() ; ++i ) {
+      std::cout << " ( " << tensor_row_offset[i]
+                << " : " << tensor_entry_offset[i*2] 
+                << " )" ;
+    }
+    std::cout << " )" << std::endl ;
+#endif
+
+  }
+
+  void run() const
+  {
+    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type tensor_subsets = m_tensor_row_offset.dimension_0() - 1 ;
+
+    const dim3 dBlock( ThreadCount , 1 , 1 );
+    const dim3 dGrid( tensor_subsets , fem_row_count , 1 );
+
+    cuda_parallel_launch_local_memory< Multiply ><<< dGrid , dBlock , m_shmem >>>( *this );
     // Impl::CudaParallelLaunch< Multiply >( *this, dGrid , dBlock , shmem );
   }
 };
