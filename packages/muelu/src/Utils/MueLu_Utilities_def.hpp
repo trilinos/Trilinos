@@ -255,12 +255,11 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(
-                                                                          const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& A,
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& A,
                                                                           bool transposeA,
                                                                           const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& B,
                                                                           bool transposeB,
-                                                                          RCP< Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >& C_in,
+                                                                          RCP< Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > C_in,
                                                                           bool doFillComplete,
                                                                           bool doOptimizeStorage) {
 
@@ -309,24 +308,11 @@ namespace MueLu {
     // this is necessary since the ML matrix matrix multiplication routine
     // has no handling for this
     // TODO: move this call to MLMultiply...
-      C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
+    C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
 
     return C;
 
   } // Multiply()
-
-  // DEPRECATED. Use Multiply() instead.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiply(
-                                                                                                                                                                RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A, bool transposeA,
-                                                                                                                                                                RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
-                                                                                                                                                                bool doFillComplete,
-                                                                                                                                                                bool doOptimizeStorage)
-  {
-    RCP<Matrix> C = Teuchos::null;
-    return Multiply(*A, transposeA, *B, transposeB, C, doFillComplete, doOptimizeStorage);
-
-  } //TwoMatrixMultiply()
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 
@@ -501,7 +487,7 @@ namespace MueLu {
                 RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
                 RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-                RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::TwoMatrixMultiply(crop1, false, crop2, false);
+                RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false);
 
                 // sum up
                 MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(temp, false, 1.0, Cij, 1.0);

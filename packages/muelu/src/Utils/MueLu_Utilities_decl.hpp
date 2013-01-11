@@ -177,26 +177,44 @@ namespace MueLu {
     @param B right matrix
     @param transposeB if true, use the transpose of B
     @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
-
-    @param C_in advanced usage. Teuchos::null by default.
     */
     static RCP<Matrix> Multiply(const Matrix & A,
                                 bool transposeA,
                                 const Matrix & B,
                                 bool transposeB,
-                                RCP<Matrix> & C_in = Teuchos::null,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true);
+                                bool doOptimizeStorage = true) {
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage);
+
+    }
+
 
     /*! @brief Helper function to do matrix-matrix multiply
 
-    DEPRECATED. Use Multiply() instead.
+    Returns C = AB.
 
+    @param A left matrix
+    @param transposeA if true, use the transpose of A
+    @param B right matrix
+    @param transposeB if true, use the transpose of B
+    @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
+
+    @param C_in advanced usage. Use Teuchos::null by default.
+           When C_in is available, its memory is reused to build
+           This is useful in the case of multiple solve: if the pattern of C does not change, we can keep the memory and pattern of previous C matrix (C_in)
+           C_in is modified in place and is not valid after the call.
+
+           ML MxM multiply does not reuse the pattern of C_in. If a C_in matrix is provided, then it is ignored.
+           This can create a memory penalty if both the useless C_in and the new C are present in memory at the same time
+           => Do not enable ML MxM at the same time as the option "reuse pattern".
     */
-    static RCP<Matrix> TwoMatrixMultiply(RCP<Matrix> const &A, bool transposeA,
-                                         RCP<Matrix> const &B, bool transposeB,
-                                         bool doFillComplete=true,
-                                         bool doOptimizeStorage=true);
+    static RCP<Matrix> Multiply(const Matrix & A,
+                                bool transposeA,
+                                const Matrix & B,
+                                bool transposeB,
+                                RCP<Matrix> C_in,
+                                bool callFillCompleteOnResult = true,
+                                bool doOptimizeStorage = true);
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply

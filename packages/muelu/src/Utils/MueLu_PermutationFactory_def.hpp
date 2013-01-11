@@ -685,8 +685,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   }
 
   // build permP * A * permQT
-  Teuchos::RCP<Matrix> ApermQt = Utils::TwoMatrixMultiply(A, false, permQTmatrix, false);
-  Teuchos::RCP<Matrix> permPApermQt = Utils::TwoMatrixMultiply(Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), false, ApermQt, false);
+  Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false);
+  Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false);
 
   /*
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
@@ -719,7 +719,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   }
   diagScalingOp->fillComplete();
 
-  Teuchos::RCP<Matrix> scaledA = Utils::TwoMatrixMultiply(diagScalingOp, false, permPApermQt, false);
+  Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false);
   currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), this);
 
   currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), this);  // TODO careful with this!!!

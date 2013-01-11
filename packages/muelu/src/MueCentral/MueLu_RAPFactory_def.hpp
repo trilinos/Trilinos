@@ -96,7 +96,7 @@ namespace MueLu {
       RCP<Matrix> AP;
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-        AP = Utils::TwoMatrixMultiply(A, false, P, false);
+        AP = Utils::Multiply(*A, false, *P, false);
         // Utils::Write("AP.dat", AP);
       }
 
@@ -106,14 +106,14 @@ namespace MueLu {
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        Ac = Utils::TwoMatrixMultiply(P, true, AP, false, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P, true, *AP, false, true, doOptimizedStorage);
 
       } else {
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
-        Ac = Utils::TwoMatrixMultiply(R, false, AP, false, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*R, false, *AP, false, true, doOptimizedStorage);
 
       }
 

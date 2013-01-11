@@ -140,7 +140,7 @@ namespace MueLu {
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvAP0 = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvAP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
 
     doFillComplete=true;
     optimizeStorage=false;
@@ -243,10 +243,10 @@ namespace MueLu {
         // calculate A * P0
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A, false, P0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, doFillComplete, optimizeStorage);
 
         // compute A * D^{-1} * A * P0
-        RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
 
         Numerator =   VectorFactory::Build(ADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(ADinvAP0->getColMap(), true);
@@ -282,7 +282,7 @@ namespace MueLu {
         bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
-        RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
         Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
@@ -686,10 +686,10 @@ namespace MueLu {
     // calculate A * Ptent
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> AP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
 
     // compute A * D^{-1} * A * P0
-    RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
 
     Numerator = MultiplyAll(AP0, ADinvAP0, GID2localgid);
     Denominator = MultiplySelfAll(ADinvAP0, GID2localgid);
@@ -719,7 +719,7 @@ namespace MueLu {
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
@@ -741,7 +741,7 @@ namespace MueLu {
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);
