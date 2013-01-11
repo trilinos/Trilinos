@@ -191,12 +191,22 @@ namespace Anasazi {
 
     //@}
 
+    //! Obtain the number of vectors in *this.
+    int GetVecLength () const { return GlobalLength(); }
+
+    //! The number of rows in the multivector.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    ptrdiff_t GetGlobalLength () const 
+    {
+       if ( Map().GlobalIndicesLongLong() )
+          return static_cast<ptrdiff_t>( GlobalLength64() );
+       else 
+          return static_cast<ptrdiff_t>( GlobalLength() );
+    }
+
     //! @name Attribute methods
     //! Obtain the vector length of *this.
     int GetNumberVecs () const { return NumVectors(); }
-
-    //! Obtain the number of vectors in *this.
-    int GetVecLength () const { return GlobalLength(); }
 
     //@}
 
@@ -1388,6 +1398,26 @@ namespace Anasazi {
           "Anasazi::OperatorTraits<double,Epetra_Multivector,Epetra_Operator>::Apply(): Error in Epetra_Operator::Apply(). Code " << ret);
     }
     
+  };
+
+  template<>
+  class MultiVecTraitsExt<double, Epetra_MultiVector>
+  {
+  public:
+    //! @name New attribute methods
+    //@{
+
+    //! Obtain the vector length of \c mv.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
+    { 
+      if (mv.Map().GlobalIndicesLongLong())
+        return static_cast<ptrdiff_t>( mv.GlobalLength64() );
+      else
+        return static_cast<ptrdiff_t>( mv.GlobalLength() );
+    }
+
+    //@}
   };
   
 } // end of Anasazi namespace 

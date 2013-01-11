@@ -127,6 +127,10 @@ public:
   //! The number of rows in the multivector.
   virtual int GetVecLength () const = 0;
 
+  //! The number of rows in the multivector.
+  //! \note This method supersedes GetVecLength, which will be deprecated.
+  virtual ptrdiff_t GetGlobalLength () const { return static_cast<ptrdiff_t>( this->GetVecLength() ); }
+
   //! The number of vectors (i.e., columns) in the multivector.
   virtual int GetNumberVecs () const = 0;
 
@@ -505,6 +509,35 @@ public:
 #endif // HAVE_ANASAZI_TSQR
   };
 
+  /// \brief An extension of the MultiVecTraits class that adds a new vector length method.
+  /// \ingroup anasazi_opvec_interfaces
+  ///
+  /// This traits class provides an additional method to the multivector
+  /// operations for finding the number of rows that is 64-bit compatible.
+  /// The method in this traits class will replace the GetVecLength()
+  /// method, which will be deprecated, and removed in the next major
+  /// Trilinos release.  At this time, this traits class will call the
+  /// GetVecLength() method by default for any traits implementation that
+  /// does not specialize this template.  However, for 64-bit support this
+  /// template will need to be specialized.
+  ///
+  /// \note You do <i>not</i> need to write a specialization of
+  ///   MultiVecTraitsExt if you are using Epetra, Tpetra, or Thyra
+  ///   multivectors.  Anasazi already provides specializations for
+  ///   these types.  Just relax and enjoy using the solvers!
+  template<class ScalarType>
+  class MultiVecTraitsExt<ScalarType, MultiVec<ScalarType> > {
+  public:
+    //! @name New attribute methods
+    //@{
+
+    //! Obtain the vector length of \c mv.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    static ptrdiff_t GetGlobalLength( const MultiVec<ScalarType>& mv )
+    { return mv.GetGlobalLength(); }
+
+    //@}
+  };
 
 } // namespace Anasazi
 

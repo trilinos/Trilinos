@@ -51,6 +51,7 @@
 #include "AnasaziOutputManager.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Anasazi {
 
@@ -85,6 +86,9 @@ namespace Anasazi {
            source multivector.
 
          GetVecLength 
+             MV: will always be positive (MV cannot have zero vectors)
+
+         GetGlobalLength (MultiVecTraitsExt) 
              MV: will always be positive (MV cannot have zero vectors)
 
          GetNumberVecs 
@@ -141,6 +145,7 @@ namespace Anasazi {
     *********************************************************************/
 
     typedef MultiVecTraits<ScalarType, MV>    MVT;
+    typedef MultiVecTraitsExt<ScalarType, MV> MVText;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType       MagType;
 
@@ -193,6 +198,17 @@ namespace Anasazi {
     }
 
 
+    /*********** GetGlobalLength() ***************************************
+       Verify:
+       1) This number should be strictly positive
+    *********************************************************************/
+    if ( MVText::GetGlobalLength(*A) <= 0 ) {
+      om->stream(Warnings)
+        << "*** ERROR *** MultiVectorTraitsExt::GetGlobalLength()" << endl
+        << "Returned <= 0." << endl;
+      return false;
+    }
+
     /*********** Clone() and MvNorm() ************************************
        Verify:
        1) Clone() allows us to specify the number of vectors
@@ -208,7 +224,7 @@ namespace Anasazi {
           << "Did not allocate requested number of vectors." << endl;
         return false;
       }
-      if ( MVT::GetVecLength(*B) != MVT::GetVecLength(*A) ) {
+      if ( MVText::GetGlobalLength(*B) != MVText::GetGlobalLength(*A) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::Clone()." << endl
           << "Did not allocate requested number of vectors." << endl;
@@ -358,7 +374,7 @@ namespace Anasazi {
             << endl
             << "Warning testing MultiVecTraits::MvInit()." << endl
             << "Ones vector should have norm sqrt(dim)." << endl
-            << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetVecLength(*B) << endl << endl;
+            << "norms[i]: " << norms[i] << "\tdim: " << MVText::GetGlobalLength(*B) << endl << endl;
           BadNormWarning = true;
         }
       }
@@ -414,7 +430,7 @@ namespace Anasazi {
           << "Wrong number of vectors." << endl;
         return false;
       }
-      if ( MVT::GetVecLength(*C) != MVT::GetVecLength(*B) ) {
+      if ( MVText::GetGlobalLength(*C) != MVText::GetGlobalLength(*B) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
           << "Vector lengths don't match." << endl;
