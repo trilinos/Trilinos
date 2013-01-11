@@ -173,7 +173,7 @@ Pitchfork_FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
-    cout << "ERROR: Pitchfork_FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
+    std::cout << "ERROR: Pitchfork_FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
   }
 
@@ -303,7 +303,7 @@ Pitchfork_FiniteElementProblem::getJacobian()
 }
 
 bool 
-Pitchfork_FiniteElementProblem::setParameter(string label, double value)
+Pitchfork_FiniteElementProblem::setParameter(std::string label, double value)
 {
   if (label == "lambda")
     lambda = value;

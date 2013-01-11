@@ -68,7 +68,7 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
        const Teuchos::RCP<Teuchos::ParameterList>& conParams,
        const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& g,
        const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints,
-       const vector<int>& paramIDs,
+       const std::vector<int>& paramIDs,
        bool skip_dfdp)
   : LOCA::Abstract::Group(global_data),
     globalData(global_data),
@@ -221,7 +221,7 @@ LOCA::MultiContinuation::ConstrainedGroup::getConstraintParameter(int i) const
   return grpPtr->getParam(constraintParamIDs[i]);
 }
 
-const vector<int>&
+const std::vector<int>&
 LOCA::MultiContinuation::ConstrainedGroup::getConstraintParamIDs() const
 {
   return constraintParamIDs;
@@ -283,7 +283,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeF()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -315,7 +315,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
   if (isValidJacobian && grpPtr->isJacobian())
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -389,7 +389,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeGradient()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -452,7 +452,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -561,7 +561,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector()";
   
   if (!isJacobian()) {
@@ -598,7 +598,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector()";
   
   if (!isJacobian()) {
@@ -637,7 +637,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -762,7 +762,7 @@ LOCA::MultiContinuation::ConstrainedGroup::getNewtonPtr() const
 double
 LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
@@ -845,7 +845,7 @@ LOCA::MultiContinuation::ConstrainedGroup::copy(
 
 void
 LOCA::MultiContinuation::ConstrainedGroup::setParamsMulti(
-		     const vector<int>& paramIDs, 
+		     const std::vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -886,7 +886,7 @@ LOCA::MultiContinuation::ConstrainedGroup::setParam(int paramID, double val)
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setParam(string paramID, double val)
+LOCA::MultiContinuation::ConstrainedGroup::setParam(std::string paramID, double val)
 {
   const LOCA::ParameterVector& p = grpPtr->getParams();
   int id = p.getIndex(paramID);
@@ -906,18 +906,18 @@ LOCA::MultiContinuation::ConstrainedGroup::getParam(int paramID) const
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getParam(string paramID) const
+LOCA::MultiContinuation::ConstrainedGroup::getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
-					     const vector<int>& paramIDs, 
+					     const std::vector<int>& paramIDs, 
 					     NOX::Abstract::MultiVector& dfdp, 
 					     bool isValid_F)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1151,15 +1151,15 @@ LOCA::MultiContinuation::ConstrainedGroup::isCombinedCZero() const
 // 			     NOX::Abstract::MultiVector& B,
 // 	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
 // {
-//   string callingFunction = 
+//   std::string callingFunction = 
 //     "LOCA::MultiContinuation::ConstrainedGroup::combineBlocks";
 
 //   Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
 //   if (constraints_mvdx == Teuchos::null)
 //     global_data.locaErrorCheck->throwError(
 // 				callingFunction,
-// 				string("Constraints object must be of type") +
-// 				string("ConstraintInterfaceMVDX"));
+// 				std::string("Constraints object must be of type") +
+// 				std::string("ConstraintInterfaceMVDX"));
 
 //   Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
 //     dfdpMultiVec->getXMultiVec();
@@ -1339,7 +1339,7 @@ void
 LOCA::MultiContinuation::ConstrainedGroup::fillA(
 	                                 NOX::Abstract::MultiVector& A) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::fillA";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
@@ -1377,7 +1377,7 @@ void
 LOCA::MultiContinuation::ConstrainedGroup::fillB(
 	                                  NOX::Abstract::MultiVector& B) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::fillB";
 
   bool isZeroB = constraintsPtr->isDXZero();
@@ -1388,8 +1388,8 @@ LOCA::MultiContinuation::ConstrainedGroup::fillB(
     if (constraints_mvdx == Teuchos::null)
       globalData->locaErrorCheck->throwError(
 				callingFunction,
-				string("Constraints object must be of type") +
-				string("ConstraintInterfaceMVDX"));
+				std::string("Constraints object must be of type") +
+				std::string("ConstraintInterfaceMVDX"));
 
     my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
   }
@@ -1432,7 +1432,7 @@ void
 LOCA::MultiContinuation::ConstrainedGroup::fillC(
 	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::fillC";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
@@ -1452,8 +1452,8 @@ LOCA::MultiContinuation::ConstrainedGroup::fillC(
     if (constraints_mvdx == Teuchos::null)
       globalData->locaErrorCheck->throwError(
 				callingFunction,
-				string("Constraints object must be of type") +
-				string("ConstraintInterfaceMVDX"));
+				std::string("Constraints object must be of type") +
+				std::string("ConstraintInterfaceMVDX"));
 
     my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
   }
@@ -1518,7 +1518,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVec
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;

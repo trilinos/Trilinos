@@ -580,8 +580,8 @@ double NOX::Thyra::Group::getNormF() const
   if ( this->isF() )
     return f_vec_->norm();
 
-  cerr << "ERROR: NOX::Thyra::Group::getNormF() "
-       << "- F is not up to date.  Please call computeF()!" << endl;
+  std::cerr << "ERROR: NOX::Thyra::Group::getNormF() "
+       << "- F is not up to date.  Please call computeF()!" << std::endl;
   throw "NOX Error";
   
   return 0.0;
@@ -672,7 +672,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 }
 
 ::Thyra::ESolveMeasureNormType 
-NOX::Thyra::Group::getThyraNormType(const string& name) const
+NOX::Thyra::Group::getThyraNormType(const std::string& name) const
 {
   if (name == "None")
     return ::Thyra::SOLVE_MEASURE_ONE;

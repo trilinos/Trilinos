@@ -84,12 +84,12 @@ SaveEigenData_Epetra::save(
 
   for (int i=0; i<ns; i++) {
     if ((*evals_i)[i]==0) {
-      cout << setprecision(8) 
+      cout << std::setprecision(8) 
            << "Eigenvalue " << i << " with value: " << (*evals_r)[i] 
            << "\n   Has Eigenvector: " << *(e_r(i)) << "\n" << endl;
     }
     else {
-      cout << setprecision(8) 
+      cout << std::setprecision(8) 
            << "Eigenvalue " << i << " with value: " << (*evals_r)[i] 
            << " +  " << (*evals_i)[i] << " i \nHas Eigenvector Re, Im" 
            << *(e_r(i)) << "\n" << *(e_i(i)) << endl;

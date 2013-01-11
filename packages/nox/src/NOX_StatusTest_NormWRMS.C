@@ -262,7 +262,7 @@ StatusType NormWRMS::getStatus() const
 }
 
 
-ostream& NormWRMS::print(ostream& stream, int indent) const
+std::ostream& NormWRMS::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -280,7 +280,7 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
       stream << ' ';
     stream << "(Max Lin Solv Tol:  " << Utils::sciformat(achievedTol, 3) << " < " << beta << ")";
   }
-  stream << endl;
+  stream << std::endl;
   return stream;
 }
 

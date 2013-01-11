@@ -97,9 +97,9 @@ int main(int argc, char *argv[])
     return parse_return;
 
   if (verbose) 
-    cout << "Verbosity Activated" << endl;
+    std::cout << "Verbosity Activated" << std::endl;
   else
-    cout << "Verbosity Disabled" << endl;
+    std::cout << "Verbosity Disabled" << std::endl;
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI

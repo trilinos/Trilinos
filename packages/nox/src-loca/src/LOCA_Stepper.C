@@ -347,7 +347,7 @@ LOCA::Stepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigen
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::start() {
   NOX::StatusTest::StatusType solverStatus;
-  string callingFunction = "LOCA::Stepper::start()";
+  std::string callingFunction = "LOCA::Stepper::start()";
 
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
@@ -432,7 +432,7 @@ LOCA::Stepper::start() {
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 {
-  string callingFunction = "LOCA::Stepper::finish()";
+  std::string callingFunction = "LOCA::Stepper::finish()";
 
   //
   // We don't need to check if the last step was successful since finish
@@ -605,7 +605,7 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
 LOCA::Abstract::Iterator::StepStatus
 LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  string callingFunction = "LOCA::Stepper::postprocess()";
+  std::string callingFunction = "LOCA::Stepper::postprocess()";
 
   // Allow continuation group to postprocess the step
   curGroupPtr->postProcessContinuationStep(stepStatus);
@@ -783,10 +783,10 @@ LOCA::Stepper::buildConstrainedGroup(
   if (!constraintsList->isParameter("Constraint Object"))
     return grp;
 
-  string methodName = "LOCA::Stepper::buildConstrainedGroup()";
+  std::string methodName = "LOCA::Stepper::buildConstrainedGroup()";
 
   Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RCP< vector<string> > constraintParamNames;
+  Teuchos::RCP< std::vector<std::string> > constraintParamNames;
 
   // Get constraint object
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
@@ -799,15 +799,15 @@ LOCA::Stepper::buildConstrainedGroup(
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP< vector<string> > > ("Constraint Parameter Names"))
+      isType< Teuchos::RCP< std::vector<std::string> > > ("Constraint Parameter Names"))
     constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RCP< vector<string> > > ("Constraint Parameter Names");
+      get< Teuchos::RCP< std::vector<std::string> > > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< vector<string> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
 
   // Convert names to integer IDs
-  vector<int> constraintParamIDs(constraintParamNames->size());
+  std::vector<int> constraintParamIDs(constraintParamNames->size());
   const LOCA::ParameterVector& pvec = grp->getParams();
   for (unsigned int i=0; i<constraintParamIDs.size(); i++)
     constraintParamIDs[i] = pvec.getIndex((*constraintParamNames)[i]);
@@ -1015,7 +1015,7 @@ LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 	  << " from "
 	  << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter());
       globalData->locaUtils->out() 
-	<< std::endl << globalData->locaUtils->fill(72, '~') << endl;
+	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
     }
   }
 }

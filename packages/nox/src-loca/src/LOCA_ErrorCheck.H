@@ -53,7 +53,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "NOX_Common.H"          // for string
+#include "NOX_Common.H"          // for std::string
 #include "NOX_Abstract_Group.H"  // for ReturnType
 
 // forward declarations
@@ -86,13 +86,13 @@ namespace LOCA {
     };
 
     //! Generic call to throw that prints info to the screen.
-    void throwError(const string& callingFunction = "<Unknown Method>",
-		    const string& message = "",
-		    const string& throwLabel = "LOCA Error");
+    void throwError(const std::string& callingFunction = "<Unknown Method>",
+		    const std::string& message = "",
+		    const std::string& throwLabel = "LOCA Error");
 
     //! Generic printing algorithm for sending warnings to the screen.
-    void printWarning(const string& callingFunction = "<Unknown Method>",
-		      const string& message = "");
+    void printWarning(const std::string& callingFunction = "<Unknown Method>",
+		      const std::string& message = "");
 
     //! Checks the supplied return type and performs an appropriate action
     /*!
@@ -100,15 +100,15 @@ namespace LOCA {
      * of \em status
      * <ul> 
      * <li> NOX::Abstract::Group::Ok -- nothing
-     * <li> NOX::Abstract::Group::Failed -- print message and throw a string
-     * <li> NOX::Abstract::Group::NotDefined -- print message and throw a string
-     * <li> NOX::Abstract::Group::BadDependency -- print message and throw a string
+     * <li> NOX::Abstract::Group::Failed -- print message and throw a std::string
+     * <li> NOX::Abstract::Group::NotDefined -- print message and throw a std::string
+     * <li> NOX::Abstract::Group::BadDependency -- print message and throw a std::string
      * <li> NOX::Abstract::Group::NotConverged -- print a warning message
      * </ul>
      */
     void checkReturnType(
 		  const NOX::Abstract::Group::ReturnType& status,
-		  const string& callingFunction = string("<Unknown Method>"));
+		  const std::string& callingFunction = std::string("<Unknown Method>"));
 
     /*! 
      * \brief Checks the return type for the NOX::AbstractGroup and may 
@@ -118,8 +118,8 @@ namespace LOCA {
     void checkReturnType(
 		  const NOX::Abstract::Group::ReturnType& status,
 		  const ActionType& action,
-		  const string& callingFunction = string("<Unknown Method>"),
-		  const string& message = string(""));
+		  const std::string& callingFunction = std::string("<Unknown Method>"),
+		  const std::string& message = std::string(""));
 
     //! Combines two return types
     /*!
@@ -141,12 +141,12 @@ namespace LOCA {
     combineAndCheckReturnTypes(
 		  const NOX::Abstract::Group::ReturnType& status1,
 		  const NOX::Abstract::Group::ReturnType& status2,
-		  const string& callingFunction = string("<Unknown Method>"));
+		  const std::string& callingFunction = std::string("<Unknown Method>"));
 
   protected:
 
-    //! Converts the NOX::Abstract::Group::ReturnType to a string
-    string getReturnTypeString(NOX::Abstract::Group::ReturnType status);
+    //! Converts the NOX::Abstract::Group::ReturnType to a std::string
+    std::string getReturnTypeString(NOX::Abstract::Group::ReturnType status);
 
   protected:
 

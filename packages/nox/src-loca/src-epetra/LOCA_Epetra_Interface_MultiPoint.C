@@ -76,13 +76,13 @@ MultiPoint(
 
    if (globalComm->MyPID()==0) {
      // TODO: pass in globalData and use output stream
-     cout  << "----------MultiPoint Partition Info------------"
+     std::cout  << "----------MultiPoint Partition Info------------"
            << "\n\tNumProcs              = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition = " << splitMultiVec_.Comm().NumProc()
            << "\n\tNumber of Domains     = " << numTimeDomains
            << "\n\tSteps on Domain 0     = " << timeStepsOnTimeDomain
            << "\n\tTotal Number of Steps = " << globalComm->NumTimeSteps();
-    cout   << "\n-----------------------------------------------" << endl;
+    std::cout   << "\n-----------------------------------------------" << std::endl;
     }
 
    // Construct global block matrix graph from split jacobian and stencil,
@@ -220,10 +220,10 @@ getJacobian()
 }
 
 void LOCA::Epetra::Interface::MultiPoint::
-throwError(const string& functionName, const string& errorMsg) const
+throwError(const std::string& functionName, const std::string& errorMsg) const
 {
-  cout << "LOCA::Epetra::Interface::MultiPoint::" << functionName 
-	 << " - " << errorMsg << endl;
+  std::cout << "LOCA::Epetra::Interface::MultiPoint::" << functionName 
+	 << " - " << errorMsg << std::endl;
   throw "LOCA Error";
 }
 

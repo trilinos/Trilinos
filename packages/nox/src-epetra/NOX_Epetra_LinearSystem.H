@@ -53,7 +53,7 @@
 
 #include "NOX_Epetra_Vector.H"	    // class data element
 #include "NOX_Utils.H"              // class data element
-#include "NOX_Common.H"             // class data element (string)
+#include "NOX_Common.H"             // class data element (std::string)
 #include "Teuchos_RCP.hpp"  // class data element
 
 // Forward declares

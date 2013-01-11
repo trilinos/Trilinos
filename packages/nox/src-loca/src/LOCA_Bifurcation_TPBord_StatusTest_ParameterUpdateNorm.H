@@ -117,7 +117,7 @@ namespace LOCA {
 	  getStatus() const;
 
 	  //! Prints current status
-	  virtual ostream& print(ostream& stream, int indent = 0) const;
+	  virtual std::ostream& print(ostream& stream, int indent = 0) const;
 
 
 	  /* @name Accessor Functions

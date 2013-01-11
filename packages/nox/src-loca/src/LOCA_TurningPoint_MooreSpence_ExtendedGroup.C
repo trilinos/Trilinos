@@ -103,7 +103,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = turningPointParams->get(
+  std::string bifParamName = turningPointParams->get(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
@@ -146,7 +146,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   else
     globalData->locaErrorCheck->throwError(
        "LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup()",
-       string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
+       std::string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
    multiplyMass = 
     turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
   if (multiplyMass && tdGrp == Teuchos::null) {
@@ -283,7 +283,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -326,7 +326,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -380,7 +380,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -488,7 +488,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -577,7 +577,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVecto
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -763,7 +763,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNewtonPtr() const
 double
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::TurningPoint::MooreSpence::ExtendedVector residual = *fVec;
@@ -830,7 +830,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
 
 void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -863,7 +863,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(int paramID,
 }
 
 void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(string paramID, 
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(std::string paramID, 
 							 double val)
 {
   const LOCA::ParameterVector& pVec = grpPtr->getParams();
@@ -886,18 +886,18 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(int paramID) const
 }
 
 double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(string paramID) const
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti(
-					    const vector<int>& paramIDs, 
+					    const std::vector<int>& paramIDs, 
 					    NOX::Abstract::MultiVector& dfdp, 
 					    bool isValid_F)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1168,7 +1168,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
      globalData->locaUtils->out() << 
        "\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(), " << 
        "applying random perturbation to initial solution of size: " << 
-       globalData->locaUtils->sciformat(perturbSize) << endl;
+       globalData->locaUtils->sciformat(perturbSize) << std::endl;
     }
     Teuchos::RCP<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);
@@ -1183,7 +1183,7 @@ void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::
 scaleNullVector(NOX::Abstract::Vector& a)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::scaleNullVector()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

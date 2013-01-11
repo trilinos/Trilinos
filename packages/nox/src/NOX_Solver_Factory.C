@@ -85,7 +85,7 @@ buildSolver(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   using Teuchos::rcp;
   RCP<NOX::Solver::Generic> solver;
 
-  string method = params->get("Nonlinear Solver", "Line Search Based");
+  std::string method = params->get("Nonlinear Solver", "Line Search Based");
   
   if ((method == "Newton") || (method == "Line Search Based")) 
     solver = rcp(new LineSearchBased(grp, tests, params));

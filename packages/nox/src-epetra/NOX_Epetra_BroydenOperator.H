@@ -58,6 +58,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include <vector>
+#include <map>
+#include <list>
 
 namespace NOX {
 
@@ -137,7 +140,7 @@ class BroydenOperator : public Epetra_RowMatrix,
   //! Destructor
   virtual ~BroydenOperator();
 
-  //! Returns a character string describing the name of the operator
+  //! Returns a character std::string describing the name of the operator
   virtual const char* Label () const;
 
   //! If set true, the transpose of this operator will be applied
@@ -366,7 +369,7 @@ class BroydenOperator : public Epetra_RowMatrix,
   NOX::Solver::PrePostOperator prePostOperator;
 
   //! label for the Epetra_RowMatrix
-  string label;
+  std::string label;
 
   /** @name IsValid flags 
    *  
@@ -378,13 +381,13 @@ class BroydenOperator : public Epetra_RowMatrix,
   //@}
 
   //! Flag to signal removal of some entries
-  vector<bool> entriesRemoved;
+  std::vector<bool> entriesRemoved;
 
   //! Container of entries to omit from Broyden updates
-  map< int, list<int> > retainedEntries;
+  std::map< int, std::list<int> > retainedEntries;
 
   //! Container of entries to omit from Broyden updates
-  vector<ReplacementInterface *> replacementInterfaces;
+  std::vector<ReplacementInterface *> replacementInterfaces;
 
 };
 } // namespace Epetra

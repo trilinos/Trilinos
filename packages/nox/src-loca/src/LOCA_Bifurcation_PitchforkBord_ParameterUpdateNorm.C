@@ -123,7 +123,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::getStatus() c
 
 ostream& 
 LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::print(
-							    ostream& stream, 
+							    std::ostream& stream, 
 							    int indent) const
 {
   for (int j = 0; j < indent; j++)
@@ -131,7 +131,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::print(
   stream << status;
   stream << "Pitchfork Scaled Parameter Update = " 
 	 << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

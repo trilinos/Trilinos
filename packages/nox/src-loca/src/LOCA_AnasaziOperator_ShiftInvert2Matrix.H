@@ -118,7 +118,7 @@ namespace LOCA {
       /*!
        * \brief Return name of this operator
        */
-      virtual const string& label() const;
+      virtual const std::string& label() const;
   
       /*! 
        * \brief Apply the operator.
@@ -168,7 +168,7 @@ namespace LOCA {
       Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Name of this operator
-      string myLabel;
+      std::string myLabel;
 
       //! Stores parameters relating to the operator
       mutable Teuchos::RCP<Teuchos::ParameterList> eigenParams;

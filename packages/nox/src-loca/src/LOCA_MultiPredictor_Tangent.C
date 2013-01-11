@@ -126,12 +126,12 @@ LOCA::MultiPredictor::Tangent::clone(NOX::CopyType type) const
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Tangent::compute(
-	      bool baseOnSecant, const vector<double>& stepSize,
+	      bool baseOnSecant, const std::vector<double>& stepSize,
 	      LOCA::MultiContinuation::ExtendedGroup& grp,
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
-  string callingFunction = "LOCA::MultiPredictor::Tangent::compute()";
+  std::string callingFunction = "LOCA::MultiPredictor::Tangent::compute()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
@@ -167,13 +167,13 @@ LOCA::MultiPredictor::Tangent::compute(
     tangent->getScalars();
 
   // Get continuation parameter IDs
-  const vector<int>& conParamIDs = grp.getContinuationParameterIDs();
+  const std::vector<int>& conParamIDs = grp.getContinuationParameterIDs();
 
   // Compute derivative of residual w.r.t. parameter
   finalStatus = underlyingGroup->computeDfDpMulti(conParamIDs, *fdfdp, false);
   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
-  vector<int> index_dfdp(conParamIDs.size());
+  std::vector<int> index_dfdp(conParamIDs.size());
   for (unsigned int i=0; i<conParamIDs.size(); i++)
     index_dfdp[i] = i+1;
   Teuchos::RCP<NOX::Abstract::MultiVector>dfdp = 
@@ -211,7 +211,7 @@ LOCA::MultiPredictor::Tangent::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Tangent::evaluate(
-	      const vector<double>& stepSize,
+	      const std::vector<double>& stepSize,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec,
 	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {

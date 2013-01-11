@@ -54,7 +54,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"	// base class
-#include "NOX_Common.H"         // for string data member
+#include "NOX_Common.H"         // for std::string data member
 
 namespace LOCA {
 
@@ -109,7 +109,7 @@ namespace LOCA {
        */
       virtual double NormInf() const;
     
-      //! Returns a character string describing the operator
+      //! Returns a character std::string describing the operator
       virtual const char* Label () const;
   
       //! Returns the current UseTranspose setting.
@@ -150,7 +150,7 @@ namespace LOCA {
     protected:
 
       //! Label for operator
-      string label;
+      std::string label;
     
       //! Stores operator representing J
       Teuchos::RCP<Epetra_Operator> J;

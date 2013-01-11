@@ -72,7 +72,7 @@ runPreIterate(const NOX::Solver::Generic& solver)
 {
   ++numRunPreIterate;
   utils.out(NOX::Utils::Details) << 
-    "1Dfem's runPreIterate() routine called!" << endl;
+    "1Dfem's runPreIterate() routine called!" << std::endl;
 }
 
 void UserPrePostOperator::
@@ -80,7 +80,7 @@ runPostIterate(const NOX::Solver::Generic& solver)
 {
   ++numRunPostIterate;
   utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPostIterate() routine called!" << endl;
+    << "1Dfem's runPostIterate() routine called!" << std::endl;
 }
 
 void UserPrePostOperator::
@@ -88,7 +88,7 @@ runPreSolve(const NOX::Solver::Generic& solver)
 {
   ++numRunPreSolve;
   utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPreSolve() routine called!" << endl;
+    << "1Dfem's runPreSolve() routine called!" << std::endl;
 }
 
 void UserPrePostOperator::
@@ -96,5 +96,5 @@ runPostSolve(const NOX::Solver::Generic& solver)
 {
   ++numRunPostSolve;
   utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPostSolve() routine called!" << endl;
+    << "1Dfem's runPostSolve() routine called!" << std::endl;
 }

@@ -214,7 +214,7 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
   lows = lowsFactory->createOp();
 
 /*
-  // Store sublist and string name where the Tolerance is set
+  // Store sublist and std::string name where the Tolerance is set
   // so that inexact Newton can modify it in resetTolerance()
   if ("Belos" == stratParams.get("Linear Solver Type","Belos")) {
   }
@@ -254,7 +254,7 @@ reset(Teuchos::ParameterList& noxStratParams)
   else if (preReusePolicyName == "Reuse")
     precReusePolicy = PRPT_REUSE;
   else {
-    string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
+    std::string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
     throwError("reset()", errorMessage);
   }
   maxAgeOfPrec = noxStratParams.get("Max Age Of Prec", 1);
@@ -399,10 +399,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     Epetra_RowMatrix* printMatrix = NULL;
     printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
     if (printMatrix == NULL) {
-      cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
+      std::cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
 	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
 	   << "Please set the \"Write Linear System\" parameter to false."
-	   << endl;
+	   << std::endl;
       throw "NOX Error";
     }
     EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
@@ -430,7 +430,7 @@ applyRightPreconditioning(bool useTranspose,
 {
 
 cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
-     << " NOT IMPLEMENTED " << endl;
+     << " NOT IMPLEMENTED " << std::endl;
 return false;
 }
 
@@ -447,7 +447,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   double startTime = timer.WallTime();  
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Creating a new preconditioner" << endl;;
+    utils.out() << "\n       Creating a new preconditioner" << std::endl;;
 
 
 //  Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
@@ -545,11 +545,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   if (precObj != Teuchos::null)  {
     if (utils.isPrintType(Utils::LinearSolverDetails))
       utils.out() << "\n       Time required to create preconditioner : " 
-           << (endTime - startTime) << " (sec.)" << endl;
+           << (endTime - startTime) << " (sec.)" << std::endl;
   }
   else {
     if (utils.isPrintType(Utils::LinearSolverDetails))
-      utils.out() << "\n       No preconditioner requested. " << endl;
+      utils.out() << "\n       No preconditioner requested. " << std::endl;
   }
 
   return true;
@@ -561,7 +561,7 @@ recomputePreconditioner(const NOX::Epetra::Vector& x,
 			Teuchos::ParameterList& linearSolverParams) const
 {  
 cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
-     << " NOT IMPLEMENTED " << endl;
+     << " NOT IMPLEMENTED " << std::endl;
 return false;
 }
 
@@ -626,11 +626,11 @@ resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& scalingObject)
 
 //***********************************************************************
 void NOX::Epetra::LinearSystemStratimikos::
-throwError(const string& functionName, const string& errorMsg) const
+throwError(const std::string& functionName, const std::string& errorMsg) const
 {
   if (utils.isPrintType(Utils::Error)) {
     utils.out() << "NOX::Epetra::LinearSystemStratimikos::" << functionName 
-	 << " - " << errorMsg << endl;
+	 << " - " << errorMsg << std::endl;
   }
   throw "NOX Error";
 }
@@ -730,7 +730,7 @@ getPreconditionerPolicy(bool advanceReuseCounter)
     if (utils.isPrintType(Utils::Details)) 
       if (advanceReuseCounter)
 	utils.out() << "\n       Preconditioner Reuse: Age of Prec --> " 
-		    << precQueryCounter << " / " << maxAgeOfPrec << endl;
+		    << precQueryCounter << " / " << maxAgeOfPrec << std::endl;
     
     // This allows reuse for the entire nonlinear solve
     if( maxAgeOfPrec == -2 ) {
@@ -840,7 +840,7 @@ precError(int error_code,
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
     }
     else
-      utils.out() << msg.str() << endl; 
+      utils.out() << msg.str() << std::endl; 
   }
 }
 

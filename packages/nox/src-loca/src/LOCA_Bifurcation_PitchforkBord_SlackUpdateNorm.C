@@ -123,7 +123,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::getStatus() const
 
 ostream& 
 LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::print(
-							    ostream& stream, 
+							    std::ostream& stream, 
 							    int indent) const
 {
   for (int j = 0; j < indent; j++)
@@ -131,7 +131,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm::print(
   stream << status;
   stream << "Pitchfork Scaled Slack Variable Update = " 
 	 << NOX::Utils::sciformat(slackUpdateNorm, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

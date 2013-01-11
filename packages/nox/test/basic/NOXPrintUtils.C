@@ -78,9 +78,9 @@ int main(int argc, char *argv[])
   int printProc = 0;
 
   if (myPID == printProc) {
-    cout << "Test #1: ctor 1" << endl;
-    cout << "***************" << endl;
-    cout << "\nBuilding utils1 using ctor #1...";
+    std::cout << "Test #1: ctor 1" << std::endl;
+    std::cout << "***************" << std::endl;
+    std::cout << "\nBuilding utils1 using ctor #1...";
   }
   Teuchos::RCP<std::ostream> outputstream = 
     Teuchos::rcp(&(std::cout), false);
@@ -89,19 +89,19 @@ int main(int argc, char *argv[])
   NOX::Utils utils1(outputInfo, myPID, printProc, 6, outputstream, 
 		    errorstream);
   if (myPID == printProc)
-    cout << "Done!\n" << endl;
+    std::cout << "Done!\n" << std::endl;
 
-  cout << utils1 << endl;
-  cout.flush();
+  std::cout << utils1 << std::endl;
+  std::cout.flush();
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   if (myPID == printProc) {
-    cout << "Test #2: ctor 2 with plist" << endl;
-    cout << "**************************" << endl;
-    cout << "Building utils2 using ctor #2...";
+    std::cout << "Test #2: ctor 2 with plist" << std::endl;
+    std::cout << "**************************" << std::endl;
+    std::cout << "Building utils2 using ctor #2...";
   }
   Teuchos::ParameterList p;
   p.set("Output Information", outputInfo);
@@ -112,11 +112,11 @@ int main(int argc, char *argv[])
   p.set("Error Stream", outputstream);
   NOX::Utils utils2(p);
   if (myPID == printProc)
-    cout << "Done!" << endl;
+    std::cout << "Done!" << std::endl;
 
   // even if not verbose, lets test the print capability
-  cout << utils2 << endl;
-  cout.flush();
+  std::cout << utils2 << std::endl;
+  std::cout.flush();
   
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
@@ -124,44 +124,44 @@ int main(int argc, char *argv[])
 
   // Test Copy ctor
   if (myPID == printProc) {
-    cout << "Test #3: Testing copy ctor" << endl;
-    cout << "**************************" << endl;
+    std::cout << "Test #3: Testing copy ctor" << std::endl;
+    std::cout << "**************************" << std::endl;
   }
   NOX::Utils utils3(utils1);
   
   if (myPID == printProc)
-    cout << "Printing utils3 - should be copy of utils1" << endl; 
-  cout << utils3 << endl;
-  cout.flush();
+    std::cout << "Printing utils3 - should be copy of utils1" << std::endl; 
+  std::cout << utils3 << std::endl;
+  std::cout.flush();
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   if (myPID == printProc) {
-    cout << "Test #4: Testing reset with plist" << endl;
-    cout << "*********************************" << endl;
-    cout << "Testing reset capability on utils3 - should be copy of utils2" 
-	 << endl;
+    std::cout << "Test #4: Testing reset with plist" << std::endl;
+    std::cout << "*********************************" << std::endl;
+    std::cout << "Testing reset capability on utils3 - should be copy of utils2" 
+	 << std::endl;
   }
   utils3.reset(p);
 
-  cout << utils3 << endl;
-  cout.flush();
+  std::cout << utils3 << std::endl;
+  std::cout.flush();
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-  // Test the ostreams
+  // Test the std::ostreams
   if (myPID == printProc) {
-    cout << "Test #5: Testing the out() function" << endl;
-    cout << "***********************************" << endl;
+    std::cout << "Test #5: Testing the out() function" << std::endl;
+    std::cout << "***********************************" << std::endl;
   }
   std::string printtest = "Function out() works correctly";
   if (myPID != printProc)
     printtest = "Test Failed!";
-  utils1.out() << printtest << endl;
+  utils1.out() << printtest << std::endl;
   utils1.out().flush();
   
 #ifdef HAVE_MPI
@@ -169,14 +169,14 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #6: Testing the out(MsgType) function:" << endl;
-    cout << "******************************************" << endl;
+    std::cout << "\nTest #6: Testing the out(MsgType) function:" << std::endl;
+    std::cout << "******************************************" << std::endl;
   }
   printtest = "Function out(MsgType) works correctly";
   if (myPID != printProc)
     printtest = "Test Failed!";
-  utils1.out(NOX::Utils::OuterIteration) << printtest << endl;
-  utils1.out(NOX::Utils::InnerIteration) << printtest << endl;
+  utils1.out(NOX::Utils::OuterIteration) << printtest << std::endl;
+  utils1.out(NOX::Utils::InnerIteration) << printtest << std::endl;
   utils1.out().flush();
   
 #ifdef HAVE_MPI
@@ -184,11 +184,11 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #7: Testing the pout() function:" << endl;
-    cout << "*************************************" << endl;
+    std::cout << "\nTest #7: Testing the pout() function:" << std::endl;
+    std::cout << "*************************************" << std::endl;
   }
   utils1.pout() << "MyPID = " << myPID
-		<< "  responded!" << endl;
+		<< "  responded!" << std::endl;
   utils1.pout().flush();
 
 #ifdef HAVE_MPI
@@ -196,46 +196,46 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #8: Testing the pout(MsgType) function:" << endl;
-    cout << "******************************************" << endl;
+    std::cout << "\nTest #8: Testing the pout(MsgType) function:" << std::endl;
+    std::cout << "******************************************" << std::endl;
   }
-  utils1.pout(NOX::Utils::OuterIteration) << "Test Failed!" << endl;
+  utils1.pout(NOX::Utils::OuterIteration) << "Test Failed!" << std::endl;
   utils1.pout(NOX::Utils::InnerIteration) << "MyPID = " << myPID
-					  << "  responded!" << endl;
+					  << "  responded!" << std::endl;
   utils1.pout().flush();
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-  // Test the ostreams
+  // Test the std::ostreams
   if (myPID == printProc) {
-    cout << "Test #9: Testing the err() function" << endl;
-    cout << "***********************************" << endl;
+    std::cout << "Test #9: Testing the err() function" << std::endl;
+    std::cout << "***********************************" << std::endl;
   }
   printtest = "Function err() works correctly";
   if (myPID != printProc)
     printtest = "Test Failed!";
-  utils1.err() << printtest << endl;
+  utils1.err() << printtest << std::endl;
   
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #10: Testing the perr() function:" << endl;
-    cout << "*************************************" << endl;
+    std::cout << "\nTest #10: Testing the perr() function:" << std::endl;
+    std::cout << "*************************************" << std::endl;
   }
   utils1.perr() << "MyPID = " << myPID
-		<< "  responded!" << endl;
+		<< "  responded!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #11: Testing output to a file:" << endl;
-    cout << "******************************************" << endl;
+    std::cout << "\nTest #11: Testing output to a file:" << std::endl;
+    std::cout << "******************************************" << std::endl;
   
     Teuchos::RCP<std::ostream> fileStream = 
       Teuchos::rcp(new std::ofstream("testfile.out"));
@@ -243,17 +243,17 @@ int main(int argc, char *argv[])
     NOX::Utils utils4(p);
     
     std::string testLine = "Supercalifragilisticexpialidocious";
-    utils4.out() << testLine << endl;
+    utils4.out() << testLine << std::endl;
     
     std::ifstream inStream("testfile.out");
     std::string read;
     inStream >> read;
     
-    utils1.out() << "Text output to file: " << testLine << endl;
-    utils1.out() << "Text read from file: " << read << endl;
+    utils1.out() << "Text output to file: " << testLine << std::endl;
+    utils1.out() << "Text read from file: " << read << std::endl;
   
     if (!testLine.compare(read)) {
-      utils1.out() << "File output works correctly!" << endl;
+      utils1.out() << "File output works correctly!" << std::endl;
     }
     else
       status = 1;
@@ -264,9 +264,9 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == printProc) {
-    cout << "\nTest #12: ctor 2 with plist for Output Information" << endl;
-    cout << "**************************" << endl;
-    cout << "Building utils2 using ctor #2...";
+    std::cout << "\nTest #12: ctor 2 with plist for Output Information" << std::endl;
+    std::cout << "**************************" << std::endl;
+    std::cout << "Building utils2 using ctor #2...";
   }
   {
     Teuchos::ParameterList pp;
@@ -282,9 +282,9 @@ int main(int argc, char *argv[])
     pp.set("Error Stream", outputstream);
     NOX::Utils utils3(pp);
     pp.print(std::cout);
-    cout << "\n" << utils3 << endl;
+    std::cout << "\n" << utils3 << std::endl;
     if (myPID == printProc)
-      cout << "Done!" << endl;
+      std::cout << "Done!" << std::endl;
   }
 
 #ifdef HAVE_MPI
@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 
   if (myPID == printProc) {
     if (status == 0) 
-      std::cout << "\nTest passed!" << endl;
+      std::cout << "\nTest passed!" << std::endl;
     else
-      std::cout << "\nTest Failed!" << endl;
+      std::cout << "\nTest Failed!" << std::endl;
   }
 
   // Final return value (0 = successfull, non-zero = failure)

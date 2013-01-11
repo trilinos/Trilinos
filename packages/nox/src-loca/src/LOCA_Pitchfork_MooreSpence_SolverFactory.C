@@ -72,12 +72,12 @@ LOCA::Pitchfork::MooreSpence::SolverFactory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = 
+  std::string methodName = 
     "LOCA::Pitchfork::MooreSpence::SolverFactory::create()";
   Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*solverParams);
+  const std::string& name = strategyName(*solverParams);
 
   if (name == "Salinger Bordering")
     strategy = 
@@ -96,7 +96,7 @@ LOCA::Pitchfork::MooreSpence::SolverFactory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = solverParams->get("User-Defined Name",
+    std::string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> >(userDefinedName))
@@ -117,7 +117,7 @@ LOCA::Pitchfork::MooreSpence::SolverFactory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::Pitchfork::MooreSpence::SolverFactory::strategyName(
 				  Teuchos::ParameterList& solverParams) const
 {

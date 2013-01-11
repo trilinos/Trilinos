@@ -73,7 +73,7 @@ LOCA::LAPACK::Factory::init(
 
 bool
 LOCA::LAPACK::Factory::createBorderedSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
@@ -92,7 +92,7 @@ LOCA::LAPACK::Factory::createBorderedSolverStrategy(
 
 bool
 LOCA::LAPACK::Factory::createEigensolverStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy)

@@ -172,10 +172,10 @@ int main(int argc, char *argv[])
 
     // Check some statistics on the solution
     NOX::Utils utils(nlPrintParams);
-    NOX::TestCompare testCompare(cout, utils);
+    NOX::TestCompare testCompare(std::cout, utils);
 
     if (utils.isPrintType(NOX::Utils::TestDetails))
-      cout << endl << "***** Checking solutions statistics *****" << endl;
+      std::cout << std::endl << "***** Checking solutions statistics *****" << std::endl;
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();

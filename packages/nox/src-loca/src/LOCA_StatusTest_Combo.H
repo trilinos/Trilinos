@@ -133,7 +133,7 @@ public:
 
   virtual LOCA::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print( ostream& stream,
+  virtual std::ostream& print( std::ostream& stream,
                           int indent = 0
                         ) const;
   
@@ -191,7 +191,7 @@ private:
   const ComboType type;
 
   //! Vector of generic status tests
-  vector<Teuchos::RCP<Abstract> > tests;
+  std::vector<Teuchos::RCP<Abstract> > tests;
 
   //! Status
   LOCA::StatusTest::StatusType status;

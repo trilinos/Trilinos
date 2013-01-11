@@ -102,7 +102,7 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
   if( finiteValueTester->finiteNumberTest(step) )
   {
     utils->out() << "NOX::LineSearch::NonlinearCG::compute "
-         << "- step value is NaN or Inf. " << endl;
+         << "- step value is NaN or Inf. " << std::endl;
     throw "NOX Error";
   }
 
@@ -113,10 +113,10 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
   double checkOrthogonality = fabs( newgrp.getF().innerProduct(dir) ); 
 
   if (utils->isPrintType(Utils::InnerIteration)) {
-    utils->out() << setw(3) << "1" << ":";
+    utils->out() << std::setw(3) << "1" << ":";
     utils->out() << " step = " << utils->sciformat(step);
     utils->out() << " orth = " << utils->sciformat(checkOrthogonality);
-    utils->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+    utils->out() << "\n" << NOX::Utils::fill(72) << "\n" << std::endl;
   }
   
   return true;
@@ -137,7 +137,7 @@ computeDirectionalDerivative(const Abstract::Vector& dir,
   if (!grp.isF())
   {
     utils->out() << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
-         << "- Invalid F" << endl;
+         << "- Invalid F" << std::endl;
     throw "NOX Error";
   }
 

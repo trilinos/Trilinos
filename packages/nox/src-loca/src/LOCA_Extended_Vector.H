@@ -54,6 +54,7 @@
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
 #include "NOX_Abstract_MultiVector.H" // for DenseMatrix
+#include <vector>
 
 // forward declarations
 namespace LOCA {
@@ -299,10 +300,10 @@ namespace LOCA {
       Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Array of vector pointers
-      vector< Teuchos::RCP<NOX::Abstract::Vector> > vectorPtrs;
+      std::vector< Teuchos::RCP<NOX::Abstract::Vector> > vectorPtrs;
 
       //! Array indicating if each vector is a view
-      vector< bool > isView;
+      std::vector< bool > isView;
 
       //! Number of scalars
       int numScalars;

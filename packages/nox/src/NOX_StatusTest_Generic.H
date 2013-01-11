@@ -51,7 +51,8 @@
 #ifndef NOX_STATUSTEST_GENERIC_H
 #define NOX_STATUSTEST_GENERIC_H
 
-#include "NOX_Common.H"		// for ostream
+#include "NOX_Common.H"		// for std::ostream
+#include <ostream>
 
 namespace NOX {
 
@@ -117,11 +118,11 @@ public:
   virtual NOX::StatusTest::StatusType getStatus() const = 0;
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& print(ostream& stream, int indent = 0) const = 0;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const = 0;
 
 };
 
-ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type);
+std::ostream& operator<<(std::ostream& os, NOX::StatusTest::StatusType type);
 
 } // namespace StatusTest
 } // namespace NOX

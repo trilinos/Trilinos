@@ -138,7 +138,7 @@ double
 LOCA::Epetra::CompactWYOp::NormInf() const
 {
   double Jn;
-  vector<double> an(A->NumVectors());
+  std::vector<double> an(A->NumVectors());
 
   Jn = J->NormInf();
   A->NormInf(&an[0]);

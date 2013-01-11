@@ -72,11 +72,11 @@ LOCA::StepSize::Factory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams)
 {
-  string methodName = "LOCA::StepSize::Factory::create()";
+  std::string methodName = "LOCA::StepSize::Factory::create()";
   Teuchos::RCP<LOCA::StepSize::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*stepsizeParams);
+  const std::string& name = strategyName(*stepsizeParams);
 
   if (name == "Constant")
     strategy = 
@@ -91,7 +91,7 @@ LOCA::StepSize::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = stepsizeParams->get("User-Defined Name",
+    std::string userDefinedName = stepsizeParams->get("User-Defined Name",
 							  "???");
     if ((*stepsizeParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName))
@@ -112,7 +112,7 @@ LOCA::StepSize::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::StepSize::Factory::strategyName(
 				  Teuchos::ParameterList& stepsizeParams) const
 {

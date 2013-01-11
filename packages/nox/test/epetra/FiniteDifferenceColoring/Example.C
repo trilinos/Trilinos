@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
   // Summarize test results
   if( Comm.MyPID() == 0 )
-    cout << "Test failed! This test requires the EpetraExt library." << endl;
+    std::cout << "Test failed! This test requires the EpetraExt library." << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "Error: numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "Error: numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
 
-  Teuchos::RCP< vector<Epetra_IntVector> > columns = 
+  Teuchos::RCP< std::vector<Epetra_IntVector> > columns = 
     Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
 
   // Use this constructor to create the graph numerically as a means of timing
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
   if (verbose) {
     if (status != NOX::StatusTest::Converged)
       if (MyPID==0) 
-	cout << "Nonlinear solver failed to converge!" << endl;
+	cout << "Nonlinear solver failed to converge!" << std::endl;
   }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -333,10 +333,10 @@ int main(int argc, char *argv[])
   if (verbose) {
     NOX::Utils utils(printParams);
     if (utils.isPrintType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
+      std::cout << std::endl << "Final Parameters" << std::endl
+	   << "****************" << std::endl;
       solver->getList().print(cout);
-      cout << endl;
+      std::cout << std::endl;
     }
   }
 
@@ -353,9 +353,9 @@ int main(int argc, char *argv[])
   // Summarize test results
   if (Comm.MyPID() == 0) {  
     if (status == NOX::StatusTest::Converged)
-      cout << "Test passed!" << endl;
+      std::cout << "Test passed!" << std::endl;
     else 
-      cout << "Test failed!" << endl;
+      std::cout << "Test failed!" << std::endl;
   }
 
 #ifdef HAVE_MPI

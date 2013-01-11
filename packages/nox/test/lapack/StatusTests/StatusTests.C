@@ -99,7 +99,7 @@ public:
     n = m;
     lambda = lambdaVal;
 
-    cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
+    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
       // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
@@ -111,7 +111,7 @@ public:
   };
 
   //! Destructor
-  ~Broyden() { cout << "Function evaluations: " << fevals << "\n"; };
+  ~Broyden() { std::cout << "Function evaluations: " << fevals << "\n"; };
 
   const NOX::LAPACK::Vector& getInitialGuess()
   {
@@ -231,7 +231,7 @@ public:
       stream << ' ';
     stream << status;
     stream << "MyTest = " << norm_f << " < " << tolerance;
-    stream << endl;
+    stream << std::endl;
     return stream;
   }
     
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
   using NOX::StatusTest::Stagnation;
   using namespace NOX::StatusTest;
 
-  cout << "Started" << endl;
+  std::cout << "Started" << std::endl;
 
   int final_status_value = 0; // zero = success, !0 = failed
 
@@ -286,10 +286,10 @@ int main(int argc, char *argv[])
 
   // Convergence tests and factory
 
-  cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-  cout << "Testing Convergence tests (NormF, NormUpdate, NormWRMS) ..."
-       << endl;
-  cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+  std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+  std::cout << "Testing Convergence tests (NormF, NormUpdate, NormWRMS) ..."
+       << std::endl;
+  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
   // Set up the problem interface
   Broyden broyden(100,0.99);
@@ -353,9 +353,9 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Teuchos::ParameterList> st_params;
 
 #ifdef HAVE_TEUCHOS_EXTENDED
-  cout << "Writing parameter list to \"input.xml\"" << endl;
+  std::cout << "Writing parameter list to \"input.xml\"" << std::endl;
   Teuchos::writeParameterListToXmlFile(stl, "input.xml");
-  cout << "Reading parameter list from \"input.xml\"" << endl;
+  std::cout << "Reading parameter list from \"input.xml\"" << std::endl;
   statusTestsCombo = NOX::StatusTest::buildStatusTests("input.xml", utils);
 #else
   statusTestsCombo = NOX::StatusTest::buildStatusTests(stl, utils);
@@ -376,20 +376,20 @@ int main(int argc, char *argv[])
   if (status == NOX::StatusTest::Converged && 
       solver->getNumIterations() == 12) {
     final_status_value += 0;
-    cout << "\nConvergence tests passed!" << endl;
+    std::cout << "\nConvergence tests passed!" << std::endl;
   }
   else {
     final_status_value += 1;
-    cout << "\nConvergence tests Failed!" << endl;
+    std::cout << "\nConvergence tests Failed!" << std::endl;
   }
 
   // Re-run test with complete checks of status tests
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "re-runningConvergence tests (NormF, NormUpdate, NormWRMS)\n"
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "re-runningConvergence tests (NormF, NormUpdate, NormWRMS)\n"
 	 << "with NOX::Solver::CheckType = Complete"
-	 << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+	 << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
     
     Broyden interface(100,0.99);
     RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
@@ -407,25 +407,25 @@ int main(int argc, char *argv[])
   
     status = solver->solve();
 
-    cout << *tmpParams << endl;
+    std::cout << *tmpParams << std::endl;
 
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 12) {
       final_status_value += 0;
-      cout << "Convergence (Complete) tests passed!\n" << endl;
+      std::cout << "Convergence (Complete) tests passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "Convergence (Complete)tests Failed!\n" << endl;
+      std::cout << "Convergence (Complete)tests Failed!\n" << std::endl;
     }
 
   }
 
   // Test the user defined status test
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing User Defined Status Test" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing User Defined Status Test" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,0.99);
     RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
     
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new MyTest(1.0e-3));
     user_defined.set("User Status Test", myTest);
 
-    std::cout << tmp_list << endl;
+    std::cout << tmp_list << std::endl;
 
     RCP<NOX::StatusTest::Generic> combo = buildStatusTests(tmp_list, utils);
 
@@ -456,20 +456,20 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 11) {
       final_status_value += 0;
-      cout << "\nUser Defined test passed!\n" << endl;
+      std::cout << "\nUser Defined test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nUser Defined test failed!\n" << endl;
+      std::cout << "\nUser Defined test failed!\n" << std::endl;
     }
   }
 
 
   // Tagging
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::Factory Tagging Option" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::Factory Tagging Option" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
 
     std::map< std::string, Teuchos::RCP<NOX::StatusTest::Generic> > my_map;
     normF.set("Tag", "Norm F Status Test");
@@ -487,20 +487,20 @@ int main(int argc, char *argv[])
 
     if (!Teuchos::is_null(my_normF_test)) {
       final_status_value += 0;
-      cout << "\nTagging test passed!" << endl;
+      std::cout << "\nTagging test passed!" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nTagging test failed!" << endl;
+      std::cout << "\nTagging test failed!" << std::endl;
     }
   }
 
   // NormF RELATIVE tolerance
   {
     
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::NormF RELATIVE Test" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::NormF RELATIVE Test" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
 
     Teuchos::ParameterList p;
 
@@ -561,11 +561,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 10) {
       final_status_value += 0;
-      cout << "\nNormF RELATIVE test 1/2 passed!\n" << endl;
+      std::cout << "\nNormF RELATIVE test 1/2 passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nNormF RELATIVE test 1/2 failed!\n" << endl;
+      std::cout << "\nNormF RELATIVE test 1/2 failed!\n" << std::endl;
     }
 
     // reset absolute and relative tolerance and keep going
@@ -588,11 +588,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 2) {
       final_status_value += 0;
-      cout << "\nNormF RELATIVE test 2/2 passed!\n" << endl;
+      std::cout << "\nNormF RELATIVE test 2/2 passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nNormF RELATIVE test 2/2 failed!\n" << endl;
+      std::cout << "\nNormF RELATIVE test 2/2 failed!\n" << std::endl;
     }
 
   }
@@ -600,9 +600,9 @@ int main(int argc, char *argv[])
   // New RelativeNormF tolerance
   {
     
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::RelativeNormF Test" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::RelativeNormF Test" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
 
     Teuchos::ParameterList p;
 
@@ -638,11 +638,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 11) {
       final_status_value += 0;
-      cout << "\nRelativeNormF test 1/2 passed!\n" << endl;
+      std::cout << "\nRelativeNormF test 1/2 passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nRelavtiveNormF test 1/2 failed!\n" << endl;
+      std::cout << "\nRelavtiveNormF test 1/2 failed!\n" << std::endl;
     }
 
     solver->reset(solver->getSolutionGroup().getX());
@@ -651,11 +651,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 1) {
       final_status_value += 0;
-      cout << "\nRelativeNormF test 2/2 passed!\n" << endl;
+      std::cout << "\nRelativeNormF test 2/2 passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nRelativeNormF test 2/2 failed!\n" << endl;
+      std::cout << "\nRelativeNormF test 2/2 failed!\n" << std::endl;
     }
 
   }
@@ -666,9 +666,9 @@ int main(int argc, char *argv[])
 
   // Max Iters
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::MaxIters" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::MaxIters" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,0.99);
     RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
     ParameterList p;
@@ -683,19 +683,19 @@ int main(int argc, char *argv[])
     // A failure reported by max iters is a passing test
     if (status == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "\nMaxIters test passed!\n" << endl;
+      std::cout << "\nMaxIters test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nMaxIters test failed!\n" << endl;
+      std::cout << "\nMaxIters test failed!\n" << std::endl;
     }
   }
 
   // Finite Value
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::FiniteValue" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::FiniteValue" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,1000.0);
     interface.setNaNSolution();
     RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
@@ -714,19 +714,19 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed && 
 	fvst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "\nFiniteValue test passed!\n" << endl;
+      std::cout << "\nFiniteValue test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nFiniteValue test failed!\n" << endl;
+      std::cout << "\nFiniteValue test failed!\n" << std::endl;
     }
   }
 
   // Divergence
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::Divergence" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::Divergence" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,0.99);
     Teuchos::RCP<NOX::LAPACK::Group> group = 
       Teuchos::rcp(new NOX::LAPACK::Group(interface));
@@ -745,20 +745,20 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed &&
 	divst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "\nDivergence test passed!\n" << endl;
+      std::cout << "\nDivergence test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nDivergence test failed!\n" << endl;
+      std::cout << "\nDivergence test failed!\n" << std::endl;
     }
 
   }
 
   // Stagnation
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::Stagnation" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::Stagnation" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,0.99);
     Teuchos::RCP<NOX::LAPACK::Group> group = 
       Teuchos::rcp(new NOX::LAPACK::Group(interface));
@@ -777,19 +777,19 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed &&
 	stagst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "\nStagnation test passed!\n" << endl;
+      std::cout << "\nStagnation test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nStagnation test failed!\n" << endl;
+      std::cout << "\nStagnation test failed!\n" << std::endl;
     }
   }
 
   // NStep
   {
-    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Testing NOX::StatusTest::NStep" << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    std::cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+    std::cout << "Testing NOX::StatusTest::NStep" << std::endl;
+    std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << std::endl;
     Broyden interface(100,0.99);
     Teuchos::RCP<NOX::LAPACK::Group> group = 
       Teuchos::rcp(new NOX::LAPACK::Group(interface));
@@ -838,11 +838,11 @@ int main(int argc, char *argv[])
     // A failure reported by stagnation is a passing test
     if (status == NOX::StatusTest::Converged) {
       final_status_value += 0;
-      cout << "\nNStep test passed!\n" << endl;
+      std::cout << "\nNStep test passed!\n" << std::endl;
     }
     else {
       final_status_value += 1;
-      cout << "\nNStep test failed!\n" << endl;
+      std::cout << "\nNStep test failed!\n" << std::endl;
     }
   }
 
@@ -850,12 +850,12 @@ int main(int argc, char *argv[])
   // Finished: Individual status test options
   // **********************
 
-  cout << endl;
+  std::cout << std::endl;
   if (final_status_value == 0)
-    cout << "Test passed!" << endl;    
+    std::cout << "Test passed!" << std::endl;    
   else 
-    cout << "Test failed!" << endl;
-  cout << endl;
+    std::cout << "Test failed!" << std::endl;
+  std::cout << std::endl;
 
   return final_status_value;
 }

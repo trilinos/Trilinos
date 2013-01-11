@@ -108,7 +108,7 @@ Group::Group(const Group& source, CopyType type) :
     break;
 
   default:
-    cerr << "ERROR: Invalid ConstructorType for group copy constructor." << endl;
+    std::cerr << "ERROR: Invalid ConstructorType for group copy constructor." << std::endl;
     throw "NOX Error";
   }
 
@@ -221,8 +221,8 @@ Group::computeF()
   status = userInterface.computeF(xVector.getPetscVector(), RHSVector.getPetscVector());
 
   if(status == false) {
-    cout << "ERROR: Petsc::Group::computeF() - fill failed!!!"
-         << endl;
+    std::cout << "ERROR: Petsc::Group::computeF() - fill failed!!!"
+         << std::endl;
     throw "NOX Error: RHS Fill Failed";
   }
 
@@ -252,13 +252,13 @@ Group::computeJacobian()
     status = userInterface.computeJacobian(xVector.getPetscVector(), Jacobian);
 
     if (status == false) {
-      cout << "ERROR: Petsc::Group::computeJacobian() - fill failed!!!"
-           << endl;
+      std::cout << "ERROR: Petsc::Group::computeJacobian() - fill failed!!!"
+           << std::endl;
       throw "NOX Error: Jacobian Fill Failed";
     }
   }
   else if(jacType == "Finite Difference") {
-    cout << "Finite Difference evaluation not yet supported !!\n\n";
+    std::cout << "Finite Difference evaluation not yet supported !!\n\n";
     throw "NOX Error";
   }
 
@@ -275,12 +275,12 @@ Group::computeGradient()
     return Abstract::Group::Ok;
   
   if (!isF()) {
-    cerr << "ERROR: NOX::Petsc::Group::computeGradient() - RHS is out of date wrt X!" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - RHS is out of date wrt X!" << std::endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Petsc::Group::computeGradient() - Jacobian is out of date wrt X!" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - Jacobian is out of date wrt X!" << std::endl;
     throw "NOX Error";
   }
   
@@ -305,12 +305,12 @@ Group::computeNewton(Teuchos::ParameterList& p)
     return Abstract::Group::Ok;
 
   if (!isF()) {
-    cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid Jacobian" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
   
@@ -354,17 +354,17 @@ Group::computeNewton(Teuchos::ParameterList& p)
 
   if( reason == KSP_DIVERGED_INDEFINITE_PC ) 
   {
-    cout << "\nDivergence because of indefinite preconditioner;\n";
-    cout << "Run the executable again but with -pc_ilu_shift option.\n";
+    std::cout << "\nDivergence because of indefinite preconditioner;\n";
+    std::cout << "Run the executable again but with -pc_ilu_shift option.\n";
   } 
   else if( reason < 0 ) 
   {
-    cout << "\nOther kind of divergence: this should not happen.\n";
+    std::cout << "\nOther kind of divergence: this should not happen.\n";
   } 
   else 
   {
     ierr = KSPGetIterationNumber( ksp, &its );
-    cout << "\nConvergence in " << its << " iterations.\n";
+    std::cout << "\nConvergence in " << its << " iterations.\n";
   }
 
   // Scale soln by -1
@@ -517,7 +517,7 @@ const Abstract::Vector&
 Group::getF() const 
 {  
   if (!isF()) {
-    cerr << "ERROR: NOX::Petsc::Group::getF() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
     
@@ -528,7 +528,7 @@ double
 Group::getNormF() const
 {
   if (!isF()) {
-    cerr << "ERROR: NOX::Petsc::Group::getNormF() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getNormF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
     
@@ -539,7 +539,7 @@ const Abstract::Vector&
 Group::getGradient() const 
 { 
   if (!isGradient()) {
-    cerr << "ERROR: NOX::Petsc::Group::getGradient() - invalid gradient" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getGradient() - invalid gradient" << std::endl;
     throw "NOX Error";
   }
     
@@ -550,7 +550,7 @@ const Abstract::Vector&
 Group::getNewton() const 
 {
   if (!isNewton()) {
-    cerr << "ERROR: NOX::Petsc::Group::getNewton() - invalid Newton vector" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getNewton() - invalid Newton vector" << std::endl;
     throw "NOX Error";
   }
     
@@ -567,7 +567,7 @@ Teuchos::RCP< const Abstract::Vector >
 Group::getFPtr() const 
 {  
   if (!isF()) {
-    cerr << "ERROR: NOX::Petsc::Group::getFPtr() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getFPtr() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
     
@@ -578,7 +578,7 @@ Teuchos::RCP< const Abstract::Vector >
 Group::getGradientPtr() const 
 { 
   if (!isGradient()) {
-    cerr << "ERROR: NOX::Petsc::Group::getGradientPtr() - invalid gradient" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getGradientPtr() - invalid gradient" << std::endl;
     throw "NOX Error";
   }
     
@@ -589,7 +589,7 @@ Teuchos::RCP< const Abstract::Vector >
 Group::getNewtonPtr() const 
 {
   if (!isNewton()) {
-    cerr << "ERROR: NOX::Petsc::Group::getNewtonPtr() - invalid Newton vector" << endl;
+    std::cerr << "ERROR: NOX::Petsc::Group::getNewtonPtr() - invalid Newton vector" << std::endl;
     throw "NOX Error";
   }
     

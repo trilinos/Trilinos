@@ -96,7 +96,7 @@ public:
 
   virtual LOCA::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
   //! Returns the Maximum number of iterations set in the constructor.
   virtual int getMaxIters() const;

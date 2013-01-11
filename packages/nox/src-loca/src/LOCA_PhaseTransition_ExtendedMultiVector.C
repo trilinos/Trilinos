@@ -94,7 +94,7 @@ LOCA::PhaseTransition::ExtendedMultiVector::ExtendedMultiVector(
 
 LOCA::PhaseTransition::ExtendedMultiVector::ExtendedMultiVector(
 	   const LOCA::PhaseTransition::ExtendedMultiVector& source, 
-	   const vector<int>& index, bool view) :
+	   const std::vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -143,7 +143,7 @@ LOCA::PhaseTransition::ExtendedMultiVector::clone(int numvecs) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::PhaseTransition::ExtendedMultiVector::subCopy(
-					       const vector<int>& index) const
+					       const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::PhaseTransition::ExtendedMultiVector(*this, index, false));
@@ -151,7 +151,7 @@ LOCA::PhaseTransition::ExtendedMultiVector::subCopy(
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::PhaseTransition::ExtendedMultiVector::subView(
-					      const vector<int>& index) const
+					      const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::PhaseTransition::ExtendedMultiVector(*this, index, true));

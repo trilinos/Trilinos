@@ -59,7 +59,7 @@
 
 // Constructor - creates the Epetra objects (maps and vectors) 
 Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
-                                           string name_) :
+                                           std::string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
@@ -145,8 +145,8 @@ void Equation_B::initialize()
   id_ptr = nameToMyIndex.find("Burgers");
   if( id_ptr == nameToMyIndex.end() ) 
   {
-    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
-         << "vector for problem \"Burgers\". Omitting convection." << endl;
+    std::cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\". Omitting convection." << std::endl;
 
     useConvection = false;
   }
@@ -164,8 +164,8 @@ void Equation_B::initialize()
 // Empty Reset function
 void Equation_B::reset()
 {
-  cout << "WARNING: reset called without passing any update vector !!" 
-       << endl;
+  std::cout << "WARNING: reset called without passing any update vector !!" 
+       << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ bool Equation_B::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector*> dep(numDep);
+  std::vector<Epetra_Vector*> dep(numDep);
   for( int i = 0; i<numDep; i++)
     dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
@@ -254,7 +254,7 @@ bool Equation_B::evaluate(
   double xx[2];
   double uu[2]; 
   double uuold[2];
-  vector<double*> ddep(numDep);
+  std::vector<double*> ddep(numDep);
   for( int i = 0; i<numDep; i++)
     ddep[i] = new double[2];
   Basis basis;
@@ -372,10 +372,10 @@ bool Equation_B::evaluate(
   A->Print(cout);
 
   if( fillRes )
-    cout << "For residual fill :" << endl << *rhs << endl;
+    std::cout << "For residual fill :" << std::endl << *rhs << std::endl;
 
   if( fillJac ) {
-    cout << "For jacobian fill :" << endl;
+    std::cout << "For jacobian fill :" << std::endl;
     A->Print(cout);
   }
 #endif

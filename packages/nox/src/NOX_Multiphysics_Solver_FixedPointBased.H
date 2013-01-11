@@ -53,6 +53,7 @@
 #include "NOX_Solver_PrePostOperator.H"       // class data element
 #include "NOX_Utils.H"		              // class data element
 #include "Teuchos_RCP.hpp"            // class data element
+#include <vector>
 
 // Forward declarations
 namespace NOX {
@@ -130,7 +131,7 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
+  FixedPointBased(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
 		  const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 		  const Teuchos::RCP<Teuchos::ParameterList>& params);
@@ -138,7 +139,7 @@ public:
   //! Destructor
   virtual ~FixedPointBased();
 
-  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+  virtual bool reset(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 		     const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 		     const Teuchos::RCP<Teuchos::ParameterList>& params);
@@ -171,7 +172,7 @@ protected:
   SOLVE_TYPE solveType;
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
+  Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
 
   //! Pointer to the callback interface needed to echange data among solvers
   Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface;

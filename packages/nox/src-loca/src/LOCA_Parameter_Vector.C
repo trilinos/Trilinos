@@ -76,7 +76,7 @@ LOCA::ParameterVector::~ParameterVector()
 }
 
 int 
-LOCA::ParameterVector::addParameter(string label, double value)
+LOCA::ParameterVector::addParameter(std::string label, double value)
 {
   unsigned int size = x.size();
   x.push_back(value);
@@ -168,7 +168,7 @@ LOCA::ParameterVector::setValue(unsigned int i, double value)
 }
 
 void 
-LOCA::ParameterVector::setValue(string label, double value)
+LOCA::ParameterVector::setValue(std::string label, double value)
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label) {
@@ -194,7 +194,7 @@ LOCA::ParameterVector::getValue(unsigned int i) const
 }
 
 double 
-LOCA::ParameterVector::getValue(string label) const
+LOCA::ParameterVector::getValue(std::string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
@@ -209,7 +209,7 @@ LOCA::ParameterVector::getValue(string label) const
 }
 
 int 
-LOCA::ParameterVector::getIndex(string label) const
+LOCA::ParameterVector::getIndex(std::string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
@@ -232,7 +232,7 @@ LOCA::ParameterVector::getDoubleArrayPointer()
 }
 
 bool 
-LOCA::ParameterVector::isParameter(string label) const
+LOCA::ParameterVector::isParameter(std::string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
@@ -241,7 +241,7 @@ LOCA::ParameterVector::isParameter(string label) const
   return false;
 }
 
-string 
+std::string 
 LOCA::ParameterVector::getLabel(unsigned int i) const
 {
   return l[i];
@@ -254,7 +254,7 @@ LOCA::ParameterVector::length() const
 }
 
 void 
-LOCA::ParameterVector::print(ostream& stream) const
+LOCA::ParameterVector::print(std::ostream& stream) const
 {
   stream << "LOCA::ParameterVector \n(size = " << x.size() << ")";
   for (unsigned int i = 0; i < x.size(); i++) {
@@ -263,20 +263,20 @@ LOCA::ParameterVector::print(ostream& stream) const
   stream << std::endl;
 }
 
-ostream& 
-LOCA::operator<<(ostream& stream, const LOCA::ParameterVector& p)
+std::ostream& 
+LOCA::operator<<(std::ostream& stream, const LOCA::ParameterVector& p)
 {
   p.print(stream);
   return stream;
 }
 
-const vector<double>& 
+const std::vector<double>& 
 LOCA::ParameterVector::getValuesVector() const
 {
   return x;
 }
 
-const vector<string>& 
+const std::vector<std::string>& 
 LOCA::ParameterVector::getNamesVector() const
 {
   return l;

@@ -72,11 +72,11 @@ LOCA::BorderedSolver::Factory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = "LOCA::BorderedSolver::Factory::create()";
+  std::string methodName = "LOCA::BorderedSolver::Factory::create()";
   Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*solverParams);
+  const std::string& name = strategyName(*solverParams);
 
   if (name == "Bordering")
     strategy = 
@@ -92,7 +92,7 @@ LOCA::BorderedSolver::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = solverParams->get("User-Defined Name",
+    std::string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName))
@@ -113,7 +113,7 @@ LOCA::BorderedSolver::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::BorderedSolver::Factory::strategyName(
 				  Teuchos::ParameterList& solverParams) const
 {

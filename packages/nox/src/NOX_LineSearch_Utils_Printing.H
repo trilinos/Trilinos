@@ -85,7 +85,7 @@ public:
   void reset(const Teuchos::RCP<NOX::Utils>& u);
 
   //! Prints the opening information.
-  void printOpeningRemarks(const string& lineSearchName) const;
+  void printOpeningRemarks(const std::string& lineSearchName) const;
 
   //! Print out step information for the inner iterations of a line search algorithm.
   /*!
@@ -107,7 +107,7 @@ public:
 
   */
   void printStep(int n, double step, double oldf, double newf, 
-		 const string s = "", bool unscaleF = true) const;
+		 const std::string s = "", bool unscaleF = true) const;
 
 };
 } // namespace Utils

@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
   
   if (status == LOCA::Abstract::Iterator::Finished) 
-    globalData->locaUtils->out() << "All tests passed" << endl;
+    globalData->locaUtils->out() << "All tests passed" << std::endl;
   else {
     if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
       globalData->locaUtils->out() 

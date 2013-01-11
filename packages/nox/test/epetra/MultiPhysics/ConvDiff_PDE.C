@@ -69,7 +69,7 @@ ConvDiff_PDE::ConvDiff_PDE(
             double Tleft_                ,
             double Tright_               ,
             int NumGlobalUnknowns_       ,
-            string name_                   ) :
+            std::string name_                   ) :
   GenericEpetraProblem(Comm_, NumGlobalUnknowns_, name_),
   xmin            ( xmin_      )   ,
   xmax            ( xmax_      )   ,
@@ -208,8 +208,8 @@ ConvDiff_PDE::initialize()
   std::string fileName1 = "analytic_" + sval.str(); 
   std::string fileName2 = "dTdx_"     + sval.str(); 
 
-  ofstream outFile1(fileName1.c_str());
-  ofstream outFile2(fileName2.c_str());
+  std::ofstream outFile1(fileName1.c_str());
+  std::ofstream outFile2(fileName2.c_str());
   if( !outFile1 || !outFile2 )
   {
     std::string msg = "ERROR: Could not open one of files \"" + fileName1 + "\"" + " or \""
@@ -219,8 +219,8 @@ ConvDiff_PDE::initialize()
 
   for( int i = 0; i < NumMyNodes; ++i ) 
   {
-    outFile1 << i << "  " << x[i] << "  " << (*exactSolution)[i] << endl;
-    outFile2 << i << "  " << x[i] << "  " << (*dTdx         )[i] << endl;
+    outFile1 << i << "  " << x[i] << "  " << (*exactSolution)[i] << std::endl;
+    outFile2 << i << "  " << x[i] << "  " << (*dTdx         )[i] << std::endl;
   }
 }
 
@@ -265,7 +265,7 @@ ConvDiff_PDE::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector*> dep(numDep);
+  std::vector<Epetra_Vector*> dep(numDep);
   for( int i = 0; i < numDep; ++i)
     dep[i] = new Epetra_Vector(*OverlapMap);
 
@@ -305,7 +305,7 @@ ConvDiff_PDE::evaluate(
   double * xx    = new double[2];
   double * uu    = new double[2]; 
   double * uuold = new double[2];
-  vector<double*> ddep(numDep);
+  std::vector<double*> ddep(numDep);
   for( int i = 0; i < numDep; ++i)
     ddep[i] = new double[2];
 
@@ -314,7 +314,7 @@ ConvDiff_PDE::evaluate(
   // Bundle up the dependent variables in the way needed for computing
   // the source terms of each reaction
   map<string, double*> depVars;
-  depVars.insert( pair< string, double*>(getName(), uu) );
+  depVars.insert( pair< std::string, double*>(getName(), uu) );
   for( int i = 0; i < numDep; ++i )
     depVars.insert( pair<string, double*>(myManager->getProblemName(depProblems[i]), ddep[i]) );
 
@@ -360,10 +360,10 @@ ConvDiff_PDE::evaluate(
   //if( NOX::Epetra::Interface::Required::Residual == flag )
   //{
   //  int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-  //  cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0] 
-  //       << "\tu[N] = " << (*soln)[lastDof] << endl;
-  //  cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0] 
-  //       << "\tRHS[N] = " << (*rhs)[lastDof] << endl << endl;
+  //  std::cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0] 
+  //       << "\tu[N] = " << (*soln)[lastDof] << std::endl;
+  //  std::cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0] 
+  //       << "\tRHS[N] = " << (*rhs)[lastDof] << std::endl << std::endl;
   //}
 
 
@@ -395,7 +395,7 @@ ConvDiff_PDE::evaluate(
   A->FillComplete();
 
 #ifdef DEBUG
-  cout << "For residual fill :" << endl << *rhs << endl;
+  std::cout << "For residual fill :" << std::endl << *rhs << std::endl;
 #endif
 
   // Cleanup
@@ -416,7 +416,7 @@ ConvDiff_PDE::evaluate(
 
 // Initialize method
 void 
-ConvDiff_PDE::getOffBlockIndices( map<int, vector<int> > & indices )
+ConvDiff_PDE::getOffBlockIndices( map<int, std::vector<int> > & indices )
 {
 
   // Get the equation map from the other problem
@@ -424,7 +424,7 @@ ConvDiff_PDE::getOffBlockIndices( map<int, vector<int> > & indices )
   int otherMinEqID = otherMap.MinAllGID();
   int otherMaxEqID = otherMap.MaxAllGID();
 
-  vector<int> offBlockColumns(2);
+  std::vector<int> offBlockColumns(2);
 
   if( LEFT == myInterface )
   {
@@ -463,7 +463,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector*> dep(numDep);
+  std::vector<Epetra_Vector*> dep(numDep);
   for( int i = 0; i < numDep; ++i)
     dep[i] = new Epetra_Vector(*OverlapMap);
 
@@ -494,7 +494,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   double * xx = new double[2];
   double * uu = new double[2]; 
   double * uuold = new double[2];
-  vector<double*> ddep(numDep);
+  std::vector<double*> ddep(numDep);
   for( int i = 0; i < numDep; ++i)
     ddep[i] = new double[2];
 
@@ -503,7 +503,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   // Bundle up the dependent variables in the way needed for computing
   // the source terms of each reaction
   map<string, double*> depVars;
-  depVars.insert( pair< string, double*>(getName(), uu) );
+  depVars.insert( pair< std::string, double*>(getName(), uu) );
   for( int i = 0; i < numDep; ++i )
     depVars.insert( pair<string, double*>(myManager->getProblemName(depProblems[i]), ddep[i]) );
 
@@ -555,9 +555,9 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
 
   //int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
   //cout << "\t\"" << myName << "\" u[0] = " << u[0] 
-  //     << "\tu[N] = " << u[lastDof] << endl;
-  //cout << u << endl;
-  //cout << "\t\"" << myName << "\" myFlux = " << myFlux << endl << endl;
+  //     << "\tu[N] = " << u[lastDof] << std::endl;
+  //cout << u << std::endl;
+  //cout << "\t\"" << myName << "\" myFlux = " << myFlux << std::endl << std::endl;
 
   // Scale domain integration according to interface position
   myFlux *= dirScale;
@@ -597,13 +597,13 @@ ConvDiff_PDE::process_transferred_data()
 //-----------------------------------------------------------------------------
 
 void 
-ConvDiff_PDE::outputStatus( ostream & os ) 
+ConvDiff_PDE::outputStatus( std::ostream & os ) 
 {
   
   std::string location = ( myInterface == LEFT ) ? "Left" : "Right";
 
   os << "\"" << myName << "\" couples at an interface with Problem \"" << depProbPtr->getName()
-     << "\" on the " << location << endl;
+     << "\" on the " << location << std::endl;
 
   return;
 }
@@ -687,8 +687,8 @@ ConvDiff_PDE::computeAnalyticInterfaceTemp(
 
     if( 1.e-15 > fabs(dfdT) )
     {
-      cout << "ConvDiff_PDE::computeAnalyticInterfaceTemp:\n"
-              "Warning: Obtained near-zero derivtative. Aborting calculation." << endl;
+      std::cout << "ConvDiff_PDE::computeAnalyticInterfaceTemp:\n"
+              "Warning: Obtained near-zero derivtative. Aborting calculation." << std::endl;
       return(T_int);
     }
 
@@ -699,8 +699,8 @@ ConvDiff_PDE::computeAnalyticInterfaceTemp(
                - kappa*(T_right - T_int);
   }
 
-  cout << "Analytic interfacial temperature = " << setprecision(8) << T_int << endl;
-  cout << "Residual = " << residual << " in " << nIters << " iterations." << endl;
+  std::cout << "Analytic interfacial temperature = " << setprecision(8) << T_int << std::endl;
+  std::cout << "Residual = " << residual << " in " << nIters << " iterations." << std::endl;
 
   return T_int;
 }

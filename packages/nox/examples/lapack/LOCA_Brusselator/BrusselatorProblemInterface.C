@@ -61,7 +61,7 @@ BrusselatorProblemInterface::BrusselatorProblemInterface(
 		    double b, 
 		    double d1,
 		    double d2,
-		    ofstream& file)  : 
+		    std::ofstream& file)  : 
   globalData(global_data),
   initialGuess(2*N),
   alpha(a),

@@ -53,7 +53,8 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "NOX_Common.H"  // for <map>
+#include "NOX_Common.H"
+#include <map>
 
 namespace LOCA {
   
@@ -85,7 +86,7 @@ namespace LOCA {
     class Library {
 
       //! Map of entries for a parameter name
-      typedef map<string, AbstractEntry*> ValueTypeMap;
+      typedef std::map<std::string, AbstractEntry*> ValueTypeMap;
 
       //! Const iterator for ValueTypeMap
       typedef ValueTypeMap::const_iterator ValueTypeMapConstIterator;
@@ -94,7 +95,7 @@ namespace LOCA {
       typedef ValueTypeMap::iterator ValueTypeMapIterator;
 
       //! Map of maps for all parameter names
-      typedef map<string, ValueTypeMap*> ParameterMap;
+      typedef std::map<std::string, ValueTypeMap*> ParameterMap;
 
       //! Const iterator for ParameterMap
       typedef ParameterMap::const_iterator ParameterMapConstIterator;
@@ -112,11 +113,11 @@ namespace LOCA {
 
       //! Set parameter given by \em name to value \em value
       template <class ValueType>
-      void setValue(const string& name, const ValueType& value);
+      void setValue(const std::string& name, const ValueType& value);
 
       //! Get parameter given by \em name
       template <class ValueType>
-      ValueType getValue(const string& name) const;
+      ValueType getValue(const std::string& name) const;
 
       //! Add a new parameter to library using the default setting mechanism
       /*!
@@ -124,7 +125,7 @@ namespace LOCA {
        * otherwise.
        */
       template <class ObjectType, class ValueType>
-      bool addParameterEntry(const string& name, ObjectType& object, 
+      bool addParameterEntry(const std::string& name, ObjectType& object, 
 			     ValueType ObjectType::* object_val_ptr);
 
       //! Add a new parameter to library using functor setting mechanism
@@ -133,7 +134,7 @@ namespace LOCA {
        * otherwise.
        */
       template <class FunctorType, class ValueType>
-      bool addParameterEntry(const string& name, FunctorType* fctr);
+      bool addParameterEntry(const std::string& name, FunctorType* fctr);
 
       //! Add a new parameter using custom entry
       /*!
@@ -141,7 +142,7 @@ namespace LOCA {
        * otherwise.
        */
       template <class ValueType>
-      bool addParameterEntry(const string& name, 
+      bool addParameterEntry(const std::string& name, 
 			     Entry<ValueType>* entry);
 
     protected:
@@ -159,13 +160,13 @@ namespace LOCA {
        * \brief Finds the set of entries corresponding to parameter \em name 
        * and sets the iterator \em it to point to it.  
        */
-      ParameterMapIterator getEntryMapIterator(const string& name);
+      ParameterMapIterator getEntryMapIterator(const std::string& name);
 
       /*! 
        * \brief Finds the set of entries corresponding to parameter \em name 
        * and sets the iterator \em it to point to it.  
        */
-      ParameterMapConstIterator getEntryMapIterator(const string& name) const;
+      ParameterMapConstIterator getEntryMapIterator(const std::string& name) const;
 
       /*!
        * \brief Finds the entry corresponding to entry \em valueTypeString for 
@@ -174,7 +175,7 @@ namespace LOCA {
        * is no entry for type given by \em valueTypeString.
        */
       ValueTypeMapIterator getEntryIterator(
-				   const string& valueTypeString, 
+				   const std::string& valueTypeString, 
 				   const ParameterMapIterator& paramIterator);
 
       /*!
@@ -184,7 +185,7 @@ namespace LOCA {
        * is no entry for type given by \em valueTypeString.
        */
       ValueTypeMapConstIterator getEntryIterator(
-			 const string& valueTypeString, 
+			 const std::string& valueTypeString, 
 			 const ParameterMapConstIterator& paramIterator) const;
 
       /*! 
@@ -192,17 +193,17 @@ namespace LOCA {
        * type \em ValueType
        */
       template <class ValueType>
-      Entry<ValueType>& getEntry(const string& name);
+      Entry<ValueType>& getEntry(const std::string& name);
 
       /*! 
        * \brief Gets the entry corresponding to parameter name \em name and 
        * type \em ValueType
        */
       template <class ValueType>
-      const Entry<ValueType>& getEntry(const string& name) const;
+      const Entry<ValueType>& getEntry(const std::string& name) const;
 
-      //! Returns a string representation of type \em ValueType
-      template <class ValueType> string getTypeName() const;
+      //! Returns a std::string representation of type \em ValueType
+      template <class ValueType> std::string getTypeName() const;
 
     protected:
 

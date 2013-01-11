@@ -54,7 +54,7 @@
 #include "Epetra_LocalMap.h"           // class data element
 #include "Epetra_MultiVector.h"        // class data element
 
-#include "NOX_Common.H"                // for string data member
+#include "NOX_Common.H"                // for std::string data member
 #include "NOX_Abstract_MultiVector.H"  // for DenseMatrix
 
 #include "Teuchos_LAPACK.hpp" // class data element
@@ -215,7 +215,7 @@ namespace LOCA {
        */
       virtual double NormInf() const;
     
-      //! Returns a character string describing the operator
+      //! Returns a character std::string describing the operator
       virtual const char* Label () const;
   
       //! Returns the current UseTranspose setting.
@@ -300,7 +300,7 @@ namespace LOCA {
       Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Label for operator
-      string label;
+      std::string label;
     
       //! Stores operator representing \f$J\f$
       Teuchos::RCP<Epetra_Operator> jacOperator;
