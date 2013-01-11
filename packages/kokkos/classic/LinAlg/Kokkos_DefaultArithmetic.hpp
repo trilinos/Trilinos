@@ -235,10 +235,21 @@ namespace Kokkos {
                           const MV& A,
                           const MV& B);
 
-    //! Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
+    /// \brief Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
+    ///
+    /// If A and B point to the same data, then this function skips
+    /// the assignment entirely.
     static void Assign (MV& A, const MV& B);
 
-    //! Assign the given columns of B to A: <tt>A(i,j) = B(whichVectors[i],j)</tt>.
+    /// \brief Assign the given columns of B to A.
+    ///
+    /// This assigns <tt>A(i, j) = B(i, whichVectors[j])</tt>
+    /// for i in <tt>[0, getNumRows(A)]</tt> and
+    /// j in <tt>[0, getNumCols(A)]</tt>.
+    ///
+    /// If for any j, <tt>A(0,j)</tt> and
+    /// <tt>B(0, whichVectors[j])</tt> point to the same data,
+    /// then this function skips the assignment for that column.
     static void Assign (MV& A, const MV& B, const ArrayView<const size_t>& whichVectors);
 
     //! Compute the inner products of corresponding columns of A and B.
