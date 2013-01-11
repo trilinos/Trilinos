@@ -417,6 +417,8 @@ namespace stk {
       ///   the average J from the vertex-based (corner-based) Jacobians.
       double hmesh_stretch_eigens(double min_max_ave[3]);
 
+      /// print mesh spacing normal to each surface part - see below (hmesh_surface_normal)
+      void print_hmesh_surface_normal(std::string msg="", std::ostream& out = std::cout);
 
       /// check if element volumes are positive
       bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, int dump_all_elements=0);
@@ -424,6 +426,14 @@ namespace stk {
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
+      struct MinMaxAve {
+        MinMaxAve() { val[0]=0; val[1]=0; val[2]=0; count = 0.0; }
+        double val[3]; // min, max, ave
+        double count;
+      };
+      /// compute the mesh spacing normal to all surfaces and return a map of Part to computed data;
+      std::map<stk::mesh::Part*, MinMaxAve > hmesh_surface_normal();
+
       static PerceptMesh *get_static_instance() { return s_static_singleton_instance; }
 
       void set_sync_io_regions(bool val) { m_sync_io_regions = val; }

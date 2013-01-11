@@ -36,6 +36,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
 
@@ -287,7 +288,7 @@ namespace stk {
       m_isAdopted = false;
       destroy();
       if (m_iossRegion)
-        //if (m_iossRegion) 
+        //if (m_iossRegion)
         {
           delete m_iossRegion;
           m_iossRegion = 0;
@@ -840,6 +841,281 @@ namespace stk {
 
     //========================================================================================================================
     /// low-level interfaces
+    struct NormalVector {
+      NormalVector() { val[0]=0; val[1]=0; val[2]=0; count = 0.0; }
+      double val[3];
+      double count; // for use in normalizing/averaging
+    };
+    NormalVector normal;
+    JacobianUtil jac;
+
+    static void get_face_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[3], double normal[3])
+    {
+      double *coord[3] = {PerceptMesh::field_data(coord_field, nodes[0]),
+                          PerceptMesh::field_data(coord_field, nodes[1]),
+                          PerceptMesh::field_data(coord_field, nodes[2])};
+      double x[2][3];
+      for (int isp=0; isp < 3; isp++)
+        {
+          x[0][isp] = coord[2][isp] - coord[1][isp];
+          x[1][isp] = coord[0][isp] - coord[1][isp];
+        }
+      Math::cross_3d(x[0], x[1], normal);
+      Math::normalize_3d(normal);
+    }
+
+    static void get_line_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[2], double normal[3])
+    {
+      double *coord[2] = {PerceptMesh::field_data(coord_field, nodes[0]),
+                          PerceptMesh::field_data(coord_field, nodes[1])};
+      double x[3];
+      for (int isp=0; isp < 2; isp++)
+        {
+          x[isp] = coord[1][isp] - coord[0][isp];
+        }
+      x[2] = 0.0;
+      double tmp = x[0];
+      x[0] = -x[1];
+      x[1] = tmp;
+      Math::normalize_3d(normal);
+    }
+
+    std::map<stk::mesh::Part*, PerceptMesh::MinMaxAve > PerceptMesh::hmesh_surface_normal()
+    {
+      std::map<stk::mesh::Part*, MinMaxAve > result;
+      int spatial_dim = get_spatial_dim();
+      stk::mesh::FieldBase *coord_field = get_coordinates_field();
+
+      const stk::mesh::PartVector & parts = get_fem_meta_data()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *parts[ipart];
+          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos) 
+            || part.subsets().size() == 0)
+            continue;
+
+          if (part.primary_entity_rank() == side_rank())
+            {
+              MinMaxAve& min_max_ave = result[&part];
+              min_max_ave.val[0] = std::numeric_limits<double>::max();
+              min_max_ave.val[1] = -1;
+              min_max_ave.val[2] = 0.0;
+              min_max_ave.count = 0.0;
+
+              boost::unordered_map<stk::mesh::EntityId, NormalVector> node_normals;
+              Selector this_part(part);
+              const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( side_rank() );
+
+              for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+                {
+                  if (this_part(**k))
+                    {
+                      stk::mesh::Bucket & bucket = **k ;
+                      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+                      shards::CellTopology cell_topo(cell_topo_data);
+                      const unsigned num_sides_in_bucket = bucket.size();
+
+                      for (unsigned iSide = 0; iSide < num_sides_in_bucket; iSide++)
+                        {
+                          stk::mesh::Entity side = bucket[iSide];
+                          switch(cell_topo_data->key)
+                            {
+                            case shards::Line<2>::key:
+                              {
+                                VERIFY_OP_ON(spatial_dim, ==, 2, "hmmm");
+
+                                stk::mesh::PairIterRelation side_elems = side.relations(element_rank());
+                                stk::mesh::Entity elem = side_elems[0].entity();
+                                const CellTopologyData * const elem_topo_data = PerceptMesh::get_cell_topology(elem);
+                                stk::mesh::PairIterRelation side_nodes = side.relations(node_rank());
+                                shards::CellTopology elem_topo(elem_topo_data);
+                                unsigned side_ord = side_elems[0].relation_ordinal();
+
+                                stk::mesh::Entity nodes[2] = {side_nodes[elem_topo_data->side[side_ord].node[0]].entity(),
+                                                              side_nodes[elem_topo_data->side[side_ord].node[1]].entity() };
+
+                                get_line_normal(coord_field, nodes, normal.val);
+
+                                int nsn = side_nodes.size();
+                                for (int i = 0; i < nsn; ++i)
+                                  {
+                                    NormalVector& global_normal = node_normals[nodes[i].identifier()];
+                                    for (int isp=0; isp < spatial_dim; isp++)
+                                      {
+                                        global_normal.val[isp] += normal.val[isp];
+                                      }
+                                    global_normal.count += 1.0;
+                                  }
+                              }
+                              break;
+                            case shards::Triangle<3>::key:
+                            case shards::Quadrilateral<4>::key:
+                              {
+                                stk::mesh::PairIterRelation side_nodes = side.relations(node_rank());
+                                int nsn = side_nodes.size();
+                                for (int i = 0; i < nsn; ++i)
+                                  {
+                                    stk::mesh::Entity nodes[3];
+                                    nodes[0] = side_nodes[(i+nsn-1)%nsn].entity();
+                                    nodes[1] = side_nodes[i].entity();
+                                    nodes[2] = side_nodes[(i+1)%nsn].entity();
+                                    get_face_normal(coord_field, nodes, normal.val);
+
+                                    NormalVector& global_normal = node_normals[nodes[1].identifier()];
+                                    for (int isp=0; isp < spatial_dim; isp++)
+                                      {
+                                        global_normal.val[isp] += normal.val[isp];
+                                      }
+                                    global_normal.count += 1.0;
+                                  }
+                              }
+                              break;
+                            default:
+                              throw std::runtime_error("unsupported surface element type");
+                            }
+                        }
+                    }
+                }
+
+              // post process the normals, get hmesh
+              const std::vector<stk::mesh::Bucket*> & node_buckets = get_bulk_data()->buckets( node_rank() );
+              for ( std::vector<stk::mesh::Bucket*>::const_iterator k = node_buckets.begin() ; k != node_buckets.end() ; ++k )
+                {
+                  if (this_part(**k))
+                    {
+                      stk::mesh::Bucket & bucket = **k ;
+                      const unsigned num_nodes_in_bucket = bucket.size();
+
+                      for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                        {
+                          stk::mesh::Entity node = bucket[iNode];
+                          double sum=0.0;
+                          NormalVector& normal = node_normals[node.identifier()];
+                          for (int isp=0; isp < spatial_dim; isp++)
+                            {
+                              sum += normal.val[isp]*normal.val[isp];
+                            }
+                          sum = std::max(1.e-10, std::sqrt(sum));
+                          for (int isp=0; isp < spatial_dim; isp++)
+                            {
+                              normal.val[isp] /= sum;
+                            }
+                        }
+                    }
+                }
+
+              const std::vector<stk::mesh::Bucket*> & element_buckets = get_bulk_data()->buckets( element_rank() );
+              DenseMatrix<3,3> AI;
+
+              for ( std::vector<stk::mesh::Bucket*>::const_iterator k = element_buckets.begin() ; k != element_buckets.end() ; ++k )
+                {
+                //if (this_part(**k))
+                    {
+                      stk::mesh::Bucket & bucket = **k ;
+                      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+                      shards::CellTopology cell_topo(cell_topo_data);
+                      const unsigned num_elements_in_bucket = bucket.size();
+
+                      for (unsigned iElem = 0; iElem < num_elements_in_bucket; iElem++)
+                        {
+                          stk::mesh::Entity element = bucket[iElem];
+                          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                          int nen = elem_nodes.size();
+                          for (int inode = 0; inode < nen; ++inode)
+                            {
+                              stk::mesh::Entity node = elem_nodes[inode].entity();
+                              //if (node.bucket().member(part))
+                              if (this_part(node.bucket()))
+                                {
+                                  NormalVector& normal = node_normals[node.identifier()];
+                                  double detJ=0;
+                                  jac(detJ, *this, element, coord_field, cell_topo_data);
+                                  DenseMatrix<3,3>& A = jac.m_J[inode];
+
+                                  inverse(A, AI);
+                                  double spacing[3] = {0,0,0};
+                                  for (int idim=0; idim < spatial_dim; idim++)
+                                    {
+                                      for (int jdim=0; jdim < spatial_dim; jdim++)
+                                        {
+                                          spacing[idim] += AI(idim,jdim)*normal.val[jdim];
+                                        }
+                                    }
+                                  double sum=0.0;
+                                  for (int jdim=0; jdim < spatial_dim; jdim++)
+                                    {
+                                      sum += spacing[jdim]*spacing[jdim];
+                                    }
+                                  sum = std::sqrt(sum);
+                                  VERIFY_OP_ON(sum, >, 1.e-12, "bad sum");
+                                  double spc = 1.0/sum;
+                                  min_max_ave.val[0] = std::min(min_max_ave.val[0], spc);
+                                  min_max_ave.val[1] = std::max(min_max_ave.val[1], spc);
+                                  min_max_ave.val[2] += spc;
+                                  min_max_ave.count += 1.0;
+                                }
+                            }
+                        }
+                    }
+                }
+
+              stk::all_reduce( get_bulk_data()->parallel() , ReduceMin<1>( & min_max_ave.val[0] ) );
+              stk::all_reduce( get_bulk_data()->parallel() , ReduceMax<1>( & min_max_ave.val[1] ) );
+              stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & min_max_ave.val[2] ) );
+              stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & min_max_ave.count ) );
+              min_max_ave.val[2] /= min_max_ave.count;
+
+            }
+        }
+      return result;
+    }
+
+    void PerceptMesh::print_hmesh_surface_normal(std::string msg, std::ostream& out)
+    {
+      typedef std::map<stk::mesh::Part*, MinMaxAve > PartMinMaxAveMap;
+      PartMinMaxAveMap result = hmesh_surface_normal();
+      stk::PrintTable table;
+      table.setTitle("Surface Mesh Normal Spacing: "+msg+"\n");
+      //table.setAutoEndCol(false);
+
+      table << "|" << "Surface" << "|" << "Min" << "|" << "Max" << "|" << "Ave" << "|" << stk::end_header;
+
+      MinMaxAve g_min_max_ave;
+      g_min_max_ave.val[0] = std::numeric_limits<double>::max();
+      g_min_max_ave.val[1] = -1;
+      g_min_max_ave.val[2] = 0.0;
+      g_min_max_ave.count = 0.0;
+
+      for (PartMinMaxAveMap::iterator iter= result.begin(); iter != result.end(); ++iter)
+        {
+          stk::mesh::Part& part = *iter->first;
+          MinMaxAve& min_max_ave = iter->second;
+
+          table << "|" << part.name() << "|"
+                << min_max_ave.val[0]   << "|"
+                << min_max_ave.val[1]   << "|"
+                << min_max_ave.val[2]   << "|"
+                << stk::end_row;
+          g_min_max_ave.val[0] = std::min(g_min_max_ave.val[0], min_max_ave.val[0]);
+          g_min_max_ave.val[1] = std::max(g_min_max_ave.val[1], min_max_ave.val[1]);
+          g_min_max_ave.val[2] += min_max_ave.val[2]*min_max_ave.count;
+          g_min_max_ave.count += min_max_ave.count;
+        }
+      g_min_max_ave.val[2] /= g_min_max_ave.count;
+
+      table << "|" << "Summary" << "|"
+      << g_min_max_ave.val[0]   << "|"
+      << g_min_max_ave.val[1]   << "|"
+      << g_min_max_ave.val[2]   << "|"
+      << stk::end_row;
+
+      //table.printHeaderBar(out);
+      if (!get_rank())
+        out << "\n" << table;
+
+    }
 
     void PerceptMesh::
     checkStateSpec(const std::string& function, bool cond1, bool cond2, bool cond3)
@@ -951,8 +1227,8 @@ namespace stk {
     PerceptMesh::~PerceptMesh()
     {
       destroy();
-      if (m_iossRegion && !m_iossMeshData_created) 
-        //if (m_iossRegion) 
+      if (m_iossRegion && !m_iossMeshData_created)
+        //if (m_iossRegion)
         {
           delete m_iossRegion;
           m_iossRegion = 0;
@@ -2201,7 +2477,7 @@ namespace stk {
 
           // is_auto_declared_part
           //if (part.name()[0] == '{' || (part.name().find("oldElem") != std::string::npos) )
-          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos) )
+          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos))
             continue;
 
           if (partName.size() > 0 && part.name() != partName)
@@ -2797,9 +3073,9 @@ namespace stk {
               break;
             }
           if (debug) {
-            std::cout << "nSubDimNodes= " << nSubDimNodes << " inodes[0]= " << inodes[0] << " knode= " << knode 
-                      << " enode= " << elem_nodes[inodes[0]].entity().identifier() 
-                      << " snode= " << side_nodes[ knode ].entity().identifier()  
+            std::cout << "nSubDimNodes= " << nSubDimNodes << " inodes[0]= " << inodes[0] << " knode= " << knode
+                      << " enode= " << elem_nodes[inodes[0]].entity().identifier()
+                      << " snode= " << side_nodes[ knode ].entity().identifier()
                       << " found_node_offset= " << found_node_offset
                       << std::endl;
           }
@@ -4165,7 +4441,7 @@ namespace stk {
         }
       std::ofstream file(filename.c_str());
       file << "# vtk DataFile Version 2.0\nDump vtk\nASCII\nDATASET UNSTRUCTURED_GRID\nPOINTS " << node_map.size() << " double\n";
-      
+
       for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
         {
           stk::mesh::Entity node_i = inode->first;
@@ -4213,7 +4489,7 @@ namespace stk {
                   stk::mesh::Entity element = bucket[iElement];
                   file << vtk_type(element) << "\n";
                 }
-            }      
+            }
         }
     }
 

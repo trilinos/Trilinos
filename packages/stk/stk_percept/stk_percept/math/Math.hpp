@@ -125,6 +125,24 @@ namespace stk {
         return sm;
       }
       
+    static void normalize_3d(double * vec)
+    {
+      double norm = std::sqrt(vec[0]*vec[0]+
+                              vec[1]*vec[1]+
+                              vec[2]*vec[2]);
+      vec[0] /= norm;
+      vec[1] /= norm;
+      vec[2] /= norm;
+    }
+    static void cross_3d(const double * a, const double * b, double * axb)
+    {
+      axb[0] = (a[1]*b[2]-a[2]*b[1]);
+      axb[1] = -(a[0]*b[2]-a[2]*b[0]);
+      axb[2] = (a[0]*b[1]-a[1]*b[0]);
+    }
+
+
+
     };
 
     inline Math::Vector operator*(Math::Matrix& mat, Math::Vector& vec) { return ublas::prod(mat, vec); }

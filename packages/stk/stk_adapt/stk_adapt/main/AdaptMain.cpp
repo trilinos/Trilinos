@@ -320,11 +320,12 @@ namespace stk {
             return;
         }
       std::ostringstream oss;
-      oss << "AdaptMain::checkInput bad option for " << option << " (= " << value << ") \n allowed values = " << allowed_values;
+      oss << "\nCommand line syntax error: bad option for " << option << " (= " << value << ") \n allowed values = " << allowed_values;
       //throw std::runtime_error(oss.str());
       {
         std::cout << oss.str() << std::endl;
         run_environment.printHelp();
+        std::cout << oss.str() << std::endl;
         exit(1);
       }
 
@@ -526,6 +527,7 @@ namespace stk {
       int streaming_W = 0;
       int streaming_iW = 0;
       std::string compute_hmesh = "";
+      int print_hmesh_surface_normal = 0;
 
       double hmesh_factor = 0.0;
       double hmesh_min_max_ave_factor[3] = {0,0,0};
@@ -579,6 +581,7 @@ namespace stk {
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("verify_meshes"            , &verify_meshes            , "verify positive volumes for input and output meshes");
       run_environment.clp.setOption("compute_hmesh"            , &compute_hmesh            , "compute mesh parameter using method eigens|edges");
+      run_environment.clp.setOption("print_hmesh_surface_normal"  , &print_hmesh_surface_normal            , "prints a table of normal mesh spacing at each surface");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
@@ -631,6 +634,14 @@ namespace stk {
       double t1   = 0.0;
       double cpu0 = 0.0;
       double cpu1 = 0.0;
+
+      if (convert.length()+enrich.length()+refine.length() == 0)
+        {
+          std::cout << "\nCommand line syntax error: you must give a value for one (and only one) of the options: refine, enrich, or convert.\n" << std::endl;
+          run_environment.printHelp();
+          std::cout << "\nCommand line syntax error: you must give a value for one (and only one) of the options: refine, enrich, or convert.\n" << std::endl;
+          exit(1);
+        }
 
       if (convert.length())
         checkInput("convert", convert, convert_options, run_environment);
@@ -978,6 +989,12 @@ namespace stk {
                             }
                             hmesh_factor = hmesh;
                           }
+                        if (print_hmesh_surface_normal)
+                          {
+                            std::string msg="before refine";
+                            eMesh.print_hmesh_surface_normal(msg, std::cout);
+                            eMesh.print_hmesh_surface_normal(msg, stk::percept::pout());
+                          }
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
@@ -1198,6 +1215,13 @@ namespace stk {
                                             << std::endl;
                                 }
                               }
+                            if (print_hmesh_surface_normal)
+                              {
+                                std::string msg="after refine";
+                                eMesh.print_hmesh_surface_normal(msg, std::cout);
+                                eMesh.print_hmesh_surface_normal(msg, stk::percept::pout());
+                              }
+
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
                             if (streaming_size) eMesh.setStreamingSize(m_M);
