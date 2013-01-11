@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------*/
 /*    Copyright 2009 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
@@ -9,6 +8,7 @@
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_mesh/fixtures/Gear.hpp>
 #include <stk_mesh/fixtures/GearsFixture.hpp>
@@ -23,6 +23,11 @@
 #include <stk_performance_test_includes/calculate_centroid.hpp>
 
 #include <sstream>
+
+namespace stk {
+namespace performance_tests {
+
+namespace {
 
 //This very simple test will visit all local elements, gather coordinates,
 //compute element-centroid (simple average of nodal coords) for each, and
@@ -47,10 +52,8 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
   std::vector<double> elem_node_coords;
 
-//  size_t num_elems = 0;
   for(size_t ib=0; ib<buckets.size(); ++ib) {
     const Bucket& b = *buckets[ib];
-//    num_elems += b.size();
 
     for(size_t i=0; i<b.size(); ++i) {
       Entity elem = b[i];
@@ -80,8 +83,9 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
       sum_centroid[2] += elem_centroid[2]; elem_centroid[2] = 0;
     }
   }
-//  std::cout << "num_elems: " << num_elems << std::endl;
 }
+
+} // empty namespace
 
 STKUNIT_UNIT_TEST(gather_gears, gather_gears)
 {
@@ -114,12 +118,20 @@ STKUNIT_UNIT_TEST(gather_gears, gather_gears)
     }
   }
 
-  double test_time = stk::cpu_time() - start_time;
+  double gather_time = stk::cpu_time() - start_time;
 
   std::cout << "Gear: ";
   std::cout << "\tNum Nodes: " << fixture.get_gear(0).num_nodes;
   std::cout << "\tNum Elements: " << fixture.get_gear(0).num_elements << std::endl;
-  std::cout << "Time to create mesh: " << mesh_create_time << std::endl;
-  std::cout << "Num centroid iterations: " << num_iters << std::endl;
-  std::cout << "Time to compute centroids: " << test_time << std::endl;
+
+  double total_time = mesh_create_time + gather_time;
+
+  static const int NUM_TIMERS = 3;
+  const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
+
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
 }
+
+} // namespace performance_tests
+} // namespace stk

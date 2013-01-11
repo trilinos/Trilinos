@@ -1,14 +1,13 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_util/environment/WallTime.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
 #include <stdexcept>
@@ -19,25 +18,9 @@ using stk::mesh::fixtures::VariableSelectorFixture;
 
 }
 
-STKUNIT_UNIT_TEST( selector, selector_start)
+STKUNIT_UNIT_TEST(selector_timings, selector_timings)
 {
-  size_t N = 5;
-  VariableSelectorFixture fix(N);
-  stk::mesh::Selector selectUnion;
-  for (size_t part_i = 0 ; part_i<N ; ++part_i) {
-    selectUnion |= *fix.m_declared_part_vector[part_i];
-  }
-  std::vector<stk::mesh::Bucket*> buckets_out;
-  unsigned entity_rank = 0;
-  get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
-  STKUNIT_ASSERT_EQUAL( buckets_out.size(), N );
-  // Construct once for large N
-  // Graph time for get_buckets against 1..N
-}
-
-STKUNIT_UNIT_TEST( selector, selector_timings)
-{
-  // Construction
+  // A scaling test for selector and bucket operations
 
   // If we are running with STL in debug mode we shrink the problem
   // down in order to keep things running in a reasonable amount of
@@ -52,22 +35,25 @@ STKUNIT_UNIT_TEST( selector, selector_timings)
 
   std::vector<double> selector_creation(N/2);
   std::vector<double> get_buckets_usage(N/2);
-  double start_time = stk::wall_time();
+  double total_selector_time = 0.0, total_bucket_time = 0.0;
   size_t timing_index = 0;
-  for (size_t n = 1 ; n<N; n*=2) {
+  for (size_t n = 1 ; n<N; n*=2, ++timing_index) {
     // Selector creation
+    double start_time = stk::wall_time();
     stk::mesh::Selector selectUnion;
     for (size_t part_i = 0 ; part_i<n ; ++part_i) {
       selectUnion |= *fix.m_declared_part_vector[part_i];
     }
     selector_creation[timing_index] = stk::wall_dtime(start_time);
+    total_selector_time += selector_creation[timing_index];
 
     // Selector usage:
+    start_time = stk::wall_time();
     std::vector<stk::mesh::Bucket*> buckets_out;
     unsigned entity_rank = 0;
     get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
     get_buckets_usage[timing_index] = stk::wall_dtime(start_time);
-    ++timing_index;
+    total_bucket_time += get_buckets_usage[timing_index];
   }
 
   // Print out table
@@ -77,5 +63,12 @@ STKUNIT_UNIT_TEST( selector, selector_timings)
     std::cout << n << " " << selector_creation[timing_index] << " " << get_buckets_usage[timing_index] << std::endl;
     ++timing_index;
   }
-  STKUNIT_EXPECT_TRUE(true);
+
+  const double total_time = total_selector_time + total_bucket_time;
+
+  static const int NUM_TIMERS = 3;
+  const double timers[NUM_TIMERS] = {total_selector_time, total_bucket_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Selector unions", "Get buckets", "Total time"};
+
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
 }

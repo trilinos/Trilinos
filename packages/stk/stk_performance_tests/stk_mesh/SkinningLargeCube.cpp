@@ -298,7 +298,7 @@ void separate_and_skin_mesh(
 // \TODO Idea: ADD scaling test over mesh size and compute the slope.
 // \TODO Idea: ADD different partitioning such that the reskinning spans more than one process.
 
-STKUNIT_UNIT_TEST( skinning, large_cube)
+STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 

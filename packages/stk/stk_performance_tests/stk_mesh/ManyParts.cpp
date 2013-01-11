@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
@@ -18,27 +19,20 @@
 
 STKUNIT_UNIT_TEST(many_parts, many_parts)
 {
-  //vector of mesh-dimensions holds the number of elements in each dimension.
-  //Hard-wired to 3. This test can run with spatial-dimension less than 3,
-  //(if generated-mesh can do that) but not greater than 3.
-  std::vector<int> mesh_dims(3);
-#ifndef NDEBUG
-  mesh_dims[0]=50; //num_elems_x
-  mesh_dims[1]=50; //num_elems_y
-  mesh_dims[2]=50; //num_elems_z
-#else
-  mesh_dims[0]=100; //num_elems_x
-  mesh_dims[1]=100; //num_elems_y
-  mesh_dims[2]=100; //num_elems_z
-#endif
+  // vector of mesh-dimensions holds the number of elements in each dimension.
+  // Hard-wired to 3. This test can run with spatial-dimension less than 3,
+  // (if generated-mesh can do that) but not greater than 3.
+  //
+  // Doesn't really matter what the mesh size is since we never commit
+  std::vector<int> mesh_dims(3, 42);
 
   std::ostringstream oss;
   oss << mesh_dims[0] << "x" << mesh_dims[1] << "x" << mesh_dims[2];
 
-  double start_time = stk::cpu_time();
-
   stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str());
   stk::mesh::MetaData& meta = fixture.getMetaData();
+
+  double start_time = stk::cpu_time();
 
   stk::mesh::Part& super1 = meta.declare_part("super1");
   stk::mesh::Part& super2 = meta.declare_part("super2");
@@ -85,8 +79,11 @@ STKUNIT_UNIT_TEST(many_parts, many_parts)
 
   double part_subset_time = stk::cpu_time() - start_time;
 
-  std::cout << "Time to create "<<num_parts<<" parts: " << part_create_time << std::endl;
-  std::cout << "Time to register field on parts: " << field_reg_time << std::endl;
-  std::cout << "Time to add final superset/subset: " << part_subset_time << std::endl;
-}
+  double total_time    = part_create_time + field_reg_time + part_subset_time;
 
+  static const int NUM_TIMERS = 4;
+  const double timers[NUM_TIMERS] = {part_create_time, field_reg_time, part_subset_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Part create", "Field register", "Part subset", "Total time"};
+
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+}

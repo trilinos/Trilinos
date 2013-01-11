@@ -152,8 +152,8 @@ TEST(hex_gather, hex_gather)
   double total_time = mesh_create_time + gather_time;
 
   static const int NUM_TIMERS = 3;
-  static const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
-  static const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
+  const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
 
   stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
 }

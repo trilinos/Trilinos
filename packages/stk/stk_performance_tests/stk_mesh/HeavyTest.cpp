@@ -8,10 +8,9 @@
 #include <stk_rebalance/ZoltanPartition.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
 #include <stk_util/environment/WallTime.hpp>
-
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -21,7 +20,7 @@
 extern int* STKUNIT_ARGC;
 extern char** STKUNIT_ARGV;
 
-STKUNIT_UNIT_TEST( heavy_test, heavy_test )
+STKUNIT_UNIT_TEST( heavy, heavy )
 {
   // A performance test that stresses important parts of stk_mesh
   // (such as mesh-modification in parallel, creation of relations,
@@ -34,7 +33,6 @@ STKUNIT_UNIT_TEST( heavy_test, heavy_test )
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  const size_t p_size = stk::parallel_machine_size(pm);
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
   stk::io::util::IO_Fixture fixture(pm);
@@ -50,21 +48,22 @@ STKUNIT_UNIT_TEST( heavy_test, heavy_test )
   const unsigned EXODUS_CREATE_PHASE_ID  = 4;
   const unsigned PROCESS_OUTPUT_PHASE_ID = 5;
 
-  std::vector<std::string> PHASE_NAMES(NUM_PHASES);
+  std::vector<std::string> PHASE_NAMES(NUM_PHASES+1);
   PHASE_NAMES[INIT_META_DATA_PHASE_ID] = "Init meta data";
   PHASE_NAMES[INIT_BULK_DATA_PHASE_ID] = "Init bulk data";
   PHASE_NAMES[REBALANCE_PHASE_ID]      = "Rebalance mesh";
   PHASE_NAMES[SKIN_MESH_PHASE_ID]      = "Skin mesh";
   PHASE_NAMES[EXODUS_CREATE_PHASE_ID]  = "Exodus file creation";
   PHASE_NAMES[PROCESS_OUTPUT_PHASE_ID] = "Process output";
+  PHASE_NAMES[NUM_PHASES]              = "Total time";
 
   // timings[6] = sum(timings[0:5])
   std::vector<double> timings(NUM_PHASES + 1, 0.0); // leave room for sum
 
   // Compute input/output filename
 
-  std::string input_base_filename = "heavy_performance_test.g"; // Default
-  std::string output_base_filename = "heavy_performance_test.e"; // Default
+  std::string input_base_filename = "heavy.g"; // Default
+  std::string output_base_filename = "heavy.e"; // Default
 
   // Search cmd-line args
   const std::string input_flag  = "--heavy-test:input-file=";
@@ -151,21 +150,13 @@ STKUNIT_UNIT_TEST( heavy_test, heavy_test )
     stk::mesh::comm_mesh_counts( bulk_data , counts);
 
     if (p_rank == 0) {
-      std::cout << "\n\n";
-      std::cout << "<performance_test name=\"HeavyTest\" num_procs=\"" << p_size << "\">\n";
-      std::cout << "  <mesh_stats>\n";
+      std::cout << "  mesh_stats\n";
       for (unsigned i = 0; i < counts.size(); ++i) {
-        std::cout << "    <entity rank=\"" << i << "\" count=\"" << counts[i] << "\"/>\n";
+        std::cout << "    entity rank=" << i << " count=" << counts[i] << "\n";
       }
-      std::cout << "  </mesh_stats>\n";
+      std::cout << std::endl;
 
-      std::cout << "  <timings time=\"" << timings[NUM_PHASES] << "\">\n";
-      for (unsigned i = 0; i < NUM_PHASES; ++i) {
-        std::cout << "    <section name=\"" << PHASE_NAMES[i] << "\" time=\"" << timings[i] <<"\"/>\n";
-      }
-      std::cout << "  </timings>\n";
-      std::cout << "</performance_test>\n";
-      std::cout << "\n\n";
+      stk::print_timers_and_memory(&PHASE_NAMES[0], &timings[0], NUM_PHASES + 1);
     }
   }
 }

@@ -11,6 +11,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_performance_test_includes/calculate_centroid.hpp>
 #include <stk_performance_test_includes/hex_refine_info.hpp>
@@ -32,7 +33,6 @@ void create_entities( BulkData & bulk,
                       // FIXME Part& active_elements_part,
                       HexRefineInfo& refine_info)
 {
-
   HexRefineInfo refine_info_half(refine_info.m_level-1, refine_info.m_nx, refine_info.m_ny, refine_info.m_nz);
   PartVector add_parts;
   add_parts.push_back(&node_part);
@@ -42,9 +42,6 @@ void create_entities( BulkData & bulk,
 
   unsigned nid_start = 1 + refine_info.node_id_offset();
   unsigned nid_end = nid_start + refine_info.num_nodes();
-
-  std::cout << "nid_start = " << nid_start << " nid_end= " << nid_end << " diff= " << nid_end - nid_start << std::endl;
-  std::cout << "eid_start = " << eid_start << " eid_end= " << eid_end << " diff= " << eid_end - eid_start << std::endl;
 
   boost::unordered_map<unsigned, Entity> node_map;
 
@@ -120,12 +117,10 @@ TEST( hex_refine, hex_refine)
   unsigned ex=nn, ey=nn, ez=nn;
 
   //unsigned num_elems = ex*ey*ez;
-  fixtures::HexFixture fixture(MPI_COMM_SELF, ex, ey, ez);
+  fixtures::HexFixture fixture(MPI_COMM_WORLD, ex, ey, ez);
   fixture.m_fem_meta.commit();
   fixture.generate_mesh();
-  double end_time = stk::cpu_time() - start_time;
-
-  std::cout << "Time to create hex mesh: " << end_time << std::endl;
+  double create_time = stk::cpu_time() - start_time;
 
   std::vector<double> avg_centroid(3, 0.0);
   //const double tolerance = 1.e-6;
@@ -146,11 +141,14 @@ TEST( hex_refine, hex_refine)
     fixture.m_bulk_data.modification_end();
   }
 
-  end_time = stk::cpu_time();
+  double refine_time = stk::cpu_time() - start_time;
+  double total_time = refine_time + create_time;
 
-  double test_time = end_time - start_time;
-  std::cout << "Num refines: " << max_levels << std::endl;
-  std::cout << "Time to refine: " << test_time << std::endl;
+  static const int NUM_TIMERS = 3;
+  const double timers[NUM_TIMERS] = {create_time, refine_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Create mesh", "Refine", "Total time"};
+
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
 }
 
 } // namespace performance_tests

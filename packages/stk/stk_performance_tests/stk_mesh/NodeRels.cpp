@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
@@ -104,8 +105,13 @@ STKUNIT_UNIT_TEST(node_rels, node_rels)
     EXPECT_EQ(nodes_visited, expected_nodes_visited);
   }
 
-  double test_time = stk::cpu_time() - start_time;
+  double traverse_time = stk::cpu_time() - start_time;
+  double total_time    = mesh_create_time + traverse_time;
 
-  std::cout << "Time to create mesh: " << mesh_create_time << std::endl;
-  std::cout << "Time to traverse elem-node relations: " << test_time << std::endl;
+  static const int NUM_TIMERS = 3;
+  const double timers[NUM_TIMERS] = {mesh_create_time, traverse_time, total_time};
+  const char* timer_names[NUM_TIMERS] = {"Create mesh", "Traverse", "Total time"};
+
+  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+
 }

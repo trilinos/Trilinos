@@ -1,16 +1,9 @@
-#include <stdexcept>
-#include <iomanip>
-#include <sstream>
-#include <cmath>
-#include <algorithm>
-#include <numeric>
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/perf_util.hpp>
 
 #include <stk_mesh/fixtures/GearsFixture.hpp>
 #include <stk_mesh/fixtures/Gear.hpp>
@@ -22,15 +15,20 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-
 #include <stk_mesh/base/SkinMesh.hpp>
 
 #include <stk_io/IossBridge.hpp>
-
 #include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
+
+#include <stdexcept>
+#include <iomanip>
+#include <sstream>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 
 namespace {
 
@@ -151,7 +149,6 @@ void separate_wedge(
 
   // Parallel collective call:
   fixture.communicate_model_fields();
-
 }
 
 //
@@ -235,11 +232,9 @@ void move_detached_wedges(
   }
 }
 
-
 //
 //-----------------------------------------------------------------------------
 //
-
 
 void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixture,
     IntField & processor_field
@@ -274,10 +269,6 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
 //
 //-----------------------------------------------------------------------------
 //
-
-} // unnamed namespace
-
-namespace {
 
 Ioss::Region *create_output_mesh(
     const std::string &mesh_filename,
@@ -346,7 +337,6 @@ Ioss::Region *create_output_mesh(
   return out_region;
 }
 
-
 } // namespace
 
 STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
@@ -356,6 +346,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   Ioss::Init::Initializer init_db;
 
   const size_t NUM_GEARS = 1;
+  double start_time = stk::wall_time();
 
   stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS);
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
@@ -553,4 +544,10 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 
   delete volume_out_region;  volume_out_region = NULL;
   delete surface_out_region; surface_out_region = NULL;
+
+  if (p_rank == 0) {
+    double total_time = stk::wall_time() - start_time;
+    const char* timer_label = "Total Time";
+    stk::print_timers_and_memory(&timer_label, &total_time, 1);
+  }
 }
