@@ -130,6 +130,8 @@ STKUNIT_UNIT_TEST(scale_study, scale_study)
     end_time = cpu_time() - start_time;
     std::cout << "compress time: " << end_time << std::endl;
 
+  //if/when this test is re-activated, the following lines should be refactored to use 
+  //the memory reporting function in stk_util/util/memory_util.hpp
     // std::cout << "memory used: " << samba::detail::human_bytes(malloc_used()) << std::endl;
     // std::cout << "MAX memory used: " << samba::detail::human_bytes(malloc_max_footprint()) << std::endl;
 
