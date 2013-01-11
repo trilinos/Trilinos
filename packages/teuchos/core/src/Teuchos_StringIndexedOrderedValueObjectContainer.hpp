@@ -63,6 +63,9 @@ public:
   /** \brief Return the value for invalid ordinal. */
   static Ordinal getInvalidOrdinal() { return -1; }
 
+  /** \brief Destructor */
+  virtual ~StringIndexedOrderedValueObjectContainerBase() {};
+
 public: // Public members (but only for unit testing purposes!)
 
   /** \brief A safe ordinal index type that default initializes to a special

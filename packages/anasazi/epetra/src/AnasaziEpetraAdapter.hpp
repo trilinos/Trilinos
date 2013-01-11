@@ -84,6 +84,9 @@ namespace Anasazi {
   class EpetraMultiVecAccessor {
  
   public:
+    //! Destructor
+    virtual ~EpetraMultiVecAccessor() {};
+
     /*! \brief Return the pointer to the Epetra_MultiVector object. */
     virtual Epetra_MultiVector* GetEpetraMultiVec() { return 0; }
 
