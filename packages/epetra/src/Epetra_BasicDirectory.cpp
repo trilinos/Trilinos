@@ -273,7 +273,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   int_type Dir_NumGlobalElements = MaxAllGID - MinAllGID + 1;
 
   // Create a uniform linear map to contain the directory
-  DirectoryMap_ = new Epetra_Map( Dir_NumGlobalElements, (int) MinAllGID, Map.Comm() );
+  DirectoryMap_ = new Epetra_Map( Dir_NumGlobalElements, MinAllGID, Map.Comm() );
 
   int Dir_NumMyElements = DirectoryMap_->NumMyElements(); // Get NumMyElements
 

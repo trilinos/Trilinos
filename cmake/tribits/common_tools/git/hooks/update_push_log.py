@@ -1,25 +1,28 @@
 #!/usr/bin/env python
+#
+# Simple python script that updates a push log file
 
 import commands
 import os
 import re
 import sys
 
-if len(sys.argv) != 3:
-  raise SystemExit("Syntax:\n  %s oldrev newrev" % sys.argv[0])
+if len(sys.argv) != 5:
+  raise SystemExit("Syntax:\n  %s oldrev newrev refname pushdate " % sys.argv[0])
 
 oldrev=sys.argv[1]
 newrev=sys.argv[2]
+refname=sys.argv[3]
+pushdate=sys.argv[4]
 
-dateStr = commands.getoutput("date")
-#print "dateStr = '"+dateStr+"'"
+#print "pushdate = '"+pushdate+"'"
 
 commitsStr = commands.getoutput(
   "git log --pretty=format:'    %h \"%s\" <%ae> [%ad] (%ar)' --topo-order "+newrev+" ^"+oldrev)
 #print "commitsStr:\n"+commitsStr
 
 pushLogEntry = \
-  "\nPush on "+dateStr+"\n\n"+ \
+  "\nPush to "+refname+" on "+pushdate+"\n\n"+ \
   commitsStr + "\n"
 
 #print "pushLogEntry:\n", pushLogEntry

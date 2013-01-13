@@ -106,7 +106,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::RelativeNormF::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::RelativeNormF::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::RelativeNormF::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -115,7 +115,7 @@ ostream& NOX::StatusTest::RelativeNormF::print(ostream& stream, int indent) cons
   stream << " < " << Utils::sciformat(tolerance * normF_0, 3);
   stream << " (" << Utils::sciformat(tolerance, 3);
   stream << " * " << Utils::sciformat(normF_0, 3);
-  stream << ")" << endl;
+  stream << ")" << std::endl;
 
   return stream;
 }

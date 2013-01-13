@@ -69,6 +69,19 @@ private:
   unsigned offset( const unsigned i , const unsigned j , const unsigned k ) 
   { return ( i << 6 ) | ( j << 3 ) | k ; }
 
+  static
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned offset( const unsigned v ,
+                   const unsigned long i ,
+                   const unsigned long j ,
+                   const unsigned long k ) 
+  {
+    const unsigned v3 = v + v + v ;
+    return ( ( ( i >> v3 ) & 0x07 ) << 6 ) |
+           ( ( ( j >> v3 ) & 0x07 ) << 3 ) |
+           ( ( ( k >> v3 ) & 0x07 ) );
+  }
+
 public:
 
   enum { MaximumPolyDegree = 7 };
@@ -118,6 +131,34 @@ public:
     for ( ; iv < n && m_map[ offset(I[iv],J[iv],K[iv]) ] ; ++iv );
     return n == iv ;
   }
+
+  //----------------------------------
+  /** \brief  Value of Product_v < I[v] , J[v] , K[v] > */
+  KOKKOSARRAY_INLINE_FUNCTION
+  double operator()( unsigned n ,
+                     const unsigned long Ipack ,
+                     const unsigned long Jpack ,
+                     const unsigned long Kpack ) const
+  {
+    double val = 1 ;
+    while ( n-- ) {
+      val *= m_terms[ m_map[ offset(n,Ipack,Jpack,Kpack) ] ];
+    }
+    return val ;
+  }
+
+  /** \brief  Value of Product_v < I[v] , J[v] , K[v] > is non-zero. */
+  KOKKOSARRAY_INLINE_FUNCTION
+  bool is_non_zero( unsigned n ,
+                    const unsigned long Ipack ,
+                    const unsigned long Jpack ,
+                    const unsigned long Kpack ) const
+  {
+    while ( n && m_map[ offset(n-1,Ipack,Jpack,Kpack) ] ) --n ;
+    return 0 == n ;
+  }
+
+  //----------------------------------
 };
 
 //----------------------------------------------------------------------------
@@ -126,8 +167,8 @@ public:
  *
  *  The combinatorial-Legendre bases are ordered according to
  *  the number of non-zeros in the triple product associated with
- *  the bases.  Ordering is first by diagonal count (largest to smallest)
- *  and then by off-diagonal count (largest to smallest).
+ *  the bases.  Ordering is largest-to-smallest first by
+ *  total non-zero count and then by diagonal count.
  */
 
 class TripleProductTensorLegendreCombinatorialEvaluation {

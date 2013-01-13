@@ -156,11 +156,11 @@ void TrustRegionBased::init()
 
 //PRIVATE
 void NOX::Solver::TrustRegionBased::
-invalid(const string& name, double value) const
+invalid(const std::string& name, double value) const
 {
   utilsPtr->err() << "NOX::Solver::TrustRegionBased::init - " 
        << "Invalid \"" << name << "\" (" << value << ")" 
-       << endl;
+       << std::endl;
   throw "NOX Error";
 }
 
@@ -243,7 +243,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   ok = newtonPtr->compute(*newtonVecPtr, soln, *this);
   if (!ok) 
   {
-    utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
+    utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << std::endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     printUpdate();
@@ -253,7 +253,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   ok = cauchyPtr->compute(*cauchyVecPtr, soln, *this);
   if (!ok) 
   {
-    utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
+    utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << std::endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     printUpdate();
@@ -282,8 +282,8 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
   if (utilsPtr->isPrintType(NOX::Utils::InnerIteration)) 
   {
-    utilsPtr->out() << NOX::Utils::fill(72) << endl;
-    utilsPtr->out() << "-- Trust Region Inner Iteration --" << endl;
+    utilsPtr->out() << NOX::Utils::fill(72) << std::endl;
+    utilsPtr->out() << "-- Trust Region Inner Iteration --" << std::endl;
   }
 
   // Trust region subproblem loop
@@ -325,14 +325,14 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
-	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << endl;
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << std::endl;
 	throw "NOX Error";
       }
       
       // final soln to quadratic equation
       double gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
-	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << endl;
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << std::endl;
 	throw "NOX Error";
       }
       
@@ -358,7 +358,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+      utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -372,7 +372,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       if (rtype != NOX::Abstract::Group::Ok) 
       {
 	utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - "
-	     << "unable to compute F" << endl;
+	     << "unable to compute F" << std::endl;
 	throw "NOX Error";
       }
       bVecPtr->update(1.0, oldSolnPtr->getF(), 1.0);
@@ -391,7 +391,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 	utilsPtr->out() << "Ratio computation: " 
 			<< utilsPtr->sciformat(numerator) << "/" 
 			<< utilsPtr->sciformat(denominator) << "=" 
-			<< ratio << endl;
+			<< ratio << std::endl;
       }
 
       // Update the merit function (newF used when printing iteration status)
@@ -412,7 +412,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 	rtype = oldSolnPtr->applyJacobian(*dirPtr, *bVecPtr);
 	if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+	  utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << std::endl;
 	  throw "NOX Error";
 	}
 	double numerator = oldF - newF;
@@ -426,7 +426,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 	  utilsPtr->out() << "Ratio computation: " 
 			  << utilsPtr->sciformat(numerator) << "/" 
 			  << utilsPtr->sciformat(denominator) << "=" 
-			  << utilsPtr->sciformat(ratio) << endl;
+			  << utilsPtr->sciformat(ratio) << std::endl;
 	
 	// WHY IS THIS CHECK HERE?
 	if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
@@ -436,7 +436,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
     if (utilsPtr->isPrintType(Utils::InnerIteration)) {
       utilsPtr->out() << "radius = " << utilsPtr->sciformat(radius, 1);
-      utilsPtr->out() << " ratio = " << setprecision(2) << setw(4) << ratio;
+      utilsPtr->out() << " ratio = " << std::setprecision(2) << std::setw(4) << ratio;
       utilsPtr->out() << " f = " << utilsPtr->sciformat(sqrt(2*newF));
       utilsPtr->out() << " old f = " << utilsPtr->sciformat(sqrt(2*oldF));
       utilsPtr->out() << " ";
@@ -453,7 +453,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 	break;
       }
 
-      utilsPtr->out() << endl;
+      utilsPtr->out() << std::endl;
     }
 
     // Update trust region
@@ -476,7 +476,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   if ((radius <= minRadius) && (ratio < minRatio)) 
   {
     if (utilsPtr->isPrintType(Utils::InnerIteration))
-      utilsPtr->out() << "Using recovery step and resetting trust region." << endl;
+      utilsPtr->out() << "Using recovery step and resetting trust region." << std::endl;
     soln.computeX(*oldSolnPtr, *newtonVecPtr, recoveryStep);
     soln.computeF();
     radius = newtonVecPtr->norm();
@@ -487,7 +487,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   status = test.checkStatus(*this, checkType);
  
   if (utilsPtr->isPrintType(Utils::InnerIteration)) 
-    utilsPtr->out() << NOX::Utils::fill(72) << endl;
+    utilsPtr->out() << NOX::Utils::fill(72) << std::endl;
 
   prePostOperator.runPostIterate(*this);
 
@@ -558,7 +558,7 @@ void TrustRegionBased::printUpdate()
       utilsPtr->out() << " (Converged!)";
     if (status == StatusTest::Failed)
       utilsPtr->out() << " (Failed!)";
-    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << std::endl;
   }
   
   if ((status != StatusTest::Unconverged) && 

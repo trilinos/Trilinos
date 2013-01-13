@@ -56,7 +56,7 @@
 void
 LOCA::MultiPredictor::AbstractStrategy::setPredictorOrientation(
 	      bool baseOnSecant, 
-	      const vector<double>& stepSize,
+	      const std::vector<double>& stepSize,
 	      const LOCA::MultiContinuation::ExtendedGroup& grp,
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec,

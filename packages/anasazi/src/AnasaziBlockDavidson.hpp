@@ -424,6 +424,7 @@ namespace Anasazi {
     //
     typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -792,7 +793,7 @@ namespace Anasazi {
                          "Anasazi::BlockDavidson::setSize(): eigenproblem did not specify initial vectors to clone from.");
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*numBlocks > MVT::GetVecLength(*tmp),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*static_cast<ptrdiff_t>(numBlocks) > MVText::GetGlobalLength(*tmp),std::invalid_argument,
                        "Anasazi::BlockDavidson::setSize(): max subspace dimension and auxilliary subspace too large.");
 
 
@@ -922,7 +923,7 @@ namespace Anasazi {
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
 
     if (newstate.V != Teuchos::null && newstate.KK != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_), std::invalid_argument, 
                           "Anasazi::BlockDavidson::initialize(newstate): Vector length of V not correct." );
       TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim < blockSize_, std::invalid_argument, 
                           "Anasazi::BlockDavidson::initialize(newstate): Rank of new state must be at least blockSize().");
@@ -1084,7 +1085,7 @@ namespace Anasazi {
 
     // X,theta require Ritz analysis; if we have to generate one of these, we might as well generate both
     if (newstate.X != Teuchos::null && newstate.T != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Size of X must be consistent with block size and length of V.");
       TEUCHOS_TEST_FOR_EXCEPTION((signed int)(newstate.T->size()) != curDim_,
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Size of T must be consistent with dimension of V.");
@@ -1146,7 +1147,7 @@ namespace Anasazi {
     if ( newstate.KX != Teuchos::null ) {
       TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_,
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.KX not correct." );
-      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*X_),
+      TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.KX must have at least block size vectors." );
       if (newstate.KX != KX_) {
         MVT::SetBlock(*newstate.KX,bsind,*KX_);
@@ -1170,7 +1171,7 @@ namespace Anasazi {
       if ( newstate.MX != Teuchos::null ) {
         TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_,
                             std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.MX not correct." );
-        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*X_),
                             std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.MX must have at least block size vectors." );
         if (newstate.MX != MX_) {
           MVT::SetBlock(*newstate.MX,bsind,*MX_);
@@ -1198,7 +1199,7 @@ namespace Anasazi {
     if (newstate.R != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != blockSize_,
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.R not correct." );
-      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*X_),
+      TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.R must have at least block size vectors." );
       if (newstate.R != R_) {
         MVT::SetBlock(*newstate.R,bsind,*R_);

@@ -348,7 +348,7 @@ SWIG_TypeClientData(swig_type_info *ti, void *clientdata) {
   }
 }
 
-/* Pack binary data into a string */
+/* Pack binary data into a std::string */
 static char *
 SWIG_PackData(char *c, void *ptr, size_t sz) {
   static char hex[17] = "0123456789abcdef";
@@ -363,7 +363,7 @@ SWIG_PackData(char *c, void *ptr, size_t sz) {
   return c;
 }
 
-/* Unpack binary data from a string */
+/* Unpack binary data from a std::string */
 static char *
 SWIG_UnpackData(char *c, void *ptr, size_t sz) {
   register unsigned char uu = 0;
@@ -491,7 +491,7 @@ typedef struct swig_const_info {
  * Pointer declarations
  * ----------------------------------------------------------------------------- */
 /*
-  Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
+  Use SWIG_NO_COBJECT_TYPES to force the use of std::strings to represent
   C/C++ pointers in the python side. Very useful for debugging, but
   not always safe.
 */
@@ -917,7 +917,7 @@ type_error:
   return -1;
 }
 
-/* Create a new pointer string */
+/* Create a new pointer std::string */
 static char *
 SWIG_Python_PointerStr(char *buff, void *ptr, const char *name, size_t bsz) {
   char *r = buff;
@@ -1308,7 +1308,7 @@ static PyObject *_wrap_delete_AbstractGroup(PyObject *, PyObject *args) {
 static PyObject *_wrap_AbstractGroup_setParamsMulti(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::MultiContinuation::AbstractGroup *arg1 = (LOCA::MultiContinuation::AbstractGroup *) 0 ;
-    vector<int > *arg2 = 0 ;
+    std::vector<int > *arg2 = 0 ;
     NOX::Abstract::MultiVector::DenseMatrix *arg3 = 0 ;
     PyObject * obj0 = 0 ;
     PyObject * obj1 = 0 ;
@@ -1333,7 +1333,7 @@ static PyObject *_wrap_AbstractGroup_setParamsMulti(PyObject *, PyObject *args) 
         }
         if (SWIG_arg_fail(3)) SWIG_fail;
     }
-    (arg1)->setParamsMulti((vector<int > const &)*arg2,(NOX::Abstract::MultiVector::DenseMatrix const &)*arg3);
+    (arg1)->setParamsMulti((std::vector<int > const &)*arg2,(NOX::Abstract::MultiVector::DenseMatrix const &)*arg3);
     
     Py_INCREF(Py_None); resultobj = Py_None;
     return resultobj;
@@ -1345,7 +1345,7 @@ static PyObject *_wrap_AbstractGroup_setParamsMulti(PyObject *, PyObject *args) 
 static PyObject *_wrap_AbstractGroup_computeDfDpMulti(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::MultiContinuation::AbstractGroup *arg1 = (LOCA::MultiContinuation::AbstractGroup *) 0 ;
-    vector<int > *arg2 = 0 ;
+    std::vector<int > *arg2 = 0 ;
     NOX::Abstract::MultiVector *arg3 = 0 ;
     bool arg4 ;
     int result;
@@ -1377,7 +1377,7 @@ static PyObject *_wrap_AbstractGroup_computeDfDpMulti(PyObject *, PyObject *args
         arg4 = (bool)(SWIG_As_bool(obj3)); 
         if (SWIG_arg_fail(4)) SWIG_fail;
     }
-    result = (int)(arg1)->computeDfDpMulti((vector<int > const &)*arg2,*arg3,arg4);
+    result = (int)(arg1)->computeDfDpMulti((std::vector<int > const &)*arg2,*arg3,arg4);
     
     resultobj = SWIG_From_int((result));
     return resultobj;
@@ -1464,7 +1464,7 @@ static PyObject *_wrap_delete_FiniteDifferenceGroup(PyObject *, PyObject *args) 
 static PyObject *_wrap_FiniteDifferenceGroup_computeDfDpMulti(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::MultiContinuation::FiniteDifferenceGroup *arg1 = (LOCA::MultiContinuation::FiniteDifferenceGroup *) 0 ;
-    vector<int > *arg2 = 0 ;
+    std::vector<int > *arg2 = 0 ;
     NOX::Abstract::MultiVector *arg3 = 0 ;
     bool arg4 ;
     int result;
@@ -1496,7 +1496,7 @@ static PyObject *_wrap_FiniteDifferenceGroup_computeDfDpMulti(PyObject *, PyObje
         arg4 = (bool)(SWIG_As_bool(obj3)); 
         if (SWIG_arg_fail(4)) SWIG_fail;
     }
-    result = (int)(arg1)->computeDfDpMulti((vector<int > const &)*arg2,*arg3,arg4);
+    result = (int)(arg1)->computeDfDpMulti((std::vector<int > const &)*arg2,*arg3,arg4);
     
     resultobj = SWIG_From_int((result));
     return resultobj;

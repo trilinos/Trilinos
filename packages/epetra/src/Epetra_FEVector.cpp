@@ -515,7 +515,7 @@ void Epetra_FEVector::createNonlocalMapAndExporter()
   int_type* nlIDptr = nonlocalIDs_var.size()>0 ? &nonlocalIDs_var[0] : NULL;
   int* nlElSzptr = nonlocalElementSize_.size()>0 ? &nonlocalElementSize_[0] : NULL;
   nonlocalMap_ = new Epetra_BlockMap ((int_type) -1, (int) nonlocalIDs_var.size(), nlIDptr,
-                                      nlElSzptr, Map().IndexBase(), Map().Comm());
+                                      nlElSzptr, (int_type) Map().IndexBase64(), Map().Comm());
   delete exporter_;
   exporter_ = new Epetra_Export (*nonlocalMap_, Map());
 

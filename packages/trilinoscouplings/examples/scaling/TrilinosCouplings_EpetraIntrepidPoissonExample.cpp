@@ -236,8 +236,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools;
   typedef Intrepid::CellTools<ST>      IntrepidCTools;
 
-  const int numProcs = comm->MyPID ();
-  const int myRank = comm->NumProc ();
+  const int myRank = comm->MyPID ();
+  const int numProcs = comm->NumProc ();
   // We'll use this to check return values of Epetra methods.
   int errCode = 0;
 
@@ -953,37 +953,36 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         // relative to the cell DoF numbering.
         for (int cellRow = 0; cellRow < numFieldsG; ++cellRow) {
           int localRow  = elemToNode (cell, cellRow);
-          int globalRow = as<int> (globalNodeIds[localRow]);
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
-          ArrayView<ST> sourceTermContributionAV =
-            arrayView (&sourceTermContribution, 1);
 
-          errCode = rhsVector->SumIntoGlobalValues (1, sourceTermContributionAV.getRawPtr (), &globalRow);
-          TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-            "Epetra_Vector::SumIntoGlobalValues on global row " << globalRow
-            << " on process " << myRank << " failed with error code "
-            << errCode << ".");
-
-          // "CELL VARIABLE" loop for the workset cell: cellCol is
-          // relative to the cell DoF numbering.
-          for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-            const int localCol  = elemToNode(cell, cellCol);
-            int globalCol = as<int> (globalNodeIds[localCol]);
-            ArrayView<int> globalColAV = arrayView<int> (&globalCol, 1);
-            ST operatorMatrixContribution =
-              worksetStiffMatrix (worksetCellOrdinal, cellRow, cellCol);
-            ArrayView<ST> operatorMatrixContributionAV =
-              arrayView<ST> (&operatorMatrixContribution, 1);
-            errCode = StiffMatrix->SumIntoGlobalValues (globalRow,
-                                                        as<int> (operatorMatrixContributionAV.size ()),
-                                                        operatorMatrixContributionAV.getRawPtr (),
-                                                        globalColAV.getRawPtr ());
-            TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-              "Epetra_CrsMatrix::SumIntoGlobalValues on global row "
-              << globalRow << " on process " << myRank << " failed with "
-              "error code " << errCode << ".");
-
-          }// *** cell col loop ***
+	  {
+	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
+	    errCode = rhsVector->SumIntoMyValues (
+	      1, &sourceTermContribution, &localRow);
+	    TEUCHOS_TEST_FOR_EXCEPTION(
+	      errCode != 0, std::runtime_error,
+	      "Epetra_Vector::SumIntoGlobalValues on local row " << localRow
+	      << " on process " << myRank << " failed with error code "
+	      << errCode << ".");
+	  }
+          
+          // "CELL VARIABLE" loop for the workset cell: sum entire element
+	  // stiff matrix contribution in one function call
+	  {
+	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
+					   elem_matrix);
+	    errCode = StiffMatrix->SumIntoMyValues (
+	      localRow,
+	      numFieldsG,
+	      &worksetStiffMatrix(worksetCellOrdinal,cellRow,0),
+	      &elemToNode(cell,0));
+	    TEUCHOS_TEST_FOR_EXCEPTION(
+	      errCode != 0, std::runtime_error,
+	      "Epetra_CrsMatrix::SumIntoGlobalValues on local row "
+	      << localRow << " on process " << myRank << " failed with "
+	      "error code " << errCode << ".");
+	  }
+	  
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
@@ -1304,7 +1303,7 @@ materialTensor (Scalar material[][3],
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
-  const bool illConditioned = true;
+  const bool illConditioned = false;
   if (illConditioned) {
     const Scalar zero = STS::zero ();
     const Scalar one = STS::one ();

@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 
     // Check eigenvalues
     for (int i=0; i<nev; i++) {
-      stringstream sstr;
+      std::stringstream sstr;
       sstr << "Eigenvalue " << i;
       ierr += testCompare.testValue((*anasazi_evals_r)[i], 
 				    (*dggev_evals_r)[i], arntol*1e3,
@@ -227,22 +227,22 @@ int main(int argc, char *argv[])
   }
 
  catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   } 
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 
    if (ierr == 0)
-     cout << "All tests passed!" << endl;
+     std::cout << "All tests passed!" << std::endl;
    else
-     cout << ierr << " test(s) failed!" << endl;
+     std::cout << ierr << " test(s) failed!" << std::endl;
 
   return ierr;
 }

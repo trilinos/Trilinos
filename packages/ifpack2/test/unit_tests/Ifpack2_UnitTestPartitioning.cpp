@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdin
   // ====================================== //
   {
     Teuchos::ParameterList List;
-    List.set("partitioner: local parts",(int) num_rows_per_proc);
+    List.set("partitioner: local parts",(LocalOrdinal) num_rows_per_proc);
     Ifpack2::LinearPartitioner<CRSG > MyPart(Matrix->getGraph());
     MyPart.setParameters(List);
     MyPart.compute();
@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdin
   // Point blocking
   {
     Teuchos::ParameterList List;
-    List.set("partitioner: local parts",1);
+    List.set("partitioner: local parts",(LocalOrdinal) 1);
     Ifpack2::LinearPartitioner<CRSG > MyPart(Matrix->getGraph());
     MyPart.setParameters(List);
     MyPart.compute();

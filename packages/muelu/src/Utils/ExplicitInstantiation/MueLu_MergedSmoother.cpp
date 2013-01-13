@@ -43,6 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
+
+
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_MergedSmoother_def.hpp"
@@ -67,3 +69,5 @@ template class MueLu::MergedSmoother<std::complex<double>, int, int, Kokkos::Def
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
+
+

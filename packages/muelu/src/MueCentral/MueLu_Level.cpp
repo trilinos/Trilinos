@@ -72,7 +72,7 @@ namespace MueLu {
         const MueLu::FactoryBase* fac = *kt;
         if (IsKept(ename, fac, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
           if (fac == NULL) // TODO: Is this possible?? Throw exception. Not supposed to use the FactoryManager here.
-            newLevel->Keep(ename);
+            newLevel->Keep(ename, NoFactory::get());
           else
             newLevel->Keep(ename, fac);
         }
@@ -238,7 +238,7 @@ namespace MueLu {
 
     Teuchos::TabularOutputter outputter(out0);
     outputter.pushFieldSpec("data name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
-    outputter.pushFieldSpec("generating factory type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 30);
+    // outputter.pushFieldSpec("generating factory type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 30);
     outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
     outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
     outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
@@ -253,10 +253,12 @@ namespace MueLu {
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);   // variable name
 
-        // factory name
-        std::stringstream ss1;
-        ss1 << (*kt)->description();
-        outputter.outputField((ss1.str()).substr(0,30));
+        // NOTE: we cannot dereference the factory pointer and call factory->description() as we do not know if the factory still exist (the factory pointer is a raw pointer by design)
+        // Instead, the level should store the factory description internally as a string for debugging purpose (and in debug mode only).
+        //         // factory name
+        //         std::stringstream ss1;
+        //         ss1 << (*kt)->description();
+        //         outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
         outputter.outputField(*kt);

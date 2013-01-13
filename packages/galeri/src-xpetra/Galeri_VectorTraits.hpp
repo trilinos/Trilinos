@@ -55,6 +55,7 @@
 
 #ifdef HAVE_GALERI_XPETRA
 #  include "Xpetra_Map.hpp"  // needed for specialized traits
+#  include "Xpetra_MultiVectorFactory.hpp"
 #endif
 
 namespace Galeri {

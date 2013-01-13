@@ -46,6 +46,9 @@
 #ifndef MUELU_PERMUTATIONFACTORY_FWD_HPP
 #define MUELU_PERMUTATIONFACTORY_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class PermutationFactory;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_PERMUTATIONFACTORY_SHORT
 #define MUELU_PERMUTATIONFACTORY_SHORT
 #endif
+
+
 
 #endif // MUELU_PERMUTATIONFACTORY_FWD_HPP

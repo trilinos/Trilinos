@@ -287,9 +287,6 @@ generate_update_branch_email()
 	test -z "${MAIL_TO}" && test -f hooks/dirs_to_emails && test -x hooks/get_recipients.py \
               && recipients=$(hooks/get_recipients.py $oldrev $newrev $refname)
 
-        # Update the push log file
-        test -x hooks/update_push_log.py && ./hooks/update_push_log.py $oldrev $newrev 
-
 	# Generate header
 	cat <<-EOF
 	To: $recipients

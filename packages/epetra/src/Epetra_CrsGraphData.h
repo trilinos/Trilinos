@@ -170,7 +170,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   bool StaticProfile_;
   bool SortGhostsAssociatedWithEachProcessor_;
 
-  int IndexBase_;
+  long long IndexBase_;
 
   long long NumGlobalEntries_;
   long long NumGlobalBlockRows_;

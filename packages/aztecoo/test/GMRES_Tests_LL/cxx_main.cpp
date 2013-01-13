@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     cout << Comm <<endl;
   
   long long NumGlobalElements = 5;
-  int IndexBase = 0;
+  long long IndexBase = 0;
 
   Epetra_Map Map(NumGlobalElements, IndexBase, Comm);
   int NumMyElements = Map.NumMyElements();

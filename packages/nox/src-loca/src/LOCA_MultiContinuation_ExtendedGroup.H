@@ -344,10 +344,10 @@ namespace LOCA {
       virtual int getContinuationParameterID(int i = 0) const;
 
       //! Get the continuation parameter ids
-      virtual const vector<int>& getContinuationParameterIDs() const;
+      virtual const std::vector<int>& getContinuationParameterIDs() const;
 
       //! Get the continuation parameter id for parameter \em i
-      virtual string getContinuationParameterName(int i = 0) const;
+      virtual std::string getContinuationParameterName(int i = 0) const;
 
       //! Returns step size scale factor for constraint equation \em i
       virtual double getStepSizeScaleFactor(int i = 0) const;
@@ -441,7 +441,7 @@ namespace LOCA {
       const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs);
+      const std::vector<int>& paramIDs);
 
       //! Set constraint object
       /*!
@@ -489,13 +489,13 @@ namespace LOCA {
       LOCA::MultiContinuation::ExtendedVector prevXVec;
 
       //! integer id of continuation parameters
-      vector<int> conParamIDs;
+      std::vector<int> conParamIDs;
 
       //! continuation step size
-      vector<double> stepSize;
+      std::vector<double> stepSize;
 
       //! step size scale factors
-      vector<double> stepSizeScaleFactor;
+      std::vector<double> stepSizeScaleFactor;
 
       //! Is Predictor vector valid
       bool isValidPredictor;

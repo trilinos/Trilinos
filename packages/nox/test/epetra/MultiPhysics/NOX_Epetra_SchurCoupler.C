@@ -70,8 +70,8 @@ SchurCoupler::SetUseTranspose( bool UseTranspose )
 {
   if (UseTranspose == true) 
   {
-    cout << "ERROR: NOX::Epetra::SchurCoupler::SetUseTranspose() - Transpose is "
-	 << "unavailable for this operator!" << endl;
+    std::cout << "ERROR: NOX::Epetra::SchurCoupler::SetUseTranspose() - Transpose is "
+	 << "unavailable for this operator!" << std::endl;
     throw "NOX Error";
   }
   return (-1);
@@ -90,18 +90,18 @@ SchurCoupler::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 //
 //  // The substance of this operator ----- to do RWH 10/24/2006
 //
-//  //cout << "Incoming X :\n" << *wrappedX << endl;
+//  //cout << "Incoming X :\n" << *wrappedX << std::endl;
 //  problemManager.applyBlockAction( depId, probId, *wrappedX, *tempY);
-//  //cout << "After applyBlockAction(" << depId << ", " << probId << ") :\n" << *tempY << endl;
+//  //cout << "After applyBlockAction(" << depId << ", " << probId << ") :\n" << *tempY << std::endl;
 //  problemManager.getBlockInverseOperator(depId)->ApplyInverse(*tempY, *tempY);
-//  //cout << "After ApplyInverse :\n" << *tempY << endl;
+//  //cout << "After ApplyInverse :\n" << *tempY << std::endl;
 //  problemManager.applyBlockAction( probId, depId, *tempY, *tempX);
-//  //cout << "After applyBlockAction(" << probId << ", " << depId << ") :\n" << *tempX << endl;
+//  //cout << "After applyBlockAction(" << probId << ", " << depId << ") :\n" << *tempX << std::endl;
 //
 //  problemManager.getBlockJacobianMatrix(probId)->Apply(*wrappedX, *wrappedY);
-//  //cout << "After Apply of diagonal block :\n" << *wrappedY << endl;
+//  //cout << "After Apply of diagonal block :\n" << *wrappedY << std::endl;
 //  wrappedY->Update(-1.0, *tempX, 1.0);
-//  //cout << "After combingin; final result :\n" << *wrappedY << endl;
+//  //cout << "After combingin; final result :\n" << *wrappedY << std::endl;
 //
   return (0);
 }
@@ -109,8 +109,8 @@ SchurCoupler::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int
 SchurCoupler::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  cout << "ERROR: NOX::Epetra::SchurCoupler::ApplyInverse() - Not valid "
-       << "for this operator!" << endl;
+  std::cout << "ERROR: NOX::Epetra::SchurCoupler::ApplyInverse() - Not valid "
+       << "for this operator!" << std::endl;
   throw "NOX Error";
 
   return (-1);
@@ -119,8 +119,8 @@ SchurCoupler::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 double 
 SchurCoupler::NormInf() const
 {
-  cout << "ERROR: NOX::Epetra::SchurCoupler::NormInf() - Not Available for "
-       << "this operator!" << endl;
+  std::cout << "ERROR: NOX::Epetra::SchurCoupler::NormInf() - Not Available for "
+       << "this operator!" << std::endl;
   throw "NOX Error";
 
   return 1.0;
@@ -194,8 +194,8 @@ SchurCoupler::getSchurOperator( int rowBlock, int colBlock )
 
   if( rowBlock != colBlock )
   {
-    cout << "ERROR: NOX::Epetra::SchurCoupler::getSchurOperator() - Off operators not supported."
-         << endl;
+    std::cout << "ERROR: NOX::Epetra::SchurCoupler::getSchurOperator() - Off operators not supported."
+         << std::endl;
     throw "NOX Error";
   }
 

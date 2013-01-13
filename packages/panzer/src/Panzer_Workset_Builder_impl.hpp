@@ -194,6 +194,8 @@ panzer::buildWorksets(const std::string& block_id,
 					 vertex_coordinates.dimension(1),
 					 vertex_coordinates.dimension(2));
     wkst->block_id = block_id;
+    wkst->subcell_dim = base_cell_dimension;
+    wkst->subcell_index = 0;
   }
   
   TEUCHOS_ASSERT(local_begin == local_cell_ids.end());
@@ -383,6 +385,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
     }
     worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
     worksets[side->first].block_id = bc.elementBlockID();
+    worksets[side->first].subcell_dim = base_cell_dim -1;
+    worksets[side->first].subcell_index = side->first;
   }
 
   // setup the integration rules

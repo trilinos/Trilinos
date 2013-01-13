@@ -94,7 +94,7 @@ int NOX::TestCompare::testValue(double value,
     if (passed)
       os << "Passed." << std::endl;
     else
-      os << "Failed." <<std:: endl;
+      os << "Failed." << std::endl;
     os << "\t\tExpected value:       " << utils.sciformat(value_expected) 
        << std::endl
        << "\t\tComputed value:       " << utils.sciformat(value) 
@@ -134,7 +134,7 @@ int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
     if (passed)
       os << "Passed." << std::endl;
     else
-      os << "Failed." <<std:: endl;
+      os << "Failed." << std::endl;
     os << "\t\tComputed norm:        " << utils.sciformat(inf_norm) 
        << std::endl
        << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
@@ -179,7 +179,7 @@ NOX::TestCompare::testMatrix(
     if (passed)
       os << "Passed." << std::endl;
     else
-      os << "Failed." <<std:: endl;
+      os << "Failed." << std::endl;
     os << "\t\tComputed norm:        " << utils.sciformat(inf_norm) 
        << std::endl
        << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
@@ -222,7 +222,7 @@ NOX::TestCompare::testMultiVector(
     if (passed)
       os << "Passed." << std::endl;
     else
-      os << "Failed." <<std:: endl;
+      os << "Failed." << std::endl;
     os << "\t\tComputed norm:        " << utils.sciformat(inf_norm_max) 
        << std::endl
        << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 

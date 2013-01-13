@@ -145,13 +145,13 @@ StatusType NormUpdate::getStatus() const
   return status;
 }
 
-ostream& NormUpdate::print(ostream& stream, int indent) const
+std::ostream& NormUpdate::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3) 
-	 << " < " << Utils::sciformat(tolerance, 3) << endl;
+	 << " < " << Utils::sciformat(tolerance, 3) << std::endl;
   return stream;
 }
 

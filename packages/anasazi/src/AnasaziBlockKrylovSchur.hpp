@@ -424,6 +424,7 @@ namespace Anasazi {
     // Convenience typedefs
     //
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -716,7 +717,7 @@ namespace Anasazi {
       newsd = blockSize_*numBlocks_+1;
     }
     // check that new size is valid
-    TEUCHOS_TEST_FOR_EXCEPTION(newsd > MVT::GetVecLength(*tmp),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(newsd) > MVText::GetGlobalLength(*tmp),std::invalid_argument,
         "Anasazi::BlockKrylovSchur::setSize(): maximum basis size is larger than problem dimension.");
 
     ritzValues_.resize(newsd);
@@ -790,7 +791,7 @@ namespace Anasazi {
 
       // initialize V_,H_, and curDim_
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_),
                           std::invalid_argument, errstr );
       if (newstate.V != V_) {
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,

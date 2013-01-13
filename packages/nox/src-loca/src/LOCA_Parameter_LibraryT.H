@@ -53,10 +53,11 @@
 #include "LOCA_ErrorCheck.H"
 
 #include "Teuchos_Assert.hpp" // for errors
+#include <utility>
 
 template <class ValueType>
 void
-LOCA::Parameter::Library::setValue(const string& name, 
+LOCA::Parameter::Library::setValue(const std::string& name, 
 					    const ValueType& value) {
   // Get entry 
   LOCA::Parameter::Entry<ValueType>& entry = getEntry<ValueType>(name);
@@ -67,7 +68,7 @@ LOCA::Parameter::Library::setValue(const string& name,
 
 template <class ValueType>
 ValueType
-LOCA::Parameter::Library::getValue(const string& name) const {
+LOCA::Parameter::Library::getValue(const std::string& name) const {
 
   // Get entry 
   const LOCA::Parameter::Entry<ValueType>& entry = getEntry<ValueType>(name);
@@ -79,7 +80,7 @@ LOCA::Parameter::Library::getValue(const string& name) const {
 template <class ObjectType, class ValueType>
 bool
 LOCA::Parameter::Library::addParameterEntry(
-				      const string& name, 
+				      const std::string& name, 
 				      ObjectType& object, 
 				      ValueType ObjectType::* object_val_ptr) {
 
@@ -106,7 +107,7 @@ LOCA::Parameter::Library::addParameterEntry(
 
 template <class FunctorType, class ValueType>
 bool
-LOCA::Parameter::Library::addParameterEntry(const string& name, 
+LOCA::Parameter::Library::addParameterEntry(const std::string& name, 
 					    FunctorType* fctr) {
   
   // Instantiate a standard entry
@@ -126,11 +127,11 @@ LOCA::Parameter::Library::addParameterEntry(const string& name,
 template <class ValueType>
 bool
 LOCA::Parameter::Library::addParameterEntry(
-				     const string& name, 
+				     const std::string& name, 
 				     LOCA::Parameter::Entry<ValueType>* entry)
 {
-  // Get string representation of ValueType
-  string valueTypeString = getTypeName<ValueType>();
+  // Get std::string representation of ValueType
+  std::string valueTypeString = getTypeName<ValueType>();
 
   // Determine if a map already exists for this parameter
   ParameterMapIterator paramIterator = getEntryMapIterator(name);
@@ -152,7 +153,7 @@ LOCA::Parameter::Library::addParameterEntry(
     // If it does not, add it
     if (valueIterator == (*paramIterator).second->end()) {
       entry->setIsInLibrary();
-      (*paramIterator).second->insert(pair<string, AbstractEntry*>(name, entry));
+      (*paramIterator).second->insert(std::pair<std::string, AbstractEntry*>(name, entry));
     }
 
     else {
@@ -165,14 +166,14 @@ LOCA::Parameter::Library::addParameterEntry(
 }
 
 template <class ValueType>
-string
+std::string
 LOCA::Parameter::Library::getTypeName() const {
   return typeid(ValueType).name();
 }   
 
 template <class ValueType>
 LOCA::Parameter::Entry<ValueType>&
-LOCA::Parameter::Library::getEntry(const string& name) {
+LOCA::Parameter::Library::getEntry(const std::string& name) {
 
   const char *func = "LOCA::Parameter::Library::getEntry(): ";
 
@@ -183,8 +184,8 @@ LOCA::Parameter::Library::getEntry(const string& name) {
 		     func << "Parameter library has no set of entries for " << 
 		     "parameter " << name);
 
-  // Convert typename ValueType to string
-  string valueTypeString = getTypeName<ValueType>();
+  // Convert typename ValueType to std::string
+  std::string valueTypeString = getTypeName<ValueType>();
 
   // Find entry corresponding to this ValueType
   ValueTypeMapIterator valueIterator = getEntryIterator(valueTypeString, 
@@ -208,7 +209,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
 
 template <class ValueType>
 const LOCA::Parameter::Entry<ValueType>&
-LOCA::Parameter::Library::getEntry(const string& name) const {
+LOCA::Parameter::Library::getEntry(const std::string& name) const {
 
   const char *func = "LOCA::Parameter::Library::getEntry(): ";
 
@@ -219,8 +220,8 @@ LOCA::Parameter::Library::getEntry(const string& name) const {
 		     func << "Parameter library has no set of entries for " << 
 		     "parameter " << name);
 
-  // Convert typename ValueType to string
-  string valueTypeString = getTypeName<ValueType>();
+  // Convert typename ValueType to std::string
+  std::string valueTypeString = getTypeName<ValueType>();
 
   // Find entry corresponding to this ValueType
   ValueTypeMapConstIterator valueIterator = getEntryIterator(valueTypeString, 

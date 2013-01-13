@@ -50,13 +50,11 @@
 
 #include "Epetra_RowMatrix.h"    	    // base class
 #include "NOX_Epetra_FiniteDifference.H"    // base class
-
-#include "NOX_Common.H"          // for <string>
+#include "NOX_Common.H"
 #include "Teuchos_RCP.hpp"
-
-#include "vector"                // for column indices from coloring
-#include "list"                  //
-#include "map"
+#include <vector>
+#include <list>
+#include <map>
 
 // Forward Declarations
 class Epetra_Comm;
@@ -164,7 +162,7 @@ class FiniteDifferenceColoring : public FiniteDifference {
       const Teuchos::RCP<Interface::Required>& i, 
       const NOX::Epetra::Vector& initialGuess, 
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
-      const Teuchos::RCP< vector<Epetra_IntVector> >& columns,
+      const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
       bool parallelColoring = false, 
       bool distance1 = false, 
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -176,7 +174,7 @@ class FiniteDifferenceColoring : public FiniteDifference {
       const NOX::Epetra::Vector& initialGuess, 
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
-      const Teuchos::RCP< vector<Epetra_IntVector> >& columns,
+      const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
       bool parallelColoring = false,
       bool distance1 = false, 
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -208,7 +206,7 @@ protected:
   Teuchos::RCP<const Epetra_MapColoring> colorMap;
 
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
-  Teuchos::RCP< vector<Epetra_IntVector> > columns;
+  Teuchos::RCP<std::vector<Epetra_IntVector> > columns;
 
   //! Number of colors in Color Map 
   int numColors;
@@ -220,7 +218,7 @@ protected:
   int* colorList;
 
   //! List of colors in Color Map
-  list<int> listOfAllColors;
+  std::list<int> listOfAllColors;
   
   //! Inverse mapping from color id to its position in colorList
   std::map<int, int> colorToNumMap;

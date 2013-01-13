@@ -1,64 +1,101 @@
 /*! 
-\mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package
+\mainpage Trilinos/Tpetra: Next-generation distributed linear algebra
 
-\section tpetra_intro Introduction to Tpetra
+\section tpetra_intro Introduction
 
-%Tpetra is an attempt at applying generic algorithm techniques to the
-serial and parallel linear algebra libraries of Epetra.  It is hoped that
-%Tpetra will complement Epetra by providing an alternative foundation 
-for future Trilinos solvers.  The lessons learned and discoveries made 
-while creating %Tpetra are also being applied to improving their Epetra cousins.
+%Tpetra implements linear algebra objects, such as sparse matrices and
+dense vectors.  %Tpetra is "hybrid parallel," meaning that it uses up
+to two levels of parallelism:
 
-%Tpetra provides the same functionality as Epetra: the fundamental construction
-routines and services functions that are required for serial and parallel
-linear algebra libraries.  Unlike Epetra, %Tpetra makes extensive use of
-templates and the Standard Template Library (STL).  This provides numerous
-benefits, including the ability to template the ordinal and scalar fields on
-any well-defined types, and the use of automatic resource allocation. 
+- MPI (the Message Passing Interface) for distributed-memory parallelism, and 
+- any of various shared-memory parallel programming models within an MPI process.
 
-%Tpetra captures a significant subset of the functionality present in the Epetra
-package. Functionality not included is either a consequence of different design
-motivations or of %Tpetra's status as a work in progress.
+We say "distributed linear algebra" because %Tpetra objects may be
+distributed over one or more parallel MPI processes.  The
+shared-memory programming models that %Tpetra may use within a process
+include 
+
+- POSIX Threads (Pthreads)
+- OpenMP
+- Intel's Threading Building Blocks
+- NVIDIA's CUDA programming model for graphics processing units (GPUs)
+
+%Tpetra differs from %Epetra, Trilinos' previous distributed linear
+algebra package, in the following ways:
+
+1. %Tpetra has native support for solving very large problems (with
+   over 2 billion unknowns).
+
+2. %Tpetra lets you construct matrices and vectors with different kinds
+   of data, such as floating-point types of different precision, or
+   complex-valued types.  Our goal is for Tpetra objects to be able to
+   contain any type of data that implements a minimal compile-time
+   interface.  %Epetra objects only support double-precision
+   floating-point data (of type \c double).
+
+3. %Tpetra can exploit many different kinds of hybrid parallelism, and
+   most of its kernels do so natively.  %Epetra only supports OpenMP
+   shared-memory parallelism for a few kernels.  %Tpetra also has
+   optimizations for shared-memory parallel systems with nonuniform
+   memory access (NUMA).  All effort in supporting future node-level
+   computer architectures will go into %Tpetra.
 
 \section tpetra_startup Overview of Tpetra
 
 \subsection tpetra_templated_types Templated Types in Tpetra
 
-All of all classes in %Tpetra utilize templates, which allows the user to
-specify any type they want. In some cases, the choice of data type allows
-increased functionality. For example, 64-bit ordinals allow for problem sizes
-to break the 2 billion element barrier present in Epetra, whereas complex
-scalar types allow the native description and solution of complex-valued
-problems.
+All of all classes in %Tpetra utilize templates, which allows the user
+to specify any type they want. In some cases, the choice of data type
+allows increased functionality. For example, 64-bit ordinals allow for
+problem sizes to break the 2 billion element barrier present in
+Epetra, whereas complex scalar types allow the native description and
+solution of complex-valued problems.
 
 Most of the classes in %Tpetra are templated according to the data types which constitute the class. 
 These are the following:
-    - \c Scalar: A \c Scalar is the data structure used for storing values.
-       This is the type most likely to be changed by many users. The most common use cases are \c float,
-       \c double, <tt>complex<float></tt> and <tt>complex<double></tt>. However, any data type can be
-       used so long as it implements Teuchos::ScalarTraits and Teuchos::SerializationTraits and supports the necessary arithmetic operations, such 
-       as addition, subtraction, division and multiplication.
-    - \c LocalOrdinal: A \c LocalOrdinal is used to store indices representing local IDs. The standard use case,
-      as well as the default for most classes, is \c int. Any type can be used that implements Teuchos::OrdinalTraits and Teuchos::SerializationTraits
-      and supports the necessary arithmetic. The purpose of template local and global ordinals as two (possibly)
-      different types is for efficiency purposes. For example, the indices of a completed Tpetra::CrsGraph contain objects
-      of type \c LocalOrdinal. If the specific application allows it, using smaller local ordinals requires 
-      less storage and potentially higher rates of computation.
-    - \c GlobalOrdinal: A \c GlobalOrdinal is used to store indices representing global IDs and to describe 
-      global properties of a distributed object (e.g., global number of non-zeros in a sparse matrix, global number
-      of rows in a vector.) The \c GlobalOrdinal therefore dictates the maximum size of a distributed object.
-    .
-Additionally, computational class in %Tpetra will also be templated on a \c Node type. This node fulfills the \ref kokkos_node_api "Kokkos Node API" and 
-allows the %Tpetra objects to perform parallel computation on one of a number of shared-memory nodes, including multi-core CPUs and GPUs.
 
-The Tpetra::Distributor class is unique in that it is not parametrized by any
-templated types. However, the class includes some templated member functions.
-The Tpetra::Distributor::createFromRecvs() method is templated on the ordinal
-type used to encode IDs, while Tpetra::Distributor::doPosts() and the other
-post methods are templated on \c Packet, the data type being communicated by a
+    - \c Scalar: A \c Scalar is the type of values in the sparse
+       matrix or dense vector.  This is the type most likely to be
+       changed by many users. The most common use cases are \c float,
+       \c double, <tt>std::complex<float></tt> and
+       <tt>std::complex<double></tt>. However, many other data types
+       can be used, as long as they have specializations for
+       Teuchos::ScalarTraits and Teuchos::SerializationTraits, and
+       support the necessary arithmetic operations, such as addition,
+       subtraction, division and multiplication.
+
+    - \c LocalOrdinal: A \c LocalOrdinal is used to store indices
+      representing local IDs. The standard use case, as well as the
+      default for most classes, is \c int. Any signed built-in integer
+      type may be used.  The reason why local and global ordinals may
+      have different types is for efficiency.  If the application
+      allows it, using smaller local ordinals requires less storage
+      and may improve performance of computational kernels such as
+      sparse matrix-vector multiply.
+
+    - \c GlobalOrdinal: A \c GlobalOrdinal is used to store global
+      indices and to describe global properties of a distributed
+      object (e.g., global number of entries in a sparse matrix, or
+      global number of rows in a vector.) The \c GlobalOrdinal
+      therefore dictates the maximum size of a distributed object. 
+
+    - \c Node: Computational classes in %Tpetra will also be templated
+      on a \c Node type. This node fulfills the \ref kokkos_node_api
+      "Kokkos Node API" and allows the %Tpetra objects to perform
+      parallel computation on one of a number of shared-memory nodes,
+      including multi-core CPUs and GPUs.  You can set the Node type
+      to control what shared-memory parallel programming model %Tpetra
+      will use.
+
+The Tpetra::Distributor class is unique in that it is not parametrized
+by any templated types. However, the class includes some templated
+member functions.  The Tpetra::Distributor::createFromRecvs() method
+is templated on the ordinal type used to encode IDs, while
+Tpetra::Distributor::doPosts() and the other post methods are
+templated on \c Packet, the data type being communicated by a
 particular invocation of the Tpetra::Distributor. This allows a single
-Tpetra::Distributor object (describing a particular communication pattern) to
-be used to communicate values of different type.
+Tpetra::Distributor object (describing a particular communication
+pattern) to be used to communicate values of different type.
 
 \subsection tpetra_formulations Tpetra Classes
 
@@ -98,5 +135,4 @@ be used to communicate values of different type.
 
 %Tpetra can be used mostly as a stand-alone package, with explicit dependencies on Teuchos and Kokkos. There are adapters allowing the 
 use of %Tpetra operators and multivectors in both the Belos linear solver package and the Anasazi eigensolver package.
-
 */

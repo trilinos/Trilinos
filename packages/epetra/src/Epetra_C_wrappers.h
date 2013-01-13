@@ -136,7 +136,7 @@ extern "C" {
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_64)(EPETRA_LONG_LONG numGlobalEquations, 
-                 EPETRA_INT indexBase,
+                 EPETRA_LONG_LONG indexBase,
                  EPETRA_OBJECT_REF comm);
 
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_64)(EPETRA_LONG_LONG numGlobalEquations, 

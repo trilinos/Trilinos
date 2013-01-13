@@ -342,7 +342,7 @@ int main(int argc,char * argv[])
    // redistribute solution vector
    linObjFactory->globalToGhostContainer(*container,*ghostCont,panzer::EpetraLinearObjContainer::X | panzer::EpetraLinearObjContainer::DxDt); 
 
-   panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(dofManager),*mesh,*ghostCont->get_x());
+   panzer_stk::write_solution_data(*dofManager,*mesh,*ghostCont->get_x());
    mesh->writeToExodus("output.exo");
 
    return 0;

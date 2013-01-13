@@ -168,7 +168,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     NOX::Abstract::Group::ReturnType rtype = solnptr->computeF();
     if (rtype != NOX::Abstract::Group::Ok)    {
       utilsPtr->out() << "NOX::Solver::TensorBasedTest::init - "
-		      << "Unable to compute F" << endl;
+		      << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -181,7 +181,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
 		      << "through constructor or reset method) "
 		      << "is already converged!  The solver will not "
 		      << "attempt to solve this system since status is "
-		      << "flagged as converged." << endl;
+		      << "flagged as converged." << std::endl;
     }
 
     printUpdate();
@@ -204,7 +204,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
   ok = direction.compute(dir, soln, *this);
   if (!ok) {
     utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - "
-	 << "unable to calculate direction" << endl;
+	 << "unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -221,14 +221,14 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
   ok = lineSearch.compute(soln, stepSize, dir, *this);
   if (!ok) {
     if (stepSize == 0) {
-      utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - line search failed" << endl;
+      utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
       return status;
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
        utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - "
-	    << "using recovery step for line search" << endl;
+	    << "using recovery step for line search" << std::endl;
   }
       
 
@@ -236,7 +236,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok)  {
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - "
-	 << "unable to compute F" << endl;
+	 << "unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -333,7 +333,7 @@ void NOX::Solver::TensorBasedTest::printUpdate()
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
       utilsPtr->out() << " (Failed!)";
-    utilsPtr->out() << "\n" << Utils::fill(72) << "\n" << endl;
+    utilsPtr->out() << "\n" << Utils::fill(72) << "\n" << std::endl;
   }
 
   // Print the final parameter values of the status test

@@ -5,7 +5,7 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-    
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     rcg_hb
     SOURCES test_rcg_hb.cpp createEpetraProblem.cpp

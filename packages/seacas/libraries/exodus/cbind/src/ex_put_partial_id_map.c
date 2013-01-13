@@ -34,7 +34,7 @@
  */
 /*****************************************************************************
 *
-* expenm - ex_put_id_map
+* expenm - ex_put_partial_id_map
 *
 * entry conditions - 
 *   input parameters:
@@ -79,7 +79,9 @@ int ex_put_partial_id_map (int  exoid,
   const char* vmap;
 
   exerrval = 0; /* clear error code */
-
+  if (num_entities == 0)
+    return (EX_NOERR);
+  
   switch ( map_type ) {
   case EX_NODE_MAP:
     tname = "node";
@@ -106,13 +108,24 @@ int ex_put_partial_id_map (int  exoid,
     sprintf( errmsg,
 	     "Error: Bad map type (%d) specified for file id %d",
 	     map_type, exoid );
-    ex_err( "ex_put_id_map", errmsg, exerrval );
+    ex_err( "ex_put_partial_id_map", errmsg, exerrval );
     return (EX_FATAL);
   }
 
   /* Make sure the file contains entries */
   if (nc_inq_dimid (exoid, dnumentries, &dimid) != NC_NOERR) {
-    return (EX_NOERR);
+    /* Error -- if we made it this far, num_entities is > 0,
+     * but the dimension 'dnumentries' is not defined which
+     * indicates that either the entity count is zero, or
+     * there is an error in that the dimension has not yet
+     * been defined.
+     */
+    exerrval = EX_BADPARAM;
+    sprintf(errmsg,
+	    "Error: The %s count is %ld, but the %s dimension is not defined on file id %d.",
+	    tname, num_entities, dnumentries, exoid);
+    ex_err("ex_put_partial_id_map",errmsg,exerrval);
+    return (EX_FATAL);
   }
    
   /* define the map if it doesn't already exist... */
@@ -122,7 +135,7 @@ int ex_put_partial_id_map (int  exoid,
       sprintf(errmsg,
 	      "Error: failed to put file id %d into define mode",
 	      exoid);
-      ex_err("ex_put_id_map",errmsg,exerrval);
+      ex_err("ex_put_partial_id_map",errmsg,exerrval);
       return (EX_FATAL);
     }
     
@@ -141,13 +154,13 @@ int ex_put_partial_id_map (int  exoid,
 	sprintf(errmsg,
 		"Error: %s numbering map already exists in file id %d",
 		tname, exoid);
-	ex_err("ex_put_id_map",errmsg,exerrval);
+	ex_err("ex_put_partial_id_map",errmsg,exerrval);
       } else {
 	exerrval = status;
 	sprintf(errmsg,
 		"Error: failed to create %s id map in file id %d",
 		tname, exoid);
-	ex_err("ex_put_id_map",errmsg,exerrval);
+	ex_err("ex_put_partial_id_map",errmsg,exerrval);
       }
       goto error_ret;         /* exit define mode and return */
     }
@@ -160,7 +173,7 @@ int ex_put_partial_id_map (int  exoid,
       sprintf(errmsg,
 	      "Error: failed to complete definition in file id %d",
 	      exoid);
-      ex_err("ex_put_id_map",errmsg,exerrval);
+      ex_err("ex_put_partial_id_map",errmsg,exerrval);
       return (EX_FATAL);
     }
   }
@@ -168,6 +181,8 @@ int ex_put_partial_id_map (int  exoid,
   /* write out the entity numbering map  */
   start[0] = start_entity_num-1;
   count[0] = num_entities;
+  if (num_entities == 0)
+    start[0] = 0;
 
   /* write out the entity numbering map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
@@ -181,7 +196,7 @@ int ex_put_partial_id_map (int  exoid,
     sprintf(errmsg,
 	    "Error: failed to store %s numbering map in file id %d",
 	    tname, exoid);
-    ex_err("ex_put_id_map",errmsg,exerrval);
+    ex_err("ex_put_partial_id_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -195,7 +210,7 @@ int ex_put_partial_id_map (int  exoid,
       sprintf(errmsg,
               "Error: failed to complete definition for file id %d",
               exoid);
-      ex_err("ex_put_id_map",errmsg,exerrval);
+      ex_err("ex_put_partial_id_map",errmsg,exerrval);
     }
   return (EX_FATAL);
 }

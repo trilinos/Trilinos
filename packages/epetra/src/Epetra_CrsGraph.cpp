@@ -159,7 +159,7 @@ int Epetra_CrsGraph::TAllocate(const int* numIndicesPerRow, int Inc, bool static
     int_type * all_indices = Data.All_Indices_.Values(); // First address of contiguous buffer
     for(i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = numIndicesPerRow==0 ? 0 :numIndicesPerRow[i*Inc];
-      const int indexBaseMinusOne = IndexBase() - 1;
+      const int_type indexBaseMinusOne = (int_type) IndexBase64() - 1;
 
       if(NumIndices > 0) {
   if (staticProfile) {
@@ -384,7 +384,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     else {
       if (current_numAllocIndices > 0 && stop > current_numAllocIndices)
         ierr = 3;
-      Data.SortedEntries_[Row].entries_.resize(stop, IndexBase() - 1);
+      Data.SortedEntries_[Row].entries_.resize(stop, IndexBase64() - 1);
       Data.Indices_[Row] = stop>0 ? &Data.SortedEntries_[Row].entries_[0] : NULL;
 
       current_numAllocIndices =  (int) Data.SortedEntries_[Row].entries_.capacity();    
@@ -570,7 +570,7 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int_type Row, int NumIndices, int_type*
       if (!CrsGraphData_->StaticProfile_)
         Data.SortedEntries_[locRow].entries_.pop_back();
       else
-        Data.Indices_[locRow][NumCurrentIndices-1] = IndexBase() - 1;
+        Data.Indices_[locRow][NumCurrentIndices-1] = IndexBase64() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -637,7 +637,7 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* indices) {
       if (!CrsGraphData_->StaticProfile_)
         Data.SortedEntries_[Row].entries_.pop_back();
       else
-        Data.Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
+        Data.Indices_[Row][NumCurrentIndices-1] = (int) IndexBase64() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -674,7 +674,7 @@ int Epetra_CrsGraph::TRemoveGlobalIndices(long long Row) {
   if (CrsGraphData_->StaticProfile_) {
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[locRow];
   
-    const int indexBaseMinusOne = IndexBase() - 1;
+    const int_type indexBaseMinusOne = (int_type) IndexBase64() - 1;
     for(j = 0; j < NumIndices; j++) 
       Data.Indices_[locRow][j] = indexBaseMinusOne; // Set to invalid 
   }
@@ -1494,15 +1494,15 @@ int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
   // Make Column map with same element sizes as Domain map
 
   if(domainMap.MaxElementSize() == 1) { // Simple map
-    Epetra_Map temp((int) -1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase(), domainMap.Comm());
+    Epetra_Map temp((int) -1, numMyBlockCols, ColIndices.Values(), (int) domainMap.IndexBase64(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   else if(domainMap.ConstantElementSize()) { // Constant Block size map
-    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase(), domainMap.Comm());
+    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(), (int) domainMap.IndexBase64(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   else { // Most general case where block size is variable.
-    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase(), domainMap.Comm());
+    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), (int) domainMap.IndexBase64(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   CrsGraphData_->HaveColMap_ = true;
@@ -1627,7 +1627,7 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
   for(i = 0; i < NumRemoteColGIDs; i++) 
     RemoteColIndices[i] = RemoteGIDList.Get(i); 
 
-  int NLists = 1;
+  int NLists = 0;
   Epetra_IntSerialDenseVector PIDList;
   Epetra_IntSerialDenseVector SizeList;
   int* RemoteSizeList = 0;
@@ -1650,15 +1650,14 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
   //int* SortLists[2]; // this array is allocated on the stack, and so we won't need to delete it.bb
   //SortLists[0] = RemoteColIndices;
   //SortLists[1] = RemoteSizeList;
-  Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, 1, &RemoteSizeList, 1, &RemoteColIndices);
+  Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, NLists, &RemoteSizeList, 1, &RemoteColIndices);
   if (CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
     // Sort external column indices so that columns from a given remote processor are not only contiguous
     // but also in ascending order. NOTE: I don't know if the number of externals associated
     // with a given remote processor is known at this point ... so I count them here.
 
-  int* SortLists[1];
+  int* SortLists[1] = {0};
 
-    NLists--;
     int StartCurrent, StartNext;
     StartCurrent = 0; StartNext = 1;
     while ( StartNext < NumRemoteColGIDs ) {
@@ -1708,15 +1707,15 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
   // Make Column map with same element sizes as Domain map
 
   if(domainMap.MaxElementSize() == 1) { // Simple map
-  Epetra_Map temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase(), domainMap.Comm());
+  Epetra_Map temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase64(), domainMap.Comm());
   CrsGraphData_->ColMap_ = temp;
   }
   else if(domainMap.ConstantElementSize()) { // Constant Block size map
-  Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase(), domainMap.Comm());
+  Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase64(), domainMap.Comm());
   CrsGraphData_->ColMap_ = temp;
   }
   else { // Most general case where block size is variable.
-  Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase(), domainMap.Comm());
+  Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase64(), domainMap.Comm());
   CrsGraphData_->ColMap_ = temp;
   }
   CrsGraphData_->HaveColMap_ = true;
@@ -1817,13 +1816,15 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     Epetra_CrsGraphData::IndexData<long long>& LL_Data = CrsGraphData_->Data<long long>();
 
-    // Use the resize trick used in TAllocate.
-    const int indexBaseMinusOne = IndexBase() - 1;
-    for(int i = 0; i < numMyBlockRows; i++) {
-      const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-      intData.SortedEntries_[i].entries_.resize(NumIndices, indexBaseMinusOne);
-      intData.Indices_[i] = NumIndices > 0 ? &intData.SortedEntries_[i].entries_[0]: NULL;
-      intData.SortedEntries_[i].entries_.resize(0);
+    if (!CrsGraphData_->StaticProfile_) {
+      // Use the resize trick used in TAllocate.
+      const long long indexBaseMinusOne = IndexBase64() - 1;
+      for(int i = 0; i < numMyBlockRows; i++) {
+        const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+        intData.SortedEntries_[i].entries_.resize(NumIndices, indexBaseMinusOne);
+        intData.Indices_[i] = NumIndices > 0 ? &intData.SortedEntries_[i].entries_[0]: NULL;
+        intData.SortedEntries_[i].entries_.resize(0);
+      }
     }
 
     // now comes the actual transformation

@@ -76,7 +76,7 @@ LOCA::StatusTest::Wrapper::getStatus() const
   return statusTestPtr->getStatus();
 }
 
-ostream& LOCA::StatusTest::Wrapper::print(ostream& stream, int indent) const
+std::ostream& LOCA::StatusTest::Wrapper::print(std::ostream& stream, int indent) const
 {
   return statusTestPtr->print(stream, indent);
 }

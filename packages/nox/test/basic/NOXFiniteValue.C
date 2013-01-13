@@ -91,11 +91,11 @@ int main(int argc, char *argv[])
 
   if ( verbose && (myPID == 0) ) {
     if (result == 0)
-      cout << "\nFinite value = " << finite 
-	   << ", test correctly identified value as finite!" << endl;
+      std::cout << "\nFinite value = " << finite 
+	   << ", test correctly identified value as finite!" << std::endl;
     else
-      cout << "Finite value = " << finite 
-	   << ", test failed to identify value as finite!" << endl;
+      std::cout << "Finite value = " << finite 
+	   << ", test failed to identify value as finite!" << std::endl;
   }
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
@@ -106,11 +106,11 @@ int main(int argc, char *argv[])
   
   if ( verbose && (myPID == 0) ) {
     if (result == -1)
-      cout << "NaN value = " << nan 
-	   << ", test correctly identified value as nan!" << endl;
+      std::cout << "NaN value = " << nan 
+	   << ", test correctly identified value as nan!" << std::endl;
     else
-      cout << "NaN value = " << nan 
-	   << ", test failed to identify value as nan!" << endl;
+      std::cout << "NaN value = " << nan 
+	   << ", test failed to identify value as nan!" << std::endl;
   }
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
@@ -121,11 +121,11 @@ int main(int argc, char *argv[])
 
   if ( verbose && (myPID == 0) ) {
     if (result == -2)
-      cout << "Inf value = " << infinity
-	   << ", test correctly identified value as inf!" << endl;
+      std::cout << "Inf value = " << infinity
+	   << ", test correctly identified value as inf!" << std::endl;
     else
-      cout << "Inf value = " << infinity 
-	   << ", test failed to identify value as inf!" << endl;
+      std::cout << "Inf value = " << infinity 
+	   << ", test failed to identify value as inf!" << std::endl;
   }
 
 
@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
 
   if (myPID == 0) {
     if (status == 0) 
-      std::cout << "\nTest passed!" << endl;
+      std::cout << "\nTest passed!" << std::endl;
     else
-      std::cout << "\nTest Failed!" << endl;
+      std::cout << "\nTest Failed!" << std::endl;
   }
 
   // Final return value (0 = successfull, non-zero = failure)

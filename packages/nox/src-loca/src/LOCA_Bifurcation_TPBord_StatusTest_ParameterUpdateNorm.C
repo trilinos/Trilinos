@@ -123,7 +123,7 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getStatus() const
 
 ostream& 
 LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
-							    ostream& stream, 
+							    std::ostream& stream, 
 							    int indent) const
 {
   for (int j = 0; j < indent; j++)
@@ -131,7 +131,7 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
   stream << status;
   stream << "Turning Point Scaled Parameter Update = " 
 	 << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

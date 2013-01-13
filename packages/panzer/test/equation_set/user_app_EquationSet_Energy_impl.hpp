@@ -76,16 +76,19 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   // ********************
   // Assemble DOF names and Residual names
   // ********************
-  this->m_dof_names->push_back(this->m_eqset_prefix+"TEMPERATURE");
-
-  this->m_dof_gradient_names->push_back("GRAD_"+this->m_eqset_prefix+"TEMPERATURE");
-
-  if (this->m_build_transient_support)
-    this->m_dof_time_derivative_names->push_back("DOT_"+this->m_eqset_prefix+"TEMPERATURE");
-
-  this->m_residual_names->push_back("RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE");
-
-  this->m_scatter_name = "Scatter_RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
+  {
+    this->m_scatter_name = "Scatter_RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
+    
+    std::string dofName = this->m_eqset_prefix+"TEMPERATURE";
+    std::string dofResidualName = "RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
+    std::string dofGrandientName = "GRAD_"+this->m_eqset_prefix+"TEMPERATURE";
+    std::string dofTimeDerivativeName = "DOT_"+this->m_eqset_prefix+"TEMPERATURE";
+    
+    this->addProvidedDOF(dofName,dofResidualName);
+    this->addDOFGrad(dofName,dofGrandientName);
+    if (this->buildTransientSupport())
+      this->addDOFTimeDerivative(dofName,dofTimeDerivativeName);
+  }
 
   // ********************
   // Build Basis Functions and Integration Rules

@@ -725,6 +725,17 @@ namespace Kokkos {
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
 
+    template <class DomainScalar, class RangeScalar>
+    void 
+    gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+		 MultiVector< RangeScalar,Node> &X,
+		 const MultiVector<Scalar,Node> &D,
+		 const RangeScalar& dampingFactor,
+		 const ESweepDirection direction) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+				 "MklSparseOps: gaussSeidel not implemented");
+    }
     //@}
 
   private:

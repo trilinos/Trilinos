@@ -58,6 +58,7 @@
 #include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 #include "LOCA_PhaseTransition_AbstractGroup.H"
+#include <vector>
 
 namespace LOCA { 
 
@@ -300,7 +301,7 @@ namespace LOCA {
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void 
-      setParamsMulti(const vector<int>& paramIDs, 
+      setParamsMulti(const std::vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Notify group that the continuation step is completed

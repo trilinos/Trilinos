@@ -132,7 +132,7 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream,
     stream << ' ';
   stream << status;
   stream << "Continuation Scaled Parameter Update = " << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

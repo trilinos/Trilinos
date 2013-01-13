@@ -93,7 +93,7 @@ Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 	  double reltol, double abstol, 
-	  const string& testName) {
+	  const std::string& testName) {
   int ierr = 0;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
@@ -207,8 +207,8 @@ int main(int argc, char *argv[])
     // The number of unknowns must be at least equal to the 
     // number of processors.
     if (NumGlobalElements < NumProc) {
-      cout << "numGlobalBlocks = " << NumGlobalElements 
-	   << " cannot be < number of processors = " << NumProc << endl;
+      std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	   << " cannot be < number of processors = " << NumProc << std::endl;
       exit(1);
     }
 
@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
 
-    string testName;
+    std::string testName;
 
     // Test all nonzero
     testName = "Testing all nonzero";
@@ -498,23 +498,23 @@ int main(int argc, char *argv[])
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 
   if (MyPID == 0) {
     if (ierr == 0)
-      cout << "All tests passed!" << endl;
+      std::cout << "All tests passed!" << std::endl;
     else
-      cout << ierr << " test(s) failed!" << endl;
+      std::cout << ierr << " test(s) failed!" << std::endl;
   }
 
 #ifdef HAVE_MPI

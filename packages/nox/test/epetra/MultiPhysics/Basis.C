@@ -63,7 +63,7 @@ Basis::~Basis() {
 }
 
 // Calculates a linear 1D basis
-void Basis::getBasis( int gp, double *x, double *u, double *uold, vector<double*>& dep )
+void Basis::getBasis( int gp, double *x, double *u, double *uold, std::vector<double*>& dep )
 {
   int N = 2;
   if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}

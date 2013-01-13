@@ -51,64 +51,9 @@
 #ifndef NOX_COMMON_H
 #define NOX_COMMON_H
 
-// The following undef's are to avoid conflicts with other packages
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
 #ifndef TRILINOS_NO_CONFIG_H
 #include "NOX_Config.h"
 #endif
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <deque>
-#include <algorithm>
-#include <sstream>
-#include <fstream>
-
-using namespace std;
-
-// Some compilers don't like this - particularly DEC!
-// Others require it - particularily AIX!
-#ifndef NO_USING_STD_OSTREAM
-using std::ostream;
-#endif
-
-using std::map;
-using std::vector;
 
 #define NOX_MAX(a,b) ((a)>(b)) ? (a) : (b)
 #define NOX_MIN(a,b) ((a)<(b)) ? (a) : (b)

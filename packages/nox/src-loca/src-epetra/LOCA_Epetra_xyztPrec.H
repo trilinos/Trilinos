@@ -193,8 +193,8 @@ namespace LOCA {
       
       
       //! Exception handler for the XYZT preconditioner class.
-      virtual void throwError(const string& functionName, 
-			      const string& errorMsg) const;
+      virtual void throwError(const std::string& functionName, 
+			      const std::string& errorMsg) const;
       
       
     private:
@@ -257,7 +257,7 @@ namespace LOCA {
       bool  isPeriodic;
       
       //! Label for this operator.
-      string label;
+      std::string label;
       
     };
     

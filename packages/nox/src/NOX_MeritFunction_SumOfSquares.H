@@ -51,7 +51,7 @@
 #ifndef NOX_MERITFUNCTION_SUMOFSQUARES_H
 #define NOX_MERITFUNCTION_SUMOFSQUARES_H
 
-#include "NOX_Common.H"  // for ostream
+#include "NOX_Common.H"  // for std::ostream
 #include "Teuchos_RCP.hpp"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
@@ -124,7 +124,7 @@ namespace MeritFunction {
     virtual void computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
 				     NOX::Abstract::Vector& result) const;
 
-    virtual const string& name() const;
+    virtual const std::string& name() const;
 
   private:
     
@@ -193,7 +193,7 @@ namespace MeritFunction {
     mutable Teuchos::RCP<NOX::Abstract::Group> tmpGrpPtr;
 
     //! Name of this function
-    string meritFunctionName;
+    std::string meritFunctionName;
 
   };
 } // namespace MeritFunction

@@ -93,11 +93,11 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
   int MyPID = Comm.MyPID();
 
   if (MyPID == 0) {
-    cout << "********** " 
+    std::cout << "********** " 
 	 << "Testing includeUV = " << includeUV << " useP = " << useP
 	 << " Preconditioner = " << prec 
 	 << " Preconditioner method = " << prec_method
-	 << " **********" << endl;
+	 << " **********" << std::endl;
   }
 
   try {
@@ -390,15 +390,15 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 
@@ -443,8 +443,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -578,9 +578,9 @@ int main(int argc, char *argv[])
 
   if (MyPID == 0) {
     if (ierr == 0)
-      cout << "All tests passed!" << endl;
+      std::cout << "All tests passed!" << std::endl;
     else
-      cout << ierr << " test(s) failed!" << endl;
+      std::cout << ierr << " test(s) failed!" << std::endl;
   }
 
 #ifdef HAVE_MPI

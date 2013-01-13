@@ -42,7 +42,7 @@
 
 #include "checkmap.h"
 int checkmap(Epetra_Map & Map, long long NumGlobalElements, int NumMyElements, 
-	     long long *MyGlobalElements, int IndexBase, Epetra_Comm& Comm,
+	     long long *MyGlobalElements, long long IndexBase, Epetra_Comm& Comm,
 	     bool DistributedGlobal)
 {
   int i, ierr=0, forierr = 0;
@@ -69,7 +69,7 @@ int checkmap(Epetra_Map & Map, long long NumGlobalElements, int NumMyElements,
 
   EPETRA_TEST_ERR(Comm1.MyPID()!=Comm.MyPID(),ierr);
 
-  EPETRA_TEST_ERR(Map.IndexBase()!=IndexBase,ierr);
+  EPETRA_TEST_ERR(Map.IndexBase64()!=IndexBase,ierr);
 
   EPETRA_TEST_ERR(!Map.LinearMap() && MyGlobalElements==0,ierr);
 

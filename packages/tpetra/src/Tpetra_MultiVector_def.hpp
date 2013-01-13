@@ -115,8 +115,8 @@ namespace Tpetra {
       // not fill the memory by default, otherwise we would lose the
       // first-touch allocation optimization.
       ArrayRCP<Scalar> data = (myLen > 0) ?
-	node->template allocBuffer<Scalar> (myLen * numVecs) :
-	Teuchos::null;
+        node->template allocBuffer<Scalar> (myLen * numVecs) :
+        Teuchos::null;
       const size_t stride = (myLen > 0) ? myLen : size_t (0);
 
       // This just sets the dimensions, pointer, and stride of lclMV_.
@@ -130,23 +130,23 @@ namespace Tpetra {
     }
     else {
       if (myLen > 0) {
-	// allocate data
-	ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
-	MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
-	// copy data
-	{
-	  ArrayRCP<Scalar> dstdata = data;
-	  ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
-	  for (size_t j = 0; j < numVecs; ++j) {
-	    ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
-	    KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
-	      node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
-	    dstdata += myLen;
-	  }
-	}
+        // allocate data
+        ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
+        MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
+        // copy data
+        {
+          ArrayRCP<Scalar> dstdata = data;
+          ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
+          for (size_t j = 0; j < numVecs; ++j) {
+            ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
+            KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
+              node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
+            dstdata += myLen;
+          }
+        }
       }
       else {
-	MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
+        MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
       }
     }
 #else
@@ -169,8 +169,29 @@ namespace Tpetra {
     }
     else {
       MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
-    }    
+    }
 #endif // 0
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               EPrivateComputeViewConstructor /* dummy */) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (localMultiVector),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    const size_t localNumElts = map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      localMultiVector.getNumRows () < localNumElts,
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts
+      << " on process " << map->getComm ()->getRank () << ", but the given "
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
+      << " rows.");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -274,6 +295,45 @@ namespace Tpetra {
     }
     else {
       MVT::initializeValues(lclMV_,0,WhichVectors.size(),Teuchos::null,0);
+    }
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               Teuchos::ArrayView<const size_t> WhichVectors,
+               EPrivateComputeViewConstructor /* dummy */) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (localMultiVector),
+    whichVectors_ (WhichVectors),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    const size_t localNumElts = map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      localMultiVector.getNumRows () < localNumElts,
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts
+      << " on process " << map->getComm ()->getRank () << ", but the given "
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
+      << " rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      WhichVectors.size () == 0,
+      std::invalid_argument,
+      "Tpetra::MultiVector constructor: WhichVectors.size() == 0.  "
+      "The noncontiguous column view constructor only makes sense for a "
+      "nonzero number of columns to view.");
+
+    // Optimization for the case of a single column: just make a
+    // contiguous ("constant stride") view of the one column.
+    if (WhichVectors.size () == 1) {
+      const size_t offsetRow = 0;
+      const size_t offsetCol = WhichVectors[0];
+      lclMV_ = lclMV_.offsetViewNonConst (localNumElts, 1, offsetRow, offsetCol);
+      whichVectors_.clear (); // This being empty defines "constant stride."
     }
   }
 
@@ -950,7 +1010,7 @@ namespace Tpetra {
       SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename ArrayView<Scalar>::iterator i = means.begin();
          i != means.begin() + numVecs;
-         ++i) 
+         ++i)
     {
       (*i) = (*i) * OneOverN;
     }
@@ -1418,34 +1478,34 @@ namespace Tpetra {
   offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
               size_t offset) const
   {
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
-    TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == " << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: " << this->getMap()->description());
-    const size_t numVecs = this->getNumVectors(),
-                myStride = MVT::getStride(lclMV_),
-                  newLen = subMap->getNodeNumElements();
-    // this is const, so the lclMV_ is const, so that we can only get const buffers
-    // we will cast away the const; this is okay, because
-    //   a) the constructor doesn't modify the data, and
-    //   b) we are encapsulating in a const MV before returning
-    ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
-    ArrayRCP<Scalar>      ncbuf = arcp_const_cast<Scalar> (cbuf);
-    RCP<CMV> constViewMV;
+    const size_t newNumRows = subMap->getNodeNumElements();
+    const bool tooManyElts = newNumRows + offset > lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (lclMV_),
+        std::runtime_error,
+        "Tpetra::MultiVector::offsetView: Invalid input Map.  Input Map owns "
+        << subMap->getNodeNumElements() << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << lclMV_.getOrigNumRows () << " on this process.");
+    }
+    RCP<const MV> constViewMV;
     if (isConstantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      constViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetView (newNumRows, lclMV_.getNumCols (), offset, 0);
+      constViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
-      // use same which index, but with an offset start pointer
-      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
-      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      constViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      // Compute the max column being viewed.  This tells us where to stop the view.
+      const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetView (newNumRows, maxCol+1, offset, 0);
+      constViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return constViewMV;
   }
@@ -1457,35 +1517,34 @@ namespace Tpetra {
   offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
                       size_t offset)
   {
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
-
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
-      "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == "
-      << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: "
-      << this->getMap()->description());
-    const size_t numVecs = this->getNumVectors(),
-                myStride = MVT::getStride(lclMV_),
-                  newLen = subMap->getNodeNumElements();
-    // this is const, so the lclMV_ is const, so that we can only get const buffers
-    // we will cast away the const; this is okay, because
-    //   a) the constructor doesn't modify the data, and
-    //   b) we are encapsulating in a const MV before returning
-    ArrayRCP<Scalar> buf = MVT::getValuesNonConst(lclMV_);
+
+    const size_t newNumRows = subMap->getNodeNumElements();
+    const bool tooManyElts = newNumRows + offset > lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (lclMV_),
+        std::runtime_error,
+        "Tpetra::MultiVector::offsetViewNonconst: Invalid input Map.  Input Map owns "
+        << subMap->getNodeNumElements() << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << lclMV_.getOrigNumRows () << " on this process.");
+    }
     RCP<MV> subViewMV;
     if (isConstantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      subViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, numVecs, COMPUTE_VIEW_CONSTRUCTOR));
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetViewNonConst (newNumRows, lclMV_.getNumCols (), offset, 0);
+      subViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
-      // use same which index, but with an offset start pointer
-      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
-      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      subViewMV = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (subMap, subdata, myStride, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
+      // Compute the max column being viewed.  This tells us where to stop the view.
+      const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetViewNonConst (newNumRows, maxCol+1, offset, 0);
+      subViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return subViewMV;
   }
@@ -2101,13 +2160,24 @@ namespace Tpetra {
                      const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("replaceLocalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(),
-      std::runtime_error, ": row index is invalid.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex),
-      std::runtime_error, ": vector index is invalid.");
+    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceLocalValue: row index " << MyRow
+      << " is invalid.  The range of valid row indices on this process "
+      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+      << ", " << maxLocalIndex << "].");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceLocalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
+    const size_t colInd = isConstantStride () ?
+      VectorIndex : whichVectors_[VectorIndex];
+    lclMV_.replaceLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
@@ -2119,44 +2189,73 @@ namespace Tpetra {
                      const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("sumIntoLocalValue");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
-      ": row index is invalid.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-      ": vector index is invalid.");
+    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << MyRow
+      << " is invalid.  The range of valid row indices on this process "
+      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+      << ", " << maxLocalIndex << "].");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
+    const size_t colInd = isConstantStride () ?
+      VectorIndex : whichVectors_[VectorIndex];
+    lclMV_.sumIntoLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  replaceGlobalValue (GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
+  replaceGlobalValue (GlobalOrdinal GlobalRow,
+                      size_t VectorIndex,
+                      const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("replaceGlobalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-        ": row index is not present on this processor.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-        ": vector index is invalid.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: global row index " << GlobalRow
+      << "is not present on this process " << this->getMap()->getComm()->getRank()
+      << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
+    replaceLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  sumIntoGlobalValue (GlobalOrdinal GlobalRow,
+                      size_t VectorIndex,
+                      const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
-    const std::string tfecfFuncName("sumIntoGlobalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-      ": row index is not present on this processor.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-      ": vector index is invalid.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoGlobalValue: global row index " << GlobalRow
+      << "is not present on this process " << this->getMap()->getComm()->getRank()
+      << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoGlobalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
+    sumIntoLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

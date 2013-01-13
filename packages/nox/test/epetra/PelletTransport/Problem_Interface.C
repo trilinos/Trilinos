@@ -74,7 +74,7 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << std::endl;
   throw 1;
 }
 
@@ -82,7 +82,7 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 					      Epetra_Operator& Prec,
 					      Teuchos::ParameterList* p)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << std::endl;
   throw 1;
 }
 //-----------------------------------------------------------------------------

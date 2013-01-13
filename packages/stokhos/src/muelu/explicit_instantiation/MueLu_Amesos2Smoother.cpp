@@ -44,10 +44,10 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
-
-#ifdef HAVE_MUELU_AMESOS2
 
 #if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
@@ -60,8 +60,6 @@ typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
 template class MueLu::Amesos2Smoother<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 
-#else
-#error
 #endif
 
-#endif // HAVE_MUELU_AMESOS2
+#endif

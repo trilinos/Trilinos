@@ -267,6 +267,36 @@ PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
+   if(matcher=="(xy)z-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(0,1,2,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="(yx)z-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(1,0,2,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="(xz)y-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(0,2,1,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="(zx)y-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(2,0,1,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="(yz)x-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(1,2,0,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
+   if(matcher=="(zy)x-quarter-coord") {
+     panzer_stk::QuarterPlaneMatcher matcher(2,1,0,params);
+     return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
+   }
+
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
        "Failed parsing parameter list: could not find periodic boundary "
        "condition matcher \"" << matcher << "\" "

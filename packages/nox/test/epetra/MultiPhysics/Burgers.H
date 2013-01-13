@@ -75,7 +75,7 @@ class Burgers : public GenericEpetraProblem {
 public:
 
   // Constructor
-  Burgers(Epetra_Comm& Comm, int NumGlobalNodes, string name);
+  Burgers(Epetra_Comm& Comm, int NumGlobalNodes, std::string name);
   
   // Destructor
   ~Burgers();

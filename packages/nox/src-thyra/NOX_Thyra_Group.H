@@ -54,7 +54,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "NOX_Abstract_Group.H"	// base class
-#include "NOX_Common.H"             // class data element (string)
+#include "NOX_Common.H"             // class data element (std::string)
 #include "NOX_Thyra_Vector.H"	    // class data element
 #include "NOX_SharedObjectTemplate.H"  // class data element 
 
@@ -303,7 +303,7 @@ namespace NOX {
 			      ::Thyra::MultiVectorBase<double>& result) const;
 
       ::Thyra::ESolveMeasureNormType 
-      getThyraNormType(const string& name) const;
+      getThyraNormType(const std::string& name) const;
 
       //! Finalizes LOWS to be a valid solver for the Jacobian
       void updateLOWS() const;

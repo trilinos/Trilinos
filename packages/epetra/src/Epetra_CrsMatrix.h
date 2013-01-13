@@ -976,7 +976,15 @@ or if the number of entries in this row exceed the Length parameter.
   int NumAllocatedMyEntries(int Row) const {return(Graph_.NumAllocatedMyIndices(Row));}
   
   //! Returns the index base for row and column indices for this graph.
-  int IndexBase() const {return(Graph_.IndexBase());}
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  //! Index base for this map.
+  int  IndexBase() const {
+    if(RowMap().GlobalIndicesInt())
+      return (int) IndexBase64();
+    throw "Epetra_CrsMatrix::IndexBase: GlobalIndices not int.";
+  }
+#endif
+  long long  IndexBase64() const {return(Graph_.IndexBase64());};
   
   
   //! Returns true if the graph associated with this matrix was pre-constructed and therefore not changeable.

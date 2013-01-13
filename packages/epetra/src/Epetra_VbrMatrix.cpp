@@ -3198,7 +3198,7 @@ int Epetra_VbrMatrix::BlockMap2PointMap(const Epetra_BlockMap & BlockMap,
 
   int curID = 0;
   for (int i=0; i<NumMyElements; i++) {
-    int StartID = BlockMap.GID64(i)*MaxElementSize;
+    int StartID = BlockMap.GID64(i)*MaxElementSize; // CJ TODO FIXME long long
     int ElementSize = BlockMap.ElementSize(i);
     for (int j=0; j<ElementSize; j++) PtMyGlobalElements[curID++] = StartID+j;
   }

@@ -196,7 +196,7 @@ LOCA::BorderedSolver::Bordering::applyInverse(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::applyInverse()";
   NOX::Abstract::Group::ReturnType status;
 
@@ -223,8 +223,8 @@ LOCA::BorderedSolver::Bordering::applyInverse(
      int numColsF = F->numVectors();
 
      // create indexing vectors
-     vector<int> indexF(numColsF);
-     vector<int> indexA(numColsA);
+     std::vector<int> indexF(numColsF);
+     std::vector<int> indexA(numColsA);
      for (int i=0; i<numColsF; i++)
        indexF[i] = i;
      for (int i=0; i<numColsA; i++)
@@ -259,7 +259,7 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::applyInverseTranspose()";
   NOX::Abstract::Group::ReturnType status;
 
@@ -299,8 +299,8 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
      int numColsF = F->numVectors();
 
      // create indexing vectors
-     vector<int> indexF(numColsF);
-     vector<int> indexB(numColsB);
+     std::vector<int> indexF(numColsF);
+     std::vector<int> indexB(numColsB);
      for (int i=0; i<numColsF; i++)
        indexF[i] = i;
      for (int i=0; i<numColsB; i++)
@@ -342,7 +342,7 @@ LOCA::BorderedSolver::Bordering::solveFZero(
 		       NOX::Abstract::MultiVector& X,
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::solveFZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -402,14 +402,14 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
 		       const NOX::Abstract::MultiVector* AA,
 		       const LOCA::MultiContinuation::ConstraintInterface* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       vector<int>& indexF,
-		       vector<int>& indexA,
+		       std::vector<int>& indexF,
+		       std::vector<int>& indexA,
 		       const NOX::Abstract::MultiVector* F,
 		       const NOX::Abstract::MultiVector::DenseMatrix* G,
 		       NOX::Abstract::MultiVector& X,
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -474,7 +474,7 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
 		       NOX::Abstract::MultiVector& X,
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::solveFTransZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -536,14 +536,14 @@ LOCA::BorderedSolver::Bordering::solveContiguousTrans(
 		       const NOX::Abstract::MultiVector* AA,
 		       const NOX::Abstract::MultiVector* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       vector<int>& indexF,
-		       vector<int>& indexB,
+		       std::vector<int>& indexF,
+		       std::vector<int>& indexB,
 		       const NOX::Abstract::MultiVector* F,
 		       const NOX::Abstract::MultiVector::DenseMatrix* G,
 		       NOX::Abstract::MultiVector& X,
 		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Bordering::solveContiguousTrans()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;

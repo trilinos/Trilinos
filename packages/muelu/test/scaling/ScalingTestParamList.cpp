@@ -150,6 +150,11 @@ int main(int argc, char *argv[]) {
     map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   }
 
+  if (matrixParameters.GetMatrixType() == "Elasticity2D")
+    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
+  if (matrixParameters.GetMatrixType() == "Elasticity3D")
+    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
+
   if (comm->getRank() == 0) {
     GO mx = galeriList.get("mx", -1);
     GO my = galeriList.get("my", -1);
@@ -179,6 +184,10 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
+
+  if (matrixParameters.GetMatrixType() == "Elasticity2D" ||
+      matrixParameters.GetMatrixType() == "Elasticity3D")
+    nullspace = Pr->BuildNullspace();
 
   H->GetLevel(0)->Set("Nullspace", nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);

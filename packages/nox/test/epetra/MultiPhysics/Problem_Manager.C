@@ -141,7 +141,7 @@ Problem_Manager::addProblem(GenericEpetraProblem & problem)
   // Give this problem a name if it doesn't already have one
   if( problem.getName() == "" ) 
   {
-    string name = "Problem_";
+    std::string name = "Problem_";
     char id_str[4];
     (void) sprintf(id_str, "%d",problemCount);
     name += id_str;
@@ -168,8 +168,8 @@ Problem_Manager::getProblem( int id_ )
 
   if( Teuchos::is_null(problem) ) 
   {
-    cout << "ERROR: Problem with id --> " << id_ << " not registered with "
-         << "Problem_Manager !!" << endl;
+    std::cout << "ERROR: Problem with id --> " << id_ << " not registered with "
+         << "Problem_Manager !!" << std::endl;
     outputStatus(std::cout);
 
     throw "Problem_Manager ERROR";
@@ -181,15 +181,15 @@ Problem_Manager::getProblem( int id_ )
 //-----------------------------------------------------------------------------
 
 GenericEpetraProblem &
-Problem_Manager::getProblem( string name )
+Problem_Manager::getProblem( std::string name )
 {
   // Get a problem given its name
   map<string, int>::iterator iter = NameLookup.find(name);
 
   if( iter == NameLookup.end() ) 
   {
-    cout << "ERROR: Could not find lookup id for Problem --> " << name 
-         << endl;
+    std::cout << "ERROR: Could not find lookup id for Problem --> " << name 
+         << std::endl;
     outputStatus(std::cout);
 
     throw "Problem_Manager ERROR";
@@ -207,7 +207,7 @@ Problem_Manager::getProblemSolutionGroup(int id)
   //if( Teuchos::is_null(Solvers[id]->rcpSolver) )
   if( Teuchos::is_null(Solvers[id]) )
   {
-    cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
+    std::cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -225,7 +225,7 @@ Problem_Manager::getSolutionVec(int id)
   //if( Teuchos::is_null(noxEpetraSolvers[id]->rcpSolver) )
   if( Teuchos::is_null(Solvers[id]) )
   {
-    cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
+    std::cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -245,8 +245,8 @@ Problem_Manager::getGroup(int id_)
 
   if( Teuchos::is_null(group) ) 
   {
-    cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
-         << " !!" << endl;
+    std::cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
+         << " !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
   else
@@ -259,8 +259,8 @@ Teuchos::RCP<Epetra_Vector>
 Problem_Manager::getCompositeSoln()
 {
   if( !compositeSoln.get() ) {
-    cout << "ERROR: No valid Composite Solution vector with Problem Manager !!"
-         << endl;
+    std::cout << "ERROR: No valid Composite Solution vector with Problem Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
   return compositeSoln;
@@ -269,7 +269,7 @@ Problem_Manager::getCompositeSoln()
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::createDependency( string nameA, string nameB, bool isInterfacial )
+Problem_Manager::createDependency( std::string nameA, std::string nameB, bool isInterfacial )
 {
   // Create a dependence of Problem A equations on Problem B variables
   int probId_A = (*(NameLookup.find(nameA))).second;
@@ -277,8 +277,8 @@ Problem_Manager::createDependency( string nameA, string nameB, bool isInterfacia
 
   if( !probId_A || !probId_B ) 
   {
-    cout << "ERROR: Could not create dependency of \"" << nameA << "\" on \""
-         << nameB << "\" !!" << endl;
+    std::cout << "ERROR: Could not create dependency of \"" << nameA << "\" on \""
+         << nameB << "\" !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
  
@@ -300,9 +300,9 @@ Problem_Manager::createDependency( GenericEpetraProblem & problemA,
 {
   // Ensure that both problems already exist
   if( !problemA.getId() || !problemB.getId() ) {
-    cout << "ERROR: Invalid dependency since at least one problem is "
+    std::cout << "ERROR: Invalid dependency since at least one problem is "
          << "not registered with Problem_Manager !!"
-         << endl;
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -341,15 +341,15 @@ Problem_Manager::registerComplete()
 {
   if(Problems.empty())
   {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
   if(Teuchos::is_null(nlParams) || Teuchos::is_null(statusTest))
   {
-    cout << "ERROR: No nlParams and/or statusTest registered with "
-         << "Problem_Manager !!" << endl;
+    std::cout << "ERROR: No nlParams and/or statusTest registered with "
+         << "Problem_Manager !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -497,7 +497,7 @@ Problem_Manager::registerComplete()
 
 #else
     if(MyPID==0)
-      cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+      std::cout << "ERROR: Cannot use EpetraExt with this build !!" << std::endl;
     exit(0);
 #endif
 #endif
@@ -528,7 +528,7 @@ Problem_Manager::registerComplete()
   computeAllF();
 
   double normSum = getNormSum();
-  cout << "Initial 2-Norm of composite Problem --> " << normSum;
+  std::cout << "Initial 2-Norm of composite Problem --> " << normSum;
 
   // Fill initial composite solution with values from each problem
   copyProblemsToComposite(*(compositeSoln.get()), SOLUTION);
@@ -551,10 +551,10 @@ Problem_Manager::registerComplete()
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose );
   Epetra_MapColoring* colorMap = &tmpMapColoring(*AA);
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = &colorMapIndex(*AA);
+  std::vector<Epetra_IntVector>* columns = &colorMapIndex(*AA);
 #else
   if(MyPID==0)
-    cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+    std::cout << "ERROR: Cannot use EpetraExt with this build !!" << std::endl;
   exit(0);
 #endif
 
@@ -644,8 +644,8 @@ Problem_Manager::registerComplete()
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     copyProblemJacobiansToComposite( *blockA );
 
-    cout << blockA->Graph() << endl;
-    cout << *blockA << endl;
+    std::cout << blockA->Graph() << std::endl;
+    std::cout << *blockA << std::endl;
 
     Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, blockA, true) );
@@ -711,8 +711,8 @@ Problem_Manager::syncAllProblems()
 {
   if(Problems.empty()) 
   {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
   
@@ -741,8 +741,8 @@ void
 Problem_Manager::setAlldt( double dt )
 {
   if(Problems.empty()) {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -764,16 +764,16 @@ Problem_Manager::setGroupX(int probId)
 
   if( Teuchos::is_null(problem) ) 
   {
-    cout << "ERROR: Could not get requested Problem to use with group.setX "
-         << endl;
+    std::cout << "ERROR: Could not get requested Problem to use with group.setX "
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
   Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId];
 
   if( Teuchos::is_null(grp) ) {
-    cout << "ERROR: Could not get appropriate group for use in setX !!"
-         << endl;
+    std::cout << "ERROR: Could not get appropriate group for use in setX !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -791,7 +791,7 @@ Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 
   if( Teuchos::is_null(problem) ) 
   {
-    cout << "ERROR: Could not get requested Problem to use with group.setX " << endl;
+    std::cout << "ERROR: Could not get requested Problem to use with group.setX " << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -799,7 +799,7 @@ Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 
   if( Teuchos::is_null(grp) ) 
   {
-    cout << "ERROR: Could not get appropriate group for use in setX !!" << endl;
+    std::cout << "ERROR: Could not get appropriate group for use in setX !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -812,8 +812,8 @@ void
 Problem_Manager::setAllGroupX()
 {
   if(Problems.empty()) {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -837,14 +837,14 @@ Problem_Manager::setAllGroupX()
 void 
 Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 {
-  map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = OffBlock_Managers.begin();
-  map<int, vector<OffBlock_Manager*> >::iterator offBlockLast = OffBlock_Managers.end();
+  map<int, std::vector<OffBlock_Manager*> >::iterator offBlockIter = OffBlock_Managers.begin();
+  map<int, std::vector<OffBlock_Manager*> >::iterator offBlockLast = OffBlock_Managers.end();
 
   // Loop over each off-block manager and set the contained groups X-vector
   // with the incoming vector
   for( ; offBlockIter != offBlockLast; ++offBlockIter) 
   {
-    vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
+    std::vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
 
     // Need to extract block portion of incoming compositeVec
     for( unsigned int i = 0; i < managerVec.size(); ++i )
@@ -886,8 +886,8 @@ void
 Problem_Manager::computeAllF()
 {
   if(Problems.empty()) {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -915,8 +915,8 @@ Problem_Manager::computeGroupF(int probId)
 
   if( Teuchos::is_null(grp) ) 
   {
-    cout << "ERROR: Could not get a group for problem with id --> "
-         << probId << endl;
+    std::cout << "ERROR: Could not get a group for problem with id --> "
+         << probId << std::endl;
     throw "Problem_Manager ERROR";
   }
   grp->computeF();
@@ -961,8 +961,8 @@ Problem_Manager::computeAllJacobian()
       Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId]; 
       if( Teuchos::is_null(grp) ) 
       {
-        cout << "ERROR: Could not find valid group for compouteJacobian !!"
-             << endl;
+        std::cout << "ERROR: Could not find valid group for compouteJacobian !!"
+             << std::endl;
         throw "Problem_Manager ERROR";
       }
 
@@ -981,18 +981,18 @@ Problem_Manager::computeAllJacobian()
 
         fillTime.ResetStartTime();
     
-        vector<OffBlock_Manager*> & offBlocksVec = OffBlock_Managers[probId];
+        std::vector<OffBlock_Manager*> & offBlocksVec = OffBlock_Managers[probId];
 
         for( unsigned int i = 0; i < offBlocksVec.size(); ++i ) 
         {
           // Refresh all problem vectors
           copyCompositeToProblems(*(compositeSoln.get()), SOLUTION);
 
-    DEBUG_BLOCKGRAPH( cout << "Doing computeJacobian for : " << offBlocksVec[i]->getName() << endl;)
+    DEBUG_BLOCKGRAPH( std::cout << "Doing computeJacobian for : " << offBlocksVec[i]->getName() << std::endl;)
 
           offBlocksVec[i]->getGroup()->computeJacobian();
     
-    DEBUG_BLOCKGRAPH( cout << "For block : " << offBlocksVec[i]->getName() << endl;)
+    DEBUG_BLOCKGRAPH( std::cout << "For block : " << offBlocksVec[i]->getName() << std::endl;)
     DEBUG_BLOCKGRAPH( offBlocksVec[i]->getMatrix().Print(cout);)
           
           if (MyPID == 0)
@@ -1028,11 +1028,11 @@ Problem_Manager::computeBlockJacobian(int probId, int depId)
   }
   else // off-diagonal block contribution
   {
-    vector<OffBlock_Manager*> managerVec = OffBlock_Managers[probId];
+    std::vector<OffBlock_Manager*> managerVec = OffBlock_Managers[probId];
 
     OffBlock_Manager::idToFind = depId;
 
-    vector<OffBlock_Manager *>::iterator iter = 
+    std::vector<OffBlock_Manager *>::iterator iter = 
       find_if( managerVec.begin(), managerVec.end(), mem_fun( &OffBlock_Manager::isMember) );
 
     if( managerVec.end() == iter )
@@ -1091,11 +1091,11 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
   }
   else // off-diagonal block
   {
-    vector<OffBlock_Manager*> offVec = OffBlock_Managers[probId];
+    std::vector<OffBlock_Manager*> offVec = OffBlock_Managers[probId];
 
     OffBlock_Manager::idToFind = depId;
 
-    vector<OffBlock_Manager *>::iterator iter = 
+    std::vector<OffBlock_Manager *>::iterator iter = 
       find_if( offVec.begin(), offVec.end(), mem_fun( &OffBlock_Manager::isMember) );
 
     if( offVec.end() == iter )
@@ -1124,8 +1124,8 @@ Problem_Manager::getBlockInverseOperator(int probId)
 
   if( BlockInverseOperators.end() == BlockInverseOperators.find(probId) )
   {
-    cout << "ERROR: No valid Block Inverse Operator exists for problem # " 
-         << probId << endl;
+    std::cout << "ERROR: No valid Block Inverse Operator exists for problem # " 
+         << probId << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1157,8 +1157,8 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 
   if( Teuchos::is_null(problem) ) 
   {
-    cout << "ERROR: Could not get requested Problem to update with final "
-         << "solution" << endl;
+    std::cout << "ERROR: Could not get requested Problem to update with final "
+         << "solution" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1166,8 +1166,8 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 
   if( Teuchos::is_null(solver) ) 
   {
-    cout << "ERROR: Could not get appropriate Solver for use in update !!"
-         << endl;
+    std::cout << "ERROR: Could not get appropriate Solver for use in update !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1212,8 +1212,8 @@ Problem_Manager::resetCurrentGroupX(int probId)
 
   if( Teuchos::is_null(solver) ) 
   {
-    cout << "ERROR: Could not get appropriate Solver for use in update !!"
-         << endl;
+    std::cout << "ERROR: Could not get appropriate Solver for use in update !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1267,8 +1267,8 @@ Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Pro
 
       case GROUP_F :
       default :
-        cout << "ERROR: vecType not supported for copy FROM composite!!" 
-             << endl;
+        std::cout << "ERROR: vecType not supported for copy FROM composite!!" 
+             << std::endl;
         throw "Problem_Manager ERROR";
     }
 
@@ -1307,8 +1307,8 @@ Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_M
 	break;
 
       default :
-        cout << "ERROR: vecType not supported for copy TO composite!!" 
-             << endl;
+        std::cout << "ERROR: vecType not supported for copy TO composite!!" 
+             << std::endl;
         throw "Problem_Manager ERROR";
     }
 
@@ -1408,8 +1408,8 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     else
     {
       if (MyPID==0)
-        cout << "Jacobian operator for Problem not supported for "
-             << "preconditioning Matrix-Free coupling solver." << endl;
+        std::cout << "Jacobian operator for Problem not supported for "
+             << "preconditioning Matrix-Free coupling solver." << std::endl;
       throw "Problem_Manager ERROR";
     }
 
@@ -1420,8 +1420,8 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     // ROGER Block Norm
     if (1) 
     {
-      cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf() 
-	   << "  One Norm=" << problemMatrix.NormOne() << endl;
+      std::cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf() 
+	   << "  One Norm=" << problemMatrix.NormOne() << std::endl;
     }
 
     // Temporary storage arrays for extracting/inserting matrix row data
@@ -1438,8 +1438,8 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
       if( numCols != numValues ) 
       {
         if (MyPID==0)
-          cout << "ERROR: Num Columns != Num Values from problem Matrix !!"
-               << endl;
+          std::cout << "ERROR: Num Columns != Num Values from problem Matrix !!"
+               << std::endl;
         throw "Problem_Manager ERROR";
       }
 
@@ -1454,7 +1454,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
       if( ierr )
       {
         if (MyPID==0)
-          cout << "ERROR: compositeMatrix.ReplaceGlobalValues(...)" << endl;
+          std::cout << "ERROR: compositeMatrix.ReplaceGlobalValues(...)" << std::endl;
         throw "Problem_Manager ERROR";
       }
     }
@@ -1486,9 +1486,9 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 
 	if( !p_offBlockMgr ) 
         {
-          cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem " 
+          std::cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem " 
                << problem.getName() << " on problem " << p_depProblem->getName() 
-               << " !!" << endl;
+               << " !!" << std::endl;
           throw "Problem_Manager ERROR";
         }
 	Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
@@ -1496,7 +1496,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
         int *        blockColIndices; //  = new int[problemMaxNodes];
         int          numCols = -1;
         double *     values; //  = new double[problemMaxNodes];
-        vector<int>  compositeColIndices;
+        std::vector<int>  compositeColIndices;
         int          compositeRow;
 
         // Loop over each row and copy into composite matrix
@@ -1544,15 +1544,15 @@ Problem_Manager::getNormSum()
 
     //if( Teuchos::is_null(grp) ) 
     //{
-    //  cout << "ERROR: Could not get appropriate group for use in NormSum !!"
-    //       << endl;
+    //  std::cout << "ERROR: Could not get appropriate group for use in NormSum !!"
+    //       << std::endl;
     //  throw "Problem_Manager ERROR";
     //}
 
     //double problemNorm = grp->getNormF();
     double problemNorm = grp.getNormF();
-    cout << "2-Norm of Problem " << probId << " --> " << problemNorm
-         << endl;
+    std::cout << "2-Norm of Problem " << probId << " --> " << problemNorm
+         << std::endl;
     normSum += problemNorm * problemNorm;
   }
   normSum = sqrt(normSum);
@@ -1567,14 +1567,14 @@ Problem_Manager::solve()
 {
   if(Problems.empty())
   {
-    cout << "ERROR: No problems registered with Problem_Manager !!" << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
   if( Groups.empty() || Interfaces.empty() || Solvers.empty() )
   {
-    cout << "ERROR: Groups, Interfaces and/or Solvers are emptry !!"
-         << endl;
+    std::cout << "ERROR: Groups, Interfaces and/or Solvers are emptry !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1587,7 +1587,7 @@ Problem_Manager::solve()
   computeAllF();
 
   double normSum = getNormSum();
-  cout << "Initial 2-Norm of composite Problem --> " << normSum;
+  std::cout << "Initial 2-Norm of composite Problem --> " << normSum;
 
   // Now do the decoupled solve
   int iter = 0;
@@ -1640,7 +1640,7 @@ Problem_Manager::solve()
       if( status != NOX::StatusTest::Converged )
       { 
         if (MyPID==0)
-          cout << "\nRegistered Problem ## failed to converge !!"  << endl;
+          std::cout << "\nRegistered Problem ## failed to converge !!"  << std::endl;
       }
 
       // Copy final solution from group into problem solution vector
@@ -1653,20 +1653,20 @@ Problem_Manager::solve()
     computeAllF();
 
     normSum = getNormSum();
-    cout << "iter #" << iter << ", 2-Norm of composite Problem --> " 
-         << normSum << endl;
+    std::cout << "iter #" << iter << ", 2-Norm of composite Problem --> " 
+         << normSum << std::endl;
   }
 
   if (normSum > 1.0e-8) 
   {
-    cout << "Warning: composite problem failed to converge after "
-         << iter << " fixed-point iterations." << endl;
+    std::cout << "Warning: composite problem failed to converge after "
+         << iter << " fixed-point iterations." << std::endl;
 
     return false;
   }
   
-  cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
-       << endl;
+  std::cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
+       << std::endl;
 
   return true;
 }
@@ -1678,8 +1678,8 @@ Problem_Manager::solveMF()
 {
   if(Problems.empty())
   {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
-         << endl;
+    std::cout << "ERROR: No problems registered with Problem_Manager !!"
+         << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1690,7 +1690,7 @@ Problem_Manager::solveMF()
   NOX::StatusTest::StatusType status = compositeSolver->solve();
   if( status != NOX::StatusTest::Converged )
     if (MyPID==0)
-      cout << "\nMatrix-Free coupled Problem failed to converge !!"  << endl;
+      std::cout << "\nMatrix-Free coupled Problem failed to converge !!"  << std::endl;
 
   // Update all problem's solutions with final solutions from solvers
   copyAllGroupXtoProblems();
@@ -1705,7 +1705,7 @@ Problem_Manager::solveSchurBased()
 {
   if( 2 != Problems.size() )
   {
-    cout << "ERROR: Schur-based coupling currently requires exactly two problems!" << endl;
+    std::cout << "ERROR: Schur-based coupling currently requires exactly two problems!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -1731,11 +1731,11 @@ Problem_Manager::solveSchurBased()
 
   Epetra_Vector solutionA(getSolutionVec(1));
   solutionA.PutScalar(0.0);
-  cout << "Solution A: \n" << solutionA << endl;
+  std::cout << "Solution A: \n" << solutionA << std::endl;
 
-  cout << "Original RHS :\n" << *resA << endl;
+  std::cout << "Original RHS :\n" << *resA << std::endl;
   schurCplOp.modifyRHS( resA, resB );
-  cout << "Modified RHS :\n" << *resA << endl;
+  std::cout << "Modified RHS :\n" << *resA << std::endl;
 
   Epetra_LinearProblem * linear_problem = new Epetra_LinearProblem(&schurCplOp, &solutionA, &(*resA));
   AztecOO * aztecoo_solver = new AztecOO(*linear_problem);
@@ -1755,28 +1755,28 @@ Problem_Manager::solveSchurBased()
     aztecoo_solver->ConstructPreconditioner(conditionNumberEstimate);
   }
 
-  cout << "... Solving.\n";
+  std::cout << "... Solving.\n";
   aztecoo_solver->Iterate(100, 1.0e-8);
-  cout << "... Solved to a tolerance of " << aztecoo_solver->TrueResidual() << " in " << aztecoo_solver->NumIters() << " iterations.\n";
+  std::cout << "... Solved to a tolerance of " << aztecoo_solver->TrueResidual() << " in " << aztecoo_solver->NumIters() << " iterations.\n";
 
-  cout << "\n----- Solution for update vector ---- :\n" << solutionA << endl;
+  std::cout << "\n----- Solution for update vector ---- :\n" << solutionA << std::endl;
 
   *resA = solutionA;
 
   solutionA.Update(1.0, getSolutionVec(1), -1.0);
 
-  cout << "\n----- Solution vector ---- :\n" << solutionA << endl;
+  std::cout << "\n----- Solution vector ---- :\n" << solutionA << std::endl;
 
   // Now back substitue for other problem solution
   applyBlockAction( 2, 1, *resA, *resB);
   resB->Update(-1.0, getResidualVec(2), 1.0);
   getBlockInverseOperator(2)->ApplyInverse(*resB, *resB);
 
-  cout << "\n----- Second Solution for update vector ---- :\n" << *resB << endl;
+  std::cout << "\n----- Second Solution for update vector ---- :\n" << *resB << std::endl;
 
   resB->Update(1.0, getSolutionVec(2), 1.0);
 
-  cout << "\n----- Second Solution vector ---- :\n" << *resB << endl;
+  std::cout << "\n----- Second Solution vector ---- :\n" << *resB << std::endl;
 
   exit(0);
   // Update all problem's solutions with final solutions from solvers
@@ -1896,7 +1896,7 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
       if( ierr )
       {
         if (MyPID==0)
-          cout << "ERROR: graphPtr->InsertGlobalIndices(...)" << endl;
+          std::cout << "ERROR: graphPtr->InsertGlobalIndices(...)" << std::endl;
         throw "Problem_Manager ERROR";
       }
     }
@@ -1915,16 +1915,16 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
 
         if( problem.suppliesOffBlockStructure(k) )
         {
-          map<int, vector<int> > offBlockIndices;
+          map<int, std::vector<int> > offBlockIndices;
           problem.getOffBlockIndices( offBlockIndices );
 
-          map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
+          map<int, std::vector<int> >::iterator indIter     = offBlockIndices.begin(),
                                            indIter_end = offBlockIndices.end()   ;
 
           for( ; indIter != indIter_end; ++indIter )
           {
             int compositeRow = problemIndices[(*indIter).first];
-            vector<int> & colIndices = (*indIter).second;
+            std::vector<int> & colIndices = (*indIter).second;
 
             // Convert column indices to composite values
             for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
@@ -1973,7 +1973,7 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
     Epetra_IntVector& problemIndices = *(ProblemToCompositeIndices[probId]);
 
     // Create containers for the off-block objects
-    vector<OffBlock_Manager*> OffBlock_ManagersVec;
+    std::vector<OffBlock_Manager*> OffBlock_ManagersVec;
 
     int problemMaxNodes = problemGraph.Map().NumGlobalElements();
 
@@ -1999,9 +1999,9 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
       if( !xferOpPtr ) 
       {
-        cout << "ERROR: Unable to get Xfer_Operator for dependence of "
+        std::cout << "ERROR: Unable to get Xfer_Operator for dependence of "
              << "problem \"" << problem.getName() << "\" on problem "
-             << "\"" << dependProblem.getName() << "\" !!" << endl;
+             << "\"" << dependProblem.getName() << "\" !!" << std::endl;
         throw "Problem_Manager ERROR";
       }
       XferOp &xferOp = *xferOpPtr;
@@ -2075,15 +2075,15 @@ Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_Crs
 
   if( !graph1.Filled() || !graph2.Filled() )
   {
-    cout << "ERROR: Problem_Manager::composeGraphs(...) One or both incoming graphs have not "
-         << "been transformed to local index space by calling FillComplete()." << endl;
+    std::cout << "ERROR: Problem_Manager::composeGraphs(...) One or both incoming graphs have not "
+         << "been transformed to local index space by calling FillComplete()." << std::endl;
     throw "Problem_Manager ERROR";
   }
 
   if( !graph1.RowMap().SameAs( graph2.RowMap() ) )
   {
-    cout << "ERROR: Problem_Manager::composeGraphs(...) Incoming graphs do not have "
-         << "the same row maps." << endl;
+    std::cout << "ERROR: Problem_Manager::composeGraphs(...) Incoming graphs do not have "
+         << "the same row maps." << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -2171,7 +2171,7 @@ Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
   char file_name[25];
   (void) sprintf(file_name, "output.%03d.%03d_%05d", probId, MyPID, timeStep);
 
-  string name(file_name);
+  std::string name(file_name);
 
   return name;
 }
@@ -2179,7 +2179,7 @@ Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::outputSolutions( const string outputDir, int timeStep )
+Problem_Manager::outputSolutions( const std::string outputDir, int timeStep )
 {
 
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
@@ -2194,8 +2194,8 @@ Problem_Manager::outputSolutions( const string outputDir, int timeStep )
     Epetra_Vector& xMesh = problem.getMesh();
     Epetra_Vector& problemSoln = *problem.getSolution();
 
-    string baseName = createIOname( problem, timeStep );
-    string fileName = outputDir + baseName;
+    std::string baseName = createIOname( problem, timeStep );
+    std::string fileName = outputDir + baseName;
 
 #ifdef HAVE_NOX_EPETRAEXT
     NOX::Epetra::DebugTools::writeVector( fileName, problemSoln, NOX::Epetra::DebugTools::MATRIX_MARKET );
@@ -2217,18 +2217,18 @@ Problem_Manager::outputSolutions( const string outputDir, int timeStep )
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::outputStatus( ostream & os ) 
+Problem_Manager::outputStatus( std::ostream & os ) 
 { 
 
   map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemIter = Problems.begin();
   map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemLast = Problems.end();
 
-  os << endl << endl << "\t\t********************************"   << endl;
-  os                 << "\t\t*******  PROBLEM SUMMARY  ******"   << endl;
-  os                 << "\t\t********************************"   << endl;
-  os << endl << endl << "\t\tOff-diagonal contributions are "
-                       << ( doOffBlocks ? "Enabled" : "Disabled" ) << endl;
-  os << endl << endl;
+  os << std::endl << std::endl << "\t\t********************************"   << std::endl;
+  os                 << "\t\t*******  PROBLEM SUMMARY  ******"   << std::endl;
+  os                 << "\t\t********************************"   << std::endl;
+  os << std::endl << std::endl << "\t\tOff-diagonal contributions are "
+                       << ( doOffBlocks ? "Enabled" : "Disabled" ) << std::endl;
+  os << std::endl << std::endl;
 
   // Loop over each problem being managed and output its dependencies
   for( ; problemIter != problemLast; problemIter++) 
@@ -2236,16 +2236,16 @@ Problem_Manager::outputStatus( ostream & os )
     GenericEpetraProblem & problem = *(*problemIter).second;
 
     os << "\tProblem \"" << problem.getName() << "\" (" << (*problemIter).first
-         << ")\t Depends on:" << endl;
+         << ")\t Depends on:" << std::endl;
     
     for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
     {
       GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
 
       os << "\t\t-------------> \t\t\"" << depProblem.getName() 
-           << "\" (" << depProblem.getId() << ")" << endl;
+           << "\" (" << depProblem.getId() << ")" << std::endl;
     }
-    os << endl;
+    os << std::endl;
 
     // Allow problems to provide additional info if desired
     for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
@@ -2253,7 +2253,7 @@ Problem_Manager::outputStatus( ostream & os )
       //GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
       problem.outputStatus(os);
     }
-    os << endl;
+    os << std::endl;
   }
 
   return;
@@ -2264,7 +2264,7 @@ Problem_Manager::outputStatus( ostream & os )
 bool
 Problem_Manager::exchangeAllData()
 { 
-  cout << "Problem_Manager::exchangeAllData() .... called." << endl;
+  std::cout << "Problem_Manager::exchangeAllData() .... called." << std::endl;
 
   // Preceding this call, the solution vector for each problem has been placed
   // in each solver's group X vector.  We need to copy this into each problem's
@@ -2283,7 +2283,7 @@ Problem_Manager::exchangeAllData()
 bool
 Problem_Manager::exchangeDataTo(int solverId)
 { 
-  cout << "Problem_Manager::exchangeDataTo( " << solverId << " ) .... called." << endl;
+  std::cout << "Problem_Manager::exchangeDataTo( " << solverId << " ) .... called." << std::endl;
 
   // Note: the incoming solverId reflects the order in which this problem occurs
   // in the container of solvers passed to the coupling solver and is 0-based.
@@ -2309,14 +2309,14 @@ Problem_Manager::exchangeDataTo(int solverId)
 Teuchos::RCP<const Epetra_CrsMatrix> 
 Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE )
 { 
-  cout << "Problem_Manager::getReplacementValuesMatrix(...) called." << endl;
+  std::cout << "Problem_Manager::getReplacementValuesMatrix(...) called." << std::endl;
 
   bool ok = evaluate( NOX::Epetra::Interface::Required::Jac, &x, NULL );
 
   if( !ok )
   {
-    cout << "ERROR: Problem_Manager::getReplacementValuesMatrix call to evaluate failed."
-         << endl;
+    std::cout << "ERROR: Problem_Manager::getReplacementValuesMatrix call to evaluate failed."
+         << std::endl;
 
     throw "Problem_Manager ERROR";
   }
@@ -2333,14 +2333,14 @@ Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & 
   Teuchos::RCP<NOX::Epetra::MatrixFree> mfOp = Teuchos::rcp_dynamic_cast<NOX::Epetra::MatrixFree>( jacOperator );
   if( Teuchos::is_null(mfOp) )
   {
-    cout << "ERROR: Problem_Manager::applyBlockAction : jacOperator is not of type NOX::Epetra::MatrixFree." << endl;
+    std::cout << "ERROR: Problem_Manager::applyBlockAction : jacOperator is not of type NOX::Epetra::MatrixFree." << std::endl;
     throw "Problem_Manager ERROR";
   }
 
   if( !x     .Map().SameAs(getSolutionVec(depId).Map())  ||
       !result.Map().SameAs(getSolutionVec(probId).Map())   )
   {
-    cout << "ERROR: Problem_Manager::applyBlockAction : vector sizes not compatible with domain and/or range of block dimensions." << endl;
+    std::cout << "ERROR: Problem_Manager::applyBlockAction : vector sizes not compatible with domain and/or range of block dimensions." << std::endl;
     throw "Problem_Manager ERROR";
   }
   Teuchos::RCP<Epetra_Vector> tmpXcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
@@ -2402,7 +2402,7 @@ Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList 
 
   if( NULL == pMatrix.get() )
   {
-    cout << "ERROR: Problem_Manager::createBlockInverseOperator : Cannot get an Epetra_CrsMatrix for diagonal block # " << probId << endl;
+    std::cout << "ERROR: Problem_Manager::createBlockInverseOperator : Cannot get an Epetra_CrsMatrix for diagonal block # " << probId << std::endl;
     throw "Problem_Manager ERROR";
   }
 

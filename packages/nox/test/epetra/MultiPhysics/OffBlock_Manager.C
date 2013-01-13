@@ -105,7 +105,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
   GenericEpetraProblem &problemEq = myManager->getProblem(problemEqId),
                        &problemVar = myManager->getProblem(problemVarId);
   
-  string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
+  std::string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
   setName(myName);
 
   // Set our graph (held in base class) after converting from incoming
@@ -133,8 +133,8 @@ OffBlock_Manager::evaluate( NOX::Epetra::Interface::Required::FillType flag,
   // Determine if fill call is valid
   if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res) 
   {
-    cout << "ERROR: Either invalid RHS vector or call made from other than "
-         << "NOX::Epetra::FiniteDifference to OffBlock fill !!" << endl;
+    std::cout << "ERROR: Either invalid RHS vector or call made from other than "
+         << "NOX::Epetra::FiniteDifference to OffBlock fill !!" << std::endl;
     throw "OffBlock_Manager ERROR";
   }
 
@@ -164,9 +164,9 @@ OffBlock_Manager::getGroup()
 {
   if( Teuchos::is_null(group) ) 
   {
-    cout << "ERROR: Unable to get off-block Group for "
+    std::cout << "ERROR: Unable to get off-block Group for "
          << "dependence of problem " << problemEqId << " on problem "
-         << problemVarId << " !!" << endl;
+         << problemVarId << " !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -178,9 +178,9 @@ OffBlock_Manager::getMatrix()
 {
   if( Teuchos::is_null(matrixOperator) ) 
   {
-    cout << "ERROR: Unable to get FDColoring underlying matrix for "
+    std::cout << "ERROR: Unable to get FDColoring underlying matrix for "
          << "dependence of problem " << problemEqId << " on problem "
-         << problemVarId << " !!" << endl;
+         << problemVarId << " !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -192,7 +192,7 @@ OffBlock_Manager::getRowMapVec() const
 {
   if( Teuchos::is_null(rowMapVec) ) 
   {
-    cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << endl;
+    std::cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << std::endl;
     throw "Problem_Manager ERROR";
   }
 
@@ -238,8 +238,8 @@ OffBlock_Manager::createFDobjects( bool useColoring )
 {
   graph = AA;
 
-  DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" 
-                         << *graph << endl << "\n\tDone." << endl;)
+  DEBUG_BLOCKGRAPH( std::cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" 
+                         << *graph << std::endl << "\n\tDone." << std::endl;)
 
   // Note: We use a vector corresponding to compositeSoln
   //Epetra_Vector & compositeVec = myManager->getCompositeSoln();
@@ -283,12 +283,12 @@ OffBlock_Manager::createFDobjects( bool useColoring )
       linearSystem) );
 
     DEBUG_BLOCKGRAPH(   
-      cout << "OffBlock_Manager::createFDobjects .... " << myName << endl
+      std::cout << "OffBlock_Manager::createFDobjects .... " << myName << std::endl
            << "---------------------------------------------------------------"
-           << "graph :" << *graph << endl
+           << "graph :" << *graph << std::endl
            << "---------------------------------------------------------------"
-           << "rowMapVec :" << *rowMapVec << endl
-           << "---------------------------------------------------------------" << endl;)
+           << "rowMapVec :" << *rowMapVec << std::endl
+           << "---------------------------------------------------------------" << std::endl;)
   }
   else // use FDC
   {
@@ -306,7 +306,7 @@ OffBlock_Manager::createFDobjects( bool useColoring )
     bool distance1 = false;
     int verbose = 0;
   
-    DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << *graph << endl;)
+    DEBUG_BLOCKGRAPH( std::cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << *graph << std::endl;)
   
     colorTime.ResetStartTime();
   
@@ -321,8 +321,8 @@ OffBlock_Manager::createFDobjects( bool useColoring )
     if (MyPID == 0) {
       printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",
                   problemEqId,problemVarId,colorTime.ElapsedTime());
-      cout << "\nUsing " << colorMap->NumColors() << " colors for "
-           << graph->NumMyRows() << " unknowns\n" << endl;
+      std::cout << "\nUsing " << colorMap->NumColors() << " colors for "
+           << graph->NumMyRows() << " unknowns\n" << std::endl;
     }
   
     // Now setup each FDC Jacobian as its own group/linearsystem
@@ -359,7 +359,7 @@ OffBlock_Manager::createFDobjects( bool useColoring )
       linearSystem) );
 #else
       if(MyPID==0)
-        cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+        std::cout << "ERROR: Cannot use EpetraExt with this build !!" << std::endl;
       exit(0);
 #endif
   }
@@ -382,10 +382,10 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
     {
       rowBlockToComposite[ rowCount ] = globalGraph.GRID( lRow );
       rowCompositeToBlock[ globalGraph.GRID( lRow ) ] = rowCount++ ;
-      DEBUG_BLOCKGRAPH( cout << "[" << lRow << "] ";)
+      DEBUG_BLOCKGRAPH( std::cout << "[" << lRow << "] ";)
       for( int col = 0; col < numCols; ++col )
       {
-        DEBUG_BLOCKGRAPH( cout << globalGraph.GCID(indices[col]) << "  ";)
+        DEBUG_BLOCKGRAPH( std::cout << globalGraph.GCID(indices[col]) << "  ";)
         if( indices[col] >= colCount )
         {
           colBlockToComposite[ colCount ] = globalGraph.GCID( indices[col]  );
@@ -394,7 +394,7 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
         }
       }
     }
-    DEBUG_BLOCKGRAPH( cout << endl;)
+    DEBUG_BLOCKGRAPH( std::cout << std::endl;)
   }
 
   // Now create the block-sized row and column maps
@@ -404,8 +404,8 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
   blockRowMap = Teuchos::rcp( new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm()) );
   blockColMap = Teuchos::rcp( new Epetra_Map ( numGlobalCols, colBlockToComposite.size(), 0, globalGraph.Comm()) );
  
-  DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Row Map : " << *blockRowMap << endl;)
-  DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Col Map : " << *blockColMap << endl;)
+  DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-sized Row Map : " << *blockRowMap << std::endl;)
+  DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-sized Col Map : " << *blockColMap << std::endl;)
 
   Epetra_CrsGraph * blockGraph = new Epetra_CrsGraph( Copy, *blockRowMap, *blockColMap, 0, false);
 
@@ -416,7 +416,7 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
     if( numCols > 0 )
     {
       int blockLocalRow = rowCompositeToBlock[ globalGraph.GRID( lRow ) ];
-      vector<int> newIndices;
+      std::vector<int> newIndices;
       newIndices.resize(numCols);
       for( int col = 0; col < numCols; ++col )
       {
@@ -426,11 +426,11 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
       blockGraph->InsertMyIndices( blockLocalRow, numCols, &(newIndices[0]) );
 
     }
-    DEBUG_BLOCKGRAPH( cout << endl;)
+    DEBUG_BLOCKGRAPH( std::cout << std::endl;)
   }
 
   
-  DEBUG_BLOCKGRAPH( cout << "\n----> Block-Graph : " << *blockGraph << endl;)
+  DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-Graph : " << *blockGraph << std::endl;)
   
   blockGraph->FillComplete();
 

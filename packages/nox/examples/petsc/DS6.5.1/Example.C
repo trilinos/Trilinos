@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
   // A maximum of 2 procesors is allowed since there are only 2 equations
   if (NumProc >= 3) {
-    cout << "ERROR: Maximum number of processors is 2!" << endl;
+    std::cout << "ERROR: Maximum number of processors is 2!" << std::endl;
     exit(1);
   }
 
@@ -150,12 +150,12 @@ int main(int argc, char *argv[])
   NOX::Petsc::Options optionHandler(nlParams, MyPID);
 
   // Warn if not using Polynimial linesearch
-  string lsMethod = nlParams.sublist("Line Search").get("Method", "Full Step");
+  std::string lsMethod = nlParams.sublist("Line Search").get("Method", "Full Step");
   if( "Polynomial" != lsMethod )
     if (MyPID==0) 
-      cout << "Line Search Method is set to \"" << lsMethod << "\".  This test is designed to "
+      std::cout << "Line Search Method is set to \"" << lsMethod << "\".  This test is designed to "
            << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
-           << "on the command line." << endl;
+           << "on the command line." << std::endl;
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -177,12 +177,12 @@ int main(int argc, char *argv[])
   if (status != NOX::StatusTest::Converged)
   {
     if (MyPID==0) 
-      cout << "Nonlinear solver failed to converge!" << endl;
+      std::cout << "Nonlinear solver failed to converge!" << std::endl;
   if( "Polynomial" != lsMethod )
       if (MyPID==0) 
-        cout << "\nLine Search Method is set to \"" << lsMethod << "\".  This test is designed to "
+        std::cout << "\nLine Search Method is set to \"" << lsMethod << "\".  This test is designed to "
              << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
-             << "on the command line." << endl;
+             << "on the command line." << std::endl;
   }
 
 

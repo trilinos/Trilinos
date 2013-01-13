@@ -46,6 +46,9 @@
 #ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class MaxLinkAggregationAlgorithm;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_SHORT
 #define MUELU_MAXLINKAGGREGATIONALGORITHM_SHORT
 #endif
+
+
 
 #endif // MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP

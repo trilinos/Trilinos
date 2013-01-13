@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.09 (2011/01/03)";
+  const char* version_string = "3.11 (2013/01/08)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -30,7 +30,7 @@ namespace SEAMS {
   Aprepro *aprepro;  // A global for use in the library.  Clean this up...
   
   Aprepro::Aprepro()
-    : sym_table(HASHSIZE)
+    : sym_table(HASHSIZE), stateImmutable(false)
   {
     ap_file_list.push(file_rec());
     init_table('#');
@@ -138,7 +138,7 @@ namespace SEAMS {
     return pointer;
   }
 
-  symrec *Aprepro::putsym (const char *sym_name, SYMBOL_TYPE sym_type, bool is_internal)
+  symrec *Aprepro::putsym (const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal)
   {
     int parser_type = 0;
     switch (sym_type)
@@ -148,6 +148,12 @@ namespace SEAMS {
 	break;
       case STRING_VARIABLE:
 	parser_type = Parser::token::SVAR;
+	break;
+      case IMMUTABLE_VARIABLE:
+	parser_type = Parser::token::IMMVAR;
+	break;
+      case IMMUTABLE_STRING_VARIABLE:
+	parser_type = Parser::token::IMMSVAR;
 	break;
       case UNDEFINED_VARIABLE:
 	parser_type = Parser::token::UNDVAR;
@@ -167,6 +173,20 @@ namespace SEAMS {
     ptr->next = sym_table[hashval];
     sym_table[hashval] = ptr;
     return ptr;
+  }
+
+  void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value)
+  {
+    symrec *var = putsym(sym_name, STRING_VARIABLE, false);
+    char *tmp = (char*)malloc(sym_value.size()+1);
+    strcpy(tmp, sym_value.c_str());
+    var->value.svar = tmp;
+  }
+
+  void Aprepro::add_variable(const std::string &sym_name, double sym_value)
+  {
+    symrec *var = putsym(sym_name, VARIABLE, false);
+    var->value.var = sym_value;
   }
 
   symrec *Aprepro::getsym (const char *sym_name) const

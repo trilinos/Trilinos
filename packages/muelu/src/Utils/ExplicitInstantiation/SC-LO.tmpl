@@ -43,6 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
+$TMPL_CONDITION_OPEN1
+$TMPL_CONDITION_OPEN2
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_$TMPL_CLASS_def.hpp"
@@ -59,3 +61,5 @@ template class MueLu::$TMPL_CLASS<std::complex<double>, int>;
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
+
+$TMPL_CONDITION_CLOSE

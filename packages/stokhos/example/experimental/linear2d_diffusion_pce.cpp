@@ -74,7 +74,7 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_Map.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 
 // Random field types
@@ -636,9 +636,9 @@ int main(int argc, char *argv[]) {
       //fm->SetFactory("CoarseSolver", smooFact);
 
       //allow for larger aggregates
-      typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-      MueLu_UCAggregationFactory;
-      RCP<MueLu_UCAggregationFactory> aggFact = rcp(new MueLu_UCAggregationFactory());
+      typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+      MueLu_CoupledAggregationFactory;
+      RCP<MueLu_CoupledAggregationFactory> aggFact = rcp(new MueLu_CoupledAggregationFactory());
       aggFact->SetMinNodesPerAggregate(minAggSize);
       fm->SetFactory("Aggregates", aggFact);
 

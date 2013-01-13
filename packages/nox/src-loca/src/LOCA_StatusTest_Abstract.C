@@ -49,11 +49,12 @@
 //@HEADER
 
 #include "LOCA_StatusTest_Abstract.H"
+#include <iomanip>
 
-ostream& 
-LOCA::StatusTest::operator<<(ostream& os, LOCA::StatusTest::StatusType status)
+std::ostream& 
+LOCA::StatusTest::operator<<(std::ostream& os, LOCA::StatusTest::StatusType status)
 {
-  os << setiosflags(ios::left) << setw(13) << setfill('.');
+  os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
   switch (status) {
   case  LOCA::StatusTest::Finished:
     os << "Finished";
@@ -68,6 +69,6 @@ LOCA::StatusTest::operator<<(ostream& os, LOCA::StatusTest::StatusType status)
     os << "**";
     break;
   }
-  os << resetiosflags(ios::adjustfield) << setfill(' ');
+  os << std::resetiosflags(std::ios::adjustfield) << std::setfill(' ');
   return os;
 }

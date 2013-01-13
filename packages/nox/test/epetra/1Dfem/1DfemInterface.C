@@ -152,7 +152,7 @@ bool Interface::computeF(const Epetra_Vector& x,
 		      Epetra_Vector& FVec, 
 		      NOX::Epetra::Interface::Required::FillType fillType)
 {
-  //static int count=0; count++; cout << "Resid ComputeF Call Number: " << count << endl;
+  //static int count=0; count++; std::cout << "Resid ComputeF Call Number: " << count << std::endl;
   return evaluate(fillType, &x, &FVec, 0);
 }
 
@@ -166,8 +166,8 @@ bool Interface::computePreconditioner(const Epetra_Vector& x,
 				      Epetra_Operator& Prec,
 				      Teuchos::ParameterList* precParams)
 {
-  cout << "ERROR: Interface::preconditionVector() - "
-       << "Use Explicit Jacobian only for this test problem!" << endl;
+  std::cout << "ERROR: Interface::preconditionVector() - "
+       << "Use Explicit Jacobian only for this test problem!" << std::endl;
   throw "Interface Error";
 }
 

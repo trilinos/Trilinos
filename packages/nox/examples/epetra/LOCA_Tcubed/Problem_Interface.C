@@ -102,8 +102,8 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
   double ave; x.MeanValue(&ave);
-  cout << "   FreeEnergy Mock Function (param, soln norm, FreeEnergy)= " 
-       << conParam << "   " <<  ave << "   " << computeFreeEnergy(x) << endl;
+  std::cout << "   FreeEnergy Mock Function (param, soln norm, FreeEnergy)= " 
+       << conParam << "   " <<  ave << "   " << computeFreeEnergy(x) << std::endl;
 
   problem.printSolution(x, conParam);
 }

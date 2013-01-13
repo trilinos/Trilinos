@@ -54,8 +54,16 @@ typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Co
 typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ConstraintFactory;
 #endif
 
+#ifdef MUELU_DEMOFACTORY_SHORT
+typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DemoFactory;
+#endif
+
 #ifdef MUELU_DIRECTSOLVER_SHORT
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
+#endif
+
+#ifdef MUELU_DISTANCELAPLACIANFACTORY_SHORT
+typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
 #endif
 
 #ifdef MUELU_EMINPFACTORY_SHORT
@@ -88,6 +96,10 @@ typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Hie
 
 #ifdef MUELU_HIERARCHYMANAGER_SHORT
 typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyManager;
+#endif
+
+#ifdef MUELU_HIERARCHYFACTORY_SHORT
+typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyFactory;
 #endif
 
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
@@ -218,12 +230,32 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
 #endif
 
-#ifdef MUELU_UTILS_SHORT
-typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
+#ifdef MUELU_CGSOLVER_SHORT
+typedef MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CGSolver;
 #endif
 
-#ifdef MUELU_DISTANCELAPLACIANFACTORY_SHORT
-typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
+#ifdef MUELU_CONSTRAINT_SHORT
+typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Constraint;
+#endif
+
+#ifdef MUELU_CONSTRAINTFACTORY_SHORT
+typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ConstraintFactory;
+#endif
+
+#ifdef MUELU_EMINPFACTORY_SHORT
+typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EminPFactory;
+#endif
+
+#ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
+typedef MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> NullspacePresmoothFactory;
+#endif
+
+#ifdef MUELU_PATTERNFACTORY_SHORT
+typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PatternFactory;
+#endif
+
+#ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
+typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SteepestDescentSolver;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT

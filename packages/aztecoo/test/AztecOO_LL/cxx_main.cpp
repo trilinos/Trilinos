@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   int local_n = 30;
   long long global_n = ((long long)numprocs)*((long long)local_n);
 
-  Epetra_Map emap(global_n, 0, comm);
+  Epetra_Map emap(global_n, 0LL, comm);
 
   Epetra_CrsMatrix* A = create_and_fill_crs_matrix(emap);
 
@@ -503,7 +503,7 @@ int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
   int numprocs = comm.NumProc();
   long long globalN = ((long long)numprocs)*((long long)localN);
  
-  Epetra_Map emap(globalN, 0, comm);
+  Epetra_Map emap(globalN, 0LL, comm);
   Epetra_CrsMatrix* Acrs = create_and_fill_crs_matrix(emap);
 
   Epetra_Vector x_crs(emap), b_crs(emap);

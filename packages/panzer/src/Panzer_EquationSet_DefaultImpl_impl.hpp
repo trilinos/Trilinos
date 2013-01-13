@@ -69,10 +69,6 @@ EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
   m_eqset_prefix("")
 { 
   m_dof_names = Teuchos::rcp(new std::vector<std::string>);
-  m_dof_gradient_names = Teuchos::rcp(new std::vector<std::string>);
-  m_dof_curl_names = Teuchos::rcp(new std::vector<std::string>);
-  m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
-  m_residual_names = Teuchos::rcp(new std::vector<std::string>);
   m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
 }
 
@@ -81,40 +77,6 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setupDOFs(int equation_dimension)
 {
-  if(m_provided_dofs_desc.size()>0) {
-
-    // this conditional and following assert is needed to check that the new
-    // approach is not interfering with the old approach of specifying DOFs.
-    bool backward_compatibility_check
-           = (m_dof_names->size()==0) && 
-             (m_dof_gradient_names->size()==0) && 
-             (m_dof_curl_names->size()==0) && 
-             (m_dof_time_derivative_names->size()==0) && 
-             (m_residual_names->size()==0);
- 
-    TEUCHOS_TEST_FOR_EXCEPTION(!backward_compatibility_check,std::runtime_error,
-                               "EquationSet_DefaultImpl::setupDOFs: You cannot call both addProvidedDOFs (and it's ilk) and set m_dof_names (for example). "
-                               "The later approach to using the default implementation of the equation set is now deprecated."); 
-  }
-  else {
-    // register with the "new" equation set way the various fields
-    for(std::size_t i=0;i<m_dof_names->size();i++) {
-      if(m_residual_names->size()>0)        
-        addProvidedDOF((*m_dof_names)[i],(*m_residual_names)[i]);
-      else
-        addProvidedDOF((*m_dof_names)[i]);
-
-      if(m_dof_gradient_names->size()>0)        
-        addDOFGrad((*m_dof_names)[i],(*m_dof_gradient_names)[i]);
-
-      if(m_dof_curl_names->size()>0)            
-        addDOFCurl((*m_dof_names)[i],(*m_dof_curl_names)[i]);
-
-      if(m_dof_time_derivative_names->size()>0) 
-        addDOFTimeDerivative((*m_dof_names)[i],(*m_dof_time_derivative_names)[i]);
-    }
-  }
-
   // for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
   //     itr!=m_provided_dofs_desc.end();++itr) {
   //   itr->second.print(std::cout); std::cout << std::endl;
@@ -555,6 +517,13 @@ const panzer::InputEquationSet&
 panzer::EquationSet_DefaultImpl<EvalT>::getInputEquationSet() const
 {
   return m_input_eq_set;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+bool panzer::EquationSet_DefaultImpl<EvalT>::buildTransientSupport() const
+{
+  return m_build_transient_support;
 }
 
 // ***********************************************************************

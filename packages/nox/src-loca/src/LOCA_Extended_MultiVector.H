@@ -53,6 +53,7 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_MultiVector.H"  // Base class
+#include <vector>
 
 // Forward declarations
 namespace LOCA {
@@ -98,7 +99,7 @@ namespace LOCA {
        * \brief Copy constructor that creates a sub copy or view of the 
        * given multivector
        */
-      MultiVector(const MultiVector& source, const vector<int>& index, 
+      MultiVector(const MultiVector& source, const std::vector<int>& index, 
 		  bool view);
 
       //! Vector destructor.
@@ -128,9 +129,9 @@ namespace LOCA {
        */
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Abstract::MultiVector& source, 
-	       const vector<int>& index);
+	       const std::vector<int>& index);
       virtual NOX::Abstract::MultiVector&
-      setBlock(const MultiVector& source, const vector<int>& index);
+      setBlock(const MultiVector& source, const std::vector<int>& index);
 
       //! Append the vectors in \c source to \c *this
       virtual NOX::Abstract::MultiVector&
@@ -219,18 +220,18 @@ namespace LOCA {
        * columns are copies of the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-      subCopy(const vector<int>& index) const;
+      subCopy(const std::vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-      subView(const vector<int>& index) const;
+      subView(const std::vector<int>& index) const;
 
       //! Norm.
       virtual void
-      norm(vector<double>& result,
+      norm(std::vector<double>& result,
 	   NOX::Abstract::Vector::NormType type = 
 	   NOX::Abstract::Vector::TwoNorm) const;
 
@@ -342,20 +343,20 @@ namespace LOCA {
 			  Teuchos::RCP<NOX::Abstract::MultiVector> v);
 
       //! Checks multi-vec argument dimensions are consistent
-      void checkDimensions(const string& callingFunction, 
+      void checkDimensions(const std::string& callingFunction, 
 			   const LOCA::Extended::MultiVector& a) const;
 
       //! Checks validity of column index
-      void checkIndex(const string& callingFunction, int i) const;
+      void checkIndex(const std::string& callingFunction, int i) const;
 
       //! Checks validity of vector row index
-      void checkVectorRowIndex(const string& callingFunction, int i) const;
+      void checkVectorRowIndex(const std::string& callingFunction, int i) const;
 
       //! Checks validity of column and row index for scalars
-      void checkIndex(const string& callingFunction, int i, int j) const;
+      void checkIndex(const std::string& callingFunction, int i, int j) const;
 
       //! Checks is index array is contiguous
-      bool isContiguous(const vector<int>& index) const;
+      bool isContiguous(const std::vector<int>& index) const;
 
       //@}
 
@@ -377,13 +378,13 @@ namespace LOCA {
       int numScalarRows;
 
       //! Array of multi-vector pointers, one for each block ROW
-      vector< Teuchos::RCP<NOX::Abstract::MultiVector> > multiVectorPtrs;
+      std::vector< Teuchos::RCP<NOX::Abstract::MultiVector> > multiVectorPtrs;
 
       //! Dense matrix of scalars
       Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> scalarsPtr;
 
       //! Pointers to each column as a LOCA::Extended::Vector
-      mutable vector< Teuchos::RCP<LOCA::Extended::Vector> > extendedVectorPtrs;
+      mutable std::vector< Teuchos::RCP<LOCA::Extended::Vector> > extendedVectorPtrs;
 
       //! Flag indicating whether this vector is a view
       bool isView;

@@ -52,12 +52,12 @@
 //     terms.
 
 // Basis types
-enum BasisType { HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS };
-const int num_basis_types = 5;
+enum BasisType { HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS, JACOBI };
+const int num_basis_types = 6;
 const BasisType basis_type_values[] = { 
-  HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS };
+  HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS, JACOBI };
 const char *basis_type_names[] = { 
-  "hermite", "legendre", "clenshaw-curtis", "gauss-patterson", "rys" };
+  "hermite", "legendre", "clenshaw-curtis", "gauss-patterson", "rys", "jacobi" };
 
 // Growth policies
 const int num_growth_types = 2;
@@ -107,10 +107,16 @@ int main(int argc, char **argv)
 		  num_prod_basis_types, prod_basis_type_values, 
 		  prod_basis_type_names, 
 		  "Product basis type");
+    double alpha = 1.0;
+    CLP.setOption("alpha", &alpha, "Jacobi alpha index");
+    double beta = 1.0;
+    CLP.setOption("beta", &beta, "Jacobi beta index");
     bool full = true;
     CLP.setOption("full", "linear", &full, "Use full or linear expansion");
     bool use_old = false;
     CLP.setOption("old", "new", &use_old, "Use old or new Cijk algorithm");
+    bool print = false;
+    CLP.setOption("print", "no-print", &print, "Print Cijk to screen");
 
     // Parse arguments
     CLP.parse( argc, argv );
@@ -135,6 +141,9 @@ int main(int argc, char **argv)
       else if (basis_type == RYS)
 	bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
 				  p, 1.0, true, growth_type));
+      else if (basis_type == JACOBI)
+	bases[i] = Teuchos::rcp(new Stokhos::JacobiBasis<int,double>(
+				  p, alpha, beta, true, growth_type));
     }
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
     if (prod_basis_type == COMPLETE)
@@ -174,6 +183,10 @@ int main(int argc, char **argv)
     std::cout << "basis size = " << basis->size() 
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
 	      << std::endl;
+
+    if (print) {
+      std::cout << *Cijk << std::endl;
+    }
 
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);

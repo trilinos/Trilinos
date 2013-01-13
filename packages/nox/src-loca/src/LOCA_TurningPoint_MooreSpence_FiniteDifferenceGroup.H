@@ -99,7 +99,7 @@ namespace LOCA {
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDpMulti(const vector<int>& paramIDs, 
+	computeDJnDpMulti(const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::Vector& nullVector,
 			  NOX::Abstract::MultiVector& result,
 			  bool isValid);

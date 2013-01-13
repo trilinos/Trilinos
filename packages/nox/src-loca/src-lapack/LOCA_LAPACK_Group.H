@@ -185,7 +185,7 @@ namespace LOCA {
       virtual void setParam(int paramID, double val);
 
       //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val);
+      virtual void setParam(std::string paramID, double val);
 
       //! Return a const reference to the parameter vector owned by the group. 
       const LOCA::ParameterVector& getParams() const;
@@ -194,7 +194,7 @@ namespace LOCA {
       virtual double getParam(int paramID) const;
 
       //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const;
+      virtual double getParam(std::string paramID) const;
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*! 

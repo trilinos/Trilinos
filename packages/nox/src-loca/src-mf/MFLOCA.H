@@ -69,7 +69,7 @@ extern "C" {
 
 // Structure to hold info for each continuation parameter
 struct ParamData {
-  string name;
+  std::string name;
   int ID;
   double initialValue;
   double minValue;

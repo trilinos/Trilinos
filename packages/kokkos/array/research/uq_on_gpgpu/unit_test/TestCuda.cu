@@ -73,72 +73,83 @@
 
 namespace unit_test {
 
-template<>
-void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, bool test_block)
-{
-  typedef KokkosArray::Cuda Device;
+template<typename Scalar>
+struct performance_test_driver<Scalar,KokkosArray::Cuda> {
+  static void run(bool test_flat, bool test_orig, bool test_block, bool check){
+    typedef KokkosArray::Cuda Device;
+    
+    int nGrid;
+    int nIter; 
+    bool print;
 
-  int nGrid;
-  int nIter; 
-  bool print;
-
-  // All methods compared against flat-original
-  if (test_flat) {
-    nGrid = 5 ;
-    nIter = 1 ; 
-    print = false ;
-    performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
-    					 test_block );
-    performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
-					 test_block );
-  }
-
+    // All methods compared against flat-original
+    if (test_flat) {
+      nGrid = 5 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_all<Scalar,Device>( 
+	3 , 1 ,  9 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_all<Scalar,Device>( 
+	5 , 1 ,  5 , nGrid , nIter , print , test_block , check );
+    }
+    
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
-  // Just polynomial methods compared against original
-  if (test_orig) {
-    nGrid = 32 ;
-    nIter = 1 ; 
-    print = false ;
-    performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-					  test_block );
-    performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
-					  test_block );
-  }
+    // Just polynomial methods compared against original
+    if (test_orig) {
+      nGrid = 32 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_poly<Scalar,Device>( 
+	3 , 1 , 12 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_poly<Scalar,Device>( 
+	5 , 1 ,  6 , nGrid , nIter , print , test_block , check );
+    }
 #endif
-
-  //------------------------------
-
-  /*
-  std::cout << std::endl
-            << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
-            << std::endl
-	    << "\"nGrid\" , "
-            << "\"VectorSize\" , "
-            << "\"MXV-Time\""
-            << std::endl ;
-
-  for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
-
-    const std::pair<size_t,double> perf_flat =
+    
+    //------------------------------
+    
+    /*
+      std::cout << std::endl
+      << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
+      << std::endl
+      << "\"nGrid\" , "
+      << "\"VectorSize\" , "
+      << "\"MXV-Time\""
+      << std::endl ;
+      
+      for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
+      
+      const std::pair<size_t,double> perf_flat =
       test_flat_matrix<double,Device>( n_grid , nIter , print );
-
-    std::cout << n_grid << " , "
-	      << perf_flat.first << " , "
-              << perf_flat.second
-              << std::endl ;
+      
+      std::cout << n_grid << " , "
+      << perf_flat.first << " , "
+      << perf_flat.second
+      << std::endl ;
+      }
+    */
+    
+    //------------------------------
   }
-  */
 
-  //------------------------------
-}
+};
 
 }
 
-int mainCuda(bool test_flat, bool test_orig, bool test_block)
+template <typename Scalar>
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id)
 {
   typedef unsigned long long int IntType ;
 
   KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+
+  cudaSetDevice(device_id);
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device_id);
+  std::cout << std::endl 
+	    << "Device " << device_id << ": " << deviceProp.name 
+	    << std::endl;
 
 //  unit_test::test_dense<KokkosArray::Cuda>();
 //  unit_test::test_diagonal<KokkosArray::Cuda>();
@@ -170,11 +181,13 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block)
   unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 100 , 10 );
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Cuda>(
-    test_flat, test_orig, test_block);
+  unit_test::performance_test_driver<Scalar,KokkosArray::Cuda>::run(
+    test_flat, test_orig, test_block, check);
 
   KokkosArray::Cuda::finalize();
 
   return 0 ;
 }
 
+template int mainCuda<float>(bool, bool, bool, bool, int);
+template int mainCuda<double>(bool, bool, bool, bool, int);

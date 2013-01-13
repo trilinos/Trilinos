@@ -80,7 +80,7 @@ solve(Teuchos::ParameterList& params,
       NOX::Abstract::MultiVector& X,
       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::LowerTriangularBlockElimination::solve()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -179,7 +179,7 @@ solveTranspose(Teuchos::ParameterList& params,
 	       NOX::Abstract::MultiVector& X,
 	       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::LowerTriangularBlockElimination::solveTranspose()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;

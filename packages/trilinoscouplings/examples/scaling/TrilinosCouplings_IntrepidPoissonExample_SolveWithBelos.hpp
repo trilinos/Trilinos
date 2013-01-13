@@ -136,6 +136,9 @@ solveWithBelos (bool& converged,
   belosParams->set ("Block Size", numColsB);
   belosParams->set ("Maximum Iterations", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
+  belosParams->set("Output Frequency",10);
+  belosParams->set("Output Style",1);
+  belosParams->set("Verbosity",33);
 
   RCP<problem_type> problem = rcp (new problem_type (A, X, B));
   if (! M_left.is_null ()) {

@@ -202,7 +202,7 @@ NOX::Utils::Fill NOX::Utils::fill(int filln, char fillc)
   return NOX::Utils::Fill(filln, fillc);
 }
 
-ostream& NOX::operator<<(ostream& os, const NOX::Utils::Fill& f)
+std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils::Fill& f)
 {
   for (int i = 0; i < f.n; i ++)
     os << f.c;
@@ -219,12 +219,12 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
   return NOX::Utils::Sci(dval, p);
 }
 
-ostream& NOX::operator<<(ostream& os, const NOX::Utils::Sci& s)
+std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils::Sci& s)
 {
-  os.setf(ios::scientific);
+  os.setf(std::ios::scientific);
   os.precision(s.p);
-  os << setw(s.p + 6) << s.d;
-  os.unsetf(ios::scientific);
+  os << std::setw(s.p + 6) << s.d;
+  os.unsetf(std::ios::scientific);
   return os;
 }
 
@@ -270,16 +270,16 @@ std::ostream& NOX::Utils::perr() const
   return *errorStream;
 }
 
-void NOX::Utils::print(ostream& os) const
+void NOX::Utils::print(std::ostream& os) const
 {
-  os << "NOX::Utils Printing Object" << endl;
-  os << "Output Information Level = " << printTest << endl;
-  os << "My PID = " << myPID << endl;
-  os << "Print Processor = " << printProc << endl;
-  os << "Precision = " << precision << endl;
+  os << "NOX::Utils Printing Object" << std::endl;
+  os << "Output Information Level = " << printTest << std::endl;
+  os << "My PID = " << myPID << std::endl;
+  os << "Print Processor = " << printProc << std::endl;
+  os << "Precision = " << precision << std::endl;
 }
 
-ostream& NOX::operator<<(ostream& os, const NOX::Utils& utils)
+std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils& utils)
 {
   utils.print(os);
   return os;

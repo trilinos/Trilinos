@@ -88,6 +88,10 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
   fields.add(Ioss::Field("node_connectivity_status",
 			 Ioss::Field::CHARACTER, SCALAR(),
 			 Ioss::Field::MESH, node_count));
+
+  fields.add(Ioss::Field("owning_processor",
+			 field_int_type(), SCALAR(),
+			 Ioss::Field::MESH, node_count));
 }
 
 Ioss::NodeBlock::~NodeBlock() {}

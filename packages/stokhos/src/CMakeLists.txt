@@ -382,7 +382,7 @@ ENDIF()
 
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
-  # this is a manual specification of include dirs, necessary because 
+  # this is a manual specification of include dirs, necessary because
   # CUDA_COMPILE doesn't recognize the package architecture system.
   GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   LIST(APPEND Stokhos_CUDA_INC_DIRS ${Teuchos_INCLUDE_DIRS})
@@ -392,7 +392,7 @@ IF (Stokhos_ENABLE_Thrust)
   #message("Stokhos_CUDA_INC_DIRS = ${Stokhos_CUDA_INC_DIRS}")
   CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
   CUDA_COMPILE(CUDA_SOURCES
-    Stokhos_CUDAStorage.cu 
+    Stokhos_CUDAStorage.cu
     Stokhos_CUDAQuadOrthogPolyExpansion.cu
   )
   SET(HEADERS ${HEADERS}
@@ -413,4 +413,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
- 
+
+#

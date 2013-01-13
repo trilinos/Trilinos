@@ -210,7 +210,7 @@ public:
    * \param overlap (In) - specified overlap, defaulted to 0.
    */
   static Ifpack_Preconditioner* Create(
-    EPrecType PrecType, Epetra_RowMatrix* Matrix, const int overlap = 0
+    EPrecType PrecType, Epetra_RowMatrix* Matrix, const int overlap = 0, bool overrideSerialDefault = false
     );
 
   /** \brief Creates an instance of Ifpack_Preconditioner given the string
@@ -229,7 +229,8 @@ public:
    */
   Ifpack_Preconditioner* Create(const string PrecType,
 				Epetra_RowMatrix* Matrix,
-				const int overlap = 0);
+				const int overlap = 0,
+                                bool overrideSerialDefault = false);
 
   /** \brief Sets the options in List from the command line.
    *

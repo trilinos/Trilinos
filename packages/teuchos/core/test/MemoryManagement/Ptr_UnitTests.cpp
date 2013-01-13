@@ -60,7 +60,6 @@ using Teuchos::NullReferenceError;
 using Teuchos::DanglingReferenceError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
-using Teuchos::RCP_STRENGTH_INVALID;
 
 
 TEUCHOS_UNIT_TEST( Ptr, nonnull )

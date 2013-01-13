@@ -94,7 +94,7 @@ namespace LOCA {
       const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs);
+      const std::vector<int>& paramIDs);
 
       //! Copy constructor
       NaturalGroup(const NaturalGroup& source, 

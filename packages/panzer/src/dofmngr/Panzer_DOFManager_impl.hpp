@@ -281,7 +281,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   }
   
   Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<const Teuchos::Comm<int> > comm = communicator_;
   RCP<Node> node = platform.getNode();
 
   /* STEPS.

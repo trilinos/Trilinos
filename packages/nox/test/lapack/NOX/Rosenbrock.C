@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
   printParams.set("Output Precision", 5);
        
-  string paramFilename;     
+  std::string paramFilename;     
   bool   usingParamInputFile = false;
 
   if (argc > 1) { 
@@ -189,14 +189,14 @@ int main(int argc, char *argv[]) {
 
        if (argc < 3)
          {
-            cout << "Error: An input parameter file was expected but not found. \n" << endl;
+            std::cout << "Error: An input parameter file was expected but not found. \n" << std::endl;
             printParams.set("Output Information", NOX::Utils::Error);
 	    NOX::Utils printing(printParams);
             return 1;
          }
 
        paramFilename = argv[2];
-       cout << "Reading parameter information from file \"" << paramFilename << "\""<< endl;
+       std::cout << "Reading parameter information from file \"" << paramFilename << "\""<< std::endl;
        usingParamInputFile = true;
 
       }
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 
   // Identify the test
   if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << endl;
+    std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
   }
 
   // Final return value (0 = succefull, non-zero = failure)
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
   // Read parameters from file paramFilename - command line arg#1
   if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, noxParams))
-     cout << "Using unchanged parameters " << endl;
+     std::cout << "Using unchanged parameters " << std::endl;
   
   // Create the solver
   Teuchos::RCP<NOX::Solver::Generic> solver = 
@@ -245,8 +245,8 @@ int main(int argc, char *argv[]) {
   NOX::StatusTest::StatusType status = solver->solve();
 
   // Print the answer
-  cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver->getList().print(cout);
+  std::cout << "\n" << "-- Parameter List From Solver --" << "\n";
+  solver->getList().print(std::cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
@@ -256,11 +256,11 @@ int main(int argc, char *argv[]) {
   //return status;
   int returnValue = 1;
   if (status == NOX::StatusTest::Converged) {
-    cout << "Test passed!" << endl;
+    std::cout << "Test passed!" << std::endl;
     returnValue = 0;
   }
   else
-    cout << "Test failed!" << endl;
+    std::cout << "Test failed!" << std::endl;
   
   return returnValue;
 }

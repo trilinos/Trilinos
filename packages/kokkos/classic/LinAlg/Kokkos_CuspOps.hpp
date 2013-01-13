@@ -450,6 +450,17 @@ namespace Kokkos {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos::CuspOps does not support solve() because Cusp library does not provide sparse triangular solve.");
     }
 
+    template <class DomainScalar, class RangeScalar>
+    void
+    gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& dampingFactor,
+                 const ESweepDirection direction) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: gaussSeidel not implemented");
+    }
     //@}
 
   private:

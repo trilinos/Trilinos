@@ -82,21 +82,21 @@ NOX::LAPACK::Vector::~Vector()
 {
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
-						const vector<double>& source)
+NOX::Abstract::Vector& 
+NOX::LAPACK::Vector::operator=(const std::vector<double>& source)
 {
   x = source;
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
-					   const NOX::Abstract::Vector& source)
+NOX::Abstract::Vector& 
+NOX::LAPACK::Vector::operator=(const NOX::Abstract::Vector& source)
 {
   return operator=(dynamic_cast<const NOX::LAPACK::Vector&>(source));
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
-					   const NOX::LAPACK::Vector& source)
+NOX::Abstract::Vector&
+NOX::LAPACK::Vector::operator=(const NOX::LAPACK::Vector& source)
 {
   x = source.x;
   return *this;
@@ -253,7 +253,7 @@ double NOX::LAPACK::Vector::norm(const NOX::Abstract::Vector& weights) const
 double NOX::LAPACK::Vector::norm(const NOX::LAPACK::Vector& weights) const
 {
   if (weights.length() != n) {
-    cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << endl;
+    std::cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << std::endl;
     throw "NOX::LAPACK Error";
   }
 
@@ -275,8 +275,8 @@ double NOX::LAPACK::Vector::innerProduct(const NOX::Abstract::Vector& y) const
 double NOX::LAPACK::Vector::innerProduct(const NOX::LAPACK::Vector& y) const
 {
   if (y.length() != n) {
-    cerr << "NOX::LAPACK::Vector::innerProduct - size mismatch for y vector" 
-	 << endl;
+    std::cerr << "NOX::LAPACK::Vector::innerProduct - size mismatch for y vector" 
+	 << std::endl;
     throw "NOX::LAPACK Error";
   }
 
@@ -308,7 +308,7 @@ const double& NOX::LAPACK::Vector::operator() (int i) const
   return x[i];
 }
 
-ostream& NOX::LAPACK::Vector::leftshift(ostream& stream) const
+std::ostream& NOX::LAPACK::Vector::leftshift(std::ostream& stream) const
 {
   stream << "[ ";
   for (int i = 0; i < n; i ++)
@@ -317,13 +317,13 @@ ostream& NOX::LAPACK::Vector::leftshift(ostream& stream) const
   return stream;
 }
 
-ostream& NOX::LAPACK::operator<<(ostream& stream, const NOX::LAPACK::Vector& v)
+std::ostream& NOX::LAPACK::operator<<(std::ostream& stream, const NOX::LAPACK::Vector& v)
 {
   return v.leftshift(stream);
 }
 
 void NOX::LAPACK::Vector::print(std::ostream& stream) const
 {
-  stream << *this << endl;
+  stream << *this << std::endl;
 }
 

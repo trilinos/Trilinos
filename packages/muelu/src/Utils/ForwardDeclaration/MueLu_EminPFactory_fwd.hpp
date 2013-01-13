@@ -46,6 +46,9 @@
 #ifndef MUELU_EMINPFACTORY_FWD_HPP
 #define MUELU_EMINPFACTORY_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class EminPFactory;
@@ -53,6 +56,8 @@ namespace MueLu {
 
 #ifndef MUELU_EMINPFACTORY_SHORT
 #define MUELU_EMINPFACTORY_SHORT
+#endif
+
 #endif
 
 #endif // MUELU_EMINPFACTORY_FWD_HPP

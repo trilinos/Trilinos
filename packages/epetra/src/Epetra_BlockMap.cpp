@@ -53,7 +53,7 @@
 
 //==============================================================================
 // Epetra_BlockMap constructor function for a Epetra-defined uniform linear distribution of constant size elements.
-void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm, bool IsLongLong)
+void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size, long long Index_Base, const Epetra_Comm& comm, bool IsLongLong)
 {
   
   // Each processor gets roughly numGlobalPoints/p points
@@ -78,7 +78,7 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
 
   BlockMapData_->NumMyElements_ = (int) (BlockMapData_->NumGlobalElements_ / NumProc);
   int remainder = (int) (BlockMapData_->NumGlobalElements_ % NumProc); // remainder will fit int
-  int start_index = MyPID * (BlockMapData_->NumMyElements_ + 1);
+  long long start_index = (long long)(MyPID) * (BlockMapData_->NumMyElements_ + 1);
 
   if (MyPID < remainder) 
     BlockMapData_->NumMyElements_++;
@@ -104,7 +104,7 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
 
 //==============================================================================
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size, long long Index_Base, const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {
@@ -127,7 +127,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int Element_Size, int I
 // Epetra_BlockMap constructor function for a user-defined linear distribution of constant size elements.
 void Epetra_BlockMap::ConstructUserLinear(
     long long NumGlobal_Elements, int NumMy_Elements,
-    int Element_Size, int Index_Base, const Epetra_Comm& comm, bool IsLongLong)
+    int Element_Size, long long Index_Base, const Epetra_Comm& comm, bool IsLongLong)
 {
   if (NumGlobal_Elements < -1) 
     throw ReportError("NumGlobal_Elements = " + toString(NumGlobal_Elements) + ".  Should be >= -1.", -1);
@@ -199,7 +199,7 @@ void Epetra_BlockMap::ConstructUserLinear(
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements, 
-      int Element_Size, int Index_Base, const Epetra_Comm& comm)
+      int Element_Size, long long Index_Base, const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {
@@ -223,7 +223,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 template<typename int_type>
 void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int NumMy_Elements,
                                  const int_type * myGlobalElements, 
-         int Element_Size, int indexBase,
+         int Element_Size, int_type indexBase,
                                  const Epetra_Comm& comm, bool IsLongLong)
 {
   int i;
@@ -294,7 +294,11 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
     // Use the Allreduce function to find min/max GID 
     long long *tmp_send = new long long[2];
     long long *tmp_recv = new long long[2];
-    tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
+    if (BlockMapData_->NumMyElements_ > 0 ||
+        BlockMapData_->NumGlobalElements_ == 0) // This test restores behavior for empty map
+      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
+    else
+      tmp_send[0] = -(std::numeric_limits<int_type>::max())-1;
     tmp_send[1] =   BlockMapData_->MaxMyGID_;
     BlockMapData_->Comm_->MaxAll(tmp_send, tmp_recv, 2);
     BlockMapData_->MinAllGID_ = - tmp_recv[0];
@@ -315,7 +319,7 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
                                  const long long * myGlobalElements, 
-         int Element_Size, int indexBase,
+         int Element_Size, long long indexBase,
                                  const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
@@ -345,7 +349,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 template<typename int_type>
 void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int NumMy_Elements,
                                  const int_type * myGlobalElements, 
-         const int *elementSizeList, int indexBase,
+         const int *elementSizeList, int_type indexBase,
                                  const Epetra_Comm& comm, bool IsLongLong)
 {
 
@@ -429,7 +433,11 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
     CheckValidNGE(NumGlobal_Elements);
     
     // Use the MaxAll function to find min/max GID 
-    tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative signs lets us do one reduction
+    if (BlockMapData_->NumMyElements_ > 0 ||
+        BlockMapData_->NumGlobalElements_ == 0) // This test restores behavior for empty map
+      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
+    else
+      tmp_send[0] = -(std::numeric_limits<int_type>::max())-1;
     tmp_send[1] =   BlockMapData_->MaxMyGID_;
     tmp_send[2] = - BlockMapData_->MinMyElementSize_;
     if (BlockMapData_->NumMyElements_ == 0) 
@@ -466,7 +474,7 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
                                  const long long * myGlobalElements, 
-         const int *elementSizeList, int indexBase,
+         const int *elementSizeList, long long indexBase,
                                  const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
@@ -516,7 +524,7 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
   if (BlockMapData_->MinAllGID_ != Map.MinAllGID64() ||
       BlockMapData_->MaxAllGID_ != Map.MaxAllGID64() ||
       BlockMapData_->NumGlobalElements_ != Map.NumGlobalElements64() ||
-      BlockMapData_->IndexBase_ != Map.IndexBase()) 
+      BlockMapData_->IndexBase_ != Map.IndexBase64()) 
     return(false);
   
   // Last possible global check for constant element sizes
@@ -1057,18 +1065,18 @@ long long Epetra_BlockMap::GID64(int lid) const
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_BlockMap::GID(int lid) const
 {
-  if ((BlockMapData_->NumMyElements_==0) ||
-      (lid < BlockMapData_->MinLID_) || 
-      (lid > BlockMapData_->MaxLID_)) {
-    return(BlockMapData_->IndexBase_ - 1); // Out of range
-  }
-
-  if (LinearMap()) {
-    return(lid + (int) BlockMapData_->MinMyGID_); // Can compute with an offset
-  }
-
   if(BlockMapData_->GlobalIndicesInt_)
   {
+    if ((BlockMapData_->NumMyElements_==0) ||
+        (lid < BlockMapData_->MinLID_) || 
+        (lid > BlockMapData_->MaxLID_)) {
+      return((int) BlockMapData_->IndexBase_ - 1); // Out of range
+    }
+
+    if (LinearMap()) {
+      return(lid + (int) BlockMapData_->MinMyGID_); // Can compute with an offset
+    }
+
     return(BlockMapData_->MyGlobalElements_int_[lid]); // Find it in MyGlobalElements array
   }
 
@@ -1222,7 +1230,7 @@ void Epetra_BlockMap::Print(ostream & os) const
   os <<    "Number of Global Points    = "; os << NumGlobalPoints64(); os << endl;
   os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << endl;
   os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << endl;
-  os <<    "Index Base                 = "; os << IndexBase(); os << endl;
+  os <<    "Index Base                 = "; os << IndexBase64(); os << endl;
   if (ConstantElementSize())
     os <<  "Constant Element Size      = "; os << ElementSize(); os << endl;
       }

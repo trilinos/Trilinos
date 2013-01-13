@@ -1,7 +1,0 @@
-CGSolver
-Constraint
-ConstraintFactory
-EminPFactory
-NullspacePresmoothFactory
-PatternFactory
-SteepestDescentSolver

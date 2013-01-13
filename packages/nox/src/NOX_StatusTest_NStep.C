@@ -108,7 +108,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::NStep::getStatus() const
   return status_;
 }
 
-ostream& NOX::StatusTest::NStep::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::NStep::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';

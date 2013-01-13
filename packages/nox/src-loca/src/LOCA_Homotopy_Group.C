@@ -253,7 +253,7 @@ LOCA::Homotopy::Group::computeGradient()
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::Group::computeGradient()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -282,7 +282,7 @@ LOCA::Homotopy::Group::computeNewton(Teuchos::ParameterList& params)
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::Group::computeNewton()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
   
@@ -543,7 +543,7 @@ LOCA::Homotopy::Group::copy(const NOX::Abstract::Group& src)
 
 void
 LOCA::Homotopy::Group::setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   resetIsValidFlags();
@@ -571,7 +571,7 @@ LOCA::Homotopy::Group::setParam(int paramID, double val)
 }
 
 void
-LOCA::Homotopy::Group::setParam(string paramID, double val)
+LOCA::Homotopy::Group::setParam(std::string paramID, double val)
 {
   resetIsValidFlags();
   grpPtr->setParam(paramID, val);
@@ -592,13 +592,13 @@ LOCA::Homotopy::Group::getParam(int paramID) const
 }
 
 double
-LOCA::Homotopy::Group::getParam(string paramID) const
+LOCA::Homotopy::Group::getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Homotopy::Group::computeDfDpMulti(const vector<int>& paramIDs, 
+LOCA::Homotopy::Group::computeDfDpMulti(const std::vector<int>& paramIDs, 
 					NOX::Abstract::MultiVector& dfdp, 
 					bool isValidF)
 {
@@ -610,8 +610,8 @@ LOCA::Homotopy::Group::computeDfDpMulti(const vector<int>& paramIDs,
   // Things get kind of messy otherwise
 
   // Extract parameter IDs that are not the continuation parameter
-  vector<int> pIDs;
-  vector<int> idx(1);
+  std::vector<int> pIDs;
+  std::vector<int> idx(1);
   idx[0] = 0; // index 0 corrsponds to f in dfdp
   for (unsigned int i=0; i<paramIDs.size(); i++)
     if (paramIDs[i] != conParamID) {

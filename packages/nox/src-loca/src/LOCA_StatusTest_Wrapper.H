@@ -93,7 +93,7 @@ namespace LOCA {
       virtual NOX::StatusTest::StatusType getStatus() const;
       
       //! Calls print of underlying status test
-      virtual ostream& print(ostream& stream, int indent = 0) const;
+      virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
       //! Returns underlying status test
       Teuchos::RCP<NOX::StatusTest::Generic>

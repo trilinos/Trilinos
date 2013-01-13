@@ -142,7 +142,7 @@ public:
   virtual ~Partitioner() {};
 
   //! Returns the number of computed local partitions.
-  virtual size_t numLocalParts() const = 0;
+  virtual LocalOrdinal numLocalParts() const = 0;
 
   //! Returns the overlapping level.
   virtual size_t overlappingLevel() const = 0;

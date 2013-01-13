@@ -928,7 +928,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     int_type* nlr_ptr = nonlocalRows_var.size() > 0 ? &nonlocalRows_var[0] : 0;
     if (sourceMap_ == NULL)
       sourceMap_ = new Epetra_Map((int_type) -1, (int) nonlocalRows_var.size(), nlr_ptr,
-            Map().IndexBase(), Map().Comm());
+            (int_type) Map().IndexBase64(), Map().Comm());
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
     //skip most of this function.
@@ -965,7 +965,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
 
       colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
-                               Map().IndexBase(), Map().Comm());
+                               (int_type) Map().IndexBase64(), Map().Comm());
     }
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.

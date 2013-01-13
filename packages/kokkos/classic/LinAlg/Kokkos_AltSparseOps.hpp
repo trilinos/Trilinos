@@ -1362,6 +1362,46 @@ namespace Kokkos {
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
 
+    /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.  
+    ///
+    /// \note We don't include a separate "Symmetric" direction mode
+    ///   in order to avoid confusion when using this method to
+    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
+    ///   for a matrix distributed over multiple processes.  ("Hybrid"
+    ///   means "Gauss-Seidel or SOR within the process, Jacobi
+    ///   outside.")  In that case, interprocess communication (a
+    ///   boundary exchange) must occur before both the forward sweep
+    ///   and the backward sweep, so we would need to invoke the
+    ///   kernel once per sweep direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void 
+    gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+		 MultiVector< RangeScalar,Node> &X,
+		 const MultiVector<Scalar,Node> &D,
+		 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+		 const enum ESweepDirection direction = Forward) const;
     //@}
 
   private:
@@ -1730,6 +1770,20 @@ namespace Kokkos {
     }
     opgraph->getMatDesc (tri_uplo_, unit_diag_);
     isInitialized_ = true;
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void 
+  AltSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+	       MultiVector< RangeScalar,Node> &X,
+	       const MultiVector<Scalar,Node> &D,
+	       const RangeScalar& dampingFactor,
+	       const ESweepDirection direction) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+      "AltSparseOps: gaussSeidel not implemented");
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>

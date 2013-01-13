@@ -52,6 +52,9 @@
 #define LOCA_PARAMETER_VECTOR_H
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
+#include <string>
+#include <vector>
+#include <ostream>
 
 // Forward declarations
 namespace LOCA {
@@ -84,7 +87,7 @@ public:
   ~ParameterVector();
 
   //! Adds a parameter to the list.  Returns the index value assigned to the parameter.
-  int addParameter(string label, double value = 0.0);
+  int addParameter(std::string label, double value = 0.0);
 
   //! Initialize the vector.  Returns true if successful.
   bool init(double value);
@@ -111,50 +114,50 @@ public:
   void setValue(unsigned int i, double value);
 
   //! Set the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
-  void setValue(string label, double value);
+  void setValue(std::string label, double value);
 
   //! Returns the value of the parameter with index i.  Will throw an error if index is out of range.
   double getValue(unsigned int i) const;
 
   //! Returns the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
-  double getValue(string label) const;
+  double getValue(std::string label) const;
 
   //! Returns the index of the parameter with the corresponding label.  Returns a -1 if "label" is not found.
-  int getIndex(string label) const;
+  int getIndex(std::string label) const;
 
   //! Returns a pointer to a C-style array of the parameter values.
   double* getDoubleArrayPointer();
 
-  //! Returns true if the parameter string "label" corresponds to a parameter label in the object.
-  bool isParameter(string label) const;
+  //! Returns true if the parameter std::string "label" corresponds to a parameter label in the object.
+  bool isParameter(std::string label) const;
 
   //! Returns the label of the parameter with index i.
-  string getLabel(unsigned int i) const;
+  std::string getLabel(unsigned int i) const;
 
   //! Returns the length of parameter vector.
   int length() const;
 
   //! Prints the vector to cout.
-  void print(ostream& stream) const;
+  void print(std::ostream& stream) const;
 
   //! Accessor to get the underlying stl vector with all parameter values
-  const vector<double>& getValuesVector() const;
+  const std::vector<double>& getValuesVector() const;
 
   //! Accessor to get the underlying stl vector with all parameter names
-  const vector<string>& getNamesVector() const;
+  const std::vector<std::string>& getNamesVector() const;
 
 protected:
 
   //! Parameter values
-  vector<double> x;
+  std::vector<double> x;
 
   //! Parameter names
-  vector<string> l;
+  std::vector<std::string> l;
 
 };
 
 //! Overload the operator<< to print ParameterVector objects.
-ostream& operator<<(ostream& stream, const LOCA::ParameterVector& p);
+std::ostream& operator<<(std::ostream& stream, const LOCA::ParameterVector& p);
 
 } //namespace LOCA
 

@@ -91,7 +91,7 @@ LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks(
 	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks";
 
   op = op_;
@@ -255,7 +255,7 @@ LOCA::BorderedSolver::EpetraAugmented::applyInverse(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::EpetraAugmented::applyInverse()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

@@ -77,7 +77,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     SortGhostsAssociatedWithEachProcessor_(false),
 
     // ints
-    IndexBase_(RowMap.IndexBase()),
+    IndexBase_(RowMap.IndexBase64()),
     NumGlobalEntries_(0),
     NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
     NumGlobalBlockCols_(NumGlobalBlockRows_),
@@ -151,7 +151,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     StaticProfile_(StaticProfile),
     SortGhostsAssociatedWithEachProcessor_(false),
     // ints
-    IndexBase_(RowMap.IndexBase()),
+    IndexBase_(RowMap.IndexBase64()),
     NumGlobalEntries_(0),
     NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
     NumGlobalBlockCols_(ColMap.NumGlobalElements64()),

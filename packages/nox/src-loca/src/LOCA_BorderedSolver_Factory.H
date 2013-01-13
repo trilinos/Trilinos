@@ -112,7 +112,7 @@ namespace LOCA {
 	const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Return strategy name given by \c solverParams
-      const string& strategyName(Teuchos::ParameterList& solverParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& solverParams) const;
 
     private:
 

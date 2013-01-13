@@ -100,6 +100,8 @@ namespace Ioss {
       bool is_input() const {return isInput;}
       Ioss::DatabaseUsage usage() const {return dbUsage;}
       
+      virtual bool needs_shared_node_information() const {return false;}
+
       Ioss::IfDatabaseExistsBehavior open_create_behavior() const;
       
       void set_region(Region* region) {region_ = region;}

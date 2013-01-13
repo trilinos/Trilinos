@@ -169,19 +169,19 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   Comm->Barrier();
   printf("[%d] StandardNodeMap :\n", MyPID);
   Comm->Barrier();
-  cout << *StandardNodeMap << endl;
+  std::cout << *StandardNodeMap << std::endl;
   Comm->Barrier();
   printf("[%d] OverlapNodeMap :\n", MyPID);
   Comm->Barrier();
-  cout << *OverlapNodeMap << endl;
+  std::cout << *OverlapNodeMap << std::endl;
   Comm->Barrier();
   printf("[%d] StandardMap :\n", MyPID);
   Comm->Barrier();
-  cout << *StandardMap << endl;
+  std::cout << *StandardMap << std::endl;
   Comm->Barrier();
   printf("[%d] StandardMap :\n", MyPID);
   Comm->Barrier();
-  cout << *OverlapMap << endl;
+  std::cout << *OverlapMap << std::endl;
   Comm->Barrier();
 #endif
 
@@ -280,7 +280,7 @@ PelletTransport::initializeSoln()
 
   if( restart )
   {
-    string name = "restartVec";
+    std::string name = "restartVec";
     Epetra_Vector * tmpVec = NULL;
     NOX::Epetra::DebugTools::readVector(name, soln.Comm(), tmpVec );
     soln = *tmpVec;
@@ -305,8 +305,8 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   if( fType == NOX::Epetra::Interface::Required::Jac ) 
   {
-    cout << "This problem only works for Finite-Difference or Matrix-Free Based Jacobians." 
-         << " No analytic Jacobian fill available !!" << endl;
+    std::cout << "This problem only works for Finite-Difference or Matrix-Free Based Jacobians." 
+         << " No analytic Jacobian fill available !!" << std::endl;
     throw "Problem ERROR";
   }
   else 
@@ -328,7 +328,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   MaterialPropBase::PropData materialProps;
   // Hard-code use of UO2 for now - RWH 5/14/2007
-  string fixedType = "UO2";
+  std::string fixedType = "UO2";
   
   int OverlapMinMyNodeGID;
   if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
@@ -453,8 +453,8 @@ PelletTransport::getJacobian()
 {
   if( Teuchos::is_null(A) ) return A;
   else {
-    cout << "No valid Jacobian matrix for this problem.  This is likely the"
-         << " result of overlapping NODES rather than ELEMENTS.\n" << endl;
+    std::cout << "No valid Jacobian matrix for this problem.  This is likely the"
+         << " result of overlapping NODES rather than ELEMENTS.\n" << std::endl;
     throw "PelletTransport Error";
   }
 }

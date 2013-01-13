@@ -108,13 +108,13 @@ LOCA::Factory::createPredictorStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& predictorParams)
 {
-  string methodName = "LOCA::Factory::createPredictorStrategy()";
+  std::string methodName = "LOCA::Factory::createPredictorStrategy()";
   Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       predictorFactory.strategyName(*predictorParams);
     bool created = factory->createPredictorStrategy(strategyName,
 						    topParams,
@@ -135,15 +135,15 @@ LOCA::Factory::createContinuationStrategy(
       const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs)
+      const std::vector<int>& paramIDs)
 {
-  string methodName = "LOCA::Factory::createContinuationStrategy()";
+  std::string methodName = "LOCA::Factory::createContinuationStrategy()";
   Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       continuationFactory.strategyName(*stepperParams);
     bool created = factory->createContinuationStrategy(strategyName,
 						       topParams,
@@ -166,13 +166,13 @@ LOCA::Factory::createBifurcationStrategy(
       const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
-  string methodName = "LOCA::Factory::createBifurcationStrategy()";
+  std::string methodName = "LOCA::Factory::createBifurcationStrategy()";
   Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       bifurcationFactory.strategyName(*bifurcationParams);
     bool created = factory->createBifurcationStrategy(strategyName,
 						      topParams,
@@ -192,13 +192,13 @@ LOCA::Factory::createStepSizeStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams)
 {
-  string methodName = "LOCA::Factory::createStepSizeStrategy()";
+  std::string methodName = "LOCA::Factory::createStepSizeStrategy()";
   Teuchos::RCP<LOCA::StepSize::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       stepsizeFactory.strategyName(*stepsizeParams);
     bool created = factory->createStepSizeStrategy(strategyName,
 						   topParams,
@@ -218,13 +218,13 @@ LOCA::Factory::createBorderedSolverStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = "LOCA::Factory::createBorderedSolverStrategy()";
+  std::string methodName = "LOCA::Factory::createBorderedSolverStrategy()";
   Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       borderedFactory.strategyName(*solverParams);
     bool created = factory->createBorderedSolverStrategy(strategyName,
 							 topParams,
@@ -244,13 +244,13 @@ LOCA::Factory::createEigensolverStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::Factory::createEigensolverStrategy()";
+  std::string methodName = "LOCA::Factory::createEigensolverStrategy()";
   Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       eigensolverFactory.strategyName(*eigenParams);
     bool created = factory->createEigensolverStrategy(strategyName,
 						      topParams,
@@ -270,13 +270,13 @@ LOCA::Factory::createEigenvalueSortStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
+  std::string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
   Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       eigenvalueSortFactory.strategyName(*eigenParams);
     bool created = factory->createEigenvalueSortStrategy(strategyName,
 							 topParams,
@@ -296,13 +296,13 @@ LOCA::Factory::createSaveEigenDataStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::Factory::createSaveEigenDataStrategy()";
+  std::string methodName = "LOCA::Factory::createSaveEigenDataStrategy()";
   Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       saveEigenFactory.strategyName(*eigenParams);
     bool created = factory->createSaveEigenDataStrategy(strategyName,
 							topParams,
@@ -324,13 +324,13 @@ LOCA::Factory::createAnasaziOperatorStrategy(
 	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
 	 const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
-  string methodName = "LOCA::Factory::createAnasaziOperatorStrategy()";
+  std::string methodName = "LOCA::Factory::createAnasaziOperatorStrategy()";
   Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       anasaziOperatorFactory.strategyName(*eigenParams);
     bool created = factory->createAnasaziOperatorStrategy(strategyName,
 							  topParams,
@@ -353,14 +353,14 @@ LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = 
+  std::string methodName = 
     "LOCA::Factory::createMooreSpenceTurningPointSolverStrategy()";
   Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       mooreSpenceTurningPointSolverFactory.strategyName(*solverParams);
     bool created = 
       factory->createMooreSpenceTurningPointSolverStrategy(strategyName,
@@ -382,14 +382,14 @@ LOCA::Factory::createMooreSpencePitchforkSolverStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = 
+  std::string methodName = 
     "LOCA::Factory::createMooreSpencePitchforkSolverStrategy()";
   Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       mooreSpencePitchforkSolverFactory.strategyName(*solverParams);
     bool created = 
       factory->createMooreSpencePitchforkSolverStrategy(strategyName,
@@ -411,14 +411,14 @@ LOCA::Factory::createMooreSpenceHopfSolverStrategy(
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  string methodName = 
+  std::string methodName = 
     "LOCA::Factory::createMooreSpenceHopfSolverStrategy()";
   Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
-    const string& strategyName = 
+    const std::string& strategyName = 
       mooreSpenceHopfSolverFactory.strategyName(*solverParams);
     bool created = 
       factory->createMooreSpenceHopfSolverStrategy(strategyName,

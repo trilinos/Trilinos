@@ -436,8 +436,8 @@ void ExodusMesh::node_map(MapVector &map)
 
 void ExodusMesh::element_map(int blockNumber, IntVector &map) const
 {
-    int offset = mElementOffsetForBlock[blockNumber-1];
-    for(size_t i=0; i < mExodusData.localNumberOfElementsInBlock[blockNumber-1]; i++)
+    int64_t offset = mElementOffsetForBlock[blockNumber-1];
+    for(int64_t i=0; i < mExodusData.localNumberOfElementsInBlock[blockNumber-1]; i++)
     {
         map[offset + i] = mExodusData.globalIdsOfLocalElements[offset + i];
     }
@@ -445,8 +445,8 @@ void ExodusMesh::element_map(int blockNumber, IntVector &map) const
 
 void ExodusMesh::element_map(int64_t blockNumber, MapVector &map) const
 {
-    int offset = mElementOffsetForBlock[blockNumber-1];
-    for(size_t i=0; i < mExodusData.localNumberOfElementsInBlock[blockNumber-1]; i++)
+    int64_t offset = mElementOffsetForBlock[blockNumber-1];
+    for(int64_t i=0; i < mExodusData.localNumberOfElementsInBlock[blockNumber-1]; i++)
     {
         map[offset + i] = mExodusData.globalIdsOfLocalElements[offset + i];
     }
@@ -454,10 +454,10 @@ void ExodusMesh::element_map(int64_t blockNumber, MapVector &map) const
 
 void ExodusMesh::element_map(MapVector &map) const
 {
-    int count = element_count_proc();
+    int64_t count = element_count_proc();
     map.resize(count);
 
-    for(int i = 0; i < count; i++)
+    for(int64_t i = 0; i < count; i++)
     {
         map[i] = mExodusData.globalIdsOfLocalElements[i];
     }
@@ -465,10 +465,10 @@ void ExodusMesh::element_map(MapVector &map) const
 
 void ExodusMesh::element_map(IntVector &map) const
 {
-    int count = element_count_proc();
+    int64_t count = element_count_proc();
     map.resize(count);
 
-    for(int i = 0; i < count; i++)
+    for(int64_t i = 0; i < count; i++)
     {
         map[i] = mExodusData.globalIdsOfLocalElements[i];
     }
