@@ -158,6 +158,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
+  Playa                 packages/Playa                    PS 
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing
   ForTrilinos           packages/ForTrilinos              EX
