@@ -777,32 +777,6 @@
       <Email address="panzer-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Playa">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILR"/>
-    <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Xpetra" type="ILO"/>
-    <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="LR"/>
-    <Dependency name="Galeri" type="ILO"/>
-    <Dependency name="Amesos" type="LR"/>
-    <Dependency name="Ifpack" type="LR"/>
-    <Dependency name="ML" type="LR"/>
-    <Dependency name="Belos" type="LR"/>
-    <Dependency name="Anasazi" type="LR"/>
-    <Dependency name="Stratimikos" type="ILO"/>
-    <Dependency name="Teko" type="ILO"/>
-    <Dependency name="NOX" type="LR"/>
-    <EmailAddresses>
-      <Email address="playa-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Sundance">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
