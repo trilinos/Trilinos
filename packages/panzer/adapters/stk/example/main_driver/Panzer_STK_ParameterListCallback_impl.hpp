@@ -50,7 +50,7 @@ namespace panzer_stk {
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
                                              const std::string & coordFieldName,
-                                             const map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fps,
+                                             const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fps,
                                              const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager, 
                                              const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)

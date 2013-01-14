@@ -515,6 +515,47 @@ namespace Tpetra {
     RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors();
 
+    // Copy rows [0, numSameIDs-1] of the local multivectors.
+    //
+    // For GPU Nodes: All of this happens using device pointers; this
+    // does not require host views of either source or destination.
+    //
+    // mfh 10 Jan 2013: In the current implementation, device data has
+    // already been copied to the host views.  If we do a
+    // device-device copy here, it won't synch the host views
+    // correctly.  Thus, we replace this step with a host copy, if
+    // Node is a GPU Node.  That ensures correctness for now, though
+    // it's really something we need to fix if we plan to run
+    // efficiently on GPUs.
+    if (Node::isHostNode) {
+      if (isConstantStride ()) {
+        const size_t numSrcCols = MVT::getNumCols (sourceMV.lclMV_);
+        const size_t numDestCols = MVT::getNumCols (lclMV_);
+
+        const KMV src = sourceMV.lclMV_.offsetView (numSameIDs, numSrcCols, 0, 0);
+        KMV dest = lclMV_.offsetViewNonConst (numSameIDs, numDestCols, 0, 0);
+        if (sourceMV.isConstantStride ()) {
+          MVT::Assign (dest, src);
+        }
+        else {
+          MVT::Assign (dest, src, sourceMV.whichVectors_ ());
+        }
+      }
+      else {
+        // Copy the columns one at a time, since MVT doesn't have an
+        // Assign method for noncontiguous access to the destination
+        // multivector.
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t destCol = isConstantStride () ? j : whichVectors_[j];
+          const size_t srcCol = sourceMV.isConstantStride () ?
+            j : sourceMV.whichVectors_[j];
+          KMV dest_j = lclMV_.offsetViewNonConst (numSameIDs, 1, 0, destCol);
+          const KMV src_j = sourceMV.lclMV_.offsetView (numSameIDs, 1, 0, srcCol);
+          MVT::Assign (dest_j, src_j); // Copy src_j into dest_j
+        }
+      }
+    }
+
     // Copy the vectors one at a time.  This works whether or not the
     // multivectors have constant stride.
     for (size_t j = 0; j < numCols; ++j) {
@@ -526,10 +567,12 @@ namespace Tpetra {
       ArrayRCP<const Scalar> srcptr = sourceMV.getSubArrayRCP(sourceMV.cview_,j);
       ArrayRCP<      Scalar> dstptr =          getSubArrayRCP(ncview_,j);
 
-      // The first numImportIDs IDs are the same between source and
-      // target, so we can just copy the data.  (This favors faster
-      // contiguous access whenever we can do it.)
-      std::copy(srcptr,srcptr+numSameIDs,dstptr);
+      if (! Node::isHostNode) {
+        // The first numSameIDs IDs are the same between source and
+        // target, so we can just copy the data.  (This favors faster
+        // contiguous access whenever we can do it.)
+        std::copy (srcptr, srcptr+numSameIDs, dstptr);
+      }
 
       // For the remaining GIDs, execute the permutations.  This may
       // involve noncontiguous access of both source and destination
