@@ -948,13 +948,25 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   {
     TimeMonitor timerAssembMultProcL (*timerAssembMultProc);
     gl_StiffMatrix->setAllToScalar (STS::zero ());
-    gl_StiffMatrix->doExport (*StiffMatrix, *exporter, Tpetra::ADD);
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix Export", 
+				     matrix_export);
+      gl_StiffMatrix->doExport (*StiffMatrix, *exporter, Tpetra::ADD);
+    }
     // If target of export has static graph, no need to do
     // setAllToScalar(0.0); export will clobber values.
-    gl_StiffMatrix->fillComplete ();
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix FillComplete", 
+				     matrix_fill_complete);
+      gl_StiffMatrix->fillComplete ();
+    }
 
     gl_rhsVector->putScalar (STS::zero ());
-    gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: RHS Export", 
+				     rhs_export);
+      gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////

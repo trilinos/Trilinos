@@ -1004,27 +1004,41 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       "Epetra_CrsMatrix::PutScalar on process " << myRank << " failed with "
       "error code " << errCode << ".");
 
-    errCode = gl_StiffMatrix->Export (*StiffMatrix, *exporter, InsertAdd);
-    TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-      "Epetra_CrsMatrix::Export on process " << myRank << " failed with "
-      "error code " << errCode << ".");
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix Export", matrix_export);
+      errCode = gl_StiffMatrix->Export (*StiffMatrix, *exporter, Add);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+	errCode != 0, std::runtime_error,
+	"Epetra_CrsMatrix::Export on process " << myRank << " failed with "
+	"error code " << errCode << ".");
+    }
 
     // If target of export has static graph, no need to do
     // PutScalar(0.0); export will clobber values.
-    errCode = gl_StiffMatrix->FillComplete ();
-    TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-      "Epetra_CrsMatrix::FillComplete on process " << myRank
-       << "failed with error code " << errCode << ".");
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix FillComplete", 
+				     matrix_fill_complete);
+      errCode = gl_StiffMatrix->FillComplete ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+	errCode != 0, std::runtime_error,
+	"Epetra_CrsMatrix::FillComplete on process " << myRank
+	<< "failed with error code " << errCode << ".");
+    }
 
     errCode = gl_rhsVector->PutScalar (STS::zero ());
     TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
       "Epetra_Vector::PutScalar on process " << myRank << " failed with "
       "error code " << errCode << ".");
 
-    errCode = gl_rhsVector->Export (*rhsVector, *exporter, Add);
-    TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-      "Epetra_Vector::Export on process " << myRank << " failed with "
-      "error code " << errCode << ".");
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: RHS Export", 
+				     rhs_export);
+      errCode = gl_rhsVector->Export (*rhsVector, *exporter, Add);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+	errCode != 0, std::runtime_error,
+	"Epetra_Vector::Export on process " << myRank << " failed with "
+	"error code " << errCode << ".");
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -1133,7 +1147,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // (multi)vector's local data.  Wrap it in a nonowning ArrayRCP.
     ArrayRCP<const int> myColsToZeroArrayRCP =
       arcp_const_cast<const int> (arcp<int> (myColsToZeroT->Values (), 0,
-                                             v->MyLength (), false));
+                                             myColsToZeroT->MyLength (), 
+					     false));
     //size_t NumEntries = 0;
     int NumEntries = 0;
 
