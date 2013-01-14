@@ -503,6 +503,13 @@ public:
   static int const minTag_ = 26000; // These came from Teuchos::MpiComm???
   static int const maxTag_ = 26099; // ""
 
+  /// \brief The current tag.
+  ///
+  /// \warning This method is ONLY for use by Teuchos developers.
+  ///   Users should not depend on the interface of this method.
+  ///   It may change or disappear at any time without warning.
+  int getTag () const { return tag_; }
+
 private:
 
   // Set internal data members once the rawMpiComm_ data member is valid.

@@ -1322,6 +1322,11 @@ reduceAll<int, std::complex<double> > (const Comm<int>& comm,
 				       const int count, 
 				       const std::complex<double> sendBuffer[], 
 				       std::complex<double> globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, std::complex<double> > (const Comm<int>& comm, 
+				      const ArrayRCP<std::complex<double> >& recvBuffer,
+				      const int sourceRank);
 
 // Specialization for Ordinal=int and Packet=std::complex<float>.
 template<>
@@ -1331,6 +1336,11 @@ reduceAll<int, std::complex<float> > (const Comm<int>& comm,
 				      const int count, 
 				      const std::complex<float> sendBuffer[], 
 				      std::complex<float> globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, std::complex<float> > (const Comm<int>& comm, 
+				     const ArrayRCP<std::complex<float> >& recvBuffer,
+				     const int sourceRank);
 #endif // TEUCHOS_HAVE_COMPLEX
 
 // Specialization for Ordinal=int and Packet=double.
@@ -1341,6 +1351,11 @@ reduceAll<int, double> (const Comm<int>& comm,
 			const int count, 
 			const double sendBuffer[], 
 			double globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, double> (const Comm<int>& comm, 
+		       const ArrayRCP<double>& recvBuffer,
+		       const int sourceRank);
 
 // Specialization for Ordinal=int and Packet=float.
 template<>
@@ -1350,6 +1365,11 @@ reduceAll<int, float> (const Comm<int>& comm,
 		       const int count, 
 		       const float sendBuffer[], 
 		       float globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, float> (const Comm<int>& comm, 
+		      const ArrayRCP<float>& recvBuffer,
+		      const int sourceRank);
 
 #ifdef TEUCHOS_HAVE_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
@@ -1360,6 +1380,11 @@ reduceAll<int, long long> (const Comm<int>& comm,
 			   const int count, 
 			   const long long sendBuffer[], 
 			   long long globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, long long> (const Comm<int>& comm, 
+			  const ArrayRCP<long long>& recvBuffer,
+			  const int sourceRank);
 #endif // TEUCHOS_HAVE_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
@@ -1370,6 +1395,11 @@ reduceAll<int, long> (const Comm<int>& comm,
 		      const int count, 
 		      const long sendBuffer[], 
 		      long globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, long> (const Comm<int>& comm, 
+		     const ArrayRCP<long>& recvBuffer,
+		     const int sourceRank);
 
 // Specialization for Ordinal=int and Packet=int.
 template<>
@@ -1379,6 +1409,11 @@ reduceAll<int, int> (const Comm<int>& comm,
 		     const int count, 
 		     const int sendBuffer[], 
 		     int globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, int> (const Comm<int>& comm, 
+		    const ArrayRCP<int>& recvBuffer,
+		    const int sourceRank);
 
 // Specialization for Ordinal=int and Packet=short.
 template<>
@@ -1388,6 +1423,11 @@ reduceAll<int, short> (const Comm<int>& comm,
 		       const int count, 
 		       const short sendBuffer[], 
 		       short globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, short> (const Comm<int>& comm, 
+		      const ArrayRCP<short>& recvBuffer,
+		      const int sourceRank);
 
 // mfh 18 Oct 2012: The specialization for Packet=char seems to be
 // causing problems such as the following:
