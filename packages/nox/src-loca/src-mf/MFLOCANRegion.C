@@ -82,7 +82,7 @@ int LOCATest(MFNVector u, void *d, MFErrorHandler err)
   LOCANVectorData* v_data = (LOCANVectorData *)MFNVectorGetData(u,err);
   LOCAData* data = (LOCAData*) d;
   
-  list<ParamData>::iterator it = data->paramData->begin();
+  std::list<ParamData>::iterator it = data->paramData->begin();
   for (unsigned int i=0; i<data->paramData->size(); i++) {
     
     if (v_data->u_ptr->getScalar(i) < it->minValue)
