@@ -160,6 +160,12 @@ namespace MueLu {
       if (factoryName == "DirectSolver") {
         return BuildDirectSolver(paramList, factoryMapIn);
       }
+      if (factoryName == "NoSmoother") {
+        return BuildNoSmoother();
+      }
+      if (factoryName == "NoDirectSolver") {
+        return BuildNoDirectSolver();
+      }
       if (factoryName == "MultiVectorTransferFactory") {
         return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
       }
@@ -234,7 +240,7 @@ namespace MueLu {
       // TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "T", Exceptions::RuntimeError, "");
       RCP<T> factory = rcp(new T());
 
-      ParameterList paramListWithFactories(paramList); // copy
+      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
       paramListWithFactories.remove("factory", false);
 
       // Read the RCP<Factory> parameters of the class T
@@ -367,6 +373,10 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
     }
 
+    RCP<FactoryBase> BuildNoSmoother() const {
+      return Teuchos::null;
+    }
+
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new DirectSolver())));
@@ -378,6 +388,10 @@ namespace MueLu {
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
+    }
+
+    RCP<FactoryBase> BuildNoDirectSolver() const {
+      return Teuchos::null;
     }
 
   }; // class
