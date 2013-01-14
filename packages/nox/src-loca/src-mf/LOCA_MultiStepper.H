@@ -170,7 +170,7 @@ namespace LOCA {
     std::vector<int> conParamIDVec;
 
     //! Stores list of continuation parameter data
-    list<ParamData> conParamData;
+    std::list<ParamData> conParamData;
   };
 } // end namespace LOCA
 
