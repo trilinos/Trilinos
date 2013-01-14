@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 2.6.5.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Positions for Bison parsers in C++
    
@@ -52,7 +52,7 @@
 
 
 namespace SEAMS {
-/* Line 38 of location.cc  */
+/* Line 36 of location.cc  */
 #line 57 "position.hh"
   /// Abstract a position.
   class position
@@ -156,8 +156,9 @@ namespace SEAMS {
    ** \param ostr the destination output stream
    ** \param pos a reference to the position to redirect
    */
-  inline std::ostream&
-  operator<< (std::ostream& ostr, const position& pos)
+  template <typename YYChar>
+  inline std::basic_ostream<YYChar>&
+  operator<< (std::basic_ostream<YYChar>& ostr, const position& pos)
   {
     if (pos.filename)
       ostr << *pos.filename << ':';
@@ -166,6 +167,6 @@ namespace SEAMS {
 
 
 } // SEAMS
-/* Line 149 of location.cc  */
-#line 171 "position.hh"
+/* Line 148 of location.cc  */
+#line 172 "position.hh"
 #endif /* !YY_SEAMS_POSITION_HH_INCLUDED  */

@@ -21,6 +21,10 @@ int main(int argc, char *argv[])
   ptr->info = "Return the successor to d";
   ptr->syntax = "succ(d)";
   
+  // EXAMPLE: Add a couple variables...
+  aprepro.add_variable("Greg", "Is the author of this code");
+  aprepro.add_variable("BirthYear", 1958);
+  
   for(int ai = 1; ai < argc; ++ai) {
     if (argv[ai] == std::string ("-s")) {
       aprepro.statistics();

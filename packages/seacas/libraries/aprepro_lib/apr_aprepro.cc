@@ -53,6 +53,7 @@ namespace SEAMS {
       }
     }
     aprepro = NULL;
+    cleanup_memory();
   }
 
   std::string Aprepro::version() const {return version_string;}
@@ -178,8 +179,8 @@ namespace SEAMS {
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value)
   {
     symrec *var = putsym(sym_name, STRING_VARIABLE, false);
-    char *tmp = (char*)malloc(sym_value.size()+1);
-    strcpy(tmp, sym_value.c_str());
+    char *tmp = NULL;
+    new_string(sym_value.c_str(), &tmp);
     var->value.svar = tmp;
   }
 

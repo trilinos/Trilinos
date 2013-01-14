@@ -137,24 +137,20 @@ sexp:     QSTRING		{ $$ = $1;				}
         | SVAR			{ $$ = (char*)$1->value.svar;			}
         | IMMSVAR		{ $$ = (char*)$1->value.svar;			}
     	| UNDVAR EQUAL sexp	{ $$ = $3; $1->value.svar = $3;
-		                  set_type(aprepro, $1, Parser::token::SVAR);			}
+		                  set_type(aprepro, $1, Parser::token::SVAR);	}
         | SVAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar = $3;
 				  redefined_warning(aprepro, $1->name);          }
         | VAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1->name);          
-		                  set_type(aprepro, $1, token::SVAR);			}
+		                  set_type(aprepro, $1, token::SVAR);		}
 	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | SFNCT LPAR sexp RPAR	{ $$ = (char*)(*($1->value.strfnct_c))($3);	}
 	| SFNCT LPAR RPAR	{ $$ = (char*)(*($1->value.strfnct))();	}
         | SFNCT LPAR exp  RPAR	{ $$ = (char*)(*($1->value.strfnct_d))($3);	}
-        | sexp CONCAT sexp	{ int len1 = strlen($1);
-				  int len3 = strlen($3);
-				  $$ = (char*)calloc(1, (len1+len3+1));
-				  memcpy($$, $1, len1+1);
-				  strcat($$, $3); }
+        | sexp CONCAT sexp	{ concat_string($1, $3, &$$); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
 				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR
