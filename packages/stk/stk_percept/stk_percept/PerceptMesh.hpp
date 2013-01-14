@@ -141,9 +141,15 @@ namespace stk {
       void
       new_mesh(const GMeshSpec gmesh_spec);
 
-      /// add a field to the mesh
+      /// add a field to the mesh; if add_to_io is set, the field will appear in the output database
+      /// if part_name is set, add field to that part only
       stk::mesh::FieldBase *
-      add_field(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
+      add_field(const std::string& field_name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part",
+                bool add_to_io=true);
+
+      /// set to enable all internal fields being saved to the output db
+      bool get_save_internal_fields() { return m_save_internal_fields; }
+      void set_save_internal_fields(bool sv) { m_save_internal_fields = sv; }
 
       stk::mesh::FieldBase *
       get_field(const std::string& name);
@@ -699,8 +705,9 @@ namespace stk {
       // write in exodus format to given file
       void writeModel( const std::string& out_filename );
 
+      /// if add_to_io is set, the field will appear in the output database
       stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
-                                         const stk::mesh::Part* arg_part=0);
+                                         const stk::mesh::Part* arg_part=0, bool add_to_io=true);
 
       //static void transformMesh(GenericFunction& coordinate_transform);
 
@@ -750,7 +757,7 @@ namespace stk {
 
       static PerceptMesh* s_static_singleton_instance;
       stk::mesh::PartVector                 * m_geometry_parts;
-
+      bool                                  m_save_internal_fields;
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

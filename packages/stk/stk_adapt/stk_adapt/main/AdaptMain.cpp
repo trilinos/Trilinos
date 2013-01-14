@@ -528,6 +528,7 @@ namespace stk {
       int streaming_iW = 0;
       std::string compute_hmesh = "";
       int print_hmesh_surface_normal = 0;
+      int save_internal_fields = 0;
 
       double hmesh_factor = 0.0;
       double hmesh_min_max_ave_factor[3] = {0,0,0};
@@ -583,6 +584,7 @@ namespace stk {
       run_environment.clp.setOption("compute_hmesh"            , &compute_hmesh            , "compute mesh parameter using method eigens|edges");
       run_environment.clp.setOption("print_hmesh_surface_normal"  , &print_hmesh_surface_normal            , "prints a table of normal mesh spacing at each surface");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
+      run_environment.clp.setOption("save_internal_fields"     , &save_internal_fields     , "save internally created fields to the output file");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
@@ -875,6 +877,7 @@ namespace stk {
                     if (do_normal_pass)
                       {
                         eMesh.open(input_mesh);
+                        eMesh.set_save_internal_fields(save_internal_fields);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
                         if (respect_spacing == 1) {
                           eMesh.set_respect_spacing(true);

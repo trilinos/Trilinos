@@ -97,6 +97,7 @@ namespace stk {
       ,m_do_respect_spacing(false)
       ,m_do_smooth_surfaces(false)
       ,m_geometry_parts(0)
+      ,m_save_internal_fields(true)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -210,7 +211,7 @@ namespace stk {
 
     /// add a field to the mesh
     stk::mesh::FieldBase * PerceptMesh::
-    add_field(const std::string& name, unsigned int entity_rank, int vectorDimension, const std::string part_name)
+    add_field(const std::string& name, unsigned int entity_rank, int vectorDimension, const std::string part_name, bool add_to_io)
     {
       if (m_isCommitted)
         {
@@ -229,7 +230,7 @@ namespace stk {
           vdim = std::vector<int>(1);
           vdim[0] = vectorDimension;
         }
-      return createField(name, entity_rank, vdim, arg_part);
+      return createField(name, entity_rank, vdim, arg_part, add_to_io);
     }
 
     stk::mesh::FieldBase * PerceptMesh::
@@ -1151,6 +1152,7 @@ namespace stk {
       ,m_do_respect_spacing(false)
       ,m_do_smooth_surfaces(false)
       ,m_geometry_parts(0)
+      ,m_save_internal_fields(true)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1302,7 +1304,7 @@ namespace stk {
     }
 
     stk::mesh::FieldBase* PerceptMesh::createField(const std::string& name, const unsigned entity_rank,
-                                       const std::vector<int>& dimensions, const stk::mesh::Part* arg_part)
+           const std::vector<int>& dimensions, const stk::mesh::Part* arg_part,  bool add_to_io)
     {
       EXCEPTWATCH;
       checkStateSpec("createField", m_isOpen);
@@ -1340,7 +1342,8 @@ namespace stk {
         }
 
       // set this field to have an Ioss role of transient
-      stk::io::set_field_role(*field, Ioss::Field::TRANSIENT);
+      if (add_to_io)
+        stk::io::set_field_role(*field, Ioss::Field::TRANSIENT);
 
       return field;
     }
@@ -1840,8 +1843,13 @@ namespace stk {
       //const stk::ParallelMachine& comm = m_bulkData->parallel();
       const stk::ParallelMachine& comm = m_comm;
 
+      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
+      m_iossMeshData_created = true;
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+
       std::string dbtype("exodusII");
-      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL, comm);
+      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL, comm,
+        mesh_data.m_property_manager);
       if (dbi == NULL || !dbi->ok()) {
         std::cerr  << "ERROR: Could not open database '" << in_filename
                    << "' of type '" << dbtype << "'\n";
@@ -1881,9 +1889,6 @@ namespace stk {
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
 
-      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
-      m_iossMeshData_created = true;
-      stk::io::MeshData& mesh_data = *m_iossMeshData;
       mesh_data.m_input_region = m_iossRegion;
       stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
 
@@ -3939,27 +3944,27 @@ namespace stk {
     {
       m_num_coordinate_field_states = 3;
       int scalarDimension = get_spatial_dim(); // a scalar
-      add_field("coordinates_N", node_rank(), scalarDimension);
-      add_field("coordinates_NM1", node_rank(), scalarDimension);
-      add_field("coordinates_lagged", node_rank(), scalarDimension);
+      add_field("coordinates_N", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("coordinates_NM1", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("coordinates_lagged", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
 
-      add_field("cg_g", node_rank(), scalarDimension);
-      add_field("cg_r", node_rank(), scalarDimension);
-      add_field("cg_d", node_rank(), scalarDimension);
-      add_field("cg_s", node_rank(), scalarDimension);
+      add_field("cg_g", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("cg_r", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("cg_d", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("cg_s", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
 
       // hessian
-      add_field("cg_h", node_rank(), scalarDimension*scalarDimension);
+      add_field("cg_h", node_rank(), scalarDimension*scalarDimension, "universal_part", m_save_internal_fields);
 
       // edge length
-      add_field("cg_edge_length", node_rank(), 0);
+      add_field("cg_edge_length", node_rank(), 0, "universal_part", m_save_internal_fields);
     }
 
     void PerceptMesh::add_spacing_fields()
     {
       int scalarDimension = get_spatial_dim(); // a scalar
-      add_field("ref_spacing_field", node_rank(), scalarDimension);
-      add_field("ref_spacing_field_counter", node_rank(), 1);
+      add_field("ref_spacing_field", node_rank(), scalarDimension, "universal_part", m_save_internal_fields);
+      add_field("ref_spacing_field_counter", node_rank(), 1, "universal_part", m_save_internal_fields);
     }
 
     void PerceptMesh::set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field)
