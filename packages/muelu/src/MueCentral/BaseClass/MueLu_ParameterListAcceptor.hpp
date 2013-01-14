@@ -102,9 +102,11 @@ namespace MueLu {
 
     virtual void SetParameterList(ParameterList & paramList) {
       // Validate and add defaults parameters.
-      RCP<const ParameterList> validParamList = GetValidParameterList();
+      RCP<const ParameterList> validParamList = GetValidParameterList(paramList);
       if (validParamList != Teuchos::null) // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous!)
         paramList.validateParametersAndSetDefaults(*validParamList);
+      //else
+      // issue a warning
       paramList_ = paramList; // copy
     }
 
