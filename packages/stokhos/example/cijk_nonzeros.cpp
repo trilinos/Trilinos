@@ -260,13 +260,13 @@ int main(int argc, char **argv)
     int w_tile = 4;
     for (int i=0; i<nz.size(); ++i) {
       int idx = nz[i].i;
-      std::cout << setw(w_index) << idx << " " 
+      std::cout << std::setw(w_index) << idx << " " 
 		<< basis->term(idx) << ": " 
-		<< setw(w_nz) << nz[i].total_nz
+		<< std::setw(w_nz) << nz[i].total_nz
 		<< ", ";
       for (int j=0; j<nj_tiles; ++j)
 	for (int k=0; k<nk_tiles; ++k)
-	  std::cout << setw(w_tile) << nz[i].nz_tiles[j][k] << " ";
+	  std::cout << std::setw(w_tile) << nz[i].nz_tiles[j][k] << " ";
       std::cout << std::endl;
     }
 
@@ -282,10 +282,10 @@ int main(int argc, char **argv)
 	  total_nz_tiles[j][k] += nz[i].nz_tiles[j][k];
     }
     int w_total = (w_index+1) + (2*basis->dimension()+5) + w_nz;
-    std::cout << std::endl << setw(w_total) << total_nz << ", ";
+    std::cout << std::endl << std::setw(w_total) << total_nz << ", ";
     for (int j=0; j<nj_tiles; ++j)
       for (int k=0; k<nk_tiles; ++k)
-	std::cout << setw(w_tile) << total_nz_tiles[j][k] << " ";
+	std::cout << std::setw(w_tile) << total_nz_tiles[j][k] << " ";
     std::cout << std::endl;
 
     // Now partition Cijk for each tile
@@ -367,9 +367,9 @@ int main(int argc, char **argv)
 		  << "Tile (" << j_tile << ", " << k_tile << "):" << std::endl;
 	for (int i=0; i<sorted_nz_tile[j_tile][k_tile].size(); ++i) {
 	  int idx = sorted_nz_tile[j_tile][k_tile][i].first;
-	  std::cout << setw(w_index) << idx << " " 
+	  std::cout << std::setw(w_index) << idx << " " 
 		    << basis->term(idx) << ": " 
-		    << setw(w_nz) << sorted_nz_tile[j_tile][k_tile][i].second
+		    << std::setw(w_nz) << sorted_nz_tile[j_tile][k_tile][i].second
 		    << std::endl;
 	  if (i % 32 == 31)
 	    std::cout << std::endl;
