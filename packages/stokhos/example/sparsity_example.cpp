@@ -73,6 +73,14 @@ const ProductBasisType prod_basis_type_values[] = {
 const char *prod_basis_type_names[] = { 
   "complete", "tensor", "total", "smolyak" };
 
+// Ordering types
+enum OrderingType { TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING };
+const int num_ordering_types = 2;
+const OrderingType ordering_type_values[] = { 
+  TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING };
+const char *ordering_type_names[] = { 
+  "total", "lexicographic" };
+
 int main(int argc, char **argv)
 {
   try {
@@ -107,6 +115,11 @@ int main(int argc, char **argv)
 		  num_prod_basis_types, prod_basis_type_values, 
 		  prod_basis_type_names, 
 		  "Product basis type");
+    OrderingType ordering_type = TOTAL_ORDERING;
+    CLP.setOption("ordering", &ordering_type, 
+		  num_ordering_types, ordering_type_values, 
+		  ordering_type_names, 
+		  "Product basis ordering");
     double alpha = 1.0;
     CLP.setOption("alpha", &alpha, "Jacobi alpha index");
     double beta = 1.0;
@@ -117,6 +130,15 @@ int main(int argc, char **argv)
     CLP.setOption("old", "new", &use_old, "Use old or new Cijk algorithm");
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print Cijk to screen");
+    bool save_3tensor = false;
+    CLP.setOption("save_3tensor", "no-save_3tensor", &save_3tensor, 
+		  "Save full 3tensor to file");
+    std::string file_3tensor = "Cijk.dat";
+    CLP.setOption("filename_3tensor", &file_3tensor, 
+		  "Filename to store full 3-tensor");
+    bool unique = false;
+    CLP.setOption("unique", "no-unique", &unique, 
+		  "Only save the unique non-zeros");
 
     // Parse arguments
     CLP.parse( argc, argv );
@@ -146,6 +168,8 @@ int main(int argc, char **argv)
 				  p, alpha, beta, true, growth_type));
     }
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
+    typedef Stokhos::TotalOrderLess< Stokhos::MultiIndex<int> > total_less;
+    typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > lexo_less;
     if (prod_basis_type == COMPLETE)
       basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
@@ -154,10 +178,16 @@ int main(int argc, char **argv)
       basis = 
 	Teuchos::rcp(new Stokhos::TensorProductBasis<int,double>(
 		       bases, drop));
-    else if (prod_basis_type == TOTAL)
-      basis = 
-	Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double>(
-		       bases, drop));
+    else if (prod_basis_type == TOTAL) {
+      if (ordering_type == TOTAL_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,total_less>(
+			 bases, drop));
+      else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,lexo_less>(
+			 bases, drop));
+    }
     else if (prod_basis_type == SMOLYAK) {
       Stokhos::TotalOrderIndexSet<int> index_set(d, p);
       basis = 
@@ -166,7 +196,8 @@ int main(int argc, char **argv)
     }
 
     // Triple product tensor
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+    Teuchos::RCP<Cijk_type> Cijk;
     if (prod_basis_type == COMPLETE) {
       if (full)
 	Cijk = basis->computeTripleProductTensor(basis->size());
@@ -196,6 +227,37 @@ int main(int argc, char **argv)
     
     // Print triple product sparsity to matrix market file
     Stokhos::sparse3Tensor2MatrixMarket(*basis, *Cijk, comm, file);
+
+    // Print full 3-tensor to file
+    if (save_3tensor) {
+      std::ofstream cijk_file(file_3tensor.c_str());
+      cijk_file.precision(14);
+      cijk_file.setf(std::ios::scientific);
+      int sz = basis->size();
+      cijk_file << "i, j, k, cijk" << std::endl;
+      Cijk_type::k_iterator k_begin = Cijk->k_begin();
+      Cijk_type::k_iterator k_end = Cijk->k_end();
+      for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+	int k = index(k_it);
+	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  int j = index(j_it);
+	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
+	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	    int i = index(i_it);
+	    double cijk = value(i_it);
+	    if (!unique || ( i >= j && j >= k ))
+	      cijk_file << i << ", " 
+			<< j << ", " 
+			<< k << ", "
+			<< cijk << std::endl;
+	  }
+	}
+      }
+      cijk_file.close();
+    }
 
     Teuchos::TimeMonitor::summarize(std::cout);
     
