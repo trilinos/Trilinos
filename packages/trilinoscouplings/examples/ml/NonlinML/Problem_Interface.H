@@ -88,7 +88,7 @@ public:
   }
   
   // get block information
-  bool getBlockInfo(int *nblocks, vector<int>& blocks, vector<int>& block_pde)
+  bool getBlockInfo(int *nblocks, std::vector<int>& blocks, std::vector<int>& block_pde)
   { *nblocks = 0; blocks.clear(); block_pde.clear(); return false; }
 
   // derived from NOX::Parameter::PrePostOperator
