@@ -1119,7 +1119,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       TEST_EQUALITY(R2->getGlobalNumRows(), 7);
       TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
       TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
       TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
       TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

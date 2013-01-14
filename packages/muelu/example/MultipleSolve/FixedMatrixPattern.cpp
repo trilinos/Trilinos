@@ -55,6 +55,7 @@
 
 #include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
 #include <MueLu_NoFactory.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
@@ -83,13 +84,26 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);
   Xpetra::Parameters xpetraParameters(clp);
 
-  bool optRecycling = true; clp.setOption("recycling", "no-recycling", &optRecycling, "Enable recycling of the multigrid preconditioner");
+  bool optRecycling           = true;  clp.setOption("recycling",             "no-recycling",             &optRecycling,           "Enable recycling of the multigrid preconditioner");
+
+  /* DO NOT WORK YET
+  bool optRecyclingRAPpattern = true;  clp.setOption("recycling-rap-pattern", "no-recycling-rap-pattern", &optRecyclingRAPpattern, "Enable recycling of Ac=RAP pattern");
+  bool optRecyclingAPpattern  = false; clp.setOption("recycling-ap-pattern",  "no-recycling-ap-pattern",  &optRecyclingAPpattern,  "Enable recycling of AP pattern");
+  */
+  bool optRecyclingRAPpattern = false;
+  bool optRecyclingAPpattern  = false;
 
   switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+  // option dependencies
+  if (optRecycling == false) {
+    optRecyclingRAPpattern = false;
+    optRecyclingAPpattern  = false;
   }
 
   //
@@ -126,10 +140,18 @@ int main(int argc, char *argv[]) {
 
     // PTENT:
     RCP<Factory> PtentFact = rcp(new TentativePFactory());
-    M.SetFactory("Ptent",      PtentFact);
-    H.Keep("P",          PtentFact.get());
+    M.SetFactory("Ptent", PtentFact);
+    H.Keep("P",           PtentFact.get());
+  }
 
-    //TODO: reuse Ac pattern
+  RCP<Factory> AcFact = rcp(new RAPFactory());
+  M.SetFactory("A", AcFact);
+
+  if (optRecyclingRAPpattern) {
+    H.Keep("RAP Pattern", AcFact.get());
+  }
+  if (optRecyclingAPpattern) {
+    H.Keep("AP Pattern", AcFact.get());
   }
   //
 
@@ -189,10 +211,17 @@ int main(int argc, char *argv[]) {
   // Clean-up
   //
 
+  // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
+
   if (optRecycling) {
-    // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
-    //H.Delete("Aggregates", M.GetFactory("Aggregates").get());
+    //if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
     H.Delete("P",           M.GetFactory("Ptent").get());
+  }
+  if (optRecyclingRAPpattern) {
+    H.Delete("RAP Pattern", M.GetFactory("A").get());
+  }
+  if (optRecyclingAPpattern) {
+    H.Delete("AP Pattern", M.GetFactory("A").get());
   }
 
   cout << "Status of the preconditioner at the end:" << std::endl;

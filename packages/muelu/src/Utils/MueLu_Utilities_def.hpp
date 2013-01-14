@@ -300,6 +300,9 @@ namespace MueLu {
     if (C == Teuchos::null) {
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), 1);
       else            C = MatrixFactory::Build(A.getRowMap(),    1);
+    } else {
+      C->resumeFill(); // why this is not done inside of Tpetra MxM?
+      std::cout << "Reuse C pattern" << std::endl;
     }
 
     Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);

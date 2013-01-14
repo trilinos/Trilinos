@@ -115,6 +115,8 @@ namespace MueLu {
     } else {
 
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+      if (varName == "RAP Pattern")   return GetFactory("A");
+      if (varName == "AP Pattern")    return GetFactory("A");
       if (varName == "P") {
         RCP<Factory> factory = rcp(new SaPFactory());
         factory->SetFactory("P", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"

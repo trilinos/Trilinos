@@ -231,10 +231,13 @@ namespace MueLu {
   void Level::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     //MUELU_DESCRIBE;
     //out0 << ""; // remove warning
+
     RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
     int previousSetting = out0->getOutputToRootOnly();
     out0->setOutputToRootOnly(0);
     out0->setShowProcRank(true);
+
+    *out0 << "LevelID = " << GetLevelID() << std::endl;
 
     Teuchos::TabularOutputter outputter(out0);
     outputter.pushFieldSpec("data name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
