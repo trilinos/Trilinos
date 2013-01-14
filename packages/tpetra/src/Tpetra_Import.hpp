@@ -64,12 +64,11 @@ namespace Tpetra {
   /// communication and computation.  However, it can be reused
   /// inexpensively.
   ///
-  /// Tpetra has two classes for data redistribution: \c Import and \c
-  /// Export.  \c Import is for redistributing data from a
-  /// uniquely-owned distribution to a possibly multiply-owned
-  /// distribution.  \c Export is for redistributing data from a
-  /// possibly multiply-owned distribution to a uniquely-owned
-  /// distribution.
+  /// Tpetra has two classes for data redistribution: Import and
+  /// Export.  Import is for redistributing data from a uniquely-owned
+  /// distribution to a possibly multiply-owned distribution.  Export
+  /// is for redistributing data from a possibly multiply-owned
+  /// distribution to a uniquely-owned distribution.
   ///
   /// One use case of Import is bringing in remote source vector data
   /// for a distributed sparse matrix-vector multiply.  The source
@@ -77,15 +76,13 @@ namespace Tpetra {
   /// overlapping distribution so that each process can compute its
   /// part of the target vector without further communication.
   ///
-  /// Epetra separated \c Import and \c Export for performance
-  /// reasons.  The implementation is different, depending on which
-  /// direction is the uniquely-owned Map.  Tpetra retains this
-  /// convention.
+  /// Epetra separated Import and Export for performance reasons.  The
+  /// implementation is different, depending on which direction is the
+  /// uniquely-owned Map.  Tpetra retains this convention.
   ///
-  /// This class is templated on the same template arguments as \c
-  /// Map: the local ordinal type (\c LocalOrdinal), the global
-  /// ordinal type (\c GlobalOrdinal), and the Kokkos Node type (\c
-  /// Node).
+  /// This class is templated on the same template arguments as Map:
+  /// the local ordinal type (\c LocalOrdinal), the global ordinal
+  /// type (\c GlobalOrdinal), and the Kokkos Node type (\c Node).
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Import: public Teuchos::Describable {
 

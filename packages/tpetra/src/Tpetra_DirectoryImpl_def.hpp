@@ -231,15 +231,15 @@ namespace Tpetra {
         { // We go through all this trouble to avoid overflow and
           // signed / unsigned casting mistakes (that were made in
           // previous versions of this code).
-          const GO one = Teuchos::OrdinalTraits<GO>::one();
-          const GO two = one + one;
-          const GO nOverP_GID = static_cast<GO> (nOverP);
+          const GO one = as<GO> (1);
+          const GO two = as<GO> (2);
+          const GO nOverP_GID = as<GO> (nOverP);
           const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
           // It's probably not OK to cast this to int in general.  It
           // works as long as |GID| <= the global number of entries
           // and nOverP is appropriately sized for int.  Trouble may
           // ensue if the index base has an exotic value.
-          const int lowerBound_int = static_cast<int> (lowerBound);
+          const int lowerBound_int = as<int> (lowerBound);
           curRank = std::min (lowerBound_int, numProcs - 1);
         }
         bool found = false;
@@ -316,6 +316,8 @@ namespace Tpetra {
       // The "Directory Map" (see below) will have a range of elements
       // from the minimum to the maximum GID of the user Map, and a
       // minimum GID of minAllGID from the user Map.
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.
       const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
       // We can't afford to replicate the whole directory on each
@@ -339,6 +341,12 @@ namespace Tpetra {
       // invalid values, in case the user global element list does
       // fill all IDs from minAllGID to maxAllGID (e.g., allows
       // global indices to be all even integers).
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.  dir_numMyEntries may
+      // be quite large if the difference between the smallest and
+      // largest GID on all processes is large, even if the actual
+      // total number of GIDs is small (i.e., if the noncontiguous Map
+      // is very "sparse").
       nodeIDs_.resize (dir_numMyEntries, -1);
       LIDs_.resize (dir_numMyEntries, LINVALID);
 
