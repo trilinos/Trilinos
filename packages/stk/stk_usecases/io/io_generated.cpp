@@ -33,7 +33,6 @@
 
 namespace {
   void driver(stk::ParallelMachine  comm,
-              size_t dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
@@ -52,7 +51,6 @@ int main(int argc, char** argv)
   std::string decomp_method = "";
   std::string mesh = "";
   std::string type = "exodusii";
-  size_t spatial_dimension = 3;
   int compression_level = 0;
   bool compression_shuffle = false;
   int db_integer_size = 4;
@@ -70,7 +68,6 @@ int main(int argc, char** argv)
      "decomposition method" )
     ("mesh",          bopt::value<std::string>(&mesh),
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
-    ("dimension", bopt::value<size_t>(&spatial_dimension), "problem spatial dimension" )
     ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
     ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data" )
     ("compose_output", bopt::value<bool>(&compose_output), "create a single output file" )
@@ -96,7 +93,7 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
   }
-  driver(use_case_environment.m_comm, spatial_dimension,
+  driver(use_case_environment.m_comm, 
 	 working_directory, mesh, type, decomp_method, compose_output, 
 	 compression_level, compression_shuffle, db_integer_size);
 
@@ -105,7 +102,6 @@ int main(int argc, char** argv)
 
 namespace {
   void driver(stk::ParallelMachine  comm,
-              size_t spatial_dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
@@ -120,7 +116,7 @@ namespace {
     // types and the exodusII default database type.
     Ioss::Init::Initializer init_db;
 
-    stk::mesh::MetaData meta_data( spatial_dimension );
+    stk::mesh::MetaData meta_data;
     stk::io::MeshData mesh_data;
 
     bool use_netcdf4 = false;
