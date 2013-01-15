@@ -204,34 +204,60 @@ void Chebyshev<MatrixType>::apply(
                  Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
                 Teuchos::ETransp mode,
                  Scalar alpha,
-                 Scalar beta) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error, 
-      "Ifpack2::Chebyshev::apply() ERROR, not yet computed.");
+                 Scalar beta) const 
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+  typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Chebyshev::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
+  // compute() calls initialize() if it hasn't already been called.
+  // Thus, we only need to check isComputed().
+  TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply(): You must call the compute() method before "
+    "you may call apply().");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     X.getNumVectors() != Y.getNumVectors(), 
+     std::runtime_error,
+     "Ifpack2::Chebyshev::apply(): X and Y must have the same number of "
+     "columns.  X.getNumVectors() = " << X.getNumVectors() << " != "
+     << "Y.getNumVectors() = " << Y.getNumVectors() << ".");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(alpha != STS::one(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for alpha != 1.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for beta != 0.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for mode != Teuchos::NO_TRANS.");
 
   Time_->start();
 
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
-    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
-  else
-    Xcopy = Teuchos::rcp( &X, false );
+  RCP<const MV> Xcopy;
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+    Xcopy = rcp (new MV (X));
+  }
+  else {
+    Xcopy = rcpFromRef (X);
+  }
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > xView = Xcopy->get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > yView = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<const Scalar> invdiag = InvDiagonal_->get1dView();
+  ArrayRCP<ArrayRCP<const Scalar> > xView = Xcopy->get2dView();
+  ArrayRCP<ArrayRCP<Scalar> > yView = Y.get2dViewNonConst();
+  ArrayRCP<const Scalar> invdiag = InvDiagonal_->get1dView();
 
   size_t nVecs = Y.getNumVectors();
 
   //--- Do a quick solve when the matrix is identity
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
     if (nVecs == 1) {
-      Teuchos::ArrayRCP<Scalar> y = yView[0];
-      Teuchos::ArrayRCP<const Scalar> x = xView[0];
+      ArrayRCP<Scalar> y = yView[0];
+      ArrayRCP<const Scalar> x = xView[0];
       for (size_t i = 0; i < NumMyRows_; ++i)
         y[i] = x[i]*invdiag[i];
     }
@@ -255,13 +281,13 @@ void Chebyshev<MatrixType>::apply(
 
   //--- Define vectors
   // In ML_Cheby, V corresponds to pAux and W to dk
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V(X);
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> W(X);
+  MV V (X);
+  MV W (X);
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > vView = V.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > wView = W.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<const Scalar> > vView = V.get2dView();
+  ArrayRCP<ArrayRCP<Scalar> > wView = W.get2dViewNonConst();
 
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  Scalar one = STS::one();
 
   Scalar oneOverTheta = one/theta;
 
@@ -271,16 +297,17 @@ void Chebyshev<MatrixType>::apply(
     A_->apply(Y, V);
     // compute W = invDiag * ( X - V )/ Theta
     if (nVecs == 1) {
-      Teuchos::ArrayRCP<const Scalar> x = xView[0];
-      Teuchos::ArrayRCP<Scalar> w = wView[0];
-      Teuchos::ArrayRCP<const Scalar> v = vView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i)
+      ArrayRCP<const Scalar> x = xView[0];
+      ArrayRCP<Scalar> w = wView[0];
+      ArrayRCP<const Scalar> v = vView[0];
+      for (size_t i = 0; i < NumMyRows_; ++i) {
         w[i] = invdiag[i] * (x[i] - v[i]) * oneOverTheta;
+      }
     }
     else {
       for (size_t k = 0; k < nVecs; ++k) {
-        Teuchos::ArrayRCP<Scalar> wk = wView[k];
-        Teuchos::ArrayRCP<const Scalar> vk = vView[k];
+        ArrayRCP<Scalar> wk = wView[k];
+        ArrayRCP<const Scalar> vk = vView[k];
         for (size_t i = 0; i < NumMyRows_; ++i) {
           Scalar coeff = invdiag[i]*oneOverTheta;
           wk[i] = (xView[k][i] - (vk[i])) * coeff;
@@ -293,9 +320,9 @@ void Chebyshev<MatrixType>::apply(
   else {
     // compute W = invDiag * X / Theta
     if (nVecs == 1) {
-      Teuchos::ArrayRCP<const Scalar> x= xView[0];
-      Teuchos::ArrayRCP<Scalar> w = wView[0];
-      Teuchos::ArrayRCP<Scalar> y = yView[0];
+      ArrayRCP<const Scalar> x= xView[0];
+      ArrayRCP<Scalar> w = wView[0];
+      ArrayRCP<Scalar> y = yView[0];
       for (size_t i = 0; i < NumMyRows_; ++i) {
         w[i] = invdiag[i] * x[i] * oneOverTheta;
         y[i] = w[i];
@@ -336,8 +363,6 @@ void Chebyshev<MatrixType>::apply(
     Y.update(one, W, one);
   } // for (deg = 0; deg < degreeMinusOne; ++deg)
 
-  // Flops are updated in each of the following. 
-
   ++NumApply_;
   Time_->stop();
   ApplyTime_ += Time_->totalElapsedTime();
@@ -363,10 +388,14 @@ void Chebyshev<MatrixType>::initialize() {
   IsInitialized_ = false;
 
   TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-      "Ifpack2::Chebyshev::initialize ERROR: A_ == Teuchos::null");
+    "Ifpack2::Chebyshev::initialize: The input matrix A is null.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A_->getGlobalNumRows() != A_->getGlobalNumCols(), std::runtime_error,
-     "Ifpack2::Chebyshev::initialize ERROR: only square matrices are supported");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_->getGlobalNumRows() != A_->getGlobalNumCols(), 
+    std::runtime_error,
+    "Ifpack2::Chebyshev::initialize: The input matrix A must be square.  "
+    "A has " << A_->getGlobalNumRows() << " rows and " 
+    << A_->getGlobalNumCols() << " columns.");
 
   NumMyRows_ = A_->getNodeNumRows();
   NumGlobalRows_ = A_->getGlobalNumRows();
@@ -382,6 +411,11 @@ void Chebyshev<MatrixType>::initialize() {
 template<class MatrixType>
 void Chebyshev<MatrixType>::compute()
 {
+  using Teuchos::ArrayRCP;
+  using Teuchos::rcp;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
   if (!isInitialized()) {
     initialize();
   }
@@ -393,23 +427,25 @@ void Chebyshev<MatrixType>::compute()
   Condest_ = -1.0;
 
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
-    "Ifpack2::Chebyshev::compute() ERROR: PolyDegree_ must be at least one");
+    "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");
   
-  if (InvDiagonal_ == Teuchos::null)
-  {
-    InvDiagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()) );
+  if (InvDiagonal_.is_null ()) {
+    InvDiagonal_ = rcp (new vector_type (A_->getRowMap ()));
+    A_->getLocalDiagCopy (*InvDiagonal_);
 
-    A_->getLocalDiagCopy(*InvDiagonal_);
-
-    // Inverse diagonal elements
-    // Replace zeros with 1.0
-    Teuchos::ArrayRCP<Scalar> diagvals = InvDiagonal_->get1dViewNonConst();
-    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
+    // Invert all diagonal elements no smaller in magnitude than the
+    // minimum allowed diagonal value d_min.  Those smaller than d_min
+    // in magnitude are replaced with d_min.  (That's why d_min itself
+    // is a scalar and not a magnitude.)
+    ArrayRCP<Scalar> diagvals = InvDiagonal_->get1dViewNonConst ();
+    for (size_t i = 0; i < NumMyRows_; ++i) {
       Scalar& diag = diagvals[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
+      if (STS::magnitude (diag) < STS::magnitude (MinDiagonalValue_)) {
         diag = MinDiagonalValue_;
-      else
-        diag = 1.0 / diag;
+      }
+      else {
+        diag = STS::one() / diag;
+      }
     }
   }
   // otherwise the inverse of the diagonal has been given by the user
