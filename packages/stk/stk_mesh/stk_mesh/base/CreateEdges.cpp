@@ -120,16 +120,15 @@ struct create_edge_impl
 
       PairIterRelation elem_edges = elem.relations(stk::topology::EDGE_RANK);
 
+      std::vector<bool> edge_exist(Topology::num_edges,false);
+
+      for (; !elem_edges.empty(); ++elem_edges) {
+        edge_exist[elem_edges->relation_ordinal()] = true;
+      }
+
       for (int e=0; e < Topology::num_edges; ++e) {
 
-        while(!elem_edges.empty() && elem_edges->relation_ordinal() < static_cast<RelationIdentifier>(e) ) {
-          ++elem_edges;
-        }
-
-        //element already has this edge defined
-        if (!elem_edges.empty() && elem_edges->relation_ordinal() == static_cast<RelationIdentifier>(e) ) {
-          continue;
-        }
+        if (edge_exist[e]) continue;
 
         Topology::edge_nodes(elem_nodes, e, edge_nodes.begin());
 
@@ -212,16 +211,15 @@ struct connect_face_impl
 
       PairIterRelation face_edges = face.relations(stk::topology::EDGE_RANK);
 
+      std::vector<bool> edge_exist(Topology::num_edges,false);
+
+      for (; !face_edges.empty(); ++face_edges) {
+        edge_exist[face_edges->relation_ordinal()] = true;
+      }
+
       for (int e=0; e < Topology::num_edges; ++e) {
 
-        while(!face_edges.empty() && face_edges->relation_ordinal() < static_cast<RelationIdentifier>(e) ) {
-          ++face_edges;
-        }
-
-        //faceent already has this edge defined
-        if (!face_edges.empty() && face_edges->relation_ordinal() == static_cast<RelationIdentifier>(e) ) {
-          continue;
-        }
+        if (edge_exist[e]) continue;
 
         Topology::edge_nodes(face_nodes, e, edge_nodes.begin());
 
