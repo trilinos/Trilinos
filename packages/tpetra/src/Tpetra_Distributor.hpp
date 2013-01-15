@@ -85,23 +85,71 @@ namespace Tpetra {
 
   } // namespace (anonymous)
 
-  //! Valid values for Distributor's "Send type" parameter.
+  /// \brief Valid values for Distributor's "Send type" parameter.
+  ///
+  /// This is mainly useful as an implementation detail of
+  /// Distributor.  You may use it if you would like a programmatic
+  /// way to get all possible values of the "Send type" parameter of
+  /// Distributor.
   Array<std::string> distributorSendTypes ();
 
   /// \class Distributor
   /// \brief Sets up and executes a communication plan for a Tpetra DistObject.
   ///
-  /// This class encapsulates the general information and services
-  /// needed for subclasses of \c DistObject (such as CrsMatrix and
-  /// MultiVector) to do data redistribution (Import and Export)
-  /// operations.
+  /// \note Most Tpetra users do not need to know about this class.
+  ///
+  /// This class encapsulates the general information and
+  /// communication services needed for subclasses of \c DistObject
+  /// (such as CrsMatrix and MultiVector) to do data redistribution
+  /// (Import and Export) operations.  It is an implementation detail
+  /// of Import and Export; in particular; it actually does the
+  /// communication.
+  ///
+  /// Here is the typical way to use this class:
+  /// 1. Create a Distributor.  (The constructor is inexpensive.)
+  /// 2. Set up the Distributor once, using one of the two "plan
+  ///    creation" methods: either createFromSends(), or
+  ///    createFromRecvs().  This may be more expensive and
+  ///    communication-intensive than Step 3.
+  /// 3. Communicate the data by calling doPostsAndWaits() (forward
+  ///    mode), or doReversePostsAndWaits() (reverse mode).  You may
+  ///    do this multiple times with the same Distributor instance.
+  ///
+  /// Step 2 is expensive, but you can amortize its cost over multiple
+  /// uses of the Distributor for communication (Step 3).  You may
+  /// also separate out "posts" (invoking nonblocking communication)
+  /// and "waits" (waiting for that communication to complete), by
+  /// calling doPosts() (resp. doReversePosts()), then doWaits()
+  /// (resp. doReverseWaits()).  This is useful if you have local work
+  /// to do between the posts and waits, because it may overlap
+  /// communication with computation.  Whether it actually <i>does</i>
+  /// overlap, depends on both the MPI implementation and your choice
+  /// of parameters for the Distributor.
+  ///
+  /// Instances of Distributor take the following parameters that
+  /// control communication and debug output:
+  /// - "Barrier between receives and sends" (<tt>bool</tt>):
+  ///   Whether to execute a barrier between receives and sends in
+  ///   do[Reverse]Posts().  A barrier is required for correctness
+  ///   when the "Send type" parameter is "Rsend".  Otherwise, a
+  ///   barrier is correct and may be useful for debugging, but not
+  ///   recommended, since it introduces useless synchronization.
+  /// - "Send type" (<tt>std::string</tt>): When using MPI, the
+  ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
+  ///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+  ///   default is "Send".  (The receive type is always MPI_Irecv, a
+  ///   nonblocking receive.  Since we post receives first before
+  ///   sends, this prevents deadlock, even if MPI_Send blocks and
+  ///   does not buffer.)
+  /// - "VerboseObject" (sublist): Optional sublist for controlling
+  ///   behavior of Distributor as a Teuchos::VerboseObject.  This
+  ///   is currently useful only for debugging.
   class Distributor :
     public Teuchos::Describable,
     public Teuchos::ParameterListAcceptorDefaultBase,
     public Teuchos::VerboseObject<Distributor> {
   public:
-
-    //! @name Constructor/Destructor
+    //! @name Constructors and destructor
     //@{
 
     /// \brief Construct using the specified communicator and default parameters.
@@ -119,6 +167,8 @@ namespace Tpetra {
     ///
     /// \param plist [in/out] List of parameters controlling how the
     ///   Distributor performs communication.  Must be nonnull.
+    ///   Please see the class documentation for a list of all
+    ///   accepted parameters and their default values.
     ///
     /// The constructor doesn't actually set up the distribution
     /// pattern.  You need to call one of the "gather / scatter
@@ -127,10 +177,10 @@ namespace Tpetra {
                           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //! Copy constructor.
-    Distributor(const Distributor &distributor);
+    Distributor (const Distributor &distributor);
 
     //! Destructor (virtual for memory safety).
-    virtual ~Distributor();
+    virtual ~Distributor ();
 
     //@}
     //! @name Implementation of ParameterListAcceptorDefaultBase
@@ -138,149 +188,163 @@ namespace Tpetra {
 
     /// \brief Set Distributor parameters.
     ///
-    /// See the documentation of getValidParameters() for the current
-    /// list of parameters understood by Distributor.
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief List of valid Distributor parameters.
     ///
-    /// Current parameters include:
-    ///
-    /// - "Barrier between receives and sends" (bool): Whether to
-    ///   execute a barrier between receives and sends in
-    ///   do[Reverse]Posts(). n A barrier is required for correctness
-    ///   when the "Send type" parameter is "Rsend".  Otherwise, a
-    ///   barrier is correct and may be useful for debugging, but not
-    ///   recommended, since it introduces useless synchronization.
-    ///
-    /// - "Send type" (std::string): When using MPI, the variant of
-    ///   MPI_Send to use in do[Reverse]Posts().  Valid values include
-    ///   "Isend", "Rsend", "Send", and "Ssend".
-    ///
-    /// - "VerboseObject" (sublist): Optional sublist for controlling
-    ///   behavior of Distributor as a Teuchos::VerboseObject.  This
-    ///   is currently useful only for debugging.
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
     //@}
-    //! \name Gather/Scatter Constructors
+    //! \name Gather / scatter "constructors"
     //@{
 
-    /// \brief Set up Distributor using list of node IDs to which this node will send.
+    /// \brief Set up Distributor using list of process ranks to which
+    ///   this process will send.
     ///
-    /// Take a list of node IDs and construct a plan for efficiently
-    /// scattering to those nodes.  Return the number of nodes which
-    /// will send me data.
+    /// Take a list of process ranks and construct a plan for
+    /// efficiently scattering to those processes.  Return the number
+    /// of processes which will send me (the calling process) data.
     ///
-    /// \param exportNodeIDs [in] List of nodes that will get the
-    ///   exported data.  A node ID greater than or equal to the
-    ///   number of nodes will result in a \c std::runtime_error on
-    ///   all nodes.  Node IDs less than zero are ignored; their
+    /// \param exportNodeIDs [in] List of ranks of the processes that
+    ///   will get the exported data.  If there is a process rank
+    ///   greater than or equal to the number of processes, all
+    ///   processes will throw an <tt>std::runtime_error</tt>
+    ///   exception.  Process ranks less than zero are ignored; their
     ///   placement corresponds to null sends in any future
     ///   exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then
     ///   the corresponding position in the export array is ignored
     ///   during a call to doPosts() or doPostsAndWaits().  For this
     ///   reason, a negative entry is sufficient to break contiguity.
     ///
-    /// \return Number of imports this node will be receiving.
+    /// \return Number of imports this process will be receiving.
     size_t createFromSends (const ArrayView<const int>& exportNodeIDs);
 
-    /// \brief Set up Distributor using list of node IDs from which to receive.
+    /// \brief Set up Distributor using list of process ranks from which to receive.
     ///
-    /// Take a list of node IDs and construct a plan for efficiently
-    /// scattering to those nodes.  Return the number and list of IDs
-    /// being sent by me.
+    /// Take a list of process ranks and construct a plan for
+    /// efficiently scattering to those processes.  Return the number
+    /// and list of IDs being sent by me (the calling process).
     ///
-    /// \c Import invokes this method in order to creating a \c
-    /// Distributor from a list of receive neighbors and IDs.  A
-    /// common use case for this process is setting up sends and
-    /// receives for the remote entries of the source vector in a
-    /// distributed sparse matrix-vector multiply.  The Mantevo HPCCG
-    /// miniapp shows an annotated and simplified version of this
-    /// process for that special case.
+    /// Import invokes this method in order to create a Distributor
+    /// from a list of receive neighbors and IDs.  A common use case
+    /// for this process is setting up sends and receives for the
+    /// remote entries of the source vector in a distributed sparse
+    /// matrix-vector multiply.  The Mantevo HPCCG miniapp shows an
+    /// annotated and simplified version of this process for that
+    /// special case.
     ///
     /// \param remoteIDs [in] List of remote IDs wanted.
     ///
-    /// \param remoteNodeIDs [in] List of the nodes that will send the
-    ///   remote IDs listed in \remoteIDs. Node IDs less than zero are
-    ///   ignored; their placement corresponds to null sends in any
-    ///   future exports. A node ID greater than or equal to the
-    ///   number of nodes will result in an \c std::runtime_error on
-    ///   all nodes.
+    /// \param remoteNodeIDs [in] The ranks of the process that will
+    ///   send the remote IDs listed in \c remoteIDs. Process ranks
+    ///   less than zero are ignored; their placement corresponds to
+    ///   null sends in any future exports.  If there is a process
+    ///   rank greater than or equal to the number of processes, all
+    ///   processes will throw an <tt>std::runtime_error</tt>
+    ///   exception.  
     ///
     /// \param exportIDs [out] List of IDs that need to be sent from
-    ///   this node.
+    ///   this process.
     ///
-    /// \param exportNodeIDs [out] List of nodes that will get the
-    ///   exported IDs in \c exportIDs.
+    /// \param exportNodeIDs [out] The ranks of the processes that
+    ///   will get the exported IDs in \c exportIDs.
     ///
     /// The \c exportGIDs and \c exportNodeIDs arrays are allocated by
-    /// the Distributor, which is why they are passed in a nonconst
+    /// the Distributor, which is why they are passed in as a nonconst
     /// reference to an ArrayRCP.  They may be null on entry.
     template <class Ordinal>
-    void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs,
-                         const ArrayView<const int> &remoteNodeIDs,
-                               ArrayRCP<Ordinal> &exportIDs,
-                               ArrayRCP<int> &exportNodeIDs);
+    void 
+    createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
+		     const ArrayView<const int>& remoteNodeIDs,
+		     ArrayRCP<Ordinal>& exportIDs,
+		     ArrayRCP<int>& exportNodeIDs);
 
     //@}
-
-    //! @name Attribute Accessor Methods
+    //! @name Attribute accessor methods
     //@{
 
-    //! The number of nodes from which we will receive data, not include this node ("myself").
+    /// \brief The number of processes from which we will receive data.
+    ///
+    /// The count does <i>not</i> include the calling process.
     size_t getNumReceives() const;
 
-    //! The number of nodes to which we will send data, not include this node ("myself").
+    /// \brief The number of processes to which we will send data.
+    ///
+    /// The count does <i>not</i> include the calling process.
     size_t getNumSends() const;
 
-    //! Indicates whether values are being sent to/recieved from this node.
-    /*! If we are sending any elements to ourself, returns true. If we aren't, returns false. */
+    //! Whether the calling process will send or receive messages to itself.
     bool hasSelfMessage() const;
 
-    //! Maximum number of values that this node is sending to another single node.
+    //! Maximum number of values this process will send to another single process.
     size_t getMaxSendLength() const;
 
-    //! Total number of values that this nodes is receiving from other nodes.
+    //! Total number of values this process will receive from other processes.
     size_t getTotalReceiveLength() const;
 
-    //! A list of images sending values to this node. (non-persisting view)
+    /// \brief Ranks of the processes sending values to this process.
+    ///
+    /// This is a nonpersisting view.  It will last only as long as
+    /// this Distributor instance does.
     ArrayView<const int> getImagesFrom() const;
 
-    //! A list of images to which this node is sending values. (non-persisting view)
+    /// \brief Ranks of the processes to which this process will send values.
+    ///
+    /// This is a nonpersisting view.  It will last only as long as
+    /// this Distributor instance does.
     ArrayView<const int> getImagesTo() const;
 
-    //! Number of values we're receiving from each node. (non-persisting view)
-    /*! We will receive <tt>getLengthsFrom[i]</tt> values from node <tt>getImagesFrom[i]</tt>. */
+    /// \brief Number of values this process will receive from each process.
+    ///
+    /// This process will receive <tt>getLengthsFrom[i]</tt> values
+    /// from process <tt>getImagesFrom[i]</tt>.
+    ///
+    /// This is a nonpersisting view.  It will last only as long as
+    /// this Distributor instance does.
     ArrayView<const size_t> getLengthsFrom() const;
 
-    //! Number of values we're sending to each node. (non-persisting view)
-    /*! We will send <tt>getLengthsTo[i]</tt> values to image <tt>getImagesTo[i]</tt>. */
+    /// \brief Number of values this process will send to each process.
+    ///
+    /// This process will send <tt>getLengthsTo[i]</tt> values to
+    /// process <tt>getImagesTo[i]</tt>.
+    ///
+    /// This is a nonpersisting view.  It will last only as long as
+    /// this Distributor instance does.
     ArrayView<const size_t> getLengthsTo() const;
 
     //@}
-
-    //! @name Reverse Communication Methods
+    //! @name Reverse communication methods
     //@{
 
-    //! \brief Returns a Distributor with a reverse plan of this Distributor's plan
-    /*! This method creates the reverse Distributor the first time the function
-        is called.
-    */
+    /// \brief A reverse communication plan Distributor.
+    ///
+    /// The first time this method is called, it creates a Distributor
+    /// with the reverse communication plan of <tt>*this</tt>.  On
+    /// subsequent calls, it returns the cached reverse Distributor.
+    /// 
+    /// Most users do not need to call this method.  If you invoke
+    /// doReversePosts() or doReversePostsAndWaits(), the reverse
+    /// Distributor will be created automatically if it does not yet
+    /// exist.
     const RCP<Distributor>& getReverse() const;
 
     //@}
-
-    //! @name Execute Distributor Plan Methods
+    //! @name Methods for executing a communication plan
     //@{
 
     /// \brief Execute the (forward) communication plan.
     ///
-    /// Call this overload when you have the same number of Packets
-    /// for each LID to send or receive.
+    /// Call this version of the method when you have the same number
+    /// of Packets for each LID (local ID) to send or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
     ///
     /// \param exports [in] Contains the values to be sent by this
-    ///   node.  On exit from this method, it's OK to modify the
+    ///   process.  On exit from this method, it's OK to modify the
     ///   entries of this buffer.
     ///
     /// \param numPackets [in] The number of Packets per export /
@@ -300,11 +364,14 @@ namespace Tpetra {
 
     /// \brief Execute the (forward) communication plan.
     ///
-    /// Call this overload when you have possibly different numbers of
-    /// Packets for each LID to send or receive.
+    /// Call this version of the method when you have possibly
+    /// different numbers of Packets for each LID (local ID) to send
+    /// or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
     ///
     /// \param exports [in] Contains the values to be sent by this
-    ///   node.  On exit from this method, it's OK to modify the
+    ///   process.  On exit from this method, it's OK to modify the
     ///   entries of this buffer.
     ///
     /// \param numExportPacketsPerLID [in] The number of packets for
@@ -328,9 +395,11 @@ namespace Tpetra {
     /// Call this overload when you have the same number of Packets
     /// for each LID to send or receive.
     ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
     /// \param exports [in] Contains the values to be sent by this
-    ///   node.  This is an ArrayRCP and not an ArrayView so that we
-    ///   have the freedom to use nonblocking sends if we wish.  Do
+    ///   process.  This is an ArrayRCP and not an ArrayView so that
+    ///   we have the freedom to use nonblocking sends if we wish.  Do
     ///   not modify the data in this array until \c doWaits() has
     ///   completed.
     ///
@@ -356,6 +425,8 @@ namespace Tpetra {
     /// Call this overload when you have possibly different numbers of
     /// Packets for each LID to send or receive.
     ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
     /// \param exports [in] Same as in the three-argument version of
     ///   \c doPosts().
     ///
@@ -374,7 +445,12 @@ namespace Tpetra {
              const ArrayRCP<Packet> &imports,
              const ArrayView<size_t> &numImportPacketsPerLID);
 
-    //! Wait on any outstanding nonblocking message requests to complete.
+    /// Wait on any outstanding nonblocking message requests to complete.
+    ///
+    /// This method is for forward mode communication only, that is,
+    /// after calling doPosts().  For reverse mode communication
+    /// (after calling doReversePosts()), call doReverseWaits()
+    /// instead.
     void doWaits ();
 
     /// \brief Execute the reverse communication plan.
@@ -419,12 +495,16 @@ namespace Tpetra {
                     const ArrayRCP<Packet> &imports,
                     const ArrayView<size_t> &numImportPacketsPerLID);
 
-    //! Wait on any outstanding reverse message requests to complete.
+    /// Wait on any outstanding nonblocking message requests to complete.
+    ///
+    /// This method is for reverse mode communication only, that is,
+    /// after calling doReversePosts().  For forward mode
+    /// communication (after calling doPosts()), call doWaits()
+    /// instead.
     void doReverseWaits ();
 
     //@}
-
-    //! @name Overridden from Teuchos::Describable
+    //! @name Implementation of Teuchos::Describable
     //@{
 
     //! A simple one-line description of this object.
@@ -439,10 +519,12 @@ namespace Tpetra {
     //! The communicator over which to perform distributions.
     RCP<const Comm<int> > comm_;
 
-    //! @name Parameters read in from \c Teuchos::ParameterList
+    //! @name Parameters read in from the Teuchos::ParameterList
     //@{
+
     //! The variant of send to use in do[Reverse]Posts().
     EDistributorSendType sendType_;
+
     //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
     bool barrierBetween_;
     //@}
@@ -460,14 +542,15 @@ namespace Tpetra {
     //! Whether I am supposed to send a message to myself.
     bool selfMessage_;
 
-    /// \brief The number of sends to other nodes.
+    /// \brief The number of sends from this process to other process.
     ///
-    /// This is always less than or equal to the number of nodes.
-    /// It does <i>not</i> count self receives.
+    /// This is always less than or equal to the number of processes.
+    /// It does <i>not</i> count self receives (that is, messages from
+    /// the calling process to itself).
     ///
-    /// This value is computed by the \c createFromSends() method.
-    /// That method first includes self receives in the count, but at
-    /// the end subtracts one if selfMessage_ is true.
+    /// This value is computed by the createFromSends() method.  That
+    /// method first includes self receives in the count, but at the
+    /// end subtracts one if selfMessage_ is true.
     size_t numSends_;
 
     /// \brief List of process IDs to which to send.
@@ -495,24 +578,24 @@ namespace Tpetra {
 
     /// \brief The maximum send length (in number of Packets) to another process.
     ///
-    /// maxSendLength_ = max(lengthsTo_[p]) for p != my process ID.
+    /// maxSendLength_ = max(lengthsTo_[p]) for p != my process rank.
     size_t maxSendLength_;
 
     /// \brief Offset (by message, not by number of Packets) into exports array.
     ///
-    /// This array is used by the three-argument version of \c
-    /// doPosts().  In that method, \c indicesTo_[j]*numPackets is the
-    /// offset into the \c exports array, where j = startsTo_[p] and p
-    /// is an index iterating through the sends in reverse order
-    /// (starting with the process ID right before the self message,
-    /// if there is a self message, else the largest process ID to
-    /// which this process sends).
+    /// This array is used by the three-argument version of doPosts().
+    /// In that method, <tt>indicesTo_[j]*numPackets</tt> is the
+    /// offset into the <tt>exports</tt> array, where <tt>j =
+    /// startsTo_[p]</tt> and p is an index iterating through the
+    /// sends in reverse order (starting with the process rank right
+    /// before the self message, if there is a self message, else the
+    /// largest process rank to which this process sends).
     ///
     /// This array is only used if export data are not blocked (laid
-    /// out) by process ID, i.e., if we need to use a send buffer.
-    /// Otherwise, this array has no entries (in fact, Distributor
-    /// currently uses this in both overloads of \c doPosts() to test
-    /// whether data are laid out by process).
+    /// out) by process rank, that is, if we need to use a send
+    /// buffer.  Otherwise, this array has no entries.  (In fact,
+    /// Distributor currently uses this in both overloads of doPosts()
+    /// to test whether data are laid out by process.)
     Array<size_t> indicesTo_;
 
     /// \brief The number of messages received by my process from other processes.
@@ -542,16 +625,16 @@ namespace Tpetra {
 
     /// \brief List that becomes the reverse communicator's indicesTo_.
     ///
-    /// Array of length \c totalReceiveLength_.  Allocated and filled
-    /// in \c computeReceives().
+    /// Array of length totalReceiveLength_.  Allocated and filled in
+    /// computeReceives().
     Array<size_t> indicesFrom_;
 
     /// \brief Communication requests associated with nonblocking receives and sends.
     ///
     /// \note To implementers: Distributor uses requests_.size() as
-    /// the number of outstanding nonblocking receives and sends.
-    /// This means you should always resize to zero after completing
-    /// receive and send requests.
+    ///   the number of outstanding nonblocking receives and sends.
+    ///   This means you should always resize to zero after completing
+    ///   receive and send requests.
     Array<RCP<Teuchos::CommRequest<int> > > requests_;
 
     /// \brief The reverse distributor.
@@ -1355,7 +1438,7 @@ namespace Tpetra {
     const int errProc =
       (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
     int maxErrProc = -1;
-    reduceAll (*comm_, Teuchos::REDUCE_MAX, errProc, outArg (maxErrProc));
+    reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX, errProc, outArg (maxErrProc));
     TEUCHOS_TEST_FOR_EXCEPTION(maxErrProc != -1, std::runtime_error,
       Teuchos::typeName (*this) << "::createFromRecvs(): lists of remote IDs "
       "and remote process IDs must have the same size on all participating "
