@@ -173,6 +173,8 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
+      std::cout << "Inside put_field_internal - Region" << std::endl;
+
       size_t num_to_get = field.verify(data_size);
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Ioss::Field::RoleType role = field.get_role();
@@ -237,6 +239,14 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
+      std::cout << "Inside put_field_internal - NodeBlock" << std::endl;
+   /*   Ioss::NameList nl;
+      std::cout << "Name = " << nb->name() << " - NodeBlock" << std::endl;
+      std::cout << "Offset = " << nb->get_offset() << " - NodeBlock" << std::endl;
+      nb->property_describe(&nl);
+      for(int i=0;i<nl.size();i++)
+         std::cout << nl[i] << std::endl;*/
+
       size_t num_to_get = field.verify(data_size);
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
       if (num_to_get > 0) {
@@ -267,13 +277,15 @@ namespace Iovs {
               }
               rdata = &interleaved[0];
             }
+            std::cout << "MESH model coordinates - NodeBlock" << std::endl;
+
             iMesh_createVtxArr (mesh_instance, num_to_get, iBase_INTERLEAVED,
                                 rdata, num_to_get * 3, 
                                 &handles, &allocated, &size,
                                 &ierr);
             iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
                                   "original coordinates", 3, iBase_INTERLEAVED,
-                                  static_cast<double*>(rdata), num_to_get * 3, num_to_get,
+                                  static_cast<double*>(rdata), num_to_get * 3, num_to_get, -1,
                                   &ierr);
           } else if (field.get_name() == "ids") {
             // The ids coming in are the global ids; their position is the
@@ -309,16 +321,18 @@ namespace Iovs {
                   &err);
           }
           */
+          std::cout << "TRANSIENT field name = " << field.get_name ().c_str () << " - NodeBlock" << std::endl;
+
           if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
             iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<double*>(data), num_to_get * components, num_to_get,
+                  static_cast<double*>(data), num_to_get * components, num_to_get, -1,
                   &err);
           }
           else if (ioss_type == Ioss::Field::INTEGER) {
             iMesh_putIntEntityField (mesh_instance, iBase_VERTEX, 
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<int*>(data), num_to_get * components, num_to_get,
+                  static_cast<int*>(data), num_to_get * components, num_to_get, -1,
                   &err);
           }
           else if (ioss_type == Ioss::Field::INT64) {
@@ -332,11 +346,14 @@ namespace Iovs {
 
           // add in the displacement so that it visualizes correctly.
           if (field.get_name () == "displ") {
+            std::cout << "DISPLACEMENT application - NodeBlock" << std::endl;
             double *coords = 0;
             int coords_allocated = 0, components = 0, size = 0;
             iMesh_getDblEntityField (mesh_instance, iBase_VERTEX, 
                                      "original coordinates", &components, iBase_INTERLEAVED,
                                      &coords, &coords_allocated, &size, &err);
+            std::cout << "num_to_get = " << num_to_get << std::endl;
+            std::cout << "size = " << size << std::endl;
             if (num_to_get == static_cast<size_t>(size)) {
                 double *new_coords = (double *) malloc (coords_allocated);
 
@@ -367,6 +384,7 @@ namespace Iovs {
       }
 #endif
       return num_to_get;
+      std::cout << "Exited put_field_internal - NodeBlock" << std::endl;
     }
   }
 
@@ -376,6 +394,29 @@ namespace Iovs {
   {
       //std::cout << "DatabaseIO::put_field_internal executing\n";
       Ioss::SerializeIO serializeIO__(this);
+
+      std::cout << "Inside put_field_internal - ElementBlock" << std::endl;
+      Ioss::NameList nl;
+      eb->field_describe(&nl);
+      for(int i=0;i<nl.size();i++)
+         std::cout << nl[i] << std::endl;
+
+      std::cout << "Block Name = " << eb->name() << std::endl;
+      std::cout << "File Name = " << eb->get_filename() << std::endl;
+      std::cout << "Offset = " << eb->get_offset() << std::endl;
+      nl.clear();
+      eb->property_describe(&nl);
+      for(int i=0;i<nl.size();i++)
+         std::cout << nl[i] << std::endl;
+      if (eb->property_exists("name"))
+        std::cout << "Name Property = " << eb->get_property("name").get_string() << std::endl;
+      if (eb->property_exists("id"))
+         std::cout << "Id Property = " << eb->get_property("id").get_int() << std::endl;
+      if (eb->property_exists("entity_count"))
+    	  std::cout << "Entity Count Property = " << eb->get_property("entity_count").get_int() << std::endl;
+      if (eb->property_exists("topology_node_count"))
+    	  std::cout << "Topology Node Count Property = " << eb->get_property("topology_node_count").get_int() << std::endl;
+
 
       size_t num_to_get = field.verify(data_size);
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
@@ -433,6 +474,8 @@ namespace Iovs {
               if (imesh_topology != iMesh_ALL_TOPOLOGIES) {
 		nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
 
+                std::cout << "Connectivity - ElementBlock" << std::endl;
+
                 iBase_EntityHandle *vertexHandles = 0;
                 int vertexAllocated = 0, vertexSize;
                 iMesh_getEntities (mesh_instance, rootset, 
@@ -440,6 +483,10 @@ namespace Iovs {
                                   &vertexHandles, &vertexAllocated, &vertexSize,
                                   &ierr);
                 if (ierr == 0) {
+                  std::cout << "ALLOCATING connection handles" << std::endl;
+                  std::cout << "num_to_get = " << num_to_get << std::endl;
+                  std::cout << "element_nodes = " << element_nodes << std::endl;
+                  std::cout << "Block Name = " << eb->name() << std::endl;
                   iBase_EntityHandle* connectHandles = new iBase_EntityHandle[num_to_get * element_nodes];
                   iBase_EntityHandle *elementHandles = 0;
                   int elementAllocated = 0, elementSize;
@@ -455,11 +502,24 @@ namespace Iovs {
                       connectHandles[i] = vertexHandles[connectInt64[i] - 1];
                     }
                   }
-                  iMesh_createEntArr (mesh_instance, imesh_topology,
+                  std::cout << "num_to_get = " << num_to_get << std::endl;
+                  std::cout << "element_nodes = " << element_nodes << std::endl;
+                  /*iMesh_createEntArr (mesh_instance, imesh_topology,
                     connectHandles, num_to_get * element_nodes,
                     &elementHandles, &elementAllocated, &elementSize,
                     &status, &statusAllocated, &statusSize,
-                    &ierr);
+                    &ierr);*/
+                  int bid = 0;
+                  if (eb->property_exists("id"))
+                     bid = eb->get_property("id").get_int();
+                  else
+                     std::cout << "ID NOT HERE!!" << std::endl;
+
+                  iMesh_createElementBlock (mesh_instance, imesh_topology,
+                                            connectHandles, num_to_get * element_nodes,
+                                            bid,
+                                            eb->name().c_str(),
+                                            &ierr);
               
                 delete [] connectHandles;
                 }
@@ -468,6 +528,8 @@ namespace Iovs {
           } else if (field.get_name() == "ids") {
             // Another 'const-cast' since we are modifying the database just
             // for efficiency; which the client does not see...
+        	  std::cout << "Ids - ElementBlock" << std::endl;
+        	  std::cout << "Ids size = " << num_to_get << std::endl;
             DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
             new_this->handle_element_ids(eb, data, num_to_get);
 
@@ -540,15 +602,22 @@ namespace Iovs {
             IOSS_ERROR(errmsg);
             exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
           }
+          std::cout << "TRANSIENT field name = " << field.get_name ().c_str () << " - ElementBlock" << std::endl;
+          std::cout << "TRANSIENT num_to_get = " << num_to_get << std::endl;
+          int bid = 0;
+          if (eb->property_exists("id"))
+             bid = eb->get_property("id").get_int();
           if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
-            iMesh_putIntEntityField (mesh_instance, iBase_REGION, 
+            iMesh_putIntEntityField (mesh_instance, iBase_REGION,
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
                   static_cast<int*>(data), num_to_get * components, num_to_get,
+                  bid,
                   &err);
           } else {
-            iMesh_putDblEntityField (mesh_instance, iBase_REGION, 
+            iMesh_putDblEntityField (mesh_instance, iBase_REGION,
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
                   static_cast<double*>(data), num_to_get * components, num_to_get,
+                  bid,
                   &err);
           }
         } else if (role == Ioss::Field::REDUCTION) {
@@ -557,6 +626,7 @@ namespace Iovs {
         }
       }
 #endif
+      std::cout << "Exited put_field_internal - ElementBlock" << std::endl;
       return num_to_get;
   }
 
