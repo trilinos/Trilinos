@@ -56,100 +56,170 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-//! A class for preconditioning with Chebyshev polynomials
-
-/*!
-  Ifpack2::Chebyshev enables the construction of preconditioners
-  based on Chebyshev polynomials for a Tpetra::RowMatrix.
-  Ifpack2::Chebyshev is derived from the Ifpack2::Preconditioner class, 
-  which is itself derived from Tpetra::Operator.
-  Therefore this object can be used as preconditioner everywhere an
-  apply() method is required in the preconditioning step.
-
-  The class is an adaptation of the routine ML_Cheby in Smoother/ml_smoother.hpp
-
-<P> (04/04/06) Flops are not counted in the routine apply()
-
-For the list of parameters, see the Chebyshev::setParameters method.
-
-\author Ulrich Hetmaniuk. SNL 1416.
-
-\date Last modified on 04-Apr-06.
-*/
+/// \class Chebyshev 
+/// \brief Chebyshev preconditioner or smoother for Tpetra sparse matrices.
+/// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
+///
+/// \section Ifpack_Chebyshev_Summary Summary
+///
+/// This class implements a Chebyshev polynomial preconditioner or
+/// smoother for a Tpetra::RowMatrix or Tpetra::CrsMatrix.  Chebyshev
+/// is derived from Preconditioner, which itself is derived from
+/// Tpetra::Operator.  Therefore, this object can be used as
+/// preconditioner everywhere an apply() method is required in the
+/// preconditioning step.
+///
+/// \warning Our implementation currently <i>only</i> works with a
+///   real symmetric positive definite (SPD) matrix.  Results for
+///   matrices that are not SPD, or for complex-valued Scalar types,
+///   are not defined.
+///
+/// \section Ifpack_Chebyshev_Algorithm Algorithm
+///
+/// This algorithm requires that the matrix be symmetric positive
+/// definite.  As a result, all of its eigenvalues must lie in a
+/// positive interval on the real line, \f$[\lambda_{min},
+/// \lambda_{max}]\f$.  We require that users give us at least (an
+/// estimate of) the maximum eigenvalue \f$\lambda_{max}\f$.  They may
+/// optionally also give us the (estimated) ratio \f$\eta =
+/// \lambda_{max} / \lambda_{min}\, or (an estimate of) the minimum
+/// eigenvalue \f$\lambda_{min}\f$.
+///
+/// When using Chebyshev iteration to solve linear systems directly,
+/// it is important to have good estimates of both the minimum and
+/// maximum eigenvalues.  However, when using a small number of
+/// Chebyshev iterations as a smoother in multigrid, the maximum
+/// eigenvalue estimate is more important.  (The point of a smoother
+/// is to smooth out the high-frequency components of the error.)
+/// This is why we use a ratio \f$\eta = \lambda_{max} /
+/// \lambda_{min}$, rather than requiring a guess for $\lambda_{min}$.
+/// In fact, we only use \f$\lambda_{min}\f$ for error checking, not
+/// when determining the Chebyshev coefficients.  Often, if users give
+/// us \f$\lambda_{max}\f$, our default value of \f$\eta\f$ suffices.
+///
+/// Some Chebyshev implementations attempt to estimate the eigenvalue
+/// interval automatically.  Steve Ashby's CHEBYCODE is the original
+/// example.  We do not attempt to do this.  Users who want estimates
+/// of the smallest and largest eigenvalues should run a few
+/// iterations of Lanczos or CG.  Since the largest eigenvalue is more
+/// important for smoother applications, a few iterations of the power
+/// method may be enough.
+///
+/// Call the setParameters() method to give this instance your
+/// estimates of \f$\lambda_{max}\f$ and \f$\eta\f$, as well as to set
+/// other options controlling the behavior of Chebyshev iteration.
+///
+/// \section Ifpack_Chebyshev_Performance Performance
+///
+/// Chebyshev should spend most of its time in Tpetra's native sparse
+/// matrix-vector multiply kernel.  This should give good performance,
+/// since we have spent a lot of effort tuning that kernel.  Depending
+/// on the Kokkos Node type of your Tpetra matrix, the kernel may also
+/// exploit threads for additional parallelism within each MPI process
+/// ("hybrid parallelism" a.k.a. "MPI + X").  If your application
+/// depends on hybrid parallelism for performance, you should favor
+/// Chebyshev smoothers whenever possible over "serial within a
+/// process" smoothers like Gauss-Seidel or SOR (Symmetric
+/// Over-Relaxation).
+///
+/// \section Ifpack_Chebyshev_History History
+///
+/// The original implementation of this class was an adaptation of
+/// ML's ML_Cheby routine.  The original author was Ulrich Hetmaniuk,
+/// a Sandia employee in what was then (2006) Org 1416.
 template<class MatrixType>
-class Chebyshev : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-
+class Chebyshev : 
+    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+					   typename MatrixType::local_ordinal_type,
+					   typename MatrixType::global_ordinal_type,
+					   typename MatrixType::node_type> 
+{
 public:
+  //! \name Typedefs
+  //@{ 
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  // \name Constructors and Destructors
+  //@}
+  // \name Constructors and destructors
   //@{
 
   //! Chebyshev constructor with given Tpetra::RowMatrix input.
-  explicit Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+  explicit Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
 
-  //! Chebyshev destructor.
-  virtual ~Chebyshev();
+  //! Destructor.
+  virtual ~Chebyshev ();
 
   //@}
+  //! \name Preconditioner computation methods
+  //@{ 
 
-  //@{ \name Preconditioner computation methods
+  /// \brief Set parameters for the preconditioner.
+  ///
+  /// The following parameters control the Chebyshev coefficients, the
+  /// number of iterations, various other properties of the algorithm,
+  /// and error checking.
+  /// - "chebyshev: max eigenvalue" (\c Scalar): (An estimate of) the
+  ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
+  ///   should always provide this value, since otherwise Chebyshev
+  ///   will not be an effective smoother.
+  /// - "chebyshev: ratio eigenvalue" (\c Scalar): (Estimated) ratio
+  ///   \f$\eta\f$ between the largest and smallest eigenvalue.  The
+  ///   default value is 30.0.  We use this to define the interval on
+  ///   the real line that determines the Chebyshev coefficients.
+  /// - "chebyshev: min eigenvalue" (\c Scalar): (An estimate of) the
+  ///   smallest eigenvalue \f$\lambda_{min}\f$ of the matrix.  This
+  ///   parameter is optional and is only used to check whether the
+  ///   input matrix is the identity matrix.  We do <i>not</i> use
+  ///   this to define the interval on the real line that determines
+  ///   the Chebyshev coefficients.
+  /// - "chebyshev: degree" (\c int): The polynomial degree; the
+  ///   number of times that apply() invokes sparse matrix-vector
+  ///   multiply.
+  /// - "chebyshev: min diagonal value" (\c Scalar): Threshold for
+  ///   diagonal values.  Values smaller than this are not inverted.
+  /// - "chebyshev: zero starting solution" (\c bool): If true, the
+  ///   input vector(s) is/are filled with zeros on entry to the
+  ///   apply() method.
+  /// - "chebyshev: operator inv diagonal" (<tt>Tpetra::Vector</tt>).
+  ///   A (raw) pointer to the inverse of the diagonal entries of the
+  ///   matrix.  If not provided, we compute this ourselves.  If
+  ///   provided, we make a deep copy.
+  void setParameters (const Teuchos::ParameterList& params);
 
-  //! Sets all the parameters for the preconditioner
-  /**
-   Valid parameters include the following:
-   <ul>
-<li> "chebyshev: ratio eigenvalue" (Scalar)<br>
-this is the ratio to define the lower bound on the spectrum; lambda^* = LambdaMax / EigRatio;
-a typical value used in ML is 30.0 (30.0 is the default value).
-<li> "chebyshev: min eigenvalue" (Scalar)<br>
-this is the smallest eigenvalue; this parameter is optional and is only
-accessed to check whether the input matrix is equal to identity.
-<li> "chebyshev: max eigenvalue" (Scalar)<br>
-this is the largest eigenvalue of the matrix.
-<li> "chebyshev: degree" (int)<br>
-this is the polynomial degree.
-<li> "chebyshev: min diagonal value" (Scalar)<br>
-this defines the threshold for diagonal values under which they are not inverted
-<li> "chebyshev: zero starting solution" (bool)<br>
-Determines whether the 'x' vector is zero'd on entry to Chebyshev::apply.
-</ul>
-
- */
-  void setParameters(const Teuchos::ParameterList& params);
-
-  //! Initialize
+  /// \brief Initialize the preconditioner.
+  ///
+  /// You must call this method before you may call compute() or apply().
   void initialize();
 
-  //! Returns \c true if the preconditioner has been successfully initialized.
+  //! Whether the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
     return(IsInitialized_);
   }
 
-  //! Computes the preconditioner.
+  /// \brief Compute the preconditioner.
+  ///
+  /// You must call this method after calling initialize(), but before
+  /// calling apply().
   void compute();
 
-  //! If preconditioner is computed, this query returns true, otherwise it returns false.
+  //! Whether the preconditioner has been successfully computed.
   inline bool isComputed() const {
     return(IsComputed_);
   }
 
   //@}
-
-  //! @name Methods implementing a Tpetra::Operator interface.
+  //! @name Implementation of Tpetra::Operator
   //@{ 
 
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::_MultiVector of dimension NumVectors containing result.
-    */
+  /// \brief Apply the preconditioner to X, returning the result in Y.
+  ///
+  /// \param X [in] A (multi)vector to which to apply the preconditioner.
+  /// \param Y [in/out] A (multi)vector containing the result of
+  ///   applying the preconditioner to X.
   void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -303,7 +373,7 @@ private:
   mutable double ApplyTime_;
   //! Contains the number of flops for compute().
   double ComputeFlops_;
-  //! Contain sthe number of flops for apply().
+  //! Contains the number of flops for apply().
   mutable double ApplyFlops_;
   //! Number of local rows.
   size_t NumMyRows_;
