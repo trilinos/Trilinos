@@ -107,6 +107,9 @@ void BulkData::change_entity_parts( Entity entity,
   OrdinalVector a_parts;
   a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
   for(AddIterator add_iter=begin_add_parts; add_iter!=end_add_parts; ++add_iter) {
+#ifdef FMWK_NO_GLOBALLY_SHARED_ELEMENTS
+    ThrowErrorMsgIf(entity_rank == stk::topology::ELEMENT_RANK && **add_iter == mesh_meta_data().globally_shared_part(), "FMWK_NO_GLOBALLY_SHARED_ELEMENTS  Error in BulkData::change_entity_parts, trying to make an element globally shared!");
+#endif // FMWK_NO_GLOBALLY_SHARED_ELEMENTS
     a_parts.push_back((*add_iter)->mesh_meta_data_ordinal());
   }
   bool quick_verify_check = true;
