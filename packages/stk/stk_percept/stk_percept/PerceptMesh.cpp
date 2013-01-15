@@ -869,15 +869,15 @@ namespace stk {
     {
       double *coord[2] = {PerceptMesh::field_data(coord_field, nodes[0]),
                           PerceptMesh::field_data(coord_field, nodes[1])};
-      double x[3];
+
       for (int isp=0; isp < 2; isp++)
         {
-          x[isp] = coord[1][isp] - coord[0][isp];
+          normal[isp] = coord[1][isp] - coord[0][isp];
         }
-      x[2] = 0.0;
-      double tmp = x[0];
-      x[0] = -x[1];
-      x[1] = tmp;
+      normal[2] = 0.0;
+      double tmp = normal[0];
+      normal[0] = -normal[1];
+      normal[1] = tmp;
       Math::normalize_3d(normal);
     }
 
@@ -931,11 +931,12 @@ namespace stk {
                                 stk::mesh::Entity elem = side_elems[0].entity();
                                 const CellTopologyData * const elem_topo_data = PerceptMesh::get_cell_topology(elem);
                                 stk::mesh::PairIterRelation side_nodes = side.relations(node_rank());
+                                stk::mesh::PairIterRelation elem_nodes = elem.relations(node_rank());
                                 shards::CellTopology elem_topo(elem_topo_data);
                                 unsigned side_ord = side_elems[0].relation_ordinal();
 
-                                stk::mesh::Entity nodes[2] = {side_nodes[elem_topo_data->side[side_ord].node[0]].entity(),
-                                                              side_nodes[elem_topo_data->side[side_ord].node[1]].entity() };
+                                stk::mesh::Entity nodes[2] = {elem_nodes[elem_topo_data->side[side_ord].node[0]].entity(),
+                                                              elem_nodes[elem_topo_data->side[side_ord].node[1]].entity() };
 
                                 get_line_normal(coord_field, nodes, normal.val);
 
