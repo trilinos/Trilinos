@@ -348,7 +348,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   const size_t NUM_GEARS = 1;
   double start_time = stk::wall_time();
 
-  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS);
+  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS,
+                                            stk::mesh::fixtures::GearParams(0.025, 0.6, 1.05, -0.4, 0.4));
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 

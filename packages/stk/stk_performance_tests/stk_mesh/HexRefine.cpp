@@ -113,7 +113,7 @@ TEST( hex_refine, hex_refine)
   double start_time = stk::cpu_time();
   //unsigned ex=100, ey=100, ez=100;
   const int max_levels = 2;
-  unsigned nn = 50/(1 << (max_levels-1));
+  unsigned nn = 100/(1 << (max_levels-1));
   unsigned ex=nn, ey=nn, ez=nn;
 
   //unsigned num_elems = ex*ey*ez;

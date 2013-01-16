@@ -312,7 +312,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 #ifdef _GLIBCXX_DEBUG
   const size_t NX = p_size*10, NY = 4, NZ = 5;
 #else
-  const size_t NX = p_size*10, NY = 20, NZ = 25;
+  const size_t NX = p_size*100, NY = 100, NZ = 100;
 #endif
 
   static const int TIMER_COUNT = 6;

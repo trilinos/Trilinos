@@ -28,13 +28,16 @@ STKUNIT_UNIT_TEST(selector_timings, selector_timings)
 #ifdef _GLIBCXX_DEBUG
   size_t N = 1000;
 #else
-  size_t N = 10000;
+  size_t N = 100000;
 #endif
 
   VariableSelectorFixture fix(N);
 
   std::vector<double> selector_creation(N/2);
   std::vector<double> get_buckets_usage(N/2);
+  std::vector<stk::mesh::Bucket*> buckets_out;
+  buckets_out.reserve(N*10);
+
   double total_selector_time = 0.0, total_bucket_time = 0.0;
   size_t timing_index = 0;
   for (size_t n = 1 ; n<N; n*=2, ++timing_index) {
@@ -49,8 +52,8 @@ STKUNIT_UNIT_TEST(selector_timings, selector_timings)
 
     // Selector usage:
     start_time = stk::wall_time();
-    std::vector<stk::mesh::Bucket*> buckets_out;
     unsigned entity_rank = 0;
+    buckets_out.clear();
     get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
     get_buckets_usage[timing_index] = stk::wall_dtime(start_time);
     total_bucket_time += get_buckets_usage[timing_index];

@@ -101,9 +101,9 @@ STKUNIT_UNIT_TEST(fast_gather, fast_gather)
   mesh_dims[1]=50; //num_elems_y
   mesh_dims[2]=50; //num_elems_z
 #else
-  mesh_dims[0]=100; //num_elems_x
-  mesh_dims[1]=100; //num_elems_y
-  mesh_dims[2]=100; //num_elems_z
+  mesh_dims[0]=150; //num_elems_x
+  mesh_dims[1]=150; //num_elems_y
+  mesh_dims[2]=150; //num_elems_z
 #endif
 
   std::ostringstream oss;
