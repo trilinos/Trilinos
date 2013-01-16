@@ -53,41 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-# Projects that change the location of the source need to consider this in
-# their top-level CMakeLists.txt file
-SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
-  CACHE PATH
-  "The base directory pointing to the TriBITS system."
-  )
-MARK_AS_ADVANCED(${PROJECT_NAME}_TRIBITS_DIR)
+# Set the official eg/git versions!
+g_officialEgVersion = "1.7.0.4"
+g_officialGitVersion = "1.7.0.4"
 
-SET(CMAKE_MODULE_PATH
-   ${${PROJECT_NAME}_TRIBITS_DIR}/package_arch
-   )
-
-IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-  MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
-ENDIF()
-
-# Overrides that we have for CMake functions
-INCLUDE(TribitsCMakePolicies)
-INCLUDE(TribitsProjectImpl)
-
-
-#
-# Defines a TriBITS project.
-#
-# Requires that PROJECT_NAME be defined before calling this macro.
-#
-# Note, this is just a shell of a macro that calls the real implementation.
-# This allows someone to set ${PROJECT_NAME}_TRIBITS_DIR in the env and point
-# to a different Tribits implementation to test before snapshoting.
-#
-# ToDo: Give documentation
-#
-
-MACRO(TRIBITS_PROJECT)
-
-  TRIBITS_PROJECT_IMPL(${ARGN})
-
-ENDMACRO()
+# Set the list of recognized repo test category types
+g_knownTribitsTestRepoTypes = ("Continuous", "Nightly", "Experimental")

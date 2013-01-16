@@ -508,6 +508,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   MissingExtraRepositoryIgnore
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=MissingExtraRepo
     -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
+    -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=
+    -DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=TRUE
   PASS_REGULAR_EXPRESSION_ALL
     "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' packages list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/PackagesList.cmake. on request!"
     "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' TPLs list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/TPLsList.cmake. on request!"

@@ -69,6 +69,7 @@
 
 from GeneralScriptSupport import *
 
+from CheckinTestConstants import *
 from TribitsDependencies import getProjectDependenciesFromXmlFile
 from TribitsDependencies import getDefaultDepsXmlInFile
 from TribitsPackageFilePathUtils import *
@@ -83,10 +84,6 @@ pp = pprint.PrettyPrinter(indent=4)
 projectDependenciesCache = None
 def getDefaultProjectDependenices():
   return projectDependenciesCache
-
-# Set the official eg/git versions!
-g_officialEgVersion = "1.7.0.4"
-g_officialGitVersion = "1.7.0.4"
 
 
 def getGitRepoDir(srcDir, gitRepoName):
@@ -111,6 +108,14 @@ def getProjectDependenciesXmlFileName(projectName):
 
 def getProjectDependenciesXmlGenerateOutputFileName(projectName):
   return projectName+"PackageDependencies.generate.out"
+
+
+def getProjectExtraReposPythonOutFile(projectName):
+  return projectName+"ExtraRepos.py"
+
+
+def getTribitsGetExtraReposForCheckinTestOututFile(projectName):
+  return projectName+"ExtraRepos.generate.out"
 
 
 def getBuildSpecificConfigFileName(buildTestCaseName):
@@ -244,10 +249,10 @@ def setupAndAssertEgGitVersions(inOptions):
     assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
 
 
-def assertGitRepoExists(inOptions, gitRepoName):
-  gitRepoDir = getGitRepoDir(inOptions.srcDir, gitRepoName)
+def assertGitRepoExists(inOptions, gitRepo):
+  gitRepoDir = getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
   if not os.path.os.path.exists(gitRepoDir):
-    raise Exception("Error, the specified git repo '"+gitRepoName+"' directory"
+    raise Exception("Error, the specified git repo '"+gitRepo.repoName+"' directory"
       " '"+gitRepoDir+"' does not exist!")
 
 
@@ -294,7 +299,7 @@ def didSinglePullBringChanges(pullOutFileFullPath):
   return alreadyUpToDateIdx == -1
 
 
-def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
+def executePull(gitRepo, inOptions, baseTestDir, outFile, pullFromRepo=None,
   doRebase=False)\
   :
   cmnd = inOptions.eg+" pull"
@@ -311,7 +316,7 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
   outFileFullPath = os.path.join(baseTestDir, outFile)
   (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
-    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
     outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
@@ -346,13 +351,183 @@ class Timings:
 
 
 class GitRepo:
-  def __init__(self, repoName):
+  def __init__(self, repoName, repoDir='', repoType='GIT', repoHasPackages=True):
     self.repoName = repoName
+    if repoDir:
+      self.repoDir = repoDir
+    else:
+      self.repoDir = repoName
+    self.repoType = repoType
+    self.repoHasPackages = repoHasPackages
     self.hasChanges = False
+    if (self.repoName and self.repoHasPackages) and (self.repoName != self.repoDir):
+      raise Exception("ERROR!  For extra repo '"+repoName+"', if repoHasPackages==True" \
+        +" then repoDir must be same as repo name, not '"+repoDir+"'!")
+    if self.repoType != 'GIT':
+      raise Exception("ERROR!  For extra repo '"+repoName+"', the repo type" \
+        +" '"+self.repoType+"' is not supported by the checkin-test.py script, only 'GIT'!")
   def __str__(self):
-    return "GitRepo{repoName="+self.repoName+", hasChanges="+str(self.hasChanges)+"}"
+    return "GitRepo{repoName='"+self.repoName+"'" \
+      +", repoDir='"+str(self.repoDir)+"'" \
+      +", repoType='"+str(self.repoType)+"'" \
+      +", repoHasPackages="+str(self.repoHasPackages) \
+      +", hasChanges="+str(self.hasChanges) \
+      +"}"
   def __rep__(self):
     return str(self)
+
+
+def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
+  consoleOutputFile = None, verbose=False \
+  ):
+  if inOptions.extraReposFile == "project":
+    extraReposFile = inOptions.srcDir+"/cmake/ExtraRepositoriesList.cmake"
+  else:
+    extraReposFile = inOptions.extraReposFile
+  cmnd = "cmake"+ \
+    " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
+    " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
+    " -DEXTRA_REPOS_FILE="+extraReposFile+ \
+    " -DENABLE_KNOWN_EXTERNAL_REPOS_TYPE="+inOptions.extraReposType+ \
+    " -DEXTRA_REPOS="+inOptions.extraRepos+ \
+    " -DEXTRA_REPOS_PYTHON_OUT_FILE="+extraReposPythonOutFile
+  if inOptions.ignoreMissingExtraRepos:
+    cmnd += " -DIGNORE_MISSING_EXTRA_REPOSITORIES=TRUE"
+  cmnd += \
+    " -P "+inOptions.tribitsDir+"/package_arch/TribitsGetExtraReposForCheckinTest.cmake"
+  echoRunSysCmnd(cmnd, throwExcept=True, timeCmnd=True, outFile=consoleOutputFile, \
+    verbose=verbose)
+
+
+def translateExtraReposPyToDictGitRepo(extraReposPyDict):
+  repoName = extraReposPyDict['NAME']
+  repoDir = extraReposPyDict['DIR']
+  repoType = extraReposPyDict['REPOTYPE']
+  repoHasPackages = (extraReposPyDict['PACKSTAT'] == 'HASPACKAGES')
+  return GitRepo(repoName, repoDir, repoType, repoHasPackages)
+
+
+class TribitsGitRepos:
+
+  def __init__(self):
+    self.reset()
+    self.__insertMainRepo()
+    self.__initFinalize()
+
+  def initFromCommandlineArguments(self, inOptions, consoleOutputFile=None, verbose=True):
+
+    self.reset()
+
+    self.__insertMainRepo()
+
+    if inOptions.extraRepos!="" and \
+      (inOptions.extraReposFile=="" or inOptions.extraReposType=="") \
+      :
+      # Just use the listed set of extra repos with no checking
+      for extraRepoName in inOptions.extraRepos.split(","):
+        extraRepo = GitRepo(extraRepoName)
+        self.__gitRepoList.append(extraRepo)
+    elif inOptions.extraReposFile!="" and inOptions.extraReposType!="":
+      # Read in the extra repos from file and assert or ignore missing repos, etc.
+      extraReposPythonOutFile = getProjectExtraReposPythonOutFile(inOptions.projectName)
+      getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
+        consoleOutputFile=consoleOutputFile, verbose=verbose)
+      extraReposPyTxt = readStrFromFile(extraReposPythonOutFile)
+      extraReposPyList = eval(extraReposPyTxt)
+      for extraRepoDict in extraReposPyList:
+        extraRepo = translateExtraReposPyToDictGitRepo(extraRepoDict)
+        self.__gitRepoList.append(extraRepo)
+
+    self.__initFinalize()
+
+  def gitRepoList(self):
+    return self.__gitRepoList
+
+  def tribitsExtraRepoNamesList(self):
+    return self.__tribitsExtraRepoNamesList
+
+  def numTribitsExtraRepos(self):
+    return len(self.__tribitsExtraRepoNamesList)
+
+  def __str__(self):
+    strRep = "{\n"
+    strRep += "  gitRepoList = " + self.__printReposList(self.__gitRepoList)
+    strRep += "  tribitsExtraRepoNamesList = "+str(self.__tribitsExtraRepoNamesList)+"\n"
+    strRep += "  }\n"
+    return strRep
+
+  def reset(self):
+    self.__gitRepoList = []
+    self.__tribitsExtraRepoNamesList = []
+    return self
+
+  # Private
+
+  def __insertMainRepo(self):
+    mainRepo = GitRepo("")
+    self.__gitRepoList.append(mainRepo) 
+
+  def __printReposList(self, reposList):
+    strRep = "[\n"
+    for gitRepo in reposList:
+      strRep += ("    " + str(gitRepo) + ",\n")
+    strRep += "    ]\n"
+    return strRep
+
+  def __initFinalize(self):
+    self.__tribitsExtraRepoNamesList = []
+    for gitRepo in self.__gitRepoList:
+      if gitRepo.repoName and gitRepo.repoHasPackages:
+        self.__tribitsExtraRepoNamesList.append(gitRepo.repoName)
+
+
+def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
+
+  if tribitsGitRepos.numTribitsExtraRepos() > 0:
+    print "\nPulling in packages from extra repos: "+\
+       ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())+" ..."
+    for gitRepo in tribitsGitRepos.gitRepoList():
+      assertGitRepoExists(inOptions, gitRepo)        
+    if not inOptions.skipDepsUpdate:
+      # There are extra repos so we need to build a new list of Project
+      # packages to include the add-on packages.
+      cmakeArgumentList = [
+        "cmake",
+        "-DPROJECT_NAME=%s" % inOptions.projectName,
+        cmakeScopedDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.tribitsDir),
+        "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
+        cmakeScopedDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR",
+          baseTestDir),
+        cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
+          ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
+        "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+        ]
+      cmnd = ' '.join(cmakeArgumentList)
+      echoRunSysCmnd(cmnd,
+        workingDir=baseTestDir,
+        outFile=baseTestDir+"/"\
+          +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
+        timeCmnd=True)
+    else:
+      print "\nSkipping update of dependencies XML file on request!"
+    projectDepsXmlFile = baseTestDir+"/"\
+      +getProjectDependenciesXmlFileName(inOptions.projectName)
+  else:
+    # No extra repos so you can just use the default list of packages
+    projectDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
+
+  projectDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
+  if projectDepsXmlFileOverride:
+    print "\nprojectDepsXmlFileOverride="+projectDepsXmlFileOverride
+    projectDepsXmlFile = projectDepsXmlFileOverride
+
+  global projectDependenciesCache
+  projectDependenciesCache = getProjectDependenciesFromXmlFile(projectDepsXmlFile)
+
+
+
+
+
 
 
 class BuildTestCase:
@@ -507,17 +682,17 @@ def getCurrentBranchName(inOptions, baseTestDir):
       break
 
 
-def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
+def getCurrentDiffOutput(gitRepo, inOptions, baseTestDir):
   echoRunSysCmnd(
     inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
-    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
-    outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
+    outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepo.repoName)),
     timeCmnd=True
     )
 
 
-def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
-  gitRepoName, enablePackagesList_inout, verbose=True,
+def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_inout,
+  gitRepo, enablePackagesList_inout, verbose=True,
   projectDependenciesLocal=None ) \
   :
 
@@ -525,20 +700,20 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
     projectDependenciesLocal = getDefaultProjectDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
-    updateOutputStr.split('\n'), reModifiedFiles )
+    changedFileDiffOutputStr.split('\n'), reModifiedFiles )
 
   for modifiedFileFullPath in modifiedFilesList:
 
     # Only look for global rebuild files in the master repo (not in extra repos)
-    if gitRepoName == '' and isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
+    if gitRepo.repoName == '' and isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
             "  => Enabling all "+inOptions_inout.projectName+" packages!"
         inOptions_inout.enableAllPackages = 'on'
 
-    if gitRepoName:
-      modifiedFileFullPath = gitRepoName+"/"+modifiedFileFullPath
+    if gitRepo.repoDir:
+      modifiedFileFullPath = gitRepo.repoDir+"/"+modifiedFileFullPath
     #print "\nmodifiedFileFullPath =", modifiedFileFullPath
 
     packageName = getPackageNameFromPath(projectDependenciesLocal, modifiedFileFullPath)
@@ -964,20 +1139,22 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   return summaryEmailSectionStr
 
 
-def cmakeDefine(projectName, name, value):
+def cmakeScopedDefine(projectName, name, value):
   """
   Formats a CMake -D<projectName>_<name>=<value> argument.
   """
   return '-D%s_%s=%s' % (projectName, name, value)
 
+
 def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
-   skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
+   skipCaseIfNoChangeFromDefaultEnables, tribitsGitRepos,
    baseTestDir, verbose \
    ):
 
   projectName = inOptions.projectName
   cmakePkgOptions = []
   enablePackagesList = []
+  gitRepoList = tribitsGitRepos.gitRepoList()
     
   if inOptions.enablePackages:
     if verbose:
@@ -989,9 +1166,9 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
       if verbose:
         print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ..."
       if os.path.exists(diffOutFileName):
-        updateOutputStr = open(diffOutFileName, 'r').read()
-        #print "\nupdateOutputStr:\n", updateOutputStr
-        extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, gitRepo.repoName,
+        changedFileDiffOutputStr = open(diffOutFileName, 'r').read()
+        #print "\nchangedFileDiffOutputStr:\n", changedFileDiffOutputStr
+        extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions, gitRepo,
           enablePackagesList, verbose)
       else:
         if verbose:
@@ -1017,33 +1194,34 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
-  if inOptions.extraRepos:
-    cmakePkgOptions.append(cmakeDefine(
-      projectName, "EXTRA_REPOSITORIES:STRING", inOptions.extraRepos))
+  if tribitsGitRepos.numTribitsExtraRepos() > 0:
+    cmakePkgOptions.append(cmakeScopedDefine(
+      projectName, "EXTRA_REPOSITORIES:STRING",
+      ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())))
 
   for pkg in enablePackagesList:
-    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
+    cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 
-  cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_OPTIONAL_PACKAGES:BOOL", "ON"))
+  cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_OPTIONAL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableAllPackages == 'on':
     if verbose:
       print "\nEnabling all packages on request!"
-    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_PACKAGES:BOOL", "ON"))
+    cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableFwdPackages:
     if verbose:
       print "\nEnabling forward packages on request!"
-    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "ON"))
+    cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "ON"))
   else:
-    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "OFF"))
+    cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "OFF"))
 
   if inOptions.disablePackages:
     if verbose:
       print "\nAdding hard disaled for specified packages '"+inOptions.disablePackages+"' ...\n"
     disablePackagesList = inOptions.disablePackages.split(',')
     for pkg in disablePackagesList:
-      cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "OFF"))
+      cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "OFF"))
 
   if verbose:
     print "\ncmakePkgOptions:", cmakePkgOptions
@@ -1051,7 +1229,7 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   return (cmakePkgOptions, enablePackagesList)
 
 
-def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
+def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
 
   success = True
 
@@ -1087,11 +1265,11 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
-    cmakeBaseOptions.append(cmakeDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
   
-    cmakeBaseOptions.append(cmakeDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
 
-    cmakeBaseOptions.append(cmakeDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
@@ -1123,7 +1301,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
       (cmakePkgOptions, enablePackagesList) = \
         getEnablesLists(inOptions, buildTestCase.validPackageTypesList, 
           buildTestCase.isDefaultBuild,
-          buildTestCase.skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
+          buildTestCase.skipCaseIfNoChangeFromDefaultEnables, tribitsGitRepos,
           baseTestDir, True)
   
     # A.3) Set the combined options
@@ -1316,7 +1494,7 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
       echoChDir("..")
 
 
-def runBuildTestCaseDriver(inOptions, gitRepoList, baseTestDir, buildTestCase, timings):
+def runBuildTestCaseDriver(inOptions, tribitsGitRepos, baseTestDir, buildTestCase, timings):
 
   success = True
 
@@ -1331,7 +1509,7 @@ def runBuildTestCaseDriver(inOptions, gitRepoList, baseTestDir, buildTestCase, t
     try:
       echoChDir(baseTestDir)
       writeDefaultBuildSpecificConfigFile(buildTestCaseName)
-      result = runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings)
+      result = runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings)
       if not result: success = False
     except Exception, e:
       success = False
@@ -1490,28 +1668,28 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
   return ('\n'.join(origLogStrList), lastNumBlankLines)
 
 
-def getLastCommitMessageStr(inOptions, gitRepoName):
+def getLastCommitMessageStr(inOptions, gitRepo):
 
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
     inOptions.eg+" cat-file -p HEAD",
-    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
 
 
-def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
+def getLocalCommitsSummariesStr(inOptions, gitRepo, appendRepoName):
 
   # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
-  if gitRepoName and appendRepoName:
-    repoNameModifier = " ("+gitRepoName+")"
+  if gitRepo.repoName and appendRepoName:
+    repoNameModifier = " ("+gitRepo.repoName+")"
   else:
     repoNameModifier = ""
 
@@ -1540,13 +1718,13 @@ def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
   return (localCommitsStr, localCommitsExist)
 
 
-def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
+def getLocalCommitsSHA1ListStr(inOptions, gitRepo):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
   if rawLocalCommitsStr:
@@ -1556,8 +1734,8 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
   return ""
 
 
-def getLocalCommitsExist(inOptions, gitRepoName):
-  if getLocalCommitsSummariesStr(inOptions, gitRepoName, False)[1]:
+def getLocalCommitsExist(inOptions, gitRepo):
+  if getLocalCommitsSummariesStr(inOptions, gitRepo, False)[1]:
     return True
   return False
 
@@ -1594,6 +1772,7 @@ def getProjectName(sourceDirectory):
   raise Exception(
     'The file %s does not set the PROJECT_NAME variable. ' +
     'This is required of any Tribits project.')
+
   
 def checkinTest(baseDir, inOptions, configuration={}):
   """
@@ -1607,9 +1786,12 @@ def checkinTest(baseDir, inOptions, configuration={}):
   print "*** Performing checkin testing of %s ***" % inOptions.projectName
   print "**********************************************"
 
+  setattr(inOptions, "tribitsDir", baseDir)
+
   scriptsDir = os.path.join(baseDir, 'python')
-  #print "\nscriptsDir =", scriptsDir
   setattr(inOptions, "scriptsDir", scriptsDir)
+
+  print "\nscriptsDir =", scriptsDir
 
   print "\nsrcDir =", inOptions.srcDir
 
@@ -1643,45 +1825,15 @@ def checkinTest(baseDir, inOptions, configuration={}):
   if not inOptions.skipDepsUpdate:
     removeIfExists(getProjectDependenciesXmlFileName(inOptions.projectName))
     removeIfExists(getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName))
+    removeIfExists(getProjectExtraReposPythonOutFile(inOptions.projectName))
 
-  if inOptions.extraRepos:
-    print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
-    for gitRepoName in inOptions.extraRepos.split(","):
-      assertGitRepoExists(inOptions, gitRepoName)        
-    if not inOptions.skipDepsUpdate:
-      # There are extra repos so we need to build a new list of Project packages
-      # to include the add-on packages.
-      cmakeArgumentList = [
-        "cmake",
-        "-DPROJECT_NAME=%s" % inOptions.projectName,
-        cmakeDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.srcDir + "/cmake/tribits"),
-        "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
-        cmakeDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR", baseTestDir),
-        cmakeDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+';'.join(inOptions.extraRepos.split(','))+"\""),
-        "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
-      ]
-      cmnd = ' '.join(cmakeArgumentList)
-      echoRunSysCmnd(cmnd,
-        workingDir=baseTestDir,
-        outFile=baseTestDir+"/"\
-          +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
-        timeCmnd=True)
-    else:
-      print "\nSkipping update of dependencies XML file on request!"
-    projectDepsXmlFile = baseTestDir+"/"\
-      +getProjectDependenciesXmlFileName(inOptions.projectName)
-  else:
-    # No extra repos so you can just use the default list of packages
-    projectDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
+  # Set up list of repositories and process dependenices
 
-  projectDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
-  if projectDepsXmlFileOverride:
-    print "\nprojectDepsXmlFileOverride="+projectDepsXmlFileOverride
-    projectDepsXmlFile = projectDepsXmlFileOverride
+  tribitsGitRepos = TribitsGitRepos()
+  tribitsGitRepos.initFromCommandlineArguments(inOptions)
+  print "\ntribitsGitRepos =", tribitsGitRepos
 
-
-  global projectDependenciesCache
-  projectDependenciesCache = getProjectDependenciesFromXmlFile(projectDepsXmlFile)
+  createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos)
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
@@ -1691,17 +1843,6 @@ def checkinTest(baseDir, inOptions, configuration={}):
   timings = Timings()
 
   subjectLine = None
-
-  # Set up list of repos array
-
-  gitRepoList = []
-  gitRepoList.append(GitRepo("")) # The main Project repo
-  if inOptions.extraRepos:
-    for extraRepo in inOptions.extraRepos.split(","):
-      gitRepoList.append(GitRepo(extraRepo))
-
-  #print "\ngitRepoList =", pp.pprint(gitRepoList)
-  #print "\ngitRepoList =", gitRepoList
   
   # Set up build/test cases array
 
@@ -1749,17 +1890,17 @@ def checkinTest(baseDir, inOptions, configuration={}):
     print "***"
 
     if inOptions.doPull:
-      for gitRepo in gitRepoList:
+      for gitRepo in tribitsGitRepos.gitRepoList():
         removeIfExists(getInitialPullOutputFileName(gitRepo.repoName))
         removeIfExists(getInitialExtraPullOutputFileName(gitRepo.repoName))
       removeIfExists(getInitialPullSuccessFileName())
 
-    for gitRepo in gitRepoList:
+    for gitRepo in tribitsGitRepos.gitRepoList():
       removeIfExists(getFinalCommitBodyFileName(gitRepo.repoName))
       removeIfExists(getFinalCommitOutputFileName(gitRepo.repoName))
     removeIfExists(getCommitStatusEmailBodyFileName())
 
-    for gitRepo in gitRepoList:
+    for gitRepo in tribitsGitRepos.gitRepoList():
       removeIfExists(getModifiedFilesOutputFileName(gitRepo.repoName))
       removeIfExists(getFinalPullOutputFileName(gitRepo.repoName))
       removeIfExists(getPushOutputFileName(gitRepo.repoName))
@@ -1797,12 +1938,12 @@ def checkinTest(baseDir, inOptions, configuration={}):
       #
 
       repoIdx = 0
-      for gitRepo in gitRepoList:
+      for gitRepo in tribitsGitRepos.gitRepoList():
 
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
         egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
-          workingDir=getGitRepoDir(inOptions.srcDir,gitRepo.repoName))
+          workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir))
   
         print \
           "\nOutput from 'eg status':\n" + \
@@ -1851,11 +1992,11 @@ def checkinTest(baseDir, inOptions, configuration={}):
     
       if inOptions.doPull and pullPassed:
         repoIdx = 0
-        for gitRepo in gitRepoList:
+        for gitRepo in tribitsGitRepos.gitRepoList():
           print "\n3.b."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
           echoChDir(baseTestDir)
           (updateRtn, updateTimings, pullGotChanges) = executePull(
-            gitRepo.repoName,
+            gitRepo,
             inOptions, baseTestDir,
             getInitialPullOutputFileName(gitRepo.repoName))
           if pullGotChanges:
@@ -1877,11 +2018,11 @@ def checkinTest(baseDir, inOptions, configuration={}):
       
       if inOptions.extraPullFrom and pullPassed:
         repoIdx = 0
-        for gitRepo in gitRepoList:
+        for gitRepo in tribitsGitRepos.gitRepoList():
           print "\n3.c."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
           echoChDir(baseTestDir)
           (updateRtn, updateTimings, pullGotChanges) = executePull(
-            gitRepo.repoName,
+            gitRepo,
             inOptions, baseTestDir,
             getInitialExtraPullOutputFileName(gitRepo.repoName),
             inOptions.extraPullFrom )
@@ -1937,8 +2078,8 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
     if pullPassed:
 
-      for gitRepo in gitRepoList:
-        getCurrentDiffOutput(gitRepo.repoName, inOptions, baseTestDir)
+      for gitRepo in tribitsGitRepos.gitRepoList():
+        getCurrentDiffOutput(gitRepo, inOptions, baseTestDir)
 
     else:
 
@@ -2006,7 +2147,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
         buildTestCase.timings = timings.deepCopy()
         result = runBuildTestCaseDriver(
           inOptions,
-          gitRepoList,
+          tribitsGitRepos,
           baseTestDir,
           buildTestCase,
           buildTestCase.timings
@@ -2038,7 +2179,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
       (cmakePkgOptions, enabledPackagesList) = \
         getEnablesLists(inOptions, allValidPackageTypesList, False, False,
-        gitRepoList, baseTestDir, False)
+        tribitsGitRepos, baseTestDir, False)
 
       enableStatsListStr = getEnableStatusList(inOptions, enabledPackagesList)
       commitEmailBodyExtra += enableStatsListStr
@@ -2175,12 +2316,12 @@ def checkinTest(baseDir, inOptions, configuration={}):
         pullFinalPassed = True
 
         repoIdx = 0
-        for gitRepo in gitRepoList:
+        for gitRepo in tribitsGitRepos.gitRepoList():
   
           print "\n7.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
   
           (update2Rtn, update2Time, pullGotChanges) = \
-            executePull(gitRepo.repoName, inOptions, baseTestDir,
+            executePull(gitRepo, inOptions, baseTestDir,
               getFinalPullOutputFileName(gitRepo.repoName), None,
               doFinalRebase )
   
@@ -2215,18 +2356,18 @@ def checkinTest(baseDir, inOptions, configuration={}):
         print "\nAttempting to amend the final commmit message ...\n"
 
         repoIdx = 0
-        for gitRepo in gitRepoList:
+        for gitRepo in tribitsGitRepos.gitRepoList():
   
           print "\n7.b."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
           try:
 
-            lastCommitMessageStr = getLastCommitMessageStr(inOptions, gitRepo.repoName)
+            lastCommitMessageStr = getLastCommitMessageStr(inOptions, gitRepo)
             #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
             (localCommitSummariesStr, localCommitsExist) = \
-              getLocalCommitsSummariesStr(inOptions, gitRepo.repoName, False)
+              getLocalCommitsSummariesStr(inOptions, gitRepo, False)
             #print "\nlocalCommitsExist =", localCommitsExist, "\n"
-            localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions, gitRepo.repoName)
+            localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions, gitRepo)
   
             # Get then final commit message
             finalCommitEmailBodyStr = lastCommitMessageStr
@@ -2244,7 +2385,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
               commitAmendRtn = echoRunSysCmnd(
                 inOptions.eg+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
-                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
                 timeCmnd=True, throwExcept=False
                 )
@@ -2277,9 +2418,9 @@ def checkinTest(baseDir, inOptions, configuration={}):
       # amended but before the push!  NOTE: We grab the list of commits even
       # if we don't ammend the last commit message
       repoIdx = 0
-      for gitRepo in gitRepoList:
+      for gitRepo in tribitsGitRepos.gitRepoList():
         localCommitSummariesStr = \
-          getLocalCommitsSummariesStr(inOptions, gitRepo.repoName, True)[0]
+          getLocalCommitsSummariesStr(inOptions, gitRepo, True)[0]
         if allLocalCommitSummariesStr:
           allLocalCommitSummariesStr += ("\n\n" + localCommitSummariesStr)
         else:
@@ -2306,7 +2447,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
         didAtLeastOnePush = False
 
         repoIdx = 0
-        for gitRepo in gitRepoList:
+        for gitRepo in tribitsGitRepos.gitRepoList():
   
           print "\n7.c."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
@@ -2326,7 +2467,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
                 inOptions.eg+" push origin "+inOptions.currentBranch,
-                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
               didAtLeastOnePush = True

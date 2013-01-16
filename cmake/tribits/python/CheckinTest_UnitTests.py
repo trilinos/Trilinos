@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+
 ########################################
 # Unit testing code for CheckinTest.py #
 ########################################
@@ -61,18 +62,64 @@
 from CheckinTest import *
 import unittest
 
+scriptsDir = getScriptBaseDir()
+
+tribitsBaseDir=os.path.abspath(scriptsDir+"/..")
+packageArchDir=os.path.abspath(tribitsBaseDir+"/package_arch")
+mockProjectBaseDir=os.path.abspath(packageArchDir+"/UnitTests/MockTrilinos")
+
+#####################################################
+#
+# Testing helper code
+#
+#####################################################
+
 
 class MockOptions:
   def __init__(self):
+    self.projectName = "Trilinos"
+    self.srcDir = mockProjectBaseDir
+    self.tribitsDir = tribitsBaseDir 
     self.enableAllPackages = 'auto'
+    self.extraReposFile = ""
+    self.extraReposType = ""
+    self.extraRepos = ""
+    self.ignoreMissingExtraRepos = ""
 
 
-scriptsDir = getScriptBaseDir()
+def assertGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose):
+  assert(os.path.isfile(fileName))
+  testName = testObject._testMethodName
+  for regexToFind in regexStrList.strip().split('\n'):
+    if regexToFind == "": continue
+    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
+    if verbose or not foundRegex:
+      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+regexToFind+"' ...", 
+      print "'"+foundRegex+"'", 
+      if foundRegex: print ": PASSED"
+      else: print ": FAILED"
+    testObject.assertNotEqual(foundRegex, "")
 
 
+def assertNotGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose):
+  assert(os.path.isfile(fileName))
+  testName = testObject._testMethodName
+  for regexToFind in regexStrList.strip().split('\n'):
+    if regexToFind == "": continue
+    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
+    if verbose or foundRegex:
+      print "\ncheckin_test::"+testName+": In '"+fileName \
+        +"' assert not exist regex '"+regexToFind+"' ... '"+foundRegex+"'", 
+      if foundRegex: print ": FAILED"
+      else: print ": PASSED"
+    testObject.assertEqual(foundRegex, "")
+
+
+#############################################################################
 #
 # Test formatMinutesStr
 #
+#############################################################################
 
 
 class test_formatMinutesStr(unittest.TestCase):
@@ -111,9 +158,11 @@ class test_formatMinutesStr(unittest.TestCase):
     self.assertEqual(formatMinutesStr(45.2493333), "45.25 min")
 
 
+#############################################################################
 #
 # Test formatMinutesStr
 #
+#############################################################################
 
 
 class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
@@ -137,9 +186,11 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
       1.16723643541)
 
 
+#############################################################################
 #
 # Test extractPackageEnablesFromChangeStatus
 #
+#############################################################################
 
 
 projectDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
@@ -163,7 +214,7 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
     options = MockOptions()
     enablePackagesList = []
 
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options, GitRepo(""),
       enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'on' )
@@ -185,7 +236,7 @@ D	packages/tpetra/FSeconds.f
     options = MockOptions()
     enablePackagesList = []
 
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options, GitRepo(""),
       enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
@@ -206,7 +257,8 @@ M	stalix/README
     options = MockOptions()
     enablePackagesList = []
 
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options, "preCopyrightTrilinos",
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+      GitRepo("preCopyrightTrilinos"),
       enablePackagesList, False, projectDependenciesLocal)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
@@ -318,8 +370,11 @@ Some other message
 
 
 ################################################################################
+#
 # Test Project name matching.
+#
 ################################################################################
+
 class test_matchProjectName(unittest.TestCase):
   def test_good_match(self):
     line = 'SET(PROJECT_NAME TestProject)'
@@ -341,17 +396,587 @@ class test_matchProjectName(unittest.TestCase):
     match = matchProjectName(line)
     self.assertEqual(match, 'TestProject')
 
-#############################################################################
-# Test CMake helpers
-#############################################################################
-class test_cmakeDefine(unittest.TestCase):
-  def test_cmakeDefineSimple(self):
-    result = cmakeDefine('ProjectName', 'SOME_FLAG:BOOL', 'ON')
-    self.assertEqual(result, '-DProjectName_SOME_FLAG:BOOL=ON')
 
 #############################################################################
 #
-#                     Test checkin-test.py script
+# Test CMake helpers
+#
+#############################################################################
+
+class test_cmakeScopedDefine(unittest.TestCase):
+  def test_simple(self):
+    result = cmakeScopedDefine('ProjectName', 'SOME_FLAG:BOOL', 'ON')
+    self.assertEqual(result, '-DProjectName_SOME_FLAG:BOOL=ON')
+
+
+#############################################################################
+#
+# Test TribitsGetExtraReposForCheckinTest.cmake 
+#
+#############################################################################
+
+
+#run_extrarepo_test_verbose = True
+run_extrarepo_test_verbose = False
+
+
+def run_extrarepo_test(testObject, extraReposFile, expectedReposList, \
+  extraCmakeVars=None, expectedErrOutput=None \
+  ):
+  testName = testObject._testMethodName
+  extraReposPythonOutFile = os.getcwd()+"/"+testName+".py"
+  cmnd = "cmake"+ \
+    " -DPROJECT_SOURCE_DIR="+mockProjectBaseDir+ \
+    " -DTRIBITS_BASE_DIR="+tribitsBaseDir
+  if extraCmakeVars:
+    cmnd += " "+extraCmakeVars
+  cmnd += \
+    " -DEXTRA_REPOS_FILE="+scriptsDir+"/UnitTests/"+extraReposFile+ \
+    " -DEXTRA_REPOS_PYTHON_OUT_FILE="+extraReposPythonOutFile+ \
+    " -DUNITTEST_SKIP_FILTER_OR_ASSERT_EXTRA_REPOS=TRUE"+ \
+    " -P "+scriptsDir+"/../package_arch/TribitsGetExtraReposForCheckinTest.cmake"
+  consoleOutFile = testName+".out"
+  rtn = echoRunSysCmnd(cmnd, throwExcept=False, timeCmnd=True, outFile=consoleOutFile,
+    verbose=run_extrarepo_test_verbose)
+  consoleOutputStr = readStrFromFile(consoleOutFile)
+  if run_extrarepo_test_verbose:
+    print "\nrtn =", rtn
+    print "\n"+consoleOutFile+":\n", consoleOutputStr 
+  if rtn == 0:
+    readReposListTxt = readStrFromFile(extraReposPythonOutFile)
+    if run_extrarepo_test_verbose:
+      print "\nreadReposListTxt:\n", readReposListTxt
+    readReposList = eval(readReposListTxt)
+    if run_extrarepo_test_verbose:
+      print "readReposList:\n", readReposList
+    testObject.assertEqual(readReposList, expectedReposList)
+  else:
+    if run_extrarepo_test_verbose:
+      print "\nexpectedErrOutput =", expectedErrOutput
+    foundExpectedErrOutput = consoleOutputStr.find(expectedErrOutput)
+    if foundExpectedErrOutput == -1:
+      print "Error, failed to find:\n\n", expectedErrOutput
+      print "\n\nin the output:\n\n", consoleOutputStr
+    testObject.assertNotEqual(foundExpectedErrOutput, -1)
+
+
+class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
+
+  def test_ExtraRepos1_implicit(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposList_1.cmake",
+      [
+        {
+          'NAME' : 'ExtraRepo1',
+          'DIR' : 'ExtraRepo1',
+          'REPOTYPE' : 'GIT',
+          'REPOURL' : 'someurl.com:/git/data/SomeExtraRepo1',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        ],
+      )
+
+  def test_ExtraRepos1_explicit(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposList_1.cmake",
+      [
+        {
+          'NAME' : 'ExtraRepo1',
+          'DIR' : 'ExtraRepo1',
+          'REPOTYPE' : 'GIT',
+          'REPOURL' : 'someurl.com:/git/data/SomeExtraRepo1',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        ],
+      extraCmakeVars="-DENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous"
+      )
+
+  def test_ExtraReposAll(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposList.cmake",
+      [
+        {
+          'NAME' : 'ExtraRepo1',
+          'DIR' : 'ExtraRepo1',
+          'REPOTYPE' : 'GIT',
+          'REPOURL' : 'someurl.com:/ExtraRepo1',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        {
+          'NAME' : 'ExtraRepo2',
+          'DIR' : 'packages/SomePackage/Blah',
+          'REPOTYPE' : 'GIT',
+          'REPOURL' : 'someurl2.com:/ExtraRepo2',
+          'PACKSTAT' : 'NOPACKAGES',
+          'CATEGORY' : 'Nightly',
+          },
+        {
+          'NAME' : 'ExtraRepo3',
+          'DIR' : 'ExtraRepo3',
+          'REPOTYPE' : 'HG',
+          'REPOURL' : 'someurl3.com:/ExtraRepo3',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        {
+          'NAME' : 'ExtraRepo4',
+          'DIR' : 'ExtraRepo4',
+          'REPOTYPE' : 'SVN',
+          'REPOURL' : 'someurl4.com:/ExtraRepo4',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Nightly',
+          },
+        ],
+      extraCmakeVars="-DENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly"
+      )
+
+  def test_ExtraReposContinuous(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposList.cmake",
+      [
+        {
+          'NAME' : 'ExtraRepo1',
+          'DIR' : 'ExtraRepo1',
+          'REPOTYPE' : 'GIT',
+          'REPOURL' : 'someurl.com:/ExtraRepo1',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        {
+          'NAME' : 'ExtraRepo3',
+          'DIR' : 'ExtraRepo3',
+          'REPOTYPE' : 'HG',
+          'REPOURL' : 'someurl3.com:/ExtraRepo3',
+          'PACKSTAT' : 'HASPACKAGES',
+          'CATEGORY' : 'Continuous',
+          },
+        ],
+      )
+
+  def test_ExtraReposInvalidCategory(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposListInvalidCategory.cmake",
+      [],
+      )
+
+  def test_ExtraReposInvalidType(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposListInvalidType.cmake",
+      ["Will never get compared"],
+      expectedErrOutput="Error, the repo type of 'InvalidType' for extra repo ExtraRepo1"
+      )
+
+  def test_ExtraReposEmptyList(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposListEmptyList.cmake",
+      ["Will never get compared"],
+      expectedErrOutput="Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY is not defined!",
+      )
+
+  def test_ExtraReposEmptyFile(self):
+    run_extrarepo_test(
+      self,
+      "ExtraReposListEmptyFile.cmake",
+      ["Will never get compared"],
+      expectedErrOutput="Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY is not defined!",
+      )
+
+
+#############################################################################
+#
+# Test TribitsGitRepos
+#
+#############################################################################
+
+
+def assertCompareGitRepoLists(testObject, gitRepoList, expectedGitRepoList):
+  testObject.assertEqual(len(gitRepoList), len(expectedGitRepoList))
+  for i in range(len(gitRepoList)):
+    gitRepo = gitRepoList[i]
+    expectedGitRepo = expectedGitRepoList[i]
+    testObject.assertEqual(gitRepo.repoName, expectedGitRepo.repoName)
+    testObject.assertEqual(gitRepo.repoDir, expectedGitRepo.repoDir)
+    testObject.assertEqual(gitRepo.repoType, expectedGitRepo.repoType)
+    testObject.assertEqual(gitRepo.repoHasPackages, expectedGitRepo.repoHasPackages)
+    testObject.assertEqual(gitRepo.hasChanges, expectedGitRepo.hasChanges)
+
+
+def assertCompareTribitGitRepos(testObject, tribitsGitRepo, expectedTribitsGitRepo):
+  assertCompareGitRepoLists(testObject, tribitsGitRepo.gitRepoList(),
+     expectedTribitsGitRepo.gitRepoList())
+  testObject.assertEqual(tribitsGitRepo.tribitsExtraRepoNamesList(),
+    expectedTribitsGitRepo.tribitsExtraRepoNamesList())
+
+
+#test_TribitsGitRepos_verbose = True
+test_TribitsGitRepos_verbose = False
+
+
+def test_TribitsGitRepos_run_case(testObject, inOptions, \
+  expectPass, \
+  expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+  consoleRegexMatches=None, consoleRegexNotMatches=None, \
+  exceptionRegexMatches=None \
+  ):
+  testName = testObject._testMethodName
+  currDir = os.getcwd()
+  if os.path.exists(testName):
+    runSysCmnd("rm -rf "+testName)
+  os.mkdir(testName)
+  os.chdir(testName)
+  try:
+    consoleOutputFile = "Console.out" 
+    tribitsGitRepos = TribitsGitRepos()
+    cmndPassed = False
+    try:
+      tribitsGitRepos.initFromCommandlineArguments(inOptions, \
+        consoleOutputFile=consoleOutputFile, \
+        verbose=test_TribitsGitRepos_verbose)
+      cmndPassed = True
+      # NOTE: the file consoleOutputFile still gets written, even if throw
+    except Exception as e:
+      #print "e =", e
+      if exceptionRegexMatches:
+        eMsg = e.args[0]
+        for exceptRegex in exceptionRegexMatches.split('\n'):
+          matchResult = re.search(exceptRegex, eMsg)
+          if not matchResult:
+            print "Error, the regex expression '"+exceptRegex+"' was not" \
+              +" found in the exception string '"+eMsg+"'!"
+          testObject.assertNotEqual(matchResult, None)
+    testObject.assertEqual(cmndPassed, expectPass)
+    if cmndPassed:
+      #print "\ntribitsGitRepos =", tribitsGitRepos
+      testObject.assertEqual(tribitsGitRepos.numTribitsExtraRepos(), len(expectedTribitsExtraRepoNamesList))
+      expectedTribitsGitRepo = TribitsGitRepos().reset()
+      expectedTribitsGitRepo._TribitsGitRepos__gitRepoList.extend(expectedGitRepos)
+      testObject.assertEqual(tribitsGitRepos.tribitsExtraRepoNamesList(), expectedTribitsExtraRepoNamesList)
+      expectedTribitsGitRepo._TribitsGitRepos__tribitsExtraRepoNamesList.extend(expectedTribitsExtraRepoNamesList)
+      assertCompareTribitGitRepos(testObject, tribitsGitRepos, expectedTribitsGitRepo)
+    if consoleRegexMatches:
+      assertGrepFileForRegexStrList(testObject, consoleOutputFile,
+        consoleRegexMatches, test_TribitsGitRepos_verbose)
+    if consoleRegexNotMatches:
+      assertNotGrepFileForRegexStrList(testObject, consoleOutputFile,
+        consoleRegexNotMatches, test_TribitsGitRepos_verbose)
+  finally:
+    os.chdir(currDir)
+
+
+class test_TribitsGitRepos(unittest.TestCase):
+
+  def test_noExtraRepos(self):
+    tribitsGitRepos = TribitsGitRepos()
+    expectedTribitsGitRepo = TribitsGitRepos().reset()
+    expectedTribitsGitRepo._TribitsGitRepos__gitRepoList.append(GitRepo("", "", "GIT", True))
+    self.assertEqual(tribitsGitRepos.tribitsExtraRepoNamesList(), [])
+    self.assertEqual(tribitsGitRepos.numTribitsExtraRepos(), 0)
+    assertCompareTribitGitRepos(self, tribitsGitRepos, expectedTribitsGitRepo)
+
+  def test_noExtraReposFile_extraRepos(self):
+    inOptions = MockOptions()
+    inOptions.extraRepos = "preCopyrightTrilinos"
+    inOptions.extraReposFile = ""
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, True, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_Continuous(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraReposType = "Continuous"
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      GitRepo('ExtraTeuchosRepo', 'packages/teuchos/extrastuff', 'GIT', False)
+      ]
+    consoleRegexMatches = \
+      "Adding extra Continuous repository preCopyrightTrilinos\n"+\
+      "Adding extra Continuous repository ExtraTeuchosRepo\n"
+    consoleRegexNotMatches = \
+      "Adding extra Nightly repository extraTrilinosRepo\n"
+    test_TribitsGitRepos_run_case(self, inOptions, True, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_Nightly(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos", "extraTrilinosRepo"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      GitRepo('extraTrilinosRepo', 'extraTrilinosRepo', "GIT", True),
+      GitRepo('ExtraTeuchosRepo', 'packages/teuchos/extrastuff', 'GIT', False)
+      ]
+    consoleRegexMatches = \
+      "Adding extra Continuous repository preCopyrightTrilinos\n"+\
+      "Adding extra Continuous repository ExtraTeuchosRepo\n"+\
+      "Adding extra Nightly repository extraTrilinosRepo\n"
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraReposExisting1Missing1_assert(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting1Missing1.cmake"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = ["Will never be compared"]
+    expectedGitRepos = ["Will never be compared."]
+    consoleRegexMatches = \
+      "ERROR! Skipping missing extra repo .MissingRepo. since\n"
+    consoleRegexNotMatches = \
+      "Adding extra Continuous repository MissingRepo\n"
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+    consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraReposExisting1Missing1_ignore(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting1Missing1.cmake"
+    inOptions.extraReposType = "Nightly"
+    inOptions.ignoreMissingExtraRepos = True
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      ]
+    consoleRegexMatches = \
+      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n"
+    consoleRegexNotMatches = \
+      "Adding extra Continuous repository MissingRepo"
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+    consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_listExtraReposNotListed1(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraRepos = "extraRepoNotInList"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = ["Will never be compared"]
+    expectedGitRepos = ["Will never be compared"]
+    consoleRegexMatches = \
+      "ERROR! The list of extra repos passed in .extraRepoNotInList. is not\n"
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_listExtraReposNotListed2(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraRepos = "preCopyrightTrilinos,extraRepoNotInList"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = ["Will never be compared"]
+    expectedGitRepos = ["Will never be compared"]
+    consoleRegexMatches = \
+      "ERROR! The list of extra repos passed in\n"+\
+     ".preCopyrightTrilinos.extraRepoNotInList. is not a subset and in the same\n"
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_extraReposFullList_right_order(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraReposType = "Nightly"
+    inOptions.extraRepos = "preCopyrightTrilinos,extraTrilinosRepo,ExtraTeuchosRepo"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos", "extraTrilinosRepo"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      GitRepo('extraTrilinosRepo', 'extraTrilinosRepo', "GIT", True),
+      GitRepo('ExtraTeuchosRepo', 'packages/teuchos/extrastuff', 'GIT', False)
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_extraReposFullList_wrong_order(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraReposType = "Nightly"
+    inOptions.extraRepos = "extraTrilinosRepo,preCopyrightTrilinos"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = ["Will never be compared"]
+    expectedGitRepos = ["Will never be compared"]
+    consoleRegexMatches = \
+      "ERROR! The list of extra repos passed in\n"+\
+     ".extraTrilinosRepo;preCopyrightTrilinos. is not a subset and in the same\n"
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_listExtraRepos1_first(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraRepos = "preCopyrightTrilinos"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_listExtraRepos1_middle(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraRepos = "extraTrilinosRepo"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["extraTrilinosRepo"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('extraTrilinosRepo', 'extraTrilinosRepo', "GIT", True),
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3_listExtraRepos1_last(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
+    inOptions.extraRepos = "ExtraTeuchosRepo"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = []
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('ExtraTeuchosRepo', 'packages/teuchos/extrastuff', 'GIT', False)
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraRepos3NoContinuous_noExtraRepos(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposList3NoContinuous.cmake"
+    inOptions.extraRepos = ""
+    inOptions.extraReposType = "Continuous"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = []
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      ]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches)
+
+  def test_ExtraReposHasPackagesAndDeepDir(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListHasPackagesAndDeepDir.cmake"
+    inOptions.extraRepos = ""
+    inOptions.extraReposType = "Continuous"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = [ "Will never be compared"]
+    expectedGitRepos = ["Will never be compared"]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    exceptionRegexMatches = \
+      "ERROR!  For extra repo 'ExtraTeuchosRepo', if repoHasPackages==True then repoDir must be same as repo name, not 'packages/teuchos/extrastuff'!\n"
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
+
+  def test_ExtraReposNotGit(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = \
+      tribitsBaseDir+"/python/UnitTests/ExtraReposListNotGit.cmake"
+    inOptions.extraRepos = ""
+    inOptions.extraReposType = "Continuous"
+    expectedPass = False
+    expectedTribitsExtraRepoNamesList = [ "Will never be compared"]
+    expectedGitRepos = ["Will never be compared"]
+    consoleRegexMatches = None
+    consoleRegexNotMatches = None
+    exceptionRegexMatches = \
+      "ERROR!  For extra repo 'ExtraTeuchosRepo', the repo type 'SVN' is not supported by the checkin-test.py script, only 'GIT'!\n"
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
+
+  def test_ExraRepoListProjectDefault(self):
+    inOptions = MockOptions()
+    inOptions.extraReposFile = "project"
+    inOptions.extraRepos = "preCopyrightTrilinos,extraTrilinosRepo"
+    inOptions.extraReposType = "Nightly"
+    expectedPass = True
+    expectedTribitsExtraRepoNamesList = ["preCopyrightTrilinos", "extraTrilinosRepo"]
+    expectedGitRepos = [
+      GitRepo("", "", "GIT", True),
+      GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
+      GitRepo('extraTrilinosRepo', 'extraTrilinosRepo', "GIT", True),
+      ]
+    consoleRegexMatches = \
+      "Adding extra Continuous repository preCopyrightTrilinos\n"+\
+      "Adding extra Nightly repository extraTrilinosRepo\n"
+    consoleRegexNotMatches = None
+    exceptionRegexMatches = None
+    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+      expectedTribitsExtraRepoNamesList, expectedGitRepos, \
+      consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
+
+
+
+#############################################################################
+#
+# Test checkin-test.py script
 #
 #############################################################################
 
@@ -388,6 +1013,9 @@ g_cmndinterceptsDiffOnlyNoChangesPasses = \
 
 g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos = \
   "IT: eg diff --name-status origin/currentbranch; 0; 'M\tteko/CMakeLists.txt'\n"
+
+g_cmndinterceptsDiffOnlyPassesExtraTrilinosRepo = \
+  "IT: eg diff --name-status origin/currentbranch; 0; 'M\textrapack/src/ExtraPack_ConfigDefs.hpp'\n"
 
 g_cmndinterceptsPullPasses = \
   g_cmndinterceptsStatusPullPasses \
@@ -556,32 +1184,6 @@ def create_checkin_test_case_dir(testName, verbose=False):
   return testDirName
 
 
-def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
-  assert(os.path.isfile(fileName))
-  for regexToFind in regexStrList.strip().split('\n'):
-    if regexToFind == "": continue
-    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
-    if verbose or not foundRegex:
-      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+regexToFind+"' ...", 
-      print "'"+foundRegex+"'", 
-      if foundRegex: print ": PASSED"
-      else: print ": FAILED"
-    testObject.assertNotEqual(foundRegex, "")
-
-
-def assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
-  assert(os.path.isfile(fileName))
-  for regexToFind in regexStrList.strip().split('\n'):
-    if regexToFind == "": continue
-    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
-    if verbose or foundRegex:
-      print "\ncheckin_test::"+testName+": In '"+fileName \
-        +"' assert not exist regex '"+regexToFind+"' ... '"+foundRegex+"'", 
-      if foundRegex: print ": FAILED"
-      else: print ": PASSED"
-    testObject.assertEqual(foundRegex, "")
-
-
 # Main unit test driver
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True, \
@@ -625,6 +1227,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
+      "FT: cmake .*TribitsGetExtraReposForCheckinTest.cmake.*\n" \
       "FT: date\n" \
       "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
@@ -672,11 +1275,11 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     else:
       outputFileToGrep = checkin_test_test_out
 
-    assertGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
+    assertGrepFileForRegexStrList(testObject, outputFileToGrep,
       passRegexStrList, verbose)
 
     if failRegexStrList:
-      assertNotGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
+      assertNotGrepFileForRegexStrList(testObject, outputFileToGrep,
         failRegexStrList, verbose)
 
     # F) Grep a set of output files looking for given strings
@@ -684,12 +1287,12 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     if filePassRegexStrList:
       for fileRegexGroup in filePassRegexStrList:
         (fileName, regexStrList) = fileRegexGroup
-        assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
+        assertGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose)
 
     if fileFailRegexStrList:
       for fileRegexGroup in fileFailRegexStrList:
         (fileName, regexStrList) = fileRegexGroup
-        assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
+        assertNotGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose)
 
     # G) Examine the final return code
 
@@ -1693,6 +2296,371 @@ class test_checkin_test(unittest.TestCase):
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
+
+
+  def test_extra_repo_file_2_continuous_pull(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_2_continuous_pull"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_2.cmake" \
+      " --extra-repos-type=Continuous" \
+      " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --pull", \
+      \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos-file=.*ExtraReposListExisting_2.\n" \
+      +"-extra-repos-type=.Continuous.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_file_2_nightly_pull(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.extraTrilinosRepo.gold.xml"
+
+    testName = "test_extra_repo_file_2_nightly_pull"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_2.cmake" \
+      " --extra-repos-type=Nightly" \
+      " --extra-builds=MPI_DEBUG_SS --pull", \
+      \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsDiffOnlyPassesExtraTrilinosRepo \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos-file=.*ExtraReposListExisting_2.\n" \
+      +"-extra-repos-type=.Nightly.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos,extraTrilinosRepo ...\n" \
+      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos.extraTrilinosRepo. -P .*TribitsDumpDepsXmlScript.cmake\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
+      +"3.a.1) Git Repo: .preCopyrightTrilinos.\n" \
+      +"3.a.2) Git Repo: .extraTrilinosRepo.\n" \
+      +"Running in working directory: .*MockTrilinos/preCopyrightTrilinos ...\n" \
+      +"Running in working directory: .*MockTrilinos/extraTrilinosRepo ...\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_file_3_continuous_pull_configure(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_3_continuous_pull_configure"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_3.cmake" \
+      " --extra-repos-type=Continuous" \
+      " --default-builds=MPI_DEBUG --pull --configure", \
+      \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg diff --name-status origin/currentbranch; 0; ''\n" \
+      +"IT: eg diff --name-status origin/currentbranch; 0; ''\n" \
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'M\tExtraTeuchosStuff.hpp'\n" \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos-file=.*ExtraReposListExisting_3.\n" \
+      +"-extra-repos-type=.Continuous.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
+      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos. -P .*TribitsDumpDepsXmlScript.cmake\n" \
+      +"Modified file: .packages/teuchos/extrastuff/ExtraTeuchosStuff.hpp.\n" \
+      +"=> Enabling .Teuchos.!\n" \
+      +"Full package enable list: .Teuchos.\n" \
+      ,
+      [
+      ("MPI_DEBUG/do-configure",
+       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"),
+      ] \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_file_3_continuous_do_all_push(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
+
+    testName = "test_extra_repo_file_3_continuous_do_all_push"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_3.cmake" \
+      " --extra-repos-type=Continuous" \
+      " --extra-repos=ExtraTeuchosRepo" \
+      " --make-options=-j3 --ctest-options=-j5" \
+      " --default-builds=MPI_DEBUG --do-all --push", \
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg diff --name-status origin/currentbranch; 0; ''\n" \
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'M\tExtraTeuchosStuff.hpp'\n" \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmndinterceptsFinalPullRebasePasses \
+      +g_cmnginterceptsEgLogCmnds \
+      +g_cmndinterceptsAmendCommitPasses \
+      +g_cmnginterceptsEgLogCmnds \
+      +g_cmndinterceptsAmendCommitPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +g_cmndinterceptsLogCommitsPasses \
+      +"IT: cat modifiedFiles.out; 0; ''\n"\
+      +"IT: cat modifiedFiles.ExtraTeuchosRepo.out; 0; 'M\tExtraTeuchosStuff.hpp'\n"\
+      +"IT: eg push; 0; 'push passes'\n" \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos-file=.*ExtraReposListExisting_3.\n" \
+      +"-extra-repos-type=.Continuous.\n" \
+      +"Modified file: .packages/teuchos/extrastuff/ExtraTeuchosStuff.hpp.\n" \
+      +"=> Enabling .Teuchos.!\n" \
+      +"Full package enable list: .Teuchos.\n" \
+      +"Skipping push to .. because there are no changes!\n" \
+      +"push.ExtraTeuchosRepo.out\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_file_project_nightly_nothing_fail(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_project_nightly_nothing_fail"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file=project" \
+      " --extra-repos-type=Nightly" , \
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "ERROR! Skipping missing extra repo .Dakota. since\n" \
+      "MockTrilinos/packages/TriKota/Dakota\n" \
+      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      ,
+      mustHaveCheckinTestOut=False
+      )
+
+
+  def test_extra_repo_file_project_continuous_extra_repos_pull(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_project_continuous_extra_repos_pull"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file=project" \
+      " --extra-repos-type=Continuous" \
+      " --extra-repos=preCopyrightTrilinos" \
+      " --pull", \
+      \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "-extra-repos-file=.project.\n" \
+      +"-extra-repos-type=.Continuous.\n" \
+      +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_file_missing_assert_fail(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_missing_assert_fail"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting1Missing1.cmake" \
+      " --extra-repos-type=Continuous" , \
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "ERROR! Skipping missing extra repo .MissingRepo. since\n" \
+      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      ,
+      mustHaveCheckinTestOut=False
+      )
+
+
+
+  def test_extra_repo_file_missing_ignore_pull(self):
+
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "test_extra_repo_file_missing_ignore_pull"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting1Missing1.cmake" \
+      " --extra-repos-type=Continuous --ignore-missing-extra-repos --pull" , \
+      \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n" \
+      "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      ,
+      mustHaveCheckinTestOut=False
+      )
+
+
+#  def test_extra_repo_file_default_pull_configure(self):
+#    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+#    checkin_test_run_case(
+#      \
+#      self,
+#      \
+#      "extra_repo_file_default_pull_configure",
+#      \
+#      "--extra-repos-file=default --pull --configure", \
+#      \
+#      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+#      +g_cmndinterceptsCurrentBranch \
+#      +g_cmndinterceptsDiffOnlyPasses \
+#      ,
+#      \
+#      True,
+#      \
+#      "-extra-repos-file=.default.\n"+ \
+#      "Dummy" \
+#      ,
+#      \
+#      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+#      )
 
 
   def test_abort_gracefully_if_no_updates_status_fails(self):
