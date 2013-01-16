@@ -93,8 +93,8 @@ namespace Galeri {
       struct Point {
         SC x, y, z;
 
-        Point() { z = 0; }
-        Point(SC x_, SC y_, SC z_ = 0) : x(x_), y(y_), z(z_) { }
+        Point() { z = Teuchos::ScalarTraits<SC>::zero(); }
+        Point(SC x_, SC y_, SC z_ = Teuchos::ScalarTraits<SC>::zero()) : x(x_), y(y_), z(z_) { }
       };
 
       enum {
