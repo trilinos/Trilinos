@@ -57,7 +57,7 @@ namespace Teuchos {
 namespace Ifpack2 {
 
 /// \class Chebyshev 
-/// \brief Chebyshev preconditioner or smoother for Tpetra sparse matrices.
+/// \brief Diagonally scaled Chebyshev iteration for Tpetra sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
 /// \section Ifpack_Chebyshev_Summary Summary
@@ -203,7 +203,9 @@ public:
   /// \brief Compute the preconditioner.
   ///
   /// You must call this method after calling initialize(), but before
-  /// calling apply().
+  /// calling apply().  If any of the diagonal entries of the matrix
+  /// have changed, you must call this method again before calling
+  /// apply().
   void compute();
 
   //! Whether the preconditioner has been successfully computed.
@@ -261,16 +263,16 @@ public:
   //@{ 
   //! \name Attribute accessor methods
 
-  //! Returns the computed estimated condition number, or -1.0 if no computed.
+  //! The estimated condition number, or -1.0 if it has not yet been computed.
   magnitudeType getCondEst() const;
 
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  //! The communicator over which the matrix is distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
-  //! Returns a reference to the matrix to be preconditioned.
+  //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
 
-  //! Returns the number of flops in the computation phase.
+  //! The total number of flops taken by all calls to compute().
   double getComputeFlops() const;
 
   //! Returns the number of flops for the application of the preconditioner.

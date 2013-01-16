@@ -62,8 +62,29 @@ Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scal
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-      Teuchos::typeName(*this) << "::Chebyshev(): input matrix reference was null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
+    "Ifpack2::Chebyshev: Input matrix to constructor is null.");
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  using Teuchos::RCP;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+  RCP<const map_type> domainMap = A_->getDomainMap ();
+  RCP<const map_type> rangeMap = A_->getRangeMap ();
+  RCP<const map_type> rowMap = A_->getGraph ()->getRowMap ();
+
+  // The relation 'isSameAs' is transitive.  It's also a collective,
+  // so we don't have to do a "shared" test for exception (i.e., a
+  // global reduction on the test value).
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     ! domainMap->isSameAs (*rangeMap),
+     std::runtime_error,
+     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be the same.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     ! rowMap->isSameAs (*rangeMap),
+     std::runtime_error,
+     "Ifpack2::Chebyshev: The row Map and range Map of the matrix must be the same.");
+#endif // HAVE_TEUCHOS_DEBUG
 }
 
 //==========================================================================
@@ -207,6 +228,7 @@ void Chebyshev<MatrixType>::apply(
                  Scalar beta) const 
 {
   using Teuchos::ArrayRCP;
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
@@ -234,6 +256,26 @@ void Chebyshev<MatrixType>::apply(
 
   TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error,
     "Ifpack2::Chebyshev::apply(): Not yet implemented for mode != Teuchos::NO_TRANS.");
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    RCP<const map_type> domainMap = A_->getDomainMap ();
+    RCP<const map_type> rangeMap = A_->getRangeMap ();
+
+    // The relation 'isSameAs' is transitive.  It's also a collective,
+    // so we don't have to do a "shared" test for exception (i.e., a
+    // global reduction on the test value).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       ! X.getMap ()->isSameAs (*domainMap),
+       std::runtime_error,
+       "Ifpack2::Chebyshev: The domain Map of the matrix must be the same as the Map of the input vector(s) X.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       ! Y.getMap ()->isSameAs (*rangeMap),
+       std::runtime_error,
+       "Ifpack2::Chebyshev: The range Map of the matrix must be the same as the Map of the output vector(s) Y.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
 
   Time_->start();
 
@@ -272,11 +314,20 @@ void Chebyshev<MatrixType>::apply(
   } // if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_))
 
   //--- initialize coefficients
+
+  const Scalar one = STS::one();
+  const Scalar two = one + one;
+  const Scalar one_half = one / two;
+  const Scalar lambdaMaxIncr = as<Scalar> (1.1);
+
   // Note that delta stores the inverse of ML_Cheby::delta
   Scalar alpha_cheby = LambdaMax_ / EigRatio_;
-  Scalar beta_cheby = 1.1 * LambdaMax_;
-  Scalar delta = 2.0 / (beta_cheby - alpha_cheby);
-  Scalar theta = 0.5 * (beta_cheby + alpha_cheby);
+  // ML source comment: "try and bracket high".  Presumably this
+  // explains that the coefficient is increased by a small factor
+  // (1.1) in order for the smoother to be more effective.
+  Scalar beta_cheby = lambdaMaxIncr * LambdaMax_;
+  Scalar delta = two / (beta_cheby - alpha_cheby);
+  Scalar theta = one_half * (beta_cheby + alpha_cheby);
   Scalar s1 = theta * delta;
 
   //--- Define vectors
@@ -286,8 +337,6 @@ void Chebyshev<MatrixType>::apply(
 
   ArrayRCP<ArrayRCP<const Scalar> > vView = V.get2dView();
   ArrayRCP<ArrayRCP<Scalar> > wView = W.get2dViewNonConst();
-
-  Scalar one = STS::one();
 
   Scalar oneOverTheta = one/theta;
 
@@ -340,10 +389,9 @@ void Chebyshev<MatrixType>::apply(
   } // if (ZeroStartingSolution_ == false)
 
   //--- Apply the polynomial
-  Scalar rhok = 1.0/s1, rhokp1;
+  Scalar rhok = one/s1, rhokp1;
   Scalar dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
-  Scalar two = 2.0;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
     A_->apply(Y, V);
     rhokp1 = one / (two *s1 - rhok);
@@ -412,6 +460,7 @@ template<class MatrixType>
 void Chebyshev<MatrixType>::compute()
 {
   using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -428,27 +477,26 @@ void Chebyshev<MatrixType>::compute()
 
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
     "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");
-  
+
+  // We do let the user supply the inverse diagonal.  If they haven't,
+  // though, we have to compute it here.
   if (InvDiagonal_.is_null ()) {
-    InvDiagonal_ = rcp (new vector_type (A_->getRowMap ()));
-    A_->getLocalDiagCopy (*InvDiagonal_);
+    RCP<vector_type> globalDiag = rcp (new vector_type (A_->getRowMap ()));
+    A_->getLocalDiagCopy (*globalDiag);
 
     // Invert all diagonal elements no smaller in magnitude than the
     // minimum allowed diagonal value d_min.  Those smaller than d_min
     // in magnitude are replaced with d_min.  (That's why d_min itself
-    // is a scalar and not a magnitude.)
-    ArrayRCP<Scalar> diagvals = InvDiagonal_->get1dViewNonConst ();
-    for (size_t i = 0; i < NumMyRows_; ++i) {
-      Scalar& diag = diagvals[i];
-      if (STS::magnitude (diag) < STS::magnitude (MinDiagonalValue_)) {
-        diag = MinDiagonalValue_;
-      }
-      else {
-        diag = STS::one() / diag;
-      }
-    }
+    // is a scalar and not a magnitude.)  Tpetra::MultiVector's
+    // reciprocal() method doesn't have the threshold feature that we
+    // want, but Kokkos (mfh 15 Jan 2013: as of today) does.
+    typedef Kokkos::MultiVector<Scalar, Node> KMV;
+    KMV& localDiag = globalDiag->getLocalMVNonConst ();
+    typedef Kokkos::DefaultArithmetic<KMV> KMVT;
+    KMVT::ReciprocalThreshold (localDiag, MinDiagonalValue_);
+
+    InvDiagonal_ = globalDiag; // "Commit" the result.
   }
-  // otherwise the inverse of the diagonal has been given by the user
 
   ComputeFlops_ += NumMyRows_;
 

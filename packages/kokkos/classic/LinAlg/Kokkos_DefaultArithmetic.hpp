@@ -225,6 +225,14 @@ namespace Kokkos {
     //! Set A to the reciprocal of B: <tt>B(i,j) = 1/A(i,j)</tt>.
     static void Recip (MV& A, const MV& B);
 
+    /// \brief A threshold, in-place variant of Recip().
+    ///
+    /// For each element A(i,j) of A, set A(i,j) = 1/A(i,j) if the
+    /// magnitude of A(i,j) is greater than or equal to the magnitude
+    /// of minDiagVal.  Otherwise, set A(i,j) to minDiagVal.
+    static void 
+    ReciprocalThreshold (MV& A, typename MV::ScalarType& minDiagVal);
+
     /// \brief Set C to the scaled element-wise multiple of A and B.
     ///
     /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
@@ -488,6 +496,39 @@ namespace Kokkos {
           Adata += Astride;
           Bdata += Bstride;
         }
+      }
+    }
+
+    static void
+    ReciprocalThreshold (MultiVector<Scalar,Node>& A, 
+			 const Scalar& minDiagVal)
+    {
+      const size_t numRows = A.getNumRows ();
+      const size_t numCols = A.getNumCols ();
+      const size_t stride = A.getStride ();
+      ArrayRCP<Scalar> A_data = A.getValuesNonConst ();
+      Scalar* const A_ptr = A_data.getRawPtr ();
+
+      RCP<Node> node = A.getNode ();
+      ReadyBufferHelper<Node> rbh (node);
+      rbh.begin();
+      rbh.template addNonConstBuffer<Scalar> (A_data);
+      rbh.end();
+
+      if (stride == numRows) { 
+	// One kernel invocation for all columns of the multivector.
+	typedef ReciprocalThresholdOp<Scalar> op_type;
+	op_type wdp (A_ptr, minDiagVal);
+	node->template parallel_for<op_type> (0, numRows*numCols, wdp);
+      }
+      else {
+	// One kernel invocation for each column of the multivector.
+	for (size_t j = 0; j < numCols; ++j) {
+	  typedef ReciprocalThresholdOp<Scalar> op_type;
+	  Scalar* const A_j = A_ptr + j * stride;
+	  op_type wdp (A_j, minDiagVal);
+	  node->template parallel_for<op_type> (0, numRows, wdp);
+	}
       }
     }
 
