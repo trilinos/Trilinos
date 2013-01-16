@@ -50,6 +50,7 @@
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 namespace panzer {
 
@@ -74,6 +75,14 @@ public:
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
                  const panzer::PhysicsBlock & pb) const = 0;
+
+   /** Build workssets specified by the workset descriptor.
+     */
+   virtual
+   Teuchos::RCP<std::vector<panzer::Workset> >
+   getWorksets(const WorksetDescriptor & worksetDesc,
+               const panzer::PhysicsBlock & pb,
+               std::size_t worksetSize) const = 0;
 };
 
 }
