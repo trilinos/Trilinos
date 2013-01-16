@@ -82,25 +82,41 @@ namespace Ifpack2 {
 ///
 /// \section Ifpack_Chebyshev_Algorithm Algorithm
 ///
-/// This algorithm requires that the matrix A be symmetric positive
-/// definite.  As a result, all of its eigenvalues must lie in a
+/// Given a matrix A, a right-hand side X, and an initial guess Y,
+/// this class performs Chebyshev iteration using the left-scaled
+/// matrix \f$D^{-1} A\f$, where D is the matrix of the diagonal
+/// elements of A.  (You may control left scaling yourself if you
+/// wish, by providing an optional vector of the entries of
+/// \f$D^{-1}\f$.)  While Chebyshev iteration works for any matrix, we
+/// have chosen only to allow real-valued, symmetric positive definite
+/// matrices.
+///
+/// Chebyshev iteration was originally intended as an iterative solver
+/// for linear systems.  See the following publication:
+///
+/// T. Manteuffel, "The Tchebychev iteration for nonsymmetric linear
+/// systems," Numer. Math., 28 (1977), pp. 307-327.
+///
+/// It also works as a smoother for algebraic multigrid, which is the
+/// target use case of this implementation.
+///
+/// \section Ifpack_Chebyshev_Eig Eigenvalue bounds
+///
+/// We require that the input matrix A be real-valued and symmetric
+/// positive definite.  Thus, all of its eigenvalues must lie in a
 /// positive interval on the real line.  Furthermore, if D is the
 /// matrix of the diagonal elements of A, then the same is true of
-/// \f$D^{-1} A\f$.  This class performs Chebyshev iteration on the
-/// left-scaled matrix \f$D^{-1} A\f$.  (You may control left scaling
-/// yourself if you wish, by providing an optional vector of the
-/// entries of \f$D^{-1}\f$.)
+/// \f$D^{-1} A\f$.  
 ///
 /// Suppose \f$[\lambda_{min}, \lambda_{max}]\f$ is the interval of
-/// the eigenvalues of \f$D^{-1} A\f$.  We require that users give us
-/// at least (an estimate of) the maximum eigenvalue
-/// \f$\lambda_{max}\f$.  They may optionally also give us the
-/// (estimated) ratio \f$\eta = \lambda_{max} / \lambda_{min}\f$, or
-/// (an estimate of) the minimum eigenvalue \f$\lambda_{min}\f$.  The
-/// \f$\eta\f$ parameter corresponds to the "smoother: Chebyshev
-/// alpha" parameter of ML.  (We use "eta" instead of "alpha" to avoid
-/// confusion with the "alpha" argument of the apply() method of
-/// Tpetra::Operator.)
+/// the eigenvalues of \f$D^{-1} A\f$.  We require users to give us at
+/// least (an estimate of) the maximum eigenvalue \f$\lambda_{max}\f$.
+/// They may optionally also give us the (estimated) ratio \f$\eta =
+/// \lambda_{max} / \lambda_{min}\f$, or (an estimate of) the minimum
+/// eigenvalue \f$\lambda_{min}\f$.  The \f$\eta\f$ parameter
+/// corresponds to the "smoother: Chebyshev alpha" parameter of ML.
+/// (We use "eta" instead of "alpha" to avoid confusion with the
+/// "alpha" argument of the apply() method of Tpetra::Operator.)
 ///
 /// When using Chebyshev iteration by itself to solve linear systems,
 /// it is important to have good estimates of both the minimum and
@@ -117,12 +133,26 @@ namespace Ifpack2 {
 /// Often, if users give us \f$\lambda_{max}\f$, our default value of
 /// \f$\eta\f$ suffices.
 ///
+/// Underestimating \f$\lambda_{min}\f$ may make Chebyshev fail to
+/// converge, or fail to reduce the highest-frequency components of
+/// the error, if used as a smoother.  Thus, we always multiply the
+/// given \f$\lambda_{min}\f$ by a small factor (1.1).  This heuristic
+/// accounts for the fact that typical methods for estimating extremal
+/// eigenvalues (like Lanczos or CG) underestimate them.
+///
 /// Some Chebyshev implementations attempt to estimate the eigenvalue
-/// interval automatically.  Steve Ashby's CHEBYCODE is the original
-/// example.  We do not attempt to do this.  Users who want estimates
-/// of both the smallest and largest eigenvalues should run a few
-/// iterations of Lanczos or CG.  For just the largest eigenvalue, a
-/// few iterations of the power method may be enough.
+/// interval automatically.  We do not attempt to do this.  Users who
+/// want estimates of both the smallest and largest eigenvalues should
+/// run a few iterations of Lanczos or CG.  For just the largest
+/// eigenvalue, a few iterations of the power method may be enough.
+/// For an example of a Chebyshev implementation that estimates
+/// eigenvalue bounds, see Steve Ashby's CHEBYCODE:
+///
+/// S. ASHBY, "CHEBYCODE: A Fortran implementation of Manteuffel's
+/// adaptive Chebyshev algorithm," Tech. Rep. UIUCDCS-R-85-1203,
+/// University of Illinois, 1985.
+///
+/// \section Ifpack_Chebyshev_Params Setting parameters
 ///
 /// Call the setParameters() method to give this instance your
 /// estimates of \f$\lambda_{max}\f$ and \f$\eta = \lambda_{max} /
