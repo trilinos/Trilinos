@@ -67,6 +67,7 @@
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TypeAssocMap.hpp"
@@ -236,7 +237,7 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-   /** Add a volumetric response using hte response factory builder.
+   /** Add a volumetric response using the response factory builder.
      *
      * \param[in] responseName Name of the response to be added.
      * \param[in] blocks Element blocks to evaluate the response over
@@ -247,7 +248,7 @@ public:
                     const std::vector<std::string> & blocks,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
 
-   /** Add a volumetric response using hte response factory builder.
+   /** Add a surface response using the response factory builder.
      *
      * \param[in] responseName Name of the response to be added.
      * \param[in] sideset_blocks Side set and element blocks to evaluate the response over
@@ -257,6 +258,19 @@ public:
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string responseName,
                     const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
+                    const ResponseEvaluatorFactory_BuilderT & builder); 
+
+   /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
+     * response are specified by the response factory builder.
+     *
+     * \param[in] responseName Name of the response to be added.
+     * \param[in] wkst_desc A vector of descriptors describing the types of elements
+     *                                that make up the response.
+     * \param[in] builder Builder that builds the correct response object.
+     */
+   template <typename ResponseEvaluatorFactory_BuilderT>
+   void addResponse(const std::string responseName,
+                    const std::vector<WorksetDescriptor> & wkst_desc,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
                    
    /** Access a response by name and evaluation type.
@@ -383,6 +397,11 @@ private:
                         std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
    BCHashMap respBCFactories_;
    std::size_t nextBC_id;
+
+   // workset descriptor response factories
+   boost::unordered_map<WorksetDescriptor,
+                        std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > descRespFactories_;
+
  
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;

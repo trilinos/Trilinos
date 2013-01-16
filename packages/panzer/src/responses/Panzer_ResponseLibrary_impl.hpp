@@ -426,18 +426,25 @@ namespace {
   class ResponseBase_Builder {
     Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > respFact_;
     std::string respName_;
-    std::vector<std::string> eBlocks_;
-    std::vector<std::pair<std::string,std::string> > sidesets_;
+    std::vector<WorksetDescriptor> wkstDesc_;
 
   public:
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
                          const std::string & respName, const std::vector<std::string> & eBlocks)
-      : respFact_(respFact), respName_(respName), eBlocks_(eBlocks) {}
+      : respFact_(respFact), respName_(respName)
+    {
+      for(std::size_t i=0;i<eBlocks.size();i++)
+        wkstDesc_.push_back(blockDescriptor(eBlocks[i]));
+    }
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
                          const std::string & respName, const std::vector<std::pair<std::string,std::string> > & sidesets)
-      : respFact_(respFact), respName_(respName), sidesets_(sidesets) {}
+      : respFact_(respFact), respName_(respName)
+    {
+      for(std::size_t i=0;i<sidesets.size();i++)
+        wkstDesc_.push_back(sidesetDescriptor(sidesets[i].first,sidesets[i].second));
+    }
 
     template <typename T>
     Teuchos::RCP<ResponseBase> build() const 
@@ -446,13 +453,7 @@ namespace {
      
       // only build this templated set of objects if the there is something to build them with
       if(baseObj!=Teuchos::null) {
-
-        if(eBlocks_.size()>0)
-          return baseObj->buildResponseObject(respName_,eBlocks_); 
-        if(sidesets_.size()>0)
-          return baseObj->buildResponseObject(respName_,sidesets_); 
-
-        TEUCHOS_ASSERT(false);
+        return baseObj->buildResponseObject(respName_,wkstDesc_); 
       }
 
       return Teuchos::null;
@@ -528,6 +529,38 @@ addResponse(const std::string responseName,
  
      nextBC_id++;
    }
+}
+
+template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<WorksetDescriptor> & wkst_desc,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // build response factory objects for each evaluation type
+  RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+       = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+  modelFact_tm->buildObjects(builder);
+
+/*
+  // build a response object for each evaluation type
+  ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,blocks);
+  responseObjects_[responseName].buildObjects(respData_builder);
+
+  // associate response objects with all workset descriptors
+  for(std::size_t i=0;i<wkst_desc.size();i++) {
+    const WorksetDescriptor & desc = wkst_desc[i];
+
+    // add response factory TM to vector that stores them
+    std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
+       = descRespFactories_[desc];
+    block_tm.push_back(std::make_pair(responseName,modelFact_tm));
+  }
+*/
 }
 
 template <typename TraitsT>

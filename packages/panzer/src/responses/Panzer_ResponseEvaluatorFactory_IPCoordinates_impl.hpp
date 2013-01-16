@@ -2,6 +2,7 @@
 #define __Panzer_ResponseEvaluatorFactory_IPCoordinates_impl_hpp__
 
 #include <string>
+#include <sstream>
 
 #include "Panzer_config.hpp"
 
@@ -15,8 +16,19 @@ namespace panzer {
 
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_IPCoordinates<EvalT>::
-buildResponseObject(const std::string & responseName,const std::vector<std::string> & eBlocks) const
+buildResponseObject(const std::string & responseName,const std::vector<WorksetDescriptor> & wkstDesc) const
 { 
+  // check that the input worksets constains only element blocks 
+  bool falure = false;
+  std::stringstream failureStrm;
+  for(std::size_t i=0;i<wkstDesc.size();i++) {
+    failure |= wkstDesc[i].useSideset();
+    failureStrm << wokstDesc[i] << std::endl;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(failure,std::runtime_error,
+                             "REF_IPCoordinates::buildResponseObject: could not build using side set descriptors:\n"
+                             << failureStrm.str());
+
   return Teuchos::rcp(new Response_IPCoordinates<EvalT>(responseName)); 
 }
 
