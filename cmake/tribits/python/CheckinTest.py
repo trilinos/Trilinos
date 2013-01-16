@@ -1831,7 +1831,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
   tribitsGitRepos = TribitsGitRepos()
   tribitsGitRepos.initFromCommandlineArguments(inOptions)
-  print "\ntribitsGitRepos =", tribitsGitRepos
+  #print "\ntribitsGitRepos =", tribitsGitRepos
 
   createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos)
 
