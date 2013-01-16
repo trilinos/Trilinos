@@ -235,8 +235,6 @@ public:
   /// number of iterations, various other properties of the algorithm,
   /// and error checking.  Where applicable, for each parameter, we
   /// list the name of its corresponding ML parameter.
-
-
   /// - "chebyshev: max eigenvalue" (\c Scalar): (An estimate of) the
   ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
   ///   should always provide this value, since otherwise Chebyshev
@@ -360,7 +358,7 @@ public:
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
 
-  /// \brief Apply the original matrix A to a multivector.
+  /// \brief Compute Y = Op(A)*X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   ///
   /// \param X [in] Input (multi)vector of sparse matrix-vector
   ///   multiply.  If mode == Teuchos::NO_TRANS, X must be in the
@@ -370,6 +368,16 @@ public:
   ///   multiply.  If mode == Teuchos::NO_TRANS, Y must be in the
   ///   range Map of the matrix A.  Otherwise, Y must be in the domain
   ///   Map of A.
+  /// \param mode [in] Whether to apply the matrix A, its transpose
+  ///   \f$A^T\f$, or its conjugate transpose \f$A^H\f$.  Op(A) is A
+  ///   if <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if
+  ///   <tt>mode</tt> is <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ (the
+  ///   Hermitian transpose) if <tt>mode</tt> is
+  ///   <tt>Teuchos::CONJ_TRANS</tt>.
+  ///
+  /// Since this class currently requires A to be real and symmetric
+  /// positive definite, setting <tt>mode</tt> should not affect the
+  /// result.
   void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
