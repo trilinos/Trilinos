@@ -528,27 +528,34 @@ namespace {
     // See if any variables were defined on the command line...
     if (!defines.empty()) {
       // Defines are space/comma-separated pairs of the form 'var=value'
+      // or "options" of the form '-W' or '--warning'
       // Split the string and then process each variable...
       std::vector<std::string> tokens;
       SEAMS::tokenize(defines, " ,\t", tokens);
       for (size_t i=0; i<tokens.size(); i++) {
 	std::string token = tokens[i];
-	std::vector<std::string> define;
-	SEAMS::tokenize(token, "=", define);
-	if (define.size() == 2) {
-	  // Determine whether the define is string type or double/int...
-	  std::stringstream ss(define[1]);
-	  double d = 0;
-	  ss >> d;
-	  if (ss.fail()) {
-	    // Not a valid number; treat as a string
-	    aprepro.add_variable(define[0], define[1]);
+	if (token[0] == '-') {
+	  aprepro.set_option(token);
+	}
+	else {
+	  // It is an aprepro variable definition
+	  std::vector<std::string> define;
+	  SEAMS::tokenize(token, "=", define);
+	  if (define.size() == 2) {
+	    // Determine whether the define is string type or double/int...
+	    std::stringstream ss(define[1]);
+	    double d = 0;
+	    ss >> d;
+	    if (ss.fail()) {
+	      // Not a valid number; treat as a string
+	      aprepro.add_variable(define[0], define[1]);
+	    } else {
+	      aprepro.add_variable(define[0], d);
+	    }
 	  } else {
-	    aprepro.add_variable(define[0], d);
+	    std::cerr << "APREPRO: Invalid format for predefined variable: '" << token << "'\n"
+		      << "         Required format is 'var=value' or 'var=\"value\"'\n";
 	  }
-	} else {
-	  std::cerr << "APREPRO: Invalid format for predefined variable: '" << token << "'\n"
-		    << "         Required format is 'var=value' or 'var=\"value\"'\n";
 	}
       }
     }
