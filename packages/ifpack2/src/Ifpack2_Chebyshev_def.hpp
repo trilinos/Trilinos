@@ -72,7 +72,6 @@ Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,Global
 
   RCP<const map_type> domainMap = A_->getDomainMap ();
   RCP<const map_type> rangeMap = A_->getRangeMap ();
-  RCP<const map_type> rowMap = A_->getGraph ()->getRowMap ();
 
   // The relation 'isSameAs' is transitive.  It's also a collective,
   // so we don't have to do a "shared" test for exception (i.e., a
@@ -80,14 +79,10 @@ Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,Global
   TEUCHOS_TEST_FOR_EXCEPTION(
      ! domainMap->isSameAs (*rangeMap),
      std::runtime_error,
-     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be the same.");
-  // This is an arbitrary requirement that can be relaxed by an Export
-  // of the vector of diagonal entries from the row Map to the range
-  // Map.  We can reuse the matrix's Export object for that.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-     ! rowMap->isSameAs (*rangeMap),
-     std::runtime_error,
-     "Ifpack2::Chebyshev: The row Map and range Map of the matrix must be the same.");
+     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
+     "the same (in the sense of isSameAs()).  We will only check for this if "
+     "Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
+     "DEBUG set to ON.");
 #endif // HAVE_TEUCHOS_DEBUG
 }
 
@@ -98,21 +93,66 @@ Chebyshev<MatrixType>::~Chebyshev() {
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List) {
+void 
+Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List) 
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vec_type;
 
   Ifpack2::getParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
   Ifpack2::getParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
   Ifpack2::getParameter(List, "chebyshev: max eigenvalue", LambdaMax_);
-  Ifpack2::getParameter(List, "chebyshev: degree",PolyDegree_);
+  Ifpack2::getParameter(List, "chebyshev: degree", PolyDegree_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    PolyDegree_ <= 0, 
+    std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters(): The \"chebyshev: degree\" parameter "
+    "must be an integer >= 1, but you specified a value of " << PolyDegree_ 
+    << ".");
   Ifpack2::getParameter(List, "chebyshev: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter(List, "chebyshev: zero starting solution", ZeroStartingSolution_);
 
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* ID = 0;
-  Ifpack2::getParameter(List, "chebyshev: operator inv diagonal", ID);
+  vec_type* globalDiag = NULL;
+  Ifpack2::getParameter(List, "chebyshev: operator inv diagonal", globalDiag);
 
-  if (ID != 0) {
-    InvDiagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*ID) );
-  }
+  if (globalDiag != NULL) {
+    RCP<const map_type> sourceMap = globalDiag->getMap ();
+    RCP<const map_type> rangeMap = A_->getRangeMap ();
+    RCP<const map_type> rowMap = A_->getRowMap ();
+    if (rangeMap.getRawPtr () == sourceMap.getRawPtr ()) {
+      // The given vector's Map is identical to the matrix's range
+      // Map.  That means we don't need to Export.  (We don't call
+      // isSameAs() here, because that takes at least one global
+      // reduction.  This is the fast path.  We may call isSameAs() in
+      // the slow path below, to avoid an even slower path.
+      userSuppliedInvDiag_ = rcp (new vec_type (*globalDiag));
+    }
+    else { // We need to Export.
+      RCP<const export_type> exporter;
+      // Making an Export object from scratch is expensive enough that
+      // it's worth the O(1) global reductions to call isSameAs().
+      if (sourceMap.getRawPtr () == rowMap.getRawPtr () || 
+	  sourceMap->isSameAs (*rowMap)) {
+	// We can reuse the matrix's Export object, if there is one.
+	exporter = A_->getGraph ()->getExporter ();
+      }
+      else { // We have to make a new Export object.
+	exporter = rcp (new export_type (sourceMap, rangeMap));
+      }
+      
+      userSuppliedInvDiag_ = rcp (new vec_type (rangeMap));
+      if (exporter.is_null ()) { 
+	// Row Map and range Map are the same; no need to Export.
+	*userSuppliedInvDiag_ = *globalDiag;
+      }
+      else {
+	userSuppliedInvDiag_->doExport (*globalDiag, *exporter, Tpetra::ADD);
+      }
+    } // if we don't need to Export, or if we do
+  } // the user gave us a vector of diagonal entries
 }
 
 //==========================================================================
@@ -459,16 +499,18 @@ void Chebyshev<MatrixType>::compute()
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  typedef Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
-  if (!isInitialized()) {
-    initialize();
+  Time_->start (true);
+
+  if (! isInitialized ()) {
+    initialize ();
   }
 
-  Time_->start(true);
-
-  // reset values
+  // Reset values
   IsComputed_ = false;
   Condest_ = -1.0;
 
@@ -476,16 +518,37 @@ void Chebyshev<MatrixType>::compute()
   // That way, it will always be correct to omit calling initialize(),
   // even if the number of entries in the sparse matrix has changed
   // since the last call to compute().
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries();
+  NumGlobalNonzeros_ = A_->getGlobalNumEntries ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
     "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");
 
-  // We do let the user supply the inverse diagonal.  If they haven't,
-  // though, we have to compute it here.
-  if (InvDiagonal_.is_null ()) {
-    RCP<vector_type> globalDiag = rcp (new vector_type (A_->getRowMap ()));
-    A_->getLocalDiagCopy (*globalDiag);
+  // If the user has not given us the inverse diagonal, compute it
+  // here.  We do so on every call to compute(), in case the values in
+  // the matrix have changed since the last call.
+  if (! userSuppliedInvDiag_.is_null ()) {
+    InvDiagonal_ = userSuppliedInvDiag_;
+  }
+  else {
+    RCP<const map_type> rowMap = A_->getRowMap ();
+    RCP<vector_type> globalDiagRowMap = rcp (new vector_type (rowMap));
+    A_->getLocalDiagCopy (*globalDiagRowMap);
+
+    // globalDiag should be distributed according to the row Map of A
+    // at this point.  If necessary, Export the vector of diagonal
+    // entries from the row Map to the range Map.
+    RCP<vector_type> globalDiagRangeMap;
+    RCP<const export_type> exporter = A_->getGraph ()->getExporter ();
+    if (exporter.is_null ()) {
+      globalDiagRangeMap = globalDiagRowMap; // Row & range Maps are the same.
+    }
+    else {
+      RCP<const map_type> rangeMap = A_->getRangeMap ();
+      globalDiagRangeMap = rcp (new vector_type (rangeMap));
+      globalDiagRangeMap->doExport (*globalDiagRowMap, *exporter, Tpetra::ADD);
+    }
+    // Get rid of the row Map version of the diagonal.
+    globalDiagRowMap = Teuchos::null;
 
     // Invert all diagonal elements no smaller in magnitude than the
     // minimum allowed diagonal value d_min.  Those smaller than d_min
@@ -494,14 +557,13 @@ void Chebyshev<MatrixType>::compute()
     // reciprocal() method doesn't have the threshold feature that we
     // want, but Kokkos (mfh 15 Jan 2013: as of today) does.
     typedef Kokkos::MultiVector<Scalar, Node> KMV;
-    KMV& localDiag = globalDiag->getLocalMVNonConst ();
+    KMV& localDiag = globalDiagRangeMap->getLocalMVNonConst ();
     typedef Kokkos::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, MinDiagonalValue_);
 
-    InvDiagonal_ = globalDiag; // "Commit" the result.
+    InvDiagonal_ = globalDiagRangeMap; // "Commit" the result.
+    ComputeFlops_ += NumMyRows_;
   }
-
-  ComputeFlops_ += NumMyRows_;
 
   ++NumCompute_;
   Time_->stop();

@@ -209,10 +209,10 @@ public:
   ///   vectors x and y in the sparse matrix-vector product y = A*x
   ///   must both have the same distribution over process(es).
   ///
-  /// We currently also require that the row Map and the range Map of
-  /// A be the same.  This is an arbitrary requirement that we plan to
-  /// relax eventually.  However, respecting this requirement will
-  /// reduce set-up costs.
+  /// We do <i>not</i> require that the row Map and the range Map of A
+  /// be the same.  However, set-up will take less time if they are
+  /// identical, in terms of pointer equality.  We do not check
+  /// isSameAs(), because that requires at least one global reduction.
   ///
   /// The constructor will only check the requirements on the various
   /// Maps of A if the CMake configuration option
@@ -232,9 +232,7 @@ public:
   /// \brief Set parameters for the preconditioner.
   ///
   /// The following parameters control the Chebyshev coefficients, the
-  /// number of iterations, various other properties of the algorithm,
-  /// and error checking.  Where applicable, for each parameter, we
-  /// list the name of its corresponding ML parameter.
+  /// number of iterations, and other properties of the algorithm.
   /// - "chebyshev: max eigenvalue" (\c Scalar): (An estimate of) the
   ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
   ///   should always provide this value, since otherwise Chebyshev
@@ -260,9 +258,9 @@ public:
   /// - "chebyshev: operator inv diagonal" (<tt>Tpetra::Vector</tt>).
   ///   A (raw) pointer to the inverse of the diagonal entries of the
   ///   matrix, stored as a <tt>Tpetra::Vector<Scalar, LocalOrdinal,
-  ///   GlobalOrdinal, Node></tt>.  If not provided, we compute this
-  ///   ourselves from the matrix provided to the constructor.  If
-  ///   provided here, we make a deep copy.
+  ///   GlobalOrdinal, Node></tt>.  If provided, we will make a deep
+  ///   copy of this.  If not provided, we compute this ourselves from
+  ///   the matrix.  See details below.
   ///
   /// The following list maps from an ML parameter to its
   /// corresponding Ifpack2 parameter.
@@ -289,6 +287,19 @@ public:
   /// - "chebyshev: zero starting solution": same
   /// - "relaxation: zero starting solution": "chebyshev: zero starting solution"
   /// - "chebyshev: operator inv diagonal": same
+  ///
+  /// Details on parameters:
+  ///
+  /// The optional user-provided vector of diagonal entries of the
+  /// matrix may have any distribution for which an Export to the
+  /// range Map of the matrix is legal.  However, if the vector is
+  /// already distributed according to the range Map, that saves us
+  /// the communication cost of an Export.  We also avoid the Export
+  /// in case the row Map and the range Map of the matrix are the
+  /// same.  If they are not the same, and if the vector is
+  /// distributed according to the row Map, we will reuse the Export
+  /// from the matrix.  Otherwise, we have to make a fresh Export
+  /// object, which is more expensive.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief Initialize the preconditioner.
@@ -470,11 +481,20 @@ private:
   //! \name The sparse matrix and related data
   //@{
 
-  //! The matrix to be preconditioned
+  //! The matrix A to be preconditioned.
   const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! The communicator over which the matrix is distributed
+  //! The communicator over which the matrix is distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
-  //! The inverse of the diagonal elements of the matrix
+  /// \brief The inverse of the diagonal elements of the matrix A.
+  ///
+  /// This is distributed according to the range Map of the matrix.
+  /// If the user has not supplied this (see userSuppliedInvDiag_ and
+  /// setParameters()), we compute this each time compute() is called.
+  /// This ensures that compute() will respect changes to the values
+  /// of the matrix.  
+  /// 
+  /// If the user <i>has</i> supplied the inverse diagonal elements,
+  /// this is just a pointer to userSuppliedInvDiag_.
   mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > InvDiagonal_;
   //! Number of local rows in the matrix.
   size_t NumMyRows_;
@@ -487,6 +507,9 @@ private:
   //! \name Algorithmic parameters (set via setParameters())
   //@{
 
+  /// User-supplied inverse of the diagonal elements of the matrix A.
+  /// It must be distributed according to the range Map of the matrix.
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > userSuppliedInvDiag_;
   //! The number of iterations to apply; the degree of the Chebyshev polynomial.
   int PolyDegree_;
   //! Estimate of the ratio LambdaMax_ / LambdaMin_.
