@@ -186,9 +186,8 @@ namespace panzer_stk {
     builder.comm = MPI_COMM_WORLD;
     std::vector<panzer::WorksetDescriptor> blocks;
     blocks.push_back(panzer::WorksetDescriptor("eblock-1_0","left",true));
-    // rLibrary->addResponse("FIELD_A",blocks,builder);
+    rLibrary->addResponse("FIELD_A",blocks,builder);
 
-/*
     Teuchos::RCP<panzer::ResponseBase> aResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
 
     TEST_ASSERT(aResp!=Teuchos::null);
@@ -199,28 +198,25 @@ namespace panzer_stk {
     TEST_NOTHROW(Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(aResp,true));
 
 
-    RCP<Thyra::VectorBase<double> > tVec;
+    RCP<Thyra::VectorBase<double> > aVec;
     {
-      RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(aResp)->getVectorSpace();
+      RCP<const Thyra::VectorSpaceBase<double> > vs 
+          = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(aResp)->getVectorSpace();
 
-      tVec = Thyra::createMember<double>(vs);
+      aVec = Thyra::createMember<double>(vs);
       
-      Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(aResp)->setVector(tVec);
+      Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(aResp)->setVector(aVec);
     }
-*/
 
-/*
-    std::vector<Teuchos::RCP<ResponseBase> > v;
+    std::vector<Teuchos::RCP<panzer::ResponseBase> > v;
     v.push_back(Teuchos::null);
 
     rLibrary->getResponses<panzer::Traits::Residual>(v);
-    TEST_EQUALITY(v.size(),2);
+    TEST_EQUALITY(v.size(),1);
 
-    TEST_ASSERT(v[0]->getName()=="FIELD_A" || v[0]->getName()=="FIELD_B");
-    TEST_ASSERT(v[1]->getName()=="FIELD_A" || v[1]->getName()=="FIELD_B");
+    TEST_ASSERT(v[0]->getName()=="FIELD_A");
 
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(v[0],true));
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(v[1],true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(v[0],true));
 
     TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 
@@ -241,15 +237,8 @@ namespace panzer_stk {
     rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
 
-    Teuchos::ArrayRCP<double> tData;
-    Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(tVec)->getNonconstLocalData(Teuchos::outArg(tData));
-
-    double iValue = -2.3;
-    double tValue = 82.9;
-
-    TEST_FLOATING_EQUALITY((*eVec)[0],0.5*iValue,1e-14);
-    TEST_FLOATING_EQUALITY(tData[0],0.5*tValue,1e-14);
-*/
+    Teuchos::ArrayRCP<double> aData;
+    Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(aVec)->getNonconstLocalData(Teuchos::outArg(aData));
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

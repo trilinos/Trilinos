@@ -393,16 +393,11 @@ private:
                                 BC::BCHash,BC::BCEquality > BCHashMap;
 
    // Store up response factories by element block
-   boost::unordered_map<std::string,
+   boost::unordered_map<WorksetDescriptor,
                         std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
    BCHashMap respBCFactories_;
    std::size_t nextBC_id;
 
-   // workset descriptor response factories
-   boost::unordered_map<WorksetDescriptor,
-                        std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > descRespFactories_;
-
- 
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
 
