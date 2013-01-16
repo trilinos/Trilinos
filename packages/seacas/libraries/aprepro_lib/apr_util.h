@@ -18,5 +18,6 @@ namespace SEAMS {
   void immutable_modify(const SEAMS::Aprepro &aprepro, const SEAMS::symrec* var);
   void set_type(const SEAMS::Aprepro &apr, SEAMS::symrec* var, int type);
   void cleanup_memory();
+  bool is_directory(const std::string &filepath);
 }
 #endif
