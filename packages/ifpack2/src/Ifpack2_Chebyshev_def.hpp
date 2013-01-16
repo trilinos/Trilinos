@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,30 +37,31 @@ namespace Ifpack2 {
 
 //==========================================================================
 template<class MatrixType>
-Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
-: A_(A),
-  Comm_(A->getRowMap()->getComm()),
-  Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Chebyshev") ) ),
-  PolyDegree_(1),
-  EigRatio_(30.0),
-  LambdaMin_(0.0),
-  LambdaMax_(100.0),
-  MinDiagonalValue_(0.0),
-  ZeroStartingSolution_(true),
-  Condest_(-1.0),
-  IsInitialized_(false),
-  IsComputed_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0),
-  ComputeFlops_(0.0),
-  ApplyFlops_(0.0),
-  NumMyRows_(0),
-  NumGlobalRows_(0),
-  NumGlobalNonzeros_(0)
+Chebyshev<MatrixType>::
+Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+: A_ (A),
+  Comm_ (A->getRowMap()->getComm()),
+  NumMyRows_ (0),
+  NumGlobalRows_ (0),
+  NumGlobalNonzeros_ (0),
+  PolyDegree_ (1),
+  EigRatio_ (30.0),
+  LambdaMin_ (0.0),
+  LambdaMax_ (100.0),
+  MinDiagonalValue_ (0.0),
+  ZeroStartingSolution_ (true),
+  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Chebyshev"))),
+  Condest_ (-1.0),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0),
+  ComputeFlops_ (0.0),
+  ApplyFlops_ (0.0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
     "Ifpack2::Chebyshev: Input matrix to constructor is null.");
@@ -80,6 +81,9 @@ Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scal
      ! domainMap->isSameAs (*rangeMap),
      std::runtime_error,
      "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be the same.");
+  // This is an arbitrary requirement that can be relaxed by an Export
+  // of the vector of diagonal entries from the row Map to the range
+  // Map.  We can reuse the matrix's Export object for that.
   TEUCHOS_TEST_FOR_EXCEPTION(
      ! rowMap->isSameAs (*rangeMap),
      std::runtime_error,
@@ -254,9 +258,6 @@ void Chebyshev<MatrixType>::apply(
   TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
     "Ifpack2::Chebyshev::apply(): Not yet implemented for beta != 0.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error,
-    "Ifpack2::Chebyshev::apply(): Not yet implemented for mode != Teuchos::NO_TRANS.");
-
 #ifdef HAVE_TEUCHOS_DEBUG
   {
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -343,7 +344,7 @@ void Chebyshev<MatrixType>::apply(
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
-    A_->apply(Y, V);
+    applyMat (Y, V, mode);
     // compute W = invDiag * ( X - V )/ Theta
     if (nVecs == 1) {
       ArrayRCP<const Scalar> x = xView[0];
@@ -393,7 +394,7 @@ void Chebyshev<MatrixType>::apply(
   Scalar dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
-    A_->apply(Y, V);
+    applyMat (Y, V, mode);
     rhokp1 = one / (two *s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
@@ -423,11 +424,11 @@ void Chebyshev<MatrixType>::applyMat(
                  Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
              Teuchos::ETransp mode) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Ifpack2::Chebyshev::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
+  TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error,
+   "Ifpack2::Chebyshev::applyMat(): isComputed() must be true prior to calling applyMat().");
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Chebyshev::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
-  A_->apply(X, Y, mode);
+   "Ifpack2::Chebyshev::applyMat(): X.getNumVectors() != Y.getNumVectors().");
+  A_->apply (X, Y, mode);
 }
 
 //==========================================================================
@@ -447,7 +448,12 @@ void Chebyshev<MatrixType>::initialize() {
 
   NumMyRows_ = A_->getNodeNumRows();
   NumGlobalRows_ = A_->getGlobalNumRows();
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries();
+
+  // mfh 15 Jan 2013: Defer setting NumGlobalNonzeros_ until
+  // compute().  That way, it will always be correct to omit calling
+  // initialize(), even if the number of entries in the sparse matrix
+  // has changed since the last call to compute().
+  //NumGlobalNonzeros_ = A_->getGlobalNumEntries();
 
   ++NumInitialize_;
   Time_->stop();
@@ -474,6 +480,12 @@ void Chebyshev<MatrixType>::compute()
   // reset values
   IsComputed_ = false;
   Condest_ = -1.0;
+
+  // mfh 15 Jan 2013: Defer setting NumGlobalNonzeros_ until here.
+  // That way, it will always be correct to omit calling initialize(),
+  // even if the number of entries in the sparse matrix has changed
+  // since the last call to compute().
+  NumGlobalNonzeros_ = A_->getGlobalNumEntries();
 
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
     "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");

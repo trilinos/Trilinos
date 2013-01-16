@@ -63,11 +63,17 @@ namespace Ifpack2 {
 /// \section Ifpack_Chebyshev_Summary Summary
 ///
 /// This class implements a Chebyshev polynomial preconditioner or
-/// smoother for a Tpetra::RowMatrix or Tpetra::CrsMatrix.  Chebyshev
-/// is derived from Preconditioner, which itself is derived from
-/// Tpetra::Operator.  Therefore, this object can be used as
-/// preconditioner everywhere an apply() method is required in the
-/// preconditioning step.
+/// smoother for a Tpetra sparse matrix.  Given a matrix A, it applies
+/// Chebyshev iteration to the left-scaled matrix \f$D^{-1} A\f$,
+/// where D = diag(A) is the matrix of the diagonal entries of A.
+/// This class accepts either a Tpetra::RowMatrix or a
+/// Tpetra::CrsMatrix; its template parameter must be a specialization
+/// of Tpetra::CrsMatrix.
+///
+/// Chebyshev is derived from Preconditioner, which itself is derived
+/// from Tpetra::Operator.  Therefore, a Chebyshev instance may be
+/// used as an operator in any code that invokes the operator as
+/// apply().
 ///
 /// \warning Our implementation currently <i>only</i> works with a
 ///   real symmetric positive definite (SPD) matrix.  Results for
@@ -76,38 +82,55 @@ namespace Ifpack2 {
 ///
 /// \section Ifpack_Chebyshev_Algorithm Algorithm
 ///
-/// This algorithm requires that the matrix be symmetric positive
+/// This algorithm requires that the matrix A be symmetric positive
 /// definite.  As a result, all of its eigenvalues must lie in a
-/// positive interval on the real line, \f$[\lambda_{min},
-/// \lambda_{max}]\f$.  We require that users give us at least (an
-/// estimate of) the maximum eigenvalue \f$\lambda_{max}\f$.  They may
-/// optionally also give us the (estimated) ratio \f$\eta =
-/// \lambda_{max} / \lambda_{min}\, or (an estimate of) the minimum
-/// eigenvalue \f$\lambda_{min}\f$.
+/// positive interval on the real line.  Furthermore, if D is the
+/// matrix of the diagonal elements of A, then the same is true of
+/// \f$D^{-1} A\f$.  This class performs Chebyshev iteration on the
+/// left-scaled matrix \f$D^{-1} A\f$.  (You may control left scaling
+/// yourself if you wish, by providing an optional vector of the
+/// entries of \f$D^{-1}\f$.)
 ///
-/// When using Chebyshev iteration to solve linear systems directly,
+/// Suppose \f$[\lambda_{min}, \lambda_{max}]\f$ is the interval of
+/// the eigenvalues of \f$D^{-1} A\f$.  We require that users give us
+/// at least (an estimate of) the maximum eigenvalue
+/// \f$\lambda_{max}\f$.  They may optionally also give us the
+/// (estimated) ratio \f$\eta = \lambda_{max} / \lambda_{min}\f$, or
+/// (an estimate of) the minimum eigenvalue \f$\lambda_{min}\f$.  The
+/// \f$\eta\f$ parameter corresponds to the "smoother: Chebyshev
+/// alpha" parameter of ML.  (We use "eta" instead of "alpha" to avoid
+/// confusion with the "alpha" argument of the apply() method of
+/// Tpetra::Operator.)
+///
+/// When using Chebyshev iteration by itself to solve linear systems,
 /// it is important to have good estimates of both the minimum and
 /// maximum eigenvalues.  However, when using a small number of
 /// Chebyshev iterations as a smoother in multigrid, the maximum
 /// eigenvalue estimate is more important.  (The point of a smoother
-/// is to smooth out the high-frequency components of the error.)
-/// This is why we use a ratio \f$\eta = \lambda_{max} /
-/// \lambda_{min}$, rather than requiring a guess for $\lambda_{min}$.
-/// In fact, we only use \f$\lambda_{min}\f$ for error checking, not
-/// when determining the Chebyshev coefficients.  Often, if users give
-/// us \f$\lambda_{max}\f$, our default value of \f$\eta\f$ suffices.
+/// is to smooth out the high-frequency components of the error, that
+/// is, those that correspond to the largest eigenvalues.  The coarser
+/// grids below the current grid will take care of the lower-frequency
+/// components of the error.)  This is why we use a ratio \f$\eta =
+/// \lambda_{max} / \lambda_{min}$, rather than requiring a guess for
+/// $\lambda_{min}$.  In fact, we only use \f$\lambda_{min}\f$ for
+/// error checking, not when determining the Chebyshev coefficients.
+/// Often, if users give us \f$\lambda_{max}\f$, our default value of
+/// \f$\eta\f$ suffices.
 ///
 /// Some Chebyshev implementations attempt to estimate the eigenvalue
 /// interval automatically.  Steve Ashby's CHEBYCODE is the original
 /// example.  We do not attempt to do this.  Users who want estimates
-/// of the smallest and largest eigenvalues should run a few
-/// iterations of Lanczos or CG.  Since the largest eigenvalue is more
-/// important for smoother applications, a few iterations of the power
-/// method may be enough.
+/// of both the smallest and largest eigenvalues should run a few
+/// iterations of Lanczos or CG.  For just the largest eigenvalue, a
+/// few iterations of the power method may be enough.
 ///
 /// Call the setParameters() method to give this instance your
-/// estimates of \f$\lambda_{max}\f$ and \f$\eta\f$, as well as to set
-/// other options controlling the behavior of Chebyshev iteration.
+/// estimates of \f$\lambda_{max}\f$ and \f$\eta = \lambda_{max} /
+/// \lambda_{min}\f$, as well as to set other options controlling the
+/// behavior of Chebyshev iteration.  The documentation of
+/// setParameters() lists all the parameters that this class accepts.
+/// Where possible, we list comparable parameters in the Ifpack
+/// package and the ML multigrid package.
 ///
 /// \section Ifpack_Chebyshev_Performance Performance
 ///
@@ -126,7 +149,8 @@ namespace Ifpack2 {
 ///
 /// The original implementation of this class was an adaptation of
 /// ML's ML_Cheby routine.  The original author was Ulrich Hetmaniuk,
-/// a Sandia employee in what was then (2006) Org 1416.
+/// a Sandia employee in what was then (2006) Org 1416.  Ifpack2 has
+/// seen significant development since then.
 template<class MatrixType>
 class Chebyshev : 
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -147,7 +171,25 @@ public:
   // \name Constructors and destructors
   //@{
 
-  //! Chebyshev constructor with given Tpetra::RowMatrix input.
+  /// \brief Constructor.
+  ///
+  /// \param A [in] The sparse matrix to which to apply Chebyshev
+  ///   iteration.  The matrix A must be square, and its domain Map
+  ///   and range Map must be the same.  The latter means that the
+  ///   vectors x and y in the sparse matrix-vector product y = A*x
+  ///   must both have the same distribution over process(es).
+  ///
+  /// We currently also require that the row Map and the range Map of
+  /// A be the same.  This is an arbitrary requirement that we plan to
+  /// relax eventually.  However, respecting this requirement will
+  /// reduce set-up costs.
+  ///
+  /// The constructor will only check the requirements on the various
+  /// Maps of A if the CMake configuration option
+  /// <tt>Teuchos_ENABLE_DEBUG</tt> was set to <tt>ON</tt> before
+  /// building Trilinos.  The checks require \f$O(1)\f$ global
+  /// reductions over all processes in A's communicator, so we prefer
+  /// to avoid them if we can.
   explicit Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
 
   //! Destructor.
@@ -161,7 +203,10 @@ public:
   ///
   /// The following parameters control the Chebyshev coefficients, the
   /// number of iterations, various other properties of the algorithm,
-  /// and error checking.
+  /// and error checking.  Where applicable, for each parameter, we
+  /// list the name of its corresponding ML parameter.
+
+
   /// - "chebyshev: max eigenvalue" (\c Scalar): (An estimate of) the
   ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
   ///   should always provide this value, since otherwise Chebyshev
@@ -186,31 +231,68 @@ public:
   ///   apply() method.
   /// - "chebyshev: operator inv diagonal" (<tt>Tpetra::Vector</tt>).
   ///   A (raw) pointer to the inverse of the diagonal entries of the
-  ///   matrix.  If not provided, we compute this ourselves.  If
-  ///   provided, we make a deep copy.
+  ///   matrix, stored as a <tt>Tpetra::Vector<Scalar, LocalOrdinal,
+  ///   GlobalOrdinal, Node></tt>.  If not provided, we compute this
+  ///   ourselves from the matrix provided to the constructor.  If
+  ///   provided here, we make a deep copy.
+  ///
+  /// The following list maps from an ML parameter to its
+  /// corresponding Ifpack2 parameter.
+  /// - "smoother: Chebyshev alpha": "chebyshev: ratio eigenvalue"
+  /// - "smoother: sweeps": "chebyshev: degree"
+  ///
+  /// ML does not have a parameter corresponding to "chebyshev: max
+  /// eigenvalue", because ML estimates the spectral radius
+  /// automatically.  Ifpack2 does not do this automatically, but a
+  /// multigrid package such as MueLu that uses Ifpack2 could do this.
+  /// Similarly, ML does not have a parameter corresponding to
+  /// "chebyshev: min eigenvalue".
+  ///
+  /// The following list maps from an Ifpack parameter to its
+  /// corresponding Ifpack2 parameter.  Many of the parameters have
+  /// the same names, in which case we simply write <i>same</i>.
+  /// - "chebyshev: max eigenvalue": same
+  /// - "chebyshev: ratio eigenvalue": same
+  /// - "chebyshev: min eigenvalue": same
+  /// - "chebyshev: degree": same
+  /// - "relaxation: sweeps": "chebyshev: degree"
+  /// - "chebyshev: min diagonal value": same
+  /// - "relaxation: min diagonal value": "chebyshev: min diagonal value"
+  /// - "chebyshev: zero starting solution": same
+  /// - "relaxation: zero starting solution": "chebyshev: zero starting solution"
+  /// - "chebyshev: operator inv diagonal": same
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief Initialize the preconditioner.
   ///
-  /// You must call this method before you may call compute() or apply().
+  /// The compute() method will call initialize() automatically if it
+  /// has not yet been called, so you do not normally need to call
+  /// this.  However, it is correct to call initialize() yourself, and
+  /// compute() will not call it again if it already has been called.
   void initialize();
 
-  //! Whether the preconditioner has been successfully initialized.
+  /// Whether the preconditioner has been successfully initialized
+  /// (by calling initialize()).
   inline bool isInitialized() const {
     return(IsInitialized_);
   }
 
   /// \brief Compute the preconditioner.
   ///
-  /// You must call this method after calling initialize(), but before
-  /// calling apply().  If any of the diagonal entries of the matrix
-  /// have changed, you must call this method again before calling
-  /// apply().
+  /// You must call this method before calling apply().  If any of the
+  /// values of the diagonal entries of the matrix have changed, or if
+  /// the structure of the matrix has changed, you must call this
+  /// method again before calling apply().
+  ///
+  /// This method will call initialize() if it has not already been
+  /// called.  However, you may call initialize() before calling this
+  /// method if you wish.
   void compute();
 
-  //! Whether the preconditioner has been successfully computed.
+  /// Whether the preconditioner has been successfully computed
+  /// (by calling compute()).
   inline bool isComputed() const {
-    return(IsComputed_);
+    return IsComputed_;
   }
 
   //@}
@@ -218,6 +300,17 @@ public:
   //@{ 
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
+  ///
+  /// This method actually computes Y = beta*Y + alpha*(M*X), where
+  /// M*X represents the result of Chebyshev iteration on X, using the
+  /// matrix Op(A).  Op(A) is A if <tt>mode</tt> is
+  /// <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if <tt>mode</tt> is
+  /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ (the Hermitian transpose)
+  /// if <tt>mode</tt> is <tt>Teuchos::CONJ_TRANS</tt>.
+  ///
+  /// Since this class currently requires A to be real and symmetric
+  /// positive definite, setting <tt>mode</tt> should not affect the
+  /// result.
   ///
   /// \param X [in] A (multi)vector to which to apply the preconditioner.
   /// \param Y [in/out] A (multi)vector containing the result of
@@ -228,40 +321,43 @@ public:
                  Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                  Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  //! The Tpetra::Map representing the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
+  //! The Tpetra::Map representing the range of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
 
+  //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
 
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*! 
-    \param 
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
+  /// \brief Apply the original matrix A to a multivector.
+  ///
+  /// \param X [in] Input (multi)vector of sparse matrix-vector
+  ///   multiply.  If mode == Teuchos::NO_TRANS, X must be in the
+  ///   domain Map of the matrix A.  Otherwise, X must be in the range
+  ///   Map of A.
+  /// \param Y [out] Output (multi)vector of sparse matrix-vector
+  ///   multiply.  If mode == Teuchos::NO_TRANS, Y must be in the
+  ///   range Map of the matrix A.  Otherwise, Y must be in the domain
+  ///   Map of A.
   void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
-
+  //! \name Mathematical functions
   //@{
-  //! \name Mathematical functions.
 
-  //! Computes the estimated condition number and returns the value.
-  magnitudeType computeCondEst(CondestType CT = Cheap, 
-                               LocalOrdinal MaxIters = 1550,
-                               magnitudeType Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+  //! Compute and return the estimated condition number.
+  magnitudeType 
+  computeCondEst (CondestType CT = Cheap, 
+		  LocalOrdinal MaxIters = 1550,
+		  magnitudeType Tol = 1e-9,
+		  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
 
   //@}
-
-  //@{ 
   //! \name Attribute accessor methods
+  //@{ 
 
   //! The estimated condition number, or -1.0 if it has not yet been computed.
   magnitudeType getCondEst() const;
@@ -272,44 +368,43 @@ public:
   //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
 
-  //! The total number of flops taken by all calls to compute().
+  //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
 
-  //! Returns the number of flops for the application of the preconditioner.
+  //! The total number of floating-point operations taken by all calls to apply().
   double getApplyFlops() const;
 
-  //! Returns the number of calls to initialize().
+  //! The total number of successful calls to initialize().
   int getNumInitialize() const;
 
-  //! Returns the number of calls to compute().
+  //! The total number of successful calls to compute().
   int getNumCompute() const;
 
-  //! Returns the number of calls to apply().
+  //! The total number of successful calls to apply().
   int getNumApply() const;
 
-  //! Returns the time spent in initialize().
+  //! The total time spent in all calls to initialize().
   double getInitializeTime() const;
 
-  //! Returns the time spent in compute().
+  //! The total time spent in all calls to compute().
   double getComputeTime() const;
 
-  //! Returns the time spent in apply().
+  //! The total time spent in all calls to apply().
   double getApplyTime() const;
 
   //@}
-
-  //! @name Overridden from Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable 
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
+  //! A simple one-line description of this object.
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
+  //! Print the object with some verbosity level to a Teuchos::FancyOStream.
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
   //@}
-
-  // @{ \name Utility methods
+  //! \name Utility methods
+  //@{
 
   //! Simple power method to compute lambda_max.
   static void PowerMethod(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator,
@@ -327,65 +422,85 @@ public:
 
 private:
   
-  //! Copy constructor (should never be used)
-  Chebyshev(const Chebyshev<MatrixType>& src);
+  //! Copy constructor (use is syntactically forbidden)
+  Chebyshev (const Chebyshev<MatrixType>&);
 
-  //! operator= (should never be used)
-  Chebyshev<MatrixType>& operator=(const Chebyshev<MatrixType>& src);
+  //! Assignment operator (use is syntactically forbidded)
+  Chebyshev<MatrixType>& operator= (const Chebyshev<MatrixType>&);
 
-  // @{ Internal data and parameters
+  //@}
+  //! \name The sparse matrix and related data
+  //@{
 
-  //! reference to the matrix to be preconditioned
+  //! The matrix to be preconditioned
   const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! Reference to the communicator object
+  //! The communicator over which the matrix is distributed
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
-  //! Contains the inverse of diagonal elements of \c Matrix.
+  //! The inverse of the diagonal elements of the matrix
   mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > InvDiagonal_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
-  //! Contains the degree of Chebyshev polynomial.
-  int PolyDegree_;
-  //! The ratio such that [LambdaMax_ / EigRatio_, LambdaMax_], the interval of interest for the Chebyshev polynomial.
-  magnitudeType EigRatio_;
-  //! An approximation to the smallest eigenvalue.
-  Scalar LambdaMin_;
-  //! An approximation to the largest eigenvalue.
-  Scalar LambdaMax_;
-  //! The minimum value on the diagonal.
-  Scalar MinDiagonalValue_;
-  //! The estimated condition number
-  //! If \c true, the starting solution is always the zero vector.
-  bool ZeroStartingSolution_;
-  magnitudeType Condest_;
-  //! If \c true, the preconditioner has been computed successfully.
-  bool IsInitialized_;
-  //! If \c true, the preconditioner has been computed successfully.
-  bool IsComputed_;
-  //! Contains the number of successful calls to initialize().
-  int NumInitialize_;
-  //! Contains the number of successful call to compute().
-  int NumCompute_;
-  //! Contains the number of successful call to apply().
-  mutable int NumApply_;
-  //! Contains the time for all successful calls to initialize().
-  double InitializeTime_;
-  //! Contains the time for all successful calls to compute().
-  double ComputeTime_;
-  //! Contains the time for all successful calls to apply().
-  mutable double ApplyTime_;
-  //! Contains the number of flops for compute().
-  double ComputeFlops_;
-  //! Contains the number of flops for apply().
-  mutable double ApplyFlops_;
-  //! Number of local rows.
+  //! Number of local rows in the matrix.
   size_t NumMyRows_;
-  //! Number of global rows.
+  //! Number of global rows in the matrix.
   global_size_t NumGlobalRows_;
-  //! Number of global nonzeros.
+  //! Number of global nonzeros in the matrix.
   global_size_t NumGlobalNonzeros_;
 
   //@}
+  //! \name Algorithmic parameters (set via setParameters())
+  //@{
 
+  //! The number of iterations to apply; the degree of the Chebyshev polynomial.
+  int PolyDegree_;
+  //! Estimate of the ratio LambdaMax_ / LambdaMin_.
+  magnitudeType EigRatio_;
+  //! Approximation of the smallest eigenvalue.
+  Scalar LambdaMin_;
+  //! Approximation of the largest eigenvalue.
+  Scalar LambdaMax_;
+  //! Minimum allowed value on the diagonal of the matrix.
+  Scalar MinDiagonalValue_;
+  /// If \c true, then the starting solution is always the zero vector.
+  bool ZeroStartingSolution_;
+
+  //@}
+  //! \name Other internal state
+  //@{
+
+  //! Time object to track timing.
+  Teuchos::RCP<Teuchos::Time> Time_;
+  //! The estimated condition number.
+  magnitudeType Condest_;
+  //! If \c true, initialize() has completed successfully.
+  bool IsInitialized_;
+  //! If \c true, compute() has completed successfully.
+  bool IsComputed_;
+  //! The total number of successful calls to initialize().
+  int NumInitialize_;
+  //! The total number of successful calls to compute().
+  int NumCompute_;
+  /// \brief The total number of successful calls to apply().
+  ///
+  /// This is "mutable" because apply() is a const method; apply() is
+  /// const because it is declared this way in Tpetra::Operator.
+  mutable int NumApply_;
+  //! The total time in seconds over all calls to initialize().
+  double InitializeTime_;
+  //! The total time in seconds over all calls to compute().
+  double ComputeTime_;
+  /// \brief The total time in seconds over all calls to apply().
+  ///
+  /// This is "mutable" because apply() is a const method; apply() is
+  /// const because it is declared this way in Tpetra::Operator.
+  mutable double ApplyTime_;
+  //! The total number of floating-point operations over all calls to compute().
+  double ComputeFlops_;
+  /// \brief The total number of floating-point operations over all calls to apply().
+  ///
+  /// This is "mutable" because apply() is a const method; apply() is
+  /// const because it is declared this way in Tpetra::Operator.
+  mutable double ApplyFlops_;
+
+  //@}
 }; // class Chebyshev
 
 }//namespace Ifpack2
