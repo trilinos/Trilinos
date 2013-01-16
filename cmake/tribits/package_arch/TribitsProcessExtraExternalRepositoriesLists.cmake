@@ -493,7 +493,7 @@ MACRO(TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS)
   # A) Read in the extra repos list variable and process the list
   #
   
-  IF (${PROJECT_NAME}_EXTRAREPOS_FILE)
+  IF (${PROJECT_NAME}_EXTRAREPOS_FILE AND ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE)
 
     MESSAGE("")
     MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
