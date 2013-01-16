@@ -184,7 +184,7 @@ namespace Galeri {
       SerialDenseMatrix<LO,SC> R(D->numRows(), bDim);
       R(0,0) = R(1,3) = R(2,1) = R(2,2) = 1;
 
-      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, pow(3, nDim)*numDofPerNode);
+      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
       for (size_t i = 0; i < elements.size(); i++) {

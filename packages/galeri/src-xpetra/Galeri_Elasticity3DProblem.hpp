@@ -196,7 +196,7 @@ namespace Galeri {
       R(0,0) = R(1,4) = R(2,8) = R(3,1) = R(3,3) = R(4,5) = R(4,7) = R(5,2) = R(5,6) = 1;
 
       // FIXME
-      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, pow(3, nDim)*numDofPerNode);
+      this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
       for (size_t i = 0; i < elements.size(); i++) {
