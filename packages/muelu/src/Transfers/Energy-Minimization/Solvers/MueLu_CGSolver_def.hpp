@@ -82,7 +82,7 @@ namespace MueLu {
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
-    tmpAP = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), false, X, false, true, false);
+    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
     C.Apply(*tmpAP, *T);
 
     R = MatrixFactory::BuildCopy(T);
@@ -105,7 +105,7 @@ namespace MueLu {
     oldRZ = Frobenius(*R, *Z);
 
     for (size_t k = 0; k < nIts_; k++) {
-      tmpAP = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), false, P, false, true, false);
+      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
       C.Apply(*tmpAP, *T);
       AP = T;
 
