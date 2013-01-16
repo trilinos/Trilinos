@@ -298,21 +298,10 @@ void Chebyshev<MatrixType>::apply(
 
   //--- Do a quick solve when the matrix is identity
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
-    if (nVecs == 1) {
-      ArrayRCP<Scalar> y = yView[0];
-      ArrayRCP<const Scalar> x = xView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i)
-        y[i] = x[i]*invdiag[i];
-    }
-    else {
-      for (size_t i = 0; i < NumMyRows_; ++i) {
-        const Scalar& coeff = invdiag[i];
-        for (size_t k = 0; k < nVecs; ++k)
-          yView[k][i] = xView[k][i] * coeff;
-      }
-    } // if (nVec == 1)
+    // Y_j = X_j .* invdiag, for all columns j.
+    Y.elementWiseMultiply (STS::one(), *InvDiagonal_, X, STS::zero());
     return;
-  } // if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_))
+  }
 
   //--- initialize coefficients
 
@@ -344,8 +333,9 @@ void Chebyshev<MatrixType>::apply(
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
-    applyMat (Y, V, mode);
-    // compute W = invDiag * ( X - V )/ Theta
+    // Compute W = (1/theta) D^{-1} (X - A*Y).
+
+    applyMat (Y, V, mode); // V = A*Y
     if (nVecs == 1) {
       ArrayRCP<const Scalar> x = xView[0];
       ArrayRCP<Scalar> w = wView[0];
@@ -364,11 +354,12 @@ void Chebyshev<MatrixType>::apply(
         }
       }
     } // if (nVec == 1)
-    // Update the vector Y
-    Y.update(one, W, one);
+
+    Y.update(one, W, one); // Y = Y + W
   }
   else {
-    // compute W = invDiag * X / Theta
+    // Compute W = (1/theta) D^{-1} X and set Y = W.
+
     if (nVecs == 1) {
       ArrayRCP<const Scalar> x= xView[0];
       ArrayRCP<Scalar> w = wView[0];
@@ -394,22 +385,22 @@ void Chebyshev<MatrixType>::apply(
   Scalar dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
-    applyMat (Y, V, mode);
+    applyMat (Y, V, mode); // V = A*Y
     rhokp1 = one / (two *s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
-    // compute W = dtemp1 * W
-    W.scale(dtemp1);
-    // compute W = W + dtemp2 * invDiag * ( X - V )
-    for (size_t k = 0; k < nVecs; ++k) {
+
+    // Compute W = dtemp1*W + dtemp2 * D^{-1} * (X - V).
+
+    W.scale (dtemp1); // W = dtemp1 * W
+    for (size_t k = 0; k < nVecs; ++k) { // W = W + dtemp2 * D^{-1} * (X - V)
       for (size_t i = 0; i < NumMyRows_; ++i) {
         Scalar coeff = invdiag[i]*dtemp2;
         wView[k][i] += (xView[k][i] - (vView[k][i])) * coeff;
       }
     }
-    // Update the vector Y
-    Y.update(one, W, one);
+    Y.update (one, W, one); // Y = Y + W
   } // for (deg = 0; deg < degreeMinusOne; ++deg)
 
   ++NumApply_;
