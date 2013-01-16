@@ -81,7 +81,20 @@ void * HostSpace::allocate(
 
   if ( 0 < scalar_size * scalar_count ) {
 
+#if defined( __INTEL_COMPILER ) && defined( __MIC__ )
+
+    ptr = _mm_malloc( scalar_size * scalar_count , MEMORY_ALIGNMENT );
+
+#elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
+      ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
+
+    posix_memalign( & ptr , MEMORY_ALIGNMENT , scalar_size * scalar_count );
+
+#else
+
     ptr = malloc( scalar_size * scalar_count );
+
+#endif
 
     if ( 0 == ptr ) {
       std::ostringstream msg ;
@@ -115,7 +128,11 @@ void HostSpace::decrement( const void * ptr )
     void * ptr_alloc = host_space_singleton().decrement( ptr );
 
     if ( 0 != ptr_alloc ) {
+#if defined( __INTEL_COMPILER ) && defined( __MIC__ )
+      _mm_free( ptr_alloc );
+#else
       free( ptr_alloc );
+#endif
     }
   }
 }
@@ -136,17 +153,13 @@ std::string HostSpace::query_label( const void * p )
 size_t HostSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
-  const size_t alignment = Host::detect_cache_line_size();
+  const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size
+                     ? MEMORY_ALIGNMENT / scalar_size : 0 ;
 
-  // If the array is larger than the cache line
-  // then align the count on cache line boundary.
-
-  if ( alignment < scalar_size * scalar_count &&
-       0 == alignment % scalar_size ) {
-    const size_t align = alignment / scalar_size ;
-    const size_t rem   = scalar_count % align ;
-    if ( rem ) scalar_count += align - rem ;
+  if ( align && align < scalar_count && scalar_count % align ) {
+    scalar_count += align - scalar_count % align ;
   }
+
   return scalar_count ;
 }
 

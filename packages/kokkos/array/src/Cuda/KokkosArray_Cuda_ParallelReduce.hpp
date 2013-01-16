@@ -398,10 +398,14 @@ public:
   {
     extern __shared__ size_type shared_data[];
 
-    const size_type tidx = thread_of_block &  CudaTraits::WarpIndexMask ;
-    const size_type tidy = thread_of_block >> CudaTraits::WarpIndexShift ;
+    void * const data = shared_data +
+                        m_data.shared_data_offset(
+                          /* tidx */ thread_of_block &  CudaTraits::WarpIndexMask ,
+                          /* tidy */ thread_of_block >> CudaTraits::WarpIndexShift );
 
-    return m_reduce.init( shared_data + m_data.shared_data_offset(tidx,tidy) );
+    m_reduce.init( data );
+
+    return m_reduce.reference( data );
   }
 
   //--------------------------------------------------------------------------

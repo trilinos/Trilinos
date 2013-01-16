@@ -95,7 +95,6 @@ protected:
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
-  unsigned         m_work_chunk ;    // Granularity of work partitioning
   unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
   void           * m_reduce_scratch ;
   HostThread       m_master_thread ;

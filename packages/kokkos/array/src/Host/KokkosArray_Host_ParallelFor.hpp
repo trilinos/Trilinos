@@ -66,6 +66,10 @@ public:
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
 
+#if defined( __INTEL_COMPILER )
+#pragma simd
+#pragma ivdep
+#endif
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
@@ -121,6 +125,10 @@ public:
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
 
+#if defined( __INTEL_COMPILER )
+#pragma simd
+#pragma ivdep
+#endif
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }

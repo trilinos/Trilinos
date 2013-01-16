@@ -73,7 +73,6 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
@@ -88,7 +87,6 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
   m_state        = ThreadActive ;
 
@@ -98,11 +96,17 @@ HostThread::HostThread()
 std::pair< Host::size_type , Host::size_type >
 HostThread::work_range( const size_type work_count ) const
 {
+  // A 'chunk' is HostSpace::WORK_ALIGNMENT atomic units of work
+
   const size_type chunk_count =
-    ( work_count + m_work_chunk - 1 ) / m_work_chunk ;
+    ( work_count + HostSpace::WORK_ALIGNMENT - 1 ) / HostSpace::WORK_ALIGNMENT ;
+
+  // Each thread performs some number of 'chunks' of work:
 
   const size_type work_per_thread =
-    m_work_chunk * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+    HostSpace::WORK_ALIGNMENT * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+
+  // Range of work:
 
   const size_type work_begin =
     std::min( m_thread_rank * work_per_thread , work_count );
@@ -216,7 +220,6 @@ HostInternal::HostInternal()
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
-  , m_work_chunk( m_cache_line_size / sizeof(void*) )
   , m_reduce_scratch_size( 0 )
   , m_reduce_scratch( 0 )
 {
@@ -236,7 +239,6 @@ HostInternal::HostInternal()
   m_master_thread.m_gang_count   = m_gang_count ;
   m_master_thread.m_worker_rank  = 0 ;
   m_master_thread.m_worker_count = m_worker_count ;
-  m_master_thread.m_work_chunk   = m_work_chunk ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
@@ -322,7 +324,6 @@ bool HostInternal::initialize_thread(
   thread.m_gang_count   = m_gang_count ;
   thread.m_worker_rank  = worker_rank ;
   thread.m_worker_count = m_worker_count ;
-  thread.m_work_chunk   = m_work_chunk ;
 
   {
     unsigned fan_count = 0 ;

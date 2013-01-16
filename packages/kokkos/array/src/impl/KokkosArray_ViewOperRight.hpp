@@ -68,6 +68,11 @@ public:
   ValueType & operator * () const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return *m_ptr_on_device ;
     }
 
@@ -75,6 +80,11 @@ public:
   ValueType & operator()( void ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return *m_ptr_on_device ;
     }
 };
@@ -102,6 +112,10 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
 
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return m_ptr_on_device[ i0 ];
     }
 
@@ -111,6 +125,10 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
 
       return m_ptr_on_device[ i0 ];
     }
@@ -139,6 +157,10 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
 
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return m_ptr_on_device[ i1 + i0 * m_shape.Stride ];
     }
 };
@@ -166,6 +188,10 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
                               i1 ) + i0 * m_shape.Stride ];
@@ -196,6 +222,10 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
@@ -230,6 +260,10 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
 
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
@@ -263,6 +297,10 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
@@ -301,6 +339,10 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
 
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
+
       return m_ptr_on_device[ i6 + m_shape.N6 * (
                               i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
@@ -338,6 +380,10 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_ptr_on_device,MemorySpace::MEMORY_ALIGNMENT);
+#endif
 
       return m_ptr_on_device[ i7 + m_shape.N7 * (
                               i6 + m_shape.N6 * (

@@ -188,9 +188,7 @@ struct HostFunctor {
       const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
         reduce(*this);
 
-      int & value = thread.value( reduce );
-
-      (void) value ; // avoid compiler warning about unused variable.
+      reduce.init( thread.reduce_data() );
 
       thread.barrier();
       thread.barrier();

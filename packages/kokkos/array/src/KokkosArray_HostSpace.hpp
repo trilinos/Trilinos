@@ -59,8 +59,16 @@ namespace KokkosArray {
 class HostSpace {
 public:
 
+  enum { MEMORY_ALIGNMENT = 64 };
+  enum { WORK_ALIGNMENT   =  8 };
+
   typedef HostSpace  memory_space ;
+
+#if defined( __INTEL_COMPILER )
+  typedef int        size_type ;
+#else
   typedef size_t     size_type ;
+#endif
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.

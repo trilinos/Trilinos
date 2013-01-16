@@ -237,7 +237,7 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
               << thread_rank
               << " @ " << gang_rank
               << "." << worker_rank
-              << " ] to node[" << m_node_rank[ gang_rank ]
+              << " ] to node[" << node_rank
               << "].core[" << core_rank
               << "].pu[" << pu_rank
               << "] " ;
@@ -387,7 +387,6 @@ HostInternalHWLOC::HostInternalHWLOC()
 
   if ( 0 < cache_line_size ) {
     HostInternal::m_cache_line_size = cache_line_size ;
-    HostInternal::m_work_chunk      = cache_line_size / sizeof(void*);
   }
 
 #if DEBUG_PRINT
