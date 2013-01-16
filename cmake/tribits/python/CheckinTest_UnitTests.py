@@ -644,7 +644,7 @@ def test_TribitsGitRepos_run_case(testObject, inOptions, \
         verbose=test_TribitsGitRepos_verbose)
       cmndPassed = True
       # NOTE: the file consoleOutputFile still gets written, even if throw
-    except Exception as e:
+    except Exception, e:
       #print "e =", e
       if exceptionRegexMatches:
         eMsg = e.args[0]
