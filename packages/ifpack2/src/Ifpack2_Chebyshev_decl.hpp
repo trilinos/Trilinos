@@ -39,20 +39,14 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
-#include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <iostream>
 #include <string>
 #include <sstream>
 
-namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
 
 namespace Ifpack2 {
 
@@ -391,23 +385,29 @@ public:
   ///
   /// This method actually computes Y = beta*Y + alpha*(M*X), where
   /// M*X represents the result of Chebyshev iteration on X, using the
-  /// matrix Op(A).  Op(A) is A if <tt>mode</tt> is
-  /// <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if <tt>mode</tt> is
-  /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ (the Hermitian transpose)
-  /// if <tt>mode</tt> is <tt>Teuchos::CONJ_TRANS</tt>.
-  ///
-  /// Since this class currently requires A to be real and symmetric
-  /// positive definite, setting <tt>mode</tt> should not affect the
-  /// result.
+  /// matrix Op(A).  Op(A) is either A itself, its transpose
+  /// \f$A^T\f$, or its Hermitian transpose \f$A^H\f$, depending on
+  /// the <tt>mode</tt> argument.  Since this class currently requires
+  /// A to be real and symmetric positive definite, it should always
+  /// be the case that \f$A = A^T = A^H\f$, but we will still respect
+  /// the <tt>mode</tt> argument.
   ///
   /// \param X [in] A (multi)vector to which to apply the preconditioner.
   /// \param Y [in/out] A (multi)vector containing the result of
   ///   applying the preconditioner to X.
-  void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  /// \param mode [in] If <tt>Teuchos::NO_TRANS</tt>, apply the matrix
+  ///   A.  If <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>, apply its
+  ///   transpose \f$A^T\f$.  If <tt>Teuchos::CONJ_TRANS</tt>, apply
+  ///   its Hermitian transpose \f$A^H\f$.
+  /// \param alpha [in] Scaling factor for the result of Chebyshev
+  ///   iteration.  The default is 1.
+  /// \param beta [in] Scaling factor for Y.  The default is 0.
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
   const Teuchos::RCP<const map_type>& getDomainMap() const;
@@ -429,18 +429,19 @@ public:
   ///   range Map of the matrix A.  Otherwise, Y must be in the domain
   ///   Map of A.
   /// \param mode [in] Whether to apply the matrix A, its transpose
-  ///   \f$A^T\f$, or its conjugate transpose \f$A^H\f$.  Op(A) is A
-  ///   if <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if
-  ///   <tt>mode</tt> is <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ (the
-  ///   Hermitian transpose) if <tt>mode</tt> is
+  ///   \f$A^T\f$, or its conjugate transpose \f$A^H\f$.  This method
+  ///   applies A if <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>,
+  ///   \f$A^T\f$ if <tt>mode</tt> is <tt>Teuchos::TRANS</tt>, and
+  ///   \f$A^H\f$ (the Hermitian transpose) if <tt>mode</tt> is
   ///   <tt>Teuchos::CONJ_TRANS</tt>.
   ///
   /// Since this class currently requires A to be real and symmetric
   /// positive definite, setting <tt>mode</tt> should not affect the
   /// result.
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                      Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  void 
+  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+	    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+	    Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions
@@ -451,7 +452,7 @@ public:
   computeCondEst (CondestType CT = Cheap, 
 		  local_ordinal_type MaxIters = 1550,
 		  magnitude_type Tol = 1e-9,
-		  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
+		  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods

@@ -606,32 +606,10 @@ CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,nod
    const int MaximumIterations, 
    scalar_type& lambda_min, scalar_type& lambda_max)
 {
-#ifdef HAVE_IFPACK2_AZTECOO
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> x(Operator.getDomainMap());
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> y(Operator.getRangeMap());
-  x.Random();
-  y.putScalar(0.0);
-
-  Tpetra::LinearProblem LP(const_cast<Tpetra::Operator*>(&Operator), &x, &y);
-  AztecOO solver(LP);
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  solver.SetAztecOption(AZ_output, AZ_none);
-
-  Ifpack2_DiagPreconditioner diag(Operator.OperatorDomainMap(),
-                                 Operator.OperatorRangeMap(),
-                                 InvPointDiagonal);
-  solver.SetPrecOperator(&diag);
-  solver.Iterate(MaximumIterations, 1e-10);
-
-  const double* status = solver.GetAztecStatus();
-
-  lambda_min = status[AZ_lambda_min];
-  lambda_max = status[AZ_lambda_max];
-
-  return(0);
-#else
-  throw std::runtime_error("Ifpack2::Chebyshev::CG: support for AztecOO not currently implemented.");
-#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error,
+    "Ifpack2::Chebyshev::CG: Not implemented.  "
+    "Please use Belos' implementation of CG with Tpetra objects.");
 }
 
 //==========================================================================
