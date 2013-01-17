@@ -83,6 +83,12 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_EminPFactory.hpp"
+#include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_NullspacePresmoothFactory.hpp"
+#endif
 
 namespace MueLu {
 
@@ -187,6 +193,17 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory") {
         return  Build2<RebalanceTransferFactory>(paramList, factoryMapIn);
       }
+
+#ifdef HAVE_MUELU_EXPERIMENTAL
+      if (factoryName == "EminPFactory")
+        return Build2<EminPFactory>(paramList, factoryMapIn);
+      if (factoryName == "PatternFactory")
+        return Build2<PatternFactory>(paramList, factoryMapIn);
+      if (factoryName == "ConstraintFactory")
+        return Build2<ConstraintFactory>(paramList, factoryMapIn);
+      if (factoryName == "NullspacePresmoothFactory")
+        return Build2<NullspacePresmoothFactory>(paramList, factoryMapIn);
+#endif
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {

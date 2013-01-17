@@ -50,6 +50,7 @@
 #include <Xpetra_CrsGraph_fwd.hpp>
 
 #include "MueLu_ConstraintFactory_decl.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"
@@ -57,17 +58,38 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ConstraintFactory()
-  { }
+  RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~ConstraintFactory()
-  { }
+    // NOTE: theoretically, one might want to use different factories for nullspace on fine and coarse levels. The problem is that
+    // Input(fineLevel, "Nullspace") uses parameter list entry to determine the factory, therefore it would be the same for both levels.
+    // To resolve that, one might need to call DeclareInput() directly to specify generating factory
+    validParamList->set< RCP<const FactoryBase> >("FineNullspace",    Teuchos::null, "Generating factory for the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("CoarseNullspace",  Teuchos::null, "Generating factory for the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Ppattern",         Teuchos::null, "Generating factory for the nonzero pattern");
+
+    return validParamList;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level& coarseLevel) const {
-    Input(fineLevel,   "Nullspace");
-    Input(coarseLevel, "Nullspace");
+    // TODO: JG: create a function in FactoryAcceptorImpl(?) to do all this stuff there
+    // Input(fineLevel, "Nullspace", "FineNullspace")
+    RCP<const FactoryBase> fineNullFact;
+    if (fineLevel.IsAvailable("Nullspace", NoFactory::get())) {
+      fineNullFact = NoFactory::getRCP();
+    } else {
+      fineNullFact = GetFactory("FineNullspace"); // is this a parameter list entry?
+      if (fineNullFact == Teuchos::null)     // the parameter is not in the list, get it from the manager
+        fineNullFact = fineLevel.GetFactoryManager()->GetFactory("Nullspace");
+      fineLevel.DeclareInput("Nullspace", fineNullFact.get(), this);
+    }
+
+    RCP<const FactoryBase> coarseNullFact = GetFactory("CoarseNullspace"); // is this a parameter list entry?
+    if (coarseNullFact == Teuchos::null)      // the parameter is not in the list, get it from the manager
+      coarseNullFact = coarseLevel.GetFactoryManager()->GetFactory("Nullspace");
+    coarseLevel.DeclareInput("Nullspace", coarseNullFact.get(), this);
+
     Input(coarseLevel, "Ppattern");
   }
 
@@ -75,9 +97,26 @@ namespace MueLu {
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Constraint", coarseLevel);
 
+    // TODO: create another function to deal with issue:
+    // Get<RCP<MultiVector>>(fineLevel, "Nullspace", "FineNullspace")
+    RCP<const FactoryBase> fineNullFact;
+    if (fineLevel.IsAvailable("Nullspace", NoFactory::get())) {
+      fineNullFact = NoFactory::getRCP();
+    } else {
+      fineNullFact = GetFactory("FineNullspace"); // is this a parameter list entry?
+      if (fineNullFact == Teuchos::null)     // the parameter is not in the list, get it from the manager
+        fineNullFact = fineLevel.GetFactoryManager()->GetFactory("Nullspace");
+    }
+
+    RCP<const FactoryBase> coarseNullFact = GetFactory("CoarseNullspace"); // is this a parameter list entry?
+    if (coarseNullFact == Teuchos::null)      // the parameter is not in the list, get it from the manager
+      coarseNullFact = coarseLevel.GetFactoryManager()->GetFactory("Nullspace");
+
+    RCP<MultiVector> fineNullspace   = fineLevel  .Get< RCP<MultiVector> >("Nullspace", fineNullFact.get());
+    RCP<MultiVector> coarseNullspace = coarseLevel.Get< RCP<MultiVector> >("Nullspace", coarseNullFact.get());
+
     RCP<Constraint> constraint(new Constraint);
-    constraint->Setup(*Get< RCP<MultiVector> >   (fineLevel,   "Nullspace"),
-                      *Get< RCP<MultiVector> >   (coarseLevel, "Nullspace"),
+    constraint->Setup(*fineNullspace, *coarseNullspace,
                        Get< RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
 
     Set(coarseLevel, "Constraint", constraint);

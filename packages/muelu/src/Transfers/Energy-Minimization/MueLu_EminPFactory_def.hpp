@@ -20,6 +20,19 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Generating factory for the matrix A used during internal iterations");
+    validParamList->set< RCP<const FactoryBase> >("P",           Teuchos::null, "Generating factory for the initial guess");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",   Teuchos::null, "Generating factory for the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Constraint",  Teuchos::null, "Generating factory for constraints");
+    validParamList->set< int >                   ("Niterations",             3, "Number of iterations of the internal iterative method");
+
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel,   "A");
     Input(fineLevel,   "Nullspace");
@@ -41,8 +54,10 @@ namespace MueLu {
     RCP<Matrix>      P0         = Get< RCP<Matrix> >     (coarseLevel, "P");
     RCP<Constraint>  X          = Get< RCP<Constraint> > (coarseLevel, "Constraint");
 
+    const ParameterList & pL = GetParameterList();
+
     RCP<Matrix>      P;
-    CGSolver EminSolver(3);
+    CGSolver EminSolver(pL.get<int>("Niterations"));
     EminSolver.Iterate(*A, *X, *P0, *B, P);
 
     Set(coarseLevel, "P", P);

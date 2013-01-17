@@ -63,12 +63,14 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    NullspacePresmoothFactory();
+    NullspacePresmoothFactory() { }
 
     //! Destructor
-    virtual ~NullspacePresmoothFactory();
+    virtual ~NullspacePresmoothFactory() { }
 
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! @name Input
     //@{
