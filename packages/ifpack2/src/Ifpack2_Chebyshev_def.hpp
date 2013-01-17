@@ -37,10 +37,6 @@ template<class MatrixType>
 Chebyshev<MatrixType>::
 Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
-  Comm_ (A->getRowMap()->getComm()),
-  NumMyRows_ (0),
-  NumGlobalRows_ (0),
-  NumGlobalNonzeros_ (0),
   PolyDegree_ (1),
   EigRatio_ (30.0),
   LambdaMin_ (0.0),
@@ -62,6 +58,13 @@ Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
     "Ifpack2::Chebyshev: Input matrix to constructor is null.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_->getGlobalNumRows() != A_->getGlobalNumCols(), 
+    std::invalid_argument,
+    "Ifpack2::Chebyshev: The input matrix A must be square.  "
+    "A has " << A_->getGlobalNumRows() << " rows and " 
+    << A_->getGlobalNumCols() << " columns.");
 
 #ifdef HAVE_TEUCHOS_DEBUG
   using Teuchos::RCP;
@@ -153,7 +156,7 @@ Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & 
 Chebyshev<MatrixType>::getComm() const{
-  return(Comm_);
+  return A_->getRowMap ()->getComm ();
 }
 
 //==========================================================================
@@ -277,8 +280,6 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-  typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
   // compute() calls initialize() if it hasn't already been called.
   // Thus, we only need to check isComputed().
@@ -369,6 +370,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   ArrayRCP<ArrayRCP<scalar_type> > wView = W.get2dViewNonConst();
 
   scalar_type oneOverTheta = one/theta;
+  const size_t numMyRows = A_->getNodeNumRows ();
 
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
@@ -380,7 +382,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       ArrayRCP<const scalar_type> x = xView[0];
       ArrayRCP<scalar_type> w = wView[0];
       ArrayRCP<const scalar_type> v = vView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i) {
+      for (size_t i = 0; i < numMyRows; ++i) {
         w[i] = invdiag[i] * (x[i] - v[i]) * oneOverTheta;
       }
     }
@@ -388,7 +390,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       for (size_t k = 0; k < nVecs; ++k) {
         ArrayRCP<scalar_type> wk = wView[k];
         ArrayRCP<const scalar_type> vk = vView[k];
-        for (size_t i = 0; i < NumMyRows_; ++i) {
+        for (size_t i = 0; i < numMyRows; ++i) {
           scalar_type coeff = invdiag[i]*oneOverTheta;
           wk[i] = (xView[k][i] - (vk[i])) * coeff;
         }
@@ -404,14 +406,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       ArrayRCP<const scalar_type> x= xView[0];
       ArrayRCP<scalar_type> w = wView[0];
       ArrayRCP<scalar_type> y = yView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i) {
+      for (size_t i = 0; i < numMyRows; ++i) {
         w[i] = invdiag[i] * x[i] * oneOverTheta;
         y[i] = w[i];
       }
     }
     else {
       for (size_t k = 0; k < nVecs; ++k) {
-        for (size_t i = 0; i < NumMyRows_; ++i) {
+        for (size_t i = 0; i < numMyRows; ++i) {
           scalar_type coeff = invdiag[i]*oneOverTheta;
           wView[k][i] = xView[k][i] * coeff;
           yView[k][i] = wView[k][i];
@@ -435,7 +437,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
     W.scale (dtemp1); // W = dtemp1 * W
     for (size_t k = 0; k < nVecs; ++k) { // W = W + dtemp2 * D^{-1} * (X - V)
-      for (size_t i = 0; i < NumMyRows_; ++i) {
+      for (size_t i = 0; i < numMyRows; ++i) {
         scalar_type coeff = invdiag[i]*dtemp2;
         wView[k][i] += (xView[k][i] - (vView[k][i])) * coeff;
       }
@@ -450,10 +452,11 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::applyMat(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-             Teuchos::ETransp mode) const
+void 
+Chebyshev<MatrixType>::
+applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+	  Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+	  Teuchos::ETransp mode) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error,
    "Ifpack2::Chebyshev::applyMat(): isComputed() must be true prior to calling applyMat().");
@@ -466,28 +469,15 @@ void Chebyshev<MatrixType>::applyMat(
 template<class MatrixType>
 void Chebyshev<MatrixType>::initialize() {
   IsInitialized_ = false;
+  Time_->start (true);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-    "Ifpack2::Chebyshev::initialize: The input matrix A is null.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_->getGlobalNumRows() != A_->getGlobalNumCols(), 
-    std::runtime_error,
-    "Ifpack2::Chebyshev::initialize: The input matrix A must be square.  "
-    "A has " << A_->getGlobalNumRows() << " rows and " 
-    << A_->getGlobalNumCols() << " columns.");
-
-  NumMyRows_ = A_->getNodeNumRows();
-  NumGlobalRows_ = A_->getGlobalNumRows();
-
-  // mfh 15 Jan 2013: Defer setting NumGlobalNonzeros_ until
-  // compute().  That way, it will always be correct to omit calling
-  // initialize(), even if the number of entries in the sparse matrix
-  // has changed since the last call to compute().
-  //NumGlobalNonzeros_ = A_->getGlobalNumEntries();
+  // mfh 15 Jan 2013: Defer fetching the global number of nonzeros in
+  // the matrix until compute().  That way, it will always be correct
+  // to omit calling initialize(), even if the number of entries in
+  // the sparse matrix has changed since the last call to compute().
 
   ++NumInitialize_;
-  Time_->stop();
+  Time_->stop ();
   InitializeTime_ += Time_->totalElapsedTime();
   IsInitialized_ = true;
 }
@@ -500,7 +490,6 @@ void Chebyshev<MatrixType>::compute()
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> export_type;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   Time_->start (true);
 
@@ -512,11 +501,12 @@ void Chebyshev<MatrixType>::compute()
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  // mfh 15 Jan 2013: Defer setting NumGlobalNonzeros_ until here.
-  // That way, it will always be correct to omit calling initialize(),
-  // even if the number of entries in the sparse matrix has changed
-  // since the last call to compute().
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries ();
+  // mfh 15 Jan 2013: Defer fetching the global number of nonzeros
+  // until here.  That way, it will always be correct to omit calling
+  // initialize(), even if the number of entries in the sparse matrix
+  // has changed since the last call to compute().
+  const Tpetra::global_size_t numGlobalNonzeros = A_->getGlobalNumEntries ();
+  (void) numGlobalNonzeros; // Forestall compiler warning.
 
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
     "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");
@@ -560,7 +550,7 @@ void Chebyshev<MatrixType>::compute()
     KMVT::ReciprocalThreshold (localDiag, MinDiagonalValue_);
 
     InvDiagonal_ = globalDiagRangeMap; // "Commit" the result.
-    ComputeFlops_ += NumMyRows_;
+    ComputeFlops_ += A_->getNodeNumRows ();
   }
 
   ++NumCompute_;
@@ -579,7 +569,6 @@ PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordi
 	     scalar_type& lambda_max)
 {
   using Teuchos::Array;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const scalar_type one = STS::one();
   const scalar_type zero = STS::zero();
@@ -671,17 +660,24 @@ std::string Chebyshev<MatrixType>::description() const {
 //==========================================================================
 template <class MatrixType>
 void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-  using std::endl;
-  using std::setw;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using std::endl;
+  using std::setw;
+
   Teuchos::EVerbosityLevel vl = verbLevel;
-  if (vl == VERB_DEFAULT) vl = VERB_LOW;
-  const int myImageID = Comm_->getRank();
+  if (vl == VERB_DEFAULT) {
+    vl = VERB_LOW;
+  }
+  RCP<const Comm<int> > comm = A_->getRowMap ()->getComm ();
+
+  const int myImageID = comm->getRank();
   Teuchos::OSTab tab(out);
 
   scalar_type MinVal, MaxVal;
@@ -690,11 +686,11 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
     scalar_type myMinVal = DiagView[0];
     scalar_type myMaxVal = DiagView[0];
     for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=1; i<DiagView.size(); ++i) {
-      if (Teuchos::ScalarTraits<scalar_type>::magnitude(myMinVal) > Teuchos::ScalarTraits<scalar_type>::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (Teuchos::ScalarTraits<scalar_type>::magnitude(myMaxVal) < Teuchos::ScalarTraits<scalar_type>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
+      if (STS::magnitude(myMinVal) > STS::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (STS::magnitude(myMaxVal) < STS::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
   }
 
   //    none: print nothing

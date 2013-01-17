@@ -230,16 +230,22 @@ public:
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
 
-  /// \brief The Tpetra::RowMatrix specialization corresponding to the
-  ///   template parameter MatrixType of this class.
+  /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
   ///
   /// MatrixType should be a Tpetra::CrsMatrix specialization.  This
   /// typedef is for the Tpetra::RowMatrix specialization which is the
   /// parent class of MatrixType.
   typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
 
-  /// The Tpetra::Map specialization matching MatrixType.
+  //! The Tpetra::Map specialization matching MatrixType.
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+
+  /// \brief The Tpetra::Vector specialization matching MatrixType.
+  ///
+  /// If you wish to supply setParameters() a precomputed vector of
+  /// diagonal entries of the matrix, use a pointer to an object of
+  /// this type.
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
 
   //@}
   // \name Constructors and destructors
@@ -299,12 +305,11 @@ public:
   /// - "chebyshev: zero starting solution" (\c bool): If true, the
   ///   input vector(s) is/are filled with zeros on entry to the
   ///   apply() method.
-  /// - "chebyshev: operator inv diagonal" (<tt>Tpetra::Vector</tt>).
+  /// - "chebyshev: operator inv diagonal" (<tt>vector_type</tt>):
   ///   A (raw) pointer to the inverse of the diagonal entries of the
-  ///   matrix, stored as a <tt>Tpetra::Vector<scalar_type, local_ordinal_type,
-  ///   global_ordinal_type, node_type></tt>.  If provided, we will make a deep
-  ///   copy of this.  If not provided, we compute this ourselves from
-  ///   the matrix.  See details below.
+  ///   matrix, stored as a <tt>vector_type</tt>.  If provided, we
+  ///   will make a deep copy of this.  If not provided, we compute
+  ///   this ourselves from the matrix.  See details below.
   ///
   /// The following list maps from an ML parameter to its
   /// corresponding Ifpack2 parameter.
@@ -501,21 +506,24 @@ public:
 
   //! Simple power method to compute lambda_max.
   static void PowerMethod(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-                         const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
+                         const vector_type& InvPointDiagonal,
                          const int MaximumIterations, 
                          scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
   static void CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
-                const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal, 
+                const vector_type& InvPointDiagonal, 
                 const int MaximumIterations, 
                 scalar_type& lambda_min, scalar_type& lambda_max);
 
   //@}
 
 private:
-  //! The Tpetra::Vector specialization matching the template parameter of this class.
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  //! Abbreviation for the Teuchos::ScalarTraits specialization for scalar_type.
+  typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
+
+  //! Abbreviation for the Tpetra::MultiVector specialization used in methods like apply().
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   
   //! Copy constructor (use is syntactically forbidden)
   Chebyshev (const Chebyshev<MatrixType>&);
@@ -529,8 +537,7 @@ private:
 
   //! The matrix A to be preconditioned.
   const Teuchos::RCP<const row_matrix_type> A_;
-  //! The communicator over which the matrix is distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
+
   /// \brief The inverse of the diagonal elements of the matrix A.
   ///
   /// This is distributed according to the range Map of the matrix.
@@ -542,12 +549,6 @@ private:
   /// If the user <i>has</i> supplied the inverse diagonal elements,
   /// this is just a pointer to userSuppliedInvDiag_.
   mutable Teuchos::RCP<vector_type> InvDiagonal_;
-  //! Number of local rows in the matrix.
-  size_t NumMyRows_;
-  //! Number of global rows in the matrix.
-  global_size_t NumGlobalRows_;
-  //! Number of global nonzeros in the matrix.
-  global_size_t NumGlobalNonzeros_;
 
   //@}
   //! \name Algorithmic parameters (set via setParameters())
