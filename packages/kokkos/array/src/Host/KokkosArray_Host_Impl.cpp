@@ -62,6 +62,10 @@
 namespace KokkosArray {
 namespace Impl {
 
+void host_aligned_free( void * );
+
+void * host_aligned_allocate( const size_t );
+
 //----------------------------------------------------------------------------
 
 HostThread::~HostThread()
@@ -251,12 +255,13 @@ inline
 void HostInternal::resize_reduce_thread( HostThread & thread ) const
 {
   if ( thread.m_reduce ) {
-    free( thread.m_reduce );
+    host_aligned_free( thread.m_reduce );
     thread.m_reduce = 0 ;
   }
 
   if ( m_reduce_scratch_size ) {
-    thread.m_reduce = malloc( m_reduce_scratch_size );
+
+    thread.m_reduce = host_aligned_allocate( m_reduce_scratch_size );
 
     // Guaranteed multiple of 'unsigned'
 

@@ -80,7 +80,13 @@ public:
   //----------------------------------------------------------------------
 
   inline
-  void * reduce_data() const { return m_reduce ; }
+  void * reduce_data() const
+    {
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
+#endif
+      return m_reduce ;
+    }
 
   //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
@@ -99,7 +105,7 @@ public:
         m_fan[i]->wait( HostThread::ThreadActive );
 
         // Join source thread reduce data.
-        reduce.join( m_reduce , m_fan[i]->m_reduce );
+        reduce.join( reduce_data() , m_fan[i]->reduce_data() );
 
         // Reset the source thread to 'Active' state.
         m_fan[i]->set( HostThread::ThreadActive );
@@ -116,7 +122,7 @@ public:
         wait( HostThread::ThreadRendezvous );
       }
       else {
-        reduce.finalize( m_reduce );
+        reduce.finalize( reduce_data() );
       }
     }
 

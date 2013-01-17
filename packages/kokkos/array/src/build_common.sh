@@ -86,7 +86,7 @@ MIC | mic )
 #-------------------------------
 curie )
   CXX="CC"
-  HAVE_MPI="/opt/cray/mpt/5.4.4/xt/gemini/mpich2-cray/73"
+  HAVE_MPI="/opt/cray/mpt/default/gni/mpich2-cray/74"
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;  

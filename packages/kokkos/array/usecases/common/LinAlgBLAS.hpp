@@ -277,7 +277,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
-  { update += source;    }
+  { update += source ; }
     
   KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )

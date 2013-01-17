@@ -68,6 +68,43 @@ Impl::MemoryTracking & host_space_singleton()
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
+namespace Impl {
+
+void host_aligned_free( void * ptr )
+{
+#if defined( __INTEL_COMPILER )
+   _mm_free( ptr );
+#else
+   free( ptr );
+#endif
+}
+
+void * host_aligned_allocate( const size_t n )
+{
+  void * ptr = 0 ;
+
+#if defined( __INTEL_COMPILER )
+
+  ptr = _mm_malloc( n , HostSpace::MEMORY_ALIGNMENT );
+
+#elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
+      ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
+
+  posix_memalign( & ptr , HostSpace::MEMORY_ALIGNMENT , n );
+
+#else
+
+  ptr = malloc( n );
+
+#endif
+
+  return ptr ;
+}
+
+}
+}
+
+namespace KokkosArray {
 
 void * HostSpace::allocate(
   const std::string    & label ,
@@ -81,20 +118,7 @@ void * HostSpace::allocate(
 
   if ( 0 < scalar_size * scalar_count ) {
 
-#if defined( __INTEL_COMPILER ) && defined( __MIC__ )
-
-    ptr = _mm_malloc( scalar_size * scalar_count , MEMORY_ALIGNMENT );
-
-#elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
-      ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
-
-    posix_memalign( & ptr , MEMORY_ALIGNMENT , scalar_size * scalar_count );
-
-#else
-
-    ptr = malloc( scalar_size * scalar_count );
-
-#endif
+    ptr = Impl::host_aligned_allocate( scalar_size * scalar_count );
 
     if ( 0 == ptr ) {
       std::ostringstream msg ;
@@ -128,11 +152,7 @@ void HostSpace::decrement( const void * ptr )
     void * ptr_alloc = host_space_singleton().decrement( ptr );
 
     if ( 0 != ptr_alloc ) {
-#if defined( __INTEL_COMPILER ) && defined( __MIC__ )
-      _mm_free( ptr_alloc );
-#else
-      free( ptr_alloc );
-#endif
+      Impl::host_aligned_free( ptr_alloc );
     }
   }
 }
