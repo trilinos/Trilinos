@@ -97,6 +97,10 @@ const PhysicsBlock & WorksetContainer::lookupPhysicsBlock(const std::string & eB
 Teuchos::RCP<std::vector<Workset> >  
 WorksetContainer::getVolumeWorksets(const std::string & eBlock)
 {
+   const WorksetDescriptor wd = blockDescriptor(eBlock);
+
+   return getWorksets(wd);
+/*
    Teuchos::RCP<std::vector<Workset> > worksetVector;
    VolumeMap::iterator itr = volWorksets_.find(eBlock);
    if(itr==volWorksets_.end()) {
@@ -111,7 +115,28 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
       worksetVector = itr->second;
 
    return worksetVector;
+*/
 }
+
+Teuchos::RCP<std::vector<Workset> >  
+WorksetContainer::getWorksets(const WorksetDescriptor & wd)
+{
+   Teuchos::RCP<std::vector<Workset> > worksetVector;
+   VolumeMap::iterator itr = volWorksets_.find(wd);
+   if(itr==volWorksets_.end()) {
+      // couldn't find workset, build it!
+      const PhysicsBlock & pb = lookupPhysicsBlock(wd.getElementBlock());
+      worksetVector = wkstFactory_->getWorksets(wd,pb,worksetSize_);
+
+      // store vector for reuse in the future
+      volWorksets_[wd] = worksetVector;
+   }
+   else 
+      worksetVector = itr->second;
+
+   return worksetVector;
+}
+
 
 Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > 
 WorksetContainer::getVolumeWorksets() const

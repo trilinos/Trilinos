@@ -281,7 +281,7 @@ public:
                                    const std::map<std::string,Teuchos::RCP<RespContVector> > & rsvdVolResp)
      : userData_(userData), rsvdVolResp_(rsvdVolResp) {}
 
-   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm,const WorksetDescriptor & wd, const PhysicsBlock & pb) const
    {
       // verify that block is relevant
       std::string blockId = pb.elementBlockID();
@@ -315,9 +315,13 @@ buildVolumeFieldManagersFromResponses(
 {
    ResponseVolumeEvaluatorsFactory<TraitsT> rvef(user_data,rsvdVolResp_);
 
+   std::vector<WorksetDescriptor> wkstDesc;
+   for(std::size_t i=0;i<physicsBlocks.size();i++)
+     wkstDesc.push_back(blockDescriptor(physicsBlocks[i]->elementBlockID()));
+
    // setup all volume field managers: pass in extra evaluator evaluator
    fmb_->setWorksetContainer(wkstContainer_);
-   fmb_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
+   fmb_->setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
 
    AssemblyEngine_TemplateBuilder builder(fmb_,linObjFactory_); 
    ae_tm_.buildObjects(builder);
@@ -327,7 +331,7 @@ buildVolumeFieldManagersFromResponses(
    for(blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
       std::string blockId = (*blkItr)->elementBlockID();
 
-      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockId);
+      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockDescriptor(blockId));
    }
 }
 
@@ -605,15 +609,15 @@ public:
    RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
      : userData_(userData), rft_(rft) {}
 
-   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm,const WorksetDescriptor & wd, const PhysicsBlock & pb) const
    {
      using Teuchos::RCP;
      using Teuchos::rcp;
 
-     std::string blockId = pb.elementBlockID();
+     TEUCHOS_ASSERT(wd.getElementBlock()==pb.elementBlockID());
 
      // because we reduce the physics blocks to only ones we need, this find should succeed
-     typename RespFactoryTable::iterator itr=rft_.find(blockDescriptor(blockId));
+     typename RespFactoryTable::iterator itr=rft_.find(wd);
 
      TEUCHOS_ASSERT(itr!=rft_.end() && itr->second.size()>0);
 
@@ -667,17 +671,45 @@ buildResponseEvaluators(
    ////////////////////////////////////////////////////////////////////////////////
 
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
+   std::vector<WorksetDescriptor> requiredWorksetDesc;
+/*
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
      std::string blockId = physicsBlocks[i]->elementBlockID();
+     WorksetDescriptor wd = blockDescriptor(blockId);
      
      // is this element block required
-     typename RespFactoryTable::const_iterator itr = respFactories_.find(blockDescriptor(blockId));
+     typename RespFactoryTable::const_iterator itr = respFactories_.find(wd);
 
      if(itr!=respFactories_.end()) {
        // one last check for nonzero size
-       if(itr->second.size()>0)
+       if(itr->second.size()>0) {
          requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
+         requiredWorksetDesc.push_back(wd);
+       }
      } 
+   }
+*/
+   for(typename RespFactoryTable::const_iterator itr=respFactories_.begin();
+       itr!=respFactories_.end();++itr) {
+     // is there something to do?
+     if(itr->second.size()==0) 
+       continue;
+
+     const WorksetDescriptor & wd = itr->first;
+     requiredWorksetDesc.push_back(wd);
+
+     // find physics block with right element block
+     bool failure = true;
+     for(std::size_t i=0;i<physicsBlocks.size();i++) {
+       if(physicsBlocks[i]->elementBlockID()==wd.getElementBlock()) {
+         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
+         failure = false;
+         break;
+       } 
+     }
+
+     // we must find at least one physics block
+     TEUCHOS_ASSERT(!failure);
    }
 
    // build boundary response array
@@ -699,7 +731,7 @@ buildResponseEvaluators(
    fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
-   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
    if(eqset_factory==Teuchos::null)
      fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
    else

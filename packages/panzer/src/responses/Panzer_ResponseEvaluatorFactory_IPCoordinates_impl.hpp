@@ -19,11 +19,11 @@ Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_IPCoordinates<EvalT>::
 buildResponseObject(const std::string & responseName,const std::vector<WorksetDescriptor> & wkstDesc) const
 { 
   // check that the input worksets constains only element blocks 
-  bool falure = false;
+  bool failure = false;
   std::stringstream failureStrm;
   for(std::size_t i=0;i<wkstDesc.size();i++) {
     failure |= wkstDesc[i].useSideset();
-    failureStrm << wokstDesc[i] << std::endl;
+    failureStrm << wkstDesc[i] << std::endl;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(failure,std::runtime_error,
                              "REF_IPCoordinates::buildResponseObject: could not build using side set descriptors:\n"

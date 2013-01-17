@@ -234,7 +234,8 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     return worksets;
   }
   
-  return Teuchos::null;
+  // return Teuchos::null;
+  return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
 
 const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>

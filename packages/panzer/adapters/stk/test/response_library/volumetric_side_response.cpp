@@ -159,8 +159,10 @@ namespace panzer_stk {
         TEST_EQUALITY((*worksets)[1].subcell_index,3);
         TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
       }
-      else
-        TEST_ASSERT(worksets==Teuchos::null);
+      else {
+        TEST_ASSERT(worksets!=Teuchos::null);
+        TEST_EQUALITY(worksets->size(),0);
+      }
       
     }
   }
@@ -185,7 +187,7 @@ namespace panzer_stk {
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
     std::vector<panzer::WorksetDescriptor> blocks;
-    blocks.push_back(panzer::WorksetDescriptor("eblock-1_0","left",true));
+    blocks.push_back(panzer::WorksetDescriptor("eblock-1_0","right",true));
     rLibrary->addResponse("FIELD_A",blocks,builder);
 
     Teuchos::RCP<panzer::ResponseBase> aResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
@@ -239,6 +241,9 @@ namespace panzer_stk {
 
     Teuchos::ArrayRCP<double> aData;
     Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(aVec)->getNonconstLocalData(Teuchos::outArg(aData));
+
+    double aValue = 82.9;
+    TEST_FLOATING_EQUALITY(aData[0],0.125*aValue,1e-14);
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
