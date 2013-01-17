@@ -33,12 +33,9 @@
 
 namespace Ifpack2 {
 
-//Definitions for the Chebyshev methods:
-
-//==========================================================================
 template<class MatrixType>
 Chebyshev<MatrixType>::
-Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
   Comm_ (A->getRowMap()->getComm()),
   NumMyRows_ (0),
@@ -68,7 +65,6 @@ Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,Global
 
 #ifdef HAVE_TEUCHOS_DEBUG
   using Teuchos::RCP;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
   RCP<const map_type> domainMap = A_->getDomainMap ();
   RCP<const map_type> rangeMap = A_->getRangeMap ();
@@ -98,9 +94,7 @@ Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vec_type;
+  typedef Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> export_type;
 
   Ifpack2::getParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
   Ifpack2::getParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
@@ -115,7 +109,7 @@ Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List)
   Ifpack2::getParameter(List, "chebyshev: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter(List, "chebyshev: zero starting solution", ZeroStartingSolution_);
 
-  vec_type* globalDiag = NULL;
+  vector_type* globalDiag = NULL;
   Ifpack2::getParameter(List, "chebyshev: operator inv diagonal", globalDiag);
 
   if (globalDiag != NULL) {
@@ -128,7 +122,7 @@ Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List)
       // isSameAs() here, because that takes at least one global
       // reduction.  This is the fast path.  We may call isSameAs() in
       // the slow path below, to avoid an even slower path.
-      userSuppliedInvDiag_ = rcp (new vec_type (*globalDiag));
+      userSuppliedInvDiag_ = rcp (new vector_type (*globalDiag));
     }
     else { // We need to Export.
       RCP<const export_type> exporter;
@@ -143,7 +137,7 @@ Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 	exporter = rcp (new export_type (sourceMap, rangeMap));
       }
       
-      userSuppliedInvDiag_ = rcp (new vec_type (rangeMap));
+      userSuppliedInvDiag_ = rcp (new vector_type (rangeMap));
       if (exporter.is_null ()) { 
 	// Row Map and range Map are the same; no need to Export.
 	*userSuppliedInvDiag_ = *globalDiag;
@@ -164,22 +158,25 @@ Chebyshev<MatrixType>::getComm() const{
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Chebyshev<MatrixType>::getMatrix() const {
-  return(A_);
+Teuchos::RCP<const typename Chebyshev<MatrixType>::row_matrix_type>
+Chebyshev<MatrixType>::
+getMatrix() const {
+  return A_;
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Chebyshev<MatrixType>::getDomainMap() const {
+const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Chebyshev<MatrixType>::
+getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Chebyshev<MatrixType>::getRangeMap() const {
+const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Chebyshev<MatrixType>::
+getRangeMap() const {
   return A_->getRangeMap();
 }
 
@@ -239,44 +236,48 @@ double Chebyshev<MatrixType>::getApplyFlops() const {
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Chebyshev<MatrixType>::getCondEst() const {
+typename Chebyshev<MatrixType>::magnitude_type
+Chebyshev<MatrixType>::
+getCondEst() const {
   return(Condest_);
 }
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Chebyshev<MatrixType>::computeCondEst(
-                     CondestType CT,
-                     LocalOrdinal MaxIters, 
-                     magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
-  if (!isComputed()) // cannot compute right now
-    return(-1.0);
-
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
-
-  return(Condest_);
+typename Chebyshev<MatrixType>::magnitude_type
+Chebyshev<MatrixType>::
+computeCondEst (CondestType CT,
+		local_ordinal_type MaxIters, 
+		magnitude_type Tol,
+		const Teuchos::Ptr<const row_matrix_type>& matrix) 
+{
+  if (! isComputed ()) {
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
+  }
+  else {
+    // Always compute it. Call Condest() with no parameters to get
+    // the previous estimate.
+    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
+    return Condest_;
+  }
 }
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::apply(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-                Teuchos::ETransp mode,
-                 Scalar alpha,
-                 Scalar beta) const 
+void 
+Chebyshev<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+       Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const 
 {
   using Teuchos::ArrayRCP;
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
   // compute() calls initialize() if it hasn't already been called.
@@ -300,7 +301,6 @@ void Chebyshev<MatrixType>::apply(
 
 #ifdef HAVE_TEUCHOS_DEBUG
   {
-    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     RCP<const map_type> domainMap = A_->getDomainMap ();
     RCP<const map_type> rangeMap = A_->getRangeMap ();
 
@@ -330,9 +330,9 @@ void Chebyshev<MatrixType>::apply(
     Xcopy = rcpFromRef (X);
   }
 
-  ArrayRCP<ArrayRCP<const Scalar> > xView = Xcopy->get2dView();
-  ArrayRCP<ArrayRCP<Scalar> > yView = Y.get2dViewNonConst();
-  ArrayRCP<const Scalar> invdiag = InvDiagonal_->get1dView();
+  ArrayRCP<ArrayRCP<const scalar_type> > xView = Xcopy->get2dView();
+  ArrayRCP<ArrayRCP<scalar_type> > yView = Y.get2dViewNonConst();
+  ArrayRCP<const scalar_type> invdiag = InvDiagonal_->get1dView();
 
   size_t nVecs = Y.getNumVectors();
 
@@ -345,30 +345,30 @@ void Chebyshev<MatrixType>::apply(
 
   //--- initialize coefficients
 
-  const Scalar one = STS::one();
-  const Scalar two = one + one;
-  const Scalar one_half = one / two;
-  const Scalar lambdaMaxIncr = as<Scalar> (1.1);
+  const scalar_type one = STS::one();
+  const scalar_type two = one + one;
+  const scalar_type one_half = one / two;
+  const scalar_type lambdaMaxIncr = as<scalar_type> (1.1);
 
   // Note that delta stores the inverse of ML_Cheby::delta
-  Scalar alpha_cheby = LambdaMax_ / EigRatio_;
+  scalar_type alpha_cheby = LambdaMax_ / EigRatio_;
   // ML source comment: "try and bracket high".  Presumably this
   // explains that the coefficient is increased by a small factor
   // (1.1) in order for the smoother to be more effective.
-  Scalar beta_cheby = lambdaMaxIncr * LambdaMax_;
-  Scalar delta = two / (beta_cheby - alpha_cheby);
-  Scalar theta = one_half * (beta_cheby + alpha_cheby);
-  Scalar s1 = theta * delta;
+  scalar_type beta_cheby = lambdaMaxIncr * LambdaMax_;
+  scalar_type delta = two / (beta_cheby - alpha_cheby);
+  scalar_type theta = one_half * (beta_cheby + alpha_cheby);
+  scalar_type s1 = theta * delta;
 
   //--- Define vectors
   // In ML_Cheby, V corresponds to pAux and W to dk
   MV V (X);
   MV W (X);
 
-  ArrayRCP<ArrayRCP<const Scalar> > vView = V.get2dView();
-  ArrayRCP<ArrayRCP<Scalar> > wView = W.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<const scalar_type> > vView = V.get2dView();
+  ArrayRCP<ArrayRCP<scalar_type> > wView = W.get2dViewNonConst();
 
-  Scalar oneOverTheta = one/theta;
+  scalar_type oneOverTheta = one/theta;
 
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
@@ -377,19 +377,19 @@ void Chebyshev<MatrixType>::apply(
 
     applyMat (Y, V, mode); // V = A*Y
     if (nVecs == 1) {
-      ArrayRCP<const Scalar> x = xView[0];
-      ArrayRCP<Scalar> w = wView[0];
-      ArrayRCP<const Scalar> v = vView[0];
+      ArrayRCP<const scalar_type> x = xView[0];
+      ArrayRCP<scalar_type> w = wView[0];
+      ArrayRCP<const scalar_type> v = vView[0];
       for (size_t i = 0; i < NumMyRows_; ++i) {
         w[i] = invdiag[i] * (x[i] - v[i]) * oneOverTheta;
       }
     }
     else {
       for (size_t k = 0; k < nVecs; ++k) {
-        ArrayRCP<Scalar> wk = wView[k];
-        ArrayRCP<const Scalar> vk = vView[k];
+        ArrayRCP<scalar_type> wk = wView[k];
+        ArrayRCP<const scalar_type> vk = vView[k];
         for (size_t i = 0; i < NumMyRows_; ++i) {
-          Scalar coeff = invdiag[i]*oneOverTheta;
+          scalar_type coeff = invdiag[i]*oneOverTheta;
           wk[i] = (xView[k][i] - (vk[i])) * coeff;
         }
       }
@@ -401,9 +401,9 @@ void Chebyshev<MatrixType>::apply(
     // Compute W = (1/theta) D^{-1} X and set Y = W.
 
     if (nVecs == 1) {
-      ArrayRCP<const Scalar> x= xView[0];
-      ArrayRCP<Scalar> w = wView[0];
-      ArrayRCP<Scalar> y = yView[0];
+      ArrayRCP<const scalar_type> x= xView[0];
+      ArrayRCP<scalar_type> w = wView[0];
+      ArrayRCP<scalar_type> y = yView[0];
       for (size_t i = 0; i < NumMyRows_; ++i) {
         w[i] = invdiag[i] * x[i] * oneOverTheta;
         y[i] = w[i];
@@ -412,7 +412,7 @@ void Chebyshev<MatrixType>::apply(
     else {
       for (size_t k = 0; k < nVecs; ++k) {
         for (size_t i = 0; i < NumMyRows_; ++i) {
-          Scalar coeff = invdiag[i]*oneOverTheta;
+          scalar_type coeff = invdiag[i]*oneOverTheta;
           wView[k][i] = xView[k][i] * coeff;
           yView[k][i] = wView[k][i];
         }
@@ -421,8 +421,8 @@ void Chebyshev<MatrixType>::apply(
   } // if (ZeroStartingSolution_ == false)
 
   //--- Apply the polynomial
-  Scalar rhok = one/s1, rhokp1;
-  Scalar dtemp1, dtemp2;
+  scalar_type rhok = one/s1, rhokp1;
+  scalar_type dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
     applyMat (Y, V, mode); // V = A*Y
@@ -436,7 +436,7 @@ void Chebyshev<MatrixType>::apply(
     W.scale (dtemp1); // W = dtemp1 * W
     for (size_t k = 0; k < nVecs; ++k) { // W = W + dtemp2 * D^{-1} * (X - V)
       for (size_t i = 0; i < NumMyRows_; ++i) {
-        Scalar coeff = invdiag[i]*dtemp2;
+        scalar_type coeff = invdiag[i]*dtemp2;
         wView[k][i] += (xView[k][i] - (vView[k][i])) * coeff;
       }
     }
@@ -499,10 +499,8 @@ void Chebyshev<MatrixType>::compute()
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> export_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   Time_->start (true);
 
@@ -556,7 +554,7 @@ void Chebyshev<MatrixType>::compute()
     // is a scalar and not a magnitude.)  Tpetra::MultiVector's
     // reciprocal() method doesn't have the threshold feature that we
     // want, but Kokkos (mfh 15 Jan 2013: as of today) does.
-    typedef Kokkos::MultiVector<Scalar, Node> KMV;
+    typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
     KMV& localDiag = globalDiagRangeMap->getLocalMVNonConst ();
     typedef Kokkos::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, MinDiagonalValue_);
@@ -573,51 +571,55 @@ void Chebyshev<MatrixType>::compute()
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::
-PowerMethod(const Tpetra::Operator<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Operator, 
-            const Tpetra::Vector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& InvPointDiagonal, 
-            const int MaximumIterations, 
-            typename MatrixType::scalar_type& lambda_max)
+void 
+Chebyshev<MatrixType>::
+PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Operator, 
+	     const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& InvPointDiagonal, 
+	     const int MaximumIterations, 
+	     scalar_type& lambda_max)
 {
-  // this is a simple power method
-  lambda_max = 0.0;
-  Teuchos::Array<Scalar> RQ_top(1), RQ_bottom(1);
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
-  x.randomize();
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  Teuchos::Array<magnitudeType> norms(x.getNumVectors());
-  x.norm2(norms());
+  using Teuchos::Array;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  x.scale(1.0 / norms[0]);
+  const scalar_type one = STS::one();
+  const scalar_type zero = STS::zero();
 
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  lambda_max = zero;
+  Array<scalar_type> RQ_top(1), RQ_bottom(1);
+  vector_type x (Operator.getDomainMap ());
+  vector_type y (Operator.getRangeMap ());
+  x.randomize ();
+  Array<magnitude_type> norms (x.getNumVectors ());
+  x.norm2 (norms ());
+  x.scale (one / norms[0]);
 
-  for (int iter = 0; iter < MaximumIterations; ++iter)
-  {
-    Operator.apply(x, y);
-    y.elementWiseMultiply(1.0, InvPointDiagonal, y, 0.0);
-    y.dot(x, RQ_top());
-    x.dot(x, RQ_bottom());
+  for (int iter = 0; iter < MaximumIterations; ++iter) {
+    Operator.apply (x, y);
+    y.elementWiseMultiply (one, InvPointDiagonal, y, zero);
+    y.dot (x, RQ_top ());
+    x.dot (x, RQ_bottom ());
     lambda_max = RQ_top[0] / RQ_bottom[0];
-    y.norm2(norms());
-    TEUCHOS_TEST_FOR_EXCEPTION(norms[0] == zero, std::runtime_error, "Ifpack2::Chebyshev::PowerMethod ERROR, norm == 0");
-    x.update( one / norms[0], y, zero);
+    y.norm2 (norms ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      norms[0] == zero, 
+      std::runtime_error, 
+      "Ifpack2::Chebyshev::PowerMethod: norm == 0 at iteration " << (iter+1) 
+      << " of " << MaximumIterations);
+    x.update (one / norms[0], y, zero);
   }
 }
 
 //==========================================================================
 template<class MatrixType>
 void Chebyshev<MatrixType>::
-CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
-            const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
+CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
+            const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal, 
    const int MaximumIterations, 
-   Scalar& lambda_min, Scalar& lambda_max)
+   scalar_type& lambda_min, scalar_type& lambda_max)
 {
 #ifdef HAVE_IFPACK2_AZTECOO
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
+  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> x(Operator.getDomainMap());
+  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> y(Operator.getRangeMap());
   x.Random();
   y.putScalar(0.0);
 
@@ -682,14 +684,14 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
   const int myImageID = Comm_->getRank();
   Teuchos::OSTab tab(out);
 
-  Scalar MinVal, MaxVal;
+  scalar_type MinVal, MaxVal;
   if (IsComputed_) {
-    Teuchos::ArrayRCP<const Scalar> DiagView = InvDiagonal_->get1dView();
-    Scalar myMinVal = DiagView[0];
-    Scalar myMaxVal = DiagView[0];
-    for(typename Teuchos::ArrayRCP<Scalar>::size_type i=1; i<DiagView.size(); ++i) {
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMinVal) > Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMaxVal) < Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
+    Teuchos::ArrayRCP<const scalar_type> DiagView = InvDiagonal_->get1dView();
+    scalar_type myMinVal = DiagView[0];
+    scalar_type myMaxVal = DiagView[0];
+    for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=1; i<DiagView.size(); ++i) {
+      if (Teuchos::ScalarTraits<scalar_type>::magnitude(myMinVal) > Teuchos::ScalarTraits<scalar_type>::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (Teuchos::ScalarTraits<scalar_type>::magnitude(myMaxVal) < Teuchos::ScalarTraits<scalar_type>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);

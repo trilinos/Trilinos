@@ -191,11 +191,55 @@ class Chebyshev :
 public:
   //! \name Typedefs
   //@{ 
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
+  //! The template parameter of this class.
+  typedef MatrixType matrix_type;
+
+  //! The type of the entries of the input MatrixType.
+  typedef typename MatrixType::scalar_type scalar_type;
+
+  //! Preserved only for backwards compatibility.  Please use "scalar_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
+
+
+  //! The type of local indices in the input MatrixType.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+
+
+  //! The type of global indices in the input MatrixType.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+
+
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::node_type node_type;
+
+  //! Preserved only for backwards compatibility.  Please use "node_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
+
+
+  //! The type of the magnitude (absolute value) of a matrix entry.
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+
+  /// \brief The Tpetra::RowMatrix specialization corresponding to the
+  ///   template parameter MatrixType of this class.
+  ///
+  /// MatrixType should be a Tpetra::CrsMatrix specialization.  This
+  /// typedef is for the Tpetra::RowMatrix specialization which is the
+  /// parent class of MatrixType.
+  typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
+
+  /// The Tpetra::Map specialization matching MatrixType.
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
 
   //@}
   // \name Constructors and destructors
@@ -220,7 +264,7 @@ public:
   /// building Trilinos.  The checks require \f$O(1)\f$ global
   /// reductions over all processes in A's communicator, so we prefer
   /// to avoid them if we can.
-  explicit Chebyshev (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+  explicit Chebyshev (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor.
   virtual ~Chebyshev ();
@@ -233,15 +277,15 @@ public:
   ///
   /// The following parameters control the Chebyshev coefficients, the
   /// number of iterations, and other properties of the algorithm.
-  /// - "chebyshev: max eigenvalue" (\c Scalar): (An estimate of) the
+  /// - "chebyshev: max eigenvalue" (\c scalar_type): (An estimate of) the
   ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
   ///   should always provide this value, since otherwise Chebyshev
   ///   will not be an effective smoother.
-  /// - "chebyshev: ratio eigenvalue" (\c Scalar): (Estimated) ratio
-  ///   \f$\eta\f$ between the largest and smallest eigenvalue.  The
-  ///   default value is 30.0.  We use this to define the interval on
-  ///   the real line that determines the Chebyshev coefficients.
-  /// - "chebyshev: min eigenvalue" (\c Scalar): (An estimate of) the
+  /// - "chebyshev: ratio eigenvalue" (\c magnitude_type): (Estimated)
+  ///   ratio \f$\eta\f$ between the largest and smallest eigenvalue.
+  ///   The default value is 30.0.  We use this to define the interval
+  ///   on the real line that determines the Chebyshev coefficients.
+  /// - "chebyshev: min eigenvalue" (\c scalar_type): (An estimate of) the
   ///   smallest eigenvalue \f$\lambda_{min}\f$ of the matrix.  This
   ///   parameter is optional and is only used to check whether the
   ///   input matrix is the identity matrix.  We do <i>not</i> use
@@ -250,15 +294,15 @@ public:
   /// - "chebyshev: degree" (\c int): The polynomial degree; the
   ///   number of times that apply() invokes sparse matrix-vector
   ///   multiply.
-  /// - "chebyshev: min diagonal value" (\c Scalar): Threshold for
+  /// - "chebyshev: min diagonal value" (\c scalar_type): Threshold for
   ///   diagonal values.  Values smaller than this are not inverted.
   /// - "chebyshev: zero starting solution" (\c bool): If true, the
   ///   input vector(s) is/are filled with zeros on entry to the
   ///   apply() method.
   /// - "chebyshev: operator inv diagonal" (<tt>Tpetra::Vector</tt>).
   ///   A (raw) pointer to the inverse of the diagonal entries of the
-  ///   matrix, stored as a <tt>Tpetra::Vector<Scalar, LocalOrdinal,
-  ///   GlobalOrdinal, Node></tt>.  If provided, we will make a deep
+  ///   matrix, stored as a <tt>Tpetra::Vector<scalar_type, local_ordinal_type,
+  ///   global_ordinal_type, node_type></tt>.  If provided, we will make a deep
   ///   copy of this.  If not provided, we compute this ourselves from
   ///   the matrix.  See details below.
   ///
@@ -354,17 +398,17 @@ public:
   /// \param X [in] A (multi)vector to which to apply the preconditioner.
   /// \param Y [in/out] A (multi)vector containing the result of
   ///   applying the preconditioner to X.
-  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
+  const Teuchos::RCP<const map_type>& getDomainMap() const;
 
   //! The Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
+  const Teuchos::RCP<const map_type>& getRangeMap() const;
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
@@ -389,8 +433,8 @@ public:
   /// Since this class currently requires A to be real and symmetric
   /// positive definite, setting <tt>mode</tt> should not affect the
   /// result.
-  void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -398,24 +442,24 @@ public:
   //@{
 
   //! Compute and return the estimated condition number.
-  magnitudeType 
+  magnitude_type
   computeCondEst (CondestType CT = Cheap, 
-		  LocalOrdinal MaxIters = 1550,
-		  magnitudeType Tol = 1e-9,
-		  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+		  local_ordinal_type MaxIters = 1550,
+		  magnitude_type Tol = 1e-9,
+		  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
   //@{ 
 
   //! The estimated condition number, or -1.0 if it has not yet been computed.
-  magnitudeType getCondEst() const;
+  magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix is distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! The matrix for which this is a preconditioner.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
@@ -456,20 +500,22 @@ public:
   //@{
 
   //! Simple power method to compute lambda_max.
-  static void PowerMethod(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator,
-                         const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal,
+  static void PowerMethod(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+                         const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
                          const int MaximumIterations, 
-                         Scalar& LambdaMax);
+                         scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
-  static void CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
-                const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
+  static void CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
+                const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal, 
                 const int MaximumIterations, 
-                Scalar& lambda_min, Scalar& lambda_max);
+                scalar_type& lambda_min, scalar_type& lambda_max);
 
   //@}
 
 private:
+  //! The Tpetra::Vector specialization matching the template parameter of this class.
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   
   //! Copy constructor (use is syntactically forbidden)
   Chebyshev (const Chebyshev<MatrixType>&);
@@ -482,7 +528,7 @@ private:
   //@{
 
   //! The matrix A to be preconditioned.
-  const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  const Teuchos::RCP<const row_matrix_type> A_;
   //! The communicator over which the matrix is distributed.
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   /// \brief The inverse of the diagonal elements of the matrix A.
@@ -495,7 +541,7 @@ private:
   /// 
   /// If the user <i>has</i> supplied the inverse diagonal elements,
   /// this is just a pointer to userSuppliedInvDiag_.
-  mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > InvDiagonal_;
+  mutable Teuchos::RCP<vector_type> InvDiagonal_;
   //! Number of local rows in the matrix.
   size_t NumMyRows_;
   //! Number of global rows in the matrix.
@@ -509,17 +555,17 @@ private:
 
   /// User-supplied inverse of the diagonal elements of the matrix A.
   /// It must be distributed according to the range Map of the matrix.
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > userSuppliedInvDiag_;
+  Teuchos::RCP<vector_type> userSuppliedInvDiag_;
   //! The number of iterations to apply; the degree of the Chebyshev polynomial.
   int PolyDegree_;
   //! Estimate of the ratio LambdaMax_ / LambdaMin_.
-  magnitudeType EigRatio_;
+  magnitude_type EigRatio_;
   //! Approximation of the smallest eigenvalue.
-  Scalar LambdaMin_;
+  scalar_type LambdaMin_;
   //! Approximation of the largest eigenvalue.
-  Scalar LambdaMax_;
+  scalar_type LambdaMax_;
   //! Minimum allowed value on the diagonal of the matrix.
-  Scalar MinDiagonalValue_;
+  scalar_type MinDiagonalValue_;
   /// If \c true, then the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
 
@@ -530,7 +576,7 @@ private:
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! The estimated condition number.
-  magnitudeType Condest_;
+  magnitude_type Condest_;
   //! If \c true, initialize() has completed successfully.
   bool IsInitialized_;
   //! If \c true, compute() has completed successfully.
