@@ -61,6 +61,23 @@ APPEND_SET(HEADERS
   )
 
 #
+# MiniTensor headers
+#
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
+APPEND_SET(HEADERS
+  Shared/MiniTensor/Intrepid_MiniTensor.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Definitions.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Geometry.h
+  Shared/MiniTensor/Intrepid_MiniTensor_LinearAlgebra.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Tensor.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Tensor3.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Tensor4.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Utilities.h
+  Shared/MiniTensor/Intrepid_MiniTensor_Vector.h
+  )
+
+#
 # Discretization headers
 #
 
