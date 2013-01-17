@@ -50,6 +50,12 @@
 
 #include <KokkosArray_Macros.hpp>
 
+#if defined( __INTEL_COMPILER )
+#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) __assume_aligned( P , M :: MEMORY_ALIGNMENT )
+#else
+#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) /* */
+#endif
+
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {

@@ -85,9 +85,6 @@ protected:
 
   HostWorkerBlock  m_worker_block ;
 
-  unsigned         m_node_count ;    // Count of NUMA nodes
-  unsigned         m_node_pu_count ; // Assuming all nodes are equivalent
-
   unsigned         m_gang_capacity ;   // Maximum number of gangs
   unsigned         m_worker_capacity ; // Maixmum number of workers per gang
 
@@ -96,7 +93,6 @@ protected:
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
   unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
-  void           * m_reduce_scratch ;
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
@@ -159,16 +155,17 @@ public:
 
   void finalize();
 
+  virtual void print_configuration( std::ostream & ) const ;
+
   inline void execute( const HostThreadWorker & worker );
 
   void driver( const size_t );
 
   bool is_master_thread() const ;
 
-  void * reduce_scratch() const ;
-
   void resize_reduce_scratch( unsigned size );
   void resize_reduce_thread( HostThread & thread ) const ;
+  void * reduce_scratch() const ;
 
   //! Access the one HostInternal instance.
   static HostInternal & singleton();

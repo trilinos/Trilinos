@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <iostream>
+
 #include <gtest/gtest.h>
 
 #include <KokkosArray_Host.hpp>
@@ -53,6 +55,7 @@ protected:
   static void SetUpTestCase()
   {
     KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+    KokkosArray::Cuda::print_configuration( std::cout );
   }
   static void TearDownTestCase()
   {

@@ -225,7 +225,6 @@ HostInternal::HostInternal()
   , m_gang_count( 1 )
   , m_worker_count( 1 )
   , m_reduce_scratch_size( 0 )
-  , m_reduce_scratch( 0 )
 {
   m_worker = NULL ;
 
@@ -247,6 +246,16 @@ HostInternal::HostInternal()
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
   }
+}
+
+void HostInternal::print_configuration( std::ostream & s ) const
+{
+  s << "KokkosArray::Host thread capacity( "
+    << m_gang_capacity << " x " << m_worker_capacity
+    << " ) used( "
+    << m_gang_count << " x " << m_worker_count
+    << " )"
+    << std::endl ;
 }
 
 //----------------------------------------------------------------------------
@@ -286,10 +295,6 @@ void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
 
 
 inline
-void * HostInternal::reduce_scratch() const
-{ return m_reduce_scratch ; }
-
-inline
 void HostInternal::resize_reduce_scratch( unsigned size )
 {
   if ( 0 == size || m_reduce_scratch_size < size ) {
@@ -303,9 +308,12 @@ void HostInternal::resize_reduce_scratch( unsigned size )
     const HostWorkerResizeReduce work ;
 
     execute_serial( work );
-
-    m_reduce_scratch = m_master_thread.m_reduce ;
   }
+}
+
+void * HostInternal::reduce_scratch() const
+{
+  return m_master_thread.reduce_data();
 }
 
 void host_resize_scratch_reduce( unsigned size )
@@ -614,6 +622,9 @@ void Host::initialize( const Host::size_type gang_count ,
 {
   Impl::HostInternal::singleton().initialize( gang_count , gang_worker_count );
 }
+
+void Host::print_configuration( std::ostream & s )
+{ Impl::HostInternal::singleton().print_configuration(s); }
 
 Host::size_type Host::detect_gang_capacity()
 { return Impl::HostInternal::singleton().m_gang_capacity ; }
