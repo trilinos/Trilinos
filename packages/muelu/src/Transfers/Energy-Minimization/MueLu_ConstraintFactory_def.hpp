@@ -61,9 +61,6 @@ namespace MueLu {
   RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // NOTE: theoretically, one might want to use different factories for nullspace on fine and coarse levels. The problem is that
-    // Input(fineLevel, "Nullspace") uses parameter list entry to determine the factory, therefore it would be the same for both levels.
-    // To resolve that, one might need to call DeclareInput() directly to specify generating factory
     validParamList->set< RCP<const FactoryBase> >("FineNullspace",    Teuchos::null, "Generating factory for the nullspace");
     validParamList->set< RCP<const FactoryBase> >("CoarseNullspace",  Teuchos::null, "Generating factory for the nullspace");
     validParamList->set< RCP<const FactoryBase> >("Ppattern",         Teuchos::null, "Generating factory for the nonzero pattern");
@@ -73,23 +70,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level& coarseLevel) const {
-    // TODO: JG: create a function in FactoryAcceptorImpl(?) to do all this stuff there
-    // Input(fineLevel, "Nullspace", "FineNullspace")
-    RCP<const FactoryBase> fineNullFact;
-    if (fineLevel.IsAvailable("Nullspace", NoFactory::get())) {
-      fineNullFact = NoFactory::getRCP();
-    } else {
-      fineNullFact = GetFactory("FineNullspace"); // is this a parameter list entry?
-      if (fineNullFact == Teuchos::null)     // the parameter is not in the list, get it from the manager
-        fineNullFact = fineLevel.GetFactoryManager()->GetFactory("Nullspace");
-      fineLevel.DeclareInput("Nullspace", fineNullFact.get(), this);
-    }
-
-    RCP<const FactoryBase> coarseNullFact = GetFactory("CoarseNullspace"); // is this a parameter list entry?
-    if (coarseNullFact == Teuchos::null)      // the parameter is not in the list, get it from the manager
-      coarseNullFact = coarseLevel.GetFactoryManager()->GetFactory("Nullspace");
-    coarseLevel.DeclareInput("Nullspace", coarseNullFact.get(), this);
-
+    Input(fineLevel,   "Nullspace", "FineNullspace");
+    Input(coarseLevel, "Nullspace", "CoarseNullspace");
     Input(coarseLevel, "Ppattern");
   }
 
@@ -97,23 +79,8 @@ namespace MueLu {
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Constraint", coarseLevel);
 
-    // TODO: create another function to deal with issue:
-    // Get<RCP<MultiVector>>(fineLevel, "Nullspace", "FineNullspace")
-    RCP<const FactoryBase> fineNullFact;
-    if (fineLevel.IsAvailable("Nullspace", NoFactory::get())) {
-      fineNullFact = NoFactory::getRCP();
-    } else {
-      fineNullFact = GetFactory("FineNullspace"); // is this a parameter list entry?
-      if (fineNullFact == Teuchos::null)     // the parameter is not in the list, get it from the manager
-        fineNullFact = fineLevel.GetFactoryManager()->GetFactory("Nullspace");
-    }
-
-    RCP<const FactoryBase> coarseNullFact = GetFactory("CoarseNullspace"); // is this a parameter list entry?
-    if (coarseNullFact == Teuchos::null)      // the parameter is not in the list, get it from the manager
-      coarseNullFact = coarseLevel.GetFactoryManager()->GetFactory("Nullspace");
-
-    RCP<MultiVector> fineNullspace   = fineLevel  .Get< RCP<MultiVector> >("Nullspace", fineNullFact.get());
-    RCP<MultiVector> coarseNullspace = coarseLevel.Get< RCP<MultiVector> >("Nullspace", coarseNullFact.get());
+    RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> >(fineLevel,   "Nullspace", "FineNullspace");
+    RCP<MultiVector> coarseNullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace", "CoarseNullspace");
 
     RCP<Constraint> constraint(new Constraint);
     constraint->Setup(*fineNullspace, *coarseNullspace,

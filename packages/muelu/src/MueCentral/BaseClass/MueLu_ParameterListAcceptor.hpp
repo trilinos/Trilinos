@@ -43,7 +43,7 @@ namespace MueLu {
     // If a parameter is unused AND default, it is printed as [default] by std::cout << paramList but printed as unused by paramList.unused(std::cout).
     // So if we set default parameters in getValidParameters() that are not used, user will get a warning message. We don't want that for [default].
     // One solution is to never set any unused parameter in getValidParameters().
-    // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not meet.
+    // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not met.
     //
     virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const = 0;
 
