@@ -170,16 +170,16 @@ int main(int argc, char *argv[]) {
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // aggregation factory
-  Teuchos::RCP<UncoupledAggregationFactory> CoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
-  //CoupledAggFact->SetFactory("Graph", dropFact); // CoupledAggFact not changed to new factory handling
-  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
-  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  Teuchos::RCP<UncoupledAggregationFactory> UnCoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
+  //UnCoupledAggFact->SetFactory("Graph", dropFact); // UnCoupledAggFact not changed to new factory handling
+  UnCoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
+  UnCoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  UnCoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
 
   Finest->Request("Graph",dropFact.get());
   Finest->Request("DofsPerNode",dropFact.get());
   Finest->Request("UnAmalgamationInfo",amalgFact.get());
-  CoupledAggFact->Build(*Finest);
+  UnCoupledAggFact->Build(*Finest);
 
   // Timer final summaries
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
