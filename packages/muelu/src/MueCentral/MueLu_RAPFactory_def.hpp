@@ -86,8 +86,6 @@ namespace MueLu {
       // Inputs: A, P
       //
 
-      fineLevel.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
-
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
