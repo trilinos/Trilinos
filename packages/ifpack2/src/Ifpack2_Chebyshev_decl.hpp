@@ -532,6 +532,57 @@ private:
   //! Assignment operator (use is syntactically forbidded)
   Chebyshev<MatrixType>& operator= (const Chebyshev<MatrixType>&);
 
+  /// \brief Set V and W to temporary multivectors with the same Map as X.
+  ///
+  /// \param V [out] 
+  /// \param W [out]
+  /// \param X [in] Multivector, whose Map to use when making V and W.
+  ///
+  /// This is an optimization for apply().  This method caches the
+  /// created multivectors in the class instance as V_ resp. W_.
+  /// Caching optimizes the common case of calling apply() many times.
+  void
+  makeTempMultiVectors (Teuchos::RCP<MV>& V,
+			Teuchos::RCP<MV>& W,
+			const MV& X) const;
+
+  /// \brief Compute the residual V = X - Op(A)*Y.
+  ///
+  /// \param V [out] Output multivector; must have the same Map as X.
+  /// \param X [in] Right-hand side(s).
+  /// \param Y [in] Current approximate solution(s).  Must not alias V.
+  /// \param mode [in] Whether Op(A) means A, \f$A^T\f$, or \f$A^H\f$.
+  void 
+  computeResidual (MV& V, 
+		   const MV& X, 
+		   const MV& Y, 
+		   const Teuchos::ETransp mode) const;
+
+  /// \brief Y := beta*Y + alpha*M*X.
+  ///
+  /// M*X represents the result of Chebyshev iteration with right-hand
+  /// side(s) X and initial guess(es) Y, using the matrix Op(A).  Op(A)
+  /// is A if mode is <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if mode is
+  /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ if mode is
+  /// <tt>Teuchos::CONJ_TRANS</tt>.
+  void 
+  applyImpl (const MV& X,
+	     MV& Y,
+	     Teuchos::ETransp mode,
+	     scalar_type alpha,
+	     scalar_type beta) const;
+
+  /// \brief Old implementation of apply().
+  ///
+  /// Please don't call this anymore.  We keep it around for reference,
+  /// so that we know what the old implementation was doing.
+  void TEUCHOS_DEPRECATED
+  applyImplOld (const MV& X,
+		MV& Y,
+		Teuchos::ETransp mode,
+		scalar_type alpha,
+		scalar_type beta) const;
+
   //@}
   //! \name The sparse matrix and related data
   //@{
@@ -574,6 +625,19 @@ private:
   //@}
   //! \name Other internal state
   //@{
+
+  /// In applyImpl(): the result of A*Y.
+  ///
+  /// We cache this multivector here to avoid creating on each call to
+  /// applyImpl().  It is "mutable" because applyImpl() is const,
+  /// because apply() is const.
+  mutable Teuchos::RCP<MV> V_;
+  /// In applyImpl(): Iteration update multivector.
+  ///
+  /// We cache this multivector here to avoid creating on each call to
+  /// applyImpl().  It is "mutable" because applyImpl() is const,
+  /// because apply() is const.
+  mutable Teuchos::RCP<MV> W_;
 
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;

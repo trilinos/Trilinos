@@ -265,7 +265,7 @@ computeCondEst (CondestType CT,
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void 
 Chebyshev<MatrixType>::
@@ -275,11 +275,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
        scalar_type alpha,
        scalar_type beta) const 
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
+  Time_->start ();
 
   // compute() calls initialize() if it hasn't already been called.
   // Thus, we only need to check isComputed().
@@ -294,14 +290,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
      "columns.  X.getNumVectors() = " << X.getNumVectors() << " != "
      << "Y.getNumVectors() = " << Y.getNumVectors() << ".");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(alpha != STS::one(), std::logic_error,
-    "Ifpack2::Chebyshev::apply(): Not yet implemented for alpha != 1.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
-    "Ifpack2::Chebyshev::apply(): Not yet implemented for beta != 0.");
-
 #ifdef HAVE_TEUCHOS_DEBUG
   {
+    using Teuchos::RCP;
     RCP<const map_type> domainMap = A_->getDomainMap ();
     RCP<const map_type> rangeMap = A_->getRangeMap ();
 
@@ -319,7 +310,33 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   }
 #endif // HAVE_TEUCHOS_DEBUG
 
-  Time_->start();
+  applyImpl (X, Y, mode, alpha, beta);
+
+  Time_->stop ();
+  ++NumApply_;
+  ApplyTime_ += Time_->totalElapsedTime ();
+}
+
+template<class MatrixType>
+void TEUCHOS_DEPRECATED
+Chebyshev<MatrixType>::
+applyImplOld (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+	      Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+	      Teuchos::ETransp mode,
+	      scalar_type alpha,
+	      scalar_type beta) const 
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(alpha != STS::one(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for alpha != 1.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for beta != 0.");
 
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
@@ -444,10 +461,6 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     }
     Y.update (one, W, one); // Y = Y + W
   } // for (deg = 0; deg < degreeMinusOne; ++deg)
-
-  ++NumApply_;
-  Time_->stop();
-  ApplyTime_ += Time_->totalElapsedTime();
 }
 
 //==========================================================================
@@ -703,6 +716,183 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
     out << endl;
   }
 }
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+makeTempMultiVectors (Teuchos::RCP<MV>& V,
+		      Teuchos::RCP<MV>& W,
+		      const MV& X) const
+{
+  if (V_.is_null ()) {
+    V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors ()));
+  }
+  if (W_.is_null ()) {
+    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors ()));
+  }
+  V = V_;
+  W = W_;
+}
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+computeResidual (MV& V, 
+		 const MV& X, 
+		 const MV& Y, 
+		 const Teuchos::ETransp mode) const
+{
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
+  V = X;
+  A_->apply (Y, V, mode, -one, one);
+}
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+applyImpl (const MV& X,
+	   MV& Y,
+	   Teuchos::ETransp mode,
+	   scalar_type alpha,
+	   scalar_type beta) const 
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcpFromRef;
+
+  const scalar_type zero = STS::zero();
+  const scalar_type one = STS::one();
+
+  // Y = beta*Y + alpha*M*X.
+
+  // If alpha == 0, then we don't need to do Chebyshev at all.
+  if (alpha == zero) {
+    if (beta == zero) { // Obey Sparse BLAS rules; avoid 0*NaN.
+      Y.putScalar (zero);
+    }
+    else {
+      Y.scale (beta);
+    }
+    return;
+  }
+
+  // If beta != 0, then we need to keep a copy of the initial value of
+  // Y, so that we can add beta*it to the Chebyshev result at the end.
+  // Usually this method is called with beta == 0, so we don't have to 
+  // worry about caching Y_org.
+  RCP<MV> Y_orig;
+  if (beta != zero) {
+    Y_orig = rcp (new MV (Y));
+  }
+
+  // If X and Y point to the same memory location, we need to use a
+  // copy of X (X_copy) as the input MV.  Otherwise, just let X_copy
+  // point to X.
+  //
+  // This is hopefully an uncommon use case, so we don't bother to
+  // optimize for it by caching X_copy.
+  RCP<const MV> X_copy;
+  bool copiedInput = false;
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+    X_copy = rcp (new MV (X));
+    copiedInput = true;
+  }
+  else {
+    X_copy = rcpFromRef (X);
+  }
+  
+  // If alpha != 1, fold alpha into (a copy of) X.
+  //
+  // This is an uncommon use case, so we don't bother to optimize for
+  // it by caching X_copy.  However, we do check whether we've already
+  // copied X above, to avoid a second copy.
+  if (alpha != one) {
+    RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
+    if (! copiedInput) {
+      X_copy_nonConst = rcp (new MV (X));
+      copiedInput = true;
+    }
+    X_copy_nonConst->scale (alpha);
+    X_copy = rcp_const_cast<const MV> (X_copy_nonConst);
+  }
+
+  // If A is the identity matrix, do a quick solve.
+  if ((LambdaMin_ == one) && (LambdaMax_ == LambdaMin_)) {
+    // Y_j = 0*Y_j + invdiag .* X_j, for all columns j.
+    Y.elementWiseMultiply (one, *InvDiagonal_, X, zero);
+    if (beta != zero) {
+      Y.update (beta, *Y_orig, one); // Y = beta * Y_orig + 1 * Y
+    }
+    return;
+  }
+
+  //
+  // Define the iteration coefficients.
+  //
+
+  const scalar_type two = as<scalar_type> (2);
+  const scalar_type lambdaMaxIncr = as<scalar_type> (1.1);
+
+  // Note that delta stores the inverse of ML_Cheby::delta
+  const scalar_type alpha_cheby = LambdaMax_ / EigRatio_;
+  // ML source comment: "try and bracket high".  Presumably this
+  // explains that the coefficient is increased by a small factor
+  // (1.1) in order for the smoother to be more effective.
+  const scalar_type beta_cheby = lambdaMaxIncr * LambdaMax_;
+  const scalar_type delta = two / (beta_cheby - alpha_cheby);
+  const scalar_type theta = (beta_cheby + alpha_cheby) / two;
+  const scalar_type s1 = theta * delta;
+
+  // In ML_Cheby, V corresponds to pAux and W to dk.
+  RCP<MV> V, W;
+  makeTempMultiVectors (V, W, *X_copy);
+
+  //
+  // Treat the initial guess.
+  //
+  if (! ZeroStartingSolution_) { // Compute W = (1/theta) D^{-1} (X - A*Y).
+    computeResidual (*V, *X_copy, Y, mode); // V = X - Op(A)*Y
+
+    // W_j = 0*W_j + (1/theta) * invdiag * V_j, for all columns j.
+    W->elementWiseMultiply (one/theta, *InvDiagonal_, *V, zero);
+    Y.update (one, *W, one); // Y = Y + W
+  }
+  else { // Compute W = (1/theta) D^{-1} X and set Y = W.
+    // W_j = 0*W_j + (1/theta) * invdiag * X_j, for all columns j.
+    W->elementWiseMultiply (one/theta, *InvDiagonal_, *X_copy, zero);
+    Y = *W; // Set Y = W.
+  }
+  
+  //
+  // Do Chebyshev iteration.
+  //
+  scalar_type rhok = one/s1;
+  scalar_type rhokp1, dtemp1, dtemp2;
+  for (int deg = 1; deg < PolyDegree_; ++deg) {
+    computeResidual (*V, *X_copy, Y, mode); // V = X - Op(A)*Y.
+
+    rhokp1 = one / (two * s1 - rhok);
+    dtemp1 = rhokp1 * rhok;
+    dtemp2 = two * rhokp1 * delta;
+    rhok = rhokp1;
+
+    // Compute W = dtemp1*W + dtemp2 * D^{-1} * V.
+    // 1. W = dtemp1 * W
+    // 2. W = W + dtemp2 * D^{-1} * V.
+    W->scale (dtemp1);
+    W->elementWiseMultiply (dtemp2, *InvDiagonal_, *V, one);
+
+    Y.update (one, *W, one); // Y = Y + W
+  }
+
+  if (beta != zero) {
+    Y.update (beta, *Y_orig, one); // Y = beta * Y_orig + 1 * Y
+  }
+}
+
 
 }//namespace Ifpack2
 
