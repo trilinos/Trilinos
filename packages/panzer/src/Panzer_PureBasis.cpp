@@ -48,7 +48,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
+PureBasis(const std::string & basis_type,const int basis_order,const int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
   basis_name(basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),
@@ -57,7 +57,7 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
   dimension = cellTopo->getDimension();
 
   topology = cellTopo;
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cellTopo);
+  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, basis_order, topology);
 
   cardinality = intrepid_basis->getCardinality();
   num_cells = numCells;
@@ -69,7 +69,7 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
 }
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,const CellData & cell_data) :
+PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data) :
   basis_name(basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),
@@ -78,7 +78,7 @@ PureBasis(const std::string & basis_type,const CellData & cell_data) :
   dimension = cell_data.baseCellDimension();
 
   topology = cell_data.getCellTopology();
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cell_data.getCellTopology());
+  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, basis_order, topology);
 
   cardinality = intrepid_basis->getCardinality();
   num_cells = cell_data.numCells();
@@ -132,13 +132,12 @@ panzer::PureBasis::getIntrepidBasis() const
 
 void panzer::PureBasis::initializeIntrospection(const std::string & name)
 {
-   if(  name=="Q1" || name=="Q2"
-     || name=="T1" || name=="T2")
-      elementSpace = HGRAD;
-   else if(name=="TEdge1")
+   if(  name == "HGrad" || name=="Q1" || name=="Q2" || name=="T1" || name=="T2")
+     elementSpace = HGRAD;
+   else if(name=="HCurl" || name=="TEdge1" || name=="QEdge1")
       elementSpace = HCURL;
-   else if(name=="QEdge1")
-      elementSpace = HCURL;
+   else if(name=="HDiv")
+      elementSpace = HDIV;
    else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                      "PureBasis::initializeIntrospection - Invalid basis name \"" 
                                      << name << "\""); }

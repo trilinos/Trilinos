@@ -63,7 +63,7 @@ namespace panzer {
 
   public:
     
-    BasisIRLayout(std::string basis_type, const PointRule& int_rule);
+    BasisIRLayout(std::string basis_type, const int basis_order, const PointRule& int_rule);
     BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& int_rule);
 
     void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
@@ -76,8 +76,6 @@ namespace panzer {
     int getNumPoints() const;
     
     int getDimension() const;
-
-    // int integrationRuleDegree() const;
 
     std::string name() const;
     
@@ -94,9 +92,8 @@ namespace panzer {
 
     void print(std::ostream & os) const;
 
-    // Added by Suzey: 06/18/2012
     Teuchos::RCP<const CellTopologyInfo> getCellTopologyInfo() const
-    { return cell_topo_info; } 
+    { return cell_topo_info; }
     
 
   public:
@@ -136,7 +133,6 @@ namespace panzer {
     
     Teuchos::RCP<const PureBasis> basis_data;
     
-    // Added by Suzey: 06/18/2012
     Teuchos::RCP<const CellTopologyInfo> cell_topo_info;
   };
 

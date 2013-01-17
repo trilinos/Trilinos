@@ -49,13 +49,13 @@
 #include "Panzer_CellTopologyInfo.hpp"
 
 panzer::BasisIRLayout::
-BasisIRLayout(std::string basis_type, const panzer::PointRule& int_rule) :
+BasisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& int_rule) :
   basis_name(basis_type),
   field_basis_name("Basis: " + basis_name),
   field_basis_name_D1("Grad Basis: " + basis_name),
   field_basis_name_D2("D2 Basis: " + basis_name)
 {
-  basis_data = Teuchos::rcp(new PureBasis(basis_type,int_rule.workset_size,int_rule.topology));
+  basis_data = Teuchos::rcp(new PureBasis(basis_type,basis_order,int_rule.workset_size,int_rule.topology));
 
   setup(basis_data->getIntrepidBasis(),int_rule);
 }
@@ -82,7 +82,6 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
   num_cells = int_rule.dl_vector->dimension(0);
   num_ip = int_rule.dl_vector->dimension(1);
   dimension = int_rule.dl_vector->dimension(2);
-  // int_rule_degree = int_rule.cubature_degree;
   
   using Teuchos::rcp;
   using PHX::MDALayout;
@@ -122,7 +121,6 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
 							dimension,
 							dimension));
 
-  // Added by Suzey: 06/18/2012, to obtain the CellTopologyInfo object
   const Teuchos::RCP<const shards::CellTopology>& topology = basis_data->getCellTopology();
   cell_topo_info = rcp(new panzer::CellTopologyInfo(num_cells, topology) );
   
@@ -132,11 +130,6 @@ int panzer::BasisIRLayout::getCardinality() const
 {
   return cardinality;
 }
-
-// int panzer::BasisIRLayout::integrationRuleDegree() const
-// {
-//   return int_rule_degree;
-// }
 
 int panzer::BasisIRLayout::getNumCells() const
 {
@@ -189,7 +182,6 @@ void panzer::BasisIRLayout::print(std::ostream & os) const
 {
    os << "Name = " << name() 
       << ", Dimension = " << getDimension()
-      << ", Cells = " << getNumCells()
-      // << ", Quad Degree = " << integrationRuleDegree() 
+      << ", Cells = " << getNumCells() 
       << ", Num Points = " << getNumPoints();
 }

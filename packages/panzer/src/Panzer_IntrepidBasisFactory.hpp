@@ -66,57 +66,92 @@
 
 namespace panzer {
 
+  /** \brief Creates an Intrepid::Basis object given the basis, order and cell topology.
+
+      \param[in] basis_type The name of the basis.
+      \param[in] basis_order The order of the polynomial used to construct the basis.
+      \param[in] cell_topology Cell topology for the basis.  Taken from shards::CellTopology::getName() after trimming the extended basis suffix.
+
+      To be backwards compatible, this method takes deprecated
+      descriptions and transform it into a valid type and order.  For
+      example "Q1" is transformed to basis_type="HGrad",basis_order=1.
+
+      \returns A newly allocated panzer::Basis object.
+  */
+
   template <typename ScalarT, typename ArrayT>
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> >
-    createIntrepidBasis(const std::string type, int cell_dimension,const Teuchos::RCP<const shards::CellTopology> & cell_topo) {
+    createIntrepidBasis(const std::string in_basis_type, int in_basis_order, const Teuchos::RCP<const shards::CellTopology> & cell_topology) {
+
+    // Shards supports extended topologies so the names have a "size"
+    // associated with the number of nodes.  We prune the size to
+    // avoid combinatorial explosion of checks.
+    std::string cell_topology_type = cell_topology->getName();
+    std::size_t end_position = 0;
+    end_position = cell_topology_type.find("_");
+    std::string cell_type = cell_topology_type.substr(0,end_position);
     
+    // Support for deprecated basis descriptions
+    std::string basis_type = in_basis_type;
+    int basis_order = in_basis_order;
+    
+    if (basis_type=="Q1" || basis_type=="T1") {
+      basis_type = "HGrad";
+      basis_order = 1;
+    }
+    else if (basis_type == "Q2" || basis_type=="T2") {
+      basis_type = "HGrad";
+      basis_order = 2;
+    }
+    else if (basis_type == "TEdge1" || basis_type=="QEdge1") {
+      basis_type = "HCurl";
+      basis_order = 1;
+    }
+
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> > basis;
+
+    if ( (basis_type == "HGrad") && (cell_type == "Hexahedral") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C1_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Hexahedral") && (basis_order == 2) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C2_FEM<ScalarT,ArrayT> );
     
-    if (cell_dimension == 3) {
-      if (type == "Q1")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C1_FEM<ScalarT,ArrayT> );
-      else if (type == "Q2")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C2_FEM<ScalarT,ArrayT> );
-      else if (type == "QEdge1") 
-	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_HEX_I1_FEM<ScalarT,ArrayT> );
-      else if (type == "T1")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
-      else if (type == "T2")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C2_FEM<ScalarT,ArrayT> );
-    }
-    else if (cell_dimension == 2) {
-      if (type == "Q1")
+    else if ( (basis_type == "HCurl") && (cell_type == "Hexahedral") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HCURL_HEX_I1_FEM<ScalarT,ArrayT> );
+    
+    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedral") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedral") && (basis_order == 2) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 1) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<ScalarT,ArrayT> );
-      else if (type == "Q2")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<ScalarT,ArrayT> );
-      else if (type == "QEdge1") 
-	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_QUAD_I1_FEM<ScalarT,ArrayT> );
-      else if (type == "T1")
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 2) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HCurl") && (cell_type == "Quadrilateral") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HCURL_QUAD_I1_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 1) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C1_FEM<ScalarT,ArrayT> );
-      else if (type == "T2")
+ 
+    else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 2) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C2_FEM<ScalarT,ArrayT> );
-      else if (type == "TEdge1") 
+
+    else if ( (basis_type == "HCurl") && (cell_type == "Triangle") && (basis_order == 1) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_TRI_I1_FEM<ScalarT,ArrayT> );
-    }
-    else if (cell_dimension == 1) {
-      if (type == "Q1")
-	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_LINE_C1_FEM<ScalarT,ArrayT> );
-    }
 
+    else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_LINE_C1_FEM<ScalarT,ArrayT> );
 
-    if (Teuchos::is_null(basis)) {
-      std::ostringstream s;
-      s << "Failed to create basis.  Either the basis type in the input file, \"" << type << "\" is unsupported or we are out of memory!" << std::endl;
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
-			 s.str());
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+			       "Failed to create the requestedbasis with basis_type=\"" << basis_type<< "\", basis_order=\"" << basis_order << "\", and cell_type=\"" << cell_type << "\"!\n");
 
-    if((*cell_topo)!=basis->getBaseCellTopology()) {
-      std::ostringstream s;
-      s << "Failed to create basis.  Intrepid basis topology does not match mesh cell topology!";
-      TEUCHOS_TEST_FOR_EXCEPTION((*cell_topo)!=basis->getBaseCellTopology(), std::runtime_error,
-			 s.str());
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION((*cell_topology)!=basis->getBaseCellTopology(),
+			       std::runtime_error,
+			       "Failed to create basis.  Intrepid basis topology does not match mesh cell topology!");
 
     return basis;
   }

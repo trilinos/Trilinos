@@ -86,9 +86,9 @@ setupDOFs(int equation_dimension)
     Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
 					     m_cell_data));
   
-  this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,m_cell_data));
-  this->m_basis = Teuchos::rcp(new panzer::BasisIRLayout(m_pure_basis,
-						 *(this->m_int_rule)));
+  // \todo ROGER: Fix this!  Currently only supports deprecated basis descriptions!!!
+  this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,-1,m_cell_data));
+  this->m_basis = Teuchos::rcp(new panzer::BasisIRLayout(m_pure_basis,*(this->m_int_rule)));
   
   this->m_provided_dofs.clear();
   this->m_dof_names->clear();

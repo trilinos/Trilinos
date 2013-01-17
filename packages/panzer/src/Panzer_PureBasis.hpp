@@ -62,8 +62,8 @@ namespace panzer {
   public:
     typedef enum { HGRAD=0, HCURL=1, HDIV=2 } EElementSpace;
     
-    PureBasis(const std::string & basis_type,const CellData & cell_data);
-    PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo);
+    PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data);
+    PureBasis(const std::string & basis_type,const int basis_order,const int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo);
 
     int getCardinality() const;
 
