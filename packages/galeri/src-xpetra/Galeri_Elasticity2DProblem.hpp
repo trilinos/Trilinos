@@ -136,9 +136,6 @@ namespace Galeri {
 
       BuildMesh();
 
-      const size_t numNodes        = nodes.size();
-      const size_t numElements     = elements.size();
-
       const size_t numDofPerNode   = 2;
       const size_t numNodesPerElem = 4;
       const size_t numDofPerElem   = numNodesPerElem * numDofPerNode;
@@ -270,7 +267,7 @@ namespace Galeri {
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
       const SC hx = stretch[0], hy = stretch[1];
-      for (size_t p = 0; p < GIDs.size(); p += 2) { // FIXME: we assume that DOF for the same node are label consequently
+      for (GO p = 0; p < GIDs.size(); p += 2) { // FIXME: we assume that DOF for the same node are label consequently
         GlobalOrdinal ind = GIDs[p] >> 1;
         size_t i = ind % nx_, j = ind / nx_;
 
