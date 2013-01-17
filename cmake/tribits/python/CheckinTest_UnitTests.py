@@ -87,28 +87,26 @@ class MockOptions:
     self.ignoreMissingExtraRepos = ""
 
 
-def assertGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose):
+def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
   assert(os.path.isfile(fileName))
-  testName = testObject._testMethodName
   for regexToFind in regexStrList.strip().split('\n'):
     if regexToFind == "": continue
     foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
     if verbose or not foundRegex:
-      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+regexToFind+"' ...", 
+      print "\n"+testName+": In '"+fileName+"' look for regex '"+regexToFind+"' ...", 
       print "'"+foundRegex+"'", 
       if foundRegex: print ": PASSED"
       else: print ": FAILED"
     testObject.assertNotEqual(foundRegex, "")
 
 
-def assertNotGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose):
+def assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
   assert(os.path.isfile(fileName))
-  testName = testObject._testMethodName
   for regexToFind in regexStrList.strip().split('\n'):
     if regexToFind == "": continue
     foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
     if verbose or foundRegex:
-      print "\ncheckin_test::"+testName+": In '"+fileName \
+      print "\n"+testName+": In '"+fileName \
         +"' assert not exist regex '"+regexToFind+"' ... '"+foundRegex+"'", 
       if foundRegex: print ": FAILED"
       else: print ": PASSED"
@@ -420,10 +418,9 @@ class test_cmakeScopedDefine(unittest.TestCase):
 run_extrarepo_test_verbose = False
 
 
-def run_extrarepo_test(testObject, extraReposFile, expectedReposList, \
+def run_extrarepo_test(testObject, testName, extraReposFile, expectedReposList, \
   extraCmakeVars=None, expectedErrOutput=None \
   ):
-  testName = testObject._testMethodName
   extraReposPythonOutFile = os.getcwd()+"/"+testName+".py"
   cmnd = "cmake"+ \
     " -DPROJECT_SOURCE_DIR="+mockProjectBaseDir+ \
@@ -465,6 +462,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraRepos1_implicit(self):
     run_extrarepo_test(
       self,
+      "test_ExtraRepos1_implicit",
       "ExtraReposList_1.cmake",
       [
         {
@@ -481,6 +479,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraRepos1_explicit(self):
     run_extrarepo_test(
       self,
+      "test_ExtraRepos1_explicit",
       "ExtraReposList_1.cmake",
       [
         {
@@ -498,6 +497,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposAll(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposAll",
       "ExtraReposList.cmake",
       [
         {
@@ -539,6 +539,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposContinuous(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposContinuous",
       "ExtraReposList.cmake",
       [
         {
@@ -563,6 +564,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposInvalidCategory(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposInvalidCategory",
       "ExtraReposListInvalidCategory.cmake",
       [],
       )
@@ -570,6 +572,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposInvalidType(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposInvalidType",
       "ExtraReposListInvalidType.cmake",
       ["Will never get compared"],
       expectedErrOutput="Error, the repo type of 'InvalidType' for extra repo ExtraRepo1"
@@ -578,6 +581,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposEmptyList(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposEmptyList",
       "ExtraReposListEmptyList.cmake",
       ["Will never get compared"],
       expectedErrOutput="Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY is not defined!",
@@ -586,6 +590,7 @@ class test_TribitsGetExtraReposForCheckinTest(unittest.TestCase):
   def test_ExtraReposEmptyFile(self):
     run_extrarepo_test(
       self,
+      "test_ExtraReposEmptyFile",
       "ExtraReposListEmptyFile.cmake",
       ["Will never get compared"],
       expectedErrOutput="Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY is not defined!",
@@ -622,13 +627,12 @@ def assertCompareTribitGitRepos(testObject, tribitsGitRepo, expectedTribitsGitRe
 test_TribitsGitRepos_verbose = False
 
 
-def test_TribitsGitRepos_run_case(testObject, inOptions, \
+def test_TribitsGitRepos_run_case(testObject, testName, inOptions, \
   expectPass, \
   expectedTribitsExtraRepoNamesList, expectedGitRepos, \
   consoleRegexMatches=None, consoleRegexNotMatches=None, \
   exceptionRegexMatches=None \
   ):
-  testName = testObject._testMethodName
   currDir = os.getcwd()
   if os.path.exists(testName):
     runSysCmnd("rm -rf "+testName)
@@ -664,10 +668,10 @@ def test_TribitsGitRepos_run_case(testObject, inOptions, \
       expectedTribitsGitRepo._TribitsGitRepos__tribitsExtraRepoNamesList.extend(expectedTribitsExtraRepoNamesList)
       assertCompareTribitGitRepos(testObject, tribitsGitRepos, expectedTribitsGitRepo)
     if consoleRegexMatches:
-      assertGrepFileForRegexStrList(testObject, consoleOutputFile,
+      assertGrepFileForRegexStrList(testObject, testName, consoleOutputFile,
         consoleRegexMatches, test_TribitsGitRepos_verbose)
     if consoleRegexNotMatches:
-      assertNotGrepFileForRegexStrList(testObject, consoleOutputFile,
+      assertNotGrepFileForRegexStrList(testObject, testName, consoleOutputFile,
         consoleRegexNotMatches, test_TribitsGitRepos_verbose)
   finally:
     os.chdir(currDir)
@@ -684,6 +688,7 @@ class test_TribitsGitRepos(unittest.TestCase):
     assertCompareTribitGitRepos(self, tribitsGitRepos, expectedTribitsGitRepo)
 
   def test_noExtraReposFile_extraRepos(self):
+    testName = "test_noExtraReposFile_extraRepos"
     inOptions = MockOptions()
     inOptions.extraRepos = "preCopyrightTrilinos"
     inOptions.extraReposFile = ""
@@ -694,11 +699,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, True, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, True, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_Continuous(self):
+    testName = "test_ExtraRepos3_Continuous"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -714,11 +720,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "Adding extra Continuous repository ExtraTeuchosRepo\n"
     consoleRegexNotMatches = \
       "Adding extra Nightly repository extraTrilinosRepo\n"
-    test_TribitsGitRepos_run_case(self, inOptions, True, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, True, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_Nightly(self):
+    testName = "test_ExtraRepos3_Nightly"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -736,11 +743,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "Adding extra Continuous repository ExtraTeuchosRepo\n"+\
       "Adding extra Nightly repository extraTrilinosRepo\n"
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraReposExisting1Missing1_assert(self):
+    testName = "test_ExtraReposExisting1Missing1_assert"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting1Missing1.cmake"
@@ -752,11 +760,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "ERROR! Skipping missing extra repo .MissingRepo. since\n"
     consoleRegexNotMatches = \
       "Adding extra Continuous repository MissingRepo\n"
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
     consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraReposExisting1Missing1_ignore(self):
+    testName = "test_ExtraReposExisting1Missing1_ignore"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting1Missing1.cmake"
@@ -772,11 +781,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n"
     consoleRegexNotMatches = \
       "Adding extra Continuous repository MissingRepo"
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
     consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_listExtraReposNotListed1(self):
+    testName = "test_ExtraRepos3_listExtraReposNotListed1"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -788,11 +798,12 @@ class test_TribitsGitRepos(unittest.TestCase):
     consoleRegexMatches = \
       "ERROR! The list of extra repos passed in .extraRepoNotInList. is not\n"
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_listExtraReposNotListed2(self):
+    testName = "test_ExtraRepos3_listExtraReposNotListed2"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -805,11 +816,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "ERROR! The list of extra repos passed in\n"+\
      ".preCopyrightTrilinos.extraRepoNotInList. is not a subset and in the same\n"
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_extraReposFullList_right_order(self):
+    testName = "test_ExtraRepos3_extraReposFullList_right_order"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -825,11 +837,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_extraReposFullList_wrong_order(self):
+    testName = "test_ExtraRepos3_extraReposFullList_wrong_order"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -842,11 +855,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       "ERROR! The list of extra repos passed in\n"+\
      ".extraTrilinosRepo;preCopyrightTrilinos. is not a subset and in the same\n"
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_listExtraRepos1_first(self):
+    testName = "test_ExtraRepos3_listExtraRepos1_first"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -860,11 +874,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_listExtraRepos1_middle(self):
+    testName = "test_ExtraRepos3_listExtraRepos1_middle"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -878,11 +893,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3_listExtraRepos1_last(self):
+    testName = "test_ExtraRepos3_listExtraRepos1_last"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListExisting_3.cmake"
@@ -896,11 +912,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraRepos3NoContinuous_noExtraRepos(self):
+    testName = "test_ExtraRepos3NoContinuous_noExtraRepos"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposList3NoContinuous.cmake"
@@ -913,11 +930,12 @@ class test_TribitsGitRepos(unittest.TestCase):
       ]
     consoleRegexMatches = None
     consoleRegexNotMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches)
 
   def test_ExtraReposHasPackagesAndDeepDir(self):
+    testName = "test_ExtraReposHasPackagesAndDeepDir"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListHasPackagesAndDeepDir.cmake"
@@ -930,11 +948,12 @@ class test_TribitsGitRepos(unittest.TestCase):
     consoleRegexNotMatches = None
     exceptionRegexMatches = \
       "ERROR!  For extra repo 'ExtraTeuchosRepo', if repoHasPackages==True then repoDir must be same as repo name, not 'packages/teuchos/extrastuff'!\n"
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
 
   def test_ExtraReposNotGit(self):
+    testName = "test_ExtraReposNotGit"
     inOptions = MockOptions()
     inOptions.extraReposFile = \
       tribitsBaseDir+"/python/UnitTests/ExtraReposListNotGit.cmake"
@@ -947,11 +966,12 @@ class test_TribitsGitRepos(unittest.TestCase):
     consoleRegexNotMatches = None
     exceptionRegexMatches = \
       "ERROR!  For extra repo 'ExtraTeuchosRepo', the repo type 'SVN' is not supported by the checkin-test.py script, only 'GIT'!\n"
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
 
   def test_ExraRepoListProjectDefault(self):
+    testName = "test_ExraRepoListProjectDefault"
     inOptions = MockOptions()
     inOptions.extraReposFile = "project"
     inOptions.extraRepos = "preCopyrightTrilinos,extraTrilinosRepo"
@@ -968,7 +988,7 @@ class test_TribitsGitRepos(unittest.TestCase):
       "Adding extra Nightly repository extraTrilinosRepo\n"
     consoleRegexNotMatches = None
     exceptionRegexMatches = None
-    test_TribitsGitRepos_run_case(self, inOptions, expectedPass, \
+    test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
       expectedTribitsExtraRepoNamesList, expectedGitRepos, \
       consoleRegexMatches, consoleRegexNotMatches, exceptionRegexMatches)
 
@@ -1275,11 +1295,11 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     else:
       outputFileToGrep = checkin_test_test_out
 
-    assertGrepFileForRegexStrList(testObject, outputFileToGrep,
+    assertGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
       passRegexStrList, verbose)
 
     if failRegexStrList:
-      assertNotGrepFileForRegexStrList(testObject, outputFileToGrep,
+      assertNotGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
         failRegexStrList, verbose)
 
     # F) Grep a set of output files looking for given strings
@@ -1287,12 +1307,12 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     if filePassRegexStrList:
       for fileRegexGroup in filePassRegexStrList:
         (fileName, regexStrList) = fileRegexGroup
-        assertGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose)
+        assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
 
     if fileFailRegexStrList:
       for fileRegexGroup in fileFailRegexStrList:
         (fileName, regexStrList) = fileRegexGroup
-        assertNotGrepFileForRegexStrList(testObject, fileName, regexStrList, verbose)
+        assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
 
     # G) Examine the final return code
 
