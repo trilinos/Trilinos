@@ -46,6 +46,7 @@ SolverBase
 SubBlockAFactory
 TentativePFactory
 ThresholdAFilterFactory
+TpetraOperator
 TransPFactory
 TrilinosSmoother
 CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
