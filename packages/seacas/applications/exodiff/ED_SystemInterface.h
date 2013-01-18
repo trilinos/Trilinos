@@ -107,6 +107,8 @@ class SystemInterface
   int time_step_stop;  // Last step to compare
   int time_step_increment;  // Step increment
   
+  std::pair<int,int> explicit_steps;  // Only compare these two steps (db1:db2) if nonzero.
+  
   int max_number_of_names;
   
   Tolerance default_tol;
