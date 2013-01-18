@@ -77,68 +77,76 @@ TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  //matrix
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
-  RCP<const Map > map = Op->getRowMap();
+  if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra )
+  {
+    //matrix
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    RCP<const Map > map = Op->getRowMap();
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
-  nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
-  nullSpace->norm1(norms);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
+    nullSpace->putScalar( (SC) 1.0);
+    Teuchos::Array<ST::magnitudeType> norms(1);
+    nullSpace->norm1(norms);
 
-  RCP<Hierarchy> H = rcp(new Hierarchy());
-  H->setDefaultVerbLevel(Teuchos::VERB_NONE);
+    RCP<Hierarchy> H = rcp(new Hierarchy());
+    H->setDefaultVerbLevel(Teuchos::VERB_NONE);
 
-  RCP<MueLu::Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
-  Finest->Set("A", Op);
-  H->Setup();
+    RCP<MueLu::Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
+    Finest->Set("A", Op);
+    H->Setup();
 
 
-  // ------------- test Tpetra Operator wrapping MueLu hierarchy ------------
-  RCP<MueLu::TpetraOperator<SC,LO,GO,NO,LMO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO,LMO>(H));
+    // ------------- test Tpetra Operator wrapping MueLu hierarchy ------------
+    RCP<MueLu::TpetraOperator<SC,LO,GO,NO,LMO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO,LMO>(H));
 
-  RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
-  RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
 
-  //normalized RHS, zero initial guess
-  RHS1->setSeed(846930886);
-  RHS1->randomize();
-  RHS1->norm2(norms);
-  RHS1->scale(1/norms[0]);
+    //normalized RHS, zero initial guess
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
 
-  X1->putScalar( (SC) 0.0);
+    X1->putScalar( (SC) 0.0);
 
-  tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
 
-  X1->norm2(norms);
-  out << "after apply, ||X1|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+    X1->norm2(norms);
+    out << "after apply, ||X1|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  // -------------- test MueLu Hierarchy directly -----------------------
-  RCP<MultiVector> RHS2 = MultiVectorFactory::Build(Op->getRowMap(), 1);
-  RCP<MultiVector> X2   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    // -------------- test MueLu Hierarchy directly -----------------------
+    RCP<MultiVector> RHS2 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RCP<MultiVector> X2   = MultiVectorFactory::Build(Op->getRowMap(), 1);
 
-  //normalized RHS, zero initial guess
-  RHS2->setSeed(846930886);
-  RHS2->randomize();
-  RHS2->norm2(norms);
-  RHS2->scale(1/norms[0]);
+    //normalized RHS, zero initial guess
+    RHS2->setSeed(846930886);
+    RHS2->randomize();
+    RHS2->norm2(norms);
+    RHS2->scale(1/norms[0]);
 
-  X2->putScalar( (SC) 0.0);
+    X2->putScalar( (SC) 0.0);
 
-  int iterations=1;
-  H->Iterate(*RHS2, iterations, *X2);
+    int iterations=1;
+    H->Iterate(*RHS2, iterations, *X2);
 
-  X2->norm2(norms);
-  out << "after apply, ||X2|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+    X2->norm2(norms);
+    out << "after apply, ||X2|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  RCP<MultiVector> diff = MultiVectorFactory::Build(Op->getRowMap(),1);
-  diff->putScalar(0.0);
+    RCP<MultiVector> diff = MultiVectorFactory::Build(Op->getRowMap(),1);
+    diff->putScalar(0.0);
 
-  diff->update(1.0,*X1,-1.0,*X2,0.0);
-  diff->norm2(norms);
-  TEST_EQUALITY(norms[0]<1e-10, true);
+    diff->update(1.0,*X1,-1.0,*X2,0.0);
+    diff->norm2(norms);
+    TEST_EQUALITY(norms[0]<1e-10, true);
+
+  } else {
+
+    out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
+
+  }
 
 } //Apply
 
