@@ -555,8 +555,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class ValueOper , class FinalizeType >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
+template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , WorkSpec >
 {
 public:
 
@@ -650,11 +650,11 @@ public:
 
 template< class FunctorType , class ValueOper ,
           class ValueType , class LayoutType ,
-          class ManagedType >
+          class ManagedType , class WorkSpec >
 class ParallelReduce< FunctorType ,
                       ValueOper , 
                       View< ValueType , LayoutType , Host , ManagedType > ,
-                      Cuda >
+                      Cuda , WorkSpec >
 {
 public:
 
@@ -688,7 +688,7 @@ public:
 
     const FinalizeType finalize( functor.value_count );
 
-    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
+    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , void >
       ( work_count , functor , finalize );
 
     finalize.result( host_view.ptr_on_device() );

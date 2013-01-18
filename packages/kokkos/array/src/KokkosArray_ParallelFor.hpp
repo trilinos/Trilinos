@@ -56,9 +56,11 @@ namespace Impl {
  *         partial specialization for the device.
  */
 template< class FunctorType ,
-          class DeviceType = typename FunctorType::device_type ,
-          class WorkSpec   = typename DeviceType::size_type >
+          class DeviceType ,
+          class WorkSpec   = void >
 class ParallelFor ;
+
+struct VectorParallel {};
 
 } // namespace Impl
 
@@ -70,7 +72,20 @@ inline
 void parallel_for( const size_t work_count ,
                    const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType >( work_count , functor );
+  Impl::ParallelFor< FunctorType ,
+                     typename FunctorType::device_type >
+    ( work_count , functor );
+}
+
+template< class FunctorType >
+inline
+void vector_parallel_for( const size_t work_count ,
+                          const FunctorType & functor )
+{
+  Impl::ParallelFor< FunctorType ,
+                     typename FunctorType::device_type ,
+                     Impl::VectorParallel >
+    ( work_count , functor );
 }
 
 //----------------------------------------------------------------------------

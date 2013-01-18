@@ -225,7 +225,7 @@ public:
        double & result )
     : x( arg_x ), y( arg_y )
   {
-    result = parallel_reduce( n , *this );
+    result = vector_parallel_reduce( n , *this );
   }
 
   template< typename iType >
@@ -266,7 +266,7 @@ public:
         double & result )
     : x( arg_x )
   {
-    result = parallel_reduce( n , *this );
+    result = vector_parallel_reduce( n , *this );
   }
 
   template< typename iType >
@@ -325,7 +325,7 @@ public:
     : w( arg_w ), x( arg_x ), y( arg_y )
     , alpha( arg_alpha ), beta( arg_beta )
   {
-    parallel_for( n , *this );
+    vector_parallel_for( n , *this );
   }
 }; // WAXPBY
 
@@ -358,7 +358,7 @@ public:
     : w( arg_w )
     , beta( arg_beta )
   {
-    parallel_for( n , *this );
+    vector_parallel_for( n , *this );
   }
 };
 
@@ -394,7 +394,7 @@ public:
     : w( arg_w ), x( arg_x )
     , alpha( arg_alpha )
   {
-    parallel_for( n , *this );
+    vector_parallel_for( n , *this );
   }
 }; // WAXPBY
 

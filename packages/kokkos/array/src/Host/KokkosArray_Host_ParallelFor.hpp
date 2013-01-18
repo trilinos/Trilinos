@@ -52,8 +52,10 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Host , Host::size_type > {
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class WorkSpec >
+class ParallelFor< FunctorType , Host , WorkSpec > {
 public:
 
   typedef Host::size_type  size_type ;
@@ -66,10 +68,6 @@ public:
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
 
-#if defined( __INTEL_COMPILER )
-#pragma simd
-#pragma ivdep
-#endif
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
@@ -80,6 +78,43 @@ public:
     , m_work_count( work_count )
     { HostParallelLaunch< ParallelFor >( *this ); }
 };
+
+//----------------------------------------------------------------------------
+
+#if defined( __INTEL_COMPILER )
+
+// Only try vectorization nested within parallel with the Intel compiler, for now.
+
+template< class FunctorType >
+class ParallelFor< FunctorType , Host , VectorParallel > {
+public:
+
+  typedef Host::size_type  size_type ;
+
+  const FunctorType m_work_functor ;
+  const size_type   m_work_count ;
+
+  void operator()( HostThread & this_thread ) const
+  {
+    const std::pair< size_type , size_type > range =
+      this_thread.work_range( m_work_count );
+
+#pragma simd
+#pragma ivdep
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+      m_work_functor( iwork );
+    }
+  }
+
+  ParallelFor( const size_type work_count , const FunctorType & functor )
+    : m_work_functor( functor )
+    , m_work_count( work_count )
+    { HostParallelLaunch< ParallelFor >( *this ); }
+};
+
+#endif
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray
