@@ -117,7 +117,7 @@ namespace MueLu {
     - parameter list options
     - <tt>fact: level-of-fill</tt>
 
-    See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
+    See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT, Ifpac2_Krylov.
     */
     Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
