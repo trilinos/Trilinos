@@ -80,6 +80,45 @@ namespace Intrepid {
   typename Sacado::ScalarType<T>::type
   machine_epsilon();
 
+  ///
+  /// Twin type. Holder of two objects of the same type.
+  /// Useful as return type for functions that need to return two objects.
+  ///
+  template<typename T>
+  struct Twin
+  {
+    T first;
+    T second;
+  };
+
+  ///
+  /// Triplet type. Holder of three objects of the same type.
+  /// Useful as return type for functions that need to return three objects.
+  ///
+  template<typename T>
+  struct Triplet
+  {
+    T first;
+    T second;
+    T third;
+  };
+
+  ///
+  /// Create a Twin structure.
+  ///
+  template<typename T>
+  inline
+  Twin<T>
+  make_twin(T const & a, T const & b);
+
+  ///
+  /// Create a Triplet structure.
+  ///
+  template<typename T>
+  inline
+  Triplet<T>
+  make_triplet(T const & a, T const & b, T const & c);
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Utilities.i.cc"

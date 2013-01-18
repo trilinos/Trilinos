@@ -51,7 +51,8 @@
 int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  std::cout << "End Result: TEST PASSED\n";
+  std::cout << "End Result: TEST PASSED";
+  std::cout << std::endl;
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
 
