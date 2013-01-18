@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/BlockedTrans
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
@@ -62,6 +63,9 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Zoltan
   )
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
@@ -80,7 +84,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Belos)
-  APPEND_SET(SOURCES BelosAdapters.cpp)
+  APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
@@ -95,7 +99,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     UnitTests
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS muelu xpetra
+    DEPLIBS muelu muelu-adapters xpetra
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
