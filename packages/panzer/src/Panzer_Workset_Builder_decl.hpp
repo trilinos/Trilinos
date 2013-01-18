@@ -57,10 +57,10 @@ namespace panzer {
   struct Workset;
   class MeshData;
   class BoundaryCondition;
-  class InputPhysicsBlock;
   class PhysicsBlock;
   class BC;
 
+/*
   template<typename ArrayT>
   Teuchos::RCP<std::vector<panzer::Workset> > 
   buildWorksets(const std::string& block_id,
@@ -70,6 +70,7 @@ namespace panzer {
 		const panzer::InputPhysicsBlock& ipb,
 		std::size_t workset_size,
 		int base_cell_dimension);
+*/
 
   template<typename ArrayT>
   Teuchos::RCP<std::vector<panzer::Workset> > 

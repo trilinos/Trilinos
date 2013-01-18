@@ -9,6 +9,10 @@
 #include "Panzer_EquationSet_Base.hpp"
 #include "Panzer_EquationSet_DefaultImpl.hpp"
 
+namespace Teuchos {
+  class ParameterList;
+}
+
 namespace panzer {
 
   /** This class allows the creation of an equation set that contains
@@ -24,8 +28,9 @@ namespace panzer {
 
   public:    
 
-    EquationSet_Parrot(const EquationSetBase & eqSet,
-                       const panzer::InputEquationSet& ies,
+    EquationSet_Parrot(const Teuchos::RCP<Teuchos::ParameterList>& input_plist,
+		       const int& default_integration_order,
+		       const EquationSetBase & eqSet,
                        const panzer::CellData& cell_data,
                        const Teuchos::RCP<panzer::GlobalData>& global_data,
                        const bool build_transient_support);

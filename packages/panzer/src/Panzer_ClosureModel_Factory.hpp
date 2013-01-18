@@ -49,7 +49,6 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include <string>
 #include <vector>
 
@@ -68,9 +67,8 @@ namespace panzer {
     
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     virtual  buildClosureModels(const std::string& model_id,
-				const panzer::InputEquationSet& set,
 				const Teuchos::ParameterList& models,
-				const Teuchos::ParameterList& default_params,
+				const Teuchos::ParameterList& equation_set_params,
 				const Teuchos::ParameterList& user_data,
 				const Teuchos::RCP<panzer::GlobalData>& global_data,
 				PHX::FieldManager<panzer::Traits>& fm) const = 0;

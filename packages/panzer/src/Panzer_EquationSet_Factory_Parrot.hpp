@@ -48,7 +48,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_Traits.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -61,7 +60,7 @@ namespace panzer {
   /** \brief Allocates and initializes an equation set template manager
              based on a privous set of equation set template managers.
 
-     \param ies [in] Input equation set
+     \param equation_set_key [in] Key for the equation set to duplicate
      \param cell_data [in] The cell data
      \param global_data [in] Global data
      \param build_transient_support [in] If true, the transient evaluators will be built, registered, and required in the Phalanx evaluation graph.
@@ -70,29 +69,42 @@ namespace panzer {
   */
   class EquationSet_FactoryParrot : public EquationSetFactory {
   public:
-    EquationSet_FactoryParrot(const std::vector<panzer::InputEquationSet> & inputEqSets,
-                              const std::vector< Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > & eqSets)
+    EquationSet_FactoryParrot(const std::vector< Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > & eqSets)
     { 
-      TEUCHOS_ASSERT(inputEqSets.size()==eqSets.size()); 
-      for(std::size_t i=0;i<inputEqSets.size();i++)
-        eqSets_[inputEqSets[i]] = eqSets[i];        
+      for(std::size_t i=0;i<eqSets.size();i++) {
+	TEUCHOS_ASSERT(nonnull(eqSets[i]));
+	
+        eqSets_[eqSets[i]->begin()->getKey()] = eqSets[i];
+      }      
     }
 
     virtual ~EquationSet_FactoryParrot() {}
 
     virtual Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
-    buildEquationSet(const panzer::InputEquationSet& ies,
+    buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& equation_set_plist,
+		     const int& default_integration_order,
 		     const panzer::CellData& cell_data,
 		     const Teuchos::RCP<panzer::GlobalData>& global_data,
 		     bool build_transient_support) const
     { 
+      // Parrot object is fragile now because the InputEquationSet
+      // object has been removed.  We could use this in the past to
+      // define unique keys, but now this is functionality is allowed
+      // to be changed by the user derived classes.  If a user derives
+      // from the EquationSet_DefaultImpl, then we can use this to get
+      // back the unique key.
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ROGER has disabled this until resolution with ERIC.");
+      std::string equation_set_key = "";
+
+
       // lookup input equation set to see if it was built into parrot factory
-      HashTable::const_iterator itr = eqSets_.find(ies);
+      HashTable::const_iterator itr = eqSets_.find(equation_set_key);
       TEUCHOS_ASSERT(itr!=eqSets_.end());
       Teuchos::RCP<EquationSet_TemplateManager<panzer::Traits> > inEqSet_tm = itr->second;
 
       // setup builder for template manager using equation set TM that is to be parroted
-      EqSetParrot_TemplateBuilder builder(*inEqSet_tm,ies,cell_data,global_data,build_transient_support);
+      EqSetParrot_TemplateBuilder builder(equation_set_plist,default_integration_order,*inEqSet_tm,cell_data,global_data,build_transient_support);
 
       // build new template manager that contains all parrotted equation set factories
       Teuchos::RCP<EquationSet_TemplateManager<panzer::Traits> > outEqSet_tm 
@@ -108,27 +120,29 @@ namespace panzer {
     EquationSet_FactoryParrot(const EquationSet_FactoryParrot &);    
 
     // A parrot template builder, that uses a passed in TM to build parrot equations
-    class EqSetParrot_TemplateBuilder {                                   
+    class EqSetParrot_TemplateBuilder { 
+      const Teuchos::RCP<Teuchos::ParameterList> plist_;
+      const int default_integration_order_;
       const panzer::EquationSet_TemplateManager<panzer::Traits> & eqSet_tm_;
-      const panzer::InputEquationSet& ies_;
       const panzer::CellData& cell_data_;
       Teuchos::RCP<panzer::GlobalData> global_data_;
       bool build_transient_support_;
 
     public:
-      EqSetParrot_TemplateBuilder(const panzer::EquationSet_TemplateManager<panzer::Traits> & eqSet_tm,
-                                  const panzer::InputEquationSet& ies,
+      EqSetParrot_TemplateBuilder(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+				  const int& default_integration_order,
+				  const panzer::EquationSet_TemplateManager<panzer::Traits> & eqSet_tm,
                                   const panzer::CellData& cell_data,
                                   const Teuchos::RCP<panzer::GlobalData>& global_data,
                                   bool build_transient_support)
-          : eqSet_tm_(eqSet_tm), ies_(ies), cell_data_(cell_data), global_data_(global_data), build_transient_support_(build_transient_support) {}
+	: plist_(plist),default_integration_order_(default_integration_order),eqSet_tm_(eqSet_tm), cell_data_(cell_data), global_data_(global_data), build_transient_support_(build_transient_support) {}
       
       template<typename EvalT>                                     
       Teuchos::RCP<panzer::EquationSetBase> build() const 
-      { return Teuchos::rcp(new EquationSet_Parrot<EvalT>(*eqSet_tm_.getAsBase<EvalT>(),ies_,cell_data_,global_data_,build_transient_support_)); }
+	{ return Teuchos::rcp(new EquationSet_Parrot<EvalT>(plist_,default_integration_order_,*eqSet_tm_.getAsBase<EvalT>(),cell_data_,global_data_,build_transient_support_)); }
     };
 
-
+/*
     struct IESHash {
        boost::hash<std::string> hash;
        std::size_t operator()(const InputEquationSet & ies) const
@@ -141,6 +155,9 @@ namespace panzer {
     };
 
     typedef boost::unordered_map<panzer::InputEquationSet,Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >,IESHash,IESEquality> HashTable;
+*/
+
+    typedef boost::unordered_map<std::string,Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > HashTable;
 
     // hash table lookup for finding correct eq set TM to parrot
     HashTable eqSets_; 

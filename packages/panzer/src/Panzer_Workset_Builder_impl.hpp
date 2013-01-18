@@ -50,7 +50,6 @@
 #include "Panzer_Workset.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_BC.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_Shards_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
@@ -71,6 +70,13 @@ panzer::buildWorksets(const panzer::PhysicsBlock& physBlk,
 		      const ArrayT& vertex_coordinates, 
 		      std::size_t workset_size)
 {
+
+
+
+
+
+/*
+
    int base_cell_dimension = physBlk.getBaseCellTopology().getDimension();
 
    // for now a simple call out to old version
@@ -89,6 +95,11 @@ panzer::buildWorksets(const std::string& block_id,
 		      std::size_t workset_size,
 		      int base_cell_dimension)
 {
+
+*/
+
+
+
   using std::vector;
   using std::string;
   using Teuchos::RCP;
@@ -96,7 +107,6 @@ panzer::buildWorksets(const std::string& block_id,
 
   panzer::IntrepidFieldContainerFactory arrayFactory;
 
-  // std::size_t total_num_cells = vertex_coordinates.dimension(0);
   std::size_t total_num_cells = local_cell_ids.size();
 
   Teuchos::RCP< std::vector<panzer::Workset> > worksets_ptr = 

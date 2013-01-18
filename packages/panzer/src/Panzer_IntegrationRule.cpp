@@ -64,7 +64,7 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   std::stringstream ss;
   ss << "CubaturePoints (Degree=" << cubature_degree;
   
-  // Intrepid does support a quadrature on a 0-dimensional object
+  // Intrepid does not support a quadrature on a 0-dimensional object
   // (which doesn't make much sense anyway) to work around this we
   // will adjust the integration rule manually
   if(cell_data.isSide() && spatialDimension==1) {
@@ -92,6 +92,9 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
 
   PointRule::setup(ss.str(),intrepid_cubature->getNumPoints(),cell_data);
 }
+
+int panzer::IntegrationRule::order() const
+{ return cubature_degree; }
 
 void panzer::IntegrationRule::print(std::ostream & os)
 {

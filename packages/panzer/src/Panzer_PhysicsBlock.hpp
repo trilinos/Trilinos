@@ -56,6 +56,10 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_FieldLibrary.hpp"
 
+namespace Teuchos {
+  class ParameterList;
+}
+
 namespace shards {
   class CellTopology;
 }
@@ -66,12 +70,26 @@ namespace panzer {
   class PureBasis;
   class EquationSetFactory;
   class GlobalData;
+  class PhysicsBlock;
 }
 
 namespace panzer {
 
-  class InputPhysicsBlock;
 
+  /** Non-member function for building the physics blocks
+      \relates panzer::PhysicsBlock 
+  */
+  void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                          const std::map<std::string,Teuchos::RCP<const shards::CellTopology> >& block_ids_to_cell_topo,
+                          const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
+			  const int default_integration_order,
+                          const std::size_t workset_size,
+                          const panzer::EquationSetFactory & eqset_factory,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
+                          const bool build_transient_support,
+                          std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+  
+  //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
   class PhysicsBlock {
 
   public:    
@@ -80,8 +98,9 @@ namespace panzer {
        : m_build_transient_support(false), m_global_data(Teuchos::null)
     { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; } 
 
-    PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
+    PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
                  const std::string & element_block_id,
+		 const int default_integration_order,
 		 const panzer::CellData & cell_data,
 		 const panzer::EquationSetFactory& factory,
 		 const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -159,8 +178,6 @@ namespace panzer {
     const std::vector<StrPureBasisPair>& getProvidedDOFs() const;
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;
 
-    const panzer::InputPhysicsBlock & getInputPhysicsBlock() const;
-    
     const shards::CellTopology getBaseCellTopology() const;
 
     std::string physicsBlockID() const;
@@ -188,7 +205,8 @@ namespace panzer {
     { return m_field_lib.getConst(); }
 
   protected:
-    void initialize(const panzer::InputPhysicsBlock & ipb,
+    void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
+		    const int& default_integration_order,
                     const std::string & element_block_id,
    		    const panzer::CellData & cell_data,
    		    const panzer::EquationSetFactory& factory,
@@ -196,8 +214,10 @@ namespace panzer {
 
     std::string m_physics_id;
     std::string m_element_block_id;
+    int m_default_integration_order;
     panzer::CellData m_cell_data;
-    panzer::InputPhysicsBlock m_initializer;
+    //! store the input parameter list for copy ctors
+    Teuchos::RCP<Teuchos::ParameterList> m_input_parameters;
     const bool m_build_transient_support;
     const Teuchos::RCP<panzer::GlobalData> m_global_data;
 

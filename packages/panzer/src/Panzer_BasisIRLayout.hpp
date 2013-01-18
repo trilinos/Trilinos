@@ -78,6 +78,9 @@ namespace panzer {
     int getDimension() const;
 
     std::string name() const;
+
+    //! Unique key for workset indexing composed of basis key and point rule name
+    std::string key() const;
     
     std::string fieldName() const;
     
@@ -121,6 +124,7 @@ namespace panzer {
   private:
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
     const std::string basis_name;
+    std::string basis_key;
     const std::string field_basis_name;
     const std::string field_basis_name_D1;
     const std::string field_basis_name_D2;

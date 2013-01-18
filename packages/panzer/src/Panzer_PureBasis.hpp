@@ -71,7 +71,12 @@ namespace panzer {
     
     int getDimension() const;
 
-    std::string name() const;
+    std::string type() const;
+    
+    int order() const;
+    
+    //! A unique key that is the combination of the basis type and basis order
+    std::string key() const;
     
     std::string fieldName() const;
     
@@ -85,7 +90,7 @@ namespace panzer {
     template <typename ScalarT,typename ArrayT>
     Teuchos::RCP< Intrepid::Basis<ScalarT,ArrayT> > 
     getIntrepidBasis() const
-    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(name(), getDimension(), getCellTopology()); }
+    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(type(), order(), getCellTopology()); }
 
     EElementSpace getElementSpace() const
     { return elementSpace; }
@@ -135,7 +140,8 @@ namespace panzer {
     Teuchos::RCP<const shards::CellTopology> topology;
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
 
-    const std::string basis_name;
+    const std::string basis_type;
+    std::string basis_key;
     const std::string field_basis_name;
     const std::string field_basis_name_D1;
     const std::string field_basis_name_D2;

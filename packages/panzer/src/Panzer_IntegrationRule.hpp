@@ -65,6 +65,9 @@ namespace panzer {
 
     void setup(int cubature_degree, const panzer::CellData& cell_data);
   
+    //! Returns the order of integration (cubature degree in intrepid lingo)
+    int order() const;
+
     int cubature_degree;
 
     //! print information about the integration rule

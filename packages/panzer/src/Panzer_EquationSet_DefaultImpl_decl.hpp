@@ -44,11 +44,14 @@
 #define PANZER_EQUATION_SET_DEFAULTIMPL_DECL_HPP
 
 #include "Panzer_EquationSet.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_GlobalDataAcceptor_DefaultImpl.hpp"
 #include "Panzer_CellData.hpp"
 
 #include <map>
+
+namespace Teuchos {
+  class ParameterList;
+}
 
 namespace PHX {
   template<typename Traits> class FieldManager;
@@ -62,7 +65,11 @@ namespace panzer {
     
   public:    
     
-    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const Teuchos::RCP<panzer::GlobalData>& global_data, const bool build_transient_support);
+    EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
+			    const int& default_integration_order,
+			    const panzer::CellData& cell_data,
+			    const Teuchos::RCP<panzer::GlobalData>& global_data,
+			    const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     
@@ -123,12 +130,17 @@ namespace panzer {
     virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary);
     Teuchos::RCP<const FieldLayoutLibrary> getFieldLayoutLibrary() const;
 
-    const panzer::InputEquationSet& getInputEquationSet() const;
+    virtual std::string getType() const;
+
+    virtual std::string getKey() const;
 
   protected:
 
     //! Returns true if transient support should be enabled in the equation set
     bool buildTransientSupport() const;
+
+    //! If the concrete equation set will be used multiple times in the same physics block, then a unique key must be supplied for the equation set.  The equation set implementer must call this during construction.  This defaults to the "type" otherwise. 
+    void setKey(const std::string& key);
 
     // The set of functions below are for use by derived classes to specify the 
     // provided degree of freedom (and associated residual name), in addition
@@ -141,10 +153,14 @@ namespace panzer {
       * \param[in] dofName Name of field to lookup in the unique global
       *                        indexer. This also serves as a key for the remaining
       *                        <code>addDOF*</code> methods.
-      * \param[in] residualName Name of field that is to be scattered associated with
+      * \param[in]  Name of field that is to be scattered associated with
       *                         this DOF.
+      * \param[in] basisType Name of the basis type for this DOF.
+      * \param[in] basisOrder Polynomial order for the basis for this DOF.
       */
     void addProvidedDOF(const std::string & dofName,
+			const std::string & basisType,
+			const int & basisOrder,
                         const std::string & residualName);
 
     /** Alert the panzer library of a DOF provided by this equation set.
@@ -154,8 +170,24 @@ namespace panzer {
       * \param[in] dofName Name of field to lookup in the unique global
       *                        indexer. This also serves as a key for the remaining
       *                        <code>addDOF*</code> methods.
+      * \param[in] basisType Name of the basis type for this DOF.
+      * \param[in] basisOrder Polynomial order for the basis for this DOF.
       */
-    void addProvidedDOF(const std::string & dofName);
+    void addProvidedDOF(const std::string & dofName,
+			const std::string & basisType,
+			const int & basisOrder);
+
+    /** Alert the panzer library of a DOF provided by this equation set.
+      * This version of the method does not sets up the scatter routines
+      * because there is no specified residual name.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global
+      *                        indexer. This also serves as a key for the remaining
+      *                        <code>addDOF*</code> methods.
+      * \param[in] basis RCP to a basis object.
+      */
+    void addProvidedDOF(const std::string & dofName,
+			const Teuchos::RCP<panzer::PureBasis>& basis);
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
@@ -193,6 +225,9 @@ namespace panzer {
         , timeDerivative(std::make_pair(false,"")) {}
 
       std::string dofName;
+      std::string basisType;
+      int basisOrder;
+      Teuchos::RCP<panzer::PureBasis> basis;
       std::pair<bool,std::string> residualName;
       std::pair<bool,std::string> grad;
       std::pair<bool,std::string> curl;
@@ -210,15 +245,14 @@ namespace panzer {
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
     
 
-    const panzer::InputEquationSet m_input_eq_set;
+    const Teuchos::RCP<Teuchos::ParameterList> m_input_params;
+    int m_integration_order;
     const panzer::CellData m_cell_data;
     const bool m_build_transient_support;
     
     std::string m_eqset_prefix;
     
     Teuchos::RCP<panzer::IntegrationRule> m_int_rule;
-    Teuchos::RCP<panzer::PureBasis> m_pure_basis;
-    Teuchos::RCP<panzer::BasisIRLayout> m_basis;
     
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
     Teuchos::RCP< std::vector<std::string> > m_dof_names;
@@ -227,6 +261,16 @@ namespace panzer {
     Teuchos::RCP<const FieldLayoutLibrary> m_field_layout_lib;
 
     std::string m_block_id;
+    std::string m_type;
+    std::string m_key;
+    std::string m_model_id;
+
+    // Deprecated code support
+    void setupDeprecatedDOFsSupport();
+    Teuchos::RCP<panzer::PureBasis> m_pure_basis;
+    Teuchos::RCP<panzer::BasisIRLayout> m_basis;
+
+
   };
   
 }

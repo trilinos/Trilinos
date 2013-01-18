@@ -57,15 +57,15 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const int base_cell_dimension = topo->getDimension();
+    const panzer::CellData cell_data(num_cells,topo);
     const int cubature_degree = 2;
 
-    panzer::IntegrationRule int_rule(cubature_degree, cell_data);
+    panzer::IntegrationRule int_rule(cubature_degree,cell_data);
     
     const std::string basis_type = "Q2";
     
-    panzer::BasisIRLayout basis(basis_type, int_rule);
+    panzer::BasisIRLayout basis(basis_type,int_rule);
 
     TEST_ASSERT(basis.getCardinality() == 9);
     TEST_ASSERT(basis.getNumCells() == 20);
@@ -101,17 +101,16 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
+    const int base_cell_dimension = topo->getDimension();
     const int cell_local_side_id = 1;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,
-				     cell_local_side_id,topo);
+    const panzer::CellData cell_data(num_cells,cell_local_side_id,topo);
     const int cubature_degree = 2;
 
-    panzer::IntegrationRule int_rule(cubature_degree, cell_data);
+    panzer::IntegrationRule int_rule(cubature_degree,cell_data);
     
     const std::string basis_type = "Q2";
     
-    panzer::BasisIRLayout basis(basis_type, int_rule);
+    panzer::BasisIRLayout basis(basis_type,int_rule);
 
     std::cout << "ROGER = " << basis.basis_ref->size();
 
@@ -149,8 +148,8 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
     
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const int base_cell_dimension = topo->getDimension();
+    const panzer::CellData cell_data(num_cells, topo);
     const std::string basis_type = "TEdge1";
 
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
@@ -170,8 +169,8 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const int base_cell_dimension = topo->getDimension();
+    const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "QEdge1";
 
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
@@ -183,6 +182,43 @@ namespace panzer {
     TEST_EQUALITY(basis->name(),basis_type);
     TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
+  }
+
+  TEUCHOS_UNIT_TEST(basis, supported_bases)
+  {
+    const int num_cells = 20;
+
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ROGER - remember to add these tests!");
+    
+    // Triangle
+    {
+      Teuchos::RCP<shards::CellTopology> topo = 
+	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
+      const panzer::CellData cell_data(num_cells,topo);
+      
+      Teuchos::RCP<PureBasis> basis;
+
+      basis = Teuchos::rcp(new PureBasis("HDiv",1,cell_data));
+      basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
+      basis = Teuchos::rcp(new PureBasis("HCurl",1,cell_data));
+    }
+
+  }
+
+  TEUCHOS_UNIT_TEST(basis, deprecated_bases)
+  {
+
+    
+    {
+      const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const std::string basis_type = "QEdge1";
+    
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    }
+
   }
 
 }

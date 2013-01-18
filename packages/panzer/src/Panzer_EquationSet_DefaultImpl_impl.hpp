@@ -53,21 +53,36 @@
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
 panzer::EquationSet_DefaultImpl<EvalT>::
-EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
+EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
+			const int& default_integration_order,
 			const panzer::CellData& cell_data,
 			const Teuchos::RCP<panzer::GlobalData>& global_data,
 			const bool build_transient_support) :
   panzer::GlobalDataAcceptorDefaultImpl(global_data),
-  m_input_eq_set(ies),
+  m_input_params(params),
+  m_integration_order(default_integration_order),
   m_cell_data(cell_data),
   m_build_transient_support(build_transient_support),
   m_eqset_prefix("")
 { 
+  TEUCHOS_ASSERT(nonnull(m_input_params));
+
+  m_type = m_input_params->get<std::string>("Type");
+
+  if (m_input_params->isType<std::string>("Key"))
+    m_key = m_input_params->get<std::string>("Key");
+  else if (m_input_params->isType<std::string>("Prefix"))
+    m_key = m_input_params->get<std::string>("Prefix") + m_type;
+  else
+    m_key = m_type;
+
+  m_model_id = m_input_params->get<std::string>("Model ID");
+
   m_dof_names = Teuchos::rcp(new std::vector<std::string>);
   m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
 }
@@ -83,12 +98,7 @@ setupDOFs(int equation_dimension)
   // }
 
   this->m_int_rule = 
-    Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
-					     m_cell_data));
-  
-  // \todo ROGER: Fix this!  Currently only supports deprecated basis descriptions!!!
-  this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,-1,m_cell_data));
-  this->m_basis = Teuchos::rcp(new panzer::BasisIRLayout(m_pure_basis,*(this->m_int_rule)));
+    Teuchos::rcp(new panzer::IntegrationRule(m_integration_order,m_cell_data));
   
   this->m_provided_dofs.clear();
   this->m_dof_names->clear();
@@ -96,15 +106,35 @@ setupDOFs(int equation_dimension)
   // load up the provided dofs from the descriptor map
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
       itr!=m_provided_dofs_desc.end();++itr) {
+
     this->m_dof_names->push_back(itr->first); // this contains all the dof names provided by this equation set
-    this->m_provided_dofs.push_back(std::make_pair(itr->first, this->m_pure_basis));
+
+    if (nonnull(itr->second.basis)) {
+      this->m_provided_dofs.push_back(std::make_pair(itr->first, itr->second.basis));
+    }
+    else {
+      Teuchos::RCP<panzer::PureBasis> basis = 
+	Teuchos::rcp(new panzer::PureBasis(itr->second.basisType, itr->second.basisOrder,m_cell_data));
+      this->m_provided_dofs.push_back(std::make_pair(itr->first, basis));
+    }
   }
 
-  this->m_eval_plist->set("IR", this->m_int_rule);
-  this->m_eval_plist->set("Basis", this->m_basis);
-  this->m_eval_plist->set("Equation Dimension", equation_dimension);
+  //this->m_eval_plist->set("Equation Dimension", equation_dimension);
+  this->m_eval_plist->set("IR", this->m_int_rule);  
   this->m_eval_plist->set("DOF Names", this->m_dof_names);  
-  this->m_eval_plist->set("Block ID", getElementBlockId());  
+  this->m_eval_plist->set("Block ID", getElementBlockId());
+
+  this->setupDeprecatedDOFsSupport();
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::setupDeprecatedDOFsSupport()
+{
+  TEUCHOS_ASSERT(m_provided_dofs.size() > 0);
+  this->m_pure_basis = m_provided_dofs.begin()->second;
+  this->m_basis = Teuchos::rcp(new panzer::BasisIRLayout(this->m_pure_basis,*(this->m_int_rule)));
+  this->m_eval_plist->set("Basis", this->m_basis);
 }
 
 // ***********************************************************************
@@ -368,7 +398,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const Teuchos::ParameterList& models,
 				       const Teuchos::ParameterList& user_data) const
 {
-  buildAndRegisterClosureModelEvaluators(fm,dofs,factory,this->m_input_eq_set.model_id,models,user_data);
+  buildAndRegisterClosureModelEvaluators(fm,dofs,factory,this->m_model_id,models,user_data);
 }
 
 // ***********************************************************************
@@ -383,7 +413,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				   const Teuchos::ParameterList& user_data) const
 {
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-    factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, 
+    factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, 
                                                      *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
@@ -434,7 +464,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
   // Add in closure models
   {
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-      factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
+      factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       fm.template registerEvaluator<EvalT>((*evaluators)[i]);
@@ -513,10 +543,16 @@ getFieldLayoutLibrary() const
 
 // ***********************************************************************
 template <typename EvalT>
-const panzer::InputEquationSet& 
-panzer::EquationSet_DefaultImpl<EvalT>::getInputEquationSet() const
+std::string panzer::EquationSet_DefaultImpl<EvalT>::getType() const
 {
-  return m_input_eq_set;
+  return m_type;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+std::string panzer::EquationSet_DefaultImpl<EvalT>::getKey() const
+{
+  return m_key;
 }
 
 // ***********************************************************************
@@ -530,6 +566,8 @@ bool panzer::EquationSet_DefaultImpl<EvalT>::buildTransientSupport() const
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 addProvidedDOF(const std::string & dofName,
+	       const std::string & basisType,
+	       const int & basisOrder,
                const std::string & residualName)
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
@@ -541,6 +579,8 @@ addProvidedDOF(const std::string & dofName,
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
   desc.dofName = dofName;
+  desc.basisType = basisType;
+  desc.basisOrder = basisOrder;
   desc.residualName.first = true;
   desc.residualName.second = residualName;
 }
@@ -548,7 +588,9 @@ addProvidedDOF(const std::string & dofName,
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
-addProvidedDOF(const std::string & dofName)
+addProvidedDOF(const std::string & dofName,
+	       const std::string & basisType,
+	       const int & basisOrder)
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
 
@@ -559,6 +601,26 @@ addProvidedDOF(const std::string & dofName)
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
   desc.dofName = dofName;
+  desc.basisType = basisType;
+  desc.basisOrder = basisOrder;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addProvidedDOF(const std::string & dofName,
+	       const Teuchos::RCP<panzer::PureBasis>& basis)
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr!=m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addProvidedDOF: DOF \"" << dofName << "\" was previously specified "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  desc.dofName = dofName;
+  desc.basis = basis;
 }
 
 // ***********************************************************************

@@ -41,33 +41,95 @@
 // @HEADER
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_Evaluator_Factory.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_Factory_Parrot.hpp"
 #include "Shards_CellTopology.hpp"
 
 // *******************************************************************
+
+void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+				const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_ids_to_cell_topo,
+				const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
+				const int default_integration_order,
+				const std::size_t workset_size,
+				const panzer::EquationSetFactory & eqset_factory,
+				const Teuchos::RCP<panzer::GlobalData>& global_data,
+				const bool build_transient_support,
+				std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::map;
+  using std::string;
+  
+  TEUCHOS_ASSERT(nonnull(physics_blocks_plist));
+
+  // Create a physics block for each element block
+  map<string,string>::const_iterator itr;
+  for (itr = block_ids_to_physics_ids.begin(); itr!=block_ids_to_physics_ids.end();++itr) {
+    string element_block_id = itr->first;
+    string physics_block_id = itr->second;
+    
+    map<string,RCP<const shards::CellTopology> >::const_iterator ct_itr =
+      block_ids_to_cell_topo.find(element_block_id);
+    TEUCHOS_TEST_FOR_EXCEPTION(ct_itr==block_ids_to_cell_topo.end(),
+			       std::runtime_error,
+			       "Falied to find CellTopology for element block id: \""
+			       << element_block_id << "\"!");
+    RCP<const shards::CellTopology> cellTopo = ct_itr->second; 
+    
+    const panzer::CellData volume_cell_data(workset_size,cellTopo);
+    
+    // find physics block parameter sublist
+    TEUCHOS_TEST_FOR_EXCEPTION(physics_blocks_plist->isSublist(physics_block_id),
+			       std::runtime_error,
+			       "Failed to find physics id: \""
+			       << physics_block_id 
+			       << "\" requested by element block: \"" 
+			       << element_block_id << "\"!");
+    
+    RCP<panzer::PhysicsBlock> pb = rcp(new panzer::PhysicsBlock(Teuchos::sublist(physics_blocks_plist,physics_block_id,true), 
+								element_block_id,
+								default_integration_order,
+								volume_cell_data, 
+								eqset_factory, 
+								global_data,
+								build_transient_support));
+    physicsBlocks.push_back(pb);
+  }
+}
+
+// *******************************************************************
 panzer::PhysicsBlock::
-PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
+PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
              const std::string & element_block_id,
+	     const int default_integration_order,
 	     const panzer::CellData & cell_data,
 	     const panzer::EquationSetFactory& factory,
 	     const Teuchos::RCP<panzer::GlobalData>& global_data,
 	     const bool build_transient_support) :
-  m_physics_id(ipb.physics_block_id),
   m_element_block_id(element_block_id),
+  m_default_integration_order(default_integration_order),
   m_cell_data(cell_data),
-  m_initializer(ipb),
+  m_input_parameters(physics_block_plist),
   m_build_transient_support(build_transient_support),
   m_global_data(global_data)
 {
-  initialize(m_initializer,element_block_id,cell_data,factory, 
+  TEUCHOS_ASSERT(nonnull(physics_block_plist));
+  m_physics_id = physics_block_plist->name();
+
+  initialize(m_input_parameters,
+	     m_default_integration_order,
+	     m_element_block_id,
+	     m_cell_data,
+	     factory, 
 	     build_transient_support);
 }
 
@@ -77,34 +139,50 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
              const panzer::EquationSetFactory& factory) :
   m_physics_id(pb.m_physics_id),
   m_element_block_id(pb.m_element_block_id),
-  m_cell_data(cell_data),
-  m_initializer(pb.m_initializer),
+  m_default_integration_order(pb.m_default_integration_order),
+  m_cell_data(cell_data),  // NOT copied from pb
+  m_input_parameters(pb.m_input_parameters),
   m_build_transient_support(pb.m_build_transient_support),
   m_global_data(pb.m_global_data)
 {
-  initialize(m_initializer,m_element_block_id,cell_data,factory,
+  initialize(m_input_parameters,
+	     m_default_integration_order,
+	     m_element_block_id,
+	     m_cell_data,
+	     factory,
 	     m_build_transient_support);
 }
 
-void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
+void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
+				      const int& default_integration_order,
                                       const std::string & element_block_id,
 	                              const panzer::CellData & cell_data,
 	                              const panzer::EquationSetFactory& factory,
 				      const bool build_transient_support)
 {
   using Teuchos::RCP;
+  using Teuchos::ParameterList;
   
-  const std::vector<panzer::InputEquationSet>& input_eq_sets = ipb.eq_sets;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(input_eq_sets.size() < 1, std::runtime_error,
-		     "There are no equation sets in the input file.  In order to use the phalanx "
-                     "assembly routines, you must add equation sets to a physics block!");
+  TEUCHOS_TEST_FOR_EXCEPTION(input_parameters->numParams() < 1, std::runtime_error,
+			     "The physics block \"" << input_parameters->name() 
+			     << "\" required by element block \"" << element_block_id
+			     << "\" does not have any equation sets associated with it."
+			     << " Please add at least one equation set to this physics block!");
 
   m_equation_sets.clear();
-  for (std::size_t i=0; i < input_eq_sets.size(); ++i) {
- 
+
+  // Loop over equation sets
+  typedef ParameterList::ConstIterator pl_iter;
+  for (pl_iter eq = input_parameters->begin(); eq != input_parameters->end(); ++eq) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( !(eq->second.isList()), std::logic_error,
+				"All entries in the physics block \"" << m_physics_id 
+				<< "\" must be an equation set sublist!" );
+
+    RCP<ParameterList> eq_set_pl = Teuchos::sublist(input_parameters,eq->first,true);
+
     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set
-      = factory.buildEquationSet(input_eq_sets[i], m_cell_data, m_global_data, build_transient_support);
+      = factory.buildEquationSet(eq_set_pl, default_integration_order, cell_data, m_global_data, build_transient_support);
 
     // add this equation set in
     m_equation_sets.push_back(eq_set);
@@ -121,7 +199,7 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
 
     // Get unique list of bases
     for(std::size_t j=0;j<sbNames.size();j++)
-      m_bases[sbNames[j].second->name()] = sbNames[j].second;
+      m_bases[sbNames[j].second->key()] = sbNames[j].second;
 
   }
 
@@ -399,12 +477,6 @@ panzer::PhysicsBlock::getBases() const
 }
 
 // *******************************************************************
-const panzer::InputPhysicsBlock & panzer::PhysicsBlock::getInputPhysicsBlock() const
-{
-   return m_initializer;
-}
-
-// *******************************************************************
 const shards::CellTopology panzer::PhysicsBlock::getBaseCellTopology() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(m_bases.size() == 0, std::runtime_error,
@@ -441,7 +513,7 @@ Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const 
 Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData & cell_data) const
 {
   // use parrot to avoid needing an equation set factory
-  EquationSet_FactoryParrot factory(m_initializer.eq_sets,m_equation_sets);
+  EquationSet_FactoryParrot factory(m_equation_sets);
   return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
 }
 

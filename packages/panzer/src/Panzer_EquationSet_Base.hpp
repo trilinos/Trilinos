@@ -125,6 +125,12 @@ namespace panzer {
     virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const = 0;
 
     virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
+
+    //! Returns the type of the equation set object.  Corresponds to the keyword used by the equation set factory to build a particular concrete equation set.
+    virtual std::string getType() const = 0;
+
+    //! Returns a unique key that differentiates an equation set (even equation sets of the same type in the same block).  This allows for reuse of equation sets in the same block.
+    virtual std::string getKey() const = 0;
   };
   
 }

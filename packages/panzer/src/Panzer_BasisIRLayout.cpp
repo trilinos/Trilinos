@@ -43,7 +43,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_PointRule.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
-
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Panzer_CellTopologyInfo.hpp"
@@ -62,7 +61,7 @@ BasisIRLayout(std::string basis_type, const int basis_order, const panzer::Point
 
 panzer::BasisIRLayout::
 BasisIRLayout(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::PointRule& int_rule) :
-  basis_name(b->name()),
+  basis_name(b->key()),
   field_basis_name(b->fieldName()),
   field_basis_name_D1(b->fieldNameD1()),
   field_basis_name_D2(b->fieldNameD2())
@@ -77,7 +76,7 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
       const panzer::PointRule & int_rule)
 {
   intrepid_basis = iBasis;
-
+  basis_key = basis_data->key() + ":" + int_rule.getName();
   cardinality = intrepid_basis->getCardinality();
   num_cells = int_rule.dl_vector->dimension(0);
   num_ip = int_rule.dl_vector->dimension(1);
@@ -149,6 +148,11 @@ int panzer::BasisIRLayout::getDimension() const
 std::string panzer::BasisIRLayout::name() const
 {
   return basis_name;
+}
+
+std::string panzer::BasisIRLayout::key() const
+{
+  return basis_key;
 }
 
 std::string panzer::BasisIRLayout::fieldName() const

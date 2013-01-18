@@ -43,17 +43,24 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
-
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include <sstream>
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,const int basis_order,const int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
-  basis_name(basis_type),
+PureBasis(const std::string & in_basis_type,
+	  const int basis_order,
+	  const int numCells,
+	  const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
+  basis_type(in_basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
+  std::ostringstream os;
+  os << basis_type << ":" << basis_order;
+  basis_key = os.str();
+
   dimension = cellTopo->getDimension();
 
   topology = cellTopo;
@@ -69,12 +76,16 @@ PureBasis(const std::string & basis_type,const int basis_order,const int numCell
 }
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data) :
-  basis_name(basis_type),
+PureBasis(const std::string & in_basis_type,const int basis_order,const CellData & cell_data) :
+  basis_type(in_basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
+  std::ostringstream os;
+  os << basis_type << ":" << basis_order;
+  basis_key = os.str();
+
   dimension = cell_data.baseCellDimension();
 
   topology = cell_data.getCellTopology();
@@ -104,9 +115,19 @@ int panzer::PureBasis::getDimension() const
   return dimension;
 }
 
-std::string panzer::PureBasis::name() const
+std::string panzer::PureBasis::type() const
 {
-  return basis_name;
+  return basis_type;
+}
+
+int panzer::PureBasis::order() const
+{
+  return intrepid_basis->getDegree();
+}
+
+std::string panzer::PureBasis::key() const
+{
+  return basis_key;
 }
 
 std::string panzer::PureBasis::fieldName() const

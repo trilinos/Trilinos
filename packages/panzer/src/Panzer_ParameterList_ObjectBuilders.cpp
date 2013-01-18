@@ -43,7 +43,6 @@
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_BC.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -51,6 +50,7 @@
 
 namespace panzer {
   
+/*
   void buildInputPhysicsBlocks(std::map<std::string,panzer::InputPhysicsBlock>& ipb,
 			       const Teuchos::ParameterList& p)
   {
@@ -96,7 +96,7 @@ namespace panzer {
     }
 
   }
-  
+*/
   void buildBCs(std::vector<panzer::BC>& bcs, 
 		const Teuchos::ParameterList& p)
   {
@@ -130,7 +130,7 @@ namespace panzer {
       b_to_p[entry->first] = entry->second.getValue(&dummy_type);
     }
   }
-
+/*
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                           const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_ids_to_cell_topo,
                           const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
@@ -176,4 +176,5 @@ namespace panzer {
         physicsBlocks.push_back(pb);
      }
   }
+*/
 }
