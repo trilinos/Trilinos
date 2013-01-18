@@ -1,5 +1,4 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
@@ -2568,10 +2567,9 @@ void ML_print_align(int int2match, char *space, int pad)
 /* submatrices, which is why this is a static function.  This should only be */
 /* called by ML_estimate_avg_nz_per_row.                                     */
 /* ************************************************************************* */
-static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * total_nz, int * total_rows) {
-  int N,row,*rowptr, *bindx, *cols;
+static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, double * total_nz, int * total_rows) {
+  int N,*rowptr, *bindx;
   double * values;
-  int maxrowlen, li=0,lj=0,lk=0;
   struct ML_CSR_MSRdata * ptr;
   int rv=-1;
   int first_row=0, last_row=matrix->getrow->Nrows;
@@ -2602,68 +2600,6 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * to
   }
 #endif
 
-  if(rv!=0) {
-    /* Case #4: Unknown Getrow (or failure in rowptr process).  Sample to estimate NZ */
-    maxrowlen = matrix->max_nz_per_row + 1; 
-    if(maxrowlen < 5) maxrowlen=50;
-    cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
-    values    = (double *) ML_allocate(maxrowlen * sizeof(double));
-    if(!cols || !values) {
-      printf("Not enough space to get a matrix row. A row length of \n");
-      printf("%d Was not sufficient\n",maxrowlen);
-      fflush(stdout);
-      exit(1);
-    }
-
-    row=1;
-    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &li)){
-      ML_free(cols); ML_free(values);
-      maxrowlen=2*maxrowlen+1;
-      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
-      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
-      if(!cols || !values) {
-	printf("Not enough space to get a matrix row. A row length of \n");
-	printf("%d Was not sufficient\n",maxrowlen);
-	fflush(stdout);
-	exit(1);
-      }
-    }
-
-    row=(N-1)/2;   
-    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lj)){
-      ML_free(cols); ML_free(values);
-      maxrowlen=2*maxrowlen+1;
-      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
-      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
-      if(!cols || !values) {
-	printf("Not enough space to get a matrix row. A row length of \n");
-	printf("%d Was not sufficient\n",maxrowlen);
-	fflush(stdout);
-	exit(1);
-      }
-    }
-    
-    row=N-1;
-    while(!matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lk)){
-      ML_free(cols); ML_free(values);
-      maxrowlen=2*maxrowlen+1;
-      cols      = (int    *) ML_allocate(maxrowlen * sizeof(int)   );
-      values    = (double *) ML_allocate(maxrowlen * sizeof(double));      
-      if(!cols || !values) {
-	printf("Not enough space to get a matrix row. A row length of \n");
-	printf("%d Was not sufficient\n",maxrowlen);
-	fflush(stdout);
-	exit(1);
-      }
-    }
-    
-    (*total_nz)=  (int) (N*(li+lj+lk)/3.0);
-
-    ML_free(cols);
-    ML_free(values);
-    rv=0;
-  }
-
   return rv;
 }
 
@@ -2673,31 +2609,67 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * to
 /* ************************************************************************* */
 int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   ML_Operator *next;
-  int sub_nz, sub_rows;
-  int rv,total_rows=0;
-  int total_nz=0;
-  (*avg_nz)=0;
+  int rv=0,sub_rows=0, total_rows=0;
+  double sub_nz=0.0,total_nz=0.0;
+  int row, allocated, i,j,k;
+  int *cols;
+  double *vals;
+  (*avg_nz)=0.0;
+
 
   /* Sanity Check & Get Num Rows*/
-  if(!matrix->getrow) return -1;
-  
-  /* Loop through all the submatrices, if any */
-  next = matrix->sub_matrix;
-  while ( (next != NULL) ) {
-    rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,&sub_nz,&sub_rows);
-    if(rv) return rv;
-    
-    /* Running statistics */
-    total_rows+= sub_rows;
-    total_nz  += sub_nz;    
-    next       = next->sub_matrix;
+  if(!matrix->getrow) {
+    printf("[%4d] CMS: matrix has no getrow.\n",matrix->comm->ML_mypid);
+    return -1;
   }
 
   /* Count the parent matrix */
   rv=ML_estimate_avg_nz_per_row_nosubmatrix(matrix,&sub_nz,&sub_rows);
   total_rows += sub_rows;
   total_nz   += sub_nz;    
+  
+  /* Loop through all the submatrices, if any */
+  next = matrix->sub_matrix;
+  while ( rv==0 && (next != NULL) ) {
+    rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,&sub_nz,&sub_rows);
 
-  if(total_rows>0) (*avg_nz)=((double)total_nz) / total_rows;
+    /* Short circuit if some submatrix failed */
+    if(rv!=0) break;
+
+    /* Running statistics */
+    total_rows+= sub_rows;
+    total_nz  += sub_nz;    
+    next       = next->sub_matrix;
+  }
+
+  if(rv) {
+    /* If any of the getrows failed, we just default to ML_get_matrix_row on the whole thing */
+    allocated = matrix->max_nz_per_row + 1;
+    cols  = (int    *) ML_allocate(allocated * sizeof(int) );
+    vals  = (double *) ML_allocate(allocated * sizeof(double));
+
+    row = 0; 
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &i, 0);
+    row = (matrix->getrow->Nrows-1)/2;
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &j, 0);
+    row = matrix->getrow->Nrows-1;
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &k, 0);
+    (*avg_nz) = ((double)i+j+k)/3.0;
+
+    /* Sanity checking in case one row is really, really different from the other two.
+       This is an attempt to avoid allocated an absurd amount of memory for the MMM if 
+       the problem has one really long row.  Rows of length 1 don't count for this purpose. */
+    if(i > 1 && j > 1 && (*avg_nz) > 10*(i+j))  (*avg_nz) = ((double)i+j)/2.0;
+    if(j > 1 && k > 1 && (*avg_nz) > 10*(j+k))  (*avg_nz) = ((double)j+k)/2.0;
+    if(i > 1 && k > 1 && (*avg_nz) > 10*(i+k))  (*avg_nz) = ((double)i+k)/2.0;
+
+    ML_free(cols);
+    ML_free(vals);
+  }
+  else{
+    /* All of the parent/submatrix getrows worked, so calculate the nz that way.*/
+    if (total_rows>0) 
+      (*avg_nz)= total_nz / total_rows;
+  }
   return 0;
 }
