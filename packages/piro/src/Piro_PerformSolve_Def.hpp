@@ -47,8 +47,8 @@
 namespace Piro {
 
 template <typename Scalar>
-void PerformSolve(
-    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+void PerformSolveImpl(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
     Teuchos::ParameterList &solveParams,
     Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
@@ -97,6 +97,16 @@ void PerformSolve(
   // Solve the problem using the nominal values for the parameters
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = piroModel.getNominalValues();
   piroModel.evalModel(inArgs, outArgs);
+}
+
+template <typename Scalar>
+void PerformSolve(
+    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
+{
+  PerformSolveImpl(piroModel, solveParams, responses, sensitivities);
 }
 
 } // namespace Piro

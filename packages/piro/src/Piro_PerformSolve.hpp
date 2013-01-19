@@ -60,6 +60,13 @@ void PerformSolve(
     Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities);
 
+template <typename Scalar>
+void PerformSolveImpl(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities);
+
 } // namespace Piro
 
 #include "Piro_PerformSolve_Def.hpp"
