@@ -45,6 +45,8 @@
 
 #include "MockModelEval_A.hpp"
 
+#include "Piro_PerformSolve.hpp"
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -62,7 +64,6 @@
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_RythmosSolver.hpp"
 #endif
-
 
 int main(int argc, char *argv[]) {
 
@@ -127,78 +128,63 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
       // Use these two objects to construct a Piro solved application
-      RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
-      RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
+      RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double> > piro;
+      {
+        RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
 
+        std::string& solver = piroParams->get("Piro Solver","NOX");
+        RCP<Teuchos::ParameterList> stratParams;
 
-      std::string& solver = piroParams->get("Piro Solver","NOX");
-      RCP<Teuchos::ParameterList> stratParams;
-
-      if (solver=="NOX" || solver=="LOCA") {
-        stratParams = Teuchos::rcp(&(piroParams->sublist("NOX").sublist("Direction").
-          sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
-      }
-      else if (solver=="Rythmos") {
-	piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
-        stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
-      }
-      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-      linearSolverBuilder.setParameterList(stratParams);
-      RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
-        createLinearSolveStrategy(linearSolverBuilder);
-      thyraModel = Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
+        if (solver=="NOX" || solver=="LOCA") {
+          stratParams = Teuchos::rcp(&(piroParams->sublist("NOX").sublist("Direction").
+            sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
+        }
+        else if (solver=="Rythmos") {
+          piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
+          stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
+        }
+        Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+        linearSolverBuilder.setParameterList(stratParams);
+        RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+          createLinearSolveStrategy(linearSolverBuilder);
+        thyraModel = Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
 
 
 #ifdef Piro_ENABLE_NOX
-      if (solver=="NOX") {
-        piro = rcp(new Piro::NOXSolver<double>(piroParams, thyraModel));
-      }
-      else
+        if (solver=="NOX") {
+          piro = rcp(new Piro::NOXSolver<double>(piroParams, thyraModel));
+        }
+        else
 #ifdef NO_LOCA_YET
- if (solver=="LOCA") {
-        piro = rcp(new Piro::LOCASolver<double>( piroParams, thyraModel, Teuchos::null));
-      }
-      else
+   if (solver=="LOCA") {
+          piro = rcp(new Piro::LOCASolver<double>(piroParams, thyraModel, Teuchos::null));
+        }
+        else
 #endif
 #endif
 #ifdef Piro_ENABLE_Rythmos
-      if (solver=="Rythmos") {
-        piro = rcp(new Piro::RythmosSolver<double>(piroParams, thyraModel));
-      }
-      else
+        if (solver=="Rythmos") {
+          piro = rcp(new Piro::RythmosSolver<double>(piroParams, thyraModel));
+        }
+        else
 #endif
-      {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Error: Unknown Piro Solver : " << solver);
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+            "Error: Unknown Piro Solver : " << solver);
+        }
       }
 
-      const bool computeSens = piroParams->get("Compute Sensitivities", false);
+      Teuchos::Array<RCP<const Thyra::VectorBase<double> > > responses;
+      Teuchos::Array<Teuchos::Array<RCP<const Thyra::MultiVectorBase<double> > > > sensitivities;
+      Piro::PerformSolve(*piro, *piroParams, responses, sensitivities);
 
-      // Now the (somewhat cumbersome) setting of inputs and outputs
-      const Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->getNominalValues();
-      const int num_p = inArgs.Np();     // Number of *vectors* of parameters
-      assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-      const RCP<const Thyra::VectorBase<double> > p1 = inArgs.get_p(0);
-      const int numParams = p1->space()->dim(); // Number of parameters in p1 vector
+      // Extract default input parameters
+      const RCP<const Thyra::VectorBase<double> > p1 = piro->getNominalValues().get_p(0);
 
-      // Set output arguments to evalModel call
-      Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-      const int num_g = outArgs.Ng(); // Number of *vectors* of responses
-      assert (num_g == 2);  // Logic needs to be generalized -- hardwire to 1 g vector in model
-
-      const RCP<Thyra::VectorBase<double> > g1 = Thyra::createMember(*piro->get_g_space(0));
-      outArgs.set_g(0,g1);
-
-      // Solution vector is returned as extra respons vector
-      const RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyraModel->get_x_space());
-      outArgs.set_g(1,gx);
-
-      const RCP<Thyra::MultiVectorBase<double> > dgdp =
-        Thyra::createMembers(*piro->get_g_space(0),numParams);
-      if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
-
-      // Now, solve the problem and return the responses
-      piro->evalModel(inArgs, outArgs);
+      // Extract output arguments
+      const RCP<const Thyra::VectorBase<double> > g1 = responses[0];
+      const RCP<const Thyra::VectorBase<double> > gx = responses[1];
+      const RCP<const Thyra::MultiVectorBase<double> > dgdp = sensitivities[0][0];
 
       // Print out everything
       if (Proc == 0)
@@ -209,7 +195,7 @@ int main(int argc, char *argv[]) {
       cout << "\nParameters! {1,1}\n" << *p1 << endl;
       cout << "\nResponses! {8.0}\n" << *g1 << endl;
       cout << "\nSolution! {1,2,3,4}\n" << *gx << endl;
-      if (computeSens)
+      if (Teuchos::nonnull(dgdp))
         cout <<"\nSensitivities {2.0, -8.0}\n" << *dgdp << endl;
 
       if (Proc == 0)
