@@ -731,12 +731,19 @@ MpiComm<Ordinal>::
 setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler)
 {
   if (! is_null (errHandler)) {
+#if MPI_VERSION >= 2
     const int err = MPI_Comm_set_errhandler (*getRawMpiComm(), *errHandler);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
       "Teuchos::MpiComm::setErrorHandler: MPI_Comm_set_errhandler() failed with "
       "error \"" << mpiErrorCodeToString (err) << "\".");
+#else // MPI 1
+    const int err = MPI_Errhandler_set (*getRawMpiComm(), *errHandler);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "Teuchos::MpiComm::setErrorHandler: MPI_Errhandler_set() failed with "
+      "error \"" << mpiErrorCodeToString (err) << "\".");
+#endif // MPI_VERSION >= 2
   }
-  // Wait to set this until the end, in case MPI_Errhandler_set()
+  // Wait to set this until the end, in case setting the error handler
   // doesn't succeed.
   customErrorHandler_ = errHandler;
 }
