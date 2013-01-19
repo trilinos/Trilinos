@@ -81,11 +81,11 @@ namespace Intrepid {
   machine_epsilon();
 
   ///
-  /// Twin type. Holder of two objects of the same type.
+  /// Duet type. Holder of two objects of the same type.
   /// Useful as return type for functions that need to return two objects.
   ///
   template<typename T>
-  struct Twin
+  struct Duet
   {
     T first;
     T second;
@@ -104,12 +104,12 @@ namespace Intrepid {
   };
 
   ///
-  /// Create a Twin structure.
+  /// Create a Duet structure.
   ///
   template<typename T>
   inline
-  Twin<T>
-  make_twin(T const & a, T const & b);
+  Duet<T>
+  make_duet(T const & a, T const & b);
 
   ///
   /// Create a Triplet structure.
@@ -118,6 +118,24 @@ namespace Intrepid {
   inline
   Triplet<T>
   make_triplet(T const & a, T const & b, T const & c);
+
+  ///
+  /// Tie function template to hold values of functions
+  /// that return a Duet.
+  ///
+  template<typename T>
+  inline
+  Duet<T>
+  tie(T & a, T& b);
+
+  ///
+  /// Tie function template to hold values of functions
+  /// that return a Duet.
+  ///
+  template<typename T>
+  inline
+  Triplet<T>
+  tie(T & a, T & b, T & c);
 
 } // namespace Intrepid
 
