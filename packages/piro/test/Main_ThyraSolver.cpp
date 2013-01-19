@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
   bool success=true;
 
-  // Initialize MPI 
+  // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 #else
   int numTests=2;
 #endif
- 
+
 #ifdef NO_LOCA_THYRA_YET
   for (int iTest=0; iTest<numTests; iTest++) {
 #else
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
           << endl;
-    
+
     try {
 
       // Create (1) a Model Evaluator and (2) a ParameterList
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
          rcp(new Teuchos::ParameterList("Piro Parameters"));
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
-      // Use these two objects to construct a Piro solved application 
+      // Use these two objects to construct a Piro solved application
       RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
       RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
       if (solver=="Rythmos") {
         piro = rcp(new Piro::RythmosSolver<double>(piroParams, thyraModel));
       }
-      else 
+      else
 #endif
       {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 
       // Print out everything
       if (Proc == 0)
-        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}" 
+        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
              << "\n-----------------------------------------------------------------"
              << std::setprecision(9) << endl;
 
@@ -223,9 +223,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (Proc==0) {
-    if (overall_status==0) 
+    if (overall_status==0)
       cout << "\nTEST PASSED\n" << endl;
-    else 
+    else
       cout << "\nTEST Failed:  " << overall_status << endl;
   }
 
