@@ -86,6 +86,13 @@ namespace details {
   ///   you have allowed the MPI_Comm to persist after MPI_Finalize
   ///   has been called.
   void safeCommFree (MPI_Comm* comm);
+
+  /// Set the given communicator's error handler to \c handler.
+  ///
+  /// If the MPI version is >= 2, this calls MPI_Comm_set_handler().
+  /// If the MPI version is 1, this calls MPI_Errhandler_set().
+  int setCommErrhandler (MPI_Comm comm, MPI_Errhandler handler);
+
 } // namespace details
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
@@ -731,17 +738,10 @@ MpiComm<Ordinal>::
 setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler)
 {
   if (! is_null (errHandler)) {
-#if MPI_VERSION >= 2
-    const int err = MPI_Comm_set_errhandler (*getRawMpiComm(), *errHandler);
+    const int err = details::setCommErrhandler (*getRawMpiComm (), *errHandler);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-      "Teuchos::MpiComm::setErrorHandler: MPI_Comm_set_errhandler() failed with "
+      "Teuchos::MpiComm: Setting the MPI_Comm's error handler failed with "
       "error \"" << mpiErrorCodeToString (err) << "\".");
-#else // MPI 1
-    const int err = MPI_Errhandler_set (*getRawMpiComm(), *errHandler);
-    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-      "Teuchos::MpiComm::setErrorHandler: MPI_Errhandler_set() failed with "
-      "error \"" << mpiErrorCodeToString (err) << "\".");
-#endif // MPI_VERSION >= 2
   }
   // Wait to set this until the end, in case setting the error handler
   // doesn't succeed.

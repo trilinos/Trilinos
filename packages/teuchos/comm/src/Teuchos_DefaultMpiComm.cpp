@@ -71,6 +71,14 @@ namespace Teuchos {
 	(void) MPI_Comm_free (comm);
       }
     }
+
+    int setCommErrhandler (MPI_Comm comm, MPI_Errhandler handler) {
+#if MPI_VERSION >= 2
+      return MPI_Comm_set_errhandler (comm, handler);
+#else // MPI 1
+      return MPI_Errhandler_set (comm, handler);
+#endif // MPI_VERSION >= 2
+    }
   } // namespace details
 
 } // namespace Teuchos
