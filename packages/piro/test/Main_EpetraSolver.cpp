@@ -47,6 +47,7 @@
 #include "SaveEigenData_Epetra.hpp"
 
 #include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_PerformSolve.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
@@ -125,33 +126,19 @@ int main(int argc, char *argv[]) {
       }
 #endif
 
-      // Use these two objects to construct a Piro solved application
-      //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
+      // Wrap original model into a Piro solver to build a response-only application
       const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
 
-      bool computeSens = piroParams->get("Compute Sensitivities", false);
+      Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > responses;
+      Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > sensitivities;
+      Piro::Epetra::PerformSolve(*piro, *piroParams, responses, sensitivities);
 
-      // Now the (somewhat cumbersome) setting of inputs and outputs
-      EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-      int num_p = inArgs.Np();     // Number of *vectors* of parameters
-      RCP<Epetra_Vector> p1 = rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-      int numParams = p1->MyLength(); // Number of parameters in p1 vector
-      inArgs.set_p(0,p1);
+      // Extract
+      const RCP<const Epetra_Vector> g1 = responses[0];
+      const RCP<const Epetra_Vector> gx = responses[1];
+      const RCP<const Epetra_MultiVector> dgdp = sensitivities[0][0];
 
-      // Set output arguments to evalModel call
-      EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-      int num_g = outArgs.Ng(); // Number of *vectors* of responses
-      RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
-      outArgs.set_g(0,g1);
-      // Solution vector is returned as extra respons vector
-      RCP<Epetra_Vector> gx = rcp(new Epetra_Vector(*(piro->get_g_map(1))));
-      outArgs.set_g(1,gx);
-
-      RCP<Epetra_MultiVector> dgdp = rcp(new Epetra_MultiVector(g1->Map(), numParams));
-      if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
-
-      // Now, solve the problem and return the responses
-      piro->evalModel(inArgs, outArgs);
+      const RCP<const Epetra_Vector> p1 = piro->get_p_init(0);
 
       // Print out everything
       if (Proc == 0)
@@ -162,7 +149,7 @@ int main(int argc, char *argv[]) {
       p1->Print(cout << "\nParameters! {1,1}\n");
       g1->Print(cout << "\nResponses! {8.0}\n");
       gx->Print(cout << "\nSolution! {1,2,3,4}\n");
-      if (computeSens)
+      if (Teuchos::nonnull(dgdp))
         dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
 
       if (Proc == 0)
