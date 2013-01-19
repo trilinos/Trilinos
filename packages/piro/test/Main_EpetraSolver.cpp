@@ -46,21 +46,14 @@
 #include "MockModelEval_A.hpp"
 #include "SaveEigenData_Epetra.hpp"
 
+#include "Piro_Epetra_Factory.hpp"
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
-
-#ifdef Piro_ENABLE_NOX
-#include "Piro_Epetra_NOXSolver.hpp"
-#include "Piro_Epetra_LOCASolver.hpp"
-#endif
-#ifdef Piro_ENABLE_Rythmos
-#include "Piro_Epetra_RythmosSolver.hpp"
-#endif
-
 
 int main(int argc, char *argv[]) {
 
@@ -83,6 +76,8 @@ int main(int argc, char *argv[]) {
 
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
+
+  Piro::Epetra::Factory solverFactory;
 
 #ifdef Piro_ENABLE_Rythmos
   int numTests=5;
@@ -121,29 +116,18 @@ int main(int argc, char *argv[]) {
          rcp(new Teuchos::ParameterList("Piro Parameters"));
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
+#ifdef Piro_ENABLE_NOX
+      const std::string &solver = piroParams->get("Piro Solver","NOX");
+      if (solver == "LOCA") {
+        const RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
+            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
+        piroParams->set("Save Eigen Data Strategy", saveEigs);
+      }
+#endif
+
       // Use these two objects to construct a Piro solved application
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
-      RCP<EpetraExt::ModelEvaluator> piro;
-
-      std::string& solver = piroParams->get("Piro Solver","NOX");
-#ifdef Piro_ENABLE_NOX
-      if (solver=="NOX")
-        piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
-      else if (solver=="LOCA") {
-        RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
-            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
-        piro = rcp(new Piro::Epetra::LOCASolver(
-                       piroParams, Model, Teuchos::null, saveEigs));
-      }
-      else
-#endif
-#ifdef Piro_ENABLE_Rythmos
-      if (solver=="Rythmos")
-        piro = rcp(new Piro::Epetra::RythmosSolver(piroParams, Model));
-      else
-#endif
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Error: Unknown Piro Solver : " << solver);
+      const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
 
       bool computeSens = piroParams->get("Compute Sensitivities", false);
 
