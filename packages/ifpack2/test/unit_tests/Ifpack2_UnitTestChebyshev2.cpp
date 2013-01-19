@@ -26,8 +26,43 @@
 
 
 /*! \file Ifpack2_UnitTestChebyshev2.cpp
+\brief A convergence test for Ifpack2::Chebyshev.
+\author Mark Hoemmen
 
-\brief A more thorough test for Ifpack2::Chebyshev.
+This test compares Ifpack2's implementation of Chebyshev iteration
+against the following implementations:
+1. A textbook version of the algorithm
+2. A clean reimplementation of Ifpack2's algorithm
+3. A textbook implementation of CG
+
+All three do the same left diagonal scaling that Ifpack2 does.
+"Textbook" implementations come from "Templates for the Solution
+of Linear Systems," 2nd edition.  We include CG just to give us a 
+rough measure of how fast the methods "should" converge.
+
+The test exercises all four algorithms with a 1-D Poisson equation.
+We know the eigenvalues of the matrix exactly as a function of its
+dimensions, so we can give perfect eigenvalue bounds.  We also
+experiment with changing the max eigenvalue bound so that it's either
+an overestimate or an underestimate.
+
+This test has the following command-line arguments:
+- numIters: The number of iterations of Chebyshev or CG.
+- localNumRows: The number of rows of the matrix on each process.
+
+Currently, Ifpack2's Chebyshev and its imitation in this file (#2
+above) <i>almost</i> agree, but not quite.  The difference is almost
+always less than an order of magnitude.  The textbook implementation
+(#1 above) converges much faster if the eigenvalue bounds are good,
+but both Ifpack2's Chebyshev and its imitation are much less sensitive
+to an incorrect upper bound on the eigenvalues.  This gives me
+confidence that Ifpack2's version is correct.
+
+I haven't yet done the analysis to understand why the different
+implementations produce different results.  However, I feel better
+now about Ifpack2's version.  I would still prefer to use the textbook
+version of the algorithm, though, just to remove the puzzle of whether 
+what you see on the screen is actually what it claims to be.
 */
 
 #include <Ifpack2_ConfigDefs.hpp>
@@ -42,17 +77,24 @@
 
 namespace {
 /// \class Chebyshev
-/// \brief Left-scaled Chebyshev iteration.
+/// \brief Left-scaled Chebyshev iteration, using the textbook algorithm.
 /// \tparam ScalarType The type of entries in the matrix and vectors.
 /// \tparam MV Specialization of Tpetra::MultiVector.
 /// \tparam MAT Corresponding specialization of Tpetra::CrsMatrix.
 ///
+/// This class implements the version of Chebyshev iteration in
+/// "Templates for the Solution of Linear Systems," 2nd edition.  It
+/// uses the diagonal of the matrix to precondition the linear system
+/// on the left.  Diagonal entries less than machine precision are
+/// replaced with machine precision.
+///
 /// This class requires that the matrix A be real valued and symmetric
 /// positive definite.  If users could provide the ellipse parameters
 /// ("d" and "c" in the literature, where d is the real-valued center
-/// of the ellipse, and d-c and d+c the two foci), the code would work
-/// fine with nonsymmetric A, as long as the eigenvalues of A can be
-/// bounded in an ellipse that is entirely to the right of the origin.
+/// of the ellipse, and d-c and d+c the two foci), the iteration
+/// itself would work fine with nonsymmetric A, as long as the
+/// eigenvalues of A can be bounded in an ellipse that is entirely to
+/// the right of the origin.
 template<class ScalarType, class MV, class MAT>
 class Chebyshev {
 public:
@@ -63,7 +105,7 @@ public:
 			 typename MV::local_ordinal_type,
 			 typename MV::global_ordinal_type,
 			 typename MV::node_type> V;
-  /// Constructor.
+  /// Constructor that sets default parameters.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
   ///   A must be real-valued and symmetric positive definite.
@@ -77,7 +119,7 @@ public:
     imitateIfpack_ (false)
   {}
 
-  /// Constructor with parameters.
+  /// Constructor that sets the user's parameters.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
   ///   A must be real-valued and symmetric positive definite.
@@ -98,21 +140,29 @@ public:
   /// \brief Set (or reset) parameters.
   ///
   /// This method accepts the following parameters:
-  /// - "chebyshev: max eigenvalue" (\c ScalarType): lambdaMax, a
+  /// - "chebyshev: max eigenvalue" (\c ScalarType): lambdaMax, an
+  ///   upper bound of the bounding ellipse of the eigenvalues of the
+  ///   matrix A.  This parameter is required.
+  /// - "chebyshev: ratio eigenvalue" (\c ScalarType): eigRatio, the
+  ///   ratio of lambdaMax to the lower bound of the bounding ellipse
+  ///   of the eigenvalues of A.  We use lambdaMax and eigRatio to
+  ///   determine the Chebyshev iteration coefficients.  This
+  ///   parameter is optional and defaults to 30.
+  /// - "chebyshev: min eigenvalue" (\c ScalarType): lambdaMin, a
   ///   lower bound of real part of bounding ellipse of eigenvalues of
-  ///   the matrix A.
-  /// - "chebyshev: min eigenvalue" (\c ScalarType): lambdaMin, an
-  ///   upper bound of real part of bounding ellipse of eigenvalues of
-  ///   the matrix A.
-  /// - "chebyshev: degree" (\c int): numIters, the number of iterations.
+  ///   the matrix A.  This parameter is optional and only used for
+  ///   sanity checks.
+  /// - "chebyshev: degree" (\c int): numIters, the number of
+  ///   iterations.
   /// - "relaxation: sweeps" (\c int): numIters, the number of
   ///   iterations.  If "chebyshev: degree" is a parameter, this
-  ///   parameter will be ignored.
+  ///   parameter will be ignored.  We include this for compatibility
+  ///   with Ifpack.
   /// - "chebyshev: imitate Ifpack" (\c bool): If true, imitate
-  ///   Ifpack's choice of Chebyshev parameters.
+  ///   Ifpack's implementation of Chebyshev iteration.
   ///
+  /// \pre lambdaMin, lambdaMax, and eigRatio are real
   /// \pre 0 < lambdaMin <= lambdaMax
-  /// \pre lambdaMin and lambdaMax are real
   /// \pre numIters >= 0
   void setParameters (Teuchos::ParameterList& plist) {
     ST lambdaMax = lambdaMax_;
@@ -138,19 +188,17 @@ public:
     imitateIfpack_ = imitateIfpack;
   }
 
-  /// Solve Ax=b for x with Chebyshev iteration, using diagonal left preconditioning.
+  /// Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
   ///
-  /// \pre numIters >= 0.
-  ///
-  /// \param b [in] Right-hand side(s) in the linear system to solve.
-  /// \param x [in] Initial guess(es) for the linear system to solve.
+  /// \param B [in] Right-hand side(s) in the linear system to solve.
+  /// \param X [in] Initial guess(es) for the linear system to solve.
   ///
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
-  MT apply (const MV& b, MV& x) {
+  MT apply (const MV& B, MV& X) {
     if (imitateIfpack_) {
       const ST eigRatio = eigRatio_;
       const ST lambdaMax = lambdaMax_ * Teuchos::as<ST> (1.1);
-      ifpackApplyImpl (*A_, b, x, numIters_, lambdaMax, eigRatio, *D_);
+      ifpackApplyImpl (*A_, B, X, numIters_, lambdaMax, eigRatio, *D_);
     } else {
       // mfh 17,18 Jan 2013: These are the best settings for
       // convergence in 50 iterations with the 1-D Poisson equation,
@@ -162,13 +210,13 @@ public:
       const ST eigRatio = Teuchos::as<ST> (30);
       const ST lambdaMax = lambdaMax_;
       const ST lambdaMin = lambdaMax / eigRatio;
-      leftScaledChebyshevImpl (*A_, b, x, numIters_, lambdaMax, lambdaMin, *D_);
+      applyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, *D_);
     }
 
-    MV r (b.getMap (), b.getNumVectors ());
-    computeResidual (r, b, *A_, x);
-    Teuchos::Array<MT> norms (b.getNumVectors ());
-    r.norm2 (norms ());
+    MV R (B.getMap (), B.getNumVectors ());
+    computeResidual (R, B, *A_, X);
+    Teuchos::Array<MT> norms (B.getNumVectors ());
+    R.norm2 (norms ());
     return *std::max_element (norms.begin (), norms.end ());
   }
 
@@ -190,67 +238,75 @@ private:
     A.apply (x, r, mode, -STS::one(), STS::one());
   }
 
-  //! z = D_inv * r, = D \ r.
-  static void solve (MV& z, const V& D_inv, const MV& r) {
-    z.elementWiseMultiply (STS::one(), D_inv, r, STS::zero());
+  /// \brief Z = D_inv * R, = D \ R.
+  ///
+  /// \param D_inv [in] A vector representing a diagonal matrix.
+  /// \param R [in] Input multivector.
+  /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
+  static void solve (MV& Z, const V& D_inv, const MV& R) {
+    Z.elementWiseMultiply (STS::one(), D_inv, R, STS::zero());
   }
 
-  //! z = alpha * D_inv * r, = alpha * (D \ r).
-  static void solve (MV& z, const ST alpha, const V& D_inv, const MV& r) {
-    z.elementWiseMultiply (alpha, D_inv, r, STS::zero());
+  /// \brief Z = alpha * D_inv * R, = alpha * (D \ R).
+  ///
+  /// \param D_inv [in] A vector representing a diagonal matrix.
+  /// \param R [in] Input multivector.
+  /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
+  static void solve (MV& Z, const ST alpha, const V& D_inv, const MV& R) {
+    Z.elementWiseMultiply (alpha, D_inv, R, STS::zero());
   }
 
   //! Get a copy of the diagonal of the matrix, as a row Map vector.
   static Teuchos::RCP<V> getDiagonal (const MAT& A) {
     Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
     A.getLocalDiagCopy (*D);
-
+    // Invert the diagonal entries, replacing entries less than
+    // machine precision with machine precision.
     typedef Kokkos::MultiVector<ST, typename MAT::node_type> KMV;
     KMV& localDiag = D->getLocalMVNonConst ();
     typedef Kokkos::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, STS::eps ());
-
     return D;
   }
 
-  /// Solve Ax=b for x with Chebyshev iteration, using diagonal left preconditioning.
+  /// Solve AX=B for X with Chebyshev iteration with left diagonal scaling.
   ///
   /// \pre A must be real-valued and symmetric positive definite.
-  /// \pre iterNum >= 0.
-  /// \pre 0 < lMin <= lMax
+  /// \pre numIters >= 0.
+  /// \pre 0 < lambdaMin <= lambdaMax
   /// \pre All entries of D_inv are positive.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
-  /// \param b [in] Right-hand side(s) in the linear system to solve.
-  /// \param x [in] Initial guess(es) for the linear system to solve.
-  /// \param iterNum [in] Number of Chebyshev iterations.
-  /// \param lMax [in] Estimate of max eigenvalue of A.
-  /// \param lMin [in] Estimate of min eigenvalue of A.
+  /// \param B [in] Right-hand side(s) in the linear system to solve.
+  /// \param X [in] Initial guess(es) for the linear system to solve.
+  /// \param numIters [in] Number of Chebyshev iterations.
+  /// \param lambdaMax [in] Estimate of max eigenvalue of A.
+  /// \param lambdaMin [in] Estimate of min eigenvalue of A.
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
-  ///   the same distribution as b.
+  ///   the same distribution as B.
   static void
-  leftScaledChebyshevImpl (const MAT& A,
-			   const MV& b,
-			   MV& x,
-			   const int iterNum,
-			   const ST lMax,
-			   const ST lMin,
-			   const V& D_inv)
+  applyImpl (const MAT& A,
+	     const MV& B,
+	     MV& X,
+	     const int numIters,
+	     const ST lambdaMax,
+	     const ST lambdaMin,
+	     const V& D_inv)
   {
     const ST one = Teuchos::as<ST> (1);
     const ST two = Teuchos::as<ST> (2);
-    const ST d = (lMax + lMin) / two; // Ifpack2 calls this theta
-    const ST c = (lMax - lMin) / two; // Ifpack2 calls this 1/delta
+    const ST d = (lambdaMax + lambdaMin) / two; // Ifpack2 calls this theta
+    const ST c = (lambdaMax - lambdaMin) / two; // Ifpack2 calls this 1/delta
 
-    MV r (b.getMap (), b.getNumVectors (), false);
-    MV p (b.getMap (), b.getNumVectors (), false);
-    MV z (b.getMap (), b.getNumVectors (), false);
+    MV R (B.getMap (), B.getNumVectors (), false);
+    MV P (B.getMap (), B.getNumVectors (), false);
+    MV Z (B.getMap (), B.getNumVectors (), false);
     ST alpha, beta;
-    for (int i = 0; i < iterNum; ++i) {
-      computeResidual (r, b, A, x); // r = b - A*x
-      solve (z, D_inv, r); // z = D_inv * r, that is, D \ r.
+    for (int i = 0; i < numIters; ++i) {
+      computeResidual (R, B, A, X); // R = B - A*X
+      solve (Z, D_inv, R); // z = D_inv * R, that is, D \ R.
       if (i == 0) {
-	p = z;
+	P = Z;
 	alpha = two / d;
       } else {
 	//beta = (c * alpha / two)^2;
@@ -258,21 +314,23 @@ private:
 	//beta = sqrtBeta * sqrtBeta;
 	beta = alpha * (c/two) * (c/two);
 	alpha = one / (d - beta);
-	p.update (one, z, beta); // p = z + beta*p
+	P.update (one, Z, beta); // P = Z + beta*P
       }
-      x.update (alpha, p, one); // x = x + alpha*p
-      // If we compute the residual here, we could either do r = b -
-      // A*x, or r = r - alpha*A*p.  Since we choose the former, we
+      X.update (alpha, P, one); // X = X + alpha*P
+      // If we compute the residual here, we could either do R = B -
+      // A*X, or R = R - alpha*A*P.  Since we choose the former, we
       // can move the computeResidual call to the top of the loop.
     }
   }
 
 
-  /// Solve AX=B for X using Chebyshev, imitating Ifpack's implementation.
+  /// \brief Solve AX=B for X with Chebyshev iteration with left
+  ///   diagonal scaling, imitating Ifpack's implementation.
   ///
   /// \pre A must be real-valued and symmetric positive definite.
-  /// \pre iterNum >= 0.
-  /// \pre 0 < lMin <= lMax
+  /// \pre numIters >= 0
+  /// \pre eigRatio >= 1
+  /// \pre 0 < lambdaMax
   /// \pre All entries of D_inv are positive.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
@@ -288,11 +346,14 @@ private:
   ifpackApplyImpl (const MAT& A,
 		   const MV& B,
 		   MV& X,
-		   const int iterNum,
+		   const int numIters,
 		   const ST lambdaMax,
 		   const ST eigRatio,
 		   const V& D_inv)
   {
+    if (numIters <= 0) {
+      return;
+    }
     const ST one = Teuchos::as<ST> (1);
     const ST two = Teuchos::as<ST> (2);
     const ST lambdaMaxIncr = Teuchos::as<ST> (1.1);
@@ -306,14 +367,15 @@ private:
     MV V (B.getMap (), B.getNumVectors (), false);
     MV W (B.getMap (), B.getNumVectors (), false);
 
-    // Treat the initial guess.
+    // Special case for the first iteration.
     computeResidual (V, B, A, X);
     solve (W, one/theta, D_inv, V);
     X.update (one, W, one);
 
+    // The rest of the iterations.
     ST rhok = one / s1;
     ST rhokp1, dtemp1, dtemp2;
-    for (int deg = 1; deg < iterNum; ++deg) {
+    for (int deg = 1; deg < numIters; ++deg) {
       computeResidual (V, B, A, X);
 
       rhokp1 = one / (two * s1 - rhok);
@@ -534,7 +596,7 @@ TEUCHOS_STATIC_SETUP()
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP ();
   clp.setOption ("numIters", &numberOfIterations, 
 		 "Number of Chebyshev iterations");
-  clp.setOption ("localNumberOfRows", &localNumberOfRows, 
+  clp.setOption ("localNumRows", &localNumberOfRows, 
 		 "Number of rows per process in the sparse matrix.");
 }
 
