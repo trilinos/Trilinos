@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  H->SetDefaultVerbLevel(MueLu::Low);
 
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);

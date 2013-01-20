@@ -272,7 +272,7 @@ namespace MueLu {
     //
 
     // Hierarchy options
-    this->verbLevel_       = toMueLuVerbLevel(eVerbLevel);
+    this->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
     this->numDesiredLevel_ = maxLevels;
     this->maxCoarseSize_   = maxCoarseSize;
 
