@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
   bool success=true;
 
-  // Initialize MPI 
+  // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
       iTest = 999;
     }
 
-    if (Proc==0) 
+    if (Proc==0)
      cout << "===================================================\n"
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
 
-      // Use these two objects to construct a Piro solved application 
+      // Use these two objects to construct a Piro solved application
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
       RCP<EpetraExt::ModelEvaluator> piro;
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 #ifdef Piro_ENABLE_Rythmos
       if (solver=="Rythmos")
         piro = rcp(new Piro::Epetra::RythmosSolver(piroParamsRCP, Model));
-      else 
+      else
 #endif
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error: Unknown Piro Solver : " << solver);
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
       if (p != Teuchos::null) {
         // Can post-process results here
-         if (Proc==0) cout << 
+         if (Proc==0) cout <<
            "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << endl;
       }
 
@@ -168,9 +168,9 @@ int main(int argc, char *argv[]) {
   }  // End loop over tests
 
   if (Proc==0) {
-    if (overall_status==0) 
+    if (overall_status==0)
       cout << "\nTEST PASSED\n" << endl;
-    else 
+    else
       cout << "\nTEST Failed: " << overall_status << "\n" << endl;
   }
 
