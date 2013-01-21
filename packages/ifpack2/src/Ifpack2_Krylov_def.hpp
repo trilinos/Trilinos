@@ -215,18 +215,14 @@ void Krylov<MatrixType>::compute() {
   }
   Time_.start(true);
   // Preconditioner choice
-  Ifpack2::Factory factory;
   if(PreconditionerType_==2) {
-    //ifpack2_prec_ = Teuchos::rcp( new Ifpack2::ILUT<MatrixType> (A_) );
-    ifpack2_prec_ = factory.create("ILUT", A_);
+    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::ILUT<MatrixType> (A_) );
   }
   else if(PreconditionerType_==3) {
-    //ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Chebyshev<MatrixType> (A_) );
-    ifpack2_prec_ = factory.create("CHEBYSHEV", A_);  
+    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Chebyshev<MatrixType> (A_) );
   }
   else {
-    //ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Relaxation<MatrixType> (A_) );
-    ifpack2_prec_ = factory.create("RELAXATION", A_);  
+    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Relaxation<MatrixType> (A_) );
   }
   ifpack2_prec_->initialize();
   ifpack2_prec_->setParameters(params_);
