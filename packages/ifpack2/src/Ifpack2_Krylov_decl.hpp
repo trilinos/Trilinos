@@ -41,6 +41,7 @@
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "ifpack2_Factory.hpp"
 
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
