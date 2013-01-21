@@ -102,7 +102,7 @@ namespace MueLu {
         stridedblocksize = fullblocksize;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
+      GetOStream(Runtime1, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
       /*std::cout << "fullblocksize: " << fullblocksize << std::endl;
         std::cout << "offset: " << offset << std::endl;
         std::cout << "blockid: " << blockid << std::endl;
