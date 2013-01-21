@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2012/12/07",
-  "Revision: 2.28"
+  "Date: 2013/01/21",
+  "Revision: 2.29"
 };
 
 #include <stdlib.h>
@@ -240,12 +240,18 @@ int main (int argc, char *argv[])
       char *pt = strrchr(val, '"');
       val++;
       *pt = '\0';
-      s = putsym(var, SVAR, 0);
+      if (var[0] == '_')
+	s = putsym(var, SVAR, 0);
+      else
+	s = putsym(var, IMMSVAR, 0);
       NEWSTR(val, s->value.svar);
     }
     else {
       sscanf (val, "%lf", &value);
-      s = putsym (var, VAR, 0);
+      if (var[0] == '_')
+	s = putsym (var, VAR, 0);
+      else
+	s = putsym (var, IMMVAR, 0);
       s->value.var = value;
     }
   }

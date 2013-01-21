@@ -104,8 +104,12 @@ void dumpsym (int type, int doInternal)
 	if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	  if (ptr->type == VAR)
 	    printf ("%c  {%-10s\t= %.10g}\n", comment, ptr->name, ptr->value.var);
+	  else if (ptr->type == IMMVAR)
+	    printf ("%c  {%-10s\t= %.10g} (immutable)\n", comment, ptr->name, ptr->value.var);
 	  else if (ptr->type == SVAR)
 	    printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name, ptr->value.svar);
+	  else if (ptr->type == IMMSVAR)
+	    printf ("%c  {%-10s\t= \"%s\"} (immutable)\n", comment, ptr->name, ptr->value.svar);
 	}
       }
     }
