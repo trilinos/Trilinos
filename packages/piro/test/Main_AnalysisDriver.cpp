@@ -46,6 +46,8 @@
 #include "MockModelEval_A.hpp"
 #include "ObserveSolution_Epetra.hpp"
 
+#include "Piro_Epetra_Factory.hpp"
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -53,17 +55,8 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_NOX
-#include "Piro_Epetra_NOXSolver.hpp"
-#include "Piro_Epetra_LOCASolver.hpp"
-#endif
-#ifdef Piro_ENABLE_Rythmos
-#include "Piro_Epetra_RythmosSolver.hpp"
-#endif
-
 #include "Piro_PerformAnalysis.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
-
 
 int main(int argc, char *argv[]) {
 
@@ -87,6 +80,7 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
+  Piro::Epetra::Factory solverFactory;
 
   for (int iTest=0; iTest<3; iTest++) {
 
@@ -121,30 +115,15 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
 
+#ifdef Piro_ENABLE_NOX
+      piroParams.set("Observer", RCP<NOX::Epetra::Observer>(new ObserveSolution_Epetra));
+#endif
+
       // Use these two objects to construct a Piro solved application
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
-      RCP<EpetraExt::ModelEvaluator> piro;
-
-      std::string& solver = piroParams.get("Piro Solver","NOX");
       const RCP<Teuchos::ParameterList> piroParamsRCP = rcp(&piroParams, false);
-
-#ifdef Piro_ENABLE_NOX
-      RCP<NOX::Epetra::Observer> observer = rcp(new ObserveSolution_Epetra());
-
-      if (solver=="NOX")
-        piro = rcp(new Piro::Epetra::NOXSolver(piroParamsRCP, Model, observer));
-      else if (solver=="LOCA")
-        piro = rcp(new Piro::Epetra::LOCASolver(piroParamsRCP, Model, observer));
-      else
-#endif
-#ifdef Piro_ENABLE_Rythmos
-      if (solver=="Rythmos")
-        piro = rcp(new Piro::Epetra::RythmosSolver(piroParamsRCP, Model));
-      else
-#endif
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Error: Unknown Piro Solver : " << solver);
-      // END Builder
+      const RCP<const EpetraExt::ModelEvaluator> piro =
+        solverFactory.createSolver(piroParamsRCP, Model);
 
       Thyra::EpetraModelEvaluator piroThyra;
       piroThyra.initialize(piro, Teuchos::null);
