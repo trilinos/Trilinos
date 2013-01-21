@@ -543,14 +543,15 @@ namespace {
 	  SEAMS::tokenize(token, "=", define);
 	  if (define.size() == 2) {
 	    // Determine whether the define is string type or double/int...
+	    bool immutable = define[0][0] != '_';
 	    std::stringstream ss(define[1]);
 	    double d = 0;
 	    ss >> d;
 	    if (ss.fail()) {
 	      // Not a valid number; treat as a string
-	      aprepro.add_variable(define[0], define[1]);
+	      aprepro.add_variable(define[0], define[1], immutable);
 	    } else {
-	      aprepro.add_variable(define[0], d);
+	      aprepro.add_variable(define[0], d, immutable);
 	    }
 	  } else {
 	    std::cerr << "APREPRO: Invalid format for predefined variable: '" << token << "'\n"
