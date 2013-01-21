@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.12 (2013/01/16)";
+  const char* version_string = "3.13 (2013/01/21)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -249,17 +249,19 @@ namespace SEAMS {
     return true;
   }
   
-  void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value)
+  void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value, bool immutable)
   {
-    symrec *var = putsym(sym_name, STRING_VARIABLE, false);
+    SYMBOL_TYPE type = immutable ? IMMUTABLE_STRING_VARIABLE : STRING_VARIABLE;
+    symrec *var = putsym(sym_name, type, false);
     char *tmp = NULL;
     new_string(sym_value.c_str(), &tmp);
     var->value.svar = tmp;
   }
 
-  void Aprepro::add_variable(const std::string &sym_name, double sym_value)
+  void Aprepro::add_variable(const std::string &sym_name, double sym_value, bool immutable)
   {
-    symrec *var = putsym(sym_name, VARIABLE, false);
+    SYMBOL_TYPE type = immutable ? IMMUTABLE_VARIABLE : VARIABLE;
+    symrec *var = putsym(sym_name, type, false);
     var->value.var = sym_value;
   }
 
@@ -283,8 +285,12 @@ namespace SEAMS {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
 	      printf ("%c  {%-10s\t= %.10g}\n", comment, ptr->name.c_str(), ptr->value.var);
+	    else if (ptr->type == Parser::token::IMMVAR)
+	      printf ("%c  {%-10s\t= %.10g}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.var);
 	    else if (ptr->type == Parser::token::SVAR)
 	      printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
+	    else if (ptr->type == Parser::token::IMMSVAR)
+	      printf ("%c  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
 	  }
 	}
       }
