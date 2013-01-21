@@ -108,7 +108,7 @@ namespace panzer {
 
     // first grab basis descriptor
     PureBasis::EElementSpace elmtspace = getElementSpace();
-    int spaceDim = basis_layout->getDimension();
+    int spaceDim = basis_layout->dimension();
 
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);

@@ -66,22 +66,19 @@ namespace panzer {
     BasisIRLayout(std::string basis_type, const int basis_order, const PointRule& int_rule);
     BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& int_rule);
 
-    void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
-               const panzer::PointRule & int_rule);
+    void setup(const panzer::PointRule & int_rule);
 
-    int getCardinality() const;
+    int cardinality() const;
     
-    int getNumCells() const;
+    int numCells() const;
     
-    int getNumPoints() const;
+    int numPoints() const;
     
-    int getDimension() const;
+    int dimension() const;
 
+    //! Unique key for workset indexing composed of basis name and point rule name
     std::string name() const;
 
-    //! Unique key for workset indexing composed of basis key and point rule name
-    std::string key() const;
-    
     std::string fieldName() const;
     
     std::string fieldNameD1() const;
@@ -122,20 +119,12 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_D2;
 
   private:
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
-    const std::string basis_name;
-    std::string basis_key;
-    const std::string field_basis_name;
-    const std::string field_basis_name_D1;
-    const std::string field_basis_name_D2;
-
-    int cardinality;
-    int num_cells;
-    int num_ip;
-    int dimension;
-    // int int_rule_degree;
+    std::string basis_name_;
+    int num_cells_;
+    int num_points_;
+    int dimension_;
     
-    Teuchos::RCP<const PureBasis> basis_data;
+    Teuchos::RCP<const PureBasis> basis_data_;
     
     Teuchos::RCP<const CellTopologyInfo> cell_topo_info;
   };

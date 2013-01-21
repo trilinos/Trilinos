@@ -65,7 +65,7 @@ void FieldLayoutLibrary::addFieldAndLayout(const std::string & fieldName,
                                       const Teuchos::RCP<panzer::BasisIRLayout> & layout)
 {
    fieldToLayout_[fieldName] = layout; 
-   basisNameToPointer_[layout->getBasis()->key()] = layout->getBasis();
+   basisNameToPointer_[layout->getBasis()->name()] = layout->getBasis();
 }
 
 Teuchos::RCP<panzer::BasisIRLayout> FieldLayoutLibrary::lookupLayout(const std::string & fieldName) const
@@ -87,9 +87,9 @@ void FieldLayoutLibrary::print(std::ostream & os) const
       Teuchos::RCP<BasisIRLayout> basis = itr->second;
 
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
-         << "(dim=" << basis->getDimension() 
-         << ",cells=" << basis->getNumCells() 
-         << ",points=" << basis->getNumPoints() << ")} ";
+         << "(dim=" << basis->dimension() 
+         << ",cells=" << basis->numCells() 
+         << ",points=" << basis->numPoints() << ")} ";
    }
 }
 
@@ -132,7 +132,7 @@ void FieldLibrary::addFieldAndBasis(const std::string & fieldName,
                                     const Teuchos::RCP<panzer::PureBasis> & basis)
 {
    fieldToBasis_[fieldName] = basis;
-   basisNameToPointer_[basis->key()] = basis;
+   basisNameToPointer_[basis->name()] = basis;
 }
 
 Teuchos::RCP<const FieldLayoutLibrary> FieldLibrary::buildFieldLayoutLibrary(panzer::PointRule & ir) const
@@ -158,9 +158,9 @@ void FieldLibrary::print(std::ostream & os) const
       std::string fieldName = itr->first; 
       Teuchos::RCP<PureBasis> basis = itr->second;
 
-      os << "\"" << fieldName << "\"" << " {" << basis->key() 
-         << "(dim=" << basis->getDimension() 
-         << ",cells=" << basis->getNumCells() << ") ";
+      os << "\"" << fieldName << "\"" << " {" << basis->name() 
+         << "(dim=" << basis->dimension() 
+         << ",cells=" << basis->numCells() << ") ";
    }
 }
 

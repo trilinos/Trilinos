@@ -199,7 +199,7 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
 
     // Get unique list of bases
     for(std::size_t j=0;j<sbNames.size();j++)
-      m_bases[sbNames[j].second->key()] = sbNames[j].second;
+      m_bases[sbNames[j].second->name()] = sbNames[j].second;
 
   }
 
