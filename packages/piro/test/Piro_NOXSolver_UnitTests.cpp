@@ -479,8 +479,8 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
 
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
 {
-  // Disable support for MultiVector-based DgDx derivative
-  // (Only LinOp form is available)
+  // Disable support for Jacobian-oriented MultiVector DgDx derivative
+  // (Only gradient layout is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
       rcp(new WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
@@ -539,14 +539,14 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
 
   const int parameterIndex = 0;
 
-  // Request solution sensitivity (MV_GRAD layout)
+  // Request solution sensitivity (LINOP layout)
   const int solutionResponseIndex = solver->Ng() - 1;
   const RCP<Thyra::LinearOpBase<double> > dxdp =
     solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
   TEST_ASSERT(nonnull(dxdp));
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp);
 
-  // Request response sensitivity (LINOP layout)
+  // Request response sensitivity (MV_GRAD layout)
   const int responseIndex = 0;
   const RCP<Thyra::VectorBase<double> > dgdp =
     Thyra::createMember(solver->get_p_space(parameterIndex));
