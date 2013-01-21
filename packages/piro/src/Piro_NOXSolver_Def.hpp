@@ -501,7 +501,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                 if (Teuchos::nonnull(dgdp_mv)) {
                   if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
                     Thyra::apply(
-                        *minus_dxdp_mv,
+                        *minus_dxdp_op,
                         Thyra::TRANS,
                         *dgdx_mv,
                         dgdp_mv.ptr(),
