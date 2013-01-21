@@ -324,7 +324,7 @@ namespace Ifpack2 {
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
     Teuchos::RCP<Teuchos::ParameterList> belosList_;
-    Teuchos::RCP< Ifpack2::Preconditioner<scalar_type,int,int,Kokkos::DefaultNode::DefaultNodeType> > ifpack2_prec_;
+    Teuchos::RCP< Ifpack2::Preconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > ifpack2_prec_;
 
   //@}
 

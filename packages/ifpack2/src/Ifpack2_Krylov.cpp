@@ -38,7 +38,7 @@
 namespace Ifpack2 {
 
   #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(KRYLOV,S,LO,GO)
+          IFPACK2_INST(Krylov,S,LO,GO)
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
