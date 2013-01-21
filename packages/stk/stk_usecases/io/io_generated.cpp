@@ -33,6 +33,7 @@
 
 namespace {
   void driver(stk::ParallelMachine  comm,
+	      const std::string &parallel_io,
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
   bool compression_shuffle = false;
   int db_integer_size = 4;
   bool compose_output = false;
+  std::string parallel_io = "";
 
   //----------------------------------
   // Process the broadcast command line arguments
@@ -65,12 +67,14 @@ int main(int argc, char** argv)
     ("directory,d",   bopt::value<std::string>(&working_directory),
      "working directory with trailing '/'" )
     ("decomposition,D", bopt::value<std::string>(&decomp_method),
-     "decomposition method" )
+     "decomposition method.  One of: linear, rcb, rib, hsfc, block, cyclic, random, kway, geom_kway, metis_sfc" )
     ("mesh",          bopt::value<std::string>(&mesh),
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
     ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
-    ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data" )
-    ("compose_output", bopt::value<bool>(&compose_output), "create a single output file" )
+    ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data: true|false" )
+    ("compose_output", bopt::value<bool>(&compose_output), "create a single output file: true|false" )
+    ("parallel_io_method", bopt::value<std::string>(&parallel_io),
+     "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
@@ -93,7 +97,7 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
   }
-  driver(use_case_environment.m_comm, 
+  driver(use_case_environment.m_comm, parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
 	 compression_level, compression_shuffle, db_integer_size);
 
@@ -102,6 +106,7 @@ int main(int argc, char** argv)
 
 namespace {
   void driver(stk::ParallelMachine  comm,
+	      const std::string &parallel_io,
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
@@ -127,6 +132,9 @@ namespace {
     if (compose_output) {
       mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESULTS", true));
       mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESTART", true));
+    }
+    if (!parallel_io.empty()) {
+      mesh_data.m_property_manager.add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
     }
     if (compression_level > 0) {
       mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
