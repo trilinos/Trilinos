@@ -52,6 +52,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Exceptions.hpp"
 
 namespace Tpetra {
 
@@ -161,6 +162,8 @@ namespace Tpetra {
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
+    template <class LO2, class GO2, class N2, class SpMatOps2>
+    friend class CrsGraph;
 
   public:
     typedef LocalOrdinal                         local_ordinal_type;
@@ -271,10 +274,132 @@ namespace Tpetra {
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
+    /// \brief Create a cloned CrsGraph for a different node type.
+    ///
+    /// This method creates a new CrsGraph on a specified node type,
+    /// with all of the entries of this CrsGraph object.
+    ///
+    /// \param node2 [in] A node for constructing the clone CrsGraph and its constituent objects.
+    ///
+    /// \param params [in/out] Optional list of parameters. If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    ///                                                              . The
+    /// Parameters to \c params:
+    /// - "StaticProfile clone"  [boolean, default: true] If \c true, creates the clone with a static allocation profile. If false, a dynamic allocation profile is used.
+    /// - "LocalIndices clone" [boolean] If \c true, fills clone using this graph's column map and local indices (requires that this graph have a column map.) If
+    ///   false, fills clone using global indices and does not provide a column map. By default, will use local indices only if this graph is using local indices.
+    /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsGraph object, with parameters \c params. The domain map and range maps
+    ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used. The clone is created with the row map of this graph
+    ///   and with parameters specified by \c params.
     template <class Node2>
-    RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node2> >
-    clone(const RCP<Node2> &node2, const RCP<ParameterList> &plist)
+    RCP< CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = Teuchos::null)
     {
+      std::string tfecfFuncName("clone()");
+      bool fillCompleteClone  = true;
+      bool useLocalIndices    = hasColMap();
+      if (params != null) fillCompleteClone = params->get("fillComplete clone",fillCompleteClone);
+      ProfileType pftype = StaticProfile;
+      if (params != null && params->get("StaticProfile clone",true) == false) pftype = DynamicProfile;
+      if (params != null && params->get("LocalIndices clone",true)  == false) useLocalIndices = false;
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          hasColMap() == false && useLocalIndices == true,
+          std::runtime_error,
+          ": requested clone using local indices, but source graph doesn't have a column map yet."
+      )
+
+      typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
+      typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+      RCP<const Map2> clonedRowMap = rowMap_->template clone(node2);
+
+      RCP<CrsGraph2> clonedGraph;
+      ArrayRCP<const size_t> numEntries;
+      size_t numEntriesForAll;
+      if (indicesAreAllocated() == false) {
+        if (numAllocPerRow_ != null) {
+          numEntries = numAllocPerRow_;
+        }
+        else {
+          numEntriesForAll = numAllocForAllRows_;
+        }
+      }
+      else if (numRowEntries_ != null) {
+        numEntries = numRowEntries_;
+      }
+      else if (nodeNumAllocated_ == 0) {
+        numEntriesForAll = 0;
+      }
+      else {
+        // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
+        TEUCHOS_TEST_FOR_EXCEPTION( getProfileType() != StaticProfile, std::logic_error, "Internal logic error. Please report this to Tpetra team." )
+        const size_t numRows = getNodeNumRows();
+        numEntriesForAll = 0;
+        ArrayRCP<size_t> numEnt;
+        if (numRows) numEnt = arcp<size_t>(numRows);
+        for (size_t i=0; i<numRows; ++i) {
+          numEnt[i] = rowPtrs_[i+1] - rowPtrs_[i];
+        }
+        numEntries = numEnt;
+      }
+
+      if (useLocalIndices) {
+        RCP<const Map2> clonedColMap = colMap_->template clone(node2);
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,params));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntries,pftype,params));
+      }
+      else {
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntriesForAll,pftype,params));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntries,pftype,params));
+      }
+      // done with these
+      numEntries = null;
+      numEntriesForAll = 0;
+
+
+
+      // FINISH: FILL GRAPH WITH ENTRIES
+      // if (
+      // for (LocalOrdinal lrow = rowMap_->getMinLocalIndex();
+      //                   lrow < rowMap->getMaxLocalIndex();
+      //                   ++lrow)
+      // {
+      //   RowInfo rowinfo = getRowInfo(lrow);
+      //   ArrayView<const LocalOrdinal> linds =
+      // }
+
+      if (fillCompleteClone) {
+        try {
+          RCP<const Map2> clonedRangeMap;
+          RCP<const Map2> clonedDomainMap;
+          if (rangeMap_ != null && rangeMap_ != rowMap_) {
+            clonedRangeMap  = rangeMap_->template clone(node2);
+          }
+          else {
+            clonedRangeMap = clonedRowMap;
+          }
+          if (domainMap_ != null && domainMap_ != rowMap_) {
+            clonedDomainMap = domainMap_->template clone(node2);
+          }
+          else {
+            clonedDomainMap = clonedRowMap;
+          }
+          clonedGraph->fillComplete(clonedDomainMap, clonedRangeMap, params);
+        }
+        catch (std::exception &e) {
+          const bool caughtExceptionOnClone = true;
+          TEUCHOS_TEST_FOR_EXCEPTION(caughtExceptionOnClone,
+                             std::runtime_error,
+              Teuchos::typeName(*this)
+              << "\ncaught the following exception while calling fillComplete() on clone of type\n"
+              << Teuchos::typeName(*clonedGraph)
+              << "\n:"
+              << e.what()
+              << "\n");
+        }
+      }
+
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
 

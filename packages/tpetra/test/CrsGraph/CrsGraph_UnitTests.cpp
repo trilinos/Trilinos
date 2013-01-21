@@ -1094,23 +1094,30 @@ namespace {
       {
         RCP<ParameterList> plClone = parameterList();
         // default is "true"
-        // plClone->set("fillComplete on clone",true);
+        // plClone->set("fillComplete clone",true);
         RCP<Graph2> A2 = A1->clone(n2,plClone);
         TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+        TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
       }
       {
         RCP<ParameterList> plClone = parameterList();
-        plClone->set("fillComplete on clone",true);
+        plClone->set("fillComplete clone",true);
         RCP<Graph2> A2 = A1->clone(n2,plClone);
         TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+        TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
       }
       {
         RCP<ParameterList> plClone = parameterList();
-        plClone->set("fillComplete on clone",false);
+        plClone->set("fillComplete clone",false);
+        plClone->set("StaticProfile clone",false);
         RCP<Graph2> A2 = A1->clone(n2,plClone);
         TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+        TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
+        TEST_EQUALITY_CONST( A2->getProfileType(), DynamicProfile );
+        TEST_NOTHROW( A2->insertLocalIndices(0, tuple<LO>(0)) );
         A2->fillComplete();
-        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+        TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
       }
       A1->fillComplete();
       ++t;

@@ -800,13 +800,8 @@ namespace Tpetra {
       minMyGID_ = entryList[0];
       maxMyGID_ = entryList[0];
       for (size_t i=0; i < numLocalElements_; i++) {
-<<<<<<< HEAD
-        lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_: LID to GID
-        glMap_[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
-=======
         lgMap_[numUniqueGIDs] = entryList[i];      // lgMap_:  LID to GID
         (*glMap_)[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
->>>>>>> added convert() method and unit test for Tpetra::Map (and directories)
         numUniqueGIDs++;
 
         if (entryList[i] < minMyGID_) {
