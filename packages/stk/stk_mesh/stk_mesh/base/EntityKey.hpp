@@ -125,7 +125,7 @@ public:
   }
 
   bool operator!=(const EntityKey &rhs) const {
-    return !(key == rhs.key);
+    return key != rhs.key;
   }
 
   bool operator<(const EntityKey &rhs) const {
@@ -133,15 +133,15 @@ public:
   }
 
   bool operator>(const EntityKey &rhs) const {
-    return rhs.key < key;
+    return key > rhs.key;
   }
 
   bool operator<=(const EntityKey &rhs) const {
-    return !(key < rhs.key);
+    return key <= rhs.key;
   }
 
   bool operator>=(const EntityKey &rhs) const {
-    return !(rhs.key < key);
+    return key >= rhs.key;
   }
 
   //------------------------------
