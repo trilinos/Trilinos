@@ -84,8 +84,8 @@ MIC | mic )
   LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------
-compton )
-  CXX="icpc -mmic -ansi-alias -Wall"
+MPIMIC | mpimic )
+  CXX="mpiicpc -mmic -ansi-alias -Wall"
   CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
