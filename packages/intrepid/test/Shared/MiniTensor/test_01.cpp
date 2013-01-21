@@ -1,8 +1,8 @@
 // @HEADER
 // ************************************************************************
 //
-//                    Intrepid MiniTensor Subpackage
-//                 Copyright (2013) Sandia Corporation
+//                           Intrepid Package
+//                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
