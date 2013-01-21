@@ -47,7 +47,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
-#include <Kokkos_SerialNode.hpp>
+#include "Kokkos_DefaultNode.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -279,17 +279,14 @@ namespace {
       assertMultiVectorsEqual (X_orig, X_outIn);
     }
   };
-} // namespace (anonymous)
 
-TEUCHOS_UNIT_TEST( Tpetra_MatrixMarket, MultiVector_Output_Perm )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm, LO, GO )
 {
   using Teuchos::Comm;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef int LO;
-  typedef long GO;
   typedef Kokkos::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
@@ -315,12 +312,21 @@ TEUCHOS_UNIT_TEST( Tpetra_MatrixMarket, MultiVector_Output_Perm )
   if (myRank == 0) {
     out << "Creating Kokkos Node of type " << TypeNameTraits<NT>::name () << endl;
   }
-  RCP<NT> node;
-  {
-    ParameterList pl; // Kokkos Node types require a PL inout.
-    node = rcp (new NT (pl));
-  }
+  RCP<NT> node = Kokkos::DefaultNode::getDefaultNode();
   // Run the actual test.
   //RCP<const map_type> map = Test<map_type>::createTestMap (comm, node);
   Test<map_type>::testPermutedMultiVectorOutput (out, comm, node);
 }
+
+//////////////////////////////////////////////////////////////////////
+// INSTANTIATE THE TEMPLATED UNIT TESTS
+//////////////////////////////////////////////////////////////////////
+
+#define UNIT_TEST_GROUP( LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Tpetra_MatrixMarket, MultiVector_Output_Perm, LO, GO )
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP )
+
+} // namespace (anonymous)
