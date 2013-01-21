@@ -215,7 +215,7 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
   if (max_row_length < 1) return;
 
   Array<GlobalOrdinal> indices(max_row_length);
-  Array<Scalar> zeros(max_row_length, 0.0);
+  Array<Scalar> zeros(max_row_length, Teuchos::ScalarTraits<Scalar>::zero());
 
   typedef std::map<GlobalOrdinal,std::set<GlobalOrdinal>*> Graph;
   typedef typename Graph::iterator    GraphIter;
