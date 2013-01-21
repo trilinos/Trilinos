@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
    //if (Comm.MyPID() == 0) std::cout << "||Pop^T x||_1 = " << bb2->norm1() << std::endl;
 
    // calculate APx
-   Teuchos::RCP<Xpetra::Matrix<double> > crsAP = MueLu::Utils<double>::TwoMatrixMultiply(crsAOp,false,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > crsAP = MueLu::Utils<double>::Multiply(*crsAOp,false,*crsPOp,false);
    //crsAP->describe(*fos,Teuchos::VERB_EXTREME);
    bb1->putScalar(0.0);
    crsAP->apply(*xx,*bb1);
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
    // calculate A^T P x explicitely
    Teuchos::RCP<Xpetra::Matrix<double> > crsAOpT = MueLu::Utils2<double>::Transpose(crsAOp,false);
-   Teuchos::RCP<Xpetra::Matrix<double> > AtPexpl = MueLu::Utils<double>::TwoMatrixMultiply(crsAOpT,false,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > AtPexpl = MueLu::Utils<double>::Multiply(*crsAOpT,false,*crsPOp,false);
    bb1->putScalar(0.0);
    AtPexpl->apply(*xx,*bb1);
    normx = bb1->norm1();
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
        std::cout << "Xpetra: ||A^T_expl Pop x||_1 = " << normx << std::endl;
 
    // calculate A^T P x
-   Teuchos::RCP<Xpetra::Matrix<double> > AtPimpl = MueLu::Utils<double>::TwoMatrixMultiply(crsAOp,true,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > AtPimpl = MueLu::Utils<double>::Multiply(*crsAOp,true,*crsPOp,false);
    bb1->putScalar(0.0);
    AtPimpl->apply(*xx,*bb1);
    normx = bb1->norm1();

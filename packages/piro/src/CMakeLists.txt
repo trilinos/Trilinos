@@ -92,6 +92,12 @@ IF (Piro_ENABLE_TriKota)
   ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 ENDIF() 
 
+APPEND_SET(HEADERS Piro_PerformSolve.hpp
+                   Piro_PerformSolve_Def.hpp)
+
+APPEND_SET(HEADERS Piro_Epetra_PerformSolve.hpp)
+APPEND_SET(SOURCES Piro_Epetra_PerformSolve.cpp)
+
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp) 
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 

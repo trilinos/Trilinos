@@ -74,11 +74,11 @@ LOCA::Eigensolver::Factory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::Eigensolver::Factory::create()";
+  std::string methodName = "LOCA::Eigensolver::Factory::create()";
   Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*eigenParams);
+  const std::string& name = strategyName(*eigenParams);
 
   if (name == "Default")
     strategy = 
@@ -99,7 +99,7 @@ LOCA::Eigensolver::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = eigenParams->get("User-Defined Name",
+    std::string userDefinedName = eigenParams->get("User-Defined Name",
 						       "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
@@ -120,7 +120,7 @@ LOCA::Eigensolver::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::Eigensolver::Factory::strategyName(
 				  Teuchos::ParameterList& eigenParams) const
 {

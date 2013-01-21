@@ -46,6 +46,7 @@
 #ifndef KOKKOSARRAY_CUDA_HPP
 #define KOKKOSARRAY_CUDA_HPP
 
+#include <iosfwd>
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_CudaSpace.hpp>
@@ -106,6 +107,9 @@ public:
 
   //! Free any resources being consumed by the device.
   static void finalize();
+
+  /** \brief  Print Cuda configuation */
+  static void print_configuration( std::ostream & );
 
   //@}
   //! \name Device-specific functions

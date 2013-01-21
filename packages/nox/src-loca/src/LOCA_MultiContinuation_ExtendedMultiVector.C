@@ -100,7 +100,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 		  const LOCA::MultiContinuation::ExtendedMultiVector& source, 
-		  const vector<int>& index, bool view) :
+		  const std::vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -151,7 +151,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::clone(int numvecs) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector> 
 LOCA::MultiContinuation::ExtendedMultiVector::subCopy(
-					       const vector<int>& index) const
+					       const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::MultiContinuation::ExtendedMultiVector(*this, 
@@ -161,7 +161,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::subCopy(
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::subView(
-					      const vector<int>& index) const
+					      const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::MultiContinuation::ExtendedMultiVector(*this, 

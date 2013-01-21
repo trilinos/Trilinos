@@ -126,25 +126,32 @@ namespace Xpetra {
       operatorViewTable_.put(viewLabel, view);
     }
 
-    void CreateView(const viewLabel_t viewLabel, const RCP<Matrix> & A, bool transposeA = false, const RCP<Matrix> & B = Teuchos::null, bool transposeB = false) {
+    // JG TODO: why this is a member function??
+    void CreateView(const viewLabel_t viewLabel, const RCP<const Matrix> & A, bool transposeA = false, const RCP<const Matrix> & B = Teuchos::null, bool transposeB = false) {
 
       RCP<const Map> domainMap = Teuchos::null;
       RCP<const Map> rangeMap  = Teuchos::null;
 
-      // A has strided Maps
       if(A->IsView(viewLabel)) {
-        Xpetra::viewLabel_t oldView = A->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-        rangeMap = (transposeA) ? A->getColMap() : A->getRowMap();
-        domainMap = (transposeA) ? A->getRowMap() : A->getColMap(); // overwrite if B != Teuchos::null
-        oldView = A->SwitchToView(oldView);
+        // A has strided Maps
+        // -- JG: ? I don't see how strided Maps are directly related to this functionality
+        RCP<Matrix> nonConstA = Teuchos::rcp_const_cast<Matrix>(A); // FIXME: implement this without changing the view
+
+        Xpetra::viewLabel_t oldView = nonConstA->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        rangeMap = (transposeA) ? nonConstA->getColMap() : nonConstA->getRowMap();
+        domainMap = (transposeA) ? nonConstA->getRowMap() : nonConstA->getColMap(); // overwrite if B != Teuchos::null
+        oldView = nonConstA->SwitchToView(oldView);
       } else rangeMap = (transposeA) ? A->getDomainMap() : A->getRangeMap();
 
-      // B has strided Maps
       if(B != Teuchos::null ) {
+        // B has strided Maps
+
         if(B->IsView(viewLabel)) {
-          Xpetra::viewLabel_t oldView = B->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-          domainMap = (transposeB) ? B->getRowMap() : B->getColMap();
-          oldView = B->SwitchToView(oldView);
+        RCP<Matrix> nonConstB = Teuchos::rcp_const_cast<Matrix>(B); // FIXME: implement this without changing the view
+
+          Xpetra::viewLabel_t oldView = nonConstB->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+          domainMap = (transposeB) ? nonConstB->getRowMap() : nonConstB->getColMap();
+          oldView = nonConstB->SwitchToView(oldView);
         } else domainMap = (transposeB) ? B->getRangeMap() : B->getDomainMap();
       }
 

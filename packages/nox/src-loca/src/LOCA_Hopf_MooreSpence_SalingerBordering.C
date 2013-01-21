@@ -113,7 +113,7 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solve(
 	   const LOCA::Hopf::MooreSpence::ExtendedMultiVector& input,
            LOCA::Hopf::MooreSpence::ExtendedMultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::SalingerBordering::solve()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -143,7 +143,7 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solve(
 
   int m = input.numVectors();
 
-  vector<int> index_input(m);
+  std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   
@@ -237,16 +237,16 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solveContiguous(
 		      NOX::Abstract::MultiVector::DenseMatrix& result_w,
 	              NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::SalingerBordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   int m = input_x.numVectors()-1;
-  vector<int> index_input(m);
-  vector<int> index_dp(1);
-  vector<int> index_B(1);
-  vector<int> index_ip(m+1);
+  std::vector<int> index_input(m);
+  std::vector<int> index_dp(1);
+  std::vector<int> index_B(1);
+  std::vector<int> index_ip(m+1);
   for (int i=0; i<m; i++) {
     index_input[i] = i;
     index_ip[i] = i;

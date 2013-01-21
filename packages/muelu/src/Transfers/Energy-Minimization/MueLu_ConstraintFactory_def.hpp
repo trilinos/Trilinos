@@ -50,6 +50,7 @@
 #include <Xpetra_CrsGraph_fwd.hpp>
 
 #include "MueLu_ConstraintFactory_decl.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"
@@ -57,17 +58,20 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ConstraintFactory()
-  { }
+  RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~ConstraintFactory()
-  { }
+    validParamList->set< RCP<const FactoryBase> >("FineNullspace",    Teuchos::null, "Generating factory for the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("CoarseNullspace",  Teuchos::null, "Generating factory for the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Ppattern",         Teuchos::null, "Generating factory for the nonzero pattern");
+
+    return validParamList;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level& coarseLevel) const {
-    Input(fineLevel,   "Nullspace");
-    Input(coarseLevel, "Nullspace");
+    Input(fineLevel,   "Nullspace", "FineNullspace");
+    Input(coarseLevel, "Nullspace", "CoarseNullspace");
     Input(coarseLevel, "Ppattern");
   }
 
@@ -75,9 +79,11 @@ namespace MueLu {
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Constraint", coarseLevel);
 
+    RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> >(fineLevel,   "Nullspace", "FineNullspace");
+    RCP<MultiVector> coarseNullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace", "CoarseNullspace");
+
     RCP<Constraint> constraint(new Constraint);
-    constraint->Setup(*Get< RCP<MultiVector> >   (fineLevel,   "Nullspace"),
-                      *Get< RCP<MultiVector> >   (coarseLevel, "Nullspace"),
+    constraint->Setup(*fineNullspace, *coarseNullspace,
                        Get< RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
 
     Set(coarseLevel, "Constraint", constraint);

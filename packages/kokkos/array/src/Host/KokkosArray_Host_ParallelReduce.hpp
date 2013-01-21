@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_HOST_PARALLELREDUCE_HPP
 
 #include <KokkosArray_ParallelReduce.hpp>
+#include <impl/KokkosArray_StaticAssert.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -101,8 +102,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class ValueOper , class FinalizeType >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host > {
+template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec > {
 public:
 
   typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
@@ -115,16 +116,16 @@ public:
 
   void operator()( HostThread & this_thread ) const
   {
-    // This thread's reduction value, initialized
-    typename reduce_oper::reference_type update = this_thread.value( m_reduce );
-
     // Iterate this thread's work
 
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_work_count );
 
+    // This thread's reduction value, initialized
+    m_reduce.init( this_thread.reduce_data() );
+
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork , update );
+      m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
     }
 
     // Fan-in reduction of other threads' reduction data:
@@ -143,6 +144,66 @@ public:
     }
 };
 
+//----------------------------------------------------------------------------
+
+#if defined( __INTEL_COMPILER )
+
+// Only try to vectorize with the Intel compiler, for now.
+
+template< class FunctorType , class ValueOper , class FinalizeType >
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , VectorParallel > {
+public:
+
+  typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
+  typedef          Host::size_type         size_type ;
+  typedef typename ValueOper::value_type  value_type ;
+
+  const FunctorType   m_work_functor ;
+  const reduce_oper   m_reduce ;
+  const size_type     m_work_count ;
+
+  void operator()( HostThread & this_thread ) const
+  {
+    // Iterate this thread's work
+
+    const std::pair<size_type,size_type> range =
+      this_thread.work_range( m_work_count );
+
+    enum { mask_align = HostSpace::WORK_ALIGNMENT - 1 };
+    enum { ok = Impl::StaticAssert< 0 == ( HostSpace::WORK_ALIGNMENT & mask_align ) >::value };
+
+#pragma simd
+#pragma ivdep
+    for ( size_type j = 0 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
+      m_reduce.init( this_thread.reduce_data() , j );
+    }
+
+#pragma simd vectorlength(HostSpace::WORK_ALIGNMENT)
+#pragma ivdep
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+      m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & mask_align ) );
+    }
+
+    m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
+
+    // Fan-in reduction of other threads' reduction data:
+    this_thread.reduce( m_reduce );
+  }
+
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType  & functor ,
+                  const FinalizeType & finalize )
+    : m_work_functor( functor )
+    , m_reduce( finalize )
+    , m_work_count( work_count )
+    {
+      host_resize_scratch_reduce( m_reduce.value_size() * HostSpace::WORK_ALIGNMENT );
+      HostParallelLaunch< ParallelReduce >( *this );
+    }
+};
+
+#endif
+
 } // namespace Impl
 } // namespace KokkosArray
 
@@ -152,21 +213,21 @@ public:
 namespace KokkosArray {
 namespace Impl {
 
-template< class FunctorType , typename ValueType >
+template< class FunctorType , class ReduceOper >
 class HostMultiFunctorParallelReduceMember ;
 
-template< typename ValueType >
-struct HostMultiFunctorParallelReduceMember<void,ValueType> {
+template< class ReduceOper >
+struct HostMultiFunctorParallelReduceMember<void,ReduceOper> {
 
   virtual ~HostMultiFunctorParallelReduceMember() {}
 
-  virtual void apply( HostThread & , ValueType & ) const = 0 ;
+  virtual void apply( HostThread & , const ReduceOper & ) const = 0 ;
 };
 
 
-template< class FunctorType , typename ValueType >
+template< class FunctorType , class ReduceOper >
 class HostMultiFunctorParallelReduceMember
-  : public HostMultiFunctorParallelReduceMember<void,ValueType> {
+  : public HostMultiFunctorParallelReduceMember<void,ReduceOper> {
 public:
   typedef Host::size_type size_type ;
     
@@ -184,13 +245,13 @@ public:
     
   // virtual method
   void apply( HostThread & this_thread ,
-              ValueType & update ) const
+              const ReduceOper & reduce ) const
   {
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_work_count );
 
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork , update );
+      m_work_functor( iwork , reduce.reference( this_thread.reduce_data() ) );
     }
   }
 };  
@@ -204,7 +265,7 @@ public:
   typedef Impl::ReduceOperator< ValueOper , FinalizeType > reduce_oper ;
   typedef          Host::size_type         size_type ;
   typedef typename ValueOper::value_type  value_type ;
-  typedef Impl::HostMultiFunctorParallelReduceMember<void,value_type> worker_type ;
+  typedef Impl::HostMultiFunctorParallelReduceMember<void,reduce_oper> worker_type ;
 
   typedef std::vector< worker_type * > MemberContainer ;
 
@@ -215,11 +276,12 @@ public:
 
   void operator()( Impl::HostThread & this_thread ) const
   {
-    value_type & update = this_thread.value( m_reduce );
+    // This thread's reduction value, initialized
+    m_reduce.init( this_thread.reduce_data() );
 
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->apply( this_thread , update );
+      (*m)->apply( this_thread , m_reduce );
     }
 
     // Fan-in reduction of other threads' reduction data:
@@ -244,7 +306,7 @@ public:
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )
   {
-    typedef Impl::HostMultiFunctorParallelReduceMember<FunctorType,value_type> member_work_type ;
+    typedef Impl::HostMultiFunctorParallelReduceMember<FunctorType,reduce_oper> member_work_type ;
 
     worker_type * const m = new member_work_type( functor , work_count );
 

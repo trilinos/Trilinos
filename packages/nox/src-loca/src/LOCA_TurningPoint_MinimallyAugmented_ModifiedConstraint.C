@@ -145,7 +145,7 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -172,7 +172,7 @@ computeConstraints()
   // Solve for w and v
   if (isFirstSolve) {
 
-    cout << "solving for base w,v..." << endl;
+    std::cout << "solving for base w,v..." << std::endl;
 
     // Create RHS
     NOX::Abstract::MultiVector::DenseMatrix one(1,1);
@@ -228,7 +228,7 @@ computeConstraints()
   // solve for updates to w and v
   else {
 
-    cout << "solving for updates..." << endl;
+    std::cout << "solving for updates..." << std::endl;
 
     // Compute J*v + a*sigma_1
     status = grpPtr->applyJacobianMultiVector(*v_vector, *v_residual);
@@ -261,7 +261,7 @@ computeConstraints()
       // Compute (Jv)_p
       Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p1 = 
 	deltaX->clone(2);
-      vector<int> idx(1); idx[0] = 0;
+      std::vector<int> idx(1); idx[0] = 0;
       Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p = 
 	Jv_p1->subView(idx);
       status = grpPtr->computeDJnDpMulti(bifParamID, (*v_vector)[0], *Jv_p1, 
@@ -341,7 +341,7 @@ computeConstraints()
 	// Compute (J^T*w)_p
 	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p1 = 
 	  deltaX->clone(2);
-	vector<int> idx(1); idx[0] = 0;
+	std::vector<int> idx(1); idx[0] = 0;
 	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p = 
 	  Jtw_p1->subView(idx);
 	status = grpPtr->computeDwtJDp(bifParamID, (*w_vector)[0], *Jtw_p1, 

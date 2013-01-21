@@ -209,9 +209,9 @@ int main(int argc, char *argv[]) {
 			     aComp);
 
   if (status == 0)
-    printing.out() << "Test passed!" << endl;
+    printing.out() << "Test passed!" << std::endl;
   else 
-    printing.out() << "Test failed!" << endl;
+    printing.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

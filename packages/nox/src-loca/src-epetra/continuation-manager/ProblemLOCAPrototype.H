@@ -71,10 +71,10 @@ class ProblemLOCAPrototype :
       virtual LOCA::ParameterVector GetContinuableParams() const =0 ;
 
       // Setting one continuation parameter
-      virtual bool SetContinuableParameter(string label,double value)=0;
+      virtual bool SetContinuableParameter(std::string label,double value)=0;
 
       // Printing the solution at each step
-      virtual bool PrintSolutionFile(const string & fileName, const Epetra_Vector & x,
+      virtual bool PrintSolutionFile(const std::string & fileName, const Epetra_Vector & x,
 	  const Teuchos::ParameterList & xParams);
 
       // Setting the solution file parameters
@@ -84,7 +84,7 @@ class ProblemLOCAPrototype :
       virtual Teuchos::RCP <Teuchos::ParameterList> GetSolutionFileParameters();
 
       // Updates the continuation file
-      virtual bool UpdateContinuationFile( const string & fileName, 
+      virtual bool UpdateContinuationFile( const std::string & fileName, 
           const int & idStep,
 	  const Teuchos::ParameterList & continuationFileParams);
 

@@ -55,6 +55,7 @@
 
 INCLUDE(AppendSet)
 INCLUDE(AssertDefined)
+INCLUDE(TribitsSortListAccordingToMasterList)
 
 
 #
@@ -86,44 +87,6 @@ FUNCTION( TRIBITS_GATHER_ENABLED_ITEMS  PACKAGE_NAME  LISTTYPE_PREFIX
   #  "  ${GATHERED_ITEMS_LIST_OUT} = ${GATHERED_ITEMS_LIST_TMP}")
 
   SET(${GATHERED_ITEMS_LIST_OUT} ${GATHERED_ITEMS_LIST_TMP} PARENT_SCOPE)
-
-ENDFUNCTION()
-
-
-#
-# Function that does an in-place sort of a list of items according to the
-# ordering in a master list
-#
-# NOTE: This function has wost-case N^2 complexity as the number of packages N
-# or TPLs increases.  It actually has N * n complexity where N is the total
-# number of packages/TPLs and n is the number of passed-in packages/TPLs.
-# However, since N is not likely to ever be more than a few hundred, this is
-# likely not going to be a big performance problem.  If this does become a
-# performance problem, LIST(SORT ...) could be used but would require some
-# work to build up the datastructures to make this very efficient.
-#
-
-FUNCTION(TRIBITS_SORT_LIST MASTER_LIST LIST_VAR)
-
-  #MESSAGE("TRIBITS_SORT_LIST:")
-  #PRINT_VAR(MASTER_LIST)
-  #PRINT_VAR(LIST_VAR)
-  #PRINT_VAR(${LIST_VAR})
-
-  SET(SORTED_LIST)
-
-  FOREACH(TPL ${MASTER_LIST})
-    LIST(FIND ${LIST_VAR} ${TPL} TPL_IDX)
-    #PRINT_VAR(TPL)
-    #PRINT_VAR(TPL_IDX)
-    IF (NOT TPL_IDX EQUAL -1)
-      APPEND_SET(SORTED_LIST ${TPL})
-    ENDIF()
-  ENDFOREACH()
-
-  #PRINT_VAR(SORTED_LIST)
-
-  SET(${LIST_VAR} ${SORTED_LIST} PARENT_SCOPE)
 
 ENDFUNCTION()
 
@@ -196,7 +159,7 @@ FUNCTION( TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS
 
   IF (LOCAL_LIST)
 
-    TRIBITS_SORT_LIST("${MASTER_SORT_LIST}"  LOCAL_LIST)
+    TRIBITS_SORT_LIST_ACCORDING_TO_MASTER_LIST("${MASTER_SORT_LIST}"  LOCAL_LIST)
     #PRINT_VAR(LOCAL_LIST)
 
     SET(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_INOUT}})

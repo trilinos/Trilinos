@@ -354,6 +354,7 @@ namespace Iogn {
     
     virtual int64_t communication_node_count_proc() const;
     virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void owning_processor(int *owner, int64_t num_node);
     
     /** 
      * Fill the passed in 'map' argument with the node map

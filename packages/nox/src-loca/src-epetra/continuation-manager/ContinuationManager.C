@@ -61,11 +61,13 @@
 #include "NOX_Epetra_LinearSystem_Amesos.H"
 #endif
 
+#include <sstream>
+
 ContinuationManager::
 ContinuationManager( 
     //const Teuchos::RCP< Epetra_MpiComm > & aComm ,
     const Teuchos::RCP< Epetra_Comm > & aComm ,
-    const string & taskFileName):
+    const std::string & taskFileName):
   comm(aComm),
   continuationFileName("continuation.dat"),
   iniStepLabel(0),
@@ -168,7 +170,7 @@ BuildLOCAStepper()
             sublist("Linear Solver");
 
   // Instntiating the appropriate linear system
-  string linearSolverType = linearSystemList.get("Solver","Aztec");
+  std::string linearSolverType = linearSystemList.get("Solver","Aztec");
   Teuchos::RCP<NOX::Epetra::LinearSystem> linearSystem = Teuchos::null; 
 
   if (linearSolverType == "Aztec")
@@ -224,8 +226,8 @@ BuildLOCAStepper()
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< vector<string> > constraintParamsNames = 
-      Teuchos::rcp(new vector<string>());
+    Teuchos::RCP< std::vector<string> > constraintParamsNames = 
+      Teuchos::rcp(new std::vector<string>());
 
     // The user-defined constrained parameters
     Teuchos::ParameterList & constraintParams = 
@@ -290,7 +292,7 @@ bool ContinuationManager::
 BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
 {
 
-  if (comm->MyPID()==0) cout << endl << "Building the LOCA stepper..." << endl;
+  if (comm->MyPID()==0) std::cout << std::endl << "Building the LOCA stepper..." << std::endl;
 
   // Make sure the problem has been set
   TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null, 
@@ -330,7 +332,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
   for (int i=0; i<globalComm->NumTimeStepsOnDomain(); i++) *(guessMV(i)) = *initialGuess;
 
 
-cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << endl;
+cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << std::endl;
 
   double dt = 1.0;
   Teuchos::RCP <LOCA::Epetra::Interface::xyzt> xyzt_interface = 
@@ -378,8 +380,8 @@ cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain(
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< vector<string> > constraintParamsNames = 
-      Teuchos::rcp(new vector<string>());
+    Teuchos::RCP< std::vector<string> > constraintParamsNames = 
+      Teuchos::rcp(new std::vector<string>());
 
     // The user-defined constrained parameters
     Teuchos::ParameterList & constraintParams = 
@@ -447,9 +449,9 @@ ValidateLOCAStepper()
   int numSteps = iniStepLabel + locaStepper->getList()->sublist("LOCA").
                                                      sublist("Stepper").
 				                       get<int>("Max Steps");
-  ostringstream osstream;
+  std::ostringstream osstream;
   osstream << maxAllowedSteps;
-  string errString = "iniStepLabel + Max number of continuation steps must not exceed " + 
+  std::string errString = "iniStepLabel + Max number of continuation steps must not exceed " + 
     osstream.str();
   TEUCHOS_TEST_FOR_EXCEPTION( numSteps > maxAllowedSteps, 
       std::logic_error,
@@ -519,7 +521,7 @@ GetSolutionFileName() const
     static_cast<int>( std::floor( std::log10( static_cast<double>(maxAllowedSteps) ) ) ) + 1;
 
   // Composing the filename
-  ostringstream fileName;
+  std::ostringstream fileName;
   fileName << outputDir + "/" +
               solutionFilesPrefix +
 	      StringifyInt(iniStepLabel + locaStepper->getStepNumber(), numDigits) +
@@ -599,10 +601,10 @@ string ContinuationManager::
 StringifyInt( const int & intNumber , const int & digits) const 
 {
   // The number of Steps
-  ostringstream osstream;
+  std::ostringstream osstream;
   osstream.width(digits);
   osstream.fill('0');
-  osstream << right << intNumber;
+  osstream << std::right << intNumber;
 
   return osstream.str();
 }

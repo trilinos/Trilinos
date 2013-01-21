@@ -81,7 +81,9 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
 
-    // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction".
+    // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
+    // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
+    //     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
 
     return validParamList;
   }

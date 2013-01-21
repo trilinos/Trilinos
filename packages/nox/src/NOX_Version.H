@@ -49,11 +49,12 @@
 #define NOX_VERSION_H
 
 #include "NOX_Common.H"
+#include <string>
 
 namespace NOX {
 
-  //! Returns a string with the current version number of the NOX code.
-  string version();
+  //! Returns a std::string with the current version number of the NOX code.
+  std::string version();
 
 }
 

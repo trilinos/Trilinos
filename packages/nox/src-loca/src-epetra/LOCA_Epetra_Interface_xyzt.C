@@ -92,14 +92,14 @@ xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
 
    if (globalComm->MyPID()==0) {
      // TODO: pass in globalData and use output stream
-     cout  << "--------------XYZT Partition Info---------------"
+     std::cout  << "--------------XYZT Partition Info---------------"
            << "\n\tNumProcs               = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition  = " << splitMultiVec_.Comm().NumProc()
            << "\n\tNumber of Time Domains = " << numTimeDomains
            << "\n\tTime Steps on Domain 0 = " << timeStepsOnTimeDomain
            << "\n\tNumber of Time Steps   = " << globalComm->NumTimeSteps();
-    if (isPeriodic) cout   << "\n\t-->Solving for a Periodic Orbit!" ;
-    cout   << "\n-----------------------------------------------" << endl;
+    if (isPeriodic) std::cout   << "\n\t-->Solving for a Periodic Orbit!" ;
+    std::cout   << "\n-----------------------------------------------" << std::endl;
     }
 
    // Construct global block matrix graph from split jacobian and stencil
@@ -141,7 +141,7 @@ xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
      splitJacCrs = dynamic_cast<Epetra_CrsMatrix *>(splitJac.get());
      if (splitJacCrs == NULL) {
         isCrsMatrix = false;
-        cout << "CAST OF splitJacCrs failed!, constructing CRS matrix " << endl;
+        std::cout << "CAST OF splitJacCrs failed!, constructing CRS matrix " << std::endl;
 
         std::vector< std::vector<int> > row(1); row[0].push_back(0);
 	std::vector<int> col; col.push_back(0);
@@ -308,7 +308,7 @@ void LOCA::Epetra::Interface::xyzt::
 beginFloquetOperatorApplication(Epetra_Vector& v)
 {
   if (!isPeriodic)
-    cout << "\n\n\t Must be periodic for Floquet theory\n" << endl;
+    std::cout << "\n\n\t Must be periodic for Floquet theory\n" << std::endl;
   // Take perturbation in final time step, apply the saved
   // mass matrix, and put as forcing of first time step
 
@@ -367,10 +367,10 @@ getPreconditioner()
 }
 
 void LOCA::Epetra::Interface::xyzt::
-throwError(const string& functionName, const string& errorMsg) const
+throwError(const std::string& functionName, const std::string& errorMsg) const
 {
-  cout << "LOCA::Epetra::Interface::xyzt::" << functionName 
-	 << " - " << errorMsg << endl;
+  std::cout << "LOCA::Epetra::Interface::xyzt::" << functionName 
+	 << " - " << errorMsg << std::endl;
   throw "LOCA Error";
 }
 

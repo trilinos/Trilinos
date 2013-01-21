@@ -94,26 +94,38 @@ namespace MueLu {
       //
 
       RCP<Matrix> AP;
+
+      // Reuse pattern if available (multiple solve)
+      if (IsAvailable(coarseLevel, "AP Pattern"))
+        AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
+
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-        AP = Utils::TwoMatrixMultiply(A, false, P, false);
+        AP = Utils::Multiply(*A, false, *P, false, AP);
+        Set(coarseLevel, "AP Pattern", AP);
+
         // Utils::Write("AP.dat", AP);
       }
 
       bool doOptimizedStorage = !checkAc_; // Optimization storage option. If not modifying matrix later (inserting local values), allow optimization of storage.  This is necessary for new faster Epetra MM kernels.
 
       RCP<Matrix> Ac;
+
+      // Reuse pattern if available (multiple solve)
+      //     if (IsAvailable(coarseLevel, "RAP Pattern"))
+      // Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        Ac = Utils::TwoMatrixMultiply(P, true, AP, false, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P, true, *AP, false, Ac, true, doOptimizedStorage);
 
       } else {
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
-        Ac = Utils::TwoMatrixMultiply(R, false, AP, false, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*R, false, *AP, false, Ac, true, doOptimizedStorage);
 
       }
 
@@ -122,7 +134,7 @@ namespace MueLu {
       GetOStream(Statistics0, 0) << PrintLoadBalancingInfo(*Ac, "Ac");
 
       Set(coarseLevel, "A", Ac);
-
+      Set(coarseLevel, "RAP Pattern", Ac);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {

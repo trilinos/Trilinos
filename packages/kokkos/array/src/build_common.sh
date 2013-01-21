@@ -78,7 +78,15 @@ INTEL | intel | icc )
 #-------------------------------
 MIC | mic )
   CXX="icpc -mmic -ansi-alias -Wall"
-  # CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
+  CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
+  # CXX="${CXX} -vec-report6"
+  # CXX="${CXX} -guide-vec"
+  LIB="${LIB} -lstdc++"
+  ;;
+#-------------------------------
+compton )
+  CXX="icpc -mmic -ansi-alias -Wall"
+  CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
@@ -86,7 +94,7 @@ MIC | mic )
 #-------------------------------
 curie )
   CXX="CC"
-  HAVE_MPI="/opt/cray/mpt/5.4.4/xt/gemini/mpich2-cray/73"
+  HAVE_MPI="/opt/cray/mpt/default/gni/mpich2-cray/74"
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;  

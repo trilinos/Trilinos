@@ -66,14 +66,18 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
-    const size_t gang_worker_count = ( KokkosArray::Host::detect_gang_worker_capacity() + 1 ) / 2 ;
+    size_t gang_count        = KokkosArray::Host::detect_gang_capacity();
+    size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity();
 
-    std::cout << "  KokkosArray::Host gang_count(" << gang_count
-              << ") X gang_worker_count(" << gang_worker_count
-              << ")" << std::endl ;
+    if ( gang_worker_count < gang_count ) {
+      gang_count = ( gang_count + 1 ) / 2 ;
+    }
+    else {
+      gang_worker_count = ( gang_worker_count + 1 ) / 2 ;
+    }
 
     KokkosArray::Host::initialize( gang_count , gang_worker_count );
+    KokkosArray::Host::print_configuration( std::cout );
   }
 
   static void TearDownTestCase()
@@ -188,9 +192,7 @@ struct HostFunctor {
       const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
         reduce(*this);
 
-      int & value = thread.value( reduce );
-
-      (void) value ; // avoid compiler warning about unused variable.
+      reduce.init( thread.reduce_data() );
 
       thread.barrier();
       thread.barrier();

@@ -92,7 +92,7 @@ public:
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
  
   /*! \brief The finite number test algorithm. 
 
@@ -129,13 +129,13 @@ private:
   VectorType vectorType;
 
   //! Vector label used for printing.
-  string vectorTypeLabel;
+  std::string vectorTypeLabel;
   
   //! Determines what norm type to use (NOX does not have access to vector entries so it must use the norm to evaluate NaN/Inf problems).
   NOX::Abstract::Vector::NormType normType;
 
   //! Norm type label for printing.
-  string normTypeLabel;
+  std::string normTypeLabel;
 
   //! Current %Status
   NOX::StatusTest::StatusType status;

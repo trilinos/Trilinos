@@ -71,7 +71,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 	 const Teuchos::RCP<Interface::Required>& i,
 	 const NOX::Epetra::Vector& x,
 	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RCP< vector<Epetra_IntVector> >& columns_,
+	 const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
 	 bool parallelColoring,
 	 bool distance1_,
 	 double beta_, double alpha_) :
@@ -106,7 +106,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 	 const NOX::Epetra::Vector& x,
 	 const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
 	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RCP< vector<Epetra_IntVector> >& columns_,
+	 const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
 	 bool parallelColoring,
 	 bool distance1_,
 	 double beta_, double alpha_) :
@@ -158,9 +158,9 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   FiniteDifferenceColoring* testMatrix =
          dynamic_cast<FiniteDifferenceColoring*>(&Jac);
   if (testMatrix == 0) {
-    cout << "ERROR: NOX::Epetra::FiniteDifferenceColoring::computeJacobian() - "
+    std::cout << "ERROR: NOX::Epetra::FiniteDifferenceColoring::computeJacobian() - "
 	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!"
-         << endl;
+         << std::endl;
     throw "NOX Error";
   }
 
@@ -204,7 +204,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   }
 
   // loop over each color in the colorGraph
-  list<int>::iterator allBegin = listOfAllColors.begin(),
+  std::list<int>::iterator allBegin = listOfAllColors.begin(),
                       allEnd   = listOfAllColors.end(),
                       allIter;
 
@@ -305,9 +305,9 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
 
   	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
           if(err) {
-            cout << "ERROR (" << map.Comm().MyPID() << ") : "
+            std::cout << "ERROR (" << map.Comm().MyPID() << ") : "
                  << "Inserting global value with indices (" << j << ","
-                 << globalColumnID << ") = " << Jc[map.LID(j)] << endl;
+                 << globalColumnID << ") = " << Jc[map.LID(j)] << std::endl;
           }
         }
       }
@@ -329,11 +329,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if (utils.isPrintType(Utils::Details)) {
     for(int n = 0; n < map.Comm().NumProc(); n++) {
       if(map.Comm().MyPID() == n)
-        cout << "\tTime to fill Jacobian [" << n << "] --> "
-             << fillTime << " sec." << endl;
+        std::cout << "\tTime to fill Jacobian [" << n << "] --> "
+             << fillTime << " sec." << std::endl;
       x.Comm().Barrier();
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 
   jac.FillComplete();

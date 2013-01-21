@@ -64,6 +64,7 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_AggOptions.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
@@ -123,19 +124,35 @@ int main(int argc, char *argv[]) {
   Teuchos::XMLObject fileXML = fileSrc.getObject();
   Teuchos::XMLParameterListReader listReader;
   Teuchos::ParameterList aggList = listReader.toParameterList(fileXML);
+  //std::cout << "===========aggList start===========" << std::endl;
+  //aggList.print(std::cout);
+  //std::cout << "===========aggList end===========" << std::endl;
 
   // instantiate aggregate factory, set options from parameter list
   RCP<MueLu::SingleLevelFactoryBase> aggFact;
   if (aggList.name() == "UncoupledAggregationFactory") {
 
      RCP<UncoupledAggregationFactory> ucFact = rcp( new UncoupledAggregationFactory() );
-     ucFact->SetParameterList(aggList);
+     //ucFact->SetParameterList(aggList);
+     //FIXME hack until UCAgg uses PL interface
+     std::string ordering = aggList.get<std::string>("Ordering");
+     MueLu::AggOptions::Ordering eordering;
+     if (ordering=="Natural") eordering = MueLu::AggOptions::NATURAL;
+     if (ordering=="Graph") eordering = MueLu::AggOptions::GRAPH;
+     if (ordering=="Random") eordering = MueLu::AggOptions::RANDOM;
+     ucFact->SetOrdering(eordering);
+     ucFact->SetMaxNeighAlreadySelected(aggList.get<int>("MaxNeighAlreadySelected"));
+     ucFact->SetMinNodesPerAggregate(aggList.get<int>("MinNodesPerAggregate"));
      aggFact = ucFact;
 
   } else if (aggList.name() == "CoupledAggregationFactory") {
 
      RCP<CoupledAggregationFactory> cFact = rcp( new CoupledAggregationFactory() );
-     cFact->SetParameterList(aggList);
+     //cFact->SetParameterList(aggList);
+     //FIXME hack until CoupledAgg uses PL interface
+     //cFact->SetOrdering(aggList.get<std::string>("Ordering"));
+     cFact->SetMaxNeighAlreadySelected(aggList.get<int>("MaxNeighAlreadySelected"));
+     cFact->SetMinNodesPerAggregate(aggList.get<int>("MinNodesPerAggregate"));
      aggFact = cFact;
 
   } else {
@@ -143,6 +160,11 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("List's name does not correspond to a known aggregation factory."));
 
   }
+
+  //Teuchos::ParameterList tlist = aggFact->GetParameterList();
+  //std::cout << "===========verify List start===========" << std::endl;
+  //tlist.print(std::cout);
+  //std::cout << "===========verify List end===========" << std::endl;
 
   // build matrix
   RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));

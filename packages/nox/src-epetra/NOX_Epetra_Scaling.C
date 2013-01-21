@@ -111,7 +111,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
       if (test == 0) {
 	cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
 	     << "For \"Row Sum\" scaling, the Matrix must be an "
-	     << "Epetra_RowMatrix derived object!" << endl;
+	     << "Epetra_RowMatrix derived object!" << std::endl;
 	throw "NOX Error";
       }
       
@@ -131,7 +131,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
       if (test == 0) {
 	cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
 	     << "For \"Column Sum\" scaling, the Matrix must be an "
-	     << "Epetra_RowMatrix derived object!" << endl;
+	     << "Epetra_RowMatrix derived object!" << std::endl;
 	throw "NOX Error";
       }
       
@@ -228,11 +228,11 @@ void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input,
 void NOX::Epetra::Scaling::print(ostream& os)
 {
 
-  os << "\n       LINEAR SOLVER SCALING:" << endl;
+  os << "\n       LINEAR SOLVER SCALING:" << std::endl;
 
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
 
-    string source = " ";
+    std::string source = " ";
     if (sourceType[i] == UserDefined)
       source = "User Defined Vector";
     else if (sourceType[i] == RowSum)
@@ -241,11 +241,11 @@ void NOX::Epetra::Scaling::print(ostream& os)
       source = "Col Sum";
 
     if (scaleType[i] == Left) {
-      os << "       " << (i+1) << ".  Left Scaled with " << source << endl;
+      os << "       " << (i+1) << ".  Left Scaled with " << source << std::endl;
 
     }
     else if (scaleType[i] == Right)
-      os << "       " << (i+1) << ".  Right Scaled with " << source << endl;
+      os << "       " << (i+1) << ".  Right Scaled with " << source << std::endl;
   }
 
   return;

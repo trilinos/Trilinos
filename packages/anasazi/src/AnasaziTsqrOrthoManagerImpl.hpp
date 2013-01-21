@@ -127,6 +127,7 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
     typedef MultiVecTraits<Scalar, MV> MVT;
+    typedef MultiVecTraitsExt<Scalar, MV> MVText;
     typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
 
   public:
@@ -799,7 +800,7 @@ namespace Anasazi {
     // troubles, you may consider modifying the code below to
     // reallocate Q_ for every X that comes in.  
     if (Q_.is_null() || 
-        MVT::GetVecLength(*Q_) != MVT::GetVecLength(X) ||
+        MVText::GetGlobalLength(*Q_) != MVText::GetGlobalLength(X) ||
         numCols > MVT::GetNumberVecs (*Q_)) {
       Q_ = MVT::Clone (X, numCols);
     }

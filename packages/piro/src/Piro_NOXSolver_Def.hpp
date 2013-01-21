@@ -508,13 +508,23 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                         -Teuchos::ScalarTraits<Scalar>::one(),
                         Teuchos::ScalarTraits<Scalar>::one());
                   } else {
-                    Thyra::apply(
-                        *dgdx_op,
-                        Thyra::NOTRANS,
-                        *minus_dxdp_mv,
-                        dgdp_mv.ptr(),
-                        -Teuchos::ScalarTraits<Scalar>::one(),
-                        Teuchos::ScalarTraits<Scalar>::one());
+                    if (Teuchos::nonnull(dxdp_mv)) {
+                      Thyra::apply(
+                          *dgdx_op,
+                          Thyra::NOTRANS,
+                          *dxdp_mv,
+                          dgdp_mv.ptr(),
+                          Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    } else {
+                      Thyra::apply(
+                          *dgdx_op,
+                          Thyra::NOTRANS,
+                          *minus_dxdp_mv,
+                          dgdp_mv.ptr(),
+                          -Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    }
                   }
                 }
               }

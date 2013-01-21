@@ -81,7 +81,7 @@ class Vector : public Abstract::Vector {
   Vector(const Vec& source, CopyType type = DeepCopy);
 
   //! Construct by copying map and/or elements of a Petsc Vec.
-  Vector(const Vec& source, string name="Unnamed", CopyType type = DeepCopy);
+  Vector(const Vec& source, std::string name="Unnamed", CopyType type = DeepCopy);
 
   //! Construct by copying a NOX::Petsc::Vector
   Vector(const Vector& source, CopyType type = DeepCopy);
@@ -171,7 +171,7 @@ class Vector : public Abstract::Vector {
 
   virtual int length() const;
  
-  string Name() { return name;};
+  std::string Name() { return name;};
 
  protected:
 
@@ -184,7 +184,7 @@ class Vector : public Abstract::Vector {
   //! Flag to indicate if the vector has been allocated
   bool isAlloc;
   
-  string name;
+  std::string name;
 
 };
 } // namespace Petsc

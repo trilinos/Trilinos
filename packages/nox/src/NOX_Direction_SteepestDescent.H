@@ -140,7 +140,7 @@ public:
 private:
 
   //! Print error message and throw error
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
 private:
 

@@ -6,15 +6,11 @@ BlockedGaussSeidelSmoother
 BlockedPFactory
 BlockedRAPFactory
 BraessSarazinSmoother
-CGSolver
 CoalesceDropFactory
 CoarseMapFactory
-Constraint
-ConstraintFactory
 DemoFactory
 DirectSolver
 DistanceLaplacianFactory
-EminPFactory
 FactoryFactory
 FactoryManager
 FakeSmootherPrototype
@@ -29,9 +25,7 @@ MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
 NullspaceFactory
-NullspacePresmoothFactory
 ParameterListInterpreter
-PatternFactory
 PermutationFactory
 PermutingSmoother
 PgPFactory
@@ -49,10 +43,10 @@ SmootherBase
 SmootherFactory
 SmootherPrototype
 SolverBase
-SteepestDescentSolver
 SubBlockAFactory
 TentativePFactory
 ThresholdAFilterFactory
+TpetraOperator
 TransPFactory
 TrilinosSmoother
 CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL

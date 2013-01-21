@@ -78,6 +78,7 @@ void panzer::FieldManagerBuilder::print(std::ostream& os) const
 //=======================================================================
 void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+                                            const std::vector<WorksetDescriptor> & wkstDesc,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
@@ -90,13 +91,22 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
   TEUCHOS_TEST_FOR_EXCEPTION(getWorksetContainer()==Teuchos::null,std::logic_error,
                             "panzer::FMB::setupVolumeFieldManagers: method function getWorksetContainer() returns null. "
                             "Plase call setWorksetContainer() before calling this method");
+  TEUCHOS_TEST_FOR_EXCEPTION(physicsBlocks.size()!=wkstDesc.size(),std::runtime_error,
+                            "panzer::FMB::setupVolumeFieldManagers: physics block count must match workset descriptor count.");
 
   phx_volume_field_managers_.clear();
 
-  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
-  for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
-    RCP<panzer::PhysicsBlock> pb = *blkItr;
-    std::string blockId = pb->elementBlockID();
+  for (std::size_t blkInd=0;blkInd<physicsBlocks.size();++blkInd) {
+    RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
+    const WorksetDescriptor wd = wkstDesc[blkInd];
+
+    Traits::SetupData setupData;
+    setupData.worksets_ = getWorksetContainer()->getWorksets(wd);
+    if(setupData.worksets_->size()==0)
+      continue;
+
+    // sanity check
+    TEUCHOS_ASSERT(wd.getElementBlock()==pb->elementBlockID());
 
     // build a field manager object
     Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
@@ -111,15 +121,13 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
  
     // register additional model evaluator from the generic evaluator factory
-    gEvalFact.registerEvaluators(*fm,*pb);
+    gEvalFact.registerEvaluators(*fm,wd,*pb);
 
     // build the setup data using passed in information
-    Traits::SetupData setupData;
-    setupData.worksets_ = getWorksetContainer()->getVolumeWorksets(blockId);
     fm->postRegistrationSetup(setupData);
 
     // make sure to add the field manager & workset to the list 
-    element_block_names_.push_back(blockId);
+    volume_workset_desc_.push_back(wd);
     phx_volume_field_managers_.push_back(fm); 
   }
 }
@@ -132,8 +140,12 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
 					    const Teuchos::ParameterList& user_data)
 {
+   std::vector<WorksetDescriptor> wkstDesc;
+   for(std::size_t i=0;i<physicsBlocks.size();i++) 
+     wkstDesc.push_back(blockDescriptor(physicsBlocks[i]->elementBlockID()));
+  
    EmptyEvaluatorFactory eef;
-   setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,lo_factory,user_data,eef);
+   setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,lo_factory,user_data,eef);
 }
 
 //=======================================================================

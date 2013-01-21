@@ -39,6 +39,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include "Ioss_ParallelUtils.h"
 
 typedef int64_t entity_id;
 
@@ -92,11 +93,11 @@ namespace Ioss {
 namespace Iopx {
   struct NodeBlock
   {
-    NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0)
+    NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0), procOffset(0)
     {}
 
     NodeBlock(const NodeBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-					attributeCount(other.attributeCount)
+					attributeCount(other.attributeCount), procOffset(other.procOffset)
     {}
 
     NodeBlock(const Ioss::NodeBlock &other);
@@ -112,18 +113,20 @@ namespace Iopx {
     entity_id id;
     int64_t entityCount;
     int64_t attributeCount;
+    int64_t procOffset;
     private:
   };
 
   struct EdgeBlock
   {
-    EdgeBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), attributeCount(0)
+    EdgeBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), attributeCount(0), procOffset(0)
     {
       std::strcpy(elType, "");
     }
 
     EdgeBlock(const EdgeBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-					nodesPerEntity(other.nodesPerEntity), attributeCount(other.attributeCount)
+					nodesPerEntity(other.nodesPerEntity), attributeCount(other.attributeCount),
+					procOffset(other.procOffset)
     {
       std::strcpy(elType, other.elType);
     }
@@ -143,19 +146,20 @@ namespace Iopx {
     int64_t entityCount;
     int64_t nodesPerEntity;
     int64_t attributeCount;
+    int64_t procOffset;
     private:
   };
 
   struct FaceBlock
   {
-    FaceBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0)
+    FaceBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0), procOffset(0)
     {
       std::strcpy(elType, "");
     }
 
     FaceBlock(const FaceBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
 					nodesPerEntity(other.nodesPerEntity), edgesPerEntity(other.edgesPerEntity),
-					attributeCount(other.attributeCount)
+					attributeCount(other.attributeCount), procOffset(other.procOffset)
     {
       std::strcpy(elType, other.elType);
     }
@@ -176,6 +180,7 @@ namespace Iopx {
     int64_t nodesPerEntity;
     int64_t edgesPerEntity;
     int64_t attributeCount;
+    int64_t procOffset;
     private:
   };
 
@@ -183,7 +188,7 @@ namespace Iopx {
   {
     ElemBlock() : name(""), id(0), entityCount(0),
 		  nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
-		  attributeCount(0), offset_(-1)
+		  attributeCount(0), procOffset(0)
     {
       std::strcpy(elType, "");
     }
@@ -192,7 +197,8 @@ namespace Iopx {
 					nodesPerEntity(other.nodesPerEntity),
 					edgesPerEntity(other.edgesPerEntity),
 					facesPerEntity(other.facesPerEntity),
-					attributeCount(other.attributeCount), offset_(other.offset_)
+					attributeCount(other.attributeCount),
+					procOffset(other.procOffset)
     {
       std::strcpy(elType, other.elType);
     }
@@ -214,15 +220,16 @@ namespace Iopx {
     int64_t edgesPerEntity;
     int64_t facesPerEntity;
     int64_t attributeCount;
-    int64_t offset_;
+    int64_t procOffset;
     private:
   };
 
   struct NodeSet
   {
-    NodeSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    NodeSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) { }
     NodeSet(const NodeSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+				    attributeCount(other.attributeCount), dfCount(other.dfCount),
+				    procOffset(other.procOffset) {}
     NodeSet(const Ioss::NodeSet &other);
     bool operator==(const NodeSet&) const;
     bool operator!=(const NodeSet& other) const {return !(*this == other);}
@@ -232,13 +239,15 @@ namespace Iopx {
     int64_t entityCount;
     int64_t attributeCount;
     int64_t dfCount;
+    int64_t procOffset;
   };
 
   struct EdgeSet
   {
-    EdgeSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    EdgeSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) { }
     EdgeSet(const EdgeSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+				    attributeCount(other.attributeCount), dfCount(other.dfCount),
+				    procOffset(other.procOffset) {}
     EdgeSet(const Ioss::EdgeSet &other);
     bool operator==(const EdgeSet&) const;
     bool operator!=(const EdgeSet& other) const {return !(*this == other);}
@@ -248,13 +257,15 @@ namespace Iopx {
     int64_t entityCount;
     int64_t attributeCount;
     int64_t dfCount;
+    int64_t procOffset;
   };
 
   struct FaceSet
   {
-    FaceSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    FaceSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) { }
     FaceSet(const FaceSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+				    attributeCount(other.attributeCount), dfCount(other.dfCount),
+				    procOffset(other.procOffset) {}
     FaceSet(const Ioss::FaceSet &other);
     bool operator==(const FaceSet&) const;
     bool operator!=(const FaceSet& other) const {return !(*this == other);}
@@ -264,13 +275,15 @@ namespace Iopx {
     int64_t entityCount;
     int64_t attributeCount;
     int64_t dfCount;
+    int64_t procOffset;
   };
 
   struct ElemSet
   {
-    ElemSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    ElemSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) { }
     ElemSet(const ElemSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
-				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+				    attributeCount(other.attributeCount), dfCount(other.dfCount),
+				    procOffset(other.procOffset) {}
     ElemSet(const Ioss::ElementSet &other);
     bool operator==(const ElemSet&) const;
     bool operator!=(const ElemSet& other) const {return !(*this == other);}
@@ -280,11 +293,12 @@ namespace Iopx {
     int64_t entityCount;
     int64_t attributeCount;
     int64_t dfCount;
+    int64_t procOffset;
   };
 
   struct SideSet
   {
-    SideSet() : name(""), id(0), sideCount(0), dfCount(0) { }
+    SideSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0), dfProcOffset(0) { }
     SideSet(const Ioss::SideBlock &other);
     SideSet(const Ioss::SideSet   &other);
     bool operator==(const SideSet&) const;
@@ -292,47 +306,10 @@ namespace Iopx {
 
     std::string name;
     entity_id id;
-    int64_t sideCount;
-    int64_t dfCount;
-  };
-
-  struct CommunicationMap
-  {
-    CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(entity_id the_id, int64_t count, char the_type) :
-      id(the_id), entityCount(count), type(the_type) {}
-    bool operator==(const CommunicationMap&) const;
-    bool operator!=(const CommunicationMap& other) const {return !(*this == other);}
-    entity_id id;
     int64_t entityCount;
-    char type; // 'n' for node, 'e' for element
-  };
-
-  struct CommunicationMetaData
-  {
-    CommunicationMetaData() : processorId(0), processorCount(0),
-			      globalNodes(0), globalElements(0),
-			      globalElementBlocks(0), globalNodeSets(0), globalSideSets(0),
-			      nodesInternal(0), nodesBorder(0), nodesExternal(0),
-			      elementsInternal(0), elementsBorder(0), outputNemesis(false) {}
-
-    std::vector<CommunicationMap> nodeMap;
-    std::vector<CommunicationMap> elementMap;
-    int processorId;
-    int processorCount;
-    int64_t globalNodes;
-    int64_t globalElements;
-    int64_t globalElementBlocks;
-    int64_t globalNodeSets;
-    int64_t globalSideSets;
-    int64_t nodesInternal;
-    int64_t nodesBorder;
-    int64_t nodesExternal;
-    int64_t elementsInternal;
-    int64_t elementsBorder;
-    bool    outputNemesis;
-    private:
-    CommunicationMetaData(const CommunicationMetaData &);
+    int64_t dfCount;
+    int64_t procOffset;
+    int64_t dfProcOffset;
   };
 
   class Redefine
@@ -372,15 +349,14 @@ namespace Iopx {
 	std::vector<FaceSet>   facesets;
 	std::vector<ElemSet>   elemsets;
 	std::vector<SideSet>   sidesets;
-	CommunicationMetaData  comm;
   };
 
   class Internals
   {
   public:
-    Internals(int exoid, int maximum_name_length);
+    Internals(int exoid, int maximum_name_length, const Ioss::ParallelUtils &util);
 
-    int write_meta_data(const Mesh &mesh);
+    int write_meta_data(Mesh &mesh);
 
     /*!  A restart file may contain an attribute which contains
      *   information about the processor count and current processor id
@@ -401,8 +377,9 @@ namespace Iopx {
     Internals(const Internals& from); // do not implement
     Internals& operator=(const Internals& from); // do not implement
 
-    int put_metadata(const Mesh &mesh,
-		     const CommunicationMetaData &comm);
+    void get_global_counts(Mesh &mesh);
+    
+    int put_metadata(const Mesh &mesh);
     int put_metadata(const std::vector<NodeBlock> &nodeblocks);
     int put_metadata(const std::vector<EdgeBlock> &edgeblocks);
     int put_metadata(const std::vector<FaceBlock> &faceblocks);
@@ -415,8 +392,7 @@ namespace Iopx {
 
     int put_metadata(const std::vector<SideSet> &sidesets);
 
-    int put_non_define_data(const Mesh &mesh,
-			    const CommunicationMetaData &comm);
+    int put_non_define_data(const Mesh &mesh);
     int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);
     int put_non_define_data(const std::vector<EdgeBlock> &edgeblocks);
     int put_non_define_data(const std::vector<FaceBlock> &faceblocks);
@@ -437,6 +413,7 @@ namespace Iopx {
     int commIndexVar;
     int elemCommIndexVar;
     int maximumNameLength; 
+    Ioss::ParallelUtils parallelUtil;
   };
 }
 #endif /* IOSS_Iopx_Internals_h */

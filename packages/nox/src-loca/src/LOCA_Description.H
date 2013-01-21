@@ -351,7 +351,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
       <li> <B>"Constraints"</B> sublist -- Used to provide additional constraint equations.
           <ul>
 	  <li> <B>"Constraint Object"</B> -- [Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>] (Must be supplied) Pointer to object implementig constraint interface LOCA::MultiContinuation::ConstraintInterface.
-	  <li> <B>"Constraint Parameter Names"</B> -- [Teuchos::RCP< std::vector<std::string> >] (Must be supplied) Pointer to vector of string names of parameters that become additional unkowns for solving constrained system.
+	  <li> <B>"Constraint Parameter Names"</B> -- [Teuchos::RCP< std::vector<std::string> >] (Must be supplied) Pointer to vector of std::string names of parameters that become additional unkowns for solving constrained system.
 	  <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations arising from constraints.  See description in the "Stepper" sublist above.
 	  </ul>
       </ul>
@@ -574,7 +574,7 @@ in a try block.
     outFile.precision(14);
 
     // Save size of discretizations
-    outFile << n << endl;
+    outFile << n << std::endl;
 \endcode
 
 Here we set up a file for saving the solutions computed at each continuation
@@ -759,13 +759,13 @@ returned status.
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    cout << e.what() << std::endl;
   }
   catch (const char *s) {
-    cout << s << endl;
+    cout << s << std::endl;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    cout << "Caught unknown exception!" << std::endl;
   }
 
   return 0;
@@ -865,7 +865,7 @@ By examining the plot in \ref loca_continuation_tutorial, a turning point bifurc
     outFile.precision(14);
 
     // Save size of discretizations
-    outFile << n << endl;
+    outFile << n << std::endl;
 
     // Create initial guess for the null vector of jacobian
     Teuchos::RCP<NOX::Abstract::Vector> nullVec = 
@@ -1039,13 +1039,13 @@ We again use a secant predictor to compute an initial guess at each continuation
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    cout << e.what() << std::endl;
   }
   catch (const char *s) {
-    cout << s << endl;
+    cout << s << std::endl;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    cout << "Caught unknown exception!" << std::endl;
   }
 
   return 0;

@@ -143,7 +143,7 @@ Stratimikos::DefaultLinearSolverBuilder .
 for Stratimikos to parse some options, such as for preconditioner reuse.
 
 <ul>
-<li> "Preconditioner Reuse Policy" - (string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
+<li> "Preconditioner Reuse Policy" - (std::string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
     <ul>
     <li>"Rebuild" - The "Rebuild" option always completely destroys and then rebuilds the preconditioner each time a linear solve is requested.
     <li>"Reuse" - The group/linear solver will not recompute the preconditioner even if the group's solution vector changes.  It just blindly reuses what has been constructed.  This turns off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  We don't recommend users trying this.
@@ -344,8 +344,8 @@ protected:
       otherwise the aztec object may ignore this operation.
   */
 
-  virtual void throwError(const string& functionName, 
-			  const string& errorMsg) const;
+  virtual void throwError(const std::string& functionName, 
+			  const std::string& errorMsg) const;
 
   //! Prints a warning for ifpack preconditioner failures (error_code != 0).
   virtual void precError(int error_code, 

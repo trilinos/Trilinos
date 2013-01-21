@@ -52,7 +52,7 @@
 
 bool
 LOCA::Abstract::Factory::createPredictorStrategy(
-        const string& strategyName,
+        const std::string& strategyName,
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& predictorParams,
 	Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& strategy)
@@ -62,12 +62,12 @@ LOCA::Abstract::Factory::createPredictorStrategy(
 
 bool
 LOCA::Abstract::Factory::createContinuationStrategy(
-    const string& strategyName,
+    const std::string& strategyName,
     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
     const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
     const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
     const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-    const vector<int>& paramIDs,
+    const std::vector<int>& paramIDs,
     Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& strategy)
 {
   return false;
@@ -75,7 +75,7 @@ LOCA::Abstract::Factory::createContinuationStrategy(
 
 bool
 LOCA::Abstract::Factory::createBifurcationStrategy(
-    const string& strategyName,
+    const std::string& strategyName,
     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
     const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
     const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
@@ -86,7 +86,7 @@ LOCA::Abstract::Factory::createBifurcationStrategy(
 
 bool
 LOCA::Abstract::Factory::createStepSizeStrategy(
-        const string& strategyName,
+        const std::string& strategyName,
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams,
 	Teuchos::RCP<LOCA::StepSize::AbstractStrategy>& strategy)
@@ -96,7 +96,7 @@ LOCA::Abstract::Factory::createStepSizeStrategy(
 
 bool
 LOCA::Abstract::Factory::createBorderedSolverStrategy(
-        const string& strategyName,
+        const std::string& strategyName,
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
 	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
@@ -106,7 +106,7 @@ LOCA::Abstract::Factory::createBorderedSolverStrategy(
 
 bool
 LOCA::Abstract::Factory::createEigensolverStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy)
@@ -116,7 +116,7 @@ LOCA::Abstract::Factory::createEigensolverStrategy(
 
 bool
 LOCA::Abstract::Factory::createEigenvalueSortStrategy(
-        const string& strategyName,
+        const std::string& strategyName,
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy)
@@ -126,7 +126,7 @@ LOCA::Abstract::Factory::createEigenvalueSortStrategy(
 
 bool
 LOCA::Abstract::Factory::createSaveEigenDataStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>& strategy)
@@ -136,7 +136,7 @@ LOCA::Abstract::Factory::createSaveEigenDataStrategy(
 
 bool
 LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
-      const string& strategyName,
+      const std::string& strategyName,
       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
@@ -148,7 +148,7 @@ LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
 
 bool
 LOCA::Abstract::Factory::createMooreSpenceTurningPointSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy)
@@ -158,7 +158,7 @@ LOCA::Abstract::Factory::createMooreSpenceTurningPointSolverStrategy(
 
 bool
 LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy)
@@ -168,7 +168,7 @@ LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
 
 bool
 LOCA::Abstract::Factory::createMooreSpenceHopfSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy)

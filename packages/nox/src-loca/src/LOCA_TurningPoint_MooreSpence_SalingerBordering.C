@@ -97,7 +97,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solve()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -118,7 +118,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 
   int m = input.numVectors();
 
-  vector<int> index_input(m);
+  std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   
@@ -176,7 +176,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose(
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -197,7 +197,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose(
 
   int m = input.numVectors();
 
-  vector<int> index_input(m);
+  std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   
@@ -266,14 +266,14 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
 		  NOX::Abstract::MultiVector& result_null,
 	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   int m = input_x.numVectors()-1;
-  vector<int> index_input(m);
-  vector<int> index_dp(1);
+  std::vector<int> index_input(m);
+  std::vector<int> index_dp(1);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   index_dp[0] = m;
@@ -358,7 +358,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
 		  NOX::Abstract::MultiVector& result_null,
 	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -371,8 +371,8 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
 					   "Underlying group must be derived from NOX::Abstract::TransposeSolveGroup for transpose solve");
 
   int m = input_x.numVectors()-1;
-  vector<int> index_input(m);
-  vector<int> index_dp(1);
+  std::vector<int> index_input(m);
+  std::vector<int> index_dp(1);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   index_dp[0] = m;

@@ -170,17 +170,13 @@ void CudaSpace::print_memory_view( std::ostream & o )
 size_t CudaSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
-  const size_t alignment = Impl::CudaTraits::WarpSize * sizeof(size_type);
+  const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size 
+                     ? MEMORY_ALIGNMENT / scalar_size : 0 ;
 
-  // If the array is larger than the warp-alignment
-  // then align the count on the warp boundary.
-
-  if ( alignment < scalar_size * scalar_count &&
-       0 == alignment % scalar_size ) {
-    const size_t align = alignment / scalar_size ;
-    const size_t rem   = scalar_count % align ;
-    if ( rem ) scalar_count += align - rem ;
+  if ( align && align < scalar_count && scalar_count % align ) {
+    scalar_count += align - scalar_count % align ;
   }
+
   return scalar_count ;
 }
 

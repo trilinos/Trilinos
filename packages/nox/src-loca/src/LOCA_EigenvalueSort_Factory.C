@@ -70,11 +70,11 @@ LOCA::EigenvalueSort::Factory::create(
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::EigenvalueSort::Factory::create()";
+  std::string methodName = "LOCA::EigenvalueSort::Factory::create()";
   Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*eigenParams);
+  const std::string& name = strategyName(*eigenParams);
 
   if (name == "LM")
     strategy = 
@@ -115,7 +115,7 @@ LOCA::EigenvalueSort::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = 
+    std::string userDefinedName = 
       eigenParams->get("User-Defined Sorting Method Name",
 				"???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
@@ -137,7 +137,7 @@ LOCA::EigenvalueSort::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::EigenvalueSort::Factory::strategyName(
 				  Teuchos::ParameterList& eigenParams) const
 {

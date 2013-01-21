@@ -118,7 +118,7 @@ namespace LOCA {
 	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys);
 
 	//! Return strategy name given by \c solverParams
-	const string& strategyName(Teuchos::ParameterList& solverParams) const;
+	const std::string& strategyName(Teuchos::ParameterList& solverParams) const;
 
       private:
 

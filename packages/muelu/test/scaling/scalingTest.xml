@@ -8,6 +8,8 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
     <!-- -->
     <!-- Non-permuted factories -->
     <!-- -->
@@ -31,6 +33,18 @@
       <Parameter name="factory" type="string" value="TransPFactory"/>
       <Parameter name="P" type="string" value="myProlongatorFact"/>
     </ParameterList>
+    <!--
+
+    this is an example of how to embed definitions
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory" type="string" value="TransPFactory"/>
+      <ParameterList name="P">
+        <Parameter name="factory"  type="string" value="SaPFactory"/>
+      </ParameterList>
+    </ParameterList>
+
+    -->
 
     <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
@@ -148,8 +162,11 @@
       <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
+    <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
+         Will refer to Factory Collection defined above. -->
     <ParameterList name="OtherLevels">
       <Parameter name="startLevel"  type="int" value="1"/>
+      <Parameter name="Smoother"   type="string" value="Chebyshev"/>
       <Parameter name="A"           type="string" value="myRebalanceAFact"/>
       <Parameter name="P"           type="string" value="myRebalanceProlongatorFact"/>
       <Parameter name="R"           type="string" value="myRebalanceRestrictionFact"/>

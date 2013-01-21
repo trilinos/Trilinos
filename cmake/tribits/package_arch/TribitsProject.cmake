@@ -53,12 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-# Define policies for CMake
-# It is assumed that the project has already called CMAKE_MINIMUM_REQUIRED.
-CMAKE_POLICY(SET CMP0003 NEW)
-CMAKE_POLICY(SET CMP0007 NEW)
-CMAKE_POLICY(SET CMP0011 NEW)
-
 # Projects that change the location of the source need to consider this in
 # their top-level CMakeLists.txt file
 SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
@@ -76,6 +70,7 @@ IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
 ENDIF()
 
 # Overrides that we have for CMake functions
+INCLUDE(TribitsCMakePolicies)
 INCLUDE(TribitsProjectImpl)
 
 

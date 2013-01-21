@@ -117,10 +117,10 @@ createJacobianTranspose()
 
   if (jac == Teuchos::null)
     globalData->locaErrorCheck->throwError(
-	 string("LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::") +
-	 string("createJacobianTranspose()"), 
-	 string("Jacobian operator must be of type Epetra_RowMatrix for ") +
-	 string("Explicit Transpose method"));
+	 std::string("LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::") +
+	 std::string("createJacobianTranspose()"), 
+	 std::string("Jacobian operator must be of type Epetra_RowMatrix for ") +
+	 std::string("Explicit Transpose method"));
 
   // Form transpose if we haven't already, otherwise just migrate data
   if (jac_trans == Teuchos::null)

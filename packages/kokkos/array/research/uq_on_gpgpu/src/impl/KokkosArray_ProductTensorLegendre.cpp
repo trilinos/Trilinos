@@ -151,6 +151,42 @@ void product_tensor_bases( const std::vector<unsigned> & poly_deg_var ,
                            const unsigned poly_deg_target ,
                            const unsigned ivar ,
                            std::vector<unsigned> & iv ,
+                           std::vector<unsigned long> & bases_map )
+{
+  const unsigned nvar = poly_deg_var.size();
+  const unsigned max  = std::min( poly_deg_var[ivar] , std::min( poly_deg_total , poly_deg_target ) );
+
+  for ( int p = max ; 0 <= p ; --p ) {
+    iv[ivar] = p ;
+
+    if ( ivar + 1 < nvar ) {
+      product_tensor_bases( poly_deg_var , poly_deg_total - p , poly_deg_target , ivar + 1 , iv ,
+                            bases_map );
+    }
+    else if ( (int) poly_deg_total == p ) {
+
+      // No variables exceeded poly_deg_target
+      // At least one variable must be equal to poly_deg_target
+
+      bool ok = false ;
+      unsigned long pack = 0 ;
+
+      for ( unsigned j = 0 ; j < nvar && ! ( ok = poly_deg_target == iv[j] ) ; ++j ) {
+        pack |= ((unsigned long)(iv[j])) << ( j * 3 );
+      }
+
+      if ( ok ) {
+        bases_map.insert( bases_map.end() , pack );
+      }
+    }
+  }
+}
+
+void product_tensor_bases( const std::vector<unsigned> & poly_deg_var ,
+                           const unsigned poly_deg_total ,
+                           const unsigned poly_deg_target ,
+                           const unsigned ivar ,
+                           std::vector<unsigned> & iv ,
                            std::vector<unsigned char> & bases_map )
 {
   const unsigned nvar = poly_deg_var.size();
@@ -181,12 +217,12 @@ void product_tensor_bases( const std::vector<unsigned> & poly_deg_var ,
 
 struct ProductTensorRowCount {
   unsigned count_diag ;
-  unsigned count_off_diag ;
+  unsigned count_total ;
   unsigned basis ;
 
   ProductTensorRowCount()
   : count_diag(0)
-  , count_off_diag(0)
+  , count_total(0)
   , basis(0)
   {}
 };
@@ -197,8 +233,8 @@ struct CompareProductTensorRowCount {
                    const ProductTensorRowCount & rhs ) const
   {
     return
-           lhs.count_diag     != rhs.count_diag     ? lhs.count_diag     > rhs.count_diag : (
-           lhs.count_off_diag != rhs.count_off_diag ? lhs.count_off_diag > rhs.count_off_diag : (
+           lhs.count_total != rhs.count_total ? lhs.count_total > rhs.count_total : (
+           lhs.count_diag  != rhs.count_diag  ? lhs.count_diag  > rhs.count_diag : (
            lhs.basis < rhs.basis ));
 
   }
@@ -252,7 +288,8 @@ TripleProductTensorLegendreCombinatorialEvaluation(
                                & tmp_bases_map[i*m_variable_count] ,
                                & tmp_bases_map[i*m_variable_count] ,
                                & tmp_bases_map[i*m_variable_count] ) ) {
-      row_count[i].count_diag += 1 ;
+      row_count[i].count_total += 1 ;
+      row_count[i].count_diag  += 1 ;
     }
 
     for ( unsigned j = i + 1 ; j < m_bases_count ; ++j ) {
@@ -262,8 +299,9 @@ TripleProductTensorLegendreCombinatorialEvaluation(
                                  & tmp_bases_map[i*m_variable_count] ,
                                  & tmp_bases_map[j*m_variable_count] ,
                                  & tmp_bases_map[j*m_variable_count] ) ) {
-        row_count[i].count_diag += 1 ;
-        row_count[j].count_off_diag += 2 ;
+        row_count[i].count_diag  += 1 ;
+        row_count[i].count_total += 1 ;
+        row_count[j].count_total += 1 ;
       }
 
       // <i,i,j> , i < j < m_bases_count
@@ -271,8 +309,9 @@ TripleProductTensorLegendreCombinatorialEvaluation(
                                  & tmp_bases_map[i*m_variable_count] ,
                                  & tmp_bases_map[i*m_variable_count] ,
                                  & tmp_bases_map[j*m_variable_count] ) ) {
-        row_count[j].count_diag += 1 ;
-        row_count[i].count_off_diag += 2 ;
+        row_count[j].count_diag  += 1 ;
+        row_count[j].count_total += 1 ;
+        row_count[i].count_total += 1 ;
       }
 
       // <i,j,k> , i < j < k < m_bases_count
@@ -281,9 +320,9 @@ TripleProductTensorLegendreCombinatorialEvaluation(
                                    & tmp_bases_map[i*m_variable_count] ,
                                    & tmp_bases_map[j*m_variable_count] ,
                                    & tmp_bases_map[k*m_variable_count] ) ) {
-          row_count[i].count_off_diag += 2 ;
-          row_count[j].count_off_diag += 2 ;
-          row_count[k].count_off_diag += 2 ;
+          row_count[i].count_total += 1 ;
+          row_count[j].count_total += 1 ;
+          row_count[k].count_total += 1 ;
         }
       }
     }
@@ -319,8 +358,8 @@ TripleProductTensorLegendreCombinatorialEvaluation(
       std::cout << (unsigned) m_bases_map[i*m_variable_count+j] ;
     }
     std::cout << "} " ;
-    std::cout << " diag_count = " << row_count[i].count_diag
-              << " , off_diag_count = " << row_count[i].count_off_diag
+    std::cout << " total_count = " << row_count[i].count_total
+              << " , diag_count = " << row_count[i].count_diag
               << " , old_index = " << ib
               << std::endl ;
 

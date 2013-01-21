@@ -464,7 +464,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
+   void getElementVertices(const std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
    // const stk::mesh::fem::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
@@ -710,7 +710,7 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
+void STK_Interface::getElementVertices(const std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
 {
 
    // nothing to do! silently return

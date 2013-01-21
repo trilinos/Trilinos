@@ -96,7 +96,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks()";
 
   // Set block pointers
@@ -107,11 +107,11 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
   if (B.get() == NULL)
     globalData->locaErrorCheck->throwError(
 	     callingFunction,
-	     string("Constraint argument is not of type\n") + 
-	     string("LOCA::MultiContinuation::ConstraintInterfaceMVDX!\n") +
-	     string("The LAPACK Direct Solve bordered solver method can\n") +
-	     string("only be used with constraints that support obtaining\n") +
-	     string("the constraint derivative as a multivector."));
+	     std::string("Constraint argument is not of type\n") + 
+	     std::string("LOCA::MultiContinuation::ConstraintInterfaceMVDX!\n") +
+	     std::string("The LAPACK Direct Solve bordered solver method can\n") +
+	     std::string("only be used with constraints that support obtaining\n") +
+	     std::string("the constraint derivative as a multivector."));
 
   C = blockC;
 
@@ -147,9 +147,9 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
     if (grp.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	      callingFunction,
-	      string("Group argument is not of type LOCA::LAPACK::Group!\n") + 
-	      string("The LAPACK Direct Solve bordered solver method can\n") +
-	      string("only be used with LAPACK groups."));
+	      std::string("Group argument is not of type LOCA::LAPACK::Group!\n") + 
+	      std::string("The LAPACK Direct Solve bordered solver method can\n") +
+	      std::string("only be used with LAPACK groups."));
 
     // Get the Jacobian matrix and size
     const NOX::LAPACK::Matrix<double>& J = grp->getJacobianMatrix();
@@ -251,9 +251,9 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
     if (grp.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	      callingFunction,
-	      string("Group argument is not of type LOCA::LAPACK::Group!\n") + 
-	      string("The LAPACK Direct Solve bordered solver method can\n") +
-	      string("only be used with LAPACK groups."));
+	      std::string("Group argument is not of type LOCA::LAPACK::Group!\n") + 
+	      std::string("The LAPACK Direct Solve bordered solver method can\n") +
+	      std::string("only be used with LAPACK groups."));
 
     // Get the number of additional rows/columns
     if (!isZeroA)
@@ -335,9 +335,9 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
   else {
     globalData->locaErrorCheck->throwError(
 		      callingFunction,
-		      string("Op argument must be of type !\n") + 
-	              string("LOCA::BorderedSolver::JacobianOperator or \n") +
-		      string("LOCA::BorderedSolver::ComplexOperator."));
+		      std::string("Op argument must be of type !\n") + 
+	              std::string("LOCA::BorderedSolver::JacobianOperator or \n") +
+		      std::string("LOCA::BorderedSolver::ComplexOperator."));
   }
 }
 

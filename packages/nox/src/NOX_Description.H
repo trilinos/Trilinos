@@ -245,7 +245,7 @@ Go on to \ref step2.
 
   We recommend using the NOX::LAPACK concrete implementation as a
   guide.  In this case, the underlying vectors are C++ STL
-  vector<double> objects, and the matrices are stored in our own
+  std::vector<double> objects, and the matrices are stored in our own
   NOX::LAPACK::Matrix class.  Both the vectors and matrices are
   manipulated using LAPACK.  The NOX::LAPACK::Vector is
   straightforward; see NOX_LAPACK_Vector.H and NOX_LAPACK_Vector.C.
@@ -528,7 +528,7 @@ The following pages are relevant to developers.
 
  %NOX/%LOCA version 10.2 will be release as part of Trilinos 10.2 in March 2010. 
  <ul>
- <li> We have fixed a long standing issue with nox regarding overloading of the ostream operator.  If you are compiling nox and get a compile/link error that fails to find the "operator<<" method on one of your classes, then you need to move your overloaded ostream function for that object into the correct namespace (the same namespace as the object it is operating on).  
+ <li> We have fixed a long standing issue with nox regarding overloading of the std::ostream operator.  If you are compiling nox and get a compile/link error that fails to find the "operator<<" method on one of your classes, then you need to move your overloaded std::ostream function for that object into the correct namespace (the same namespace as the object it is operating on).  
 
 The following artice by Herb Sutter explains this issue:
 
@@ -566,7 +566,7 @@ info.set("Outer Iteration StatusTest", true);
 info.set("Outer Iteration", true);
 NOX::Utils utils3(p);
 \endcode
-  <li> Removed all instances of enumerated types from the parameter list.  This was causing problems with the python interfaces.  Enumerated type are now string types. 
+  <li> Removed all instances of enumerated types from the parameter list.  This was causing problems with the python interfaces.  Enumerated type are now std::string types. 
   <li> The RefCountPtr class in Teuchos was changed to RCP to shorten the amount of code.  All instances of RefCountPtr should be changed to RCP.  There is a script available in Teuchos to automatically make this change to any package.  
 </ul>
 
@@ -1222,13 +1222,13 @@ MsgType flag. The flags are:
 <li>Always check return values of functions for errors.
 <li>In general, try to recover from errors.
 <li>If you must throw an exception, always print an explanation with
-the function name to <code>NOX::Utils::err</code> or <code>NOX::Utils::perr</code> and then throw an exception with the string
+the function name to <code>NOX::Utils::err</code> or <code>NOX::Utils::perr</code> and then throw an exception with the std::string
 <code>"NOX Error"</code>. For example if utils is a NOX::Utils object,
 
 <pre>
   if (/* Error Condition */) 
   {
-    utils.err() << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << endl;
+    utils.err() << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << std::endl;
     throw "NOX Error";
   }
 </pre>
@@ -2015,8 +2015,8 @@ int main(int argc, char *argv[])
   // number of processors.
   if (NumGlobalElements < NumProc) {
     cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
-    cout << "Test failed!" << endl;
+	 << " cannot be < number of processors = " << NumProc << std::endl;
+    cout << "Test failed!" << std::endl;
     throw "NOX Error";
   }
 \endcode

@@ -150,7 +150,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
   double endTime = timer.WallTime();
   if (utils.isPrintType(Utils::LinearSolverDetails))
     utils.out() << "\n       Time required for one linear solve : " 
-         << (endTime - startTime) << " (sec.)" << endl;;
+         << (endTime - startTime) << " (sec.)" << std::endl;;
 
   return status;
 }

@@ -102,7 +102,7 @@ public:
     n = m;
     lambda = lambdaVal;
 
-    cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
+    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
       // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
@@ -114,7 +114,7 @@ public:
   }
 
   //! Destructor
-  ~Broyden() { cout << "Function evaluations: " << fevals << "\n"; }
+  ~Broyden() { std::cout << "Function evaluations: " << fevals << "\n"; }
 
   const NOX::LAPACK::Vector& getInitialGuess()
   {
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   using Teuchos::ParameterList;
   using namespace NOX::StatusTest;
 
-  cout << "Started" << endl;
+  std::cout << "Started" << std::endl;
 
   int final_status_value = 0; // zero = success, !0 = failed
 
@@ -267,15 +267,15 @@ int main(int argc, char *argv[])
 
   NOX::StatusTest::StatusType status = solver->solve();
 
-  cout << *solverParametersPtr << endl;
+  std::cout << *solverParametersPtr << std::endl;
 
   if (status != NOX::StatusTest::Converged || 
       solver->getNumIterations() != 12) {
     final_status_value += 1;
-    cout << "\nTest failed!\n" << endl;
+    std::cout << "\nTest failed!\n" << std::endl;
   }
   else 
-    cout << "\nTest passed!\n" << endl;    
+    std::cout << "\nTest passed!\n" << std::endl;    
     
   return final_status_value;
 }

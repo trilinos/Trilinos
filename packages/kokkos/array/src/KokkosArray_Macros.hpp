@@ -90,6 +90,19 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 /* END defined( __CUDACC__ ) */
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+#elif defined( __INTEL_COMPILER ) && defined( __MIC__ )
+
+/*  Compiling with Intel compiler for execution on an Intel MIC device.
+ *  These devices are used in no-offload mode so the Host space is the MIC space.
+ */
+
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #elif defined( _OPENMP )
 

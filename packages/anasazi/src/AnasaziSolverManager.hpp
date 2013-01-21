@@ -39,6 +39,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Time.hpp"
 
 /*! \class Anasazi::SolverManager
   \brief The Anasazi::SolverManager is a templated virtual base class that defines the
@@ -70,6 +72,13 @@ class SolverManager {
 
   //! Get the iteration count for the most recent call to \c solve().
   virtual int getNumIters() const = 0;
+
+  //! Return the timers for this object. 
+  virtual Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const 
+  {
+    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > null_time;
+    return null_time;
+  }
 
   //@}
 

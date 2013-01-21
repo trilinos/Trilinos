@@ -95,7 +95,7 @@ namespace Galeri {
         GlobalOrdinal NBigYDir         = ny - PerProcSmallYDir*my;
 
         if (xpid < NBigXDir) startx =  xpid*(PerProcSmallXDir+1);
-        else                 startx = (xpid-NBigXDir)*PerProcSmallXDir + 
+        else                 startx = (xpid-NBigXDir)*PerProcSmallXDir +
           NBigXDir*(PerProcSmallXDir+1);
         endx = startx + PerProcSmallXDir;
         if (xpid < NBigXDir) endx++;
@@ -110,8 +110,8 @@ namespace Galeri {
         vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
         size_t count = 0;
 
-        for (GlobalOrdinal i = startx ; i < endx ; ++i) 
-          for (GlobalOrdinal j = starty ; j < endy ; ++j) 
+        for (GlobalOrdinal j = starty ; j < endy ; ++j)
+          for (GlobalOrdinal i = startx ; i < endx ; ++i)
             MyGlobalElements[count++] = i + j * nx;
 
         global_size_t numGlobalElements = nx * ny;

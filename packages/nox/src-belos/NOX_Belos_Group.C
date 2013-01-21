@@ -168,13 +168,13 @@ NOX::Belos::Group::computeNewton(NOX::Parameter::List& params)
     return NOX::Abstract::Group::Ok;
 
   if (!isF()) {
-    cerr << "ERROR: NOX::Belos::Group::computeNewton() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Belos::Group::computeNewton() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Belos::Group::computeNewton() - invalid Jacobian" 
-	 << endl;
+    std::cerr << "ERROR: NOX::Belos::Group::computeNewton() - invalid Jacobian" 
+	 << std::endl;
     throw "NOX Error";
   }
 
@@ -289,7 +289,7 @@ NOX::Belos::Group::applyJacobianInverseMultiVector(
   int length = params.getParameter("Size of Krylov Subspace", 300);
   int numrestarts = params.getParameter("Number of Restarts", 20);
   int maxblocksize = params.getParameter("Maximum block size", 10);
-  string method = params.getParameter("Belos Solver", "GMRES");
+  std::string method = params.getParameter("Belos Solver", "GMRES");
   int verbLevel = params.getParameter("Verbosity Level", 1);
 
   // Create status tests
@@ -323,9 +323,9 @@ NOX::Belos::Group::applyJacobianInverseMultiVector(
     belosCG.Solve();
   }
   else {
-    cout << "ERROR: NOX::Belos::Group::applyJacobianInverseMultiVector" << endl
+    std::cout << "ERROR: NOX::Belos::Group::applyJacobianInverseMultiVector" << std::endl
 	 << "\"Belos Solver\" parameter \"" << method 
-	 <<  "\" is invalid!" << endl;
+	 <<  "\" is invalid!" << std::endl;
     throw "NOX Error";
   }
 
@@ -412,7 +412,7 @@ NOX::Belos::Group::getNormNewtonSolveResidual() const
   
   status = applyJacobian(*newtonVecPtr, *residual);
   if (status != NOX::Abstract::Group::Ok) {
-    cerr << "Error:  NOX::Belos::Group::getNormNewtonSolveResidual() -- applyJacobian failed!" << endl;
+    std::cerr << "Error:  NOX::Belos::Group::getNormNewtonSolveResidual() -- applyJacobian failed!" << std::endl;
     throw "NOX Error";
   }
 

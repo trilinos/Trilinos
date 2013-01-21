@@ -87,7 +87,7 @@ namespace LOCA {
        //! Create bordered system solver strategy
       virtual bool
       createBorderedSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
@@ -95,7 +95,7 @@ namespace LOCA {
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy);

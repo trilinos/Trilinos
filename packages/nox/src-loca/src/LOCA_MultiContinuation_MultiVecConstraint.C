@@ -124,7 +124,7 @@ LOCA::MultiContinuation::MultiVecConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
 }
@@ -148,11 +148,11 @@ LOCA::MultiContinuation::MultiVecConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::MultiVecConstraint::computeDP(
-		                const vector<int>& paramIDs, 
+		                const std::vector<int>& paramIDs, 
 		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 				bool isValidG)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::MultiContinuation::MultiVecConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   

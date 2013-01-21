@@ -151,17 +151,22 @@ int ex_create_par_int (const char *path,
   char errmsg[MAX_ERR_LENGTH];
   char *mode_name;
   int mode = 0;
-#if defined(NC_NETCDF4)
-  static int netcdf4_mode = -1;
-  char *option;
-#endif /* NC_NETCDF4 */
    
   int int64_status;
-  int pariomode = NC_MPIPOSIX;
+  int pariomode = 0;
 
   unsigned int my_mode = cmode;
   assert(my_mode == cmode);
   exerrval = 0; /* clear error code */
+
+#if !defined(NC_NETCDF4)
+    /* Library does NOT support netcdf4 */
+    exerrval = EX_BADPARAM;
+    sprintf(errmsg,
+	    "EXODUS: Error: Parallel output requires the netcdf-4 library format, but this netcdf library does not support that.\n");
+    ex_err("ex_create_par",errmsg,exerrval);
+    return (EX_FATAL);
+#endif
 
   if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
     int run_version_major = run_version / 100;
@@ -182,51 +187,36 @@ int ex_create_par_int (const char *path,
   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
   
   if ((int64_status & EX_ALL_INT64_DB) != 0) {
-#if defined(NC_NETCDF4)
     /* Library DOES support netcdf4... Set modes required to use
      * netcdf-4 in non-classic mode
      */
     my_mode |= EX_NOCLASSIC;
     my_mode |= EX_NETCDF4;
-#else
-    /* Library does NOT support netcdf4 */
-    exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-	    "EXODUS: Error: 64-bit integer storage requested, but the netcdf library does not support the required netcdf-4 extensions.\n");
-    ex_err("ex_create",errmsg,exerrval);
-    return (EX_FATAL);
-#endif
   }
-
-#if defined(NC_NETCDF4)
-  if (my_mode & EX_NETCDF4) {
-    mode |= (NC_NETCDF4);
-  } else {
-    if (netcdf4_mode == -1) {
-      option = getenv("EXODUS_NETCDF4");
-      if (option != NULL) {
-	fprintf(stderr, "EXODUS: Using netcdf version 4 selected via EXODUS_NETCDF4 environment variable\n");
-	netcdf4_mode = NC_NETCDF4; 
-      } else {
-	netcdf4_mode = 0;
-      }
-    }
-    mode |= netcdf4_mode;
-  }
-  if (! (my_mode & EX_NOCLASSIC)) {
-    mode |= NC_CLASSIC_MODEL;
-  }
-#endif
 
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    */
-  if (mode & EX_MPIPOSIX)
+  if (my_mode & EX_MPIPOSIX) {
     pariomode = NC_MPIPOSIX;
-  else if (mode & EX_MPIIO)
+    my_mode |= EX_NETCDF4;
+  }
+  else if (my_mode & EX_MPIIO) {
     pariomode = NC_MPIIO;
-  else if (mode & EX_PNETCDF)
+    my_mode |= EX_NETCDF4;
+  }
+  else if (my_mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
+    mode |= NC_64BIT_OFFSET;
+  }
+
+  if (my_mode & EX_NETCDF4) {
+    mode |= NC_NETCDF4;
+  }
+
+  if (! (my_mode & EX_NOCLASSIC)) {
+    mode |= NC_CLASSIC_MODEL;
+  }
 
   /*
    * See if "large file" mode was specified in a ex_create my_mode. If
@@ -240,23 +230,8 @@ int ex_create_par_int (const char *path,
 	    path, (int)my_mode);
     ex_err("ex_create",errmsg,exerrval);
   }
-  if (my_mode & EX_NORMAL_MODEL)
-    filesiz = 0;
-#if defined(NC_NETCDF4)
-  else if (mode & NC_NETCDF4)
-    filesiz = 1;
-#endif
-  else 
-    filesiz = (int)((my_mode & EX_LARGE_MODEL) || (ex_large_model(-1) == 1));
-
-  if (
-#if defined(NC_NETCDF4)
-      !(mode & NC_NETCDF4) &&
-#endif
-      filesiz == 1) {
-    mode |= NC_64BIT_OFFSET;
-  }
-
+  filesiz = 1;
+  
   if (my_mode & EX_SHARE) {
     mode |= NC_SHARE;
   }
@@ -289,8 +264,7 @@ int ex_create_par_int (const char *path,
     return (EX_FATAL);
   }
 
-  /* turn off automatic filling of netCDF variables
-   */
+  /* turn off automatic filling of netCDF variables */
 
   if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
     exerrval = status;

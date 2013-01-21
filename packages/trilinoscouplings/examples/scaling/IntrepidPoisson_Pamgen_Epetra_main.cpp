@@ -107,6 +107,8 @@ main (int argc, char *argv[])
   typedef EpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef EpetraIntrepidPoissonExample::vector_type vector_type;
 
+  Epetra_Object::SetTracebackMode(2);
+
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   const int myRank = mpiSession.getRank ();
@@ -218,6 +220,15 @@ main (int argc, char *argv[])
   const int maxNumIters = 100;
   solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
                   X, A, B, Teuchos::null, Teuchos::null);
+
+  // Compute ||X-X_exact||_2
+  MT norm_x, norm_error;
+  X_exact->Norm2(&norm_x);
+  X_exact->Update(-1.0, *X, 1.0);
+  X_exact->Norm2(&norm_error);
+  *out << endl
+       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
+       << endl;
 
   // Summarize timings
   // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");

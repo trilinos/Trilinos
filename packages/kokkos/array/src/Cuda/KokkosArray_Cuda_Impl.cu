@@ -183,6 +183,8 @@ public:
   void initialize( int cuda_device_id );
   void finalize();
 
+  void print_configuration( std::ostream & ) const ;
+
   ~CudaInternal();
 
   CudaInternal()
@@ -203,6 +205,24 @@ public:
   size_type * scratch_flags( const size_type size );
   size_type * scratch_unified( const size_type size );
 };
+
+//----------------------------------------------------------------------------
+
+void CudaInternal::print_configuration( std::ostream & s ) const
+{
+  const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
+
+  for ( int i = 0 ; i < dev_info.m_cudaDevCount ; ++i ) {
+    s << "KokkosArray::Cuda[ " << i << " ] "
+      << dev_info.m_cudaProp[i].name
+      << " capability " << dev_info.m_cudaProp[i].major
+      << "." << dev_info.m_cudaProp[i].minor ;
+    if ( m_cudaDev == i ) s << " : selected" ;
+    s << std::endl ;
+  }
+}
+
+//----------------------------------------------------------------------------
 
 CudaInternal::~CudaInternal()
 {
@@ -468,6 +488,9 @@ void Cuda::initialize( const Cuda::SelectDevice config )
 
 void Cuda::finalize()
 { Impl::CudaInternal::raw_singleton().finalize(); }
+
+void Cuda::print_configuration( std::ostream & s )
+{ Impl::CudaInternal::raw_singleton().print_configuration( s ); }
 
 bool Cuda::sleep() { return false ; }
 

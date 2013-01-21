@@ -181,7 +181,11 @@ NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
   } else {
     id = 1;
   }
-  entityCount = other.get_property("entity_count").get_int();
+  if (other.property_exists("locally_owned_count")) {
+    entityCount = other.get_property("locally_owned_count").get_int();
+  } else {
+    entityCount = other.get_property("entity_count").get_int();
+  }
   attributeCount = other.get_property("attribute_count").get_int();
 }
 
@@ -295,7 +299,6 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
   }
 
   attributeCount = other.get_property("attribute_count").get_int();
-  offset_ = other.get_offset();
   std::string el_type = other.get_property("topology_type").get_string();
   if (other.property_exists("original_topology_type")) {
     el_type = other.get_property("original_topology_type").get_string();
@@ -322,7 +325,6 @@ ElemBlock& ElemBlock::operator=(const ElemBlock& other)
   edgesPerEntity = other.edgesPerEntity;
   facesPerEntity = other.facesPerEntity;
   attributeCount = other.attributeCount;
-  offset_ = other.offset_;
   std::strcpy(elType, other.elType);
   return *this;
 }
@@ -342,9 +344,16 @@ NodeSet::NodeSet(const Ioss::NodeSet &other)
 {
   name = other.name();
   id = other.get_property("id").get_int();
-  entityCount = other.get_property("entity_count").get_int();
+  if (other.property_exists("locally_owned_count")) {
+    entityCount = other.get_property("locally_owned_count").get_int();
+  } else {
+    entityCount = other.get_property("entity_count").get_int();
+  }
   attributeCount = other.get_property("attribute_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
+  if (dfCount > 0 && dfCount != entityCount) {
+    dfCount = entityCount;
+  }
 }
 
 bool NodeSet::operator==(const NodeSet& other) const
@@ -410,56 +419,53 @@ SideSet::SideSet(const Ioss::SideBlock &other)
 {
   name = other.name();
   id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
+  entityCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
-    dfCount = sideCount;
+    dfCount = entityCount;
 }
 
 SideSet::SideSet(const Ioss::SideSet &other)
 {
   name = other.name();
   id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
+  entityCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
-    dfCount = sideCount;
+    dfCount = entityCount;
 }
 
 bool SideSet::operator==(const SideSet& other) const
 {
   return id == other.id &&
-    sideCount == other.sideCount &&
+    entityCount == other.entityCount &&
     dfCount == other.dfCount &&
     name == other.name;
 }
 
-bool CommunicationMap::operator==(const CommunicationMap& other) const
-{
-  return id == other.id &&
-    entityCount == other.entityCount &&
-    type == other.type;
-}
-
-Internals::Internals(int exoid, int maximum_name_length)
+Internals::Internals(int exoid, int maximum_name_length, const Ioss::ParallelUtils &util)
   : exodusFilePtr(exoid),
     nodeMapVarID(),
     elementMapVarID(),
     commIndexVar(0),
     elemCommIndexVar(0),
-    maximumNameLength(maximum_name_length)
+    maximumNameLength(maximum_name_length),
+    parallelUtil(util)
 {}
 
-int Internals::write_meta_data(const Mesh &mesh)
+int Internals::write_meta_data(Mesh &mesh)
 {
   int ierr;
   {
+    // Determine global counts...
+    get_global_counts(mesh);
+
     Redefine the_database(exodusFilePtr);
 
     // Set the database to NOFILL mode.  Only writes values we want written...
@@ -468,7 +474,7 @@ int Internals::write_meta_data(const Mesh &mesh)
     ierr=nc_set_fill(exodusFilePtr, NC_NOFILL, &old_fill);
     if (ierr != EX_NOERR) return(ierr);
 
-    ierr=put_metadata(mesh, mesh.comm);
+    ierr=put_metadata(mesh);
     if (ierr != EX_NOERR) return(ierr);
 
     ierr=put_metadata(mesh.edgeblocks);
@@ -496,8 +502,10 @@ int Internals::write_meta_data(const Mesh &mesh)
     if (ierr != EX_NOERR) return(ierr);
   }
 
+
   // NON-Define mode output...
-  ierr=put_non_define_data(mesh, mesh.comm);
+  size_t my_proc = parallelUtil.parallel_rank();
+  ierr=put_non_define_data(mesh);
   if (ierr != EX_NOERR) return(ierr);
 
   ierr=put_non_define_data(mesh.edgeblocks);
@@ -537,8 +545,114 @@ int Internals::write_meta_data(const Mesh &mesh)
   return(EX_NOERR);
 }
 
-int Internals::put_metadata(const Mesh &mesh,
-			    const CommunicationMetaData &comm)
+void Internals::get_global_counts(Mesh &mesh)
+{
+  std::vector<int64_t> counts;
+  std::vector<int64_t> global_counts;
+  
+  counts.push_back(mesh.nodeblocks[0].entityCount);
+  for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
+    counts.push_back(mesh.edgeblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.faceblocks.size(); i++) {
+    counts.push_back(mesh.faceblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.elemblocks.size(); i++) {
+    counts.push_back(mesh.elemblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.nodesets.size(); i++) {
+    counts.push_back(mesh.nodesets[i].entityCount);
+    counts.push_back(mesh.nodesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.edgesets.size(); i++) {
+    counts.push_back(mesh.edgesets[i].entityCount);
+    counts.push_back(mesh.edgesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.facesets.size(); i++) {
+    counts.push_back(mesh.facesets[i].entityCount);
+    counts.push_back(mesh.facesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.elemsets.size(); i++) {
+    counts.push_back(mesh.elemsets[i].entityCount);
+    counts.push_back(mesh.elemsets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.sidesets.size(); i++) {
+    counts.push_back(mesh.sidesets[i].entityCount);
+    counts.push_back(mesh.sidesets[i].dfCount);
+  }
+
+  // Now gather this information on each processor so
+  // they can determine the offsets and totals...
+  global_counts.resize(counts.size() * parallelUtil.parallel_size());
+  
+  MPI_Allgather(&counts[0],        counts.size(), MPI_LONG_LONG_INT,
+		&global_counts[0], counts.size(), MPI_LONG_LONG_INT,
+		parallelUtil.communicator());
+  
+  std::vector<int64_t> offsets(counts.size());
+  
+  size_t my_proc = parallelUtil.parallel_rank();
+  size_t proc_count = parallelUtil.parallel_size();
+  
+  // Calculate offsets for each entity on each processor
+  for (size_t j=0; j < offsets.size(); j++) {
+    for (size_t i=0; i < my_proc; i++) {
+      offsets[j] += global_counts[i*offsets.size() + j];
+    }
+  }
+  
+  // Now calculate the total count of entities over all processors
+  for (size_t j=0; j < offsets.size(); j++) {
+    for (size_t i=1; i < proc_count; i++) {
+      global_counts[j] += global_counts[i*offsets.size() + j];
+    }
+  }
+
+  size_t j = 0;
+  mesh.nodeblocks[0].procOffset = offsets[j];
+  mesh.nodeblocks[0].entityCount = global_counts[j++];
+
+  for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
+    mesh.edgeblocks[i].procOffset = offsets[j];
+    mesh.edgeblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.faceblocks.size(); i++) {
+    mesh.faceblocks[i].procOffset = offsets[j];
+    mesh.faceblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.elemblocks.size(); i++) {
+    mesh.elemblocks[i].procOffset = offsets[j];
+    mesh.elemblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.nodesets.size(); i++) {
+    mesh.nodesets[i].procOffset = offsets[j];
+    mesh.nodesets[i].entityCount = global_counts[j++];
+    mesh.nodesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.edgesets.size(); i++) {
+    mesh.edgesets[i].procOffset = offsets[j];
+    mesh.edgesets[i].entityCount = global_counts[j++];
+    mesh.edgesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.facesets.size(); i++) {
+    mesh.facesets[i].procOffset = offsets[j];
+    mesh.facesets[i].entityCount = global_counts[j++];
+    mesh.facesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.elemsets.size(); i++) {
+    mesh.elemsets[i].procOffset = offsets[j];
+    mesh.elemsets[i].entityCount = global_counts[j++];
+    mesh.elemsets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.sidesets.size(); i++) {
+    mesh.sidesets[i].procOffset = offsets[j];
+    mesh.sidesets[i].entityCount = global_counts[j++];
+    mesh.sidesets[i].dfProcOffset = offsets[j];
+    mesh.sidesets[i].dfCount = global_counts[j++];
+  }
+}
+
+int Internals::put_metadata(const Mesh &mesh)
 {
   int numdimdim  = 0;
   int numnoddim  = 0;
@@ -563,22 +677,6 @@ int Internals::put_metadata(const Mesh &mesh,
 	    "Error: failed to define title attribute to file id %d", exodusFilePtr);
     ex_err(routine,errmsg,status);
     return(EX_FATAL);
-  }
-
-  // For use later as a consistency check, define the number of processors and
-  // the current processor id as an attribute of the file...
-  {
-    int ltempsv[2];
-    ltempsv[0] = comm.processorCount;
-    ltempsv[1] = comm.processorId;
-    status=nc_put_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", NC_INT, 2, ltempsv);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define processor info attribute to file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
   }
 
   // For use later to determine whether a timestep is corrupt, we define an attribute
@@ -883,224 +981,6 @@ int Internals::put_metadata(const Mesh &mesh,
 				  mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR) return EX_FATAL;
 
-  // Define dimension for the number of processors
-  if (comm.outputNemesis) {
-    if (comm.processorCount > 0) {
-      int procdim;
-      status=nc_inq_dimid(exodusFilePtr, DIM_NUM_PROCS, &procdim);
-      if (status != NC_NOERR) {
-	int ltempsv = comm.processorCount;
-	status=nc_def_dim(exodusFilePtr, DIM_NUM_PROCS, ltempsv, &procdim);
-	if (status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: failed to dimension \"%s\" in file ID %d",
-		  DIM_NUM_PROCS, exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
-      }
-    }
-
-    // If this is a parallel file then the status vectors are size 1
-    int dimid_npf;
-    status= nc_inq_dimid(exodusFilePtr, DIM_NUM_PROCS_F, &dimid_npf);
-    if ((status) != NC_NOERR) {
-      int ltempsv = 1; // 1 processor per file...
-      status=nc_def_dim(exodusFilePtr, DIM_NUM_PROCS_F, ltempsv, &dimid_npf);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to dimension \"%s\" in file ID %d",
-		DIM_NUM_PROCS_F, exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-    }
-
-    // Define the file type variable...
-    status=nc_inq_varid(exodusFilePtr, VAR_FILE_TYPE, &varid);
-    if (status != NC_NOERR) {
-      status=nc_def_var(exodusFilePtr, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to define file type in file ID %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-    }
-
-    // Output the file version
-    int ierr = ex_put_nemesis_version(exodusFilePtr);
-    if (ierr < 0) return (ierr);
-
-    if (comm.globalNodes > 0) {
-      // Define dimension for number of global nodes
-      size_t ltempsv = comm.globalNodes;
-      int glonoddim = 0;
-      status=nc_def_dim(exodusFilePtr, DIM_NUM_NODES_GLOBAL, ltempsv, &glonoddim);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to dimension \"%s\" in file ID %d",
-		DIM_NUM_NODES_GLOBAL, exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-    }
-
-    if (comm.globalElements > 0) {
-      // Define dimension for number of global elements
-      size_t ltempsv = comm.globalElements;
-      int gloelemdim = 0;
-      status=nc_def_dim(exodusFilePtr, DIM_NUM_ELEMS_GLOBAL, ltempsv, &gloelemdim);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to dimension \"%s\" in file ID %d",
-		DIM_NUM_ELEMS_GLOBAL, exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-    }
-
-    // Output the number of global element blocks. This is output as a
-    // dimension since the vector of global element block IDs is sized
-    // by this quantity.
-    {
-      const char *vars[] = {VAR_ELBLK_IDS_GLOBAL,
-			    VAR_ELBLK_CNT_GLOBAL,
-			    NULL};
-      const nc_type types[] = {ids_type, bulk_type};
-      
-      status = define_variables(exodusFilePtr, (int)comm.globalElementBlocks, DIM_NUM_ELBLK_GLOBAL, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-
-    // Output the number of global node sets. This is output as a
-    // dimension since the vector of global element block IDs is sized
-    // by this quantity.
-    {
-      const char *vars[] = {VAR_NS_IDS_GLOBAL,
-			    VAR_NS_NODE_CNT_GLOBAL,
-			    VAR_NS_DF_CNT_GLOBAL,
-			    NULL};
-      const nc_type types[] = {ids_type, bulk_type, bulk_type};
-
-      status = define_variables(exodusFilePtr, (int)comm.globalNodeSets, DIM_NUM_NS_GLOBAL, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-	
-    // Output the number of global side sets. This is output as a
-    // dimension since the vector of global element block IDs is sized
-    // by this quantity.
-    {
-      const char *vars[] = {VAR_SS_IDS_GLOBAL,
-			    VAR_SS_SIDE_CNT_GLOBAL,
-			    VAR_SS_DF_CNT_GLOBAL,
-			    NULL};
-      const nc_type types[] = {ids_type, bulk_type, bulk_type};
-
-      status = define_variables(exodusFilePtr, (int)comm.globalSideSets, DIM_NUM_SS_GLOBAL, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-
-    // Internal Node status
-    status = conditional_define_variable(exodusFilePtr, VAR_INT_N_STAT, dimid_npf, &nodeMapVarID[0], NC_INT);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Border node status
-    status = conditional_define_variable(exodusFilePtr, VAR_BOR_N_STAT, dimid_npf, &nodeMapVarID[1], NC_INT);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // External Node status
-    status = conditional_define_variable(exodusFilePtr, VAR_EXT_N_STAT, dimid_npf, &nodeMapVarID[2], NC_INT);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Define the variable IDs for the elemental status vectors
-    // Internal elements
-    status = conditional_define_variable(exodusFilePtr, VAR_INT_E_STAT, dimid_npf, &elementMapVarID[0], NC_INT);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Border elements
-    status = conditional_define_variable(exodusFilePtr, VAR_BOR_E_STAT, dimid_npf, &elementMapVarID[1], NC_INT);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Define variable for the internal element information
-    status = define_variable(exodusFilePtr, comm.elementsInternal, DIM_NUM_INT_ELEMS, VAR_ELEM_MAP_INT, bulk_type);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Define variable for the border element information
-    status = define_variable(exodusFilePtr, comm.elementsBorder, DIM_NUM_BOR_ELEMS, VAR_ELEM_MAP_BOR, bulk_type);
-    if (status != EX_NOERR) return EX_FATAL;
-    
-    // Define variable for vector of internal FEM node IDs
-    status = define_variable(exodusFilePtr, comm.nodesInternal, DIM_NUM_INT_NODES, VAR_NODE_MAP_INT, bulk_type);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Define variable for vector of border FEM node IDs
-    status = define_variable(exodusFilePtr, comm.nodesBorder, DIM_NUM_BOR_NODES, VAR_NODE_MAP_BOR, bulk_type);
-    if (status != EX_NOERR) return EX_FATAL;
-
-    // Define dimension for vector of external FEM node IDs
-    status = define_variable(exodusFilePtr, comm.nodesExternal, DIM_NUM_EXT_NODES, VAR_NODE_MAP_EXT, bulk_type);
-    if (status != EX_NOERR) return EX_FATAL;
-    
-    // Add the nodal communication map count
-
-    size_t ncnt_cmap = 0;
-    for(size_t icm=0; icm < comm.nodeMap.size(); icm++) {
-      ncnt_cmap += comm.nodeMap[icm].entityCount;
-    }
-
-    {
-      const char *vars[] = {VAR_N_COMM_IDS,
-			    VAR_N_COMM_STAT,
-			    VAR_N_COMM_DATA_IDX,
-			    NULL};
-      const nc_type types[] = {ids_type, NC_INT, bulk_type};
-      
-      status = define_variables(exodusFilePtr, (int)comm.nodeMap.size(), DIM_NUM_N_CMAPS, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-    {
-      const char *vars[] = {VAR_N_COMM_NIDS,
-			    VAR_N_COMM_PROC,
-			    NULL};
-      const nc_type types[] = {ids_type, NC_INT};
-      
-      // Add dimensions for all of the nodal communication maps
-      status = define_variables(exodusFilePtr, ncnt_cmap, DIM_NCNT_CMAP, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-
-    // Add the nodal communication map count
-    size_t ecnt_cmap = 0;
-    for (size_t icm=0; icm < comm.elementMap.size(); icm++)
-      ecnt_cmap += comm.elementMap[icm].entityCount;
-
-    {
-      const char *vars[] = {VAR_E_COMM_IDS,
-			    VAR_E_COMM_STAT,
-			    VAR_E_COMM_DATA_IDX,
-			    NULL};
-      const nc_type types[] = {ids_type, NC_INT, bulk_type};
-
-      status = define_variables(exodusFilePtr, (int)comm.elementMap.size(), DIM_NUM_E_CMAPS, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-    {
-      const char *vars[] = {VAR_E_COMM_EIDS,
-			    VAR_E_COMM_PROC,
-			    VAR_E_COMM_SIDS,
-			    NULL};
-      const nc_type types[] = {ids_type, NC_INT, bulk_type};
-      status = define_variables(exodusFilePtr, ecnt_cmap, DIM_ECNT_CMAP, vars, types);
-      if (status != EX_NOERR) return EX_FATAL;
-    }
-  }
   return(EX_NOERR);
 }
 
@@ -1653,211 +1533,8 @@ int Internals::put_metadata(const std::vector<EdgeBlock> &blocks)
 }
 
 
-int Internals::put_non_define_data(const Mesh&,
-				   const CommunicationMetaData &comm)
+int Internals::put_non_define_data(const Mesh&)
 {
-  const char *routine = "Internals::put_non_define_data(mesh)";
-  char errmsg[MAX_ERR_LENGTH];
-  int status = 0;
-  // Metadata that must be written outside of define mode...
-
-  // Output the file type
-  if (comm.outputNemesis) {
-    int varid;
-    status=nc_inq_varid(exodusFilePtr, VAR_FILE_TYPE, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to locate file type in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    int lftype = 0; // Parallel file...
-    status=nc_put_var1_int(exodusFilePtr, varid, 0, &lftype);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: unable to output file type variable in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    int nmstat;
-    size_t start[1];
-
-    nmstat = comm.nodesInternal == 0 ? 0 : 1;
-    status=nc_put_var_int(exodusFilePtr, nodeMapVarID[0], &nmstat);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to output status for internal node map in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    nmstat = comm.nodesBorder == 0 ? 0 : 1;
-    status=nc_put_var_int(exodusFilePtr, nodeMapVarID[1], &nmstat);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to output status for border node map in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    nmstat = comm.nodesExternal == 0 ? 0 : 1;
-    status=nc_put_var_int(exodusFilePtr, nodeMapVarID[2], &nmstat);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to output status for external node map in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    nmstat = comm.elementsInternal == 0 ? 0 : 1;
-    status=nc_put_var_int(exodusFilePtr, elementMapVarID[0], &nmstat);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to output status for internal elem map in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    nmstat = comm.elementsBorder == 0 ? 0 : 1;
-    status=nc_put_var_int(exodusFilePtr, elementMapVarID[1], &nmstat);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to output status for border elem map in file ID %d",
-	      exodusFilePtr);
-      ex_err(routine, errmsg, status);
-      return (EX_FATAL);
-    }
-
-    size_t ncnt_cmap = 0;
-    for(size_t icm=0; icm < comm.nodeMap.size(); icm++) {
-      ncnt_cmap += comm.nodeMap[icm].entityCount;
-    }
-
-    if (comm.nodeMap.size() > 0 && ncnt_cmap > 0) {
-      int n_varid;
-      status=nc_inq_varid(exodusFilePtr, VAR_N_COMM_STAT, &n_varid);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to find variable ID for \"%s\" in file ID %d",
-		VAR_N_COMM_STAT, exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-
-      long long nl_ncnt_cmap = 0;
-      for (size_t icm=0; icm < comm.nodeMap.size(); icm++) {
-
-	start[0] = icm;
-	nmstat = comm.nodeMap[icm].entityCount > 0 ? 1 : 0;
-	status=nc_put_var1_int(exodusFilePtr, n_varid, start, &nmstat);
-	if(status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: unable to output variable in file ID %d", exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
-
-	// increment to the next starting position
-	nl_ncnt_cmap += comm.nodeMap[icm].entityCount;
-
-	// fill the cmap data index
-	nc_inq_varid(exodusFilePtr, VAR_N_COMM_DATA_IDX, &commIndexVar);
-	status=nc_put_var1_longlong(exodusFilePtr, commIndexVar, start, &nl_ncnt_cmap);
-
-	if (status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: failed to output internal element map index in file ID %d",
-		  exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
-      } // End "for(icm=0; icm < num_n_comm_maps; icm++)"
-
-      // Put Communication set ids...
-      std::vector<entity_id> node_cmap_ids(comm.nodeMap.size());
-      for (size_t i=0; i < comm.nodeMap.size(); i++) {
-	node_cmap_ids[i] = comm.nodeMap[i].id;
-      }
-      if (put_id_array(exodusFilePtr, VAR_N_COMM_IDS, node_cmap_ids) != NC_NOERR)
-	return(EX_FATAL);
-    }
-    // Set the status of the elemental communication maps
-    long long ecnt_cmap = 0;
-    for (size_t icm=0; icm < comm.elementMap.size(); icm++)
-      ecnt_cmap += comm.elementMap[icm].entityCount;
-
-    if (comm.elementMap.size() > 0 && ecnt_cmap > 0) {
-
-      // Get variable ID for elemental status vector
-      int e_varid;
-      status=nc_inq_varid(exodusFilePtr, VAR_E_COMM_STAT, &e_varid);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to find variable ID for \"%s\" in file ID %d",
-		VAR_E_COMM_STAT, exodusFilePtr);
-	ex_err(routine, errmsg, status);
-	return (EX_FATAL);
-      }
-
-      long long nl_ecnt_cmap = 0; // reset this for index
-      for (size_t icm=0; icm < comm.elementMap.size(); icm++) {
-
-	start[0] = icm;
-	nmstat = comm.elementMap[icm].entityCount > 0 ? 1 : 0;
-
-	status=nc_put_var1_int(exodusFilePtr, e_varid, start, &nmstat);
-	if (status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: unable to output variable in file ID %d", exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
-
-	// increment to the next starting position
-	nl_ecnt_cmap += comm.elementMap[icm].entityCount;
-
-	// fill the cmap data index
-	nc_inq_varid(exodusFilePtr, VAR_E_COMM_DATA_IDX, &elemCommIndexVar);
-	status=nc_put_var1_longlong(exodusFilePtr, elemCommIndexVar, start, &nl_ecnt_cmap);
-	if (status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: failed to output int elem map index in file ID %d",
-		  exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
-      } // End "for(icm=0; icm < num_e_comm_maps; icm++)"
-
-      // Get the variable ID for the elemental comm map IDs vector
-      std::vector<entity_id> elem_cmap_ids(comm.elementMap.size());
-      for (size_t i=0; i < comm.elementMap.size(); i++) {
-	elem_cmap_ids[i] = comm.elementMap[i].id;
-      }
-      if (put_id_array(exodusFilePtr, VAR_E_COMM_IDS, elem_cmap_ids) != NC_NOERR)
-	return(EX_FATAL);
-    }
-  }
   return EX_NOERR;
 }
 
@@ -2887,11 +2564,11 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets)
     // for a specific file and returns that value incremented.
     int cur_num_side_sets = (int)ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_SIDE_SET));
 
-    if (sidesets[i].sideCount == 0)
+    if (sidesets[i].entityCount == 0)
       continue;
 
     status=nc_def_dim (exodusFilePtr, DIM_NUM_SIDE_SS(cur_num_side_sets+1),
-		       sidesets[i].sideCount, &dimid);
+		       sidesets[i].entityCount, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
@@ -3013,7 +2690,7 @@ int Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
   // Now, write the status array
   std::vector<int> status(num_sidesets);
   for (int i = 0; i < num_sidesets; i++) {
-    status[i] = sidesets[i].sideCount > 0 ? 1 : 0;
+    status[i] = sidesets[i].entityCount > 0 ? 1 : 0;
   }
 
   if (put_int_array(exodusFilePtr, VAR_SS_STAT, status) != NC_NOERR)

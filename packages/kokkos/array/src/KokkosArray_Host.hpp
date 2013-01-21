@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_HOST_HPP
 
 #include <cstddef>
+#include <iosfwd>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_HostSpace.hpp>
 #include <KokkosArray_MemoryManagement.hpp>
@@ -104,6 +105,9 @@ public:
   ///
   /// For the Host device, this terminates spawned worker threads.
   static void finalize();
+
+  /** \brief  Print Host configuration information */
+  static void print_configuration( std::ostream & );
 
   //@}
   //! \name Device-specific functions

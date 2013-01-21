@@ -100,6 +100,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
   if(sscanf(line, "%s %d", token, &NumGlobalElements)==0) return(-1);
 
   int ierr = 0;
+  (void) ierr; // mfh 13 Jan 2013: Forestall compiler warning for unused var.
   if (comm.NumProc()==numProc) {
     if(fgets(line, lineLength, handle)==0) return(-1); // NumMyElements header line
     firstGid = 0;

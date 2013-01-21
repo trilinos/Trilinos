@@ -153,7 +153,7 @@ namespace LOCA {
       const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs);
+      const std::vector<int>& paramIDs);
 
     //! Create bifurcation strategy
     /*!

@@ -43,6 +43,7 @@ INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Interface)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")

@@ -83,9 +83,9 @@ public:
   //! Destructor.
   ~WeightedMeritFunction();
 
-  virtual const string& name() const;
+  virtual const std::string& name() const;
   
-  virtual ostream& print(ostream& os, int indent=0) const;
+  virtual std::ostream& print(std::ostream& os, int indent=0) const;
   
   virtual double computef(const NOX::Abstract::Group& group) const;
 

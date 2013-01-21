@@ -255,7 +255,7 @@ reset(Teuchos::ParameterList& linearSolverParams)
   destroyPreconditioner();
 
   // Set the requested preconditioning.
-  string prec = linearSolverParams.get("Preconditioner", "None");
+  std::string prec = linearSolverParams.get("Preconditioner", "None");
   if (prec == "AztecOO")
     precAlgorithm = AztecOO_;
   else if (prec == "Ifpack")
@@ -271,7 +271,7 @@ reset(Teuchos::ParameterList& linearSolverParams)
   else if (prec == "None") 
     precAlgorithm = None_;
   else {
-    string errorMessage = "Option for \"Preconditioner\" is invalid!";
+    std::string errorMessage = "Option for \"Preconditioner\" is invalid!";
     throwError("reset()", errorMessage);
   }
     
@@ -328,7 +328,7 @@ reset(Teuchos::ParameterList& linearSolverParams)
   else if (preReusePolicyName == "Reuse")
     precReusePolicy = PRPT_REUSE;
   else {
-    string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
+    std::string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
     throwError("reset()", errorMessage);
   }
   maxAgeOfPrec = linearSolverParams.get("Max Age Of Prec", 1);
@@ -351,7 +351,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
   aztec.SetErrorStream(utils.perr());
 
   // Set the Aztec Solver
-  string linearSolver = p.get("Aztec Solver", "GMRES");
+  std::string linearSolver = p.get("Aztec Solver", "GMRES");
   if (linearSolver == "CG")
     aztec.SetAztecOption(AZ_solver, AZ_cg);
   else if (linearSolver == "GMRES")
@@ -367,16 +367,16 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
   else if (linearSolver == "LU")
     aztec.SetAztecOption(AZ_solver, AZ_lu);
   else {
-    utils.out() << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+    utils.out() << "ERROR: NOX::Epetra::Group::setAztecOptions" << std::endl
 	 << "\"Aztec Solver\" parameter \"" << linearSolver 
-	 <<  "\" is invalid!" << endl;
+	 <<  "\" is invalid!" << std::endl;
     throw "NOX Error";
   }
  
   // Preconditioning where AztecOO inverts the Preconditioning Matrix
   if (precAlgorithm == AztecOO_) {
     
-    string aztecPreconditioner = p.get("Aztec Preconditioner", "ilu");
+    std::string aztecPreconditioner = p.get("Aztec Preconditioner", "ilu");
 
     if (aztecPreconditioner == "ilu") {
       aztec.SetAztecOption(AZ_precond, AZ_dom_decomp);
@@ -408,7 +408,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
       aztec.SetAztecOption(AZ_poly_ord, p.get("Polynomial Order", 3));
     }
     else {
-      string errorMessage = "\"Aztec Preconditioner\" parameter is invalid!";
+      std::string errorMessage = "\"Aztec Preconditioner\" parameter is invalid!";
       throwError("setAztecOptions", errorMessage);
     }
 
@@ -418,24 +418,24 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
     
   // Turn on RCM reordering in conjunction with domain decomp preconditioning
   // default is "Disabled" = no reordering
-  string rcmReordering = p.get("RCM Reordering", "Disabled");
+  std::string rcmReordering = p.get("RCM Reordering", "Disabled");
   if (rcmReordering == "Enabled")
     aztec.SetAztecOption(AZ_reorder, 1);
   else if (rcmReordering == "Disabled")
     aztec.SetAztecOption(AZ_reorder, 0);
   else {
-    string errorMessage = "\"RCM Reordering\" parameter is invalid!";
+    std::string errorMessage = "\"RCM Reordering\" parameter is invalid!";
     throwError("setAztecOptions", errorMessage);
   }
     
   // Gram-Schmidt orthogonalization procedure
-  string orthog = p.get("Orthogonalization", "Classical");
+  std::string orthog = p.get("Orthogonalization", "Classical");
   if (orthog == "Classical") 
     aztec.SetAztecOption(AZ_orthog, AZ_classic);
   else if (orthog == "Modified")
     aztec.SetAztecOption(AZ_orthog, AZ_modified);
   else {
-    string errorMessage = "\"Orthogonalization\" parameter is invalid!";
+    std::string errorMessage = "\"Orthogonalization\" parameter is invalid!";
     throwError("setAztecOptions()", errorMessage);
   }
 
@@ -444,7 +444,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
 		       p.get("Size of Krylov Subspace", 300));
 
   // Convergence criteria to use in the linear solver
-  string convCriteria = p.get("Convergence Test", "r0");
+  std::string convCriteria = p.get("Convergence Test", "r0");
   if (convCriteria == "r0") 
     aztec.SetAztecOption(AZ_conv, AZ_r0);
   else if (convCriteria == "rhs")
@@ -456,7 +456,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
   else if (convCriteria == "sol")
     aztec.SetAztecOption(AZ_conv, AZ_sol);
   else {
-    string errorMessage = "\"Convergence Test\" parameter is invalid!";
+    std::string errorMessage = "\"Convergence Test\" parameter is invalid!";
     throwError("setAztecOptions()", errorMessage);
   }
 
@@ -480,13 +480,13 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
 
   // Some Debugging utilities 
 //   if (utils.isPrintType(Utils::Debug)) {
-//     utils.out() << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
-//     utils.out() << "jacType = " << jacType << endl;
-//     utils.out() << "jacPtr = " << jacPtr << endl;
-//     utils.out() << "jacInterfacePtr = " << jacInterfacePtr << endl;
-//     utils.out() << "precType = " << precType << endl;
-//     utils.out() << "precPtr = " << precPtr << endl;
-//     utils.out() << "precInterfacePtr = " << precInterfacePtr << endl;
+//     utils.out() << "NOX::Epetra::LinearSystemAztecOO Operator Information" << std::endl;
+//     utils.out() << "jacType = " << jacType << std::endl;
+//     utils.out() << "jacPtr = " << jacPtr << std::endl;
+//     utils.out() << "jacInterfacePtr = " << jacInterfacePtr << std::endl;
+//     utils.out() << "precType = " << precType << std::endl;
+//     utils.out() << "precPtr = " << precPtr << std::endl;
+//     utils.out() << "precInterfacePtr = " << precInterfacePtr << std::endl;
 //   }
     
   return;
@@ -499,7 +499,7 @@ bool NOX::Epetra::LinearSystemAztecOO::createJacobianOperator(
        const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector)
 {
-  string choice = lsParams.get("Jacobian Operator", "Matrix-Free");
+  std::string choice = lsParams.get("Jacobian Operator", "Matrix-Free");
 
   if (choice == "Matrix-Free") {
     jacPtr = 
@@ -529,7 +529,7 @@ bool NOX::Epetra::LinearSystemAztecOO::createPrecOperator(
        const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector)
 {
-  string choice = lsParams.get("Preconditioner Operator", 
+  std::string choice = lsParams.get("Preconditioner Operator", 
 					"Use Jacobian");
 
   if (choice == "Use Jacobian") {
@@ -621,7 +621,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     scaling->scaleLinearSystem(Problem);
 
     if (utils.isPrintType(Utils::Details)) {
-      utils.out() << *scaling << endl;
+      utils.out() << *scaling << std::endl;
     }
   }
   // ************* End linear system scaling *******************
@@ -649,10 +649,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
 
     if (printMatrix == NULL) {
-      cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
+      std::cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
 	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
 	   << "Please set the \"Write Linear System\" parameter to false."
-	   << endl;
+	   << std::endl;
       throw "NOX Error";
     }
 
@@ -823,7 +823,7 @@ applyRightPreconditioning(bool useTranspose,
     }
     else {
       if (utils.isPrintType(NOX::Utils::Warning))
-	utils.out() << msg << endl;
+	utils.out() << msg << std::endl;
     }
     return false;
   }
@@ -872,7 +872,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   double startTime = timer.WallTime();  
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Creating a new preconditioner" << endl;;
+    utils.out() << "\n       Creating a new preconditioner" << std::endl;;
 
   if (precAlgorithm == None_) {
     return true;
@@ -980,7 +980,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
     utils.out() << "\n       Time required to create preconditioner : " 
-         << (endTime - startTime) << " (sec.)" << endl;;
+         << (endTime - startTime) << " (sec.)" << std::endl;;
 
   return true;
 }
@@ -999,7 +999,7 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
   if (utils.isPrintType(Utils::Debug))
     utils.out() << "NOX::Epetra::LinearSolverAztecOO : createIfpackPrecon - \n"
          << "  using Fill Factor --> " << p.get("Fill Factor", 1)
-         << endl;
+         << std::endl;
 
   //check to see if it is a VBR matrix
   if (precType == EpetraVbrMatrix) {
@@ -1143,7 +1143,7 @@ createNewIfpackPreconditioner(Teuchos::ParameterList& p) const
 
   if (utils.isPrintType(Utils::Debug)) {
     utils.out() << "NOX::Epetra::LinearSolverAztecOO : createNewIfpackPrecon - \n"
-         << "  using Teuchos parameter : " << endl;
+         << "  using Teuchos parameter : " << std::endl;
     teuchosParams.print(utils.out());
   } 
 
@@ -1207,7 +1207,7 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
   if (utils.isPrintType(Utils::Debug)) 
   {
     utils.out() << "NOX::Epetra::LinearSolverAztecOO : createMLPreconditioner - \n"
-         << "  using Teuchos parameter : " << endl;
+         << "  using Teuchos parameter : " << std::endl;
     teuchosParams.print(utils.out());
   } 
 
@@ -1248,7 +1248,7 @@ recomputePreconditioner(const NOX::Epetra::Vector& x,
 			Teuchos::ParameterList& linearSolverParams) const
 {  
   if (utils.isPrintType(Utils::LinearSolverDetails)) {
-    utils.out() << "\n       Recomputing preconditioner" << endl;
+    utils.out() << "\n       Recomputing preconditioner" << std::endl;
   }
 
   if (precAlgorithm == None_) {
@@ -1325,7 +1325,7 @@ bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
       MLPreconditionerPtr = Teuchos::null;
 #endif
     if (utils.isPrintType(Utils::LinearSolverDetails)) {
-      utils.out() << "\n       Destroying preconditioner" << endl;
+      utils.out() << "\n       Destroying preconditioner" << std::endl;
     }
   }
   isPrecConstructed = false;
@@ -1388,11 +1388,11 @@ resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& scalingObject)
 
 //***********************************************************************
 void NOX::Epetra::LinearSystemAztecOO::
-throwError(const string& functionName, const string& errorMsg) const
+throwError(const std::string& functionName, const std::string& errorMsg) const
 {
   if (utils.isPrintType(Utils::Error)) {
     utils.out() << "NOX::Epetra::LinearSystemAztecOO::" << functionName 
-	 << " - " << errorMsg << endl;
+	 << " - " << errorMsg << std::endl;
   }
   throw "NOX Error";
 }
@@ -1492,7 +1492,7 @@ getPreconditionerPolicy(bool advanceReuseCounter)
     if (utils.isPrintType(Utils::Details)) 
       if (advanceReuseCounter)
 	utils.out() << "\n       Preconditioner Reuse: Age of Prec --> " 
-		    << precQueryCounter << " / " << maxAgeOfPrec << endl;
+		    << precQueryCounter << " / " << maxAgeOfPrec << std::endl;
     
     // This allows reuse for the entire nonlinear solve
     if( maxAgeOfPrec == -2 ) {
@@ -1604,7 +1604,7 @@ precError(int error_code,
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
     }
     else
-      utils.out() << msg.str() << endl; 
+      utils.out() << msg.str() << std::endl; 
   }
 }
 

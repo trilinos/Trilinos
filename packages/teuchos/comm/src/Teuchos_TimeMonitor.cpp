@@ -45,6 +45,7 @@
 #include "Teuchos_TableColumn.hpp"
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <functional>
 
 
@@ -599,6 +600,8 @@ namespace Teuchos {
                              Ptr<const Comm<int> > comm,
                              const timer_map_t& globalTimerData)
     {
+      using Teuchos::ScalarTraits;
+
       const int numTimers = static_cast<int> (globalTimerData.size());
       const int numProcs = comm->getSize();
 
@@ -669,7 +672,12 @@ namespace Teuchos {
         // We don't have to undo the scaling for the mean timings;
         // just divide by the scaled call count.
         for (int k = 0; k < numTimers; ++k) {
-          meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
+          if ( meanCallCounts[k] > ScalarTraits<double>::zero() ) {
+            meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
+          }
+          else {
+            meanOverCallCountsTimings[k] = ScalarTraits<double>::zero();
+          }
         }
       }
 

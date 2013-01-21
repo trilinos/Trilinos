@@ -51,7 +51,7 @@
 #include "NOX_Epetra_LinearSystem.H"	// base class
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
-#include "NOX_Common.H"         // class data element (string)
+#include "NOX_Common.H"         // class data element (std::string)
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Time.h"        // class data element
 #ifdef HAVE_NOX_ML_EPETRA
@@ -265,7 +265,7 @@ below (See the Aztec 2.1 manual for more information):
 
 <li> "ML" - If the "Preconditioner" flag is set to "ML" then any of the options supported by the ML factory can be specified using a Teuchos::ParameterList containing the ML options and then setting this as a parameter named "ML" in the "Linear Solver" sublist.
 
-<li> "Preconditioner Reuse Policy" - (string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
+<li> "Preconditioner Reuse Policy" - (std::string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
     <ul>
     <li>"Rebuild" - The "Rebuild" option always completely destroys and then rebuilds the preconditioner each time a linear solve is requested.
     <li>"Reuse" - The group/linear solver will not recompute the preconditioner even if the group's solution vector changes.  It just blindly reuses what has been constructed.  This turns off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  We don't recommend users trying this.
@@ -293,7 +293,7 @@ options are valid:
 
 <li> "Write Linear System" - (boolean) If set to true, the linear system (Epetra_Map, Jacobian, LHS and RHS) is printed to a set of files in matrix market format.  This option requires building nox with the flag --enable-nox-debug and building the EpetraExt library.
 
-<li> "Write Linear System File Prefix" - (string) If writing of the linear system is enabled (see above parameter) users can change the name of the output file prefix.  The default is "NOX_LinSys".  This option requires building nox with the flag --enable-nox-debug and building the EpetraExt library.
+<li> "Write Linear System File Prefix" - (std::string) If writing of the linear system is enabled (see above parameter) users can change the name of the output file prefix.  The default is "NOX_LinSys".  This option requires building nox with the flag --enable-nox-debug and building the EpetraExt library.
 
 </ul>
 
@@ -574,8 +574,8 @@ protected:
   */
   virtual void setAztecOOPreconditioner() const;
 
-  virtual void throwError(const string& functionName, 
-			  const string& errorMsg) const;
+  virtual void throwError(const std::string& functionName, 
+			  const std::string& errorMsg) const;
 
   //! Prints a warning for ifpack preconditioner failures (error_code != 0).
   virtual void precError(int error_code, 

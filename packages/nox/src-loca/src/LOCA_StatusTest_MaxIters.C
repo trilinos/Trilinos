@@ -73,10 +73,10 @@ MaxIters(int maxIterations,
   if (maxiters < 0)
   {
     if ( globalDataPtr_.is_valid_ptr() && !globalDataPtr_.is_null() )
-        globalDataPtr_->locaUtils->err() << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << endl;
+        globalDataPtr_->locaUtils->err() << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << std::endl;
     else
         // This will spit out the error message NUMPROC times. -- Without locaUtils, there's nothing we can do..
-        std::cerr << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << endl;
+        std::cerr << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << std::endl;
     throw "LOCA Error";
   }
 }
@@ -117,13 +117,13 @@ getStatus() const
   return status;
 }
 
-ostream& LOCA::StatusTest::MaxIters::print(ostream& stream, int indent) const
+std::ostream& LOCA::StatusTest::MaxIters::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   stream << "Number of Iterations = " << niters << " < " << maxiters;
-  stream << endl;
+  stream << std::endl;
  return stream;
 }
 

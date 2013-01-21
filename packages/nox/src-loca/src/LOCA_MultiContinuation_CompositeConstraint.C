@@ -66,7 +66,7 @@ LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint() :
 
 LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RCP<
+    const std::vector< Teuchos::RCP<
     LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects) :
   globalData(),
   numConstraintObjects(0),
@@ -152,7 +152,7 @@ LOCA::MultiContinuation::CompositeConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::CompositeConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (int i=0; i<numConstraintObjects; i++)
@@ -167,7 +167,7 @@ LOCA::MultiContinuation::CompositeConstraint::computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -196,7 +196,7 @@ LOCA::MultiContinuation::CompositeConstraint::computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -214,11 +214,11 @@ LOCA::MultiContinuation::CompositeConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraint::computeDP(
-		                const vector<int>& paramIDs, 
+		                const std::vector<int>& paramIDs, 
 		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 				bool isValidG)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -273,7 +273,7 @@ LOCA::MultiContinuation::CompositeConstraint::multiplyDX(
 		      const NOX::Abstract::MultiVector& input_x,
 	              NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraint::multiplyDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -332,7 +332,7 @@ LOCA::MultiContinuation::CompositeConstraint::addDX(
 			      double beta,
 			      NOX::Abstract::MultiVector& result_x) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraint::addDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -420,7 +420,7 @@ LOCA::MultiContinuation::CompositeConstraint::postProcessContinuationStep(
 void
 LOCA::MultiContinuation::CompositeConstraint::init(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RCP<
+    const std::vector< Teuchos::RCP<
     LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects)
 {
   globalData = global_data;

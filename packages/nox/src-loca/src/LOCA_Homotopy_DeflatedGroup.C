@@ -289,7 +289,7 @@ computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::computeF()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -327,7 +327,7 @@ computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -382,7 +382,7 @@ computeGradient()
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::computeGradient()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -424,7 +424,7 @@ computeNewton(Teuchos::ParameterList& params)
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -533,7 +533,7 @@ LOCA::Homotopy::DeflatedGroup::
 applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
 			 NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::applyJacobianMultiVector()";
   
   if (!isJacobian()) {
@@ -584,7 +584,7 @@ LOCA::Homotopy::DeflatedGroup::
 applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
 				  NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::applyJacobianTransposeMultiVector()";
   
   if (!isJacobian()) {
@@ -636,7 +636,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::applyJacobianInverseMultiVector()";
   
   if (!isJacobian()) {
@@ -772,7 +772,7 @@ double
 LOCA::Homotopy::DeflatedGroup::
 getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
@@ -858,7 +858,7 @@ copy(const NOX::Abstract::Group& src)
 
 void
 LOCA::Homotopy::DeflatedGroup::
-setParamsMulti(const vector<int>& paramIDs, 
+setParamsMulti(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -896,7 +896,7 @@ setParam(int paramID, double val)
 
 void
 LOCA::Homotopy::DeflatedGroup::
-setParam(string paramID, double val)
+setParam(std::string paramID, double val)
 {
   int id = paramVec.getIndex(paramID);
   setParam(id, val);
@@ -917,18 +917,18 @@ getParam(int paramID) const{
 
 double
 LOCA::Homotopy::DeflatedGroup::
-getParam(string paramID) const
+getParam(std::string paramID) const
 {
   return paramVec.getValue(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeDfDpMulti(const vector<int>& paramIDs, 
+computeDfDpMulti(const std::vector<int>& paramIDs, 
 		 NOX::Abstract::MultiVector& dfdp, 
 		 bool isValid_F)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1237,7 +1237,7 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillA(NOX::Abstract::MultiVector& A) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::fillA";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
@@ -1275,7 +1275,7 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillB(NOX::Abstract::MultiVector& B) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::fillB";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_B =
@@ -1313,7 +1313,7 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Homotopy::DeflatedGroup::fillC";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 

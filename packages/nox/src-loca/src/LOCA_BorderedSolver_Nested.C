@@ -93,7 +93,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
 	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::Nested::setMatrixBlocks()";
 
   // Cast oper to a bordered operator
@@ -102,16 +102,16 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   if (op == Teuchos::null) 
     globalData->locaErrorCheck->throwError(
       callingFunction,
-      string("Operaror must be of type LOCA::BorderedSolver::JacobianOperator")
-      + string(" in order to use nested bordered solver strategy."));
+      std::string("Operaror must be of type LOCA::BorderedSolver::JacobianOperator")
+      + std::string(" in order to use nested bordered solver strategy."));
 
   // Get bordered group
   grp = Teuchos::rcp_dynamic_cast<const LOCA::BorderedSystem::AbstractGroup>(op->getGroup());
   if (grp == Teuchos::null) 
     globalData->locaErrorCheck->throwError(
       callingFunction,
-      string("Group must be of type LOCA::BorderedSystem::AbstractGroup")
-      + string(" in order to use nested bordered solver strategy."));
+      std::string("Group must be of type LOCA::BorderedSystem::AbstractGroup")
+      + std::string(" in order to use nested bordered solver strategy."));
 
   Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockB);
   if (con_mvdx == Teuchos::null)

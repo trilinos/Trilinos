@@ -78,11 +78,11 @@ namespace MueLu {
     P = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
     for (size_t k = 0; k < nIts_; k++) {
-      AP = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), false, P, false, true, false);
+      AP = Utils::Multiply(*A, false, *P, false, true, false);
 #if 0
       // gradient = -2 A^T * A * P
       SC stepLength = 2*stepLength_;
-      G = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), true, AP, false, true, true);
+      G = Utils::Multiply(*A, true, *AP, false, true, true);
       C.Apply(*G, *Ptmp);
 #else
       // gradient = - A * P

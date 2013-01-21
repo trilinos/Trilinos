@@ -22,6 +22,8 @@ $
         sideset, khi, 11
         sideset, klo, 21
         block sideset, ihi, 45, 2
+        block sideset, ihi, 55, 1
+        block sideset, ihi, 65, 1
     end
 
 

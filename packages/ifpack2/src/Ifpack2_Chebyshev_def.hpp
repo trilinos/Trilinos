@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -33,37 +33,56 @@
 
 namespace Ifpack2 {
 
-//Definitions for the Chebyshev methods:
-
-//==========================================================================
 template<class MatrixType>
-Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
-: A_(A),
-  Comm_(A->getRowMap()->getComm()),
-  Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Chebyshev") ) ),
-  PolyDegree_(1),
-  EigRatio_(30.0),
-  LambdaMin_(0.0),
-  LambdaMax_(100.0),
-  MinDiagonalValue_(0.0),
-  ZeroStartingSolution_(true),
-  Condest_(-1.0),
-  IsInitialized_(false),
-  IsComputed_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0),
-  ComputeFlops_(0.0),
-  ApplyFlops_(0.0),
-  NumMyRows_(0),
-  NumGlobalRows_(0),
-  NumGlobalNonzeros_(0)
+Chebyshev<MatrixType>::
+Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
+: A_ (A),
+  PolyDegree_ (1),
+  EigRatio_ (30.0),
+  LambdaMin_ (0.0),
+  LambdaMax_ (100.0),
+  MinDiagonalValue_ (0.0),
+  ZeroStartingSolution_ (true),
+  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Chebyshev"))),
+  Condest_ (-1.0),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0),
+  ComputeFlops_ (0.0),
+  ApplyFlops_ (0.0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-      Teuchos::typeName(*this) << "::Chebyshev(): input matrix reference was null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
+    "Ifpack2::Chebyshev: Input matrix to constructor is null.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_->getGlobalNumRows() != A_->getGlobalNumCols(), 
+    std::invalid_argument,
+    "Ifpack2::Chebyshev: The input matrix A must be square.  "
+    "A has " << A_->getGlobalNumRows() << " rows and " 
+    << A_->getGlobalNumCols() << " columns.");
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  using Teuchos::RCP;
+
+  RCP<const map_type> domainMap = A_->getDomainMap ();
+  RCP<const map_type> rangeMap = A_->getRangeMap ();
+
+  // The relation 'isSameAs' is transitive.  It's also a collective,
+  // so we don't have to do a "shared" test for exception (i.e., a
+  // global reduction on the test value).
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     ! domainMap->isSameAs (*rangeMap),
+     std::runtime_error,
+     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
+     "the same (in the sense of isSameAs()).  We will only check for this if "
+     "Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
+     "DEBUG set to ON.");
+#endif // HAVE_TEUCHOS_DEBUG
 }
 
 //==========================================================================
@@ -73,48 +92,94 @@ Chebyshev<MatrixType>::~Chebyshev() {
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List) {
+void 
+Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List) 
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> export_type;
 
   Ifpack2::getParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
   Ifpack2::getParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
   Ifpack2::getParameter(List, "chebyshev: max eigenvalue", LambdaMax_);
-  Ifpack2::getParameter(List, "chebyshev: degree",PolyDegree_);
+  Ifpack2::getParameter(List, "chebyshev: degree", PolyDegree_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    PolyDegree_ <= 0, 
+    std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters(): The \"chebyshev: degree\" parameter "
+    "must be an integer >= 1, but you specified a value of " << PolyDegree_ 
+    << ".");
   Ifpack2::getParameter(List, "chebyshev: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter(List, "chebyshev: zero starting solution", ZeroStartingSolution_);
 
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* ID = 0;
-  Ifpack2::getParameter(List, "chebyshev: operator inv diagonal", ID);
+  vector_type* globalDiag = NULL;
+  Ifpack2::getParameter(List, "chebyshev: operator inv diagonal", globalDiag);
 
-  if (ID != 0) {
-    InvDiagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*ID) );
-  }
+  if (globalDiag != NULL) {
+    RCP<const map_type> sourceMap = globalDiag->getMap ();
+    RCP<const map_type> rangeMap = A_->getRangeMap ();
+    RCP<const map_type> rowMap = A_->getRowMap ();
+    if (rangeMap.getRawPtr () == sourceMap.getRawPtr ()) {
+      // The given vector's Map is identical to the matrix's range
+      // Map.  That means we don't need to Export.  (We don't call
+      // isSameAs() here, because that takes at least one global
+      // reduction.  This is the fast path.  We may call isSameAs() in
+      // the slow path below, to avoid an even slower path.
+      userSuppliedInvDiag_ = rcp (new vector_type (*globalDiag));
+    }
+    else { // We need to Export.
+      RCP<const export_type> exporter;
+      // Making an Export object from scratch is expensive enough that
+      // it's worth the O(1) global reductions to call isSameAs().
+      if (sourceMap.getRawPtr () == rowMap.getRawPtr () || 
+	  sourceMap->isSameAs (*rowMap)) {
+	// We can reuse the matrix's Export object, if there is one.
+	exporter = A_->getGraph ()->getExporter ();
+      }
+      else { // We have to make a new Export object.
+	exporter = rcp (new export_type (sourceMap, rangeMap));
+      }
+      
+      userSuppliedInvDiag_ = rcp (new vector_type (rangeMap));
+      if (exporter.is_null ()) { 
+	// Row Map and range Map are the same; no need to Export.
+	*userSuppliedInvDiag_ = *globalDiag;
+      }
+      else {
+	userSuppliedInvDiag_->doExport (*globalDiag, *exporter, Tpetra::ADD);
+      }
+    } // if we don't need to Export, or if we do
+  } // the user gave us a vector of diagonal entries
 }
 
 //==========================================================================
 template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & 
 Chebyshev<MatrixType>::getComm() const{
-  return(Comm_);
+  return A_->getRowMap ()->getComm ();
 }
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Chebyshev<MatrixType>::getMatrix() const {
-  return(A_);
+Teuchos::RCP<const typename Chebyshev<MatrixType>::row_matrix_type>
+Chebyshev<MatrixType>::
+getMatrix() const {
+  return A_;
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Chebyshev<MatrixType>::getDomainMap() const {
+const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Chebyshev<MatrixType>::
+getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Chebyshev<MatrixType>::getRangeMap() const {
+const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Chebyshev<MatrixType>::
+getRangeMap() const {
   return A_->getRangeMap();
 }
 
@@ -174,137 +239,199 @@ double Chebyshev<MatrixType>::getApplyFlops() const {
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Chebyshev<MatrixType>::getCondEst() const {
+typename Chebyshev<MatrixType>::magnitude_type
+Chebyshev<MatrixType>::
+getCondEst() const {
   return(Condest_);
 }
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Chebyshev<MatrixType>::computeCondEst(
-                     CondestType CT,
-                     LocalOrdinal MaxIters, 
-                     magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
-  if (!isComputed()) // cannot compute right now
-    return(-1.0);
-
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
-
-  return(Condest_);
+typename Chebyshev<MatrixType>::magnitude_type
+Chebyshev<MatrixType>::
+computeCondEst (CondestType CT,
+		local_ordinal_type MaxIters, 
+		magnitude_type Tol,
+		const Teuchos::Ptr<const row_matrix_type>& matrix) 
+{
+  if (! isComputed ()) {
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
+  }
+  else {
+    // Always compute it. Call Condest() with no parameters to get
+    // the previous estimate.
+    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
+    return Condest_;
+  }
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void Chebyshev<MatrixType>::apply(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-                Teuchos::ETransp mode,
-                 Scalar alpha,
-                 Scalar beta) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error, 
-      "Ifpack2::Chebyshev::apply() ERROR, not yet computed.");
+void 
+Chebyshev<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+       Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const 
+{
+  Time_->start ();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Chebyshev::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
+  // compute() calls initialize() if it hasn't already been called.
+  // Thus, we only need to check isComputed().
+  TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply(): You must call the compute() method before "
+    "you may call apply().");
 
-  Time_->start();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     X.getNumVectors() != Y.getNumVectors(), 
+     std::runtime_error,
+     "Ifpack2::Chebyshev::apply(): X and Y must have the same number of "
+     "columns.  X.getNumVectors() = " << X.getNumVectors() << " != "
+     << "Y.getNumVectors() = " << Y.getNumVectors() << ".");
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    using Teuchos::RCP;
+    RCP<const map_type> domainMap = A_->getDomainMap ();
+    RCP<const map_type> rangeMap = A_->getRangeMap ();
+
+    // The relation 'isSameAs' is transitive.  It's also a collective,
+    // so we don't have to do a "shared" test for exception (i.e., a
+    // global reduction on the test value).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       ! X.getMap ()->isSameAs (*domainMap),
+       std::runtime_error,
+       "Ifpack2::Chebyshev: The domain Map of the matrix must be the same as the Map of the input vector(s) X.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       ! Y.getMap ()->isSameAs (*rangeMap),
+       std::runtime_error,
+       "Ifpack2::Chebyshev: The range Map of the matrix must be the same as the Map of the output vector(s) Y.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
+
+  applyImpl (X, Y, mode, alpha, beta);
+
+  Time_->stop ();
+  ++NumApply_;
+  ApplyTime_ += Time_->totalElapsedTime ();
+}
+
+template<class MatrixType>
+void TEUCHOS_DEPRECATED
+Chebyshev<MatrixType>::
+applyImplOld (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+	      Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+	      Teuchos::ETransp mode,
+	      scalar_type alpha,
+	      scalar_type beta) const 
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(alpha != STS::one(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for alpha != 1.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
+    "Ifpack2::Chebyshev::apply(): Not yet implemented for beta != 0.");
 
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
-    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
-  else
-    Xcopy = Teuchos::rcp( &X, false );
+  RCP<const MV> Xcopy;
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+    Xcopy = rcp (new MV (X));
+  }
+  else {
+    Xcopy = rcpFromRef (X);
+  }
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > xView = Xcopy->get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > yView = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<const Scalar> invdiag = InvDiagonal_->get1dView();
+  ArrayRCP<ArrayRCP<const scalar_type> > xView = Xcopy->get2dView();
+  ArrayRCP<ArrayRCP<scalar_type> > yView = Y.get2dViewNonConst();
+  ArrayRCP<const scalar_type> invdiag = InvDiagonal_->get1dView();
 
   size_t nVecs = Y.getNumVectors();
 
   //--- Do a quick solve when the matrix is identity
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
-    if (nVecs == 1) {
-      Teuchos::ArrayRCP<Scalar> y = yView[0];
-      Teuchos::ArrayRCP<const Scalar> x = xView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i)
-        y[i] = x[i]*invdiag[i];
-    }
-    else {
-      for (size_t i = 0; i < NumMyRows_; ++i) {
-        const Scalar& coeff = invdiag[i];
-        for (size_t k = 0; k < nVecs; ++k)
-          yView[k][i] = xView[k][i] * coeff;
-      }
-    } // if (nVec == 1)
+    // Y_j = X_j .* invdiag, for all columns j.
+    Y.elementWiseMultiply (STS::one(), *InvDiagonal_, X, STS::zero());
     return;
-  } // if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_))
+  }
 
   //--- initialize coefficients
+
+  const scalar_type one = STS::one();
+  const scalar_type two = one + one;
+  const scalar_type one_half = one / two;
+  const scalar_type lambdaMaxIncr = as<scalar_type> (1.1);
+
   // Note that delta stores the inverse of ML_Cheby::delta
-  Scalar alpha_cheby = LambdaMax_ / EigRatio_;
-  Scalar beta_cheby = 1.1 * LambdaMax_;
-  Scalar delta = 2.0 / (beta_cheby - alpha_cheby);
-  Scalar theta = 0.5 * (beta_cheby + alpha_cheby);
-  Scalar s1 = theta * delta;
+  scalar_type alpha_cheby = LambdaMax_ / EigRatio_;
+  // ML source comment: "try and bracket high".  Presumably this
+  // explains that the coefficient is increased by a small factor
+  // (1.1) in order for the smoother to be more effective.
+  scalar_type beta_cheby = lambdaMaxIncr * LambdaMax_;
+  scalar_type delta = two / (beta_cheby - alpha_cheby);
+  scalar_type theta = one_half * (beta_cheby + alpha_cheby);
+  scalar_type s1 = theta * delta;
 
   //--- Define vectors
   // In ML_Cheby, V corresponds to pAux and W to dk
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V(X);
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> W(X);
+  MV V (X);
+  MV W (X);
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > vView = V.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > wView = W.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<const scalar_type> > vView = V.get2dView();
+  ArrayRCP<ArrayRCP<scalar_type> > wView = W.get2dViewNonConst();
 
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-
-  Scalar oneOverTheta = one/theta;
+  scalar_type oneOverTheta = one/theta;
+  const size_t numMyRows = A_->getNodeNumRows ();
 
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
-    A_->apply(Y, V);
-    // compute W = invDiag * ( X - V )/ Theta
+    // Compute W = (1/theta) D^{-1} (X - A*Y).
+
+    applyMat (Y, V, mode); // V = A*Y
     if (nVecs == 1) {
-      Teuchos::ArrayRCP<const Scalar> x = xView[0];
-      Teuchos::ArrayRCP<Scalar> w = wView[0];
-      Teuchos::ArrayRCP<const Scalar> v = vView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i)
+      ArrayRCP<const scalar_type> x = xView[0];
+      ArrayRCP<scalar_type> w = wView[0];
+      ArrayRCP<const scalar_type> v = vView[0];
+      for (size_t i = 0; i < numMyRows; ++i) {
         w[i] = invdiag[i] * (x[i] - v[i]) * oneOverTheta;
+      }
     }
     else {
       for (size_t k = 0; k < nVecs; ++k) {
-        Teuchos::ArrayRCP<Scalar> wk = wView[k];
-        Teuchos::ArrayRCP<const Scalar> vk = vView[k];
-        for (size_t i = 0; i < NumMyRows_; ++i) {
-          Scalar coeff = invdiag[i]*oneOverTheta;
+        ArrayRCP<scalar_type> wk = wView[k];
+        ArrayRCP<const scalar_type> vk = vView[k];
+        for (size_t i = 0; i < numMyRows; ++i) {
+          scalar_type coeff = invdiag[i]*oneOverTheta;
           wk[i] = (xView[k][i] - (vk[i])) * coeff;
         }
       }
     } // if (nVec == 1)
-    // Update the vector Y
-    Y.update(one, W, one);
+
+    Y.update(one, W, one); // Y = Y + W
   }
   else {
-    // compute W = invDiag * X / Theta
+    // Compute W = (1/theta) D^{-1} X and set Y = W.
+
     if (nVecs == 1) {
-      Teuchos::ArrayRCP<const Scalar> x= xView[0];
-      Teuchos::ArrayRCP<Scalar> w = wView[0];
-      Teuchos::ArrayRCP<Scalar> y = yView[0];
-      for (size_t i = 0; i < NumMyRows_; ++i) {
+      ArrayRCP<const scalar_type> x= xView[0];
+      ArrayRCP<scalar_type> w = wView[0];
+      ArrayRCP<scalar_type> y = yView[0];
+      for (size_t i = 0; i < numMyRows; ++i) {
         w[i] = invdiag[i] * x[i] * oneOverTheta;
         y[i] = w[i];
       }
     }
     else {
       for (size_t k = 0; k < nVecs; ++k) {
-        for (size_t i = 0; i < NumMyRows_; ++i) {
-          Scalar coeff = invdiag[i]*oneOverTheta;
+        for (size_t i = 0; i < numMyRows; ++i) {
+          scalar_type coeff = invdiag[i]*oneOverTheta;
           wView[k][i] = xView[k][i] * coeff;
           yView[k][i] = wView[k][i];
         }
@@ -313,67 +440,57 @@ void Chebyshev<MatrixType>::apply(
   } // if (ZeroStartingSolution_ == false)
 
   //--- Apply the polynomial
-  Scalar rhok = 1.0/s1, rhokp1;
-  Scalar dtemp1, dtemp2;
+  scalar_type rhok = one/s1, rhokp1;
+  scalar_type dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
-  Scalar two = 2.0;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
-    A_->apply(Y, V);
+    applyMat (Y, V, mode); // V = A*Y
     rhokp1 = one / (two *s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
-    // compute W = dtemp1 * W
-    W.scale(dtemp1);
-    // compute W = W + dtemp2 * invDiag * ( X - V )
-    for (size_t k = 0; k < nVecs; ++k) {
-      for (size_t i = 0; i < NumMyRows_; ++i) {
-        Scalar coeff = invdiag[i]*dtemp2;
+
+    // Compute W = dtemp1*W + dtemp2 * D^{-1} * (X - V).
+
+    W.scale (dtemp1); // W = dtemp1 * W
+    for (size_t k = 0; k < nVecs; ++k) { // W = W + dtemp2 * D^{-1} * (X - V)
+      for (size_t i = 0; i < numMyRows; ++i) {
+        scalar_type coeff = invdiag[i]*dtemp2;
         wView[k][i] += (xView[k][i] - (vView[k][i])) * coeff;
       }
     }
-    // Update the vector Y
-    Y.update(one, W, one);
+    Y.update (one, W, one); // Y = Y + W
   } // for (deg = 0; deg < degreeMinusOne; ++deg)
-
-  // Flops are updated in each of the following. 
-
-  ++NumApply_;
-  Time_->stop();
-  ApplyTime_ += Time_->totalElapsedTime();
 }
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::applyMat(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-             Teuchos::ETransp mode) const
+void 
+Chebyshev<MatrixType>::
+applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+	  Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+	  Teuchos::ETransp mode) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Ifpack2::Chebyshev::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
+  TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error,
+   "Ifpack2::Chebyshev::applyMat(): isComputed() must be true prior to calling applyMat().");
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Chebyshev::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
-  A_->apply(X, Y, mode);
+   "Ifpack2::Chebyshev::applyMat(): X.getNumVectors() != Y.getNumVectors().");
+  A_->apply (X, Y, mode);
 }
 
 //==========================================================================
 template<class MatrixType>
 void Chebyshev<MatrixType>::initialize() {
   IsInitialized_ = false;
+  Time_->start (true);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-      "Ifpack2::Chebyshev::initialize ERROR: A_ == Teuchos::null");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(A_->getGlobalNumRows() != A_->getGlobalNumCols(), std::runtime_error,
-     "Ifpack2::Chebyshev::initialize ERROR: only square matrices are supported");
-
-  NumMyRows_ = A_->getNodeNumRows();
-  NumGlobalRows_ = A_->getGlobalNumRows();
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries();
+  // mfh 15 Jan 2013: Defer fetching the global number of nonzeros in
+  // the matrix until compute().  That way, it will always be correct
+  // to omit calling initialize(), even if the number of entries in
+  // the sparse matrix has changed since the last call to compute().
 
   ++NumInitialize_;
-  Time_->stop();
+  Time_->stop ();
   InitializeTime_ += Time_->totalElapsedTime();
   IsInitialized_ = true;
 }
@@ -382,39 +499,72 @@ void Chebyshev<MatrixType>::initialize() {
 template<class MatrixType>
 void Chebyshev<MatrixType>::compute()
 {
-  if (!isInitialized()) {
-    initialize();
+  using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> export_type;
+
+  Time_->start (true);
+
+  if (! isInitialized ()) {
+    initialize ();
   }
 
-  Time_->start(true);
-
-  // reset values
+  // Reset values
   IsComputed_ = false;
   Condest_ = -1.0;
 
+  // mfh 15 Jan 2013: Defer fetching the global number of nonzeros
+  // until here.  That way, it will always be correct to omit calling
+  // initialize(), even if the number of entries in the sparse matrix
+  // has changed since the last call to compute().
+  const Tpetra::global_size_t numGlobalNonzeros = A_->getGlobalNumEntries ();
+  (void) numGlobalNonzeros; // Forestall compiler warning.
+
   TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
-    "Ifpack2::Chebyshev::compute() ERROR: PolyDegree_ must be at least one");
-  
-  if (InvDiagonal_ == Teuchos::null)
-  {
-    InvDiagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()) );
+    "Ifpack2::Chebyshev::compute(): PolyDegree_ must be at least one");
 
-    A_->getLocalDiagCopy(*InvDiagonal_);
-
-    // Inverse diagonal elements
-    // Replace zeros with 1.0
-    Teuchos::ArrayRCP<Scalar> diagvals = InvDiagonal_->get1dViewNonConst();
-    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-      Scalar& diag = diagvals[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
-        diag = MinDiagonalValue_;
-      else
-        diag = 1.0 / diag;
-    }
+  // If the user has not given us the inverse diagonal, compute it
+  // here.  We do so on every call to compute(), in case the values in
+  // the matrix have changed since the last call.
+  if (! userSuppliedInvDiag_.is_null ()) {
+    InvDiagonal_ = userSuppliedInvDiag_;
   }
-  // otherwise the inverse of the diagonal has been given by the user
+  else {
+    RCP<const map_type> rowMap = A_->getRowMap ();
+    RCP<vector_type> globalDiagRowMap = rcp (new vector_type (rowMap));
+    A_->getLocalDiagCopy (*globalDiagRowMap);
 
-  ComputeFlops_ += NumMyRows_;
+    // globalDiag should be distributed according to the row Map of A
+    // at this point.  If necessary, Export the vector of diagonal
+    // entries from the row Map to the range Map.
+    RCP<vector_type> globalDiagRangeMap;
+    RCP<const export_type> exporter = A_->getGraph ()->getExporter ();
+    if (exporter.is_null ()) {
+      globalDiagRangeMap = globalDiagRowMap; // Row & range Maps are the same.
+    }
+    else {
+      RCP<const map_type> rangeMap = A_->getRangeMap ();
+      globalDiagRangeMap = rcp (new vector_type (rangeMap));
+      globalDiagRangeMap->doExport (*globalDiagRowMap, *exporter, Tpetra::ADD);
+    }
+    // Get rid of the row Map version of the diagonal.
+    globalDiagRowMap = Teuchos::null;
+
+    // Invert all diagonal elements no smaller in magnitude than the
+    // minimum allowed diagonal value d_min.  Those smaller than d_min
+    // in magnitude are replaced with d_min.  (That's why d_min itself
+    // is a scalar and not a magnitude.)  Tpetra::MultiVector's
+    // reciprocal() method doesn't have the threshold feature that we
+    // want, but Kokkos (mfh 15 Jan 2013: as of today) does.
+    typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+    KMV& localDiag = globalDiagRangeMap->getLocalMVNonConst ();
+    typedef Kokkos::DefaultArithmetic<KMV> KMVT;
+    KMVT::ReciprocalThreshold (localDiag, MinDiagonalValue_);
+
+    InvDiagonal_ = globalDiagRangeMap; // "Commit" the result.
+    ComputeFlops_ += A_->getNodeNumRows ();
+  }
 
   ++NumCompute_;
   Time_->stop();
@@ -424,74 +574,55 @@ void Chebyshev<MatrixType>::compute()
 
 //==========================================================================
 template<class MatrixType>
-void Chebyshev<MatrixType>::
-PowerMethod(const Tpetra::Operator<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Operator, 
-            const Tpetra::Vector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& InvPointDiagonal, 
-            const int MaximumIterations, 
-            typename MatrixType::scalar_type& lambda_max)
+void 
+Chebyshev<MatrixType>::
+PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Operator, 
+	     const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& InvPointDiagonal, 
+	     const int MaximumIterations, 
+	     scalar_type& lambda_max)
 {
-  // this is a simple power method
-  lambda_max = 0.0;
-  Teuchos::Array<Scalar> RQ_top(1), RQ_bottom(1);
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
-  x.randomize();
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  Teuchos::Array<magnitudeType> norms(x.getNumVectors());
-  x.norm2(norms());
+  using Teuchos::Array;
 
-  x.scale(1.0 / norms[0]);
+  const scalar_type one = STS::one();
+  const scalar_type zero = STS::zero();
 
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  lambda_max = zero;
+  Array<scalar_type> RQ_top(1), RQ_bottom(1);
+  vector_type x (Operator.getDomainMap ());
+  vector_type y (Operator.getRangeMap ());
+  x.randomize ();
+  Array<magnitude_type> norms (x.getNumVectors ());
+  x.norm2 (norms ());
+  x.scale (one / norms[0]);
 
-  for (int iter = 0; iter < MaximumIterations; ++iter)
-  {
-    Operator.apply(x, y);
-    y.elementWiseMultiply(1.0, InvPointDiagonal, y, 0.0);
-    y.dot(x, RQ_top());
-    x.dot(x, RQ_bottom());
+  for (int iter = 0; iter < MaximumIterations; ++iter) {
+    Operator.apply (x, y);
+    y.elementWiseMultiply (one, InvPointDiagonal, y, zero);
+    y.dot (x, RQ_top ());
+    x.dot (x, RQ_bottom ());
     lambda_max = RQ_top[0] / RQ_bottom[0];
-    y.norm2(norms());
-    TEUCHOS_TEST_FOR_EXCEPTION(norms[0] == zero, std::runtime_error, "Ifpack2::Chebyshev::PowerMethod ERROR, norm == 0");
-    x.update( one / norms[0], y, zero);
+    y.norm2 (norms ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      norms[0] == zero, 
+      std::runtime_error, 
+      "Ifpack2::Chebyshev::PowerMethod: norm == 0 at iteration " << (iter+1) 
+      << " of " << MaximumIterations);
+    x.update (one / norms[0], y, zero);
   }
 }
 
 //==========================================================================
 template<class MatrixType>
 void Chebyshev<MatrixType>::
-CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
-            const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
+CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
+            const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal, 
    const int MaximumIterations, 
-   Scalar& lambda_min, Scalar& lambda_max)
+   scalar_type& lambda_min, scalar_type& lambda_max)
 {
-#ifdef HAVE_IFPACK2_AZTECOO
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
-  x.Random();
-  y.putScalar(0.0);
-
-  Tpetra::LinearProblem LP(const_cast<Tpetra::Operator*>(&Operator), &x, &y);
-  AztecOO solver(LP);
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  solver.SetAztecOption(AZ_output, AZ_none);
-
-  Ifpack2_DiagPreconditioner diag(Operator.OperatorDomainMap(),
-                                 Operator.OperatorRangeMap(),
-                                 InvPointDiagonal);
-  solver.SetPrecOperator(&diag);
-  solver.Iterate(MaximumIterations, 1e-10);
-
-  const double* status = solver.GetAztecStatus();
-
-  lambda_min = status[AZ_lambda_min];
-  lambda_max = status[AZ_lambda_max];
-
-  return(0);
-#else
-  throw std::runtime_error("Ifpack2::Chebyshev::CG: support for AztecOO not currently implemented.");
-#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error,
+    "Ifpack2::Chebyshev::CG: Not implemented.  "
+    "Please use Belos' implementation of CG with Tpetra objects.");
 }
 
 //==========================================================================
@@ -520,30 +651,37 @@ std::string Chebyshev<MatrixType>::description() const {
 //==========================================================================
 template <class MatrixType>
 void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-  using std::endl;
-  using std::setw;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using std::endl;
+  using std::setw;
+
   Teuchos::EVerbosityLevel vl = verbLevel;
-  if (vl == VERB_DEFAULT) vl = VERB_LOW;
-  const int myImageID = Comm_->getRank();
+  if (vl == VERB_DEFAULT) {
+    vl = VERB_LOW;
+  }
+  RCP<const Comm<int> > comm = A_->getRowMap ()->getComm ();
+
+  const int myImageID = comm->getRank();
   Teuchos::OSTab tab(out);
 
-  Scalar MinVal, MaxVal;
+  scalar_type MinVal, MaxVal;
   if (IsComputed_) {
-    Teuchos::ArrayRCP<const Scalar> DiagView = InvDiagonal_->get1dView();
-    Scalar myMinVal = DiagView[0];
-    Scalar myMaxVal = DiagView[0];
-    for(typename Teuchos::ArrayRCP<Scalar>::size_type i=1; i<DiagView.size(); ++i) {
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMinVal) > Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMaxVal) < Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
+    Teuchos::ArrayRCP<const scalar_type> DiagView = InvDiagonal_->get1dView();
+    scalar_type myMinVal = DiagView[0];
+    scalar_type myMaxVal = DiagView[0];
+    for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=1; i<DiagView.size(); ++i) {
+      if (STS::magnitude(myMinVal) > STS::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (STS::magnitude(myMaxVal) < STS::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
   }
 
   //    none: print nothing
@@ -578,6 +716,183 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
     out << endl;
   }
 }
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+makeTempMultiVectors (Teuchos::RCP<MV>& V,
+		      Teuchos::RCP<MV>& W,
+		      const MV& X) const
+{
+  if (V_.is_null ()) {
+    V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors ()));
+  }
+  if (W_.is_null ()) {
+    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors ()));
+  }
+  V = V_;
+  W = W_;
+}
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+computeResidual (MV& V, 
+		 const MV& X, 
+		 const MV& Y, 
+		 const Teuchos::ETransp mode) const
+{
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
+  V = X;
+  A_->apply (Y, V, mode, -one, one);
+}
+
+template<class MatrixType>
+void 
+Chebyshev<MatrixType>::
+applyImpl (const MV& X,
+	   MV& Y,
+	   Teuchos::ETransp mode,
+	   scalar_type alpha,
+	   scalar_type beta) const 
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcpFromRef;
+
+  const scalar_type zero = STS::zero();
+  const scalar_type one = STS::one();
+
+  // Y = beta*Y + alpha*M*X.
+
+  // If alpha == 0, then we don't need to do Chebyshev at all.
+  if (alpha == zero) {
+    if (beta == zero) { // Obey Sparse BLAS rules; avoid 0*NaN.
+      Y.putScalar (zero);
+    }
+    else {
+      Y.scale (beta);
+    }
+    return;
+  }
+
+  // If beta != 0, then we need to keep a copy of the initial value of
+  // Y, so that we can add beta*it to the Chebyshev result at the end.
+  // Usually this method is called with beta == 0, so we don't have to 
+  // worry about caching Y_org.
+  RCP<MV> Y_orig;
+  if (beta != zero) {
+    Y_orig = rcp (new MV (Y));
+  }
+
+  // If X and Y point to the same memory location, we need to use a
+  // copy of X (X_copy) as the input MV.  Otherwise, just let X_copy
+  // point to X.
+  //
+  // This is hopefully an uncommon use case, so we don't bother to
+  // optimize for it by caching X_copy.
+  RCP<const MV> X_copy;
+  bool copiedInput = false;
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+    X_copy = rcp (new MV (X));
+    copiedInput = true;
+  }
+  else {
+    X_copy = rcpFromRef (X);
+  }
+  
+  // If alpha != 1, fold alpha into (a copy of) X.
+  //
+  // This is an uncommon use case, so we don't bother to optimize for
+  // it by caching X_copy.  However, we do check whether we've already
+  // copied X above, to avoid a second copy.
+  if (alpha != one) {
+    RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
+    if (! copiedInput) {
+      X_copy_nonConst = rcp (new MV (X));
+      copiedInput = true;
+    }
+    X_copy_nonConst->scale (alpha);
+    X_copy = rcp_const_cast<const MV> (X_copy_nonConst);
+  }
+
+  // If A is the identity matrix, do a quick solve.
+  if ((LambdaMin_ == one) && (LambdaMax_ == LambdaMin_)) {
+    // Y_j = 0*Y_j + invdiag .* X_j, for all columns j.
+    Y.elementWiseMultiply (one, *InvDiagonal_, X, zero);
+    if (beta != zero) {
+      Y.update (beta, *Y_orig, one); // Y = beta * Y_orig + 1 * Y
+    }
+    return;
+  }
+
+  //
+  // Define the iteration coefficients.
+  //
+
+  const scalar_type two = as<scalar_type> (2);
+  const scalar_type lambdaMaxIncr = as<scalar_type> (1.1);
+
+  // Note that delta stores the inverse of ML_Cheby::delta
+  const scalar_type alpha_cheby = LambdaMax_ / EigRatio_;
+  // ML source comment: "try and bracket high".  Presumably this
+  // explains that the coefficient is increased by a small factor
+  // (1.1) in order for the smoother to be more effective.
+  const scalar_type beta_cheby = lambdaMaxIncr * LambdaMax_;
+  const scalar_type delta = two / (beta_cheby - alpha_cheby);
+  const scalar_type theta = (beta_cheby + alpha_cheby) / two;
+  const scalar_type s1 = theta * delta;
+
+  // In ML_Cheby, V corresponds to pAux and W to dk.
+  RCP<MV> V, W;
+  makeTempMultiVectors (V, W, *X_copy);
+
+  //
+  // Treat the initial guess.
+  //
+  if (! ZeroStartingSolution_) { // Compute W = (1/theta) D^{-1} (X - A*Y).
+    computeResidual (*V, *X_copy, Y, mode); // V = X - Op(A)*Y
+
+    // W_j = 0*W_j + (1/theta) * invdiag * V_j, for all columns j.
+    W->elementWiseMultiply (one/theta, *InvDiagonal_, *V, zero);
+    Y.update (one, *W, one); // Y = Y + W
+  }
+  else { // Compute W = (1/theta) D^{-1} X and set Y = W.
+    // W_j = 0*W_j + (1/theta) * invdiag * X_j, for all columns j.
+    W->elementWiseMultiply (one/theta, *InvDiagonal_, *X_copy, zero);
+    Y = *W; // Set Y = W.
+  }
+  
+  //
+  // Do Chebyshev iteration.
+  //
+  scalar_type rhok = one/s1;
+  scalar_type rhokp1, dtemp1, dtemp2;
+  for (int deg = 1; deg < PolyDegree_; ++deg) {
+    computeResidual (*V, *X_copy, Y, mode); // V = X - Op(A)*Y.
+
+    rhokp1 = one / (two * s1 - rhok);
+    dtemp1 = rhokp1 * rhok;
+    dtemp2 = two * rhokp1 * delta;
+    rhok = rhokp1;
+
+    // Compute W = dtemp1*W + dtemp2 * D^{-1} * V.
+    // 1. W = dtemp1 * W
+    // 2. W = W + dtemp2 * D^{-1} * V.
+    W->scale (dtemp1);
+    W->elementWiseMultiply (dtemp2, *InvDiagonal_, *V, one);
+
+    Y.update (one, *W, one); // Y = Y + W
+  }
+
+  if (beta != zero) {
+    Y.update (beta, *Y_orig, one); // Y = beta * Y_orig + 1 * Y
+  }
+}
+
 
 }//namespace Ifpack2
 

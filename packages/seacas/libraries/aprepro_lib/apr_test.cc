@@ -21,6 +21,10 @@ int main(int argc, char *argv[])
   ptr->info = "Return the successor to d";
   ptr->syntax = "succ(d)";
   
+  // EXAMPLE: Add a couple variables...
+  aprepro.add_variable("Greg", "Is the author of this code");
+  aprepro.add_variable("BirthYear", 1958);
+  
   for(int ai = 1; ai < argc; ++ai) {
     if (argv[ai] == std::string ("-s")) {
       aprepro.statistics();
@@ -39,6 +43,10 @@ int main(int argc, char *argv[])
     }
     else if (argv[ai] == std::string ("-M")) {
       aprepro.ap_options.info_msg = true;
+    }
+    else if (argv[ai] == std::string ("-X")) {
+      aprepro.ap_options.immutable = true;
+      aprepro.stateImmutable = true;
     }
     else if (argv[ai] == std::string ("-W")) {
       aprepro.ap_options.warning_msg = false;

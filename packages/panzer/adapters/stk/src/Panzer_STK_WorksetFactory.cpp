@@ -66,4 +66,20 @@ getSideWorksets(const panzer::BC & bc,
    return panzer_stk::buildBCWorksets(*mesh_,pb,bc);
 }
 
+Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
+getWorksets(const panzer::WorksetDescriptor & worksetDesc,
+            const panzer::PhysicsBlock & pb,
+            std::size_t worksetSize) const
+{
+  if(!worksetDesc.useSideset()) {
+    return getVolumeWorksets(worksetDesc.getElementBlock(),pb,worksetSize);
+  }
+  else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
+    return panzer_stk::buildWorksets(*mesh_,pb,worksetDesc.getSideset(),worksetSize);
+  }
+  else {
+    TEUCHOS_ASSERT(false);
+  }
+}
+
 }

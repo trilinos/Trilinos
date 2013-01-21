@@ -140,7 +140,7 @@ namespace LOCA {
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
 
       //! Return strategy name given by \c bifurcationParams
-      string 
+      std::string 
       strategyName(Teuchos::ParameterList& bifurcationParams) const;
 
     private:

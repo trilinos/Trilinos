@@ -134,27 +134,120 @@ namespace Belos {
     
   public:
     
-    //! @name Constructors/Destructor
+    //! @name Constructors and destructor
     //@{ 
 
-    /*! \brief Empty constructor for BlockGmresSolMgr.
-     * This constructor takes no arguments and sets the default values for the solver.
-     * The linear problem must be passed in using setProblem() before solve() is called on this object.
-     * The solver values can be changed using setParameters().
+    /*! \brief Empty constructor.
+     *
+     * This constructor takes no arguments.  It sets default solver
+     * parameters, which you may change by calling setParameters().
+     * Before you may call solve(), you must first give the solver a
+     * linear problem to solve, by calling setProblem().  
      */
     PseudoBlockGmresSolMgr();
     
-    /*! \brief Basic constructor for PseudoBlockGmresSolMgr.
+    /*! \brief Constructor that takes the problem to solve, and a list
+     *    of solver options.
      *
-     * This constructor accepts the LinearProblem to be solved in addition
-     * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. 
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. 
-     *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. 
-     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
-     *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-     *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
+     * \param problem [in/out] The linear problem to be solved.
+     * \param pl [in/out] A list of solver options.
+     *
+     * Belos' solvers accept many different options.  You may accept
+     * their default values, or set any of them yourself.  We will
+     * explain the options by category.
+     *
+     * The following options govern the number of iterations and
+     * restarts:
+     * - "Num Blocks" (\c int): The restart length.  The number of
+     *   vectors (or blocks, in the case of multiple right-hand sides)
+     *   allocated for the Krylov basis.  Its default value is 300.
+     * - "Maximum Iterations" (\c int): The maximum number of
+     *   iterations the solver is allowed to perform.  This does
+     *   <i>not</i> include computing the initial residual, but it
+     *   <i>does</i> include iterations before and after any restarts.
+     *   Its default value is 1000.
+     * - "Maximum Restarts" (\c int): The maximum number of restarts.
+     *   This does <i>not</i> include the first "Num Blocks"
+     *   iterations (before the first restart).  Its default value is
+     *   20.
+     *
+     * We do not currently perform any sanity checks for these
+     * options.  This may affect you if you set some of them but let
+     * others keep their default values.  For example, if you set "Num
+     * Blocks" to 2 and "Maximum Iterations" to 100, but don't set
+     * "Maximum Restarts", you will only get 40 = 20*2 total
+     * iterations, rather than 100.  Thus, if you set one of these
+     * parameters, you should always set them all.
+     *
+     * When solving with multiple right-hand sides, the "Block Size"
+     * (\c int) parameter controls the number of right-hand sides for
+     * which the solver solves at once.  This setting controls both
+     * performance and total memory use.  Doubling it (approximately)
+     * doubles the total amount of memory used by the solver, but
+     * might make the solves faster by reducing synchronization
+     * overhead and improving memory bandwidth utilization.  The gain
+     * from increasing this tends to level off quickly.  Making this
+     * setting too large may actually hurt performance.
+     *
+     * These options govern convergence and the numerical algorithm:
+     * - "Convergence Tolerance" (\c MagnitudeType): The level that
+     *   residual norms must reach in order for the solver to stop
+     *   iterating.
+     * - "Implicit Residual Scaling" (\c std::string): How to scale
+     *   the implicit residual norm.  The default is the norm of the
+     *   preconditioned initial residual.
+     * - "Explicit Residual Scaling" (\c std::string): How to scale
+     *   the explicit residual norm.  The default is the norm of the
+     *   (unpreconditioned) initial residual.
+     * - "Deflation Quorum" (\c int): When solving with multiple
+     *   right-hand sides: the number of right-hand sides that must
+     *   have converged to the given tolerance, before the solver will
+     *   consider all the systems converged.  If -1, then the solver
+     *   will require that all the right-hand sides have converged
+     *   before declaring all the systems converged.  This must be no
+     *   bigger than the "Block Size" parameter.
+     * - "Orthogonalization" (\c std::string): The desired
+     *   orthogonalization method.  Currently accepted values are
+     *   "DGKS", "ICGS", and "IMGS".  Please refer to Belos'
+     *   documentation for more details.
+     *
+     * For an explanation of "implicit" vs. "explicit" residuals,
+     * please see the documentation of isLOADetected().  The
+     * difference matters if using left preconditioning.  Otherwise,
+     * it is not so important to most users.
+     *
+     * The residual scaling parameters ("Implicit Residual Scaling"
+     * and "Explicit Residual Scaling") accept the following values:
+     * - "Norm of Initial Residual"
+     * - "Norm of Preconditioned Initial Residual"
+     * - "Norm of RHS" (RHS stands for "right-hand side")
+     * - "None" (no scaling factor)
+     *
+     * GMRES always uses the 2 norm (square root of sum of squares of
+     * magnitudes of entries) to measure convergence.
+     *
+     * Belos' solvers let users control intermediate "status" output.
+     * This output tells you the current iteration and the values of
+     * current convergence criteria.  The following parameters control
+     * output.  The default values are fine for users who only care
+     * about the final result and don't want to see status output.
+     * - "Verbosity": a sum of \c MsgType enum values specifying the
+     *   verbosity. Default: Belos::Errors.
+     * - "Output Frequency" (\c int): How often (in terms of number of
+     *   iterations) to print intermediate status output.  The default
+     *   (-1) means not to print intermediate status output at all.
+     * - "Output Style" (\c OutputType): The style of output.
+     *   Accepted values are General and Brief.  Default: General.
+     * - "Output Stream" (<tt>Teuchos::RCP<std::ostream></tt>): A
+     *   pointer to an output stream to which the solver will write
+     *   status output.  The default is a pointer to
+     *   <tt>std::cout</tt>.  Currently, if Trilinos was built with
+     *   MPI support, only the MPI process with rank 0 in
+     *   MPI_COMM_WORLD will print to this output stream.
+     * - "Show Maximum Residual Norm Only": When solving for multiple
+     *   right-hand sides, this controls whether output shows residual
+     *   norms for all the right-hand sides, or just the current
+     *   maximum residual norm over all right-hand sides.
      */
     PseudoBlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                             const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -170,12 +263,10 @@ namespace Belos {
       return *problem_;
     }
     
-    /*! \brief Get a parameter list containing the valid parameters for this object.
-     */
+    //! A list of valid default parameters for this solver.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
    
-    /*! \brief Get a parameter list containing the current parameters for this object.
-     */
+    //! The current parameters for this solver.
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
  
     /*! \brief Return the timers for this object. 
@@ -201,29 +292,28 @@ namespace Belos {
       return achievedTol_;
     }
 
-    //! Get the iteration count for the most recent call to \c solve().
+    //! Iteration count for the most recent call to \c solve().
     int getNumIters() const {
       return numIters_;
     }
   
     /// \brief Whether a "loss of accuracy" was detected during the last solve().
     ///
-    /// The GMRES algorithm (which Pseudoblock GMRES implements) uses
-    /// two different residual norms to predict convergence:
-    /// "implicit" (also called "native") and "explicit" (also called
-    /// "exact," not to be confused with "exact arithmetic").  The
-    /// "implicit" residuals are computed by the solver via a
-    /// recurrence relation (the Arnoldi relation, in the case of
-    /// GMRES).  The "explicit" residuals are computed directly as $B
-    /// - A X_k$.  Implicit residuals are much cheaper to compute,
-    /// since they are available almost "for free" from the recurrence
-    /// relation.  In contrast, computing exact residuals requires
-    /// computing the current approximate solution \f$X_k\f$, applying
-    /// the global operator \f$A\f$ to \f$X_k\f$, and then computing
-    /// the norm of the resulting vector(s) via a global reduction.
-    /// Thus, GMRES favors using the cheaper implicit residuals to
-    /// predict convergence.  Users typically want convergence with
-    /// respect to explicit residuals, though.
+    /// This solver uses two different residual norms to predict
+    /// convergence: "implicit" (also called "native") and "explicit"
+    /// (also called "exact," not to be confused with "exact
+    /// arithmetic").  The "implicit" residuals are computed by the
+    /// solver via a recurrence relation (the Arnoldi relation, in the
+    /// case of GMRES).  The "explicit" residuals are computed
+    /// directly as $B - A X_k$.  Implicit residuals are much cheaper
+    /// to compute, since they are available almost "for free" from
+    /// the recurrence relation.  In contrast, computing exact
+    /// residuals requires computing the current approximate solution
+    /// \f$X_k\f$, applying the global operator \f$A\f$ to \f$X_k\f$,
+    /// and then computing the norm of the resulting vector(s) via a
+    /// global reduction.  Thus, GMRES favors using the cheaper
+    /// implicit residuals to predict convergence.  Users typically
+    /// want convergence with respect to explicit residuals, though.
     ///
     /// Implicit and explicit residuals may differ due to rounding
     /// error.  However, the difference between implicit and explicit
@@ -235,9 +325,9 @@ namespace Belos {
     /// the explicit residual norms, even if one could compute without
     /// rounding error.
     ///
-    /// When using a left preconditioner, Pseudoblock GMRES tries to
-    /// detect if the implicit residuals have converged but the
-    /// explicit residuals have not.  In that case, it will reduce the
+    /// When using a left preconditioner, this solver tries to detect
+    /// if the implicit residuals have converged but the explicit
+    /// residuals have not.  In that case, it will reduce the
     /// convergence tolerance and iterate a little while longer to
     /// attempt to reduce the explicit residual norm.  However, if
     /// that doesn't work, it declares a "loss of accuracy" for the
@@ -248,8 +338,8 @@ namespace Belos {
     /// Calling this method tells you whether a "loss of accuracy"
     /// (LOA) occurred during the last \c solve() invocation.
     ///
-    /// When <i>not</i> using a left preconditioner, Pseudoblock GMRES
-    /// will iterate until both the implicit and explicit residuals
+    /// When <i>not</i> using a left preconditioner, this solver will
+    /// iterate until both the implicit and explicit residuals
     /// converge.  (It does not start testing the explicit residuals
     /// until the implicit residuals have converged.  This avoids
     /// whenever possible the cost of computing explicit residuals.)

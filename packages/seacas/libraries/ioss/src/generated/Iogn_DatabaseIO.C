@@ -153,6 +153,10 @@ namespace Iogn {
 	  // (1...node_count) to global node ids.
 	  get_node_map().map_implicit_data(data, field, num_to_get, 0);
 	}
+	else if (field.get_name() == "owning_processor") {
+	  int *owner = static_cast<int*>(data);
+	  m_generatedMesh->owning_processor(owner, num_to_get);
+	}
 	else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	}

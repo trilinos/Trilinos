@@ -102,20 +102,20 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       (maxfev <= 0) || 
       (defaultstep <= 0)) 
   {
-    print.out() << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << endl;
+    print.out() << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << std::endl;
     throw "NOX Error";
   }
 
   counter.reset();
 
-  string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
+  std::string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
     suffDecrCond = AredPred;
   else if (choice == "Armijo-Goldstein") 
     suffDecrCond = ArmijoGoldstein;
   else {
     print.out() << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
-	 << "\"Sufficient Decrease Condition\" is invalid." << endl;
+	 << "\"Sufficient Decrease Condition\" is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -127,7 +127,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   }
   else {
     print.out() << "NOX::LineSearch::MoreThuente::reset - Invalid "
-	 << "\"Recovery Step Type\"" << endl;
+	 << "\"Recovery Step Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -180,7 +180,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
   {
     if (print.isPrintType(NOX::Utils::Warning)) 
     {
-      print.out() << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
+      print.out() << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << std::endl;
     }
     stp = recoverystep;
     newgrp.computeX(oldgrp, dir, stp);
@@ -268,7 +268,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     rtype = newgrp.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << endl;
+      print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -279,20 +279,20 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
       rtype = newgrp.computeJacobian();
       if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
+	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << std::endl;
 	  throw "NOX Error";
 	}
 
       rtype = newgrp.computeGradient();
       if (rtype != NOX::Abstract::Group::Ok) 
 	{
-	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
+	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << std::endl;
 	  throw "NOX Error";
 	}
     }
 
     nfev ++;
-    string message = "";
+    std::string message = "";
 
     double dg = 0.0;
     if (useOptimizedSlopeCalc)
@@ -326,7 +326,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
 
     //print.out() << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
-    //	 << " gtol*(-dginit)=" << gtol*(-dginit) << endl;
+    //	 << " gtol*(-dginit)=" << gtol*(-dginit) << std::endl;
 
     // RPP sufficient decrease test can be different
     bool sufficientDecreaseTest = false;

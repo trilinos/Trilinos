@@ -55,8 +55,8 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Cuda , Cuda::size_type > {
+template< class FunctorType , class WorkSpec >
+class ParallelFor< FunctorType , Cuda , WorkSpec > {
 public:
 
   const FunctorType     m_work_functor ;

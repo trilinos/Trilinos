@@ -130,11 +130,25 @@ namespace MueLu {
         //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
-        //FIXME Improved Epetra MM returns error code -1 optimizeStorage==true.  For now, do this
-        bool optimizeStorage=false;
+
+        bool optimizeStorage=true;
+
+        // FIXME: ADD() need B.getProfileType()==DynamicProfile
+        if (A->getRowMap()->lib() == Xpetra::UseTpetra) {
+          optimizeStorage=false;
+        }
+
+        //FIXME Improved Epetra MM returns error code -1 optimizeStorage==true.
+#if !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_EPETRAEXT) || !defined(HAVE_MUELU_ML)
+        if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
+          optimizeStorage=false;
+        }
+#endif
+        //
+
         //FIXME but once fixed, reenable the next line.
         //if (A->getRowMap()->lib() == Xpetra::UseTpetra) optimizeStorage=false;
-        AP = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
+        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
       }
 
       {

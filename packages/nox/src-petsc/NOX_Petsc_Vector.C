@@ -66,7 +66,7 @@ Vector::Vector(const Vector& source, CopyType type)
   allocate(source.getPetscVector(), type);
 }
 
-Vector::Vector(const Vec& source, string Name, CopyType type) :
+Vector::Vector(const Vec& source, std::string Name, CopyType type) :
   name(Name)
 {
   allocate(source, type);
@@ -77,7 +77,7 @@ Vector::~Vector()
   if(isAlloc)
   {
     //cout << "\n\t\tVecDestroy called ....  " << name << "  " << this << "   " 
-    //     << &petscVec << endl;
+    //     << &petscVec << std::endl;
     //VecDestroy(petscVec);
     isAlloc = false;
   }
@@ -127,8 +127,8 @@ Vector::allocate(const Vec& source, CopyType type)
   }
 
   if(ierr)
-    cout << "ERROR: value " << ierr << " returned during "
-         << "NOX::Petsc::Vector allocation !!" << endl;
+    std::cout << "ERROR: value " << ierr << " returned during "
+         << "NOX::Petsc::Vector allocation !!" << std::endl;
 
   return ierr;
 }
@@ -272,7 +272,7 @@ double
 Vector::norm(const Vector& weights) const
 {
   double n = 0.0;
-  cerr << "Norm type not supported for weighted norm" << endl;
+  std::cerr << "Norm type not supported for weighted norm" << std::endl;
   throw;
   return n;
 }

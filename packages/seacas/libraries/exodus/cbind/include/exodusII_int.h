@@ -224,8 +224,6 @@ are detected, even if it's not a C99 compiler. */
 #define DIM_NUM_ATT_IN_FBLK(num) ex_catstr("num_att_in_fblk",num)
                                                 /* # of attributes in face   */
                                                 /*   block num               */
-#define DIM_NUM_ATT_IN_NBLK      "num_att_in_nblk"
-
 #define VAR_CONN(num)            ex_catstr("connect",num)
                                                 /* element connectivity for  */
                                                 /*   element block num       */

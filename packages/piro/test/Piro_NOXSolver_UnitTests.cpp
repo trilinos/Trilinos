@@ -357,6 +357,53 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityAndResponseSensitivityMvJac)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int parameterIndex = 0;
+
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  const int responseIndex = 0;
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  // Solution sensitivity
+  {
+    const Array<Array<double> > expected = tuple(
+        Array<double>(tuple(0.5, 0.0, 0.0, 0.0)),
+        Array<double>(tuple(0.0, 1.0, 1.0, 1.0)));
+    TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+      const Array<double> actual = arrayFromVector(*dxdp->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+    }
+  }
+
+  // Response sensitivity
+  {
+    const Array<double> expected = tuple(2.0, -8.0);
+    TEST_EQUALITY(dgdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      const Array<double> actual = arrayFromVector(*dgdp->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());

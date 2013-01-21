@@ -78,20 +78,8 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps
 LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
   Monitor m(*this, "BuildAggregates");
 
-  std::string orderingType;
-  switch (this->GetOrdering()) {
-  case NATURAL:
-    orderingType = "Natural";
-    break;
-  case RANDOM:
-    orderingType = "Random";
-    break;
-  case GRAPH:
-    orderingType = "Graph";
-    break;
-  default:
-    break;
-  }
+  if (this->GetOrdering() != NATURAL && this->GetOrdering() != RANDOM && this->GetOrdering() != GRAPH)
+    throw(Exceptions::RuntimeError("UncoupledAggregation::BuildAggregates : bad aggregation ordering option"));
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();

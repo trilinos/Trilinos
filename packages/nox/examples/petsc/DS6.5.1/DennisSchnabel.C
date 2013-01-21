@@ -142,8 +142,8 @@ bool DennisSchnabel::evaluate(FillType f,
     A = tmp_matrix;
   } 
   else {
-    cout << "ERROR: DennisSchnabel::fillMatrix() - No such flag as " 
-	 << flag << endl;
+    std::cout << "ERROR: DennisSchnabel::fillMatrix() - No such flag as " 
+	 << flag << std::endl;
     throw;
   }
 
@@ -155,7 +155,7 @@ bool DennisSchnabel::evaluate(FillType f,
   double* u;
   VecGetArray(*overlapSolution, &u);
 //  for(int i=0; i<2; i++)
-//    cout << i << " :\t" << u[i] << endl;
+//    std::cout << i << " :\t" << u[i] << std::endl;
 //  cin.get();
 
 
@@ -210,7 +210,7 @@ bool DennisSchnabel::evaluate(FillType f,
 //  ierr = VecAssemblyBegin(*rhs);CHKERRQ(ierr);
 //  ierr = VecAssemblyEnd(*rhs);CHKERRQ(ierr);
 //  
-//  cout << "Checking residuals .... " << endl;
+//  std::cout << "Checking residuals .... " << std::endl;
 //  double val1, val2;
 //  VecDot(*rhs, mask, &val1);
 //  dmask[0] = 0.0;
@@ -219,7 +219,7 @@ bool DennisSchnabel::evaluate(FillType f,
 //  ierr = VecAssemblyBegin(*rhs);CHKERRQ(ierr);
 //  ierr = VecAssemblyEnd(*rhs);CHKERRQ(ierr);
 //  VecDot(*rhs, mask, &val2);
-//  cout << "rhs vals:\t" << val1 << "\t" << val2 << endl;
+//  std::cout << "rhs vals:\t" << val1 << "\t" << val2 << std::endl;
 //  cin.get();
 
   }

@@ -138,7 +138,7 @@ class FiniteDifference : public Epetra_RowMatrix,
   //! Pure virtual destructor
   virtual ~FiniteDifference();
 
-  //! Returns a character string describing the name of the operator
+  //! Returns a character std::string describing the name of the operator
   virtual const char* Label () const;
 
   //! If set true, the transpose of this operator will be applied
@@ -338,7 +338,7 @@ protected:
   DifferenceType diffType;
 
   //! label for the Epetra_RowMatrix
-  string label;
+  std::string label;
 
   //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
   bool useGroupForComputeF;

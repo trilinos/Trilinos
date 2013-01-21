@@ -67,7 +67,7 @@
 
 GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm, 
                                            int numGlobalNodes,
-                                           string name_) :
+                                           std::string name_) :
   myId(0),
   myName(name_),
   OverlapMap(0),
@@ -156,8 +156,8 @@ GenericEpetraProblem::createMaps()
     // Output to check progress so far
     printf("NumMyNodes, NumGlobalNodes --> %d\t%d\n",NumMyNodes, 
 		                                     NumGlobalNodes);
-    cout << *StandardMap << endl;
-    cout << *OverlapMap << endl;
+    std::cout << *StandardMap << std::endl;
+    std::cout << *OverlapMap << std::endl;
     Importer->Print(cout);
 #endif
   }
@@ -174,10 +174,10 @@ GenericEpetraProblem::outputResults(const NOX::Solver::Generic& solver,
   // Output the parameter list
   NOX::Utils utils(printParams);
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
+    std::cout << std::endl << "Final Parameters" << std::endl
+	 << "****************" << std::endl;
     solver.getList().print(cout);
-    cout << endl;
+    std::cout << std::endl;
   }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -201,19 +201,19 @@ GenericEpetraProblem::outputResults(const NOX::Solver::Generic& solver,
 //-----------------------------------------------------------------------------
 
 void 
-GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
+GenericEpetraProblem::outputSolutionStatus( std::ostream & os ) const
 {
   // Output all solution vectors
-  os << "\nProblem Status for " << myName << endl;
-  os << "  ----------------------------------" << endl;
-  os << *initialSolution << endl;
+  os << "\nProblem Status for " << myName << std::endl;
+  os << "  ----------------------------------" << std::endl;
+  os << *initialSolution << std::endl;
 
   for( unsigned int i = 0; i < depProblems.size(); ++i) {
     int depId = depProblems[i];
-    os << "\tDependent Status for " << myManager->getProblem(depId).getName() << endl;
-    os << "\t----------------------------------" << endl;
+    os << "\tDependent Status for " << myManager->getProblem(depId).getName() << std::endl;
+    os << "\t----------------------------------" << std::endl;
     Epetra_Vector & depVec = *( (*(depSolutions.find(depId))).second );
-    os << depVec << endl;
+    os << depVec << std::endl;
   }
 }
 
@@ -222,7 +222,7 @@ GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
 void 
 GenericEpetraProblem::setdt( double dt )
 {
-  cout << "No-op : Implement time dependence in inherited problem !!" << endl;
+  std::cout << "No-op : Implement time dependence in inherited problem !!" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -230,7 +230,7 @@ GenericEpetraProblem::setdt( double dt )
 double 
 GenericEpetraProblem::getdt() const
 {
-  cout << "No-op : Implement time dependence in inherited problem !!" << endl;
+  std::cout << "No-op : Implement time dependence in inherited problem !!" << std::endl;
   return 0.0;
 }
 
@@ -260,7 +260,7 @@ GenericEpetraProblem::getJacobian()
     return A;
   else
   {
-    cout << "ERROR: No valid Jacobian exists for this problem !!" << endl;
+    std::cout << "ERROR: No valid Jacobian exists for this problem !!" << std::endl;
     return A;
   }
 }
@@ -273,7 +273,7 @@ GenericEpetraProblem::setSolution(const Epetra_Vector& data)
   // Ensure that the derived problem class created the solution vector
   if(!initialSolution.get())
   {
-    cout << "ERROR: No solution vector exists for this problem !!" << endl;
+    std::cout << "ERROR: No solution vector exists for this problem !!" << std::endl;
     throw "GenericEpetraProblem ERROR";
   }
 
@@ -288,15 +288,15 @@ GenericEpetraProblem::createDependentVectors()
   // Create the dependent vectors needed to receive data from other problems
   if( !initialSolution.get() ) 
   {
-    cout << "ERROR: Cannot create dependent data without an existing solution "
-         << "vector for this problem !!" << endl;
+    std::cout << "ERROR: Cannot create dependent data without an existing solution "
+         << "vector for this problem !!" << std::endl;
     throw "GenericEpetraProblem ERROR";
   }
   for( unsigned int i = 0; i<depProblems.size(); i++ ) 
   {
 #ifdef DEBUG
-    cout << "For problem : " << myId << "  Creating DepVec for problem : "
-         << depProblems[i] << endl;
+    std::cout << "For problem : " << myId << "  Creating DepVec for problem : "
+         << depProblems[i] << std::endl;
 #endif
     depSolutions[ depProblems[i] ] = new Epetra_Vector(*initialSolution);
   }
@@ -337,7 +337,7 @@ GenericEpetraProblem::doTransfer()
 
     if( !xfer ) 
     {
-      cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
+      std::cout << "ERROR: doTransfer: No valid transfer operator !!" << std::endl;
       throw "GenericEpetraProblem ERROR";
     }
     else 
@@ -357,8 +357,8 @@ GenericEpetraProblem::doTransfer()
 bool 
 GenericEpetraProblem::computePrecMatrix( const Epetra_Vector& solnVector, Epetra_RowMatrix& matrix )
 {
-  cout << "WARNING: computePrecMatrix not implemented for this problem !!"
-       << endl;
+  std::cout << "WARNING: computePrecMatrix not implemented for this problem !!"
+       << std::endl;
 
   return false;
 }
@@ -368,8 +368,8 @@ GenericEpetraProblem::computePrecMatrix( const Epetra_Vector& solnVector, Epetra
 bool 
 GenericEpetraProblem::computePreconditioner( const Epetra_Vector& solnVector, Epetra_Operator& precOperator )
 {
-  cout << "WARNING: computePreconditioner not implemented for this problem !!"
-       << endl;
+  std::cout << "WARNING: computePreconditioner not implemented for this problem !!"
+       << std::endl;
 
   return false;
 }

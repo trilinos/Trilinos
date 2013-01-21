@@ -73,6 +73,8 @@
 #include "NOX_StatusTest_RelativeNormF.H"
 #include "NOX_StatusTest_NStep.H"
 
+#include <sstream>
+
 using namespace Teuchos;
 
 // ************************************************************************
@@ -183,7 +185,7 @@ buildComboTest(Teuchos::ParameterList& p, const NOX::Utils& u,
     rcp(new NOX::StatusTest::Combo(combo_type, &u));
   
   for (int i=0; i < number_of_tests; ++i) {
-    ostringstream subtest_name;
+    std::ostringstream subtest_name;
     subtest_name << "Test " << i;
     ParameterList& subtest_list = p.sublist(subtest_name.str(), true);
     

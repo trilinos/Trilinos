@@ -43,8 +43,6 @@
 
 /*--------------------------------------------------------------------------*/
 
-#define DEBUG_PRINT 0
-
 #include <iostream>
 #include <limits>
 
@@ -139,12 +137,21 @@ private:
   unsigned         m_node_core_pu_count ; // Processing units per core per node
   unsigned         m_node_rank[ MAX_NODE_COUNT ];
 
+  void thread_mapping(
+    const unsigned thread_rank ,
+    unsigned & gang_rank ,
+    unsigned & worker_rank ,
+    unsigned & node_rank ,
+    unsigned & core_rank ,
+    unsigned & pu_rank ) const ;
+
 public:
 
   ~HostInternalHWLOC();
   HostInternalHWLOC();
 
   bool bind_thread( const unsigned thread_rank ) const ;
+  void print_configuration( std::ostream & ) const ;
 };
 
 //----------------------------------------------------------------------------
@@ -152,6 +159,121 @@ public:
 HostInternal & HostInternal::singleton()
 {
   static HostInternalHWLOC self ; return self ;
+}
+
+//----------------------------------------------------------------------------
+
+void HostInternalHWLOC::thread_mapping(
+  const unsigned thread_rank ,
+  unsigned & gang_rank ,
+  unsigned & worker_rank ,
+  unsigned & node_rank ,
+  unsigned & core_rank ,
+  unsigned & pu_rank ) const
+{
+  // Which node -> core -> processing unit
+
+  gang_rank   = thread_rank / HostInternal::m_worker_count ;
+  worker_rank = thread_rank % HostInternal::m_worker_count ;
+
+  // How many cores will be used:
+
+  const unsigned min_worker_per_core =
+    HostInternal::m_worker_count / m_node_core_count ;
+
+  const unsigned max_worker_per_core =
+    min_worker_per_core +
+    ( HostInternal::m_worker_count % m_node_core_count ? 1 : 0 );
+
+  const unsigned core_base =
+    m_node_core_count * max_worker_per_core - HostInternal::m_worker_count ;
+
+  const unsigned core_base_worker_count = core_base * min_worker_per_core ;
+
+  // Use the upper range of accessible nodes.
+  // Assumes that the lower range is preferred by the operating system.
+
+  const unsigned gang_unused =
+    ( HostInternal::m_gang_capacity - HostInternal::m_gang_count ); 
+
+  node_rank = m_node_rank[ gang_rank + gang_unused ];
+
+  // Which core:
+
+  core_rank = 
+    worker_rank < core_base_worker_count ?
+    worker_rank / min_worker_per_core :
+    core_base +
+    ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
+
+  pu_rank = worker_rank % m_node_core_pu_count ;
+}
+
+void HostInternalHWLOC::print_configuration( std::ostream & s ) const
+{
+  static const char name_numa[] = "NUMA" ;
+  static const char name_socket[] = "SOCKET" ;
+  static const char name_core[] = "CORE" ;
+  static const char name_unknown[] = "unknown" ;
+
+  const char * name_node = 0 ;
+
+  switch ( m_node_type ) {
+  case HWLOC_OBJ_NODE   : name_node = name_numa ; break ;
+  case HWLOC_OBJ_SOCKET : name_node = name_socket ; break ;
+  case HWLOC_OBJ_CORE   : name_node = name_core ; break ;
+  default: name_node = name_unknown ; break ;
+  }
+
+  s << std::endl
+    << "KokkosArray::Host HWLOC { " << name_node << "("
+    << HostInternal::m_gang_capacity
+    << ")" ;
+
+  if ( 1 < m_node_core_count ) {
+    s << " x CORE(" << m_node_core_count << ")" ;
+  }
+  if ( 1 < m_node_core_pu_count ) {
+    s << " x PU(" << m_node_core_pu_count << ")" ;
+  }
+  s << " }" << std::endl ;
+
+  if ( 1 < HostInternal::m_thread_count ) {
+    s << "  thread binding {"
+      << std::endl ;
+
+    for ( Host::size_type i = 0 ; i < HostInternal::m_thread_count ; ++i ) {
+      const HostThread & thread = * HostInternal::m_thread[i] ;
+
+      unsigned gang_rank = 0 ;
+      unsigned worker_rank = 0 ;
+      unsigned node_rank = 0 ;
+      unsigned core_rank = 0 ;
+      unsigned pu_rank = 0 ;
+
+      thread_mapping( thread.rank() ,
+                      gang_rank ,
+                      worker_rank ,
+                      node_rank ,
+                      core_rank ,
+                      pu_rank );
+
+      s << "    { thread(" << thread.rank()
+        << ") : gang(" << thread.gang_rank()
+        << ") worker(" << thread.worker_rank()
+        << ") } -> { " << name_node << "(" << node_rank
+        << ")" ;
+
+      if ( 1 < m_node_core_count ) {
+        s << " CORE(" << core_rank << ")" ;
+      }
+      if ( 1 < m_node_core_pu_count ) {
+        s << " PU(" << pu_rank << ")" ;
+      }
+      s << " }" << std::endl ;
+    }
+    s << "  }" << std::endl ;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -164,42 +286,18 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 
   if ( HostInternal::m_gang_capacity ) {
 
-    // Which node -> core -> processing unit
+    unsigned gang_rank = 0 ;
+    unsigned worker_rank = 0 ;
+    unsigned node_rank = 0 ;
+    unsigned core_rank = 0 ;
+    unsigned pu_rank = 0 ;
 
-    const unsigned gang_rank   = thread_rank / HostInternal::m_worker_count ;
-    const unsigned worker_rank = thread_rank % HostInternal::m_worker_count ;
-
-    // How many cores will be used:
-
-    const unsigned min_worker_per_core =
-      HostInternal::m_worker_count / m_node_core_count ;
-
-    const unsigned max_worker_per_core =
-      min_worker_per_core +
-      ( HostInternal::m_worker_count % m_node_core_count ? 1 : 0 );
-
-    const unsigned core_base =
-      m_node_core_count * max_worker_per_core - HostInternal::m_worker_count ;
-
-    const unsigned core_base_worker_count = core_base * min_worker_per_core ;
-
-    // Which core:
-
-    const unsigned core_rank = 
-      worker_rank < core_base_worker_count ?
-      worker_rank / min_worker_per_core :
-      core_base +
-      ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
-
-    const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
-
-    // Use the upper range of accessible nodes.
-    // Assumes that the lower range is preferred by the operating system.
-
-    const unsigned gang_unused =
-      ( HostInternal::m_gang_capacity - HostInternal::m_gang_count ); 
-
-    const unsigned node_rank = m_node_rank[ gang_rank + gang_unused ];
+    thread_mapping( thread_rank ,
+                    gang_rank ,
+                    worker_rank ,
+                    node_rank ,
+                    core_rank ,
+                    pu_rank );
 
     const hwloc_obj_t node =
       hwloc_get_obj_by_type( m_host_topology, m_node_type, node_rank );
@@ -230,21 +328,6 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 
       hwloc_bitmap_free( thread_cpuset );
     }
-
-#if DEBUG_PRINT
-    std::cout << ( result ? "SUCCESS " : "FAILED " )
-              << "HWLOC::bind_thread thread[ "
-              << thread_rank
-              << " @ " << gang_rank
-              << "." << worker_rank
-              << " ] to node[" << m_node_rank[ gang_rank ]
-              << "].core[" << core_rank
-              << "].pu[" << pu_rank
-              << "] " ;
-   print_bitmap( pu->allowed_cpuset );
-   std::cout << std::endl ;
-#endif
-
   }
 
   return result ;
@@ -387,25 +470,7 @@ HostInternalHWLOC::HostInternalHWLOC()
 
   if ( 0 < cache_line_size ) {
     HostInternal::m_cache_line_size = cache_line_size ;
-    HostInternal::m_work_chunk      = cache_line_size / sizeof(void*);
   }
-
-#if DEBUG_PRINT
-  std::cout << "Manycore topology = {" ;
-  for ( int i = 0 ; i < node_count ; ++i ) {
-    std::cout << " " << m_node_rank[i] ;
-  }
-  std::cout << " }"
-            << " x " << core_per_node
-            << " x " << pu_per_core ;
-
-  if ( ! node_symmetry ) {
-    std::cout << " : is not symmetric :" ;
-  }
-
-  std::cout << " : cache_line_size( " << cache_line_size << " )" ;
-  std::cout << std::endl ;
-#endif
 }
 
 HostInternalHWLOC::~HostInternalHWLOC()

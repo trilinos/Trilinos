@@ -56,12 +56,12 @@ error the way that an assert command does. */
 #ifndef _NOX_TEST_ERR_H_
 #define _NOX_TEST_ERR_H_
 #include "NOX_Common.H"
-using namespace std;
+
 // This function is to be used when first identifying an error.
 #define NOX_TEST_ERR(a,b) { { int nox_testing_err = a; \
   if (nox_testing_err != 0) {\
-    cerr << "Non zero error code " << nox_testing_err << \
-       ", file: " << __FILE__ << ", line: " << __LINE__ << endl;\
+    std::cerr << "Non zero error code " << nox_testing_err << \
+       ", file: " << __FILE__ << ", line: " << __LINE__ << std::endl;\
  b+=1;\
   }\
   }\

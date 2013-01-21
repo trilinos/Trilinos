@@ -147,7 +147,7 @@ private:
   enum reorthogonalizeType {Never, AsNeeded, Always};
 
   //! Print an error message
-  void throwError(const string& functionName, const string& errorMsg) const;
+  void throwError(const std::string& functionName, const std::string& errorMsg) const;
 
   // Compute approximate Newton and tensor steps by solving the local models
   bool solveModels(NOX::Abstract::Vector& dir, NOX::Abstract::Group& soln, 

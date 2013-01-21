@@ -6,15 +6,44 @@
 #include <errno.h>
 
 #include "aprepro.h"
+#include "aprepro_parser.h"
+
+namespace {
+  std::vector<char*> allocations;
+}
 
 namespace SEAMS {
 extern Aprepro *aprepro;
+
+void set_type(const SEAMS::Aprepro &apr, SEAMS::symrec* var, int type)
+{
+  if (var->name[0] == '_' || !apr.state_is_immutable()) {
+    var->type = type;
+  } else {
+    if (type == Parser::token::VAR)
+      var->type = Parser::token::IMMVAR;
+    else if (type == Parser::token::SVAR)
+      var->type = Parser::token::IMMSVAR;
+    else
+    var->type = type;
+  }
+}
 
 void new_string(const char *from, char **to)
 {
   int len=strlen(from);
   *to = new char[len+1];
   std::memcpy(*to, from, len+1);
+  allocations.push_back(*to);
+}
+
+void concat_string(const char *from1, const char *from2, char **to)
+{
+  int len=strlen(from1) + strlen(from2);
+  *to = new char[len+1];
+  std::memcpy(*to, from1, len+1);
+  std::strcat(*to, from2);
+  allocations.push_back(*to);
 }
 
   /* This function returns a pointer to a static character array.
@@ -40,6 +69,14 @@ void new_string(const char *from, char **to)
 void yyerror (const SEAMS::Aprepro &apr, const std::string &s)
 {
   std::cerr << "Aprepro: ERROR:  '" << s << "' ("
+	    << apr.ap_file_list.top().name << ", line "
+	    << apr.ap_file_list.top().lineno + 1 << ")\n";
+}
+
+void immutable_modify(const SEAMS::Aprepro &apr, const SEAMS::symrec *var)
+{
+  std::cerr << "Aprepro: (IMMUTABLE) Variable " << var->name
+	    << " is immutable and cannot be modified ("
 	    << apr.ap_file_list.top().name << ", line "
 	    << apr.ap_file_list.top().lineno + 1 << ")\n";
 }
@@ -108,4 +145,10 @@ void conv_string (char *string)
     }
 }
 
+void cleanup_memory()
+{
+  for (size_t i=0; i < allocations.size(); i++) {
+    delete [] allocations[i];
+  }
+}
 }

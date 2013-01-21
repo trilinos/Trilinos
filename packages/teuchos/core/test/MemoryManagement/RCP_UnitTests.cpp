@@ -76,7 +76,6 @@ using Teuchos::DanglingReferenceError;
 using Teuchos::DuplicateOwningRCPError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
-using Teuchos::RCP_STRENGTH_INVALID;
 using Teuchos::RCPNodeTracer;
 
 
@@ -569,7 +568,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 
   ECHO(rcp_strong = null); // This deletes the underlying object of type T!
 
-  TEST_EQUALITY_CONST( rcp_strong.strength(), RCP_STRENGTH_INVALID );
+  TEST_EQUALITY_CONST( rcp_strong.strength(), RCP_STRONG );
   TEST_EQUALITY_CONST( rcp_strong.is_null(), true );
   TEST_EQUALITY_CONST( rcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_strong.strong_count(), 0 );
@@ -612,7 +611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 
   ECHO(rcp_weak1 = null); // Just deicrements weak count!
 
-  TEST_EQUALITY_CONST( rcp_weak1.strength(), RCP_STRENGTH_INVALID );
+  TEST_EQUALITY_CONST( rcp_weak1.strength(), RCP_STRONG );
   TEST_EQUALITY_CONST( rcp_weak1.is_null(), true );
   TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( rcp_weak1.strong_count(), 0 );

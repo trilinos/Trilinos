@@ -149,7 +149,7 @@ class MatrixFree : public Epetra_Operator,
      \warning This method must not be called unless HasNormInf() returns true.    */
   virtual double NormInf() const;
 
-  //! Returns a character string describing the operator
+  //! Returns a character std::string describing the operator
   virtual const char* Label () const;
 
   //! Returns the current UseTranspose setting.
@@ -195,7 +195,7 @@ class MatrixFree : public Epetra_Operator,
 protected:
 
   //! Label for matrix
-  string label;
+  std::string label;
 
   //! User provided interface function
   Teuchos::RCP<NOX::Epetra::Interface::Required> interface;
