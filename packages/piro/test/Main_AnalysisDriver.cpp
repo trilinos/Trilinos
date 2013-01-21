@@ -48,15 +48,14 @@
 
 #include "Piro_Epetra_Factory.hpp"
 
+#include "Piro_Epetra_PerformAnalysis.hpp"
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Piro_ConfigDefs.hpp"
-
-#include "Piro_PerformAnalysis.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -120,23 +119,20 @@ int main(int argc, char *argv[]) {
 #endif
 
       // Use these two objects to construct a Piro solved application
-      //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
+      // EpetraExt::ModelEvaluator is the base class of all Piro::Epetra solvers
       const RCP<Teuchos::ParameterList> piroParamsRCP = rcp(&piroParams, false);
-      const RCP<const EpetraExt::ModelEvaluator> piro =
-        solverFactory.createSolver(piroParamsRCP, Model);
+      const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParamsRCP, Model);
+      // END Builder
 
-      Thyra::EpetraModelEvaluator piroThyra;
-      piroThyra.initialize(piro, Teuchos::null);
+      // Call the analysis routine
+      RCP<Epetra_Vector> p;
+      status = Piro::Epetra::PerformAnalysis(*piro, analysisParams, p);
 
-      RCP< Thyra::VectorBase<double> > p;
-
-      // Now call the analysis routine
-      status = Piro::PerformAnalysis(piroThyra, analysisParams, p);
-
-      if (p != Teuchos::null) {
+      if (Teuchos::nonnull(p)) {
         // Can post-process results here
-         if (Proc==0) cout <<
-           "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << endl;
+        if (Proc==0) {
+          cout << "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << endl;
+        }
       }
 
     }
