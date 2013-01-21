@@ -894,7 +894,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   typedef Tpetra::Vector<ST, LO, GO, NT> V;
   typedef Ifpack2::Chebyshev<crs_matrix_type> prec_type;
   typedef Teuchos::ScalarTraits<ST> STS;
-  typedef typename STS::magnitudeType MT;
+  typedef STS::magnitudeType MT;
 
   const ST zero = STS::zero ();
   const ST one = STS::one ();
