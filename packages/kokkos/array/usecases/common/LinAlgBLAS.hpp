@@ -65,10 +65,21 @@ template< typename ScalarA ,
 struct Scale ;
 
 template< typename ScalarA ,
+          typename ScalarY ,
+          class Layout , class Device >
+struct Fill ;
+
+template< typename ScalarA ,
           typename ScalarX ,
           typename ScalarY ,
           class Layout , class Device >
 struct AXPY ;
+
+template< typename ScalarX ,
+          typename ScalarB ,
+          typename ScalarY ,
+          class Layout , class Device >
+struct XPBY ;
 
 template< typename ScalarA ,
           typename ScalarX ,
@@ -88,32 +99,97 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
+#if defined( HAVE_MPI )
+
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
           class Layout ,
           class Device ,
           class MX /* Allow any management type */ ,
           class MY /* Allow any management type */ >
+inline
 double dot( const size_t n ,
             const View< ScalarX * , Layout , Device , MX > & x ,
             const View< ScalarY * , Layout , Device , MY > & y ,
             comm::Machine machine )
 {
   double global_result = 0 ;
+  double local_result = 0 ;
 
-  Impl::Dot< ScalarX , Layout , Device >( n , x , y , global_result );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
+  Impl::Dot< ScalarX , Layout , Device >( n , x , y , local_result );
 
   MPI_Allreduce( & local_result , & global_result , 1 ,
                  MPI_DOUBLE , MPI_SUM , machine.mpi_comm );
 
-#endif
+  return global_result ;
+}
+
+#else
+
+template< typename ScalarX /* Allow mix of const and non-const */ ,
+          typename ScalarY /* Allow mix of const and non-const */ ,
+          class Layout ,
+          class Device ,
+          class MX /* Allow any management type */ ,
+          class MY /* Allow any management type */ >
+inline
+double dot( const size_t n ,
+            const View< ScalarX * , Layout , Device , MX > & x ,
+            const View< ScalarY * , Layout , Device , MY > & y ,
+            comm::Machine )
+{
+  double global_result = 0 ;
+
+  Impl::Dot< ScalarX , Layout , Device >( n , x , y , global_result );
 
   return global_result ;
 }
+
+#endif
+
+//----------------------------------------------------------------------------
+
+#if defined( HAVE_MPI )
+
+template< typename ScalarX /* Allow mix of const and non-const */ ,
+          class Layout ,
+          class Device ,
+          class MX /* Allow any management type */ >
+inline
+double dot( const size_t n ,
+            const View< ScalarX * , Layout , Device , MX > & x ,
+            comm::Machine machine )
+{
+  double global_result = 0 ;
+  double local_result = 0 ;
+
+  Impl::Dot1< ScalarX , Layout , Device >( n , x , local_result );
+
+  MPI_Allreduce( & local_result , & global_result , 1 ,
+                 MPI_DOUBLE , MPI_SUM , machine.mpi_comm );
+
+  return global_result ;
+}
+
+#else
+
+template< typename ScalarX /* Allow mix of const and non-const */ ,
+          class Layout ,
+          class Device ,
+          class MX /* Allow any management type */ >
+inline
+double dot( const size_t n ,
+            const View< ScalarX * , Layout , Device , MX > & x ,
+            comm::Machine )
+{
+  double global_result = 0 ;
+
+  Impl::Dot1< ScalarX , Layout , Device >( n , x , global_result );
+
+  return global_result ;
+}
+
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -121,24 +197,12 @@ template< typename ScalarX /* Allow mix of const and non-const */ ,
           class Layout ,
           class Device ,
           class MX /* Allow any management type */ >
+inline
 double norm2( const size_t n ,
               const View< ScalarX * , Layout , Device , MX > & x ,
               comm::Machine machine )
 {
-  double global_result = 0 ;
-
-  Impl::Dot1< ScalarX , Layout , Device >( n , x , global_result );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 ,
-                 MPI_DOUBLE , MPI_SUM , machine.mpi_comm );
-
-#endif
-
-  return std::sqrt( global_result );
+  return std::sqrt( dot( n , x , machine ) );
 }
 
 //----------------------------------------------------------------------------
@@ -150,9 +214,21 @@ template< typename ScalarA ,
           class MX >
 void scale( const size_t n ,
             const ScalarA & alpha ,
-            const View< ScalarX , Layout , Device , MX > & x )
+            const View< ScalarX * , Layout , Device , MX > & x )
 {
   Impl::Scale< ScalarA , ScalarX , Layout , Device >( n , alpha , x );
+}
+
+template< typename ScalarA ,
+          typename ScalarX ,
+          class Layout ,
+          class Device ,
+          class MX >
+void fill( const size_t n ,
+           const ScalarA & alpha ,
+           const View< ScalarX * , Layout , Device , MX > & x )
+{
+  Impl::Fill< ScalarA , ScalarX , Layout , Device >( n , alpha , x );
 }
 
 //----------------------------------------------------------------------------
@@ -166,11 +242,27 @@ template< typename ScalarA ,
           class MY >
 void axpy( const size_t n ,
            const ScalarA & alpha ,
-           const View< ScalarX , Layout , Device , MX > & x ,
-           const View< ScalarY , Layout , Device , MY > & y )
+           const View< ScalarX *, Layout , Device , MX > & x ,
+           const View< ScalarY *, Layout , Device , MY > & y )
 {
-  Impl::AXPY< ScalarA, ScalarX, ScalarY , Layout , Device >
-    ( n , alpha , x , y );
+  Impl::AXPY< ScalarA, ScalarX, ScalarY , Layout , Device >( n, alpha, x, y );
+}
+
+//----------------------------------------------------------------------------
+
+template< typename ScalarX ,
+          typename ScalarB ,
+          typename ScalarY ,
+          class Layout ,
+          class Device ,
+          class MX ,
+          class MY >
+void xpby( const size_t n ,
+           const View< ScalarX *, Layout , Device , MX > & x ,
+           const ScalarB & beta ,
+           const View< ScalarY *, Layout , Device , MY > & y )
+{
+  Impl::XPBY< ScalarX, ScalarB, ScalarY , Layout , Device >( n, x, beta, y );
 }
 
 //----------------------------------------------------------------------------
@@ -297,9 +389,9 @@ struct WAXPBY
 {
 private:
 
-  const View<       ScalarW , Layout , DeviceType , MemoryUnmanaged >  w ;
-  const View< const ScalarX , Layout , DeviceType , MemoryUnmanaged >  x ;
-  const View< const ScalarY , Layout , DeviceType , MemoryUnmanaged >  y ;
+  const View<       ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
+  const View< const ScalarY *, Layout , DeviceType , MemoryUnmanaged >  y ;
   const ScalarA  alpha ;
   const ScalarB  beta ;
 
@@ -318,10 +410,10 @@ public:
   inline
   WAXPBY( const size_t  n ,
           const ScalarA & arg_alpha ,
-          const View< ScalarX , Layout , DeviceType , MX > & arg_x ,
+          const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
           const ScalarB & arg_beta ,
-          const View< ScalarY , Layout , DeviceType , MY > & arg_y ,
-          const View< ScalarW , Layout , DeviceType , MW > & arg_w )
+          const View< ScalarY *, Layout , DeviceType , MY > & arg_y ,
+          const View< ScalarW *, Layout , DeviceType , MW > & arg_w )
     : w( arg_w ), x( arg_x ), y( arg_y )
     , alpha( arg_alpha ), beta( arg_beta )
   {
@@ -338,7 +430,7 @@ struct Scale
 {
 private:
 
-  const View< ScalarW , Layout , DeviceType , MemoryUnmanaged >  w ;
+  const View< ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
   const ScalarB  beta ;
 
 public:
@@ -354,7 +446,38 @@ public:
   inline
   Scale( const size_t  n ,
          const ScalarB & arg_beta ,
-         const View< ScalarW , Layout , DeviceType , MW > & arg_w )
+         const View< ScalarW * , Layout , DeviceType , MW > & arg_w )
+    : w( arg_w )
+    , beta( arg_beta )
+  {
+    vector_parallel_for( n , *this );
+  }
+};
+
+template < typename ScalarB ,
+           typename ScalarW ,
+           class Layout , class DeviceType >
+struct Fill
+{
+private:
+
+  const View< ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  const ScalarB  beta ;
+
+public:
+
+  typedef DeviceType  device_type ;
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const iType & i ) const
+  { w(i) = beta ; }
+
+  template< class MW >
+  inline
+  Fill( const size_t  n ,
+        const ScalarB & arg_beta ,
+        const View< ScalarW * , Layout , DeviceType , MW > & arg_w )
     : w( arg_w )
     , beta( arg_beta )
   {
@@ -372,8 +495,8 @@ struct AXPY
 {
 private:
 
-  const View<       ScalarW , Layout , DeviceType , MemoryUnmanaged >  w ;
-  const View< const ScalarX , Layout , DeviceType , MemoryUnmanaged >  x ;
+  const View<       ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
   const ScalarA  alpha ;
 
 public:
@@ -389,14 +512,48 @@ public:
   inline
   AXPY( const size_t  n ,
         const ScalarA & arg_alpha ,
-        const View< ScalarX , Layout , DeviceType , MX > & arg_x ,
-        const View< ScalarW , Layout , DeviceType , MW > & arg_w )
+        const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
+        const View< ScalarW *, Layout , DeviceType , MW > & arg_w )
     : w( arg_w ), x( arg_x )
     , alpha( arg_alpha )
   {
     vector_parallel_for( n , *this );
   }
-}; // WAXPBY
+}; // AXPY
+
+template< typename ScalarX ,
+          typename ScalarB ,
+          typename ScalarY ,
+          class Layout , class DeviceType >
+struct XPBY
+{
+private:
+
+  const View<       ScalarY *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
+  const ScalarB  beta ;
+
+public:
+
+  typedef DeviceType  device_type ;
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const iType & i ) const
+  { w(i) = x(i) + beta * w(i); }
+
+  template< class MX , class MW >
+  inline
+  XPBY( const size_t  n ,
+        const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
+        const ScalarB & arg_beta ,
+        const View< ScalarY *, Layout , DeviceType , MW > & arg_w )
+    : w( arg_w ), x( arg_x )
+    , beta( arg_beta )
+  {
+    vector_parallel_for( n , *this );
+  }
+}; // XPBY
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
