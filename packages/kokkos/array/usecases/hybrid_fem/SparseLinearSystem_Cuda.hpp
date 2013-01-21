@@ -44,8 +44,9 @@
 #ifndef SPARSELINEARSYSTEM_CUDA_HPP
 #define SPARSELINEARSYSTEM_CUDA_HPP
 
+#if defined( __CUDACC__ )
+
 #include <cusparse.h>
-#include <SparseLinearSystem.hpp>
 #include <KokkosArray_Cuda.hpp>
 
 namespace KokkosArray {
@@ -158,6 +159,6 @@ public:
 } /* namespace Impl */
 } /* namespace KokkosArray */
 
-
+#endif /* #if defined( __CUDACC__ ) */
 #endif /* #ifndef SPARSELINEARSYSTEM_CUDA_HPP */
 

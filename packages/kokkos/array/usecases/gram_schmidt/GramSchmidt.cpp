@@ -187,19 +187,20 @@ KokkosArray::Host
 #else
   typedef KokkosArray::Host Device ;
 #endif
-  typedef double Scalar ;
-
-  typedef KokkosArray::View< Scalar ** ,
-                             KokkosArray::LayoutLeft ,
-                             Device > matrix_type ;
 
   const int comm_size = comm::size( machine );
   const int comm_rank = comm::rank( machine );
 
   if ( comm_rank == 0 ) {
+
+    std::cout << ( KokkosArray::Impl::is_same<Device,KokkosArray::Cuda>::value ?
+                   "\"Cuda\"" : "\"Host\"" )
+              << " , \"Double Precision\""
+              << std::endl ;
+
     std::cout << "\"Length\" , \"Count\" , \"millisec\""
               << " , \"Gflops\" , \"Greads\" , \"Gwrites\""
-              << " , \"Gflops/s\" , \"Greads/s\" , \"Gwrites/s\""
+              << " ,   \"Gflops/s\" , \"Read GB/s\" , \"Write GB/s\""
               << std::endl ;
   }
 
@@ -212,10 +213,14 @@ KokkosArray::Host
     const int local_next   = local_length_upper * ( comm_rank + 1 );
     const int local_length = std::min( length , local_next ) - local_begin ;
 
-    const matrix_type Q( "Q" , local_length , count );
-    const matrix_type R( "R" , count , count );
+    typedef KokkosArray::View< double ** ,
+                               KokkosArray::LayoutLeft ,
+                               Device > matrix_double_type ;
 
-    const matrix_type::HostMirror hQ =
+    const matrix_double_type Q( "Q" , local_length , count );
+    const matrix_double_type R( "R" , count , count );
+
+    const matrix_double_type::HostMirror hQ =
       KokkosArray::create_mirror_view( Q );
 
     for ( int j = 0 ; j < count ; ++j ) {
@@ -242,18 +247,18 @@ KokkosArray::Host
 
       const double milli_sec   = dt_min * 1.0e3 ;
       const double giga_flops  = ( counts.flops / dt_min ) / 1.0e9 ;
-      const double giga_reads  = ( counts.reads / dt_min ) / 1.0e9 ;
-      const double giga_writes = ( counts.writes / dt_min ) / 1.0e9 ;
+      const double GB_reads  = ( counts.reads * sizeof(double) ) / ( dt_min * 1.0e9 );
+      const double GB_writes = ( counts.writes * sizeof(double) ) / ( dt_min * 1.0e9 );
 
       std::cout << length     << " , "
                 << count      << " , "
                 << milli_sec  << " , "
                 << double(counts.flops) / 1.0e9 << " , "
                 << double(counts.reads) / 1.0e9 << " , "
-                << double(counts.writes) / 1.0e9 << " , "
+                << double(counts.writes) / 1.0e9 << " ,   "
                 << giga_flops << " , "
-                << giga_reads << " , "
-                << giga_writes
+                << GB_reads << " , "
+                << GB_writes
                 << std::endl ;
     }
   }

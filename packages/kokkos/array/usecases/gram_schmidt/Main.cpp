@@ -95,6 +95,11 @@ int main( int argc , char ** argv )
         test_length_end   = atoi( argv[++i] );
         test_count  = atoi( argv[++i] );
         test_iter   = atoi( argv[++i] );
+        if ( test_length_end <= test_length_begin ||
+             test_length_begin <= 0 ||
+             test_count        <= 0 ) {
+          error = 1 ;
+        }
       }
       else {
         error = 1 ;
@@ -147,12 +152,17 @@ int main( int argc , char ** argv )
     if ( gang_count && gang_worker ) {
       KokkosArray::Host::initialize( gang_count , gang_worker );
 
-      Test::driver_modified_gram_schmidt<KokkosArray::Host>
-        ( test_length_begin ,
-          test_length_end ,
-          test_count ,
-          test_iter ,
-          machine );
+      if ( test_iter ) {
+        Test::driver_modified_gram_schmidt<KokkosArray::Host>
+          ( test_length_begin ,
+            test_length_end ,
+            test_count ,
+            test_iter ,
+            machine );
+      }
+      else {
+        KokkosArray::Host::print_configuration( std::cout );
+      }
 
       KokkosArray::Host::finalize();
     }
@@ -162,12 +172,17 @@ int main( int argc , char ** argv )
       KokkosArray::Cuda::SelectDevice select( ( cuda_device + comm_rank ) % cuda_device_count );
       KokkosArray::Cuda::initialize( select );
 
-      Test::driver_modified_gram_schmidt<KokkosArray::Cuda>
-        ( test_length_begin ,
-          test_length_end ,
-          test_count ,
-          test_iter ,
-          machine );
+      if ( test_iter ) {
+        Test::driver_modified_gram_schmidt<KokkosArray::Cuda>
+          ( test_length_begin ,
+            test_length_end ,
+            test_count ,
+            test_iter ,
+            machine );
+       }
+       else {
+        KokkosArray::Cuda::print_configuration( std::cout );
+       }
 
       KokkosArray::Cuda::finalize();
     }

@@ -76,10 +76,9 @@ class Multiply ;
 }
 }
 
-/* Cuda-specific specializations */
-#if defined( __CUDACC__ )
+/* Device-specific specializations */
 #include <SparseLinearSystem_Cuda.hpp>
-#endif
+#include <SparseLinearSystem_Host.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
