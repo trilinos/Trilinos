@@ -132,9 +132,17 @@ typedef struct nc_file_state nc_file_state;
 map<int, nc_file_state *> file_state_map;
 
 
+#undef BUILD_FOR_QACINA
 
+#if defined(BUILD_FOR_QACINA)
 #define MANIPULATE_ARGS(netcdf_id) { netcdf_id--; }
-
+#undef USE_ASYNC_CLOSE
+#undef USE_ASYNC_SYNC
+#else
+#define MANIPULATE_ARGS(netcdf_id) { }
+#define USE_ASYNC_CLOSE 1
+#define USE_ASYNC_SYNC  1
+#endif
 
 
 /* ************************ Private functions ******************* */
@@ -353,8 +361,10 @@ int netcdf_client_init(void)
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
+#if defined(BUILD_FOR_QACINA)
     /* if we exit normally, we should cleanup after ourselves */
     atexit(netcdf_client_fini);
+#endif
 
     log_level_str=getenv("NSSI_LOG_LEVEL");
     logfile_base=getenv("NSSI_LOG_FILE");
@@ -699,7 +709,9 @@ int nc_create(
 
     rc = _nc_create(path, cmode, initialsz, &chunksizehint, ncidp);
 
+#if defined(BUILD_FOR_QACINA)
     (*ncidp)++;
+#endif
 
     return(rc);
 }
@@ -857,7 +869,9 @@ int nc_open(
 
     rc = _nc_open(path, mode, &chunksizehint, ncidp);
 
+#if defined(BUILD_FOR_QACINA)
     (*ncidp)++;
+#endif
 
     return(rc);
 }
