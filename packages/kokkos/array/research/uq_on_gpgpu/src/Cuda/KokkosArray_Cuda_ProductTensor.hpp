@@ -616,7 +616,7 @@ public:
     const size_type shmem = 
       sizeof(VectorScalar) * ((2*block_size+1) * tensor_align + dBlock.x*dBlock.y);
 
-#if 1
+#if 0
 
     std::cout << "Multiply< BlockCrsMatrix< CrsProductTensor ... > >::apply"
               << std::endl 

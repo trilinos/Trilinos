@@ -65,7 +65,7 @@
 #define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_VARIABLE_BLOCK_A_X  5  /* verified */
 #define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT_TEXTURE_A_X         6
 
-#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  5
+#define MULTIPLY_CRS_PRODUCT_TENSOR_LEGENDRE_VARIANT  2
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -362,7 +362,7 @@ public:
       sizeof(VectorScalar) * ((2*m_block_size+1) * tensor_dim_align + dBlock.x*dBlock.y);
       //sizeof(unsigned int) * ( 2 * tensor_dim_align + 1 );
 
-#if 1
+#if 0
 
     std::cout << "Multiply< BlockCrsMatrix< CrsProductTensorLegendre ... > >"
               << std::endl 
