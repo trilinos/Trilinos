@@ -49,6 +49,7 @@
 
 #include <impl/KokkosArray_ViewOperLeft.hpp>
 #include <impl/KokkosArray_ViewOperRight.hpp>
+#include <impl/KokkosArray_ViewOperTileLeft.hpp>
 
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
@@ -71,7 +72,7 @@ struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType > >
       Impl::ShapeMap<shape_type>::allocation_count( view.shape() );
 
     Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
-                                           
+
   }
 };
 

@@ -2,9 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                             KokkosArray
-//         Manycore Performance-Portable Multidimensional Arrays
-//
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,48 +35,44 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_LAYOUT_HPP
-#define KOKKOSARRAY_LAYOUT_HPP
+#ifndef KOKKOSARRAY_SHAPETILELEFT_HPP
+#define KOKKOSARRAY_SHAPETILELEFT_HPP
 
-#include <impl/KokkosArray_ArrayTraits.hpp>
+#include <impl/KokkosArray_Shape.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
-/** \brief  Left-to-right striding of multi-indices (Fortran scheme). */
-struct LayoutLeft { typedef LayoutLeft array_layout ; };
+template < unsigned ValueSize , unsigned M, unsigned N, unsigned s0 , unsigned s1 >
+struct ShapeMap< Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> >
+{
+  typedef Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> shape_type ;
 
-/** \brief  Right-to-left striding of multi-indices
- *         (C or lexigraphical scheme).
- */
-struct LayoutRight { typedef LayoutRight array_layout ; };
+  static inline
+  size_t allocation_count( const shape_type & shape ) { return M*N*((shape.N0+M-1)/M)*((shape.N1+N-1)/N); }
 
+  static inline
+  size_t offset( const shape_type & shape , const size_t i0, const size_t i1 )
+  { assert_shape_bounds( shape, i0, i1 ); return shape.offset(i0,i1)  ; }
 
-/** \brief  Left-to-right striding of multi-indices (Fortran scheme) by tiles.
- */
-template < unsigned M , unsigned N,
-           bool IsPowerOfTwo = (Impl::is_power_of_2<M>::value && Impl::is_power_of_2<N>::value)
-         >
-struct LayoutTileLeft { typedef LayoutTileLeft<M,N,IsPowerOfTwo> array_layout ; };
+  template< class MemorySpace >
+  static inline
+  size_t stride( const shape_type & ) { return 1 ; }
+};
 
-#if 0
-template < typename Outer, typename Inner >
-struct LayoutTile;
+//----------------------------------------------------------------------------
 
-
-struct Left {};
-struct Right {};
-
-template < typename Outer, typename Inner, unsigned M, unsigned N >
-struct LayoutTile< Outer, Inner[M][N] >;
-#endif
-
+} /* namespace Impl */
 } /* namespace KokkosArray */
 
-#endif /* #ifndef KOKKOSARRAY_LAYOUT_HPP */
+#endif /* #ifndef KOKKOSARRAY_SHAPETILELEFT_HPP */
 
