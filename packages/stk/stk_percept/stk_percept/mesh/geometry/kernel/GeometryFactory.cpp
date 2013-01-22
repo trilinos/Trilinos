@@ -31,9 +31,11 @@ bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_d
     for (size_t i=0; i<geometry_entities.size(); i++)
     {
         std::string str = geomKernel->get_attribute(geometry_entities[i]);
-        Part* part = mesh_data->get_non_const_part(str);
+        bool partial_string_match_ok = true;
+        Part* part = mesh_data->get_non_const_part(str, partial_string_match_ok);
 #if DEBUG_GEOM_SNAP
-        std::cout << "tmp geom part = " << str << " lookup= " << part << std::endl;
+        std::cout << "tmp geom 3dm attribute = " << str << " part= " << part 
+                  << " part name= " << (part?part->name():"null") << std::endl;
 #endif
         if (part)
         {

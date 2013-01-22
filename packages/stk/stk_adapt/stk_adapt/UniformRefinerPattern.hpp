@@ -929,6 +929,7 @@ namespace stk {
             EN[ind] = VERT_N(ind);
           }
 
+        //std::cout << "ToTopology::vertex_count = " << ToTopology::vertex_count << std::endl;
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
             if (needed_entities[i_need].first == m_eMesh.edge_rank())
@@ -2466,7 +2467,7 @@ namespace stk {
         EXCEPTWATCH;
 
         // a part to hold new nodes
-        if (1)  // FIXME - this is causing an exception in parallel runs, why?
+        if (1)
           {
             stk::mesh::Part* new_nodes_part = eMesh.get_non_const_part("refine_new_nodes_part");
             if (!new_nodes_part)
@@ -2628,7 +2629,7 @@ namespace stk {
                         unsigned my_cellTopoKey = getFromTypeKey();
                         doThisPart = doThisPart && (topo.getKey() == my_cellTopoKey);
 
-                        if (DEBUG_SET_NEEDED_PARTS)
+                        if (DEBUG_SET_NEEDED_PARTS && doThisPart)
                           std::cout << "tmp setNeededParts:: "
                                     << "\n   part name= " << part->name()
                                     << "\n   doThisPart= " << doThisPart

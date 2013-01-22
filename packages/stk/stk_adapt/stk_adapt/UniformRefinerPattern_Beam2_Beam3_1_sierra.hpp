@@ -40,7 +40,8 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;
+        //needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;
+        needed_entities[0].first = m_eMesh.edge_rank();
         setToOne(needed_entities);
       }
 
@@ -75,7 +76,8 @@ namespace stk {
               EN[ind] = inode;
             }
 
-          EN[2] = CENTROID_N;
+          //EN[2] = CENTROID_N;
+          EN[2] = NN(1,0);
         }
 
 #undef CENTROID_N

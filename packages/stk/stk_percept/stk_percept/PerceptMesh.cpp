@@ -1260,25 +1260,19 @@ namespace stk {
     }
 
     stk::mesh::Part* PerceptMesh::
-    get_non_const_part(const std::string& part_name)
+    get_non_const_part(const std::string& part_name, bool partial_string_match_ok)
     {
-      const stk::mesh::Part* part = getPart(part_name);
+      const stk::mesh::Part* part = getPart(part_name, partial_string_match_ok);
       return const_cast<mesh::Part *>(part);
     }
 
     const stk::mesh::Part* PerceptMesh::
-    getPart(const std::string& part_name)
+    getPart(const std::string& part_name, bool partial_string_match_ok)
     {
-#if 1
-      const stk::mesh::Part* part = get_fem_meta_data()->get_part(part_name);
-      return part;
-#else
-      EXCEPTWATCH;
-      checkStateSpec("getPart", m_isInitialized, m_isOpen);
-      const stk::mesh::Part* arg_part = 0;
-      if (part_name == "universal_part")
+      const stk::mesh::Part* found_part =0;
+      if (!partial_string_match_ok)
         {
-          arg_part = &m_metaData->universal_part();
+          found_part = get_fem_meta_data()->get_part(part_name);
         }
       else
         {
@@ -1288,20 +1282,22 @@ namespace stk {
           for (unsigned ipart=0; ipart < nparts; ipart++)
             {
               stk::mesh::Part& part = *parts[ipart];
-              if (part.name() == part_name)
+              size_t found = part.name().find(part_name);
+              if (found != std::string::npos)
                 {
-                  arg_part = &part;
+                  found_part = &part;
+                  break;
                 }
             }
         }
-      if (!arg_part)
+      const bool error_check = false;
+      if (error_check && !found_part)
         {
           std::ostringstream msg;
           msg << "stk::percept::Mesh::getPart() couldn't find part with name = " << part_name;
           throw std::runtime_error(msg.str());
         }
-      return arg_part;
-#endif
+      return found_part;
     }
 
     stk::mesh::FieldBase* PerceptMesh::createField(const std::string& name, const unsigned entity_rank,

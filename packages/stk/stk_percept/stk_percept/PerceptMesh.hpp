@@ -218,8 +218,10 @@ namespace stk {
       /// get the low-level meta data pointer from stk_mesh
       stk::mesh::MetaData * get_fem_meta_data();
 
-      /// get a pointer to a stk_mesh Part with the given name
-      mesh::Part* get_part(const std::string& part_name) { return get_non_const_part(part_name); }
+      /// get a pointer to a stk_mesh Part with the given name - if @param partial_string_match_ok, allow a 
+      ///   partial match of the part_name with any part found, in the sense that @param part_name can
+      ///   be a substring of the actual part name.
+      mesh::Part* get_part(const std::string& part_name, bool partial_string_match_ok=false) { return get_non_const_part(part_name, partial_string_match_ok); }
 
       // entity data setter/getters
       /// get the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
@@ -457,7 +459,7 @@ namespace stk {
                                   bool print=true, bool print_all_field_diffs=false);
 
 
-      mesh::Part* get_non_const_part(const std::string& part_name);
+      mesh::Part* get_non_const_part(const std::string& part_name, bool partial_string_match_ok=false);
 
       /// opens an empty mesh, with a commit
       void
@@ -472,7 +474,7 @@ namespace stk {
       void destroy();       // FIXME - make private
 
       const mesh::Part*
-      getPart(const std::string& part_name) ;
+      getPart(const std::string& part_name, bool partial_string_match_ok=false) ;
 
       void print_entity(std::ostream& out, const stk::mesh::Entity entity, stk::mesh::FieldBase* field=0);
 

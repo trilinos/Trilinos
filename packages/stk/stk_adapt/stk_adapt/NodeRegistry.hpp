@@ -749,14 +749,19 @@ namespace stk {
         bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
 
         // if empty or if my id is the smallest, make this element the owner
-        bool should_put_in =
-          (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
-          || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
+        bool should_put_in_id = (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
+        bool should_put_in_rank = (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
+        bool should_put_in = should_put_in_id || should_put_in_rank;
 
 #define DEBUG_NR_UNREF 0
-        if (DEBUG_NR_UNREF)
+        if (DEBUG_NR_UNREF) // && (subDimEntity[0].identifier() == 19 && subDimEntity[1].identifier() == 20))
           {
-            std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= "
+            std::cout << "registerNeedNewNode:: element= "; m_eMesh.print(element,false,true);
+            std::cout << " is_empty= " << is_empty 
+                      << " should_put_in= " << should_put_in 
+                      << " should_put_in_id= " << should_put_in_id 
+                      << " should_put_in_rank= " << should_put_in_rank 
+                      << " needed_entity_rank= "
                       << needed_entity_rank.first << " subDimEntity= ";
 
             for (unsigned k=0; k < subDimEntity.size(); k++)

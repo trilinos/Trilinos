@@ -19,6 +19,10 @@ MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, double 
   mDbgNodeCoords[1] = 1.48796;
   mDbgNodeCoords[2] = 19.3677;
 
+  mDbgNodeCoords[0] = 10.5;
+  mDbgNodeCoords[1] = -1.5;
+  mDbgNodeCoords[2] = 1.5;
+
 }
 
 MeshGeometry::~MeshGeometry()
@@ -392,7 +396,7 @@ void MeshGeometry::snap_node
 
     if ( is_dbg_node( coord ) )
     {
-      std::cout << "Node in question being projected" << std::endl;
+      std::cout << "tmp geom snap_points_to_geometry Node in question being projected" << std::endl;
       doPrint=true;
     }
 

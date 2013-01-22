@@ -8,12 +8,12 @@
 #include <Shards_CellTopologyData.h>
 
 
-#define FACE_BREAKER_HETERO_ENRICH_3D 1
-
-#if FACE_BREAKER_HETERO_ENRICH_3D
-#include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
-#include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
-#endif
+#include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
+#include "UniformRefinerPattern_Tri3_Tri6_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellLine2_ShellLine3_1_sierra.hpp"
+#include "UniformRefinerPattern_Beam2_Beam3_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad4_ShellQuad9_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellTri3_ShellTri6_1_sierra.hpp"
 
 namespace stk {
   namespace adapt {
@@ -23,9 +23,6 @@ namespace stk {
 
       std::vector<UniformRefinerPatternBase *> m_bp;
 
-#if FACE_BREAKER_HETERO_ENRICH_3D
-      UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > * m_face_breaker;
-#endif
 
     protected:
 
@@ -33,7 +30,7 @@ namespace stk {
 
     public:
 
-      URP_Heterogeneous_Enrich_3D(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  m_eMesh(eMesh) 
+      URP_Heterogeneous_Enrich_3D(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  m_eMesh(eMesh)
       {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
@@ -53,28 +50,21 @@ namespace stk {
             throw std::runtime_error("URP_Heterogeneous_Enrich_3D is only for 3D meshes");
           }
 
-//         // refine
-//         m_bp.push_back(  new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names) );
-//         m_bp.push_back(  new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names) );
-//         m_bp.push_back(  new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names) );
-
 
         // enrich
-        m_bp.push_back ( new UniformRefinerPattern< shards::Wedge<6>,        shards::Wedge<15>, 1, SierraPort >          (eMesh, block_names) );
-        m_bp.push_back ( new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >   (eMesh, block_names) );
-        m_bp.push_back ( new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >   (eMesh, block_names) );
-        m_bp.push_back ( new UniformRefinerPattern< shards::Pyramid<5>,      shards::Pyramid<13>, 1, SierraPort >        (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern<shards::Wedge<6>,        shards::Wedge<15>, 1, SierraPort >          (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern<shards::Tetrahedron<4>,  shards::Tetrahedron<10>,  1, SierraPort >   (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern<shards::Hexahedron<8>,   shards::Hexahedron<27>,   1, SierraPort >   (eMesh, block_names) );
+        m_bp.push_back ( new UniformRefinerPattern<shards::Pyramid<5>,      shards::Pyramid<13>, 1, SierraPort >        (eMesh, block_names) );
 
-        //m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<9>,   1, SierraPort > (eMesh, block_names) );
-        //m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<9>,   1, SierraPort > (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<6>,   1, SierraPort >      (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Beam<2>,       shards::Beam<3>,   1, SierraPort >      (eMesh, block_names) );
 
+        m_bp.push_back(  new UniformRefinerPattern<shards::Quadrilateral<4>,       shards::Quadrilateral<9>, 1, SierraPort >        (eMesh, block_names) );
+        m_bp.push_back(  new UniformRefinerPattern<shards::Triangle<3>,            shards::Triangle<6>, 1, SierraPort >             (eMesh, block_names) );
 
-#if FACE_BREAKER_HETERO_ENRICH_3D
-        
-        m_bp.push_back(  new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) );
-        m_bp.push_back(  new UniformRefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 4, SierraPort > (eMesh, block_names) );
-
-#endif
+        m_bp.push_back(  new UniformRefinerPattern<shards::ShellLine<2>,       shards::ShellLine<3>,   1, SierraPort >      (eMesh, block_names) );
 
       }
 
@@ -94,16 +84,16 @@ namespace stk {
 
       }
 
-      virtual std::string getFromTopoPartName() { 
+      virtual std::string getFromTopoPartName() {
         shards::CellTopology cell_topo(getFromTopology());
         return cell_topo.getName();
       }
-      virtual std::string getToTopoPartName() { 
+      virtual std::string getToTopoPartName() {
         shards::CellTopology cell_topo(getToTopology());
         return cell_topo.getName();
       }
 
-      virtual void doBreak() 
+      virtual void doBreak()
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_Enrich_3D::doBreak()");
 
@@ -129,19 +119,19 @@ namespace stk {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_Enrich_3D::fillNeededEntities()");
       }
 
-      virtual unsigned getNumNewElemPerElem() 
-      { 
+      virtual unsigned getNumNewElemPerElem()
+      {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_Enrich_3D::getNumNewElemPerElem()");
-        return 8; 
+        return 8;
       }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_Enrich_3D::createNewElements()");
-      }      
+      }
     };
 
   }

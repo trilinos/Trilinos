@@ -442,9 +442,30 @@ namespace stk {
             {
               stk::mesh::EntityRank irank = m_breakPattern[ibp]->getPrimaryEntityRank();
               stk::mesh::EntityRank irank_prev = stk::percept::EntityRankEnd;
+
+              if (0)
+                std::cout << "tmp srk a1 ibp= " << ibp << " irank= " << irank << " irank_prev= " << irank_prev
+                          << " fromTopo= " << m_breakPattern[ibp]->getFromTopology()->name
+                          << " toTopo= " << m_breakPattern[ibp]->getToTopology()->name
+                          << std::endl;
+
+
               if (ibp > 0) irank_prev = m_breakPattern[ibp-1]->getPrimaryEntityRank();
               if (irank > irank_prev)
                 {
+                  for (unsigned jbp = 0; jbp < m_breakPattern.size(); jbp++)
+                    {
+                      if (m_breakPattern[jbp])
+                        {
+                          stk::mesh::EntityRank jrank = m_breakPattern[jbp]->getPrimaryEntityRank();
+                          std::cout << "tmp jbp= " << jbp << " jrank= " << jrank
+                                    << " fromTopo= " << m_breakPattern[jbp]->getFromTopology()->name
+                                    << " toTopo= " << m_breakPattern[jbp]->getToTopology()->name
+                                    << std::endl;
+                        }
+                    }
+
+                  std::cout << "tmp irank= " << irank << " irank_prev= " << irank_prev << std::endl;
                   throw std::logic_error("m_breakPattern: must be in decreasing order of rank");
                 }
               ranks.push_back(irank);
@@ -561,6 +582,7 @@ namespace stk {
               EXCEPTWATCH;
               unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
               shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
+              //std::cout << "a1 toposrk cell_topo= " << cell_topo.getName() << std::endl;
 
               mesh::Selector selector(m_eMesh.get_fem_meta_data()->locally_owned_part());
               if (fromPartsAll.size())
@@ -637,7 +659,7 @@ namespace stk {
                                            << " elementType= " << elementType
                                            << " cell_topo= " << cell_topo.getName()
                                            << std::endl;
-          
+
           elementRankTypeInfo[irank] = ElementRankTypeInfo(ranks[irank], elementType);
         }
 
@@ -693,13 +715,13 @@ namespace stk {
                 bool doAllElements = true;
 
                 unsigned num_elem_not_ghost_0_incr = doForAllElements(irank, "Register New Nodes",
-                                                                      ranks[irank], &NodeRegistry::registerNeedNewNode, 
+                                                                      ranks[irank], &NodeRegistry::registerNeedNewNode,
                                                                       elementType, needed_entity_ranks,
                                                                       count_only, doAllElements);
 
                 num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
 
-                if (0) std::cout << "tmp irank= " << irank << " ranks[irank]= " << ranks[irank] << " nodeRegistry size= " << m_nodeRegistry->getMap().size() << std::endl;
+                if (0) std::cout << "tmp srk1 irank= " << irank << " ranks[irank]= " << ranks[irank] << " nodeRegistry size= " << m_nodeRegistry->getMap().size() << std::endl;
 
               }
             }
@@ -1227,6 +1249,7 @@ namespace stk {
 #endif
 #endif
 
+
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
     void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile)
     {
@@ -1292,7 +1315,7 @@ namespace stk {
               smoothGeometry(mesh_geometry,option);
               //mesh_geometry.snap_points_to_geometry(&m_eMesh);
             }
-              
+
         }
         break;
       }
@@ -1365,6 +1388,7 @@ namespace stk {
       std::vector<stk::mesh::Entity> elems;
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
+      //std::cout << "tmp srk1 rank= " << rank << " buckets.size= " << buckets.size() << std::endl;
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           stk::mesh::Bucket & bucket = **k ;
@@ -1375,6 +1399,10 @@ namespace stk {
               if (topo.getKey() == elementType)
                 {
                   unsigned num_elements_in_bucket = bucket.size();
+                  if (0 && function_info == "Register New Nodes")
+                    std::cout << "tmp srk toposrk1= " << topo.getName() << " rank= " << rank << " num_elements_in_bucket= " << num_elements_in_bucket
+                              << " function_info= " << function_info
+                              << std::endl;
                   //jele += num_elements_in_bucket;
                   for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                     {
@@ -2646,8 +2674,8 @@ namespace stk {
           for (SetOfEntities::iterator ise=side_set.begin(); ise != side_set.end(); ++ise)
             {
               stk::mesh::Entity side = *ise;
-              
-              while (true) 
+
+              while (true)
                 {
                   mesh::PairIterRelation rels = side.relations(element_rank);
                   if (!rels.size())
@@ -2677,7 +2705,7 @@ namespace stk {
                   // std::cout << "found geom parts" << std::endl;
                   continue;
                 }
-              
+
               const unsigned num_elements_in_side_bucket = side_bucket.size();
               for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
                 {
@@ -2766,8 +2794,8 @@ namespace stk {
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
       if (debug) {
-        std::cout << "tmp srk connectSidesForced element= "; m_eMesh.print(element, true, true); 
-        std::cout << " side= "; m_eMesh.print(side_elem, true, true); 
+        std::cout << "tmp srk connectSidesForced element= "; m_eMesh.print(element, true, true);
+        std::cout << " side= "; m_eMesh.print(side_elem, true, true);
       }
 
       // check validity of connection
@@ -2878,9 +2906,9 @@ namespace stk {
                 }
 
               if (elem_sides[iside].relation_ordinal() == k_element_side ) {
-                std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true); 
-                std::cout << " side= " << side_elem.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, side_elem.bucket()); m_eMesh.print(side_elem, true, true); 
-                std::cout << " existing_side= " << existing_side.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, existing_side.bucket()); m_eMesh.print(existing_side, true, true); 
+                std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true);
+                std::cout << " side= " << side_elem.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, side_elem.bucket()); m_eMesh.print(side_elem, true, true);
+                std::cout << " existing_side= " << existing_side.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, existing_side.bucket()); m_eMesh.print(existing_side, true, true);
                 VERIFY_OP_ON(elem_sides[iside].relation_ordinal(), !=, k_element_side, "Relation already exists!");
               }
 
