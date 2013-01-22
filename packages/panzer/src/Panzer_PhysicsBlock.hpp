@@ -253,15 +253,7 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    // Loop over integration rules
-    for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
-	 ir_iter != m_integration_rules.end(); ++ ir_iter) {
-      
-      Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-      
-      eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, user_data);
-    }
-
+    eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
   }
 }
 

@@ -92,8 +92,7 @@ namespace panzer {
 							      const Teuchos::ParameterList& user_data) const = 0;
     
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const panzer::FieldLayoutLibrary& field_library,
-						       const Teuchos::RCP<panzer::IntegrationRule>& ir,
+						       const panzer::FieldLibrary& field_library,
 						       const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,

@@ -49,21 +49,23 @@
 
 
 // ***********************************************************************
-// Nonmember ctor
+// Nonmember ctors
+
 Teuchos::RCP<panzer::BasisIRLayout> 
-basisIRLayout(std::string basis_type, const int basis_order, const PointRule& pt_rule)
+panzer::basisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& pt_rule)
 {
   return Teuchos::rcp(new panzer::BasisIRLayout(basis_type,basis_order,pt_rule),true);
 }
 
 Teuchos::RCP<panzer::BasisIRLayout> 
-basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule)
+panzer::basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule)
 {
   return Teuchos::rcp(new panzer::BasisIRLayout(b,pt_rule),true);
 }
 
 
 // ***********************************************************************
+// Class implementation
 
 panzer::BasisIRLayout::
 BasisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& point_rule)

@@ -252,15 +252,11 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
 
-      // Loop over integration rules
-      for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
-	   ir_iter != m_integration_rules.end(); ++ ir_iter) {
-	
-	Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-	
-
-	eval_type->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, user_data);
-      }
+      // Do not loop over integration rules.  Only call this for the
+      // ir that the residual is integrated over.  Otherwise the
+      // residual gets contributions from multiple integrations of the
+      // same cell!  This ir is only known by equaiton set.
+      eval_type->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
     }
   }
 }
