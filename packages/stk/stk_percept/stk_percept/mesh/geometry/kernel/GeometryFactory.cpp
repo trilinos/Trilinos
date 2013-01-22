@@ -23,6 +23,44 @@ GeometryFactory::~GeometryFactory()
 #endif
 }
 
+static stk::mesh::Part* 
+getPart(PerceptMesh *eMesh, const std::string& part_name, bool partial_string_match_ok)
+{
+  stk::mesh::Part* found_part =0;
+  if (!partial_string_match_ok)
+    {
+      found_part = eMesh->get_fem_meta_data()->get_part(part_name);
+    }
+  else
+    {
+      const stk::mesh::PartVector & parts = eMesh->get_fem_meta_data()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *parts[ipart];
+          size_t found = part.name().find(part_name);
+          if (found != std::string::npos)
+            {
+              // skip "old" parts
+              if (part.name().find(PerceptMesh::s_omit_part) == std::string::npos)
+                {
+                  found_part = &part;
+                  break;
+                }
+            }
+        }
+    }
+  const bool error_check = true;
+  if (error_check && !found_part)
+    {
+      std::ostringstream msg;
+      msg << "stk::percept::Mesh::getPart() couldn't find part with name = " << part_name;
+      throw std::runtime_error(msg.str());
+    }
+  return found_part;
+}
+
 bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_data)
 {
     std::vector<GeometryHandle> geometry_entities;
@@ -32,7 +70,8 @@ bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_d
     {
         std::string str = geomKernel->get_attribute(geometry_entities[i]);
         bool partial_string_match_ok = true;
-        Part* part = mesh_data->get_non_const_part(str, partial_string_match_ok);
+        //Part* part = mesh_data->get_non_const_part(str, partial_string_match_ok);
+        Part* part = getPart(mesh_data, str, partial_string_match_ok);
 #if DEBUG_GEOM_SNAP
         std::cout << "tmp geom 3dm attribute = " << str << " part= " << part 
                   << " part name= " << (part?part->name():"null") << std::endl;
