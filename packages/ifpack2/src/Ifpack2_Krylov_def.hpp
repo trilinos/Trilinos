@@ -40,8 +40,8 @@ namespace Ifpack2 {
 
 //Definitions for the Krylov methods:
 //==============================================================================
-template <class MatrixType>
-Krylov<MatrixType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
+template <class MatrixType, class PrecType>
+Krylov<MatrixType,PrecType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
   A_(A),
   Comm_(A->getRowMap()->getComm()),
   // Default values
@@ -70,13 +70,13 @@ Krylov<MatrixType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_typ
 }
 
 //==========================================================================
-template <class MatrixType>
-Krylov<MatrixType>::~Krylov() {
+template <class MatrixType, class PrecType>
+Krylov<MatrixType,PrecType>::~Krylov() {
 }
 
 //==========================================================================
-template <class MatrixType>
-void Krylov<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
+template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
@@ -91,81 +91,81 @@ void Krylov<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
 }
 
 //==========================================================================
-template <class MatrixType>
+template <class MatrixType, class PrecType>
 const Teuchos::RCP<const Teuchos::Comm<int> > &
-Krylov<MatrixType>::getComm() const{
+Krylov<MatrixType,PrecType>::getComm() const{
   return(Comm_);
 }
 
 //==========================================================================
-template <class MatrixType>
+template <class MatrixType, class PrecType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Krylov<MatrixType>::getMatrix() const {
+Krylov<MatrixType,PrecType>::getMatrix() const {
   return(A_);
 }
 
 //==========================================================================
-template <class MatrixType>
+template <class MatrixType, class PrecType>
 const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType>::getDomainMap() const
+Krylov<MatrixType,PrecType>::getDomainMap() const
 {
   return A_->getDomainMap();
 }
 
 //==========================================================================
-template <class MatrixType>
+template <class MatrixType, class PrecType>
 const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType>::getRangeMap() const
+Krylov<MatrixType,PrecType>::getRangeMap() const
 {
   return A_->getRangeMap();
 }
 
 //==============================================================================
-template <class MatrixType>
-bool Krylov<MatrixType>::hasTransposeApply() const {
+template <class MatrixType, class PrecType>
+bool Krylov<MatrixType,PrecType>::hasTransposeApply() const {
   return true;
 }
 
 //==========================================================================
-template <class MatrixType>
-int Krylov<MatrixType>::getNumInitialize() const {
+template <class MatrixType, class PrecType>
+int Krylov<MatrixType,PrecType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
 //==========================================================================
-template <class MatrixType>
-int Krylov<MatrixType>::getNumCompute() const {
+template <class MatrixType, class PrecType>
+int Krylov<MatrixType,PrecType>::getNumCompute() const {
   return(NumCompute_);
 }
 
 //==========================================================================
-template <class MatrixType>
-int Krylov<MatrixType>::getNumApply() const {
+template <class MatrixType, class PrecType>
+int Krylov<MatrixType,PrecType>::getNumApply() const {
   return(NumApply_);
 }
 
 //==========================================================================
-template <class MatrixType>
-double Krylov<MatrixType>::getInitializeTime() const {
+template <class MatrixType, class PrecType>
+double Krylov<MatrixType,PrecType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
 //==========================================================================
-template<class MatrixType>
-double Krylov<MatrixType>::getComputeTime() const {
+template <class MatrixType, class PrecType>
+double Krylov<MatrixType,PrecType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
 //==========================================================================
-template<class MatrixType>
-double Krylov<MatrixType>::getApplyTime() const {
+template <class MatrixType, class PrecType>
+double Krylov<MatrixType,PrecType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
 //=============================================================================
-template<class MatrixType>
-typename Krylov<MatrixType>::magnitude_type
-Krylov<MatrixType>::
+template <class MatrixType, class PrecType>
+typename Krylov<MatrixType,PrecType>::magnitude_type
+Krylov<MatrixType,PrecType>::
 computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
@@ -181,8 +181,8 @@ computeCondEst (CondestType CT,
 }
 
 //==========================================================================
-template<class MatrixType>
-void Krylov<MatrixType>::initialize() {
+template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::initialize() {
   // clear any previous allocation
   IsInitialized_ = false;
   IsComputed_ = false;
@@ -196,6 +196,9 @@ void Krylov<MatrixType>::initialize() {
   belosList_->set("Convergence Tolerance",ResidualTolerance_);
   //belosList_->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
   // nothing else to do here
+  ifpack2_prec_=Teuchos::rcp( new PrecType(A_) );
+  ifpack2_prec_->initialize();
+  ifpack2_prec_->setParameters(params_);
   IsInitialized_ = true;
   ++NumInitialize_;
   Time_.stop();
@@ -203,8 +206,8 @@ void Krylov<MatrixType>::initialize() {
 }
 
 //==========================================================================
-template<class MatrixType>
-void Krylov<MatrixType>::compute() {
+template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::compute() {
   using Teuchos::as;
   //--------------------------------------------------------------------------
   // Ifpack2::Krylov
@@ -214,18 +217,6 @@ void Krylov<MatrixType>::compute() {
     initialize();
   }
   Time_.start(true);
-  // Preconditioner choice
-  if(PreconditionerType_==2) {
-    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::ILUT<MatrixType> (A_) );
-  }
-  else if(PreconditionerType_==3) {
-    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Chebyshev<MatrixType> (A_) );
-  }
-  else {
-    ifpack2_prec_ = Teuchos::rcp( new Ifpack2::Relaxation<MatrixType> (A_) );
-  }
-  ifpack2_prec_->initialize();
-  ifpack2_prec_->setParameters(params_);
   ifpack2_prec_->compute();
   IsComputed_ = true;
   ++NumCompute_;
@@ -234,8 +225,8 @@ void Krylov<MatrixType>::compute() {
 }
 
 //==========================================================================
-template <class MatrixType>
-void Krylov<MatrixType>::apply(const Tpetra::MultiVector<typename MatrixType::scalar_type,
+template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename MatrixType::scalar_type,
 			      typename MatrixType::local_ordinal_type,
 			      typename MatrixType::global_ordinal_type,
 			      typename MatrixType::node_type>& X,
@@ -294,8 +285,8 @@ void Krylov<MatrixType>::apply(const Tpetra::MultiVector<typename MatrixType::sc
 }
 
 //=============================================================================
-template <class MatrixType>
-std::string Krylov<MatrixType>::description() const {
+template <class MatrixType, class PrecType>
+std::string Krylov<MatrixType,PrecType>::description() const {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
   if (isInitialized()) {
@@ -316,8 +307,8 @@ std::string Krylov<MatrixType>::description() const {
 }
 
 //=============================================================================
-template <class MatrixType>
-void Krylov<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;

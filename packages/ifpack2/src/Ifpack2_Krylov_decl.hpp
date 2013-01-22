@@ -84,7 +84,7 @@ namespace Ifpack2 {
     
     For all valid parameters, see the method Krylov::setParameters.
   */
-  template<class MatrixType>
+  template<class MatrixType,class PrecType>
   class Krylov: virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
     
   public:
@@ -256,10 +256,10 @@ namespace Ifpack2 {
     // @{ Internal methods
     
     //! Copy constructor (should never be used)
-    Krylov(const Krylov<MatrixType>& RHS);
+    Krylov(const Krylov<MatrixType,PrecType>& RHS);
     
     //! operator= (should never be used)
-    Krylov<MatrixType>& operator=(const Krylov<MatrixType>& RHS);
+    Krylov<MatrixType,PrecType>& operator=(const Krylov<MatrixType,PrecType>& RHS);
     
     //@}
     
@@ -324,7 +324,7 @@ namespace Ifpack2 {
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
     Teuchos::RCP<Teuchos::ParameterList> belosList_;
-    Teuchos::RCP< Ifpack2::Preconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > ifpack2_prec_;
+    Teuchos::RCP<PrecType> ifpack2_prec_;
 
   //@}
 
