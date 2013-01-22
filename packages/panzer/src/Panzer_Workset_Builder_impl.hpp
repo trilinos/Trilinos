@@ -310,6 +310,7 @@ panzer::buildWorksets(const std::string& block_id,
 // ****************************************************************
 // ****************************************************************
 
+/*
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::BC& bc,
@@ -320,6 +321,24 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 		       const panzer::InputPhysicsBlock& ipb,
 		       unsigned base_cell_dim)
 {
+*/
+template<typename ArrayT>
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+panzer::buildBCWorkset(const panzer::BC& bc,
+		       const panzer::PhysicsBlock & physBlk,
+		       const std::vector<std::size_t>& local_cell_ids,
+		       const std::vector<std::size_t>& local_side_ids,
+		       const ArrayT& vertex_coordinates)
+{
+
+
+
+  
+
+
+
+
+
   using std::vector;
   using std::string;
   using Teuchos::RCP;

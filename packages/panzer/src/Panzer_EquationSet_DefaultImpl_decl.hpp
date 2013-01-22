@@ -73,42 +73,43 @@ namespace panzer {
     
     virtual ~EquationSet_DefaultImpl() {}
     
-    //! Builds the integration rule, basis, DOFs, and default parameter list
-    virtual void setupDOFs(int equation_dimension);
-
-    virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-						       const Teuchos::ParameterList& user_data) const = 0;
-
     virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-								const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+								const panzer::FieldLibrary& fl,
 								const LinearObjFactory<panzer::Traits> & lof,
 								const Teuchos::ParameterList& user_data) const;
     
-    virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-							      const Teuchos::ParameterList& user_data) const;
-    
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+						   const panzer::FieldLibrary& fl,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const;
 
+    virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						       const panzer::FieldLayoutLibrary& fl,
+						       const Teuchos::RCP<panzer::IntegrationRule>& ir,
+						       const Teuchos::ParameterList& user_data) const = 0;
+
+    virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							      const panzer::FieldLayoutLibrary& fl,
+							      const Teuchos::RCP<panzer::IntegrationRule>& ir,
+							      const Teuchos::ParameterList& user_data) const;
+    
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							const panzer::FieldLayoutLibrary& fl,
+							const Teuchos::RCP<panzer::IntegrationRule>& ir,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							const panzer::FieldLayoutLibrary& fl,
+							const Teuchos::RCP<panzer::IntegrationRule>& ir,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
                                                         const std::string & model_name,
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							    const panzer::FieldLibrary& fl,
 							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							    const std::string& model_name,
 							    const Teuchos::ParameterList& models,
@@ -117,18 +118,13 @@ namespace panzer {
 
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
     
-    virtual const std::vector<std::string> & getDOFNames() const;
-    
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
+
+    virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const;
 
     void setElementBlockId(const std::string & blockId);
 
     std::string getElementBlockId() const;
-
-    virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const;
-
-    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary);
-    Teuchos::RCP<const FieldLayoutLibrary> getFieldLayoutLibrary() const;
 
     virtual std::string getType() const;
 
@@ -136,10 +132,13 @@ namespace panzer {
 
   protected:
 
+    //! Builds the integration rule, basis, DOFs, and default parameter list
+    virtual void setupDOFs();
+
     //! Returns true if transient support should be enabled in the equation set
     bool buildTransientSupport() const;
 
-    //! If the concrete equation set will be used multiple times in the same physics block, then a unique key must be supplied for the equation set.  The equation set implementer must call this during construction.  This defaults to the "type" otherwise. 
+    //! If the concrete equation set will be used multiple times in the same physics block, then a unique key must be set using this call from the user derived equation set constructor. If not called by the user, it defaults to the "type" and this equation set can only be instantiated once per physics block. 
     void setKey(const std::string& key);
 
     // The set of functions below are for use by derived classes to specify the 
@@ -153,68 +152,59 @@ namespace panzer {
       * \param[in] dofName Name of field to lookup in the unique global
       *                        indexer. This also serves as a key for the remaining
       *                        <code>addDOF*</code> methods.
-      * \param[in]  Name of field that is to be scattered associated with
-      *                         this DOF.
       * \param[in] basisType Name of the basis type for this DOF.
       * \param[in] basisOrder Polynomial order for the basis for this DOF.
+      * \param[in] integrationOrder Order of the integration rule associated with this
+      *                             DOF.  If set to -1 (default), it will use the default
+      *                             integration order.
+      * \param[in] residualName Name of field that is to be scattered associated with
+      *                         this DOF.  If not supplied or an empty string used, the
+      *                         default is to add the prefix "RESIDUAL_" to the dofName for
+      *                         the residual field name.
+      * \param[in] scatterName Name of the required scatter field associated with
+      *                        this DOF.  If not supplied or an empty string used,
+      *                        the default is to add the prefix "SCATTER_"
+      *                        to the dofName for the scatter field name.
       */
-    void addProvidedDOF(const std::string & dofName,
-			const std::string & basisType,
-			const int & basisOrder,
-                        const std::string & residualName);
-
-    /** Alert the panzer library of a DOF provided by this equation set.
-      * This version of the method does not sets up the scatter routines
-      * because there is no specified residual name.
-      *
-      * \param[in] dofName Name of field to lookup in the unique global
-      *                        indexer. This also serves as a key for the remaining
-      *                        <code>addDOF*</code> methods.
-      * \param[in] basisType Name of the basis type for this DOF.
-      * \param[in] basisOrder Polynomial order for the basis for this DOF.
-      */
-    void addProvidedDOF(const std::string & dofName,
-			const std::string & basisType,
-			const int & basisOrder);
-
-    /** Alert the panzer library of a DOF provided by this equation set.
-      * This version of the method does not sets up the scatter routines
-      * because there is no specified residual name.
-      *
-      * \param[in] dofName Name of field to lookup in the unique global
-      *                        indexer. This also serves as a key for the remaining
-      *                        <code>addDOF*</code> methods.
-      * \param[in] basis RCP to a basis object.
-      */
-    void addProvidedDOF(const std::string & dofName,
-			const Teuchos::RCP<panzer::PureBasis>& basis);
+    void addDOF(const std::string & dofName,
+		const std::string & basisType,
+		const int & basisOrder,
+		const int integrationOrder = -1,
+		const std::string residualName = "",
+		const std::string scatterName = "");
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
       * \param[in] dofName Name of field to lookup in the unique global indexer. 
       * \param[in] gradName Name of the gradient field associated with
-      *                         this DOF.
+      *                     this DOF.  If not supplied or an empty string used,
+      *                     the default is to add the prefix "GRAD_"
+      *                     to the dofName for the name of the gradient field.
       */
     void addDOFGrad(const std::string & dofName,
-                    const std::string & gradName);
+                    const std::string & gradName = "");
 
     /** Alert the panzer library that a curl of particular a DOF is needed.
       *
       * \param[in] dofName Name of field to lookup in the unique global indexer. 
       * \param[in] curlName Name of the curl field associated with
-      *                         this DOF.
+      *                     this DOF.  If not supplied or an empty string used,
+      *                     the default is to add the prefix "CURL_"
+      *                     to the dofName for the naem of the curl field.
       */
     void addDOFCurl(const std::string & dofName,
-                    const std::string & curlName);
+                    const std::string & curlName = "");
 
     /** Alert the panzer library that a time derivative of particular a DOF is needed.
       *
       * \param[in] dofName Name of field to lookup in the unique global indexer. 
       * \param[in] dotName Name of the time derivative field associated with
-      *                         this DOF.
+      *                    this DOF.  If not supplied or an empty string used,
+      *                    the default is to add the prefix "DXDT_"
+      *                    to the dofName for the name of the time derivative field.
       */
     void addDOFTimeDerivative(const std::string & dofName,
-                              const std::string & dotName);
+                              const std::string & dotName = "");
 
     struct DOFDescriptor {
       DOFDescriptor() 
@@ -228,7 +218,10 @@ namespace panzer {
       std::string basisType;
       int basisOrder;
       Teuchos::RCP<panzer::PureBasis> basis;
+      int integrationOrder;
+      Teuchos::RCP<panzer::IntegrationRule> intRule;
       std::pair<bool,std::string> residualName;
+      std::string scatterName;
       std::pair<bool,std::string> grad;
       std::pair<bool,std::string> curl;
       std::pair<bool,std::string> timeDerivative;
@@ -242,34 +235,49 @@ namespace panzer {
       }
     };
 
+    //! Maps the dof name into a DOFDescriptor
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
+
+    //! For convenience, declare the DOFDescriptor iterator
+    typedef typename std::map<std::string,DOFDescriptor>::const_iterator DescriptorIterator;
+
+
+    /** \brief Map that links a common basis to a vector of dof names.  Key is the unique basis name, the value is a pair that contains an RCP to a basis and an RCP to a vector of dof names that share the basis.
+
+        Some of our evaluators are vectorized to work on a block of
+        dofs as long as they share a common basis.  We can minimize
+        the evaluators built below by grouping dofs with a common
+        basis.  This struct is for grouping dofs with a common basis.
+    */
+    std::map<std::string,std::pair<Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<std::vector<std::string> > > > m_basis_to_dofs;
+
+    //! For convenience, declare a basis iterator
+    typedef typename std::map<std::string,std::pair<Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<std::vector<std::string> > > >::const_iterator BasisIterator;
     
 
     const Teuchos::RCP<Teuchos::ParameterList> m_input_params;
-    int m_integration_order;
+    int m_default_integration_order;
     const panzer::CellData m_cell_data;
     const bool m_build_transient_support;
     
-    std::string m_eqset_prefix;
-    
-    Teuchos::RCP<panzer::IntegrationRule> m_int_rule;
-    
+    //! Key is the dof name and the value is the corresponding basis
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
-    Teuchos::RCP< std::vector<std::string> > m_dof_names;
-    std::string m_scatter_name;
+
+    //! Key is the integration rule order and the value is the corresponding integration rule
+    std::map<int,Teuchos::RCP<panzer::IntegrationRule> > m_int_rules;
+
+    //! Key is the basis name from panzer::PureBasis::name() and value is the corresponding PureBasis
+    std::map<std::string,Teuchos::RCP<panzer::PureBasis> > m_unique_bases;
+
     Teuchos::RCP<Teuchos::ParameterList> m_eval_plist;
-    Teuchos::RCP<const FieldLayoutLibrary> m_field_layout_lib;
 
     std::string m_block_id;
     std::string m_type;
     std::string m_key;
     std::string m_model_id;
 
-    // Deprecated code support
+    // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the phsyics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
     void setupDeprecatedDOFsSupport();
-    Teuchos::RCP<panzer::PureBasis> m_pure_basis;
-    Teuchos::RCP<panzer::BasisIRLayout> m_basis;
-
 
   };
   

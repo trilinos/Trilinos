@@ -57,7 +57,16 @@
 namespace panzer {
 
   class PointRule;
-  class CellTopologyInfo;   
+  class CellTopologyInfo;
+  class BasisIRLayout;
+
+  //! Nonmember constructor
+  Teuchos::RCP<panzer::BasisIRLayout> 
+  basisIRLayout(std::string basis_type, const int basis_order, const PointRule& pt_rule);
+
+  //! Nonmember constructor
+  Teuchos::RCP<panzer::BasisIRLayout>
+  basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule);
 
   class BasisIRLayout { 
 

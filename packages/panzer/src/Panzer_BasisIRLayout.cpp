@@ -47,6 +47,24 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Panzer_CellTopologyInfo.hpp"
 
+
+// ***********************************************************************
+// Nonmember ctor
+Teuchos::RCP<panzer::BasisIRLayout> 
+basisIRLayout(std::string basis_type, const int basis_order, const PointRule& pt_rule)
+{
+  return Teuchos::rcp(new panzer::BasisIRLayout(basis_type,basis_order,pt_rule),true);
+}
+
+Teuchos::RCP<panzer::BasisIRLayout> 
+basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule)
+{
+  return Teuchos::rcp(new panzer::BasisIRLayout(b,pt_rule),true);
+}
+
+
+// ***********************************************************************
+
 panzer::BasisIRLayout::
 BasisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& point_rule)
 {

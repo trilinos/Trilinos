@@ -64,63 +64,79 @@ namespace panzer {
 
     virtual ~EquationSet() {}
 
-    virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-						       const Teuchos::ParameterList& user_data) const = 0;
+    /// \name Initialization (derived from panzer::EquationSetBase)
+    ///@{ 
+
+    virtual void setElementBlockId(const std::string & blockId) = 0;
+
+    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
+
+    ///@}
+
+    /// \name Evaluator Construction and Registration Methods (derived from panzer::EquationSetBase)
+    ///@{
 
     virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-								const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+								const panzer::FieldLibrary& field_library,
 								const LinearObjFactory<panzer::Traits> & lof,
 								const Teuchos::ParameterList& user_data) const = 0;
     
-    virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-							      const Teuchos::ParameterList& user_data) const = 0;
-    
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+						   const panzer::FieldLibrary& field_library,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const = 0;
 
-    //! Register closure model evaluators with the model name internally specified by the equation set
+    virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							      const panzer::FieldLayoutLibrary& field_library,
+							      const Teuchos::RCP<panzer::IntegrationRule>& ir,
+							      const Teuchos::ParameterList& user_data) const = 0;
+    
+    virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							      const panzer::FieldLayoutLibrary& field_library,
+						       const Teuchos::RCP<panzer::IntegrationRule>& ir,
+						       const Teuchos::ParameterList& user_data) const = 0;
+
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							      const panzer::FieldLayoutLibrary& field_library,
+							const Teuchos::RCP<panzer::IntegrationRule>& ir,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const = 0;
 
-    //! Register closure model evaluators with the model name specified by an argument
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						    const std::string& model_name,
-						    const Teuchos::ParameterList& models,
-						    const Teuchos::ParameterList& user_data) const = 0;
+							      const panzer::FieldLayoutLibrary& field_library,
+							const Teuchos::RCP<panzer::IntegrationRule>& ir,
+							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+							const std::string& model_name,
+							const Teuchos::ParameterList& models,
+							const Teuchos::ParameterList& user_data) const = 0;
     
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							    const panzer::FieldLibrary& field_library,
 							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							    const std::string& model_name,
 							    const Teuchos::ParameterList& models,
 							    const LinearObjFactory<panzer::Traits> & lof,
 							    const Teuchos::ParameterList& user_data) const = 0;
 
+    ///@}
+
+    /// \name Query Methods (derived from panzer::EquationSetBase)
+    ///@{
+
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
-    
-    virtual const std::vector<std::string> & getDOFNames() const = 0;
     
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
 
-    virtual void setElementBlockId(const std::string & blockId) = 0;
+    virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const = 0;
 
     virtual std::string getElementBlockId() const = 0;
 
-    virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const = 0;
+    virtual std::string getType() const = 0;
 
-    /** Allows user to specify the Basis IR (integ rule) library for 
-      * different degrees of freedom.
-      */
-    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
+    virtual std::string getKey() const = 0;
+
+    ///@}
 
   };
   
