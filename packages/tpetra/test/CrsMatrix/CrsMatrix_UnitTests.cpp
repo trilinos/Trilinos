@@ -2120,35 +2120,68 @@ namespace {
 
     // create a contiguous uniform distributed map with numLocal entries per node
     RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
-    RCP<Mat1>       A1 = createCrsMatrix<SCALAR>(map1,1);
-    // test this before and after fillComplete() on the parent CrsMatrix
-    // makes no difference, but we want to ensure that it works
-    int t=0;
-    while (t < 2)
+    RCP<Mat1>       A1 = createCrsMatrix<SCALAR>(map1,3);
+
+    // empty source, not filled
     {
+      RCP<ParameterList> plClone = parameterList();
+      // default: plClone->set("fillComplete clone",true);
+      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
+      TEST_EQUALITY_CONST( A2->getCrsGraph()->getNodeAllocationSize(), (size_t)0 );
+    }
+
+    // one entry per row
+    for (GO grow =map1->getMinGlobalIndex();
+            grow<=map1->getMaxGlobalIndex();
+            ++grow)
+    {
+      if (grow == map1->getMinGlobalIndex())      A1->insertGlobalValues(grow, tuple<GO>(grow,grow+1), tuple<SCALAR>(1.0,-1.0));
+      else if (grow == map1->getMaxGlobalIndex()) A1->insertGlobalValues(grow, tuple<GO>(grow-1,grow), tuple<SCALAR>(-1.0,1.0));
+      else                                        A1->insertGlobalValues(grow, tuple<GO>(grow-1,grow,grow+1), tuple<SCALAR>(-1.0,1.0,-1.0));
+    }
+    // source has global indices, not filled, dynamic profile
+    {
+      RCP<ParameterList> plClone = parameterList();
+      plClone->set("fillComplete clone",false);
+      plClone->set("Static profile clone",false);
+      // default: plClone->set("Locally indexed clone",false);
+      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      TEST_EQUALITY_CONST( A2->hasColMap(), false );
+      TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+      TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
+      TEST_EQUALITY_CONST( A2->getCrsGraph()->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
+      TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMaxLocalIndex(), tuple<GO>(map1->getMinLocalIndex()), tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMinLocalIndex(), tuple<GO>(map1->getMaxLocalIndex()), tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->fillComplete() );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
+    }
+
+    // source has local indices
+    A1->fillComplete();
+
+    {
+      RCP<ParameterList> plClone = parameterList();
+      plClone->set("Static profile clone", false);
+      RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
+      plCloneFill->set("Optimize Storage",false);
+      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
+      A2->resumeFill();
+      for (LO lrow = map1->getMinLocalIndex();
+              lrow < map1->getMaxLocalIndex()-1;
+              ++lrow)
       {
-        RCP<ParameterList> plClone = parameterList();
-        // default is "true"
-        // plClone->set("fillComplete on clone",true);
-        RCP<Mat2>       A2 = A1->clone(n2,plClone);
-        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+        TEST_NOTHROW( A2->insertLocalValues(lrow, tuple<LO>(lrow+2), tuple<SCALAR>(1.0)) );
       }
-      {
-        RCP<ParameterList> plClone = parameterList();
-        plClone->set("fillComplete on clone",true);
-        RCP<Mat2>       A2 = A1->clone(n2,plClone);
-        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-      }
-      {
-        RCP<ParameterList> plClone = parameterList();
-        plClone->set("fillComplete on clone",false);
-        RCP<Mat2>       A2 = A1->clone(n2,plClone);
-        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
-        A2->fillComplete();
-        TEST_EQUALITY_CONST( A2->isFillComplete(), false );
-      }
-      A1->fillComplete();
-      ++t;
+      A2->fillComplete();
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
     }
 
   }

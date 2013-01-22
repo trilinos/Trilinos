@@ -290,11 +290,10 @@ namespace Tpetra {
     /// - "Locally indexed clone" [boolean] If \c true, fills clone using this graph's column map and local indices (requires that this graph have a column map.) If
     ///   false, fills clone using global indices and does not provide a column map. By default, will use local indices only if this graph is using local indices.
     /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsGraph object, with parameters from \c params sublist "CrsGraph". The domain map and range maps
-    ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used. The clone is created with the row map of this graph
-    ///   and with parameters specified by \c params sublist "fillComplete".
+    ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used.
     template <class Node2>
     RCP< CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = Teuchos::null) const
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null) const
     {
       std::string tfecfFuncName("clone()");
       bool fillCompleteClone  = true;
