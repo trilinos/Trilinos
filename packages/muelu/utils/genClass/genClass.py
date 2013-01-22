@@ -121,6 +121,30 @@ def main(argv=None):
     line = line.replace("$BUILD", BuildName)
     o.write(line)
   o.close()	
+  
+  # open class list file
+  listClasses = []
+  for line in open("../../src/Utils/ClassList/"+templateType+".classList"):
+    listClasses.append(line)
+    
+  # append new class name
+  listClasses.append(className+"\n")
+  
+  # sort list alphabetically
+  listClasses.sort()
+      
+  # create copy of old classList filenames
+  runCommand("mv ../../src/Utils/ClassList/"+templateType+".classList ../../src/Utils/ClassList/"+templateType+".classList~")
+  o = open("../../src/Utils/ClassList/"+templateType+".classList","a")
+  for i in listClasses:
+    o.write(i)
+  o.close()
+  
+  # run generation scripts for forward declaration/explicit instantiation and short header files
+  print "Don't forget to run gen_all.sh in ../../src/Utils/ClassList/"
+  print "Don't forget to update the dependencies in Stokhos"
+  #runCommand("../../src/Utils/ClassList/gen_all.sh")
+  
 if __name__ == "__main__":
   sys.exit(main())
 
