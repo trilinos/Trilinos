@@ -2,6 +2,9 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 
+#include <boost/algorithm/string.hpp>    
+
+
 using namespace stk;
 using namespace mesh;
 using namespace percept;
@@ -24,9 +27,10 @@ GeometryFactory::~GeometryFactory()
 }
 
 static stk::mesh::Part* 
-getPart(PerceptMesh *eMesh, const std::string& part_name, bool partial_string_match_ok)
+getPart(PerceptMesh *eMesh, std::string part_name, bool partial_string_match_ok)
 {
   stk::mesh::Part* found_part =0;
+  boost::algorithm::to_lower(part_name);
   if (!partial_string_match_ok)
     {
       found_part = eMesh->get_fem_meta_data()->get_part(part_name);
@@ -55,7 +59,17 @@ getPart(PerceptMesh *eMesh, const std::string& part_name, bool partial_string_ma
   if (error_check && !found_part)
     {
       std::ostringstream msg;
-      msg << "stk::percept::Mesh::getPart() couldn't find part with name = " << part_name;
+      msg << "GeometryFactor::getPart() couldn't find part with name = " << part_name;
+      std::cout << msg.str() << std::endl;
+      const stk::mesh::PartVector & parts = eMesh->get_fem_meta_data()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *parts[ipart];
+          if (!stk::mesh::is_auto_declared_part(part))
+            std::cout << "part= " << part.name() << std::endl;
+        }
       throw std::runtime_error(msg.str());
     }
   return found_part;

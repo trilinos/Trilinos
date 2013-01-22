@@ -4,6 +4,16 @@
 #include <stdio.h>
 #include <exception>
 
+#ifdef PERCEPT_USE_BACKTRACE
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#endif
+
+
+
+
 /** This little jewel is a poor man's stack trace.  To use, insert EXCEPTWATCH at the beginning of each function you want to trace:
  *
  * void func() {
@@ -26,8 +36,27 @@ namespace stk {
         if(std::uncaught_exception()) {
           //on purpose
           printf("STACKTRACE::ExceptionWatch: line:\t%d\tfile name:\t%s\n", line_, pfname_);
+#ifdef PERCEPT_USE_BACKTRACE
+          print_trace();
+#endif
         }
       }
+#ifdef PERCEPT_USE_BACKTRACE
+      static void print_trace() 
+      {
+        const int depth=10;
+        void *array[depth];
+        size_t size;
+
+        // get void*'s for all entries on the stack
+        size = backtrace(array, depth);
+
+        // print out all the frames to stderr
+        //fprintf(stderr, "Error: signal %d:\n", sig);
+        backtrace_symbols_fd(array, size, 2);
+
+      }
+#endif
     };
   }
 }
