@@ -284,25 +284,25 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters. If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    ///                                                              . The
+    ///
     /// Parameters to \c params:
-    /// - "StaticProfile clone"  [boolean, default: true] If \c true, creates the clone with a static allocation profile. If false, a dynamic allocation profile is used.
-    /// - "LocalIndices clone" [boolean] If \c true, fills clone using this graph's column map and local indices (requires that this graph have a column map.) If
+    /// - "Static profile clone"  [boolean, default: true] If \c true, creates the clone with a static allocation profile. If false, a dynamic allocation profile is used.
+    /// - "Locally indexed clone" [boolean] If \c true, fills clone using this graph's column map and local indices (requires that this graph have a column map.) If
     ///   false, fills clone using global indices and does not provide a column map. By default, will use local indices only if this graph is using local indices.
-    /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsGraph object, with parameters \c params. The domain map and range maps
+    /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsGraph object, with parameters from \c params sublist "CrsGraph". The domain map and range maps
     ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used. The clone is created with the row map of this graph
-    ///   and with parameters specified by \c params.
+    ///   and with parameters specified by \c params sublist "fillComplete".
     template <class Node2>
     RCP< CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = Teuchos::null)
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = Teuchos::null) const
     {
       std::string tfecfFuncName("clone()");
       bool fillCompleteClone  = true;
       bool useLocalIndices    = hasColMap();
-      if (params != null) fillCompleteClone = params->get("fillComplete clone",fillCompleteClone);
       ProfileType pftype = StaticProfile;
-      if (params != null && params->get("StaticProfile clone",true) == false) pftype = DynamicProfile;
-      if (params != null && params->get("LocalIndices clone",true)  == false) useLocalIndices = false;
+      if (params != null) fillCompleteClone = params->get("fillComplete clone",fillCompleteClone);
+      if (params != null) useLocalIndices = params->get("Locally indexed clone",useLocalIndices);
+      if (params != null && params->get("Static profile clone",true) == false) pftype = DynamicProfile;
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           hasColMap() == false && useLocalIndices == true,
@@ -316,21 +316,13 @@ namespace Tpetra {
 
       RCP<CrsGraph2> clonedGraph;
       ArrayRCP<const size_t> numEntries;
-      size_t numEntriesForAll;
+      size_t numEntriesForAll = 0;
       if (indicesAreAllocated() == false) {
-        if (numAllocPerRow_ != null) {
-          numEntries = numAllocPerRow_;
-        }
-        else {
-          numEntriesForAll = numAllocForAllRows_;
-        }
+        if (numAllocPerRow_ != null)   numEntries = numAllocPerRow_;
+        else numEntriesForAll =        numAllocForAllRows_;
       }
-      else if (numRowEntries_ != null) {
-        numEntries = numRowEntries_;
-      }
-      else if (nodeNumAllocated_ == 0) {
-        numEntriesForAll = 0;
-      }
+      else if (numRowEntries_ != null) numEntries = numRowEntries_;
+      else if (nodeNumAllocated_ == 0) numEntriesForAll = 0;
       else {
         // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
         TEUCHOS_TEST_FOR_EXCEPTION( getProfileType() != StaticProfile, std::logic_error, "Internal logic error. Please report this to Tpetra team." )
@@ -344,32 +336,80 @@ namespace Tpetra {
         numEntries = numEnt;
       }
 
+      RCP<ParameterList> graphparams = sublist(params,"CrsGraph");
       if (useLocalIndices) {
         RCP<const Map2> clonedColMap = colMap_->template clone(node2);
-        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,params));
-        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntries,pftype,params));
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,graphparams));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntries,pftype,graphparams));
       }
       else {
-        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntriesForAll,pftype,params));
-        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntries,pftype,params));
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntriesForAll,pftype,graphparams));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntries,pftype,graphparams));
       }
       // done with these
       numEntries = null;
       numEntriesForAll = 0;
 
 
-
-      // FINISH: FILL GRAPH WITH ENTRIES
-      // if (
-      // for (LocalOrdinal lrow = rowMap_->getMinLocalIndex();
-      //                   lrow < rowMap->getMaxLocalIndex();
-      //                   ++lrow)
-      // {
-      //   RowInfo rowinfo = getRowInfo(lrow);
-      //   ArrayView<const LocalOrdinal> linds =
-      // }
+      if (useLocalIndices)
+      {
+        clonedGraph->allocateIndices(LocalIndices);
+        if (this->isLocallyIndexed())
+        {
+          ArrayView<const LocalOrdinal> linds;
+          for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
+                            lrow <= rowMap_->getMaxLocalIndex();
+                            ++lrow)
+          {
+            this->getLocalRowView(lrow, linds);
+            if (linds.size()) clonedGraph->insertLocalIndices(lrow, linds);
+          }
+        }
+        else // this->isGloballyIndexed()
+        {
+          Array<LocalOrdinal> linds;
+          for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
+                            lrow <= rowMap_->getMaxLocalIndex();
+                            ++lrow)
+          {
+            size_t numEntries;
+            linds.resize( this->getNumEntriesInLocalRow(lrow) );
+            this->getLocalRowCopy(rowMap_->getGlobalElement(lrow), linds(), numEntries);
+            if (numEntries) clonedGraph->insertLocalIndices(lrow, linds(0,numEntries) );
+          }
+        }
+      }
+      else /* useGlobalIndices */
+      {
+        clonedGraph->allocateIndices(GlobalIndices);
+        if (this->isGloballyIndexed())
+        {
+          ArrayView<const GlobalOrdinal> ginds;
+          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
+                             grow <= rowMap_->getMaxGlobalIndex();
+                             ++grow)
+          {
+            this->getGlobalRowView(grow, ginds);
+            if (ginds.size()) clonedGraph->insertGlobalIndices(grow, ginds);
+          }
+        }
+        else // this->isLocallyIndexed()
+        {
+          Array<GlobalOrdinal> ginds;
+          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
+                             grow <= rowMap_->getMaxGlobalIndex();
+                             ++grow)
+          {
+            size_t numEntries;
+            ginds.resize( this->getNumEntriesInGlobalRow(grow) );
+            this->getGlobalRowCopy(grow, ginds(), numEntries);
+            if (numEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,numEntries) );
+          }
+        }
+      }
 
       if (fillCompleteClone) {
+        RCP<ParameterList> fillparams = sublist(params,"fillComplete");
         try {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
@@ -385,7 +425,7 @@ namespace Tpetra {
           else {
             clonedDomainMap = clonedRowMap;
           }
-          clonedGraph->fillComplete(clonedDomainMap, clonedRangeMap, params);
+          clonedGraph->fillComplete(clonedDomainMap, clonedRangeMap, fillparams);
         }
         catch (std::exception &e) {
           const bool caughtExceptionOnClone = true;
@@ -399,8 +439,7 @@ namespace Tpetra {
               << "\n");
         }
       }
-
-      TEUCHOS_TEST_FOR_EXCEPT(true);
+      return clonedGraph;
     }
 
     //! Destructor.
@@ -494,7 +533,7 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
+          \post if parameter "Optimize Storage" was \c true, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
       void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, const RCP<ParameterList> &params = null);
 
@@ -502,14 +541,7 @@ namespace Tpetra {
 
           Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
 
-          \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
-
-          \pre  <tt>isFillActive() == true<tt>
-          \pre <tt>isFillComplete()() == false<tt>
-
-          \post <tt>isFillActive() == false<tt>
-          \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
+          \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
        */
       void fillComplete(const RCP<ParameterList> &params = null);
 
@@ -1137,7 +1169,7 @@ namespace Tpetra {
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
-      // This is deleted after fillCOmplete if "Optimize Storage" is set to \c true
+      // This is deleted after fillComplete if "Optimize Storage" is set to \c true
       ArrayRCP<size_t>       numRowEntries_;
 
       bool indicesAreAllocated_,
