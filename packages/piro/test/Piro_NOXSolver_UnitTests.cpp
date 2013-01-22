@@ -530,9 +530,11 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJacWithResponseSensitivityMvJac)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp_NoDgDpMvJac)
 {
-  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+      rcp(new WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
