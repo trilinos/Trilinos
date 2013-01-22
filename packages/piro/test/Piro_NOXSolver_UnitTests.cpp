@@ -669,7 +669,56 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOpWithSolutionSensitivityMvJac)
       TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
     }
   }
+}
 
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityMvJac_NoAdjointW_NoDgDpMvJac)
+{
+  // Disable support for Jacobian adjoint solve
+  // (Only forward solve is available)
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+      rcp(new WeakenedModelEvaluator_NoDgDpMvJac(rcp(new WeakenedModelEvaluator_NoAdjointW(thyraModelNew(epetraModelNew())))));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  const int parameterIndex = 0;
+
+  // Request solution sensitivity (MV_JAC layout)
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  // Request response sensitivity (MV_GRAD layout)
+  const int responseIndex = 0;
+  const RCP<Thyra::VectorBase<double> > dgdp =
+    Thyra::createMember(solver->get_p_space(parameterIndex));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  // Verify solution sensitivity
+  {
+    const Array<Array<double> > expected = tuple(
+        Array<double>(tuple(0.5, 0.0, 0.0, 0.0)),
+        Array<double>(tuple(0.0, 1.0, 1.0, 1.0)));
+    TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+      const Array<double> actual = arrayFromVector(*dxdp->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+    }
+  }
+
+  // Verifiy response sensitivity
+  {
+    const Array<double> expected = tuple(2.0, -8.0);
+    const Array<double> actual = arrayFromVector(*dgdp);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
 }
 
 #endif /*Piro_ENABLE_NOX*/

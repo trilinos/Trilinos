@@ -500,13 +500,23 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                   dgdp_deriv.getMultiVector();
                 if (Teuchos::nonnull(dgdp_mv)) {
                   if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
-                    Thyra::apply(
-                        *minus_dxdp_op,
-                        Thyra::TRANS,
-                        *dgdx_mv,
-                        dgdp_mv.ptr(),
-                        -Teuchos::ScalarTraits<Scalar>::one(),
-                        Teuchos::ScalarTraits<Scalar>::one());
+                    if (Teuchos::nonnull(dxdp_mv)) {
+                      Thyra::apply(
+                          *dxdp_mv,
+                          Thyra::TRANS,
+                          *dgdx_mv,
+                          dgdp_mv.ptr(),
+                          Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    } else {
+                      Thyra::apply(
+                          *minus_dxdp_mv,
+                          Thyra::TRANS,
+                          *dgdx_mv,
+                          dgdp_mv.ptr(),
+                          -Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    }
                   } else {
                     if (Teuchos::nonnull(dxdp_mv)) {
                       Thyra::apply(
