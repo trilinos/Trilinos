@@ -1120,7 +1120,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,KokkosClassic"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Belos,Teuchos,Tpetra,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>

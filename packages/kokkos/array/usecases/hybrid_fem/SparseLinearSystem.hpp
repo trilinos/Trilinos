@@ -46,8 +46,11 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
+
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
+
+#include <LinAlgBLAS.hpp>
 
 namespace KokkosArray {
 
@@ -67,18 +70,15 @@ struct CrsMatrix {
 
 namespace Impl {
 
-template< class Scalar , class DeviceType , class > struct Dot ;
-
 template< class Matrix , class OutputVector , class InputVector >
 class Multiply ;
 
 }
 }
 
-/* Cuda-specific specializations */
-#if defined( __CUDACC__ )
+/* Device-specific specializations */
 #include <SparseLinearSystem_Cuda.hpp>
-#endif
+#include <SparseLinearSystem_Host.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -86,213 +86,27 @@ class Multiply ;
 namespace KokkosArray {
 namespace Impl {
 
-template< typename Scalar , class DeviceType >
-struct Dot< Scalar , DeviceType , Impl::unsigned_<2> >
-{
-  typedef DeviceType          device_type;
-  typedef typename device_type::size_type       size_type;
-  typedef View<Scalar*, device_type>  scalar_vector;  
-  typedef double                       value_type;
-
-private:
-
-  scalar_vector x;
-  scalar_vector y;
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void operator()( int iwork , value_type & update ) const 
-  { update += x(iwork) * y(iwork); }
-    
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void join( volatile value_type & update ,
-                    const volatile value_type & source )
-  { update += source;    }
-    
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void init( value_type & update )
-  { update = 0 ; }
-
-  inline static
-  value_type apply( const size_t n ,
-                    const scalar_vector & x ,
-                    const scalar_vector & y )
-  {
-    Dot op ; op.x = x ; op.y = y ;
-    return parallel_reduce( n , op );
-  }
-}; //Dot
-
-template< typename Scalar , class DeviceType >
-struct Dot< Scalar , DeviceType , Impl::unsigned_<1> >
-{
-  typedef DeviceType          device_type;
-  typedef typename device_type::size_type       size_type;
-  typedef View<Scalar*, device_type>  scalar_vector;  
-  typedef View < double, device_type>  result_type ;  
-  typedef double                       value_type;
-
-private:
-
-  scalar_vector x;
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void operator()( int iwork , value_type & update ) const 
-  { const Scalar xi = x(iwork); update += xi * xi ; }
-    
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void join( volatile value_type & update ,
-                    const volatile value_type & source )
-  { update += source ; }
-    
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void init( value_type & update )
-  { update = 0 ; }
-
-  inline static
-  value_type apply( const size_t n ,
-                    const scalar_vector & x )
-  {
-    Dot op ; op.x = x ;
-    return parallel_reduce( n , op );
-  }
-}; //Dot
-
-//----------------------------------------------------------------------------
-
-template < typename Scalar , class DeviceType >
-struct FILL
-{
-  typedef DeviceType          device_type ;
-  typedef typename device_type::size_type       size_type ;
-  typedef View<Scalar*, device_type>  scalar_vector ;
-
-private:
-
-  scalar_vector w ;
-  Scalar alpha ;
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void operator()(int inode) const
-  {
-    w(inode) = alpha ;
-  }
-
-  inline static
-  void apply( const size_t n ,
-              const double          alpha ,
-              const scalar_vector & w )
-  {
-    FILL op ;
-    op.w = w ;
-    op.alpha = alpha ;
-    parallel_for( n , op );
-  }
-};
-
-template < typename Scalar , class DeviceType >
-struct WAXPBY
-{
-  typedef DeviceType          device_type ;
-  typedef typename device_type::size_type       size_type ;
-  typedef View<Scalar*, device_type>  scalar_vector ;
-
-private:
-
-  scalar_vector w ;
-  scalar_vector x ;
-  scalar_vector y ;
-
-  Scalar alpha ;
-  Scalar beta ;
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void operator()(int inode) const
-  {
-    w(inode) = alpha * x(inode) + beta * y(inode);
-  }
-
-  inline static
-  void apply( const size_t n ,
-              const double          alpha ,
-              const scalar_vector & x ,
-              const double          beta ,
-              const scalar_vector & y ,
-              const scalar_vector & w )
-  {
-    WAXPBY op ;
-    op.w = w ;
-    op.x = x ;
-    op.y = y ;
-    op.alpha = alpha ;
-    op.beta  = beta ;
-    parallel_for( n , op );
-  }
-}; // WAXPBY
-
-template < typename Scalar , class DeviceType >
-struct AXPBY
-{
-  typedef DeviceType          device_type ;
-  typedef typename device_type::size_type       size_type ;
-  typedef View<Scalar*, device_type>  scalar_vector ;
-
-private:
-
-  scalar_vector x ;
-  scalar_vector y ;
-
-  Scalar alpha ;
-  Scalar beta ;
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void operator()(int inode) const
-  {
-    Scalar & val = y(inode); val = alpha * x(inode) + beta * val ;
-  }
-
-  inline static
-  void apply( const size_t n ,
-              const double          alpha ,
-              const scalar_vector & x ,
-              const double          beta ,
-              const scalar_vector & y )
-  {
-    AXPBY op ;
-    op.x = x ;
-    op.y = y ;
-    op.alpha = alpha ;
-    op.beta  = beta ;
-    parallel_for( n , op );
-  }
-}; // WAXPBY
-
-//----------------------------------------------------------------------------
-
-template< typename AScalarType , typename VScalarType , class DeviceType >
+template< typename AScalarType ,
+          typename VScalarType ,
+          class LayoutType ,
+          class DeviceType >
 struct Multiply< CrsMatrix<AScalarType,DeviceType> ,
-                 View<VScalarType*,DeviceType > ,
-                 View<VScalarType*,DeviceType > >
+                 View<VScalarType*,LayoutType,DeviceType > ,
+                 View<VScalarType*,LayoutType,DeviceType > >
 {
-  typedef DeviceType                             device_type ;
-  typedef typename device_type::size_type        size_type ;
-  typedef View< VScalarType* , device_type >     vector_type ;
-  typedef CrsMatrix< AScalarType , device_type > matrix_type ;
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  typedef View<       VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_type ;
+  typedef View< const VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_const_type ;
+
+  typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
 
 private:
 
-  matrix_type  m_A ;
-  vector_type  m_x ;
-  vector_type  m_y ;
+  matrix_type        m_A ;
+  vector_const_type  m_x ;
+  vector_type        m_y ;
 
 public:
 
@@ -313,17 +127,14 @@ public:
     m_y(iRow) = sum ;
   }
 
-  static void apply( const matrix_type & A ,
-                     const size_type nrow ,
-                     const size_type , // ncol ,
-                     const vector_type & x ,
-                     const vector_type & y )
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type , // ncol ,
+            const vector_type & x ,
+            const vector_type & y )
+    : m_A( A ), m_x( x ), m_y( y )
   {
-    Multiply op ;
-    op.m_A = A ;
-    op.m_x = x ;
-    op.m_y = y ;
-    parallel_for( nrow , op );
+    parallel_for( nrow , *this );
   }
 };
 
@@ -336,75 +147,6 @@ public:
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
-
-//----------------------------------------------------------------------------
-
-
-template< typename Scalar , class Device >
-void waxpby( const ParallelDataMap & data_map ,
-             const double alpha ,
-             const View< Scalar* , Device > & x ,
-             const double beta ,
-             const View< Scalar* , Device > & y ,
-             const View< Scalar* , Device > & w )
-{
-  if ( y == w ) {
-    Impl::AXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y );
-  }
-  else {
-    Impl::WAXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y , w );
-  }
-}
-
-template< typename Scalar , class Device >
-void fill( const double alpha ,
-           const View< Scalar* , Device > & w )
-{
-  Impl::FILL<Scalar,Device>::apply( w.dimension_0() , alpha , w );
-}
-
-//----------------------------------------------------------------------------
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const View< Scalar* , Device > & x ,
-            const View< Scalar* , Device > & y )
-{
-  double global_result =
-    Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
-        ::apply( data_map.count_owned , x , y );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-
-#endif
-
-  return global_result ;
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const View< Scalar* , Device > & x )
-{
-  double global_result = 
-    Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
-        ::apply( data_map.count_owned , x );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-
-#endif
-
-  return global_result ;
-}
 
 //----------------------------------------------------------------------------
 
@@ -452,8 +194,8 @@ public:
     const typename Device::size_type nrow = data_map.count_owned ;
     const typename Device::size_type ncol = data_map.count_owned +
                                             data_map.count_receive ;
-    Impl::Multiply<matrix_type,vector_type,vector_type>
-      ::apply( A , nrow , ncol , x , y );
+
+    Impl::Multiply<matrix_type,vector_type,vector_type>( A, nrow, ncol, x, y);
   }
 };
 
@@ -490,10 +232,10 @@ void cgsolve(
 
   /* p  = x      */ deep_copy( p , x );
   /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
-  /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
+  /* r  = b - Ap */ waxpby( count_owned , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r );
 
-  double old_rdot = dot( data_map , r );
+  double old_rdot = dot( count_owned , r , data_map.machine );
 
   normr     = sqrt( old_rdot );
   iteration = 0 ;
@@ -506,16 +248,16 @@ void cgsolve(
 
     /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
 
-    const double pAp_dot = dot( data_map , p , Ap );
+    const double pAp_dot = dot( count_owned , p , Ap , data_map.machine );
     const double alpha   = old_rdot / pAp_dot ;
 
-    /* x += alpha * p ;  */ waxpby( data_map,  alpha, p , 1.0 , x , x );
-    /* r -= alpha * Ap ; */ waxpby( data_map, -alpha, Ap, 1.0 , r , r );
+    /* x += alpha * p ;  */ axpy( count_owned,  alpha, p , x );
+    /* r -= alpha * Ap ; */ axpy( count_owned, -alpha, Ap, r );
 
-    const double r_dot = dot( data_map , r );
+    const double r_dot = dot( count_owned , r , data_map.machine );
     const double beta  = r_dot / old_rdot ;
 
-    /* p = r + beta * p ; */ waxpby( data_map , 1.0 , r , beta , p , p );
+    /* p = r + beta * p ; */ xpby( count_owned , r , beta , p );
 
     normr = sqrt( old_rdot = r_dot );
     ++iteration ;

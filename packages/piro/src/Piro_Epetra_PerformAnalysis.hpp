@@ -1,11 +1,11 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//        Piro: Strategy package for embedded analysis capabilitites
+//                  Copyright (2010) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,71 +34,33 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// National Laboratories.
 //
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Utilities_i_cc)
-#define Intrepid_MiniTensor_Utilities_i_cc
+#ifndef PIRO_EPETRA_PERFORMANALYSIS_HPP
+#define PIRO_EPETRA_PERFORMANALYSIS_HPP
 
-#include <cmath>
-#include <limits>
+#include "EpetraExt_ModelEvaluator.h"
 
-namespace Intrepid {
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
-  //
-  // Sign function
-  //
-  template <typename T>
-  inline
-  int
-  sgn(T const & s)
-  {
-    return (T(0) < s) - (s < T(0));
-  }
+class Epetra_Vector;
 
-  //
-  // Copysign function
-  //
-  template<typename T>
-  inline
-  T
-  copysign(T const & a, T const & b)
-  {
-    return b >= 0 ? std::abs(a) : -std::abs(a);
-  }
+namespace Piro {
 
-  //
-  // NaN function. Necessary to choose the proper underlying NaN
-  // for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  not_a_number()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
-  }
+namespace Epetra {
 
-  //
-  // Machine epsilon function. Necessary to choose the proper underlying
-  // machine epsilon for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  machine_epsilon()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
-  }
+int PerformAnalysis(
+    EpetraExt::ModelEvaluator &piroModel,
+    Teuchos::ParameterList &analysisParams,
+    Teuchos::RCP<Epetra_Vector> &p);
 
-} // namespace Intrepid
+} // namespace Epetra
 
-#endif // Intrepid_MiniTensor_Utilities_i_cc
+} // namespace Piro
+
+#endif /* PIRO_EPETRA_PERFORMANALYSIS_HPP */

@@ -304,7 +304,7 @@
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Xpetra" type="LO"/>
     <Dependency name="Galeri" type="TR"/>
-    <Dependency name="Belos" type="TR"/>
+    <Dependency name="Belos" type="LR"/>
     <Dependency name="Anasazi" type="TO"/>
     <Dependency name="Zoltan2" type="LO"/>
     <EmailAddresses>

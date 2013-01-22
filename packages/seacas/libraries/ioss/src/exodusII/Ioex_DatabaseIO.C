@@ -6357,17 +6357,28 @@ namespace Ioex {
       DatabaseIO::output_results_names(ex_entity_type type,
 				       VariableNameMap &variables) const
     {
+      bool lowercase_names = (properties.exists("VARIABLE_NAME_CASE") &&
+			      Ioss::Utils::lowercase(properties.get("VARIABLE_NAME_CASE").get_string()) == "lower");
+      bool uppercase_names = (properties.exists("VARIABLE_NAME_CASE") &&
+			      Ioss::Utils::lowercase(properties.get("VARIABLE_NAME_CASE").get_string()) == "upper");
+      
       size_t var_count = variables.size();
 
       if (var_count > 0) {
 	// Push into a char** array...
 	std::vector<char*> var_names(var_count);
+	std::vector<std::string> variable_names(var_count);
 	VariableNameMap::const_iterator J  = variables.begin();
 	VariableNameMap::const_iterator JE = variables.end();
 	while (J != JE) {
 	  size_t index = (*J).second;
 	  assert(index > 0 && index <= var_count);
-	  var_names[index-1] = (char*)(*J).first.c_str();
+	  variable_names[index-1] = (*J).first;
+	  if (uppercase_names)
+	    variable_names[index-1] = Ioss::Utils::uppercase(variable_names[index-1]);
+	  else if (lowercase_names)
+	    variable_names[index-1] = Ioss::Utils::lowercase(variable_names[index-1]);
+	  var_names[index-1] = (char*)variable_names[index-1].c_str();
 	  ++J;
 	}
 

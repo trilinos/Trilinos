@@ -20,7 +20,7 @@
 
 #ifdef __GNUC__
 # if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
-#pragma warning(pop)
+#pragma GCC diagnostic pop
 #endif // GCC_VERSION
 #endif // __GNUC__
 

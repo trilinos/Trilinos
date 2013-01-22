@@ -357,53 +357,6 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityAndResponseSensitivityMvJac)
-{
-  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
-
-  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
-
-  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
-  const int parameterIndex = 0;
-
-  const int solutionResponseIndex = solver->Ng() - 1;
-  const Thyra::MEB::Derivative<double> dxdp_deriv =
-    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
-  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
-  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
-
-  const int responseIndex = 0;
-  const Thyra::MEB::Derivative<double> dgdp_deriv =
-    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
-  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
-  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
-
-  solver->evalModel(inArgs, outArgs);
-
-  // Solution sensitivity
-  {
-    const Array<Array<double> > expected = tuple(
-        Array<double>(tuple(0.5, 0.0, 0.0, 0.0)),
-        Array<double>(tuple(0.0, 1.0, 1.0, 1.0)));
-    TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
-    for (int i = 0; i < expected.size(); ++i) {
-      TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
-      const Array<double> actual = arrayFromVector(*dxdp->col(i));
-      TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
-    }
-  }
-
-  // Response sensitivity
-  {
-    const Array<double> expected = tuple(2.0, -8.0);
-    TEST_EQUALITY(dgdp->domain()->dim(), expected.size());
-    for (int i = 0; i < expected.size(); ++i) {
-      const Array<double> actual = arrayFromVector(*dgdp->col(i));
-      TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
-    }
-  }
-}
-
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
@@ -479,8 +432,8 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
 
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
 {
-  // Disable support for MultiVector-based DgDx derivative
-  // (Only LinOp form is available)
+  // Disable support for Jacobian-oriented MultiVector DgDx derivative
+  // (Only gradient layout is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
       rcp(new WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
@@ -530,6 +483,53 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp_NoDgDpMv)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJacWithResponseSensitivityMvJac)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int parameterIndex = 0;
+
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  const int responseIndex = 0;
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  // Solution sensitivity
+  {
+    const Array<Array<double> > expected = tuple(
+        Array<double>(tuple(0.5, 0.0, 0.0, 0.0)),
+        Array<double>(tuple(0.0, 1.0, 1.0, 1.0)));
+    TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+      const Array<double> actual = arrayFromVector(*dxdp->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+    }
+  }
+
+  // Response sensitivity
+  {
+    const Array<double> expected = tuple(2.0, -8.0);
+    TEST_EQUALITY(dgdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      const Array<double> actual = arrayFromVector(*dgdp->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
@@ -539,14 +539,14 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
 
   const int parameterIndex = 0;
 
-  // Request solution sensitivity (MV_GRAD layout)
+  // Request solution sensitivity (LINOP layout)
   const int solutionResponseIndex = solver->Ng() - 1;
   const RCP<Thyra::LinearOpBase<double> > dxdp =
     solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
   TEST_ASSERT(nonnull(dxdp));
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp);
 
-  // Request response sensitivity (LINOP layout)
+  // Request response sensitivity (MV_GRAD layout)
   const int responseIndex = 0;
   const RCP<Thyra::VectorBase<double> > dgdp =
     Thyra::createMember(solver->get_p_space(parameterIndex));
@@ -564,6 +564,54 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
     for (int i = 0; i < expected.size(); ++i) {
       TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
       const Array<double> actual = arrayFromLinOp(*dxdp, i);
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+    }
+  }
+
+  // Verifiy response sensitivity
+  {
+    const Array<double> expected = tuple(2.0, -8.0);
+    const Array<double> actual = arrayFromVector(*dgdp);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityMvJac_NoDgDpMvJac)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+    rcp(new WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  const int parameterIndex = 0;
+
+  // Request solution sensitivity (MV_JAC layout)
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  // Request response sensitivity (MV_GRAD layout)
+  const int responseIndex = 0;
+  const RCP<Thyra::VectorBase<double> > dgdp =
+    Thyra::createMember(solver->get_p_space(parameterIndex));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  // Verify solution sensitivity
+  {
+    const Array<Array<double> > expected = tuple(
+        Array<double>(tuple(0.5, 0.0, 0.0, 0.0)),
+        Array<double>(tuple(0.0, 1.0, 1.0, 1.0)));
+    TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+      const Array<double> actual = arrayFromVector(*dxdp->col(i));
       TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
     }
   }

@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.11 (2013/01/08)";
+  const char* version_string = "3.13 (2013/01/21)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -61,6 +61,11 @@ namespace SEAMS {
   bool Aprepro::parse_stream(std::istream& in, const std::string& in_name)
   {
     ap_file_list.top().name = in_name;
+
+    if (!ap_options.include_file.empty()) {
+      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
+      ap_file_list.push(include_file);
+    }
 
     Scanner scanner(*this, &in, &parsingResults);
     this->lexer = &scanner;
@@ -176,17 +181,87 @@ namespace SEAMS {
     return ptr;
   }
 
-  void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value)
+  bool Aprepro::set_option(const std::string &option)
   {
-    symrec *var = putsym(sym_name, STRING_VARIABLE, false);
+    // Option should be of the form "--option" or "-O"
+    // I.e., double dash for long option, single dash for short.
+    // Option can be followed by "=value" if the option requires
+    // a value.
+
+    // Some options (--include) 
+    
+    if (option == "--debug" || option == "-d") {
+      ap_options.debugging = true;
+    }
+    else if (option == "--version" || option == "-v") {
+      std::cerr << "Aprepro version " << version() << "\n";
+    }
+    else if (option == "--nowarning" || option == "-W") {
+      ap_options.warning_msg = false;
+    }
+    else if (option == "--copyright" || option == "-C") {
+      copyright();
+    }
+    else if (option == "--message" || option == "-M") {
+      ap_options.info_msg = true;
+    }
+    else if (option == "--immutable" || option == "-X") {
+      ap_options.immutable = true;
+      stateImmutable = true;
+    }
+    else if (option == "--trace" || option == "-t") {
+      ap_options.trace_parsing = true;
+    }
+    else if (option == "--interactive" || option == "-i") {
+      ap_options.interactive = true;
+    }
+    else if (option == "--exit_on" || option == "-e") {
+      ap_options.end_on_exit = true;
+    }
+    else if (option.find("--include=") != std::string::npos || (option[1] == 'I' && option[2] == '=')) {
+      size_t index = option.find_first_of('=');
+      std::string file_or_path = option.substr(index+1);
+      if (is_directory(file_or_path)) {
+	ap_options.include_path = file_or_path;
+      } else {
+	ap_options.include_file = file_or_path;
+      }
+    }
+    else if (option == "--help" || option == "-h") {
+      std::cerr << "\nAPREPRO PREPROCESSOR OPTIONS:\n"
+		<< "        --debug or -d: Dump all variables, debug loops/if/endif\n"
+		<< "      --version or -v: Print version number to stderr          \n"
+		<< "    --immutable or -X: All variables are immutable--cannot be modified\n"
+		<< "  --interactive or -i: Interactive use, no buffering           \n"
+		<< "  --include=P or -I=P: Include file or include path            \n"
+		<< "                     : If P is path, then optionally prepended to all include filenames\n"
+		<< "                     : If P is file, then processed before processing input file\n"
+		<< "      --exit_on or -e: End when 'Exit|EXIT|exit' entered       \n"
+		<< "         --help or -h: Print this list                         \n"
+		<< "      --message or -M: Print INFO messages                     \n"
+		<< "    --nowarning or -W: Do not print WARN messages              \n"
+		<< "    --copyright or -C: Print copyright message                 \n\n"
+	        << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
+		<< "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
+		<< "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
+		<< "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n";
+    }
+    return true;
+  }
+  
+  void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value, bool immutable)
+  {
+    SYMBOL_TYPE type = immutable ? IMMUTABLE_STRING_VARIABLE : STRING_VARIABLE;
+    symrec *var = putsym(sym_name, type, false);
     char *tmp = NULL;
     new_string(sym_value.c_str(), &tmp);
     var->value.svar = tmp;
   }
 
-  void Aprepro::add_variable(const std::string &sym_name, double sym_value)
+  void Aprepro::add_variable(const std::string &sym_name, double sym_value, bool immutable)
   {
-    symrec *var = putsym(sym_name, VARIABLE, false);
+    SYMBOL_TYPE type = immutable ? IMMUTABLE_VARIABLE : VARIABLE;
+    symrec *var = putsym(sym_name, type, false);
     var->value.var = sym_value;
   }
 
@@ -210,8 +285,12 @@ namespace SEAMS {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
 	      printf ("%c  {%-10s\t= %.10g}\n", comment, ptr->name.c_str(), ptr->value.var);
+	    else if (ptr->type == Parser::token::IMMVAR)
+	      printf ("%c  {%-10s\t= %.10g}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.var);
 	    else if (ptr->type == Parser::token::SVAR)
 	      printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
+	    else if (ptr->type == Parser::token::IMMSVAR)
+	      printf ("%c  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
 	  }
 	}
       }

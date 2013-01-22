@@ -67,7 +67,7 @@ namespace SEAMS {
   struct aprepro_options
   {
     std::string include_path;
-    char comment;
+    std::string include_file;
     bool end_on_exit;
     bool warning_msg;
     bool info_msg;
@@ -168,8 +168,9 @@ namespace SEAMS {
     SEAMS::symrec *getsym(const char *) const;
     SEAMS::symrec *putsym(const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal);
 
-    void add_variable(const std::string &sym_name, const std::string &sym_value);
-    void add_variable(const std::string &sym_name, double sym_value);
+    void add_variable(const std::string &sym_name, const std::string &sym_value, bool is_immutable=false);
+    void add_variable(const std::string &sym_name, double sym_value, bool is_immutable=false);
+    bool set_option(const std::string &option);
     
     std::fstream *open_file(const std::string &file, const char *mode);
     std::fstream *check_open_file(const std::string &file, const char *mode);

@@ -22,39 +22,12 @@ int main(int argc, char *argv[])
   ptr->syntax = "succ(d)";
   
   // EXAMPLE: Add a couple variables...
-  aprepro.add_variable("Greg", "Is the author of this code");
+  aprepro.add_variable("Greg", "Is the author of this code", true);  // Make it immutable
   aprepro.add_variable("BirthYear", 1958);
   
   for(int ai = 1; ai < argc; ++ai) {
-    if (argv[ai] == std::string ("-s")) {
-      aprepro.statistics();
-    }
-    else if (argv[ai] == std::string ("-C")) {
-      aprepro.copyright();
-    }
-    else if (argv[ai] == std::string ("-p")) {
-      aprepro.ap_options.trace_parsing = true;
-    }
-    else if (argv[ai] == std::string ("-d")) {
-      aprepro.ap_options.debugging = true;
-    }
-    else if (argv[ai] == std::string ("-e")) {
-      aprepro.ap_options.end_on_exit = true;
-    }
-    else if (argv[ai] == std::string ("-M")) {
-      aprepro.ap_options.info_msg = true;
-    }
-    else if (argv[ai] == std::string ("-X")) {
-      aprepro.ap_options.immutable = true;
-      aprepro.stateImmutable = true;
-    }
-    else if (argv[ai] == std::string ("-W")) {
-      aprepro.ap_options.warning_msg = false;
-    }
-    else if (argv[ai] == std::string ("-v")) {
-      std::cerr << "Aprepro version " << aprepro.version() << "\n";
-    }
-    else if (argv[ai] == std::string ("-i")) {
+    std::string arg = argv[ai];
+    if (arg == "-i") {
       // Read from cin and echo each line to cout All results will
       // also be stored in Aprepro::parsing_results() stream if needed
       // at end of file.
@@ -64,6 +37,9 @@ int main(int argc, char *argv[])
 	std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
       }
     }
+    else if (arg[0] == '-') {
+      aprepro.set_option(argv[ai]);
+    } 
     else {
       // Read and parse a file.  The entire file will be parsed and
       // then the output can be obtained in an std::ostringstream via

@@ -81,22 +81,21 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
     DEPLIBS muelu xpetra muelu-adapters
     )
 
-  #Simple-TpetraOperator
-  IF(${PACKAGE_NAME}_ENABLE_Belos)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Simple-TpetraOperator
-    SOURCES Simple-TpetraOperator.cpp
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
-    )
-  ENDIF()
-
   #Simple-Complex
   IF(HAVE_MUELU_COMPLEX)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Simple-Complex
       SOURCES Simple-Complex.cpp
+      DEPLIBS muelu xpetra
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+  ENDIF()
+
+  IF(HAVE_MUELU_COMPLEX)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Simple-FGMRES
+      SOURCES Simple-FGMRES.cpp
       DEPLIBS muelu xpetra
       NUM_MPI_PROCS 1
       COMM serial mpi

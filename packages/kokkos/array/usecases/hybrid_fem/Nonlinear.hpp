@@ -346,8 +346,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     wall_clock.reset();
 
-    fill( 0 , jacobian.coefficients );
-    fill( 0 , residual );
+    fill( jacobian.coefficients.dimension_0(), 0 , jacobian.coefficients );
+    fill( residual.dimension_0() , 0 , residual );
 
     GatherFillFunctor::apply( jacobian , 
                               residual ,
@@ -376,7 +376,9 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     //------------------------------------
     // Has the residual converged?
 
-    residual_norm = sqrt( dot(mesh.parallel_data_map, residual) );
+    residual_norm = norm2( mesh.parallel_data_map.count_owned,
+                           residual,
+                           mesh.parallel_data_map.machine );
 
     if ( 0 == newton_iteration_count ) {
       residual_norm_init = residual_norm ;
@@ -409,9 +411,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     // text:
     // x[n+1] = x[n] + Dx
 
-    waxpby( mesh.parallel_data_map,
-            1.0, nodal_solution,
-           -1.0, delta, nodal_solution);
+    axpy( mesh.parallel_data_map.count_owned ,
+          -1.0, delta, nodal_solution);
 
     ++newton_iteration_count ;
 

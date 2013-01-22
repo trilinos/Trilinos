@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -55,9 +55,27 @@
 #include "Piro_Epetra_RythmosSolver.hpp"
 #endif
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Ptr.hpp"
 
+#include <string>
 
-Teuchos::RCP<EpetraExt::ModelEvaluator> 
+namespace { // anonymous
+
+// Returns a copy of the RCP parameter from the parameter list
+// if it exists and it is of the expected type, otherwise returns null
+template <typename T>
+Teuchos::RCP<T> getRCP(const Teuchos::ParameterList &params, const std::string &name)
+{
+  typedef Teuchos::RCP<T> RCPT;
+  const Teuchos::Ptr<const RCPT> maybeRcp(Teuchos::getParameterPtr<RCPT>(params, name));
+  return Teuchos::nonnull(maybeRcp) ? *maybeRcp : Teuchos::null;
+}
+
+} // anonymous namespace
+
+Teuchos::RCP<EpetraExt::ModelEvaluator>
 Piro::Epetra::Factory::
 createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
 	     Teuchos::RCP<EpetraExt::ModelEvaluator> model)
@@ -69,8 +87,7 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
   if (name == "NOX") {
     found = true;
     Teuchos::RCP<NOX::Epetra::Observer> observer =
-      piroParams->get< Teuchos::RCP<NOX::Epetra::Observer> >(
-	"Observer", Teuchos::null);
+      getRCP<NOX::Epetra::Observer>(*piroParams, "Observer");
     Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface =
       piroParams->get< Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> >(
 	"Interface", Teuchos::null);
@@ -84,8 +101,7 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
   if (name == "LOCA") {
     found = true;
     Teuchos::RCP<NOX::Epetra::Observer> observer =
-      piroParams->get< Teuchos::RCP<NOX::Epetra::Observer> >(
-	"Observer", Teuchos::null);
+      getRCP<NOX::Epetra::Observer>(*piroParams, "Observer");
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData =
       piroParams->get< Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> >(
 	"Save Eigen Data Strategy", Teuchos::null);
@@ -93,15 +109,14 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
       piroParams->get< Teuchos::RCP<LOCA::StatusTest::Abstract> >(
 	"Status Test", Teuchos::null);
     return Teuchos::rcp(new Piro::Epetra::LOCASolver(
-			  piroParams, model, observer, saveEigData, 
+			  piroParams, model, observer, saveEigData,
 			  locaStatusTest));
   }
 
   if (name == "Trapezoid Rule") {
     found = true;
     Teuchos::RCP<NOX::Epetra::Observer> observer =
-      piroParams->get< Teuchos::RCP<NOX::Epetra::Observer> >(
-	"Observer", Teuchos::null);
+      getRCP<NOX::Epetra::Observer>(*piroParams, "Observer");
     return Teuchos::rcp(new Piro::Epetra::TrapezoidRuleSolver(
 			  piroParams, model, observer));
   }
@@ -109,8 +124,7 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
   if (name == "Velocity Verlet") {
     found = true;
     Teuchos::RCP<NOX::Epetra::Observer> observer =
-      piroParams->get< Teuchos::RCP<NOX::Epetra::Observer> >(
-	"Observer", Teuchos::null);
+      getRCP<NOX::Epetra::Observer>(*piroParams, "Observer");
     return Teuchos::rcp(new Piro::Epetra::VelocityVerletSolver(
 			  piroParams, model, observer));
   }
@@ -121,8 +135,7 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
     found = true;
     typedef Piro::Epetra::RythmosSolver::Scalar Scalar;
     Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer =
-      piroParams->get< Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > >(
-	"Observer", Teuchos::null);
+      getRCP<Rythmos::IntegrationObserverBase<Scalar> >(*piroParams, "Observer");
     return Teuchos::rcp(new Piro::Epetra::RythmosSolver(
 			  piroParams, model, observer));
   }

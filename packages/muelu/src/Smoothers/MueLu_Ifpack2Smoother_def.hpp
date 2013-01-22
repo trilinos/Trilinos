@@ -135,6 +135,9 @@ namespace MueLu {
     else if (type_ == "RELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
     }
+    else if (type_ == "KRYLOV") {
+      paramList.set("krylov: zero starting solution", InitialGuessIsZero);
+    }
     else if (type_ == "ILUT") {
       if (InitialGuessIsZero == false) {
         if (this->IsPrint(Warnings0, 0)) {

@@ -10,7 +10,8 @@ bool supportsUnsymmetric(const std::string& prec_type)
       prec_type == "CHEBYSHEV" ||
       prec_type == "DIAGONAL" ||
       prec_type == "RILUK" ||
-      prec_type == "ILUT")
+      prec_type == "ILUT" ||
+      prec_type == "KRYLOV")
   {
     result = true;
   }

@@ -171,8 +171,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   // Level Set
   Set(currentLevel, "Aggregates", aggregates);
 
-  aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
-
+  GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
 }
 
 } //namespace MueLu
