@@ -136,31 +136,49 @@ namespace stk {
     bool ReferenceMeshSmoother1::check_convergence()
     {
       double grad_check = gradNorm;
+      double scaled_grad_norm = std::sqrt(m_dnew)/double(m_num_nodes);
+      bool retval=false;
+      //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1.0 m_num_invalid= " << m_num_invalid << " m_dnew= " << m_dnew << " m_dmax = " << m_dmax << " m_grad_norm_scaled= " << m_grad_norm_scaled << std::endl;
+      int type=-1;
       if (m_stage == 0 && (m_dnew == 0.0 || m_total_metric == 0.0))
         {
-          //std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
-          return true; // for untangle
+          //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1.1 untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
+          retval = true; // for untangle
+          type=1;
         }
-      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_grad_norm_scaled < grad_check))
+      else if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_grad_norm_scaled < grad_check))
         {
-          return true;
+          //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1.2 untangle m_num_invalid= " << m_num_invalid << " m_dmax = " << m_dmax << " m_grad_norm_scaled= " << m_grad_norm_scaled << std::endl;
+          retval = true;
+          type=2;
         }
       //grad_check = 1.e-8;
-      double scaled_grad_norm = std::sqrt(m_dnew)/double(m_num_nodes);
-      if (m_num_invalid == 0 && (m_grad_norm_scaled < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
+      else if (m_num_invalid == 0 && (m_grad_norm_scaled < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
         //    if (m_num_invalid == 0 && (m_grad_norm_scaled < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           if (0)
             {
-              std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
+              std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1.3 untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
                         << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check)
                         << " m_dmax check= " << (m_dmax < grad_check)
                         << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
                         << " m_total_metric = " << m_total_metric << std::endl;
             }
-          return true;
+          type=3;
+          retval = true;
         }
-      return false;
+      if (0)
+        {
+          MPI_Barrier( MPI_COMM_WORLD );
+
+          std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1 retval= " << retval << " type= " << type << " m_num_invalid= " << m_num_invalid << " m_total_metric= " << m_total_metric
+                    << " m_dnew= " << m_dnew << " m_dmax = " << m_dmax
+                    << " m_grad_norm_scaled= " << m_grad_norm_scaled << " m_iter= " << m_iter
+                    << " m_d0= " << m_d0 << " scaled_grad_norm= " << scaled_grad_norm << " m_num_nodes= " << m_num_nodes << std::endl;
+          //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1 retval= " << retval << " m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
+          MPI_Barrier( MPI_COMM_WORLD );
+        }
+      return retval;
     }
 
     double ReferenceMeshSmoother1::metric(stk::mesh::Entity element, bool& valid)
@@ -1100,7 +1118,7 @@ namespace stk {
       if (m_eMesh->get_smooth_surfaces())
         {
           snap_nodes();
-          if (m_stage != 0) 
+          if (m_stage != 0)
             {
               bool total_valid_0=true;
               total_metric( 0.0, 1.0, total_valid_0);

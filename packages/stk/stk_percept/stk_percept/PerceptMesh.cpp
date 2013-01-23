@@ -605,14 +605,18 @@ namespace stk {
     get_number_elements()
     {
       std::vector<unsigned> count ;
-      stk::mesh::Selector selector(get_fem_meta_data()->universal_part());
+      stk::mesh::Selector selector(get_fem_meta_data()->locally_owned_part());
       stk::mesh::count_entities( selector, *get_bulk_data(), count );
       if (count.size() < 3)
         {
           throw std::logic_error("logic error in PerceptMesh::get_number_elements");
         }
 
-      return count[ element_rank() ];
+      unsigned nelems = count[ element_rank() ];
+      stk::ParallelMachine pm = get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceSum<1>( &nelems ) );
+      return nelems;
+
       //         std::cout << " Node = " << count[  0 ] ;
       //         std::cout << " Edge = " << count[  1 ] ;
       //         std::cout << " Face = " << count[  2 ] ;
@@ -625,14 +629,17 @@ namespace stk {
     get_number_edges()
     {
       std::vector<unsigned> count ;
-      stk::mesh::Selector selector(get_fem_meta_data()->universal_part());
+      stk::mesh::Selector selector(get_fem_meta_data()->locally_owned_part());
       stk::mesh::count_entities( selector, *get_bulk_data(), count );
       if (count.size() < 3)
         {
           throw std::logic_error("logic error in PerceptMesh::get_number_elements");
         }
 
-      return count[ edge_rank() ];
+      unsigned nedges = count[ node_rank() ];
+      stk::ParallelMachine pm = get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceSum<1>( &nedges ) );
+      return nedges;
       //         std::cout << " Node = " << count[  0 ] ;
       //         std::cout << " Edge = " << count[  1 ] ;
       //         std::cout << " Face = " << count[  2 ] ;
@@ -645,14 +652,17 @@ namespace stk {
     get_number_nodes()
     {
       std::vector<unsigned> count ;
-      stk::mesh::Selector selector(get_fem_meta_data()->universal_part());
+      stk::mesh::Selector selector(get_fem_meta_data()->locally_owned_part() );
       stk::mesh::count_entities( selector, *get_bulk_data(), count );
       if (count.size() < 3)
         {
-          throw std::logic_error("logic error in PerceptMesh::get_number_elements");
+          throw std::logic_error("logic error in PerceptMesh::get_number_nodes");
         }
 
-      return count[ node_rank() ];
+      unsigned nnodes = count[ node_rank() ];
+      stk::ParallelMachine pm = get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
+      return nnodes;
     }
 
     int PerceptMesh::
@@ -665,8 +675,11 @@ namespace stk {
         {
           throw std::logic_error("logic error in PerceptMesh::get_number_elements");
         }
+      unsigned nelems = count[ element_rank() ];
+      stk::ParallelMachine pm = get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceSum<1>( &nelems ) );
+      return nelems;
 
-      return count[ element_rank() ];
       //         std::cout << " Node = " << count[  0 ] ;
       //         std::cout << " Edge = " << count[  1 ] ;
       //         std::cout << " Face = " << count[  2 ] ;

@@ -226,9 +226,11 @@ namespace stk {
                     {
                       m_untangled = true;
                     }
-                  if (conv && m_untangled) break;
-                  //if (iter == 5) break;
-                  //if (iter == 0) exit(1);
+                  if (conv && m_untangled) 
+                    {
+                      //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1 converged, stage= " << m_stage << std::endl;
+                      break;
+                    }
                 }
 
               eMesh->save_as("outer_iter_"+toString(outer)+"_"+toString(stage)+"_mesh.e");
