@@ -6,8 +6,6 @@
 //  Erik Boman, May 2012
 //  K. Devine & H. Thornquist, January 2013
 //
-//  For command-line options (inputs, methods, parameters), run
-//    anasazi.exe --help
 
 #define TINYMATRIX 26
 #include "Epetra_ConfigDefs.h"
@@ -60,7 +58,7 @@ int main(int narg, char *arg[])
   bool verbose = true;
   int verbosity = 1;
   
-  bool testEpetra64 = false;
+  bool testEpetra64 = true;
 
   // Matrix properties
   bool isHermitian = true;
@@ -161,37 +159,27 @@ int main(int narg, char *arg[])
     testEpetra64 = false;
 #endif
 
-  Epetra_CrsMatrix *AK = NULL;
+  Epetra_CrsMatrix *K = NULL;
   
   // Read matrix from file or generate a matrix
   if ((gensize > 0 && testEpetra64)) {
     // Generate the matrix using long long for global indices
-    build_simple_matrix<long long>(Comm, AK, (long long)gensize, true, verbose);
+    build_simple_matrix<long long>(Comm, K, (long long)gensize, true, verbose);
   }
   else if (gensize) {
     // Generate the matrix using int for global indices
-    build_simple_matrix<int>(Comm, AK, gensize, false, verbose);
+    build_simple_matrix<int>(Comm, K, gensize, false, verbose);
   }
   else {
     printf("YOU SHOULDN'T BE HERE \n");
     exit(-1);
   }
 
-  if (verbose && (AK->NumGlobalRows64() < TINYMATRIX)) {
-    if (MyPID == 0) cout << "Input matrix:  " << endl;
-    AK->Print(cout);
-  }
-
-  Teuchos::RCP<Epetra_CrsMatrix> K(AK);
-  const Epetra_Map *AMap = &(AK->DomainMap());
-  Teuchos::RCP<const Epetra_Map> Map(AMap, false);
-  // TODO Check whether memory leaks because we used "false" above.
-
   if (verbose && (K->NumGlobalRows64() < TINYMATRIX)) {
-    if (MyPID == 0) cout << "Converted matrix:  " << endl;
+    if (MyPID == 0) cout << "Input matrix:  " << endl;
     K->Print(cout);
   }
-
+  Teuchos::RCP<Epetra_CrsMatrix> rcpK = Teuchos::rcp( K );
 
   // Set Anasazi verbosity level
   if (MyPID == 0) cout << "Setting up the problem..." << endl;
@@ -207,7 +195,6 @@ int main(int narg, char *arg[])
                        + Anasazi::Debug;
   
   // Create parameter list to pass into solver
-
   Teuchos::ParameterList MyPL;
   MyPL.set("Verbosity", anasazi_verbosity);
   MyPL.set("Which", which);
@@ -231,11 +218,11 @@ int main(int narg, char *arg[])
     
   // Dummy initial vectors - will be set later.
   Teuchos::RCP<Epetra_MultiVector> ivec = 
-    Teuchos::rcp(new Epetra_MultiVector(*Map, blockSize));
+    Teuchos::rcp(new Epetra_MultiVector(K->Map(), blockSize));
 
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
   MyProblem = 
-    Teuchos::rcp(new Anasazi::BasicEigenproblem<double, MV, OP>(K, ivec) );
+    Teuchos::rcp(new Anasazi::BasicEigenproblem<double, MV, OP>(rcpK, ivec) );
 
   // Inform the eigenproblem whether K is Hermitian
 
@@ -369,14 +356,14 @@ int main(int narg, char *arg[])
      
     if (MyProblem->isHermitian()) {
       // Get storage
-      Epetra_MultiVector Kevecs(*Map,numev);
+      Epetra_MultiVector Kevecs(K->Map(),numev);
       Teuchos::RCP<Epetra_MultiVector> Mevecs;
       Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
       B.putScalar(0.0); 
       for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
       
       // Compute A*evecs
-      OPT::Apply( *K, *evecs, Kevecs );
+      OPT::Apply( *rcpK, *evecs, Kevecs );
       Mevecs = evecs;
       
       // Compute A*evecs - lambda*evecs and its norm
