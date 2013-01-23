@@ -115,24 +115,28 @@ public:
   typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename STS::magnitudeType MT;
+  typedef Tpetra::Operator<typename MV::scalar_type,
+			   typename MV::local_ordinal_type,
+			   typename MV::global_ordinal_type,
+			   typename MV::node_type> OP;
   typedef Tpetra::Vector<typename MV::scalar_type,
 			 typename MV::local_ordinal_type,
 			 typename MV::global_ordinal_type,
 			 typename MV::node_type> V;
-  /// Constructor that sets default parameters.
+  /// Constructor that takes a MAT and sets default parameters.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
   ///   A must be real-valued and symmetric positive definite.
   Chebyshev (Teuchos::RCP<const MAT> A) : 
-    A_ (A), 
-    D_ (getDiagonal (*A)),
+    A_ (A),
     computedLambdaMax_ (STS::nan ()),
     computedLambdaMin_ (STS::nan ()),
-    lambdaMax_ (Teuchos::as<ST> (100)), // (Teuchos::as<ST> (4)),
-    lambdaMin_ (Teuchos::as<ST> (0)), // Teuchos::as<ST> (4) / Teuchos::as<ST> (30),
+    lambdaMax_ (STS::nan ()),
+    lambdaMin_ (STS::nan ()),
     eigRatio_ (Teuchos::as<ST> (30)),
     numIters_ (1),
     eigMaxIters_ (10),
+    zeroStartingSolution_ (true),
     imitateML_ (false),
     imitateIfpack_ (false)
   {}
@@ -145,14 +149,14 @@ public:
   ///   filled with the current parameter settings.
   Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) : 
     A_ (A), 
-    D_ (getDiagonal (*A)),
     computedLambdaMax_ (STS::nan ()),
     computedLambdaMin_ (STS::nan ()),
-    lambdaMax_ (Teuchos::as<ST> (100)), // (Teuchos::as<ST> (4)),
-    lambdaMin_ (Teuchos::as<ST> (0)), // Teuchos::as<ST> (4) / Teuchos::as<ST> (30),
+    lambdaMax_ (STS::nan ()),
+    lambdaMin_ (STS::nan ()),
     eigRatio_ (Teuchos::as<ST> (30)),
     numIters_ (1),
     eigMaxIters_ (10),
+    zeroStartingSolution_ (true),
     imitateML_ (false),
     imitateIfpack_ (false)
   {
@@ -161,10 +165,26 @@ public:
 
   /// \brief Set (or reset) parameters.
   ///
-  /// This method accepts the following parameters:
+  /// This method fills in the input ParameterList with missing
+  /// parameters set to their default values.  You may call this
+  /// method as many times as you want.  On each call, the input
+  /// ParameterList is treated as a complete list of the desired
+  /// parameters, not as a "delta" or change list from the current set
+  /// of parameters.  (That is, if you remove parameters from the list
+  /// that were there in the last call to setParameters() and call
+  /// setParameters() again with the revised list, this method will
+  /// use default values for the removed parameters, rather than
+  /// letting the current settings remain.)  However, since the method
+  /// fills in missing parameters, you may keep calling it with the
+  /// ParameterList used in the previous call in order to get the same
+  /// behavior as before.
+  ///
+  /// Parameters that govern spectral bounds of the matrix:
   /// - "chebyshev: max eigenvalue" (\c ScalarType): lambdaMax, an
   ///   upper bound of the bounding ellipse of the eigenvalues of the
-  ///   matrix A.  This parameter is required.
+  ///   matrix A.  If you do not set this parameter, we will compute
+  ///   an approximation.  See "Parameters that govern eigenvalue
+  ///   analysis" to control this approximation process.
   /// - "chebyshev: ratio eigenvalue" (\c ScalarType): eigRatio, the
   ///   ratio of lambdaMax to the lower bound of the bounding ellipse
   ///   of the eigenvalues of A.  We use lambdaMax and eigRatio to
@@ -174,77 +194,185 @@ public:
   ///   lower bound of real part of bounding ellipse of eigenvalues of
   ///   the matrix A.  This parameter is optional and only used for
   ///   sanity checks.
+  ///
+  /// Parameters that govern the number of Chebyshev iterations:
   /// - "chebyshev: degree" (\c int): numIters, the number of
-  ///   iterations.
+  ///   iterations.  This overrides "relaxation: sweeps" and
+  ///   "smoother: sweeps" (see below).
   /// - "relaxation: sweeps" (\c int): numIters, the number of
-  ///   iterations.  If "chebyshev: degree" is a parameter, this
-  ///   parameter will be ignored.  We include this for compatibility
-  ///   with Ifpack.
+  ///   iterations.  We include this for compatibility with Ifpack.
+  ///   This overrides "smoother: sweeps" (see below).
+  /// - "smoother: sweeps" (\c int): numIters, as above.
+  ///   We include this for compatibility with ML.
+  ///
+  /// Parameters that govern eigenvalue analysis:
+  /// - "chebyshev: eigenvalue max iterations" (\c int): eigMaxIters,
+  ///   the number of power method iterations used to compute the
+  ///   maximum eigenvalue.  This overrides "eigen-analysis:
+  ///   iterations" (see below).
+  /// - "eigen-analysis: iterations" (\c int): eigMaxIters, as above.
+  ///   We include this parameter for compatibility with ML.
+  /// - "eigen-analysis: type" (<tt>std::string</tt>): The algorithm
+  ///   to use for estimating the max eigenvalue.  This parameter is
+  ///   optional.  Currently, we only support "power-method" (or
+  ///   "power method"), which is what Ifpack::Chebyshev uses for
+  ///   eigenanalysis.  We include this parameter for compatibility
+  ///   with ML.
+  ///
+  /// Parameters that govern backwards compatibility:
   /// - "chebyshev: imitate ML" (\c bool): If true, imitate
   ///   ML's implementation of Chebyshev iteration (ML_Cheby).
   ///   This overwrites the "chebyshev: imitate Ifpack" parameter.
   /// - "chebyshev: imitate Ifpack" (\c bool): If true, imitate
   ///   Ifpack's implementation of Chebyshev iteration.
-  /// - "chebyshev: eigenvalue max iterations" (\c int): eigMaxIters,
-  ///   the number of power method iterations used to compute the
-  ///   maximum eigenvalue.  This is only done if "chebyshev: imitate
-  ///   Ifpack" is true.  Power method iterations override lambdaMax
-  ///   and lambdaMin (which is set to lambdaMax / eigRatio in this
-  ///   case).
-  /// - "eigen-analysis: iterations" (\c int): eigMaxIters, as above.
-  ///   This parameter's value overrides the above's value.  We
-  ///   include this parameter for compatibility with ML.
   ///
   /// \pre lambdaMin, lambdaMax, and eigRatio are real
   /// \pre 0 < lambdaMin <= lambdaMax
   /// \pre numIters >= 0
+  /// \pre eigMaxIters >= 0
   ///
   /// Default settings for parameters relating to spectral bounds come
   /// from Ifpack.
   void setParameters (Teuchos::ParameterList& plist) {
-    ST lambdaMax = lambdaMax_;
-    ST lambdaMin = lambdaMin_;
-    ST eigRatio = eigRatio_;
-    int numIters = numIters_;
-    int eigMaxIters = eigMaxIters_;
-    bool imitateML = imitateML_;
-    bool imitateIfpack = imitateIfpack_;
+    // Default values of all the parameters.
+    const ST defaultLambdaMax = STS::nan ();
+    const ST defaultLambdaMin = STS::nan ();
+    // 30 is Ifpack::Chebyshev's default.  ML has a different default
+    // eigRatio for smoothers and the coarse-grid solve (if using
+    // Chebyshev for that).  The former uses 20; the latter uses 30.
+    // We're testing smoothers here, so use 20.  (However, if you give
+    // ML an Epetra matrix, it will use Ifpack for Chebyshev, in which
+    // case it would defer to Ifpack's default settings.)
+    const ST defaultEigRatio = Teuchos::as<ST> (30);
+    const int defaultNumIters = 1;
+    const int defaultEigMaxIters = 10;
+    const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
+    const bool defaultImitateML = false;
+    const bool defaultImitateIfpack = false;
+
+    // We'll set the instance data transactionally, after all reads
+    // from the ParameterList.  That way, if any of the ParameterList
+    // reads fail (e.g., due to the wrong parameter type), we will not
+    // have left the instance data in a half-changed state.
+    ST lambdaMax = defaultLambdaMax;
+    ST lambdaMin = defaultLambdaMin;
+    ST eigRatio = defaultEigRatio;
+    int numIters = defaultNumIters;
+    int eigMaxIters = defaultEigMaxIters;
+    bool zeroStartingSolution = defaultZeroStartingSolution;
+    bool imitateML = defaultImitateML;
+    bool imitateIfpack = defaultImitateIfpack;
 
     // Defer all externally visible side effects until we have
     // finished all ParameterList interaction.  This makes the method
     // satisfy the strong exception guarantee.
     lambdaMax = plist.get ("chebyshev: max eigenvalue", lambdaMax);
     lambdaMin = plist.get ("chebyshev: min eigenvalue", lambdaMin);
-    eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
 
     // The last parameter name overrides the first.
-    numIters = plist.get ("relaxation: sweeps", numIters);
+    eigRatio = plist.get ("smoother: Chebyshev alpha", eigRatio); // ML compatibility
+    eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
+
+    // Each parameter name overrides the one above it.
+    numIters = plist.get ("smoother: sweeps", numIters); // ML compatibility
+    numIters = plist.get ("relaxation: sweeps", numIters); // Ifpack compatibility
     numIters = plist.get ("chebyshev: degree", numIters);
 
     // The last parameter name overrides the first.
+    eigMaxIters = plist.get ("eigen-analysis: iterations", eigMaxIters); // ML compatibility
     eigMaxIters = plist.get ("chebyshev: eigenvalue max iterations", eigMaxIters);
-    eigMaxIters = plist.get ("eigen-analysis: iterations", eigMaxIters);
 
+    zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution),
     imitateML = plist.get ("chebyshev: imitate ML", imitateML);
     imitateIfpack = plist.get ("chebyshev: imitate Ifpack", imitateIfpack);
+
+    // Test for Ifpack parameters that we won't ever implement here.
+    // Be careful to use the one-argument version of get(), since the
+    // two-argment version adds the parameter if it's not there.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      plist.isParameter ("chebyshev: use block mode") && 
+      ! plist.get<bool> ("chebyshev: use block mode"),
+      std::invalid_argument,
+      "Ifpack2::Chebyshev requires that if you supply the Ifpack parameter "
+      "\"chebyshev: use block mode\", it must be set to false.  Ifpack2's "
+      "Chebyshev does not implement Ifpack's block mode.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      plist.isParameter ("chebyshev: solve normal equations") && 
+      ! plist.get<bool> ("chebyshev: solve normal equations"),
+      std::invalid_argument,
+      "Ifpack2::Chebyshev does not and will never implement the Ifpack "
+      "parameter \"chebyshev: solve normal equations\".  If you want to solve "
+      "the normal equations, construct a Tpetra::Operator that implements "
+      "A^* A, and use Chebyshev to solve A^* A x = A^* b.");
+
+    // Test for Ifpack parameters that we haven't implemented yet.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      plist.isParameter ("chebyshev: min diagonal value"),
+      std::logic_error,
+      "Ifpack2::Chebyshev: The Ifpack parameter \"chebyshev: min diagonal "
+      "value\" is not currently supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      plist.isParameter ("chebyshev: operator inv diagonal"),
+      std::logic_error,
+      "Ifpack2::Chebyshev: The Ifpack parameter \"chebyshev: operator inv "
+      "diagonal\" is not currently supported.");
+    // For now, we only check that this ML parameter, if provided, has
+    // the one value that we support.
+    std::string eigenAnalysisType ("power-method");
+    if (plist.isParameter ("eigen-analysis: type")) {
+      eigenAnalysisType = plist.get<std::string> ("eigen-analysis: type");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        eigenAnalysisType != "power-method" && eigenAnalysisType != "power method",
+	std::invalid_argument,
+	"Ifpack2::Chebyshev: This class does support the ML parameter \"eigen-"
+	"analysis: type\" for backwards compatibility.  However, Ifpack2 "
+	"currently only supports the \"power-method\" option for this "
+	"parameter.  This imitates Ifpack, which only implements the power "
+	"method for eigenanalysis.");
+    }
 
     lambdaMax_ = lambdaMax;
     lambdaMin_ = lambdaMin;
     eigRatio_ = eigRatio;
     numIters_ = numIters;
     eigMaxIters_ = eigMaxIters;
+    zeroStartingSolution_ = zeroStartingSolution;
     imitateML_ = imitateML;
     imitateIfpack_ = imitateIfpack;
   }
 
-  //! Estimate max and min eigenvalues of D_inv * A.
+  /// \brief (Re)compute the left scaling, and (if applicable)
+  ///   estimate max and min eigenvalues of D_inv * A.
+  ///
+  /// You must call this method before calling apply(),
+  /// - if you have not yet called this method,
+  /// - if the matrix (either its values or its structure) has changed, or
+  /// - any time after you call setParameters().
+  ///
+  /// Advanced users may omit calling compute() after calling
+  /// setParameters(), as long as none of the changed parameters
+  /// affect either computation of the inverse diagonal, or estimation
+  /// of the max or min eigenvalues.
+  ///
+  /// If estimation of the eigenvalues is required, this method may
+  /// take as long as several Chebyshev iterations.
   void compute () {
-    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
-    const ST computedLambdaMin = computedLambdaMax / eigRatio_;
+    // The matrix may have changed, and the parameters also affect
+    // this process, so recompute the inverse diagonal.
+    D_ = getDiagonal (*A_);
 
-    // Defer "committing" results until all computations succeeded.
-    computedLambdaMax_ = computedLambdaMax;
-    computedLambdaMin_ = computedLambdaMin;
+    // The matrix may have changed, so we always compute the
+    // eigenvalue estimates, even if we computed them before.
+    // However, if the user gave us lambdaMax already (if it's not
+    // NaN), then don't (re)compute it.
+    if (STS::isnaninf (lambdaMax_)) {
+      const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+      const ST computedLambdaMin = computedLambdaMax / eigRatio_;
+
+      // Defer "committing" results until all computations succeeded.
+      computedLambdaMax_ = computedLambdaMax;
+      computedLambdaMin_ = computedLambdaMin;
+    }
   }
 
   /// Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
@@ -254,26 +382,41 @@ public:
   ///
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   MT apply (const MV& B, MV& X) {
+    ST eigRatio = eigRatio_;
+    ST lambdaMax = lambdaMax_;
+    ST lambdaMin = lambdaMax / eigRatio_; // lambdaMin_; (???)
+
+    // FIXME (mfh 22 Jan 2013) We really only want to check if it's
+    // NaN.  Inf means something different.  However,
+    // Teuchos::ScalarTraits doesn't distinguish the two cases.
+    if (STS::isnaninf (lambdaMax)) {
+      lambdaMax = computedLambdaMax_;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (lambdaMax), 
+      std::runtime_error, 
+      "Chebyshev::apply: Both lambdaMax_ and computedLambdaMax_ are NaN or Inf.  "
+      "This means one of the following: (a) you didn't call compute() before calling apply(), "
+      "(b) you didn't call compute() after calling setParameters(), or "
+      "(c) there is a bug in this class (compute() has not done the eigenanalysis that it should have done).");
+    if (STS::isnaninf (lambdaMin)) {
+      lambdaMin = computedLambdaMin_;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (lambdaMin), 
+      std::runtime_error, 
+      "Chebyshev::apply: Both lambdaMin_ and computedLambdaMin_ are NaN or Inf.  "
+      "This means one of the following: (a) you didn't call compute() before calling apply(), "
+      "(b) you didn't call compute() after calling setParameters(), or "
+      "(c) there is a bug in this class (compute() has not done the eigenanalysis that it should have done).");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (eigRatio), 
+      std::logic_error, 
+      "Chebyshev::apply: eigRatio is NaN or Inf.");
+
     if (imitateML_) {
-      // ML has a different default eigRatio for smoothers and the
-      // coarse-grid solve (if using Chebyshev for that).  The former
-      // uses 20; the latter uses 30.  We're testing smoothers here,
-      // so use 20.
-
-      //const ST eigRatio = Teuchos::as<ST> (20);
-      const ST eigRatio = eigRatio_;
-      //const ST lambdaMax = computedLambdaMax_;
-      const ST lambdaMax = lambdaMax_; // computedLambdaMax_;
-      const ST lambdaMin = lambdaMax / eigRatio;
-
       mlApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
     } else if (imitateIfpack_) {
-      //ST eigRatio = Teuchos::as<ST> (30);
-      ST eigRatio = eigRatio_;
-      ST lambdaMax = lambdaMax_; // computedLambdaMax_;
-      ST lambdaMin = lambdaMax / eigRatio;
-
-      //const ST lambdaMax = lambdaMax_ * Teuchos::as<ST> (1.1);
       const ST one = Teuchos::as<ST> (1);
       if (STS::magnitude (lambdaMax - one) < Teuchos::as<ST> (1.0e-6)) {
 	lambdaMin = one;
@@ -288,15 +431,6 @@ public:
       // eigenvalue (not to multiply it by 1.1, as in ML), but to use
       // lambdaMax/30 for the "min eigenvalue," instead of the actual
       // min eigenvalue.
-#if 0
-      const ST eigRatio = Teuchos::as<ST> (30); 
-      const ST lambdaMax = computedLambdaMax_; 
-      const ST lambdaMin = lambdaMax / eigRatio;
-#else
-      const ST eigRatio = eigRatio_;
-      const ST lambdaMax = lambdaMax_;
-      const ST lambdaMin = lambdaMin_;
-#endif 
       applyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
     }
 
@@ -305,6 +439,21 @@ public:
     Teuchos::Array<MT> norms (B.getNumVectors ());
     R.norm2 (norms ());
     return *std::max_element (norms.begin (), norms.end ());
+  }
+
+  //! Print instance data to the given output stream.
+  void print (std::ostream& out) {
+    using std::endl;
+    out << "Chebyshev:" << endl
+	<< "- computedLambdaMax_ = " << computedLambdaMax_ << endl
+	<< "- computedLambdaMin_ = " << computedLambdaMin_ << endl
+	<< "- lambdaMax_ = " << lambdaMax_ << endl
+	<< "- lambdaMin_ = " << lambdaMin_ << endl
+	<< "- eigRatio_ = " << eigRatio_ << endl
+	<< "- numIters_ = " << numIters_ << endl
+	<< "- eigMaxIters_ = " << eigMaxIters_ << endl
+	<< "- imitateML_ = " << imitateML_ << endl
+	<< "- imitateIfpack_ = " << imitateIfpack_ << endl;
   }
 
 private:
@@ -324,8 +473,12 @@ private:
 
   // Parameters
 
-  ST lambdaMax_; //!< User-provided estimate for maximum eigenvalue of A.
-  ST lambdaMin_; //!< User-provided estimate for minimum eigenvalue of A.
+  /// User-provided estimate for maximum eigenvalue of A.
+  /// This is set to NaN if the user did not provide this.
+  ST lambdaMax_; 
+  /// User-provided estimate for minimum eigenvalue of A.
+  /// This is set to NaN if the user did not provide this.
+  ST lambdaMin_; 
   /// Estimate for ratio of max to max eigenvalue of A.
   /// Not necessarily equal to lambdaMax_/lambdaMin_.
   ST eigRatio_;  
@@ -333,29 +486,14 @@ private:
   int numIters_;
   //! Number of iterations of the power method for estimating lambdaMax_.
   int eigMaxIters_;
+  //! Whether to assume that the X input to apply() is always zero.
+  bool zeroStartingSolution_;
   /// Whether to imitate ML's Chebyshev implementation.
   /// This overrides imitateIfpack_, and enables the power method.
   bool imitateML_;
   //! Whether to imitate Ifpack's Chebyshev implementation.
   bool imitateIfpack_;
 
-public:
-  //! Print instance data to the given output stream.
-  void print (std::ostream& out) {
-    using std::endl;
-    out << "Chebyshev:" << endl
-	<< "- computedLambdaMax_ = " << computedLambdaMax_ << endl
-	<< "- computedLambdaMin_ = " << computedLambdaMin_ << endl
-	<< "- lambdaMax_ = " << lambdaMax_ << endl
-	<< "- lambdaMin_ = " << lambdaMin_ << endl
-	<< "- eigRatio_ = " << eigRatio_ << endl
-	<< "- numIters_ = " << numIters_ << endl
-	<< "- eigMaxIters_ = " << eigMaxIters_ << endl
-	<< "- imitateML_ = " << imitateML_ << endl
-	<< "- imitateIfpack_ = " << imitateIfpack_ << endl;
-  }
-
-private:
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void 
   computeResidual (MV& R, const MV& B, const MAT& A, const MV& X, 
@@ -413,7 +551,7 @@ private:
   ///   This need not be the same as lambdaMax / lambdaMin.
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as B.
-  static void
+  void
   applyImpl (const MAT& A,
 	     const MV& B,
 	     MV& X,
@@ -421,16 +559,21 @@ private:
 	     const ST lambdaMax,
 	     const ST lambdaMin,
 	     const ST eigRatio,
-	     const V& D_inv)
+	     const V& D_inv) const
   {
     (void) lambdaMin; // Forestall compiler warning.
     const ST myLambdaMin = lambdaMax / eigRatio;
 
+    const ST zero = Teuchos::as<ST> (0);
     const ST one = Teuchos::as<ST> (1);
     const ST two = Teuchos::as<ST> (2);
     const ST d = (lambdaMax + myLambdaMin) / two; // Ifpack2 calls this theta
     const ST c = (lambdaMax - myLambdaMin) / two; // Ifpack2 calls this 1/delta
 
+    if (zeroStartingSolution_ && numIters > 0) {
+      // If zero iterations, then input X is output X.
+      X.putScalar (zero);
+    }
     MV R (B.getMap (), B.getNumVectors (), false);
     MV P (B.getMap (), B.getNumVectors (), false);
     MV Z (B.getMap (), B.getNumVectors (), false);
@@ -456,7 +599,6 @@ private:
     }
   }
 
-
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
   ///
@@ -470,12 +612,16 @@ private:
   /// \param B [in] Right-hand side(s) in the linear system to solve.
   /// \param X [in] Initial guess(es) for the linear system to solve.
   /// \param numIters [in] Number of Chebyshev iterations.
-  /// \param lambdaMax [in] Estimate of max eigenvalue of A.
-  /// \param eigRatio [in] Estimate of ratio of max eigenvalue to min
-  ///   eigenvalue of A.
+  /// \param lambdaMax [in] Estimate of max eigenvalue of D_inv*A.
+  /// \param lambdaMin [in] Estimate of min eigenvalue of D_inv*A.  We
+  ///   only use this to determine if A is the identity matrix.
+  /// \param eigRatio [in] Estimate of max / min eigenvalue ratio of
+  ///   D_inv*A.  We use this along with lambdaMax to compute the
+  ///   Chebyshev coefficients.  This need not be the same as
+  ///   lambdaMax/lambdaMin.
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as b.
-  static void
+  void
   ifpackApplyImpl (const MAT& A,
 		   const MV& B,
 		   MV& X,
@@ -483,7 +629,7 @@ private:
 		   const ST lambdaMax,
 		   const ST lambdaMin,
 		   const ST eigRatio,
-		   const V& D_inv)
+		   const V& D_inv) const
   {
     if (numIters <= 0) {
       return;
@@ -510,8 +656,7 @@ private:
     const ST oneOverTheta = one / theta;
 
     // Special case for the first iteration.
-    const bool zeroStartingSolution = false;
-    if (zeroStartingSolution) {
+    if (! zeroStartingSolution_) {
       computeResidual (V, B, A, X); // V = B - A*X
       solve (W, one/theta, D_inv, V); // W = (1/theta)*D_inv*(B-A*X)
       X.update (one, W, one); // X = X + W
@@ -537,7 +682,6 @@ private:
     }
   }
 
-public:
   /// \brief Use numIters power method iterations to estimate the
   ///   maximum eigenvalue of A*D_inv.
   static ST
@@ -572,8 +716,29 @@ public:
     return lambdaMax;
   }
 
-private:
-  static void
+  /// \brief Solve AX=B for X with Chebyshev iteration with left
+  ///   diagonal scaling, imitating ML's implementation.
+  ///
+  /// \pre A must be real-valued and symmetric positive definite.
+  /// \pre numIters >= 0
+  /// \pre eigRatio >= 1
+  /// \pre 0 < lambdaMax
+  /// \pre All entries of D_inv are positive.
+  ///
+  /// \param A [in] The matrix A in the linear system to solve.
+  /// \param B [in] Right-hand side(s) in the linear system to solve.
+  /// \param X [in] Initial guess(es) for the linear system to solve.
+  /// \param numIters [in] Number of Chebyshev iterations.
+  /// \param lambdaMax [in] Estimate of max eigenvalue of D_inv*A.
+  /// \param lambdaMin [in] Estimate of min eigenvalue of D_inv*A.  We
+  ///   only use this to determine if A is the identity matrix.
+  /// \param eigRatio [in] Estimate of max / min eigenvalue ratio of
+  ///   D_inv*A.  We use this along with lambdaMax to compute the
+  ///   Chebyshev coefficients.  This need not be the same as
+  ///   lambdaMax/lambdaMin.
+  /// \param D_inv [in] Vector of diagonal entries of A.  It must have
+  ///   the same distribution as b.
+  void
   mlApplyImpl (const MAT& A,
 	       const MV& B,
 	       MV& X,
@@ -581,7 +746,7 @@ private:
 	       const ST lambdaMax,
 	       const ST lambdaMin,
 	       const ST eigRatio,
-	       const V& D_inv)
+	       const V& D_inv) const
   {
     const ST zero = Teuchos::as<ST> (0);
     const ST one = Teuchos::as<ST> (1);
@@ -616,8 +781,7 @@ private:
     // ML_Cheby function, in the "normal point scaling" section, which
     // is in lines 7365-7392 of ml_smoother.c.
 
-    const bool zeroOutInitialGuess = false;
-    if (! zeroOutInitialGuess) {
+    if (! zeroStartingSolution_) {
       // dk = (1/theta) * D_inv * (B - (A*X))
       A.apply (X, pAux); // pAux = A * X
       R = B;
@@ -841,6 +1005,7 @@ private:
 // They have long names so I don't confuse them with the shorter-named
 // actual options in the body of the test.
 int numberOfIterations = 50;
+int numberOfEigenanalysisIterations = 15;
 int localNumberOfRows = 10000;
 bool perturbMaxEigenvalue = false;
 
@@ -852,6 +1017,8 @@ TEUCHOS_STATIC_SETUP()
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP ();
   clp.setOption ("numIters", &numberOfIterations, 
 		 "Number of Chebyshev iterations");
+  clp.setOption ("numEigIters", &numberOfEigenanalysisIterations, 
+		 "Number of iterations of eigenvalue analysis (e.g., power method)");
   clp.setOption ("localNumRows", &localNumberOfRows, 
 		 "Number of rows per process in the sparse matrix.");
   clp.setOption ("perturbMaxEigenvalue", "dontPerturbMaxEigenvalue", 
@@ -967,9 +1134,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   const ST pi = acos (-1.0);
   const ST N = as<ST> (globalNumRows);
   const ST lambdaMax = two * (one - cos ((pi*N) / (N+one)));
-  const ST lambdaMin = (pi / globalNumRows) * (pi / globalNumRows);
+  const ST lambdaMin = (pi / N) * (pi / N);
   ST eigRatio = lambdaMax / lambdaMin;
   const int numIters = numberOfIterations;
+  int numEigIters = numberOfEigenanalysisIterations;
 
   // Set up the linear system to solve.
   V x_exact (domainMap), x (domainMap), b (rangeMap);
@@ -1003,80 +1171,29 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Ifpack2, Ifpack, and ML.  For this first pass, we only set the
   // max eigenvalue.  Below, we'll experiment with also setting the
   // min eigenvalue and the min / max eigenvalue ratio.
+  params.set ("chebyshev: eigenvalue max iterations", numEigIters);
   params.set ("chebyshev: degree", numIters);
   params.set ("chebyshev: max eigenvalue", lambdaMax);
   params.set ("chebyshev: imitate Ifpack", false);  
   params.set ("chebyshev: imitate ML", false);  
 
-  // Create the Ifpack2::Chebyshev iteration operator.
+  // Create the operators: Ifpack2, custom Chebyshev, custom CG.
   prec_type ifpack2Cheby (A);
+  Chebyshev<ST, MV, crs_matrix_type> myCheby (A);
+  CG<ST, MV, crs_matrix_type> cg (A);
+
+  // Residual 2-norms for comparison.
+  MT maxResNormM1, maxResNormM2, maxResNormM3, maxResNormM4, maxResNormM5;
+
+  ////////////////////////////////////////////////////////////////////
+  // Test 1: set lambdaMax exactly, use default values of eigRatio and
+  // lambdaMin.  Run each version of Chebyshev and compare results.
+  ////////////////////////////////////////////////////////////////////
+
+  // Run Ifpack2's version of Chebyshev.
   ifpack2Cheby.setParameters (params);
   ifpack2Cheby.initialize ();
   ifpack2Cheby.compute ();
-
-  // Create the comparison Chebyshev iteration operator.
-  Chebyshev<ST, MV, crs_matrix_type> myCheby (A, params);
-
-  // Estimate max and min eigenvalues of A.  We only need to do this
-  // once, unless we change A or the "chebyshev: eigenvalue max
-  // iterations" or "eigen-analysis: iterations" parameters.
-  myCheby.compute ();
-
-  // Print the computed max and min eigenvalues, and other details.
-  myCheby.print (cout);
-
-  //
-  // Run each version of Chebyshev and compare their results.
-  //
-  // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.apply (b, x);
-  r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  MT maxResNormM1 = *std::max_element (norms.begin (), norms.end ());
-
-  // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  MT maxResNormM2 = myCheby.apply (b, x);
-
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: imitate Ifpack", true);
-  params.set ("chebyshev: imitate ML", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  MT maxResNormM3 = myCheby.apply (b, x);
-
-  // Run our custom version of Chebyshev, but imitate ML.
-  params.set ("chebyshev: imitate Ifpack", false);
-  params.set ("chebyshev: imitate ML", true);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  MT maxResNormM4 = myCheby.apply (b, x);
-
-  // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  CG<ST, MV, crs_matrix_type> cg (A, params);
-  MT maxResNormM5 = cg.apply (b, x);
-
-  cout << "Results with lambdaMax = " << lambdaMax 
-       << ", default lambdaMin and eigRatio:" << endl
-       << "- Ifpack2::Chebyshev:         " << maxResNormM1 / maxInitResNorm << endl
-       << "- Chebyshev imitating Ifpack: " << maxResNormM3 / maxInitResNorm << endl
-       << "- Textbook Chebyshev:         " << maxResNormM2 / maxInitResNorm << endl
-       << "- Chebyshev imitating ML:     " << maxResNormM4 / maxInitResNorm << endl
-       << "- CG:                         " << maxResNormM5 / maxInitResNorm << endl;
-
-  params.set ("chebyshev: imitate Ifpack", false);
-  params.set ("chebyshev: imitate ML", false);
-  // Now try setting the min eigenvalue and max / min eigenvalue ratio
-  // as well.
-  params.set ("chebyshev: min eigenvalue", lambdaMin);
-  params.set ("chebyshev: ratio eigenvalue", eigRatio);
-
-  //
-  // Run each version of Chebyshev and compare their results.
-  //
-  // Run Ifpack2's version of Chebyshev.
   ifpack2Cheby.apply (b, x);
   r = b;
   A->apply (x, r, Teuchos::NO_TRANS, -one, one);
@@ -1085,6 +1202,8 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
   maxResNormM2 = myCheby.apply (b, x);
 
   // Run our custom version of Chebyshev, but imitate Ifpack.
@@ -1103,6 +1222,78 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
+  maxResNormM5 = cg.apply (b, x);
+
+  cout << "Results with lambdaMax = " << lambdaMax 
+       << ", default lambdaMin and eigRatio:" << endl
+       << "- Ifpack2::Chebyshev:         " << maxResNormM1 / maxInitResNorm << endl
+       << "- Chebyshev imitating Ifpack: " << maxResNormM3 / maxInitResNorm << endl
+       << "- Textbook Chebyshev:         " << maxResNormM2 / maxInitResNorm << endl
+       << "- Chebyshev imitating ML:     " << maxResNormM4 / maxInitResNorm << endl
+       << "- CG:                         " << maxResNormM5 / maxInitResNorm << endl;
+
+  // At least the first four or so digits of Ifpack2::Chebyshev and
+  // "Chebyshev imitating Ifpack" should be the same.  (We're not so
+  // dreadfully picky, but generally many more digits than this should
+  // match.)
+  {
+    const MT tol = Teuchos::as<MT> (1.0e-4);
+    const MT relDiff = STS::magnitude (maxResNormM1 - maxResNormM3) / maxResNormM3;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      relDiff > tol, 
+      std::runtime_error, 
+      "After " << numIters << " iterations of Chebyshev, with lambdaMax = " 
+      << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
+      "and an imitation of Ifpack's implementation have a relative difference "
+      "of " << relDiff << " > tol = " << tol << ".");
+  }
+
+  // Reset the parameters to their original values.
+  params.set ("chebyshev: imitate Ifpack", false);
+  params.set ("chebyshev: imitate ML", false);
+
+  ////////////////////////////////////////////////////////////////////
+  // Test 2: set lambdaMax and lambdaMin exactly, and set eigRatio =
+  // lambdaMax / lambdaMin.
+  ////////////////////////////////////////////////////////////////////
+
+  params.set ("chebyshev: min eigenvalue", lambdaMin);
+  params.set ("chebyshev: ratio eigenvalue", eigRatio);
+
+  // Run Ifpack2's version of Chebyshev.
+  ifpack2Cheby.setParameters (params);
+  ifpack2Cheby.initialize ();
+  ifpack2Cheby.compute ();
+  ifpack2Cheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormM1 = *std::max_element (norms.begin (), norms.end ());
+
+  // Run our custom version of Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
+  maxResNormM2 = myCheby.apply (b, x);
+
+  // Run our custom version of Chebyshev, but imitate Ifpack.
+  params.set ("chebyshev: imitate Ifpack", true);
+  params.set ("chebyshev: imitate ML", false);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM3 = myCheby.apply (b, x);
+
+  // Run our custom version of Chebyshev, but imitate ML.
+  params.set ("chebyshev: imitate Ifpack", false);
+  params.set ("chebyshev: imitate ML", true);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM4 = myCheby.apply (b, x);
+
+  // Run CG, just to compare.
+  x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
   maxResNormM5 = cg.apply (b, x);
 
   cout << "Results with lambdaMax = " << lambdaMax 
@@ -1116,8 +1307,17 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Reset parameters to their first values.
   params.set ("chebyshev: imitate Ifpack", false);
   params.set ("chebyshev: imitate ML", false);
+
+  // ParameterList is NOT a delta.  That is, if we remove these
+  // parameters from the list, setParameters() will use default
+  // values, rather than letting the current settings remain.
   params.remove ("chebyshev: min eigenvalue", false);
   params.remove ("chebyshev: ratio eigenvalue", false);
+
+  ////////////////////////////////////////////////////////////////////
+  // Test 3: set lambdaMax exactly, and set eigRatio = 20 (ML's
+  // default).
+  ////////////////////////////////////////////////////////////////////
 
   // Now try again, but set the max / min eigenvalue ratio to 20 (ML's
   // default value for smoothers).
@@ -1128,6 +1328,9 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Run each version of Chebyshev and compare their results.
   //
   // Run Ifpack2's version of Chebyshev.
+  ifpack2Cheby.setParameters (params);
+  ifpack2Cheby.initialize ();
+  ifpack2Cheby.compute ();
   ifpack2Cheby.apply (b, x);
   r = b;
   A->apply (x, r, Teuchos::NO_TRANS, -one, one);
@@ -1136,6 +1339,8 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
   maxResNormM2 = myCheby.apply (b, x);
 
   // Run our custom version of Chebyshev, but imitate Ifpack.
@@ -1154,6 +1359,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
   maxResNormM5 = cg.apply (b, x);
 
   cout << "Results with lambdaMax = " << lambdaMax 
@@ -1167,8 +1373,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: imitate Ifpack", false);
   params.set ("chebyshev: imitate ML", false);
 
-  // Now try again, but set the max / min eigenvalue ratio to 30
-  // (Ifpack's default value for smoothers).
+  ////////////////////////////////////////////////////////////////////
+  // Test 4: set lambdaMax exactly, and set eigRatio = 30 (Ifpack's
+  // default).
+  ////////////////////////////////////////////////////////////////////
   eigRatio = Teuchos::as<ST> (30);
   params.set ("chebyshev: ratio eigenvalue", eigRatio);
 
@@ -1176,6 +1384,9 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Run each version of Chebyshev and compare their results.
   //
   // Run Ifpack2's version of Chebyshev.
+  ifpack2Cheby.setParameters (params);
+  ifpack2Cheby.initialize ();
+  ifpack2Cheby.compute ();
   ifpack2Cheby.apply (b, x);
   r = b;
   A->apply (x, r, Teuchos::NO_TRANS, -one, one);
@@ -1184,6 +1395,8 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run our custom version of Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
   maxResNormM2 = myCheby.apply (b, x);
 
   // Run our custom version of Chebyshev, but imitate Ifpack.
@@ -1202,6 +1415,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
   maxResNormM5 = cg.apply (b, x);
 
   cout << "Results with lambdaMax = " << lambdaMax 
@@ -1218,58 +1432,120 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.remove ("chebyshev: ratio eigenvalue", false);
   eigRatio = lambdaMax / lambdaMin;
 
-  if (perturbMaxEigenvalue) {
-    // Let's try different incorrect estimates of the max eigenvalue.
-    const MT scalingFactors[] = {2, 1.5, 1.25, 1.125, 0.875, 0.75, 0.5};
-    const int numScalingFactors = 7;
-    for (int i = 0; i < numScalingFactors; ++i) {
-      const ST lambdaMaxWrong = lambdaMax * scalingFactors[i];
-      params.set ("chebyshev: min eigenvalue", lambdaMin);
-      params.set ("chebyshev: max eigenvalue", lambdaMaxWrong);
-      params.set ("chebyshev: ratio eigenvalue", lambdaMaxWrong / lambdaMin);
-      params.set ("chebyshev: imitate Ifpack", false);
-      params.set ("chebyshev: imitate ML", false);
+  ////////////////////////////////////////////////////////////////////
+  // Test 5: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
+  // smoother do eigenanalysis to estimate lambdaMax.
+  ////////////////////////////////////////////////////////////////////
 
-      // Run Ifpack2's version of Chebyshev.
-      ifpack2Cheby.setParameters (params);
-      ifpack2Cheby.apply (b, x);
-      r = b;
-      A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-      r.norm2 (norms ());
-      maxResNormM1 = *std::max_element (norms.begin (), norms.end ());
+  params.remove ("chebyshev: min eigenvalue", false);
+  params.remove ("chebyshev: max eigenvalue", false);
+  params.remove ("chebyshev: ratio eigenvalue", false);
 
-      // Run our custom version of Chebyshev.
-      x.putScalar (zero); // Reset the initial guess(es).
-      myCheby.setParameters (params);
-      maxResNormM2 = myCheby.apply (b, x);
+  // Run Ifpack2's version of Chebyshev.
+  ifpack2Cheby.setParameters (params);
+  ifpack2Cheby.initialize ();
+  ifpack2Cheby.compute ();
+  ifpack2Cheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormM1 = *std::max_element (norms.begin (), norms.end ());
 
-      // Run our custom version of Chebyshev, but imitate Ifpack.
-      params.set ("chebyshev: imitate Ifpack", true);
-      myCheby.setParameters (params);
-      x.putScalar (zero); // Reset the initial guess(es).
-      maxResNormM3 = myCheby.apply (b, x);
+  // Run our custom version of Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
+  maxResNormM2 = myCheby.apply (b, x);
 
-      // Run our custom version of Chebyshev, but imitate ML.
-      params.set ("chebyshev: imitate Ifpack", false);
-      params.set ("chebyshev: imitate ML", true);
-      myCheby.setParameters (params);
-      x.putScalar (zero); // Reset the initial guess(es).
-      maxResNormM4 = myCheby.apply (b, x);
+  // Run our custom version of Chebyshev, but imitate Ifpack.
+  params.set ("chebyshev: imitate Ifpack", true);
+  params.set ("chebyshev: imitate ML", false);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM3 = myCheby.apply (b, x);
 
-      // Run CG, just to compare.
-      x.putScalar (zero); // Reset the initial guess(es).
-      cg.setParameters (params);
-      maxResNormM5 = cg.apply (b, x);
+  // Run our custom version of Chebyshev, but imitate ML.
+  params.set ("chebyshev: imitate Ifpack", false);
+  params.set ("chebyshev: imitate ML", true);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM4 = myCheby.apply (b, x);
 
-      cout << endl
-	   << "With wrong lambdaMax:       " << lambdaMaxWrong << endl
-	   << "Ifpack2::Chebyshev:         " << maxResNormM1 / maxInitResNorm << endl
-	   << "Chebyshev imitating Ifpack: " << maxResNormM3 / maxInitResNorm << endl
-	   << "Textbook Chebyshev:         " << maxResNormM2 / maxInitResNorm << endl
-	   << "Chebyshev imitating ML:     " << maxResNormM4 / maxInitResNorm << endl
-	   << "CG:                         " << maxResNormM5 / maxInitResNorm << endl;
-    }
-  }
+  // Run CG, just to compare.
+  x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
+  maxResNormM5 = cg.apply (b, x);
+
+  cout << "Results with default lambdaMax, lambdaMin, and eigRatio, "
+    "with numEigIters = " << numEigIters << ":" << endl
+       << "- Ifpack2::Chebyshev:         " << maxResNormM1 / maxInitResNorm << endl
+       << "- Chebyshev imitating Ifpack: " << maxResNormM3 / maxInitResNorm << endl
+       << "- Textbook Chebyshev:         " << maxResNormM2 / maxInitResNorm << endl
+       << "- Chebyshev imitating ML:     " << maxResNormM4 / maxInitResNorm << endl
+       << "- CG:                         " << maxResNormM5 / maxInitResNorm << endl;
+
+  // Print the computed max and min eigenvalues, and other details.
+  cout << endl;
+  myCheby.print (cout);
+
+  ////////////////////////////////////////////////////////////////////
+  // Test 6: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
+  // smoother do eigenanalysis to estimate lambdaMax, with more
+  // iterations.
+  ////////////////////////////////////////////////////////////////////
+
+  params.remove ("chebyshev: min eigenvalue", false);
+  params.remove ("chebyshev: max eigenvalue", false);
+  params.remove ("chebyshev: ratio eigenvalue", false);
+  numEigIters = 2 * numEigIters;
+  params.set ("chebyshev: eigenvalue max iterations", numEigIters);
+
+  // Run Ifpack2's version of Chebyshev.
+  ifpack2Cheby.setParameters (params);
+  ifpack2Cheby.initialize ();
+  ifpack2Cheby.compute ();
+  ifpack2Cheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormM1 = *std::max_element (norms.begin (), norms.end ());
+
+  // Run our custom version of Chebyshev.
+  x.putScalar (zero); // Reset the initial guess(es).
+  myCheby.setParameters (params);
+  myCheby.compute ();
+  maxResNormM2 = myCheby.apply (b, x);
+
+  // Run our custom version of Chebyshev, but imitate Ifpack.
+  params.set ("chebyshev: imitate Ifpack", true);
+  params.set ("chebyshev: imitate ML", false);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM3 = myCheby.apply (b, x);
+
+  // Run our custom version of Chebyshev, but imitate ML.
+  params.set ("chebyshev: imitate Ifpack", false);
+  params.set ("chebyshev: imitate ML", true);
+  myCheby.setParameters (params);
+  x.putScalar (zero); // Reset the initial guess(es).
+  maxResNormM4 = myCheby.apply (b, x);
+
+  // Run CG, just to compare.
+  x.putScalar (zero); // Reset the initial guess(es).
+  cg.setParameters (params);
+  maxResNormM5 = cg.apply (b, x);
+
+  cout << "Results with default lambdaMax, lambdaMin, and eigRatio, "
+    "with numEigIters = " << numEigIters << ":" << endl
+       << "- Ifpack2::Chebyshev:         " << maxResNormM1 / maxInitResNorm << endl
+       << "- Chebyshev imitating Ifpack: " << maxResNormM3 / maxInitResNorm << endl
+       << "- Textbook Chebyshev:         " << maxResNormM2 / maxInitResNorm << endl
+       << "- Chebyshev imitating ML:     " << maxResNormM4 / maxInitResNorm << endl
+       << "- CG:                         " << maxResNormM5 / maxInitResNorm << endl;
+
+  // Print the computed max and min eigenvalues, and other details.
+  cout << endl;
+  myCheby.print (cout);
 }
 
 
