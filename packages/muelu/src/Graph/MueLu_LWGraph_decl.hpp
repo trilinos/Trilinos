@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_GRAPH_DECL_HPP
-#define MUELU_GRAPH_DECL_HPP
+#ifndef MUELU_LWGRAPH_DECL_HPP
+#define MUELU_LWGRAPH_DECL_HPP
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
@@ -52,32 +52,35 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
 /*!
-   @class Graph
-   @brief MueLu representation of a compressed row storage graph.
+   @class LWGraph
+   @brief Lightweight MueLu representation of a compressed row storage graph.
 
-   This class holds an underlying Xpetra_CrsGraph.
-   This class can be considered a facade, as MueLu needs only limited functionality for aggregation.
+   This class is lightweight in the sense that it holds to local graph information.  These were built without using
+   fillComplete.
+   TODO handle systems
 */
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class Graph
+  class LWGraph
     : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> { //FIXME  shortnames isn't working
-#undef MUELU_GRAPH_SHORT
+#undef MUELU_LWGRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
-    }
+    LWGraph(ArrayRCP<LocalOrdinal> const & rowPtrs, ArrayRCP<LocalOrdinal> const & colPtrs,
+            RCP<const CrsGraph> const & graph, std::string const & objectLabel="")
+            : rows_(rowPtrs), columns_(colPtrs), graph_(graph), objectLabel_(objectLabel) {}
 
-    virtual ~Graph() {}
+    virtual ~LWGraph() {}
     //@}
 
     size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
@@ -88,24 +91,16 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
 
+    void SetBoundaryNodeMap(RCP<const Map> const &map) {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
+
     //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
-
-    //! Set map with global ids of boundary nodes.
-    void SetBoundaryNodeMap(const RCP<const Map> & gBoundaryNodeMap) { gBoundaryNodeMap_ = gBoundaryNodeMap; }
-
-    //! Returns map with global ids of boundary nodes.
-    const RCP<const Map> GetBoundaryNodeMap() const { return gBoundaryNodeMap_; }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
     //! Return true if vertex with local id 'v' is on current process.
     bool isLocalNeighborVertex(LocalOrdinal v) const;
-
-#ifdef MUELU_UNUSED
-    size_t GetNodeNumGhost() const;
-#endif
 
     /// Return a simple one-line description of the Graph.
     std::string description() const;
@@ -117,15 +112,18 @@ namespace MueLu {
 
   private:
 
-    RCP<const CrsGraph> graph_;
-
-    //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
-    //! Vector of global boundary node IDs on current process.
-    RCP<const Map> gBoundaryNodeMap_;
+    //! Indices into columns_ array.  Part of local graph information.
+    const ArrayRCP<LocalOrdinal> rows_;
+    //! Columns corresponding to connections.  Part of local graph information.
+    const ArrayRCP<LocalOrdinal> columns_;
+    //! CrsGraph of original matrix.  Needed for its maps.
+    const RCP<const CrsGraph> graph_;
+    //! Name of this graph.
+    const std::string & objectLabel_;
 
   };
 
 } // namespace MueLu
 
-#define MUELU_GRAPH_SHORT
-#endif // MUELU_GRAPH_DECL_HPP
+#define MUELU_LWGRAPH_SHORT
+#endif // MUELU_LWGRAPH_DECL_HPP

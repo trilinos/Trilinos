@@ -43,61 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_EmergencyAggregationAlgorithm_decl.hpp
- *
- *  Created on: Sep 18, 2012
- *      Author: Tobias Wiesner
- */
+#ifndef MUELU_LWGRAPH_FWD_HPP
+#define MUELU_LWGRAPH_FWD_HPP
 
-#ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
 
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
-  /*!
-    @class EmergencyAggregationAlgorithm class.
-    @brief Algorithm for coarsening a graph with uncoupled aggregation.
-    aggregate all leftover nodes into small "emergency" aggregates
-  */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class LWGraph;
+}
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class EmergencyAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-#undef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#include "MueLu_UseShortNamesOrdinal.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    EmergencyAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
-
-    //! Destructor.
-    virtual ~EmergencyAggregationAlgorithm() { }
-
-    //@}
+#ifndef MUELU_LWGRAPH_SHORT
+#define MUELU_LWGRAPH_SHORT
+#endif
 
 
-    //! @name Aggregation methods.
-    //@{
 
-    /*! @brief Local aggregation. */
-
-    LocalOrdinal BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
-    //@}
-
-  }; //class MaxLinkAggregationAlgorithm
-
-} //namespace MueLu
-
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#endif /* MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_ */
+#endif // MUELU_LWGRAPH_FWD_HPP

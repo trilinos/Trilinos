@@ -50,7 +50,6 @@
 
 #include "MueLu_PreDropFunctionConstVal_decl.hpp"
 #include "MueLu_Graph.hpp"
-#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
@@ -65,6 +64,12 @@ namespace MueLu {
     }
     return true;    // values too small -> drop them
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetThreshold() const {
+    return threshold_;
+  }
+
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {

@@ -43,64 +43,57 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
-#define MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
+#ifndef MUELU_LWGRAPH_DEF_HPP
+#define MUELU_LWGRAPH_DEF_HPP
 
-#include "MueLu_CoupledAggregationFactory_decl.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_Aggregates.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
+#include <Xpetra_MapFactory.hpp>  // TODO: can go away?
+
+#include "MueLu_LWGraph_decl.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoupledAggregationFactory()
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
+  Teuchos::ArrayView<const LocalOrdinal> LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getNeighborVertices(LocalOrdinal v) const {
+    //FIXME fix this
+    Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
+    neighborVertices = columns_.view(rows_[v],rows_[v+1]-rows_[v]);
+    return neighborVertices;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    Input(currentLevel, "Graph");
-    //Input(currentLevel, "UnAmalgamationInfo"); // TODO, only provided by CoalesceDropFactory2
+  bool LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
+    return graph_->getDomainMap()->isNodeLocalElement(v);
   }
 
+  /// Return a simple one-line description of this object.
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
-  {
-    FactoryMonitor m(*this, "Build", currentLevel);
-
-    RCP<Aggregates> aggregates;
-    {
-      //TODO check for reuse of aggregates here
-      //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
-      //FIXME there ever be more than one graph?
-      //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
-      //FIXME TAW: We can distinguish them by their factory!
-
-      // Level Get
-      RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
-
-      // Build
-      aggregates = rcp(new Aggregates(*graph));
-      aggregates->setObjectLabel("UC");
-
-      algo1_.CoarsenUncoupled(*graph, *aggregates);
-      algo2_.AggregateLeftovers(*graph, *aggregates);
-
-    }
-
-    // Level Set
-    Set(currentLevel, "Aggregates", aggregates);
-
-    if (IsPrint(Statistics0)) {
-      aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
-    }
-
+  std::string LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+    return "MueLu.description()"; //FIXME use object's label
   }
 
-} //namespace MueLu
+  //! Print the object with some verbosity level to an FancyOStream object.
+  //using MueLu::Describable::describe; // overloading, not hiding
+  //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+    MUELU_DESCRIBE;
 
-#endif // MUELU_COUPLEDAGGREGATIONFACTORY_DEF_HPP
+    if (verbLevel & Parameters0) {
+      //out0 << "Prec. type: " << type_ << std::endl;
+    }
+
+    if (verbLevel & Parameters1) {
+      //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+      //out0 << "PrecType: " << type_ << std::endl;
+      //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      //out0 << "Overlap: " << overlap_ << std::endl;
+    }
+
+    if (verbLevel & Debug) {
+      graph_->describe(out0, Teuchos::VERB_EXTREME);
+    }
+  }
+
+}
+
+#endif // MUELU_LWGRAPH_DEF_HPP

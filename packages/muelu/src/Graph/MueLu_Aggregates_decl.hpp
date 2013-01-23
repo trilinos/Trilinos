@@ -55,6 +55,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -98,7 +99,7 @@ namespace MueLu {
      * th mapping of node to the owning processor id.
      *
      */
-    Aggregates(const Graph & graph);
+    Aggregates(const GraphBase & graph);
 
     /*! @brief Constructor for Aggregates structure
      *

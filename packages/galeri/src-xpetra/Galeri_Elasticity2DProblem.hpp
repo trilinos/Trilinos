@@ -97,15 +97,6 @@ namespace Galeri {
         Point(SC x_, SC y_, SC z_ = Teuchos::ScalarTraits<SC>::zero()) : x(x_), y(y_), z(z_) { }
       };
 
-      enum {
-        DIR_LEFT   = 1,
-        DIR_RIGHT  = 2,
-        DIR_BOTTOM = 4,
-        DIR_TOP    = 8,
-        DIR_FRONT  = 16,
-        DIR_BACK   = 32
-      };
-
       GlobalOrdinal                  nx_, ny_, nz_;
       size_t                         nDim;
       std::vector<GO>                dims;
@@ -113,7 +104,6 @@ namespace Galeri {
       std::vector<std::vector<LO> >  elements;
       std::vector<GO>                local2Global_;
 
-      size_t                         DirichletBC_;
       std::vector<char>              dirichlet_;
 
       Scalar                         E, nu;
@@ -333,12 +323,6 @@ namespace Galeri {
       dirichlet_   .resize((nx+1)*(ny+1));
       elements     .resize(nx*ny);
 
-      DirichletBC_ = 0;
-      if (this->list_.get("left boundary",   "Neumann") == "Dirichlet")   DirichletBC_ |= DIR_LEFT;
-      if (this->list_.get("right boundary",  "Neumann") == "Dirichlet")   DirichletBC_ |= DIR_RIGHT;
-      if (this->list_.get("bottom boundary", "Neumann") == "Dirichlet")   DirichletBC_ |= DIR_BOTTOM;
-      if (this->list_.get("top boundary",    "Neumann") == "Dirichlet")   DirichletBC_ |= DIR_TOP;
-
 #define NODE(i,j) ((j)*(nx+1) + (i))
 #define CELL(i,j) ((j)*nx     + (i))
       for (int j = 0; j <= ny; j++)
@@ -347,10 +331,10 @@ namespace Galeri {
           nodes[NODE(i,j)] = Point((ii+1)*hx, (jj+1)*hy);
           local2Global_[NODE(i,j)] = jj*nx_ + ii;
 
-          if ((ii == 0   && (DirichletBC_ & DIR_LEFT))   ||
-              (ii == nx_ && (DirichletBC_ & DIR_RIGHT))  ||
-              (jj == 0   && (DirichletBC_ & DIR_BOTTOM)) ||
-              (jj == ny_ && (DirichletBC_ & DIR_TOP)))
+          if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
+              (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  ||
+              (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
+              (jj == ny_ && (this->DirichletBC_ & DIR_TOP)))
             dirichlet_[NODE(i,j)] = 1;
         }
 

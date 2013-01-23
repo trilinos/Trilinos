@@ -100,13 +100,13 @@ namespace Galeri {
       }
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      Scalar east = -stretchx;
-      Scalar west = -stretchx;
-      Scalar north = -stretchy;
-      Scalar south = -stretchy;
+      Scalar east   = -stretchx;
+      Scalar west   = -stretchx;
+      Scalar north  = -stretchy;
+      Scalar south  = -stretchy;
       Scalar center = -(east + west + north + south);
 
-      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, keepBCs);
+      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }

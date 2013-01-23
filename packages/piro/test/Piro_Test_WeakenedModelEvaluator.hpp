@@ -248,6 +248,96 @@ private:
   }
   //@}
 };
+
+class NoAdjointLows : public Thyra::LinearOpWithSolveBase<double> {
+public:
+  explicit NoAdjointLows(const Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > &underlyingLows) :
+    underlyingLows_(underlyingLows)
+  {}
+
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > getUnderlyingLows() {
+    return underlyingLows_;
+  }
+
+  virtual Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain() const { return underlyingLows_->domain(); }
+  virtual Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range() const { return underlyingLows_->range(); }
+
+protected:
+  virtual bool opSupportedImpl(Thyra::EOpTransp M_trans) const {
+    return underlyingLows_->opSupported(M_trans);
+  }
+
+  virtual void applyImpl(
+      const Thyra::EOpTransp M_trans,
+      const Thyra::MultiVectorBase<double> &X,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > &Y,
+      const double alpha,
+      const double beta) const {
+    underlyingLows_->apply(M_trans, X, Y, alpha, beta);
+  }
+
+  virtual bool solveSupports(const Thyra::EOpTransp transp) const {
+    return transp == Thyra::NOTRANS;
+  }
+
+  virtual Thyra::SolveStatus<double> solveImpl(
+      const Thyra::EOpTransp transp,
+      const Thyra::MultiVectorBase<double> &B,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > &X,
+      const Teuchos::Ptr<const Thyra::SolveCriteria<double> > solveCriteria) const {
+    TEUCHOS_ASSERT(this->solveSupports(transp));
+    return underlyingLows_->solve(transp, B, X, solveCriteria);
+  }
+
+private:
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > underlyingLows_;
+};
+
+/** \brief Simple ModelEvaluator wrapper with adjoint Jacobian solver disabled */
+class WeakenedModelEvaluator_NoAdjointW : public Thyra::ModelEvaluatorDelegatorBase<double> {
+public:
+  explicit WeakenedModelEvaluator_NoAdjointW(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
+    Thyra::ModelEvaluatorDelegatorBase<double>(model)
+  {}
+
+  virtual Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const {
+    const Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > W_underlying = getUnderlyingModel()->create_W();
+    return Teuchos::rcp(new NoAdjointLows(W_underlying));
+  }
+
+private:
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  /** \brief . */
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const {
+    ModelEvaluatorBase::OutArgs<double> forwardedOutArgs = getUnderlyingModel()->createOutArgs();
+    forwardedOutArgs.setArgs(outArgs);
+    if (Teuchos::nonnull(outArgs.get_W())) {
+      const Teuchos::RCP<NoAdjointLows> W_downcasted = Teuchos::rcp_dynamic_cast<NoAdjointLows>(outArgs.get_W());
+      W_downcasted.assert_not_null();
+      forwardedOutArgs.set_W(W_downcasted->getUnderlyingLows());
+    }
+    getUnderlyingModel()->evalModel(inArgs, forwardedOutArgs);
+  }
+  //@}
+
+  /** \name Overridden from Thyra::ModelEvaluatorDelegatorBase . */
+  //@{
+  virtual ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const {
+    ModelEvaluatorBase::OutArgsSetup<double> outArgs = getUnderlyingModel()->createOutArgs();
+    outArgs.setModelEvalDescription(this->description());
+    {
+      Thyra::ModelEvaluatorBase::DerivativeProperties W_properties = outArgs.get_W_properties();
+      W_properties.supportsAdjoint = false;
+      outArgs.set_W_properties(W_properties);
+    }
+    return outArgs;
+  }
+  //@}
+};
+
 } // namespace Test
 
 } // namespace Piro
