@@ -51,6 +51,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_FieldLibrary.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_ClosureModel_Factory.hpp"
@@ -61,33 +62,24 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluator_factory, basic_construction)
   {
-    panzer::InputEquationSet ies;
-    {
-      ies.name = "Momentum";
-      ies.basis = "Q2";
-      ies.integration_order = 1;
-      ies.model_id = "fluid model";
-      ies.prefix = "";
-      ies.params.set<int>("junk", 1);
-    }
-
-    Teuchos::ParameterList default_params; 
+    panzer::FieldLayoutLibrary fl;
+    Teuchos::RCP<panzer::IntegrationRule> ir;
     {
       Teuchos::RCP<shards::CellTopology> topo = 
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
     
       const int num_cells = 20;
-      const int base_cell_dimension = 3;
-      const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+      const panzer::CellData cell_data(num_cells,topo);
       const int cubature_degree = 2;      
-      Teuchos::RCP<panzer::IntegrationRule> ir = 
-	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
-      default_params.set("IR",ir);
-      Teuchos::RCP<panzer::BasisIRLayout> basis = 
-	Teuchos::rcp(new panzer::BasisIRLayout("Q1", *ir));
-      default_params.set("Basis",basis);
+      ir = Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
+      Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout("Q1",0,*ir));
       
+      fl.addFieldAndLayout("Ux",basis);
     }
+
+    std::string model_id = "fluid model";
+
+    Teuchos::ParameterList eqset_params; 
 
     Teuchos::ParameterList p("Closure Models");
     {
@@ -107,21 +99,21 @@ namespace panzer {
 
     PHX::FieldManager<panzer::Traits> fm;
 
-    evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
+    evaluators = mf.buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     user_app::MyModelFactory_TemplateBuilder builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
-    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
+    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     // Add an unsupported type
     p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
     
-    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm), std::logic_error);
+    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm), std::logic_error);
 
   }
 
