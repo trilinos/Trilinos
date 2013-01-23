@@ -60,9 +60,10 @@
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
-#include <Intrepid_HCURL_TRI_I1_FEM.hpp>
-#include <Intrepid_HCURL_QUAD_I1_FEM.hpp>
-#include <Intrepid_HCURL_HEX_I1_FEM.hpp>
+#include "Intrepid_HCURL_TRI_I1_FEM.hpp"
+#include "Intrepid_HCURL_TET_I1_FEM.hpp"
+#include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid_HCURL_HEX_I1_FEM.hpp"
 
 namespace panzer {
 
@@ -110,20 +111,23 @@ namespace panzer {
 
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> > basis;
 
-    if ( (basis_type == "HGrad") && (cell_type == "Hexahedral") && (basis_order == 1) )
+    if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C1_FEM<ScalarT,ArrayT> );
 
-    else if ( (basis_type == "HGrad") && (cell_type == "Hexahedral") && (basis_order == 2) )
+    else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 2) )
       basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C2_FEM<ScalarT,ArrayT> );
     
-    else if ( (basis_type == "HCurl") && (cell_type == "Hexahedral") && (basis_order == 1) )
+    else if ( (basis_type == "HCurl") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid::Basis_HCURL_HEX_I1_FEM<ScalarT,ArrayT> );
     
-    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedral") && (basis_order == 1) )
+    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
 
-    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedral") && (basis_order == 2) )
+    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order == 2) )
       basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
+
+    else if ( (basis_type == "HCurl") && (cell_type == "Tetrahedron") && (basis_order == 1) )
+      basis = Teuchos::rcp( new Intrepid::Basis_HCURL_TET_I1_FEM<ScalarT,ArrayT> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 1) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<ScalarT,ArrayT> );

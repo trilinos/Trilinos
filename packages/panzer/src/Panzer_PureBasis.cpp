@@ -77,20 +77,32 @@ void panzer::PureBasis::initialize(const std::string & basis_type,const int basi
   os << basis_type_ << ":" << basis_order;
   basis_name_ = os.str();
 
+  // For deprecated basis descriptions, we have to patch the names by
+  // not tacking on the basis order (this knowledge is already
+  // embedded in the name)
+  if (basis_type_ == "Q1" ||
+      basis_type_ == "Q2" ||
+      basis_type_ == "T1" ||
+      basis_type_ == "T2" ||
+      basis_type_ == "TEdge1" ||
+      basis_type_ == "QEdge1")
+    basis_name_ = basis_type_;
+
   field_basis_name_ = "Basis: " + basis_name_;
   field_basis_name_D1_ = "Grad Basis: " + basis_name_;
   field_basis_name_D2_ = "D2 Basis: " + basis_name_;
 
-   if(  basis_name_ == "HGrad" || basis_name_=="Q1" || basis_name_=="Q2" || basis_name_=="T1" || basis_name_=="T2")
-     element_space_ = HGRAD;
-   else if(basis_name_=="HCurl" || basis_name_=="TEdge1" || basis_name_=="QEdge1")
-      element_space_ = HCURL;
-   else if(basis_name_=="HDiv")
-      element_space_ = HDIV;
-   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                     "PureBasis::initializeIntrospection - Invalid basis name \"" 
-                                     << basis_name_ << "\""); }
-
+  
+  if(  basis_type_ == "HGrad" || basis_name_=="Q1" || basis_name_=="Q2" || basis_name_=="T1" || basis_name_=="T2")
+    element_space_ = HGRAD;
+  else if(basis_type_=="HCurl" || basis_name_=="TEdge1" || basis_name_=="QEdge1")
+    element_space_ = HCURL;
+  else if(basis_type_=="HDiv")
+    element_space_ = HDIV;
+  else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+				    "PureBasis::initializeIntrospection - Invalid basis name \"" 
+				    << basis_type_ << "\""); }
+  
   switch(getElementSpace()) {
   case HGRAD:
      basis_rank_ = 0;
