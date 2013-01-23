@@ -30,6 +30,8 @@
 #ifndef IFPACK2_CHEBYSHEV_DECL_HPP
 #define IFPACK2_CHEBYSHEV_DECL_HPP
 
+/// \file Ifpack2_Chebyshev_decl.hpp
+/// \brief Chebyshev iteration
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
@@ -86,7 +88,8 @@ namespace Ifpack2 {
 /// matrices.
 ///
 /// Chebyshev iteration was originally intended as an iterative solver
-/// for linear systems.  See the following publication:
+/// for linear systems.  See the following publication (the spelling
+/// of "Chebyshev" in Latin characters differs in some publications):
 ///
 /// T. Manteuffel, "The Tchebychev iteration for nonsymmetric linear
 /// systems," Numer. Math., 28 (1977), pp. 307-327.

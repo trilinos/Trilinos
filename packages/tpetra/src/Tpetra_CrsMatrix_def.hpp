@@ -1232,15 +1232,32 @@ namespace Tpetra {
                                 const ArrayView<Scalar>       &values,
                                 size_t &numEntries) const
   {
-    const std::string tfecfFuncName("getLocalRowCopy()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed()==true && hasColMap()==false, std::runtime_error,
-        ": local indices cannot be produced.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error,
-        ": specified row (==" << localRow << ") is not valid on this node.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isGloballyIndexed() && ! hasColMap(),
+      std::runtime_error,
+      "Tpetra::CrsMatrix::getLocalRowCopy: The matrix is globally indexed and "
+      "does not have a column Map yet.  That means we don't have local indices "
+      "for columns yet, so it doesn't make sense to call this method.  If the "
+      "matrix doesn't have a column Map yet, you should call fillComplete on "
+      "it first.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! getRowMap ()->isNodeLocalElement (localRow), 
+      std::runtime_error,
+      "Tpetra::CrsMatrix::getLocalRowCopy: The calling process " 
+      << this->getComm ()->getRank () << " does not own the given local row " 
+      << localRow << ".");
     const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
     numEntries = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(static_cast<size_t>(indices.size()) < numEntries || static_cast<size_t>(values.size()) < numEntries,
-        std::runtime_error, ": size of indices,values must be sufficient to store the specified row.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t>(indices.size()) < numEntries || 
+      static_cast<size_t>(values.size()) < numEntries,
+      std::runtime_error, 
+      "Tpetra::CrsMatrix::getLocalRowCopy: The given row " << localRow 
+      << " has " << numEntries << " entries.  One or both of the given array "
+      "views are not long enough to store that many entries.  indices can "
+      "store " << indices.size() << " entries and values can store " 
+      << values.size() << " entries.");
     if (staticGraph_->isLocallyIndexed()) {
       ArrayView<const LocalOrdinal> indrowview = staticGraph_->getLocalView(rowinfo);
       ArrayView<const Scalar>       valrowview = getView(rowinfo);
@@ -1258,8 +1275,12 @@ namespace Tpetra {
     else {
 #ifdef HAVE_TPETRA_DEBUG
       // should have fallen in one of the above if indices are allocated
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_->indicesAreAllocated() == true, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        staticGraph_->indicesAreAllocated(), 
+	std::logic_error, "Tpetra::CrsMatrix::getLocalRowCopy: Control flow "
+	"should never reach here.  Please report this bug to the Tpetra "
+	"developers.");
+#endif // HAVE_TPETRA_DEBUG
       numEntries = 0;
     }
   }
