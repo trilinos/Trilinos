@@ -44,10 +44,6 @@
 #define PANZER_EQUATION_SET_HPP
 
 #include "Panzer_EquationSet_Base.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
-#include "Panzer_CellData.hpp"
-
-#include "Panzer_FieldLibrary.hpp"
 
 namespace PHX {
   template<typename Traits> class FieldManager;

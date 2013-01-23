@@ -61,7 +61,6 @@
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_CellData.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_EquationSet_Factory.hpp"

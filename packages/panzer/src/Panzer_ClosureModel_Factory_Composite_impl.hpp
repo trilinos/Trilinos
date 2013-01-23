@@ -48,7 +48,6 @@
 #include <string>
 #include <vector>
 #include <list>
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"

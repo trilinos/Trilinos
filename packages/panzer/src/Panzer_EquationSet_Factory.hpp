@@ -45,7 +45,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 #include "Panzer_GlobalData.hpp"

@@ -57,7 +57,7 @@ WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> 
    setPhysicsBlockVector(physicsBlocks);
 }
 
-/** Copies the workset factory, the InputPhysicsBlock map, and the workset size, but not constructed
+/** Copies the workset factory and the workset size, but not constructed
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)

@@ -67,11 +67,11 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
                              "Integrator_CurlBasisDotVector: Basis of type \"" << basis->name() << "\" does not support CURL.");
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->requiresOrientations(),std::logic_error,
                              "Integration_CurlBasisDotVector: Basis of type \"" << basis->name() << "\" should require orientations. So we are throwing.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!(basis->getDimension()==2 || basis->getDimension()==3),std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!(basis->dimension()==2 || basis->dimension()==3),std::logic_error,
                              "Integrator_CurlBasisDotVector: Evaluator requires 2D or 3D basis types, the basis \"" << basis->name() << "\" is neither.");
 
   // use a scalar field only if dimension is 2D
-  useScalarField = (basis->getDimension()==2);
+  useScalarField = (basis->dimension()==2);
   
   // determine if using scalar field for curl or a vector field (2D versus 3D)
   if(!useScalarField)
