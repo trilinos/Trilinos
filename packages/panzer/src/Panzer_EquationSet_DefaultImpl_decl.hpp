@@ -253,7 +253,6 @@ namespace panzer {
     //! For convenience, declare a basis iterator
     typedef typename std::map<std::string,std::pair<Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<std::vector<std::string> > > >::const_iterator BasisIterator;
     
-
     const Teuchos::RCP<Teuchos::ParameterList> m_input_params;
     int m_default_integration_order;
     const panzer::CellData m_cell_data;

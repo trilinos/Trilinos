@@ -456,7 +456,9 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
     factory.getAsObject<EvalT>()->buildClosureModels(model_name,
-						     models, 
+						     models,
+						     fl,
+						     ir,
                                                      *(this->m_eval_plist),
 						     user_data,
 						     this->getGlobalData(),
@@ -505,10 +507,23 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     fm.template requireField<EvalT>(tag);
   }
 
-  // Add in closure models
+  // Add in closure models.  This is a hack that we should revisit.
   {
+    // Closure models are normally evaluated at integration points,
+    // but some evaluator models support evaluation at both basis and
+    // integration points.  For initial guesses, we should only
+    // evaluate at basis points, so integration rule is meaningless.
+    // We use this to build all closure model evaluators in model
+    // (including integration point based ones that will never be
+    // used).  In the future we may need ir for using L2 projection to
+    // basis points for initial guesses (for non-nodal bases).
+    Teuchos::RCP<panzer::IntegrationRule> dummy_ir;
+    if (m_int_rules.size() > 0)
+      dummy_ir = m_int_rules.begin()->second;
+    Teuchos::RCP<const panzer::FieldLayoutLibrary> fll = fl.buildFieldLayoutLibrary(*dummy_ir);
+
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-      factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
+      factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *fll, dummy_ir, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       fm.template registerEvaluator<EvalT>((*evaluators)[i]);

@@ -103,7 +103,7 @@ namespace panzer {
 							const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const panzer::FieldLayoutLibrary& field_library,
+							const panzer::FieldLayoutLibrary& field_library,
 							const Teuchos::RCP<panzer::IntegrationRule>& ir,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							const std::string& model_name,
