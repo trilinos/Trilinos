@@ -41,13 +41,14 @@
 // @HEADER
 
 
-#ifndef PANZER_BC_H
-#define PANZER_BC_H
+#ifndef PANZER_BC_HPP
+#define PANZER_BC_HPP
 
 #include <string>
 #include <iostream>
 #include <functional>
 #include <cstddef>
+#include <vector>
 
 #include <boost/unordered_map.hpp>
 
@@ -58,6 +59,13 @@ namespace Teuchos {
 }
 
 namespace panzer {
+
+  class BC;
+
+  /** \brief Nonmember constructor to build BC objects from a ParameterList
+      \relates panzer::BC
+  */
+  void buildBCs(std::vector<panzer::BC>& bcs, const Teuchos::ParameterList& p);
 
   //! Type of boundary condition.
   enum BCType {

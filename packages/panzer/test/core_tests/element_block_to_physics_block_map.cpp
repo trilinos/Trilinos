@@ -40,45 +40,31 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Panzer_BC.hpp"
-#include "Teuchos_TestForException.hpp"
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+
+#include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 
 namespace panzer {
 
-  void buildBCs(std::vector<panzer::BC>& bcs, 
-		const Teuchos::ParameterList& p)
+  TEUCHOS_UNIT_TEST(ElementBlockToPhsyicsBlockMap,basic)
   {
-    using Teuchos::ParameterList;
+    Teuchos::ParameterList p;
+    p.set("eblock-0_0", "fluid");
+    p.set("eblock-0_1", "fluid");
+    p.set("eblock-1_0", "solid");
+    p.set("eblock-1_1", "solid");
+    
+    std::map<std::string,std::string> b_to_p;
+    
+    panzer::buildBlockIdToPhysicsIdMap(b_to_p, p);
 
-    bcs.clear();
-
-    // Check for non-backward compatible change
-    TEUCHOS_TEST_FOR_EXCEPTION(p.isParameter("Number of Boundary Conditions"),
-			       std::logic_error,
-			       "Error - the parameter \"Number of Boundary Conditions\" is no longer valid for the boundary condition sublist.  Please remove this from your input file!");
-     
-    std::size_t bc_index = 0;
-    for (ParameterList::ConstIterator bc_pl=p.begin(); bc_pl != p.end(); ++bc_pl,++bc_index) {
-      TEUCHOS_TEST_FOR_EXCEPTION( !(bc_pl->second.isList()), std::logic_error,
-				  "Error - All objects in the boundary condition sublist must be BC sublists!" );
-      ParameterList& sublist = bc_pl->second.getValue(&sublist);
-
-      panzer::BC bc(bc_index,sublist);
-      bcs.push_back(bc);
-    }
-
-  }
-
-  void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p,
-				  const Teuchos::ParameterList& p)
-  {
-    for (Teuchos::ParameterList::ConstIterator entry = p.begin();
-	 entry != p.end(); ++entry) {
-      std::string dummy_type;
-      b_to_p[entry->first] = entry->second.getValue(&dummy_type);
-    }
+    TEST_EQUALITY(b_to_p["eblock-0_0"], "fluid");
+    TEST_EQUALITY(b_to_p["eblock-0_1"], "fluid");
+    TEST_EQUALITY(b_to_p["eblock-1_0"], "solid");
+    TEST_EQUALITY(b_to_p["eblock-1_1"], "solid");
   }
 
 }

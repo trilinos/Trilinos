@@ -46,6 +46,32 @@
 
 //=======================================================================
 //=======================================================================
+void 
+panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p)
+{
+  using Teuchos::ParameterList;
+  
+  bcs.clear();
+  
+  // Check for non-backward compatible change
+  TEUCHOS_TEST_FOR_EXCEPTION(p.isParameter("Number of Boundary Conditions"),
+			     std::logic_error,
+			     "Error - the parameter \"Number of Boundary Conditions\" is no longer valid for the boundary condition sublist.  Please remove this from your input file!");
+  
+  std::size_t bc_index = 0;
+  for (ParameterList::ConstIterator bc_pl=p.begin(); bc_pl != p.end(); ++bc_pl,++bc_index) {
+    TEUCHOS_TEST_FOR_EXCEPTION( !(bc_pl->second.isList()), std::logic_error,
+				"Error - All objects in the boundary condition sublist must be BC sublists!" );
+    ParameterList& sublist = bc_pl->second.getValue(&sublist);
+    
+    panzer::BC bc(bc_index,sublist);
+    bcs.push_back(bc);
+  }
+  
+}
+
+//=======================================================================
+//=======================================================================
 panzer::BC::BC(std::size_t bc_id,
 	       BCType bc_type,
 	       std::string sideset_id,

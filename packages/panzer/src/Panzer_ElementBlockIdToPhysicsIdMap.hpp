@@ -40,11 +40,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_PARAMETER_LIST_OBJECT_BUILDERS_HPP
-#define PANZER_PARAMETER_LIST_OBJECT_BUILDERS_HPP
+#ifndef PANZER_ELEMENT_BLOCK_ID_TO_PHYSICS_ID_MAP_HPP
+#define PANZER_ELEMENT_BLOCK_ID_TO_PHYSICS_ID_MAP_HPP
 
 #include <map>
-#include <vector>
 #include <string>
 
 namespace Teuchos {
@@ -53,13 +52,9 @@ namespace Teuchos {
 
 namespace panzer {
 
-  class BC;
-
-  void buildBCs(std::vector<panzer::BC>& bcs, 
-		const Teuchos::ParameterList& p);
-
   void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p, 
 				  const Teuchos::ParameterList& p);
+
 }
 
 #endif

@@ -85,8 +85,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  parameter_list_object_builders
-  SOURCES parameter_list_object_builders.cpp ${UNIT_TEST_DRIVER}
+  element_block_to_physics_block_map
+  SOURCES element_block_to_physics_block_map.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 
