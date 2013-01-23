@@ -53,6 +53,9 @@ void all_reduce_bor( ParallelMachine ,
                      const unsigned * local ,
                      unsigned * global , unsigned count );
 
+void all_reduce_max( ParallelMachine ,
+                     const double * local , double * global , unsigned count );
+
 /** Aggregated parallel in-place reduce-to-all-processors operations.
  *
  *  example:

@@ -183,6 +183,13 @@ void all_reduce_bor( ParallelMachine comm ,
   MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_BOR , comm );
 }
 
+void all_reduce_max( ParallelMachine comm ,
+                     const double * local , double * global , unsigned count )
+{
+  double * tmp = const_cast<double*>( local );
+  MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_MAX , comm );
+}
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
