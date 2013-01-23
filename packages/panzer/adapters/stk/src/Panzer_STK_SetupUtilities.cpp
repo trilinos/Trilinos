@@ -45,7 +45,7 @@
 #include "Teuchos_Assert.hpp"
 
 namespace panzer_stk { 
-
+/*
 std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
@@ -88,7 +88,8 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   
   return worksets;
 }
-
+*/
+ /*
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & eBlock,
@@ -114,7 +115,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   return panzer::buildWorksets(eBlock,topo, local_cell_ids, cell_vertex_coordinates,
                                ipb, workset_size, base_cell_dimension);
 }
-
+ */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb, 
@@ -136,7 +137,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates,
                                workset_size);
 }
-
+/*
 const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
@@ -167,24 +168,14 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   
   return bc_worksets;
 }
-
+*/
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
                 const panzer::BC & bc)
 {
-   return buildBCWorksets(mesh,pb.getInputPhysicsBlock(),bc);
-}
-
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
-                const panzer::BC & bc)
-{
   using namespace workset_utils;
   using Teuchos::RCP;
-
-  int base_cell_dimension = mesh.getDimension();
 
   std::vector<stk::mesh::Entity*> sideEntities; 
 
@@ -248,8 +239,8 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
       Intrepid::FieldContainer<double> vertices;
       mesh.getElementVertices(local_cell_ids,vertices);
   
-      return panzer::buildBCWorkset(bc,topo, local_cell_ids, local_side_ids,
-	                            vertices, ipb, base_cell_dimension);
+      return panzer::buildBCWorkset(bc, pb, local_cell_ids, local_side_ids,
+				    vertices);
   }
   
   return Teuchos::null;

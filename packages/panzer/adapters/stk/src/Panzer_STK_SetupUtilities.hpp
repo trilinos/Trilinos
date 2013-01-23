@@ -47,7 +47,6 @@
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -65,10 +64,10 @@ namespace panzer_stk {
   *
   * \returns Map relating block IDs to vectors of worksets on that element block.
   */
-std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
-              const std::size_t workset_size);
+// std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+// buildWorksets(const panzer_stk::STK_Interface & mesh,
+//               const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
+//               const std::size_t workset_size);
 
 
 /** Build volumetric worksets for a STK mesh
@@ -80,11 +79,11 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \returns Map relating block IDs to vectors of worksets on that element block.
   */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::string & eBlock,
-              const panzer::InputPhysicsBlock & ipb, 
-              const std::size_t workset_size);
+// Teuchos::RCP<std::vector<panzer::Workset> >  
+// buildWorksets(const panzer_stk::STK_Interface & mesh,
+//               const std::string & eBlock,
+//               const panzer::InputPhysicsBlock & ipb, 
+//               const std::size_t workset_size);
 
 /** Build volumetric worksets for a STK mesh
   *
@@ -109,10 +108,10 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   * \note Current implementation does not use different workset sizes for the 
   *       boundary conditions.
   */
-const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
-                const std::vector<panzer::BC> & bcs);
+// const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
+// buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+//                 const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
+//                 const std::vector<panzer::BC> & bcs);
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
@@ -130,10 +129,10 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   * \note Current implementation does not use different workset sizes for the 
   *       boundary conditions.
   */
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
-                const panzer::BC & bc);
+// Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+// buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+//                 const panzer::InputPhysicsBlock & ipb,
+//                 const panzer::BC & bc);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests
