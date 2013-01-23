@@ -50,18 +50,8 @@
 #include "Panzer_Workset_Builder_impl.hpp"
 
 template
-Teuchos::RCP<std::vector<panzer::Workset> >
-panzer::buildWorksets<Intrepid::FieldContainer<double> >(const std::string& block_id,
-							 const Teuchos::RCP<const shards::CellTopology> & blockTopo,
-							 const std::vector<std::size_t>& local_cell_ids,
-							 const Intrepid::FieldContainer<double>& vertex_coordinates, 
-							 const panzer::InputPhysicsBlock& ipb,
-							 std::size_t workset_size,
-							 int base_cell_dimension);
-
-template
 Teuchos::RCP<std::vector<panzer::Workset> > 
-panzer::buildWorksets(const panzer::PhysicsBlock & physBlk,
+panzer::buildWorksets(const panzer::PhysicsBlock & pb,
 		      const std::vector<std::size_t>& local_cell_ids,
 		      const Intrepid::FieldContainer<double>& vertex_coordinates, 
 		      std::size_t workset_size);
@@ -69,11 +59,9 @@ panzer::buildWorksets(const panzer::PhysicsBlock & physBlk,
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::BC& bc,
-		       const Teuchos::RCP<const shards::CellTopology> & blockTopo,
+		       const panzer::PhysicsBlock & volume_pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
-		       const Intrepid::FieldContainer<double>& vertex_coordinates, 
-		       const panzer::InputPhysicsBlock& ipb,
-		       unsigned base_cell_dim);
+		       const Intrepid::FieldContainer<double>& vertex_coordinates);
 
 #endif

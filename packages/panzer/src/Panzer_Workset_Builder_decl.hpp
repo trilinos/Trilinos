@@ -60,21 +60,9 @@ namespace panzer {
   class PhysicsBlock;
   class BC;
 
-/*
   template<typename ArrayT>
   Teuchos::RCP<std::vector<panzer::Workset> > 
-  buildWorksets(const std::string& block_id,
-                const Teuchos::RCP<const shards::CellTopology> & blockTopo,
-		const std::vector<std::size_t>& local_cell_ids,
-		const ArrayT& vertex_coordinates, 
-		const panzer::InputPhysicsBlock& ipb,
-		std::size_t workset_size,
-		int base_cell_dimension);
-*/
-
-  template<typename ArrayT>
-  Teuchos::RCP<std::vector<panzer::Workset> > 
-  buildWorksets(const panzer::PhysicsBlock & physBlk,
+  buildWorksets(const panzer::PhysicsBlock & pb,
 		const std::vector<std::size_t>& local_cell_ids,
 		const ArrayT& vertex_coordinates, 
 		std::size_t workset_size);
@@ -82,7 +70,7 @@ namespace panzer {
   template<typename ArrayT>
   Teuchos::RCP<std::map<unsigned,panzer::Workset> >
   buildBCWorkset(const panzer::BC& bc,
-		 const panzer::PhysicsBlock & physBlk,
+		 const panzer::PhysicsBlock & volume_pb,
 		 const std::vector<std::size_t>& local_cell_ids,
 		 const std::vector<std::size_t>& local_side_ids,
 		 const ArrayT& vertex_coordinates);

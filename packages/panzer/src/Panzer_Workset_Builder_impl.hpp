@@ -70,36 +70,6 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 		      const ArrayT& vertex_coordinates, 
 		      std::size_t workset_size)
 {
-
-
-
-
-
-/*
-
-   int base_cell_dimension = physBlk.getBaseCellTopology().getDimension();
-
-   // for now a simple call out to old version
-   return buildWorksets(physBlk.elementBlockID(),Teuchos::rcp(new shards::CellTopology(physBlk.getBaseCellTopology())),
-                        local_cell_ids,vertex_coordinates,
-                        physBlk.getInputPhysicsBlock(),workset_size,base_cell_dimension);
-}
-
-template<typename ArrayT>
-Teuchos::RCP< std::vector<panzer::Workset> > 
-panzer::buildWorksets(const std::string& block_id,
-                      const Teuchos::RCP<const shards::CellTopology> & blockTopo,
-		      const std::vector<std::size_t>& local_cell_ids,
-		      const ArrayT& vertex_coordinates, 
-		      const panzer::InputPhysicsBlock& ipb,
-		      std::size_t workset_size,
-		      int base_cell_dimension)
-{
-
-*/
-
-
-
   using std::vector;
   using std::string;
   using Teuchos::RCP;
@@ -215,7 +185,7 @@ panzer::buildWorksets(const std::string& block_id,
 
   TEUCHOS_ASSERT(offset == Teuchos::as<std::size_t>(vertex_coordinates.dimension(0)));
   
-  // Set ir and basis arrays
+  // Set ir and basis arrayskset
   RCP<vector<int> > ir_degrees = rcp(new vector<int>(0));
   RCP<vector<string> > basis_names = rcp(new vector<string>(0));
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
@@ -309,21 +279,13 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::BC& bc,
-		       const panzer::PhysicsBlock & physBlk,
+		       const panzer::PhysicsBlock & volume_pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const ArrayT& vertex_coordinates)
 {
-
-
-
-  
-
-
-
-
-
   using std::vector;
+  using std::map;
   using std::string;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -352,34 +314,6 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   for (std::size_t cell=0; cell < local_cell_ids.size(); ++cell)
     element_list[local_side_ids[cell]].push_back(std::make_pair(cell,local_cell_ids[cell])); 
 
-  // *****************
-  // New BCs only work for Intrepid elements!!
-  // *****************
-  using std::map;
-  using std::string;
-  using Teuchos::rcp;
-   
-  RCP< vector<int> > rcp_ir_degrees = rcp(new vector<int>(0));
-  RCP< vector<string> > rcp_basis_names = rcp(new vector<string>(0));
-
-  vector<int>& ir_degrees = *rcp_ir_degrees;
-  vector<string>& basis_names = *rcp_basis_names;
-
-  map<string,int> basis_to_int_order;
-
-  std::set<int> ir_degrees_set;
-  std::set<std::string> basis_names_set;
-  for (std::size_t eq = 0; eq < ipb.eq_sets.size(); ++eq) {
-
-    basis_to_int_order[ipb.eq_sets[eq].basis] = 
-      ipb.eq_sets[eq].integration_order;
-
-    ir_degrees_set.insert(ipb.eq_sets[eq].integration_order);
-    basis_names_set.insert(ipb.eq_sets[eq].basis);
-  }
-  ir_degrees.insert(ir_degrees.begin(),ir_degrees_set.begin(),ir_degrees_set.end());
-  basis_names.insert(basis_names.begin(),basis_names_set.begin(),basis_names_set.end());
-
   std::map<unsigned,panzer::Workset>& worksets = *worksets_ptr;
 
   // create worksets 
@@ -398,74 +332,69 @@ panzer::buildBCWorkset(const panzer::BC& bc,
     }
     worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
     worksets[side->first].block_id = bc.elementBlockID();
-    worksets[side->first].subcell_dim = base_cell_dim -1;
+    worksets[side->first].subcell_dim = volume_pb.cellData().baseCellDimension() - 1;
     worksets[side->first].subcell_index = side->first;
   }
 
-  // setup the integration rules
-  for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
-       wkst != worksets.end(); ++wkst)
-    wkst->second.int_rules.resize(ir_degrees.size());
-
-  for (std::size_t i = 0; i < ir_degrees.size(); ++i) {
-    
-    for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin();
-	 wkst != worksets.end(); ++wkst) {
+  // setup the integration rules and bases
+  for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin();
+       wkst != worksets.end(); ++wkst) {
       
-      const panzer::CellData side_cell_data(wkst->second.num_cells, base_cell_dim,
-					    static_cast<int>(wkst->first),blockTopo);
+    const panzer::CellData side_cell_data(wkst->second.num_cells,
+					  static_cast<int>(wkst->first),
+					  volume_pb.cellData().getCellTopology());
 
-      RCP<panzer::IntegrationRule> ir = 
-	rcp(new panzer::IntegrationRule(ir_degrees[i], side_cell_data));
+    RCP<panzer::PhysicsBlock> side_pb = volume_pb.copyWithCellData(side_cell_data);
+
+    const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = side_pb->getIntegrationRules();
+
+    wkst->second.ir_degrees = rcp(new vector<int>(0));
+    wkst->second.basis_names = rcp(new vector<string>(0));
+
+    for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+	 ir_itr != int_rules.end(); ++ir_itr) {
+
+      wkst->second.ir_degrees->push_back(ir_itr->first);
       
-      wkst->second.ir_degrees = rcp_ir_degrees;
-
-      wkst->second.int_rules[i] = 
+      RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > iv = 
 	rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
-      
-      wkst->second.int_rules[i]->setupArrays(ir);
-
-      wkst->second.int_rules[i]->evaluateValues(wkst->second.cell_vertex_coordinates);
-    }
-  }
-
-
-  // setup the basis functions
-  for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
-       wkst != worksets.end(); ++wkst)
-    wkst->second.bases.resize(basis_names.size());
-
-  for (std::size_t i = 0; i < basis_names.size(); ++i) {
     
-    for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
-	 wkst != worksets.end(); ++wkst) {
+      iv->setupArrays(ir_itr->second);
+      iv->evaluateValues(wkst->second.cell_vertex_coordinates);
       
-      std::size_t int_degree_index = 
-	std::distance(ir_degrees.begin(), 
-		      std::find(ir_degrees.begin(), 
-				ir_degrees.end(), 
-				basis_to_int_order[basis_names[i]]));
+      wkst->second.int_rules.push_back(iv);
 
       
-      RCP<panzer::BasisIRLayout> cb = 
-	rcp(new panzer::BasisIRLayout(basis_names[i], *(wkst->second.int_rules[int_degree_index]->int_rule)));
+      // Need to create all combinations of basis/ir pairings 
+      const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases = side_pb->getBases();
       
-      wkst->second.basis_names = rcp_basis_names;
-
-      wkst->second.bases[i] = 
-	rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
+      for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+	   b_itr != bases.end(); ++b_itr) {
+	
+	RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(b_itr->second,*ir_itr->second));
+	wkst->second.basis_names->push_back(b_layout->name());
       
-      wkst->second.bases[i]->setupArrays(cb,arrayFactory);
+	RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > bv = 
+	  rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
+	
+	bv->setupArrays(b_layout,arrayFactory);
+	
+	std::size_t int_degree_index = 
+	  std::distance(wkst->second.ir_degrees->begin(), 
+			std::find(wkst->second.ir_degrees->begin(), 
+				  wkst->second.ir_degrees->end(), 
+				  ir_itr->second->order()));
+	
+	bv->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
+			   wkst->second.int_rules[int_degree_index]->jac,
+			   wkst->second.int_rules[int_degree_index]->jac_det,
+			   wkst->second.int_rules[int_degree_index]->jac_inv,
+			   wkst->second.int_rules[int_degree_index]->weighted_measure,
+			   wkst->second.cell_vertex_coordinates);
 
-      wkst->second.bases[i]->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
-					    wkst->second.int_rules[int_degree_index]->jac,
-					    wkst->second.int_rules[int_degree_index]->jac_det,
-					    wkst->second.int_rules[int_degree_index]->jac_inv,
-					    wkst->second.int_rules[int_degree_index]->weighted_measure,
-					    wkst->second.cell_vertex_coordinates);
-
+	wkst->second.bases.push_back(bv);
+      }
     }
-
   }
 
   return worksets_ptr;
