@@ -121,13 +121,11 @@ namespace panzer {
 
     virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const;
 
-    void setElementBlockId(const std::string & blockId);
+    virtual void setElementBlockId(const std::string & blockId);
 
-    std::string getElementBlockId() const;
+    virtual std::string getElementBlockId() const;
 
     virtual std::string getType() const;
-
-    virtual std::string getKey() const;
 
   protected:
 
@@ -136,9 +134,6 @@ namespace panzer {
 
     //! Returns true if transient support should be enabled in the equation set
     bool buildTransientSupport() const;
-
-    //! If the concrete equation set will be used multiple times in the same physics block, then a unique key must be set using this call from the user derived equation set constructor. If not called by the user, it defaults to the "type" and this equation set can only be instantiated once per physics block. 
-    void setKey(const std::string& key);
 
     // The set of functions below are for use by derived classes to specify the 
     // provided degree of freedom (and associated residual name), in addition
@@ -205,6 +200,29 @@ namespace panzer {
     void addDOFTimeDerivative(const std::string & dofName,
                               const std::string & dotName = "");
 
+    /** Alert the equation set default implementation to build the
+     * required closure model(s) for this equation set.  You can make
+     * multiple calls to this funciton to build multiple closure
+     * models.
+     */
+    void addClosureModel(const std::string& closure_model);
+
+    /** Sets the valid default parameters in the parameter list used
+     *  by the default equation set implementaiton.  To validate the
+     *  incoming user list, get the defaults using this call, then add
+     *  their own valid parameters specific to the user derived
+     *  equation set and then validate the list.
+     */
+    void setDefaultValidParameters(Teuchos::ParameterList& valid_parameters);
+
+    //! Returns the integration rule for one of the registered DOFs
+    Teuchos::RCP<panzer::IntegrationRule> getIntRuleForDOF(const std::string& dof_name) const;
+
+    // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the physics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
+    void setupDeprecatedDOFsSupport();
+
+  private:
+
     struct DOFDescriptor {
       DOFDescriptor() 
         : dofName("")
@@ -241,12 +259,15 @@ namespace panzer {
     typedef typename std::map<std::string,DOFDescriptor>::const_iterator DescriptorIterator;
 
 
-    /** \brief Map that links a common basis to a vector of dof names.  Key is the unique basis name, the value is a pair that contains an RCP to a basis and an RCP to a vector of dof names that share the basis.
+    /** \brief Map that links a common basis to a vector of dof names.
+         Key is the unique basis name, the value is a pair that contains
+         an RCP to a basis and an RCP to a vector of dof names that
+         share the basis.
 
-        Some of our evaluators are vectorized to work on a block of
-        dofs as long as they share a common basis.  We can minimize
-        the evaluators built below by grouping dofs with a common
-        basis.  This struct is for grouping dofs with a common basis.
+         Some of our evaluators are vectorized to work on a block of
+         dofs as long as they share a common basis.  We can minimize
+         the evaluators built below by grouping dofs with a common
+         basis.  This struct is for grouping dofs with a common basis.
     */
     std::map<std::string,std::pair<Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<std::vector<std::string> > > > m_basis_to_dofs;
 
@@ -271,11 +292,7 @@ namespace panzer {
 
     std::string m_block_id;
     std::string m_type;
-    std::string m_key;
-    std::string m_model_id;
-
-    // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the phsyics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
-    void setupDeprecatedDOFsSupport();
+    std::vector<std::string> m_closure_model_ids;
 
   };
   

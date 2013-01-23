@@ -65,8 +65,6 @@ namespace panzer {
 
     virtual void setElementBlockId(const std::string & blockId) = 0;
 
-    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
-
     ///@}
 
     /// \name Evaluator Construction and Registration Methods (derived from panzer::EquationSetBase)
@@ -128,8 +126,6 @@ namespace panzer {
     virtual std::string getElementBlockId() const = 0;
 
     virtual std::string getType() const = 0;
-
-    virtual std::string getKey() const = 0;
 
     ///@}
 

@@ -71,17 +71,6 @@ EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
 { 
   TEUCHOS_ASSERT(nonnull(m_input_params));
 
-  m_type = m_input_params->get<std::string>("Type");
-
-  if (m_input_params->isType<std::string>("Key"))
-    m_key = m_input_params->get<std::string>("Key");
-  else if (m_input_params->isType<std::string>("Prefix"))
-    m_key = m_input_params->get<std::string>("Prefix") + m_type;
-  else
-    m_key = m_type;
-
-  m_model_id = m_input_params->get<std::string>("Model ID");
-
   m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
 }
 
@@ -90,6 +79,9 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setupDOFs()
 {
+  // Get defaultparameters
+  m_type = m_input_params->get<std::string>("Type");
+
   // for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
   //     itr!=m_provided_dofs_desc.end();++itr) {
   //   itr->second.print(std::cout); std::cout << std::endl;
@@ -435,7 +427,11 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const Teuchos::ParameterList& models,
 				       const Teuchos::ParameterList& user_data) const
 {
-  buildAndRegisterClosureModelEvaluators(fm,fl,ir,factory,this->m_model_id,models,user_data);
+  for (std::vector<std::string>::const_iterator model_name = m_closure_model_ids.begin();
+       model_name != m_closure_model_ids.end(); ++model_name) {
+    
+    buildAndRegisterClosureModelEvaluators(fm,fl,ir,factory,*model_name,models,user_data);
+  }
 }
 
 // ***********************************************************************
@@ -450,20 +446,16 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const Teuchos::ParameterList& models,
 				       const Teuchos::ParameterList& user_data) const
 {
-
-  // temporary hack until fl is added to closure model interface
-  this->m_eval_plist->set("Field Layout Library", Teuchos::rcpFromRef(fl));
-
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
     factory.getAsObject<EvalT>()->buildClosureModels(model_name,
 						     models,
 						     fl,
 						     ir,
-                                                     *(this->m_eval_plist),
+						     *(this->m_eval_plist),
 						     user_data,
 						     this->getGlobalData(),
 						     fm);
-    
+  
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
     fm.template registerEvaluator<EvalT>((*evaluators)[i]);
 }
@@ -575,13 +567,6 @@ std::string panzer::EquationSet_DefaultImpl<EvalT>::getType() const
 
 // ***********************************************************************
 template <typename EvalT>
-std::string panzer::EquationSet_DefaultImpl<EvalT>::getKey() const
-{
-  return m_key;
-}
-
-// ***********************************************************************
-template <typename EvalT>
 bool panzer::EquationSet_DefaultImpl<EvalT>::buildTransientSupport() const
 {
   return m_build_transient_support;
@@ -601,7 +586,7 @@ addDOF(const std::string & dofName,
 
   TEUCHOS_TEST_FOR_EXCEPTION(itr!=m_provided_dofs_desc.end(),std::runtime_error,
                              "EquationSet_DefaultImpl::addProvidedDOF: DOF \"" << dofName << "\" was previously specified "
-                             "by derived equation set \"" << this->getKey() << "\".");
+                             "by derived equation set \"" << this->getType() << "\".");
 
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
@@ -637,7 +622,7 @@ addDOFGrad(const std::string & dofName,
 
   TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
                              "EquationSet_DefaultImpl::addDOFGrad: DOF \"" << dofName << "\" has not been specified as a DOF "
-                             "by derived equation set \"" << this->getKey() << "\".");
+                             "by derived equation set \"" << this->getType() << "\".");
 
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
@@ -659,7 +644,7 @@ addDOFCurl(const std::string & dofName,
 
   TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
                              "EquationSet_DefaultImpl::addDOFCurl: DOF \"" << dofName << "\" has not been specified as a DOF "
-                             "by derived equation set \"" << this->getKey() << "\".");
+                             "by derived equation set \"" << this->getType() << "\".");
 
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
@@ -681,7 +666,7 @@ addDOFTimeDerivative(const std::string & dofName,
 
   TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
                              "EquationSet_DefaultImpl::addDOFTimeDerivative: DOF \"" << dofName << "\" has not been specified as a DOF "
-                             "by derived equation set \"" << this->getKey() << "\".");
+                             "by derived equation set \"" << this->getType() << "\".");
 
   // allocate and populate a dof descriptor associated with the field "dofName"
   DOFDescriptor & desc = m_provided_dofs_desc[dofName];
@@ -691,6 +676,32 @@ addDOFTimeDerivative(const std::string & dofName,
     desc.timeDerivative = std::make_pair(true,std::string("DXDT_")+dofName);
   else
     desc.timeDerivative = std::make_pair(true,dotName);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+setDefaultValidParameters(Teuchos::ParameterList& valid_parameters)
+{
+  std::string default_type = "";
+  valid_parameters.set("Type",default_type,"The equation set type. This must corespond to the type keyword used to build the equation set in the equation set factory.");
+}
+
+// ***********************************************************************
+template <typename EvalT>
+Teuchos::RCP<panzer::IntegrationRule> 
+panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_name) const
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  return desc_it->second.intRule;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::addClosureModel(const std::string& closure_model)
+{
+  m_closure_model_ids.push_back(closure_model);
 }
 
 // ***********************************************************************
