@@ -43,89 +43,77 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_GRAPH_DECL_HPP
-#define MUELU_GRAPH_DECL_HPP
+#ifndef MUELU_GRAPHBASE_HPP
+#define MUELU_GRAPHBASE_HPP
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
 
 /*!
-   @class Graph
-   @brief MueLu representation of a compressed row storage graph.
+   @class GraphBase
+   @brief MueLu representation of a graph.
 
-   This class holds an underlying Xpetra_CrsGraph.
-   This class can be considered a facade, as MueLu needs only limited functionality for aggregation.
+   Pure virtual base class for MueLu representations of graphs.
 */
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class Graph
-    : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> { //FIXME  shortnames isn't working
-#undef MUELU_GRAPH_SHORT
+  class GraphBase
+    : public BaseClass {
+#undef MUELU_GRAPHBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
-    }
-
-    virtual ~Graph() {}
+    virtual ~GraphBase() {};
     //@}
 
-    size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
-    size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
+    virtual const RCP<const Teuchos::Comm<int> > GetComm() const = 0;
+    virtual const RCP<const Map> GetDomainMap() const = 0;
+    virtual const RCP<const Map> GetImportMap() const = 0;
 
-    Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
+    //! @name Query graph attributes.
+    //@{
 
-    const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
-    const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
+    //! Return number of vertices owned by the calling node.
+    virtual size_t GetNodeNumVertices() const = 0;
 
-    //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
+    //! Return number of edges owned by the calling node.
+    virtual size_t GetNodeNumEdges()    const = 0;
 
-    //! Set map with global ids of boundary nodes.
-    void SetBoundaryNodeMap(const RCP<const Map> & gBoundaryNodeMap) { gBoundaryNodeMap_ = gBoundaryNodeMap; }
+    virtual void SetBoundaryNodeMap(const RCP<const Map> & map) = 0;
 
-    //! Returns map with global ids of boundary nodes.
-    const RCP<const Map> GetBoundaryNodeMap() const { return gBoundaryNodeMap_; }
+    //FIXME is this necessary?
+    //! Return number of global edges in the graph.
+    virtual Xpetra::global_size_t GetGlobalNumEdges() const = 0;
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
+    virtual Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const = 0;
 
     //! Return true if vertex with local id 'v' is on current process.
-    bool isLocalNeighborVertex(LocalOrdinal v) const;
+    virtual bool isLocalNeighborVertex(LocalOrdinal v) const = 0;
+    //@}
 
-#ifdef MUELU_UNUSED
-    size_t GetNodeNumGhost() const;
-#endif
-
+    //! @name Print graph.
+    //@{
     /// Return a simple one-line description of the Graph.
-    std::string description() const;
+    virtual std::string description() const = 0;
 
     //! Print the Graph with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
-
-  private:
-
-    RCP<const CrsGraph> graph_;
-
-    //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
-    //! Vector of global boundary node IDs on current process.
-    RCP<const Map> gBoundaryNodeMap_;
+    virtual void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const = 0;
+    //@}
 
   };
 
 } // namespace MueLu
 
-#define MUELU_GRAPH_SHORT
-#endif // MUELU_GRAPH_DECL_HPP
+#define MUELU_GRAPHBASE_SHORT
+#endif // MUELU_GRAPHBASE_HPP

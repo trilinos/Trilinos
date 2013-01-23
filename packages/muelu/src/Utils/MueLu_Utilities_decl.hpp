@@ -62,6 +62,7 @@
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
@@ -278,6 +279,15 @@ namespace MueLu {
     Note -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix &A);
+
+    /*! @brief Extract Overlapped Matrix Diagonal
+
+    Returns overlapped Matrix diagonal in ArrayRCP.
+
+    The local overlapped diagonal has an entry for each index in A's column map.
+    Note -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix &A);
 
     /*! @brief Left scale matrix by an arbitrary vector.
 

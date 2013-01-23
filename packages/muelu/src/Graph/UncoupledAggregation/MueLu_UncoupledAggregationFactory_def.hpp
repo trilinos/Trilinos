@@ -67,7 +67,8 @@
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
+//#include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
@@ -115,7 +116,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   RCP<Aggregates> aggregates;
   {
     // Level Get
-    RCP<const Graph> graph   = Get< RCP<Graph> >(currentLevel, "Graph");
+    RCP<const GraphBase> graph   = Get< RCP<GraphBase> >(currentLevel, "Graph");
     LocalOrdinal nDofsPerNode = Get<LocalOrdinal>(currentLevel, "DofsPerNode");
 
     // TODO create a map of Xpetra::Maps for different

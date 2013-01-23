@@ -5,6 +5,7 @@ CoupledAggregationFactory
 DemoFactory
 EmergencyAggregationAlgorithm
 Graph
+LWGraph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 MaxLinkAggregationAlgorithm

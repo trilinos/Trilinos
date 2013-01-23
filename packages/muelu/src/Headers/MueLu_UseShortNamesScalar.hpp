@@ -194,6 +194,10 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMat
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ThresholdAFilterFactory;
 #endif
 
+#ifdef MUELU_TPETRAOPERATOR_SHORT
+typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraOperator;
+#endif
+
 #ifdef MUELU_TRANSPFACTORY_SHORT
 typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TransPFactory;
 #endif

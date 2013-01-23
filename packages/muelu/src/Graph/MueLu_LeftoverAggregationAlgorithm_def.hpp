@@ -53,7 +53,7 @@
 
 #include "MueLu_Aggregates_decl.hpp" // MUELU_UNASSIGNED macro
 #include "MueLu_Utilities_decl.hpp"  // sumAll macro
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_CoupledAggregationCommHelper.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -67,7 +67,7 @@ namespace MueLu {
   { }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const {
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const {
     Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
@@ -664,7 +664,8 @@ namespace MueLu {
   } //AggregateLeftovers
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RootCandidates(my_size_t nVertices,
+  ArrayView<const LO> & vertex2AggId, GraphBase const &graph,
                       ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
   {
     nCandidates = 0;

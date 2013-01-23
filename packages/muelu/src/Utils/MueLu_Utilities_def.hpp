@@ -77,6 +77,8 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 #include <XpetraExt_MatrixMatrix.hpp>  // standard matrix matrix routines
 
@@ -175,7 +177,8 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(RCP<MultiVector> const Vec) {
+  RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(RCP<MultiVector> const Vec) {
     //rcp<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
     RCP<const TpetraMultiVector > tmpVec;
     tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
@@ -193,7 +196,7 @@ namespace MueLu {
       throw(Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed"));
     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec->getTpetra_MultiVector();
     return tpVec;
-  } //MV2TpetraMV
+  } //MV2NonConstTpetraMV
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -201,7 +204,7 @@ namespace MueLu {
     TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
     return *tpVec;
-  } //MV2TpetraMV
+  } //MV2NonConstTpetraMV
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -209,11 +212,12 @@ namespace MueLu {
     TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
     return tpVec;
-  } //MV2TpetraMV
+  } //MV2NonConstTpetraMV2
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  const& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(MultiVector const &Vec) {
+  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  const&
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(MultiVector const &Vec) {
     TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
     RCP<Tpetra::MultiVector<SC,LO,GO,NO>  const> tpVec = tmpVec.getTpetra_MultiVector();
     return *tpVec;
@@ -604,6 +608,25 @@ namespace MueLu {
     //for (int i=0; i<locSize; ++i) std::cout << "diag[" << i << "] = " << diag[i] << std::endl;
     return diag;
   } //GetMatrixDiagonal
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix &A)
+  {
+    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);  //FIXME should this return a Vector instead?
+    RCP<Vector> diagonal = VectorFactory::Build(A.getColMap());
+    RCP<Vector> localDiag = VectorFactory::Build(A.getRowMap());
+    ArrayRCP<SC> localDiagVals = localDiag->getDataNonConst(0);
+    for (LO i=0; i<localDiagVals.size(); ++i)
+      localDiagVals[i] = diagVals[i];
+    localDiagVals = null;  //release view
+    diagVals = null;
+    //TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
+    //TODO so right now construct an importer.
+    //diagonal->doImport(*localDiag,*(A.getCrsGraph()->getImporter()),Xpetra::INSERT);
+    RCP<const Import> importer = ImportFactory::Build(A.getRowMap(), A.getColMap());
+    diagonal->doImport(*localDiag,*importer,Xpetra::INSERT);
+    return diagonal;
+  } //GetMatrixOverlappedDiagonal
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

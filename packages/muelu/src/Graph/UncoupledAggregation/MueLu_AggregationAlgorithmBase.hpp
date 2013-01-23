@@ -56,10 +56,10 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
+//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 
 #include "MueLu_AggOptions.hpp"
@@ -132,14 +132,14 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
   //@}
 
   //! @name Build routines
   //@{
 
   //! BuildAggregates routine.
-  virtual void PrintAggregationInformation(const std::string phase, Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  virtual void PrintAggregationInformation(const std::string phase, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
     const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
     const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();

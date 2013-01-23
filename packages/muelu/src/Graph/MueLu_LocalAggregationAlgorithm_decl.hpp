@@ -52,7 +52,7 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 #include "MueLu_AggOptions.hpp" // includes Ordering enum
 
@@ -140,7 +140,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Local aggregation. */
-    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
+    void CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)

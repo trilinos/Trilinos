@@ -54,7 +54,7 @@
 #include "MueLu_LeftoverAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 #include "MueLu_CoupledAggregationCommHelper_fwd.hpp"
 
@@ -272,7 +272,7 @@ namespace MueLu {
     Note: procWinners is also set to MyPid() by ArbitrateAndCommunicate()
     for any nonshared gid's with a nonzero weight.
     */
-    void AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const; //AggregateLeftovers
+    void AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const; //AggregateLeftovers
 
       //@}
 
@@ -283,7 +283,7 @@ namespace MueLu {
 
       Candidates are vertices not adjacent to already aggregated vertices.
       */
-    void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
+    void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, GraphBase const &graph,
                         ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const; //RootCandidates
 
       //! @brief Attempt to clean up aggregates that are too small.

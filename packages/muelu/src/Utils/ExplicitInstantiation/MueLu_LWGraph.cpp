@@ -43,61 +43,22 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_EmergencyAggregationAlgorithm_decl.hpp
- *
- *  Created on: Sep 18, 2012
- *      Author: Tobias Wiesner
- */
-
-#ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
-
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
-
-namespace MueLu {
-  /*!
-    @class EmergencyAggregationAlgorithm class.
-    @brief Algorithm for coarsening a graph with uncoupled aggregation.
-    aggregate all leftover nodes into small "emergency" aggregates
-  */
-
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class EmergencyAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-#undef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#include "MueLu_UseShortNamesOrdinal.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    EmergencyAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
-
-    //! Destructor.
-    virtual ~EmergencyAggregationAlgorithm() { }
-
-    //@}
 
 
-    //! @name Aggregation methods.
-    //@{
+#include "MueLu_ExplicitInstantiation.hpp"
 
-    /*! @brief Local aggregation. */
+#include "MueLu_LWGraph_def.hpp"
 
-    LocalOrdinal BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
-    //@}
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::LWGraph<int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+#endif
 
-  }; //class MaxLinkAggregationAlgorithm
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::LWGraph<int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
 
-} //namespace MueLu
 
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#endif /* MUELU_EMERGENCYAGGREGATIONALGORITHM_DECL_HPP_ */

@@ -53,7 +53,7 @@
 
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp"
 
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LinkedList.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -67,7 +67,7 @@ namespace MueLu {
   { }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const {
+  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const {
     Monitor m(*this, "Coarsen Uncoupled");
 
     std::string orderingType;
