@@ -95,8 +95,6 @@ buildClosureModels(const std::string& model_id,
 
   std::vector<Teuchos::RCP<const panzer::PureBasis> > bases;
   fl.uniqueBases(bases);
-  TEUCHOS_ASSERT(bases.size() == 1);
-  Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*bases.begin(),*ir);
 
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
        model_it != my_models.end(); ++model_it) {
@@ -123,11 +121,14 @@ buildClosureModels(const std::string& model_id,
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      { // at BASIS
+      
+      for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	input.set("UQ", plist.get<double>("UQ"));
 	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
+	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
@@ -145,7 +146,10 @@ buildClosureModels(const std::string& model_id,
 	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,ir->dl_scalar,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
-	{ // at BASIS
+	
+	for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
+	  Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	  RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,basis->functional,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
@@ -164,9 +168,12 @@ buildClosureModels(const std::string& model_id,
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      { // at BASIS
+      // at BASIS
+      for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) {
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
+	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));

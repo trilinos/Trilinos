@@ -70,33 +70,24 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(closure_model_factory, composite_factory)
   {
-    panzer::InputEquationSet ies;
-    {
-      ies.name = "Momentum";
-      ies.basis = "Q2";
-      ies.integration_order = 1;
-      ies.model_id = "fluid model";
-      ies.prefix = "";
-      ies.params.set<int>("junk", 1);
-    }
-
-    Teuchos::ParameterList default_params; 
+    panzer::FieldLayoutLibrary fl;
+    Teuchos::RCP<panzer::IntegrationRule> ir;
     {
       Teuchos::RCP<shards::CellTopology> topo = 
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
     
       const int num_cells = 20;
-      const int base_cell_dimension = 3;
-      const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+      const panzer::CellData cell_data(num_cells,topo);
       const int cubature_degree = 2;      
-      Teuchos::RCP<panzer::IntegrationRule> ir = 
-	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
-      default_params.set("IR",ir);
-      Teuchos::RCP<panzer::BasisIRLayout> basis = 
-	Teuchos::rcp(new panzer::BasisIRLayout("Q1", *ir));
-      default_params.set("Basis",basis);
+      ir = Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
+      Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout("Q2",0,*ir));
       
+      fl.addFieldAndLayout("Ux",basis);
     }
+
+    std::string model_id = "fluid model";
+
+    Teuchos::ParameterList eqset_params; 
 
     Teuchos::ParameterList p("Closure Models");
     {
@@ -117,7 +108,7 @@ namespace panzer {
     {
       user_app::MyModelFactory_Physics1<panzer::Traits::Residual> p1(false);
       PHX::FieldManager<panzer::Traits> fm;
-      evaluators = p1.buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
+      evaluators = p1.buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
       TEST_EQUALITY(evaluators->size(), 8);
     }
 
@@ -125,7 +116,7 @@ namespace panzer {
     {
       user_app::MyModelFactory_Physics2<panzer::Traits::Residual> p2(false);
       PHX::FieldManager<panzer::Traits> fm;
-      evaluators = p2.buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
+      evaluators = p2.buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
       TEST_EQUALITY(evaluators->size(), 1);
     }
     
@@ -148,7 +139,7 @@ namespace panzer {
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory_composite;
     model_factory_composite.buildObjects(builder_composite);
 
-    evaluators = model_factory_composite.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
+    evaluators = model_factory_composite.getAsObject<panzer::Traits::Residual>()->buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
     
     TEST_EQUALITY(evaluators->size(), 9);
     
