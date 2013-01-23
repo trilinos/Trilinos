@@ -57,7 +57,7 @@ namespace panzer {
     
     const int num_cells = 20;
     const int base_cell_dimension = 3;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     const int cubature_degree = 2;
 
     panzer::IntegrationRule int_rule(cubature_degree, cell_data);
@@ -78,8 +78,7 @@ namespace panzer {
     const int num_cells = 20;
     const int base_cell_dimension = 3;
     const int cell_local_side_id = 1;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,
-				     cell_local_side_id,topo);
+    const panzer::CellData cell_data(num_cells,cell_local_side_id,topo);
     const int cubature_degree = 2;
     
     panzer::IntegrationRule int_rule(cubature_degree, cell_data);

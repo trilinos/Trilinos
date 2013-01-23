@@ -68,7 +68,7 @@ namespace panzer {
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 2;    
     RCP<IntegrationRule> int_rule = 
@@ -112,7 +112,7 @@ namespace panzer {
     
     const std::string basis_type = "Q2";
   
-    RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
+    RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
     panzer::IntrepidFieldContainerFactory af;
@@ -155,7 +155,7 @@ namespace panzer {
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
     RCP<IntegrationRule> int_rule = 
@@ -212,7 +212,7 @@ namespace panzer {
     
     const std::string basis_type = "Q1";
   
-    RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
+    RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
     panzer::IntrepidFieldContainerFactory af;
@@ -262,7 +262,7 @@ namespace panzer {
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
     RCP<IntegrationRule> int_rule = 
@@ -330,7 +330,7 @@ namespace panzer {
     
     const std::string basis_type = "QEdge1";
   
-    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
@@ -405,7 +405,7 @@ namespace panzer {
 
     const int num_cells = 4;
     const int base_cell_dimension = 3;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
     RCP<IntegrationRule> int_rule = 
@@ -492,7 +492,7 @@ namespace panzer {
     
     const std::string basis_type = "QEdge1";
   
-    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
@@ -533,7 +533,7 @@ namespace panzer {
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    
 
@@ -541,7 +541,7 @@ namespace panzer {
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const int num_qp = int_rule->num_points;
   
-    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,PHX::MDField<double> > basis_values;
@@ -614,7 +614,7 @@ namespace panzer {
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    
 
@@ -622,7 +622,7 @@ namespace panzer {
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const int num_qp = int_rule->num_points;
   
-    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<ScalarType,PHX::MDField<ScalarType> > basis_values;
