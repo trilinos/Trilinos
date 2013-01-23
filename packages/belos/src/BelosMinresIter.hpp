@@ -100,6 +100,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   // Convenience typedefs
   //
   typedef MultiVecTraits< ScalarType, MV > MVT;
+  typedef MultiVecTraitsExt< ScalarType, MV > MVText;
   typedef OperatorTraits< ScalarType, MV, OP > OPT;
   typedef Teuchos::ScalarTraits< ScalarType > SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -392,7 +393,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
                         "Belos::MinresIter::initialize(): MinresIterationState does not have initial residual.");
 
     std::string errstr("Belos::MinresIter::initialize(): Specified multivectors must have a consistent length and width.");
-    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.Y) != MVT::GetVecLength(*Y_),
+    TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.Y) != MVText::GetGlobalLength(*Y_),
                         std::invalid_argument,
                         errstr );
     TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.Y) != 1,
