@@ -91,10 +91,10 @@ buildClosureModels(const std::string& model_id,
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
-  const ParameterList& my_models = models.sublist(model_id);
-
   std::vector<Teuchos::RCP<const panzer::PureBasis> > bases;
   fl.uniqueBases(bases);
+
+  const ParameterList& my_models = models.sublist(model_id);
 
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
        model_it != my_models.end(); ++model_it) {
