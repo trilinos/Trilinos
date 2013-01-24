@@ -83,6 +83,7 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -153,6 +154,9 @@ namespace MueLu {
       }
       if (factoryName == "RebalanceAcFactory") {
         return Build2<RebalanceAcFactory>(paramList, factoryMapIn);
+      }
+      if (factoryName == "AggregationExportFactory") {
+        return Build2<AggregationExportFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "CoupledAggregationFactory") {
         return BuildCoupledAggregationFactory(paramList, factoryMapIn);
