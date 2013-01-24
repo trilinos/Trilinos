@@ -135,16 +135,17 @@ namespace Galeri {
         ny = nx; nz = nx;
         TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
       }
+      bool keepBCs = this->list_.get("keepBCs", false);
 
-      Scalar right = -stretchx;
-      Scalar left = -stretchx;
-      Scalar front = -stretchy;
-      Scalar back = -stretchy;
-      Scalar up = -stretchz;
-      Scalar down = -stretchz;
+      Scalar right  = -stretchx;
+      Scalar left   = -stretchx;
+      Scalar front  = -stretchy;
+      Scalar back   = -stretchy;
+      Scalar up     = -stretchz;
+      Scalar down   = -stretchz;
       Scalar center = -(right + left + front + back + up + down);
 
-      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up);
+      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
