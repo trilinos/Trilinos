@@ -67,8 +67,26 @@ PureBasis(const std::string & basis_type,const int basis_order,const CellData & 
   initialize(basis_type,basis_order);
 }
 
-void panzer::PureBasis::initialize(const std::string & basis_type,const int basis_order)
+void panzer::PureBasis::initialize(const std::string & in_basis_type,const int in_basis_order)
 {
+  // Support for deprecated basis descriptions
+  std::string basis_type = in_basis_type;
+  int basis_order = in_basis_order;
+
+  if (basis_type=="Q1" || basis_type=="T1") {
+    basis_type = "HGrad";
+    basis_order = 1;
+  }
+  else if (basis_type == "Q2" || basis_type=="T2") {
+    basis_type = "HGrad";
+    basis_order = 2;
+  }
+  else if (basis_type == "TEdge1" || basis_type=="QEdge1") {
+    basis_type = "HCurl";
+    basis_order = 1;
+  }
+  // End deprecated basis support
+
   intrepid_basis_ = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, basis_order, topology_);
 
   basis_type_ = basis_type;
@@ -77,25 +95,13 @@ void panzer::PureBasis::initialize(const std::string & basis_type,const int basi
   os << basis_type_ << ":" << basis_order;
   basis_name_ = os.str();
 
-  // For deprecated basis descriptions, we have to patch the names by
-  // not tacking on the basis order (this knowledge is already
-  // embedded in the name)
-  if (basis_type_ == "Q1" ||
-      basis_type_ == "Q2" ||
-      basis_type_ == "T1" ||
-      basis_type_ == "T2" ||
-      basis_type_ == "TEdge1" ||
-      basis_type_ == "QEdge1")
-    basis_name_ = basis_type_;
-
   field_basis_name_ = "Basis: " + basis_name_;
   field_basis_name_D1_ = "Grad Basis: " + basis_name_;
   field_basis_name_D2_ = "D2 Basis: " + basis_name_;
 
-  
-  if(  basis_type_ == "HGrad" || basis_name_=="Q1" || basis_name_=="Q2" || basis_name_=="T1" || basis_name_=="T2")
+  if(  basis_type_ == "HGrad")
     element_space_ = HGRAD;
-  else if(basis_type_=="HCurl" || basis_name_=="TEdge1" || basis_name_=="QEdge1")
+  else if(basis_type_=="HCurl")
     element_space_ = HCURL;
   else if(basis_type_=="HDiv")
     element_space_ = HDIV;

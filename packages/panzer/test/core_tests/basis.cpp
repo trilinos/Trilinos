@@ -71,10 +71,10 @@ namespace panzer {
     TEST_EQUALITY(basis.numCells(), 20);
     TEST_EQUALITY(basis.numPoints(), 4);
     TEST_EQUALITY(basis.dimension(), base_cell_dimension);
-    TEST_EQUALITY(basis.name(), "Q2:CubaturePoints (Degree=2,volume)");
-    TEST_EQUALITY(basis.fieldName(), "Basis: Q2");
-    TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: Q2");
-    TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: Q2");
+    TEST_EQUALITY(basis.name(), "HGrad:2:CubaturePoints (Degree=2,volume)");
+    TEST_EQUALITY(basis.fieldName(), "Basis: HGrad:2");
+    TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
+    TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
       intrepid_basis = basis.getIntrepidBasis();
@@ -115,10 +115,10 @@ namespace panzer {
     TEST_EQUALITY(basis.numCells(), 20);
     TEST_EQUALITY(basis.numPoints(), 2);
     TEST_EQUALITY(basis.dimension(), base_cell_dimension);
-    TEST_EQUALITY(basis.name(), "Q2:CubaturePoints (Degree=2,side)");
-    TEST_EQUALITY(basis.fieldName(), "Basis: Q2");
-    TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: Q2");
-    TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: Q2");
+    TEST_EQUALITY(basis.name(), "HGrad:2:CubaturePoints (Degree=2,side)");
+    TEST_EQUALITY(basis.fieldName(), "Basis: HGrad:2");
+    TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
+    TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
       intrepid_basis = basis.getIntrepidBasis();
@@ -154,7 +154,7 @@ namespace panzer {
     TEST_EQUALITY(basis->cardinality(),3);
     TEST_EQUALITY(basis->numCells(),num_cells);
     TEST_EQUALITY(basis->dimension(),base_cell_dimension);
-    TEST_EQUALITY(basis->name(),basis_type);
+    TEST_EQUALITY(basis->name(),"HCurl:1");
     TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
   }
@@ -175,7 +175,7 @@ namespace panzer {
     TEST_EQUALITY(basis->cardinality(),4);
     TEST_EQUALITY(basis->numCells(),num_cells);
     TEST_EQUALITY(basis->dimension(),base_cell_dimension);
-    TEST_EQUALITY(basis->name(),basis_type);
+    TEST_EQUALITY(basis->name(),"HCurl:1");
     TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
   }
@@ -282,13 +282,13 @@ namespace panzer {
       const panzer::CellData cell_data(num_cells,topo);
       
       basis = Teuchos::rcp(new PureBasis("T1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"T1");
+      TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("T2",0,cell_data));
-      TEST_EQUALITY(basis->name(),"T2");
+      TEST_EQUALITY(basis->name(),"HGrad:2");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("TEdge1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"TEdge1");
+      TEST_EQUALITY(basis->name(),"HCurl:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 
@@ -299,13 +299,13 @@ namespace panzer {
       const panzer::CellData cell_data(num_cells,topo);
       
       basis = Teuchos::rcp(new PureBasis("Q1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"Q1");
+      TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("Q2",0,cell_data));
-      TEST_EQUALITY(basis->name(),"Q2");
+      TEST_EQUALITY(basis->name(),"HGrad:2");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("QEdge1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"QEdge1");
+      TEST_EQUALITY(basis->name(),"HCurl:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 
@@ -316,13 +316,13 @@ namespace panzer {
       const panzer::CellData cell_data(num_cells,topo);
       
       basis = Teuchos::rcp(new PureBasis("T1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"T1");
+      TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("T2",0,cell_data));
-      TEST_EQUALITY(basis->name(),"T2");
+      TEST_EQUALITY(basis->name(),"HGrad:2");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("TEdge1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"TEdge1");
+      TEST_EQUALITY(basis->name(),"HCurl:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 
@@ -333,13 +333,13 @@ namespace panzer {
       const panzer::CellData cell_data(num_cells,topo);
       
       basis = Teuchos::rcp(new PureBasis("Q1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"Q1");
+      TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("Q2",0,cell_data));
-      TEST_EQUALITY(basis->name(),"Q2");
+      TEST_EQUALITY(basis->name(),"HGrad:2");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
       basis = Teuchos::rcp(new PureBasis("QEdge1",0,cell_data));
-      TEST_EQUALITY(basis->name(),"QEdge1");
+      TEST_EQUALITY(basis->name(),"HCurl:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 

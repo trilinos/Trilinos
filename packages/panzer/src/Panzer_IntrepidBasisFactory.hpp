@@ -82,7 +82,8 @@ namespace panzer {
 
   template <typename ScalarT, typename ArrayT>
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> >
-    createIntrepidBasis(const std::string in_basis_type, int in_basis_order, const Teuchos::RCP<const shards::CellTopology> & cell_topology) {
+    createIntrepidBasis(const std::string basis_type, int basis_order,
+			const Teuchos::RCP<const shards::CellTopology> & cell_topology) {
 
     // Shards supports extended topologies so the names have a "size"
     // associated with the number of nodes.  We prune the size to
@@ -92,23 +93,6 @@ namespace panzer {
     end_position = cell_topology_type.find("_");
     std::string cell_type = cell_topology_type.substr(0,end_position);
     
-    // Support for deprecated basis descriptions
-    std::string basis_type = in_basis_type;
-    int basis_order = in_basis_order;
-    
-    if (basis_type=="Q1" || basis_type=="T1") {
-      basis_type = "HGrad";
-      basis_order = 1;
-    }
-    else if (basis_type == "Q2" || basis_type=="T2") {
-      basis_type = "HGrad";
-      basis_order = 2;
-    }
-    else if (basis_type == "TEdge1" || basis_type=="QEdge1") {
-      basis_type = "HCurl";
-      basis_order = 1;
-    }
-
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> > basis;
 
     if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
@@ -160,24 +144,6 @@ namespace panzer {
     return basis;
   }
 
-  inline 
-  std::string getBasisName(const std::string type) {
-    const std::string name = "Basis " + type;
-    return  name;
-  }
-  
-  inline
-  std::string getD1BasisName(const std::string type) {
-    const std::string name = "Grad_Basis " + type;
-    return  name;
-  }
-
-  inline
-  std::string getD2BasisName(const std::string type) {
-    const std::string name = "D2_Basis " + type;
-    return  name;
-  }
-  
 }
 
 
