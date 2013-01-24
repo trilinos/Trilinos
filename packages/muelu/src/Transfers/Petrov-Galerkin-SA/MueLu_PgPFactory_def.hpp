@@ -167,10 +167,10 @@ namespace MueLu {
       // exporter: overlapping row map to nonoverlapping domain map (target map is unique)
       // since A is already transposed we use the RangeMap of A
       Teuchos::RCP<const Export> exporter =
-	ExportFactory::Build(RowBasedOmega->getMap(), A->getRangeMap());
+        ExportFactory::Build(RowBasedOmega->getMap(), A->getRangeMap());
 
       Teuchos::RCP<Vector > noRowBasedOmega =
-	VectorFactory::Build(A->getRangeMap());
+        VectorFactory::Build(A->getRangeMap());
 
       noRowBasedOmega->doExport(*RowBasedOmega, *exporter, Xpetra::INSERT);
 
@@ -178,7 +178,7 @@ namespace MueLu {
 
       // importer: source -> target maps
       Teuchos::RCP<const Import > importer =
-	ImportFactory::Build(A->getRangeMap(), A->getRowMap());
+        ImportFactory::Build(A->getRangeMap(), A->getRowMap());
 
       // doImport target->doImport(*source, importer, action)
       RowBasedOmega->doImport(*noRowBasedOmega, *importer, Xpetra::INSERT);
@@ -191,8 +191,8 @@ namespace MueLu {
     Utils::MyOldScaleMatrix(DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Utils2::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
-			 DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
-			 P_smoothed);
+                         DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
+                         P_smoothed);
     P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
 
     //////////////////// store results in Level
@@ -200,22 +200,22 @@ namespace MueLu {
     // Level Set
     if(!restrictionMode_)
       {
-	// prolongation factory is in prolongation mode
-	Set(coarseLevel, "P", P_smoothed);
+        // prolongation factory is in prolongation mode
+        Set(coarseLevel, "P", P_smoothed);
 
-	///////////////////////// EXPERIMENTAL
-	if(Ptent->IsView("stridedMaps")) P_smoothed->CreateView("stridedMaps", Ptent);
-	///////////////////////// EXPERIMENTAL
+        ///////////////////////// EXPERIMENTAL
+        if(Ptent->IsView("stridedMaps")) P_smoothed->CreateView("stridedMaps", Ptent);
+        ///////////////////////// EXPERIMENTAL
       }
     else
       {
-	// prolongation factory is in restriction mode
-	RCP<Matrix> R = Utils2::Transpose(P_smoothed, true); // use Utils2 -> specialization for double
-	Set(coarseLevel, "R", R);
+        // prolongation factory is in restriction mode
+        RCP<Matrix> R = Utils2::Transpose(P_smoothed, true); // use Utils2 -> specialization for double
+        Set(coarseLevel, "R", R);
 
-	///////////////////////// EXPERIMENTAL
-	if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
-	///////////////////////// EXPERIMENTAL
+        ///////////////////////// EXPERIMENTAL
+        if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
+        ///////////////////////// EXPERIMENTAL
       }
 
   }
@@ -234,70 +234,70 @@ namespace MueLu {
     switch (min_norm_)
       {
       case ANORM: {
-	// MUEMAT mode (=paper)
-	// Minimize with respect to the (A)' A norm.
-	// Need to be smart here to avoid the construction of A' A
-	//
-	//                   diag( P0' (A' A) D^{-1} A P0)
-	//   omega =   ------------------------------------------
-	//             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
-	//
-	// expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
+        // MUEMAT mode (=paper)
+        // Minimize with respect to the (A)' A norm.
+        // Need to be smart here to avoid the construction of A' A
+        //
+        //                   diag( P0' (A' A) D^{-1} A P0)
+        //   omega =   ------------------------------------------
+        //             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
+        //
+        // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
 
-	// calculate A * P0
-	bool doFillComplete=true;
-	bool optimizeStorage=false;
-	RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, doFillComplete, optimizeStorage);
+        // calculate A * P0
+        bool doFillComplete=true;
+        bool optimizeStorage=false;
+        RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, doFillComplete, optimizeStorage);
 
-	// compute A * D^{-1} * A * P0
-	RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
+        // compute A * D^{-1} * A * P0
+        RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
 
-	Numerator =   VectorFactory::Build(ADinvAP0->getColMap(), true);
-	Denominator = VectorFactory::Build(ADinvAP0->getColMap(), true);
-	MultiplyAll(AP0, ADinvAP0, Numerator);
-	MultiplySelfAll(ADinvAP0, Denominator);
+        Numerator =   VectorFactory::Build(ADinvAP0->getColMap(), true);
+        Denominator = VectorFactory::Build(ADinvAP0->getColMap(), true);
+        MultiplyAll(AP0, ADinvAP0, Numerator);
+        MultiplySelfAll(ADinvAP0, Denominator);
       }
-	break;
+        break;
       case L2NORM: {
 
-	// ML mode 1 (cheapest)
-	// Minimize with respect to L2 norm
-	//                  diag( P0' D^{-1} A P0)
-	//   omega =   -----------------------------
-	//             diag( P0' A' D^{-1}' D^{-1} A P0)
-	//
-	Numerator =   VectorFactory::Build(DinvAP0->getColMap(), true);
-	Denominator = VectorFactory::Build(DinvAP0->getColMap(), true);
-	MultiplyAll(P0, DinvAP0, Numerator);
-	MultiplySelfAll(DinvAP0, Denominator);
+        // ML mode 1 (cheapest)
+        // Minimize with respect to L2 norm
+        //                  diag( P0' D^{-1} A P0)
+        //   omega =   -----------------------------
+        //             diag( P0' A' D^{-1}' D^{-1} A P0)
+        //
+        Numerator =   VectorFactory::Build(DinvAP0->getColMap(), true);
+        Denominator = VectorFactory::Build(DinvAP0->getColMap(), true);
+        MultiplyAll(P0, DinvAP0, Numerator);
+        MultiplySelfAll(DinvAP0, Denominator);
       }
-	break;
+        break;
       case DINVANORM: {
-	// ML mode 2
-	// Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
-	// Need to be smart here to avoid the construction of A' A
-	//
-	//                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-	//   omega =   --------------------------------------------------------
-	//             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-	//
+        // ML mode 2
+        // Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
+        // Need to be smart here to avoid the construction of A' A
+        //
+        //                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+        //   omega =   --------------------------------------------------------
+        //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+        //
 
-	// compute D^{-1} * A * D^{-1} * A * P0
-	bool doFillComplete=true;
-	bool optimizeStorage=false;
-	Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
-	RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
-	Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        // compute D^{-1} * A * D^{-1} * A * P0
+        bool doFillComplete=true;
+        bool optimizeStorage=false;
+        Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
+        RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
+        Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
-	Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
-	Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(), true);
-	MultiplyAll(DinvAP0, DinvADinvAP0, Numerator);
-	MultiplySelfAll(DinvADinvAP0, Denominator);
+        Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
+        Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(), true);
+        MultiplyAll(DinvAP0, DinvADinvAP0, Numerator);
+        MultiplySelfAll(DinvADinvAP0, Denominator);
       }
-	break;
+        break;
       default:
-	TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::Build: minimization mode not supported. error");
-	break;
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::Build: minimization mode not supported. error");
+        break;
       }
 
 
@@ -316,18 +316,18 @@ namespace MueLu {
     Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
     for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
       if(Teuchos::ScalarTraits<Scalar>::magnitude(Denominator_local[i]) == mZero)
-	{
-	  ColBasedOmega_local[i] = 0.0; // fallback: nonsmoothed basis function since denominator == 0.0
-	  nan_local++;
-	}
+        {
+          ColBasedOmega_local[i] = 0.0; // fallback: nonsmoothed basis function since denominator == 0.0
+          nan_local++;
+        }
       else
-	{
-	  ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];  // default case
-	}
+        {
+          ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];  // default case
+        }
 
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < mZero) { // negative omegas are not valid. set them to zero
-	ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
-	zero_local++; // count zero omegas
+        ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
+        zero_local++; // count zero omegas
       }
 
       // handle case that Nominator == Denominator -> Dirichlet bcs in A?
@@ -335,7 +335,7 @@ namespace MueLu {
       // TAW: this is somewhat nonstandard and a rough fallback strategy to avoid problems
       // also avoid "overshooting" with omega > 0.8
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) >= 0.8) {
-	ColBasedOmega_local[i] = 0.0;
+        ColBasedOmega_local[i] = 0.0;
       }
 
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < Teuchos::ScalarTraits<Scalar>::magnitude(min_local)) { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
@@ -354,12 +354,12 @@ namespace MueLu {
 
       GetOStream(MueLu::Statistics1, 0) << "PgPFactory: smoothed aggregation (scheme: ";
       switch (min_norm_)
-	{
-	case ANORM:     { GetOStream(MueLu::Statistics1, 0) << "Anorm)"     << std::endl;   }   break;
-	case L2NORM:    { GetOStream(MueLu::Statistics1, 0) << "L2norm)"    << std::endl;   }   break;
-	case DINVANORM: { GetOStream(MueLu::Statistics1, 0) << "DinvAnorm)" << std::endl;   }   break;
-	default:          GetOStream(MueLu::Statistics1, 0) << "unknown)" << std::endl;         break;
-	}
+        {
+        case ANORM:     { GetOStream(MueLu::Statistics1, 0) << "Anorm)"     << std::endl;   }   break;
+        case L2NORM:    { GetOStream(MueLu::Statistics1, 0) << "L2norm)"    << std::endl;   }   break;
+        case DINVANORM: { GetOStream(MueLu::Statistics1, 0) << "DinvAnorm)" << std::endl;   }   break;
+        default:          GetOStream(MueLu::Statistics1, 0) << "unknown)" << std::endl;         break;
+        }
       GetOStream(MueLu::Statistics1, 0) << "Damping parameter: min = " << min_all << ", max = " << max_all << std::endl;
       GetOStream(MueLu::Statistics, 0) << "# negative omegas: " << zero_all << " out of " << ColBasedOmega->getGlobalLength() << " column-based omegas" << std::endl;
       GetOStream(MueLu::Statistics, 0) << "# NaNs: " << nan_all << " out of " << ColBasedOmega->getGlobalLength() << " column-based omegas" << std::endl;
@@ -384,16 +384,16 @@ namespace MueLu {
       DinvAP0->getLocalRowView(row, lindices, lvals);
       bAtLeastOneDefined = false;
       for(size_t j=0; j<Teuchos::as<size_t>(lindices.size()); j++) {
-	Scalar omega = ColBasedOmega_local[lindices[j]];
-	if (Teuchos::ScalarTraits<Scalar>::magnitude(omega) != -666) { // TODO bad programming style
-	  bAtLeastOneDefined = true;
-	  if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) == -666)    RowBasedOmega_local[row] = omega;
-	  else if(Teuchos::ScalarTraits<Scalar>::magnitude(omega) < Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row])) RowBasedOmega_local[row] = omega;
-	}
+        Scalar omega = ColBasedOmega_local[lindices[j]];
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(omega) != -666) { // TODO bad programming style
+          bAtLeastOneDefined = true;
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) == -666)    RowBasedOmega_local[row] = omega;
+          else if(Teuchos::ScalarTraits<Scalar>::magnitude(omega) < Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row])) RowBasedOmega_local[row] = omega;
+        }
       }
       if(bAtLeastOneDefined == true) {
-	if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) < mZero)
-	  RowBasedOmega_local[row] = sZero;
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) < mZero)
+          RowBasedOmega_local[row] = sZero;
       }
     }
 
@@ -416,7 +416,7 @@ namespace MueLu {
     for(size_t n=0; n<Op->getNodeNumRows(); n++) {
       Op->getLocalRowView(n, lindices, lvals);
       for(size_t i=0; i<Teuchos::as<size_t>(lindices.size()); i++) {
-	InnerProd_local[lindices[i]] += lvals[i]*lvals[i];
+        InnerProd_local[lindices[i]] += lvals[i]*lvals[i];
       }
     }
 
@@ -454,41 +454,41 @@ namespace MueLu {
 
       LocalOrdinal i = 0;
       for (size_t j=0; j < right->getColMap()->getNodeNumElements(); j++) {
-	while ( (i < Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements())) &&
-		(left->getColMap()->getGlobalElement(i) < right->getColMap()->getGlobalElement(j)) ) i++;
-	if (left->getColMap()->getGlobalElement(i) == right->getColMap()->getGlobalElement(j)) {
-	  NewRightLocal[j] = i;
-	}
+        while ( (i < Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements())) &&
+                (left->getColMap()->getGlobalElement(i) < right->getColMap()->getGlobalElement(j)) ) i++;
+        if (left->getColMap()->getGlobalElement(i) == right->getColMap()->getGlobalElement(j)) {
+          NewRightLocal[j] = i;
+        }
       }
 
       Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
       std::vector<Scalar> temp_array(left->getColMap()->getNodeNumElements()+1, 0.0);
 
       for(size_t n=0; n<right->getNodeNumRows(); n++) {
-	Teuchos::ArrayView<const LocalOrdinal> lindices_left;
-	Teuchos::ArrayView<const Scalar> lvals_left;
-	Teuchos::ArrayView<const LocalOrdinal> lindices_right;
-	Teuchos::ArrayView<const Scalar> lvals_right;
+        Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+        Teuchos::ArrayView<const Scalar> lvals_left;
+        Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+        Teuchos::ArrayView<const Scalar> lvals_right;
 
-	left->getLocalRowView (n, lindices_left,  lvals_left);
-	right->getLocalRowView(n, lindices_right, lvals_right);
+        left->getLocalRowView (n, lindices_left,  lvals_left);
+        right->getLocalRowView(n, lindices_right, lvals_right);
 
-	for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++) {
-	  temp_array[NewRightLocal[lindices_right[j] ] ] = lvals_right[j];
-	}
-	for (size_t j=0; j < Teuchos::as<size_t>(lindices_left.size()); j++) {
-	  InnerProd_local[lindices_left[j]] += temp_array[lindices_left[j] ]*lvals_left[j];
-	}
-	for (size_t j=0; j < Teuchos::as<size_t>(lindices_right.size()); j++) {
-	  temp_array[NewRightLocal[lindices_right[j] ] ] = 0.0;
-	}
+        for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++) {
+          temp_array[NewRightLocal[lindices_right[j] ] ] = lvals_right[j];
+        }
+        for (size_t j=0; j < Teuchos::as<size_t>(lindices_left.size()); j++) {
+          InnerProd_local[lindices_left[j]] += temp_array[lindices_left[j] ]*lvals_left[j];
+        }
+        for (size_t j=0; j < Teuchos::as<size_t>(lindices_right.size()); j++) {
+          temp_array[NewRightLocal[lindices_right[j] ] ] = 0.0;
+        }
       }
       // exporter: overlapping map to nonoverlapping map (target map is unique)
       Teuchos::RCP<const Export> exporter =
-	ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
+        ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
 
       Teuchos::RCP<Vector > nonoverlap =
-	VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
+        VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
 
       nonoverlap->doExport(*InnerProdVec, *exporter, Xpetra::ADD);
 
@@ -496,7 +496,7 @@ namespace MueLu {
 
       // importer: source -> target maps
       Teuchos::RCP<const Import > importer =
-	ImportFactory::Build(left->getDomainMap(), left->getColMap()); // TODO: change left to right?
+        ImportFactory::Build(left->getDomainMap(), left->getColMap()); // TODO: change left to right?
 
       // doImport target->doImport(*source, importer, action)
       InnerProdVec->doImport(*nonoverlap, *importer, Xpetra::INSERT);
@@ -505,63 +505,63 @@ namespace MueLu {
     } else
 #endif // end remove me
       if(InnerProdVec->getMap()->isSameAs(*right->getColMap())) {
-	size_t szNewLeftLocal = TEUCHOS_MAX(left->getColMap()->getNodeNumElements(), right->getColMap()->getNodeNumElements());
-	Teuchos::RCP<std::vector<LocalOrdinal> > NewLeftLocal = Teuchos::rcp(new std::vector<LocalOrdinal>(szNewLeftLocal, Teuchos::as<LocalOrdinal>(right->getColMap()->getMaxLocalIndex()+1)));
+        size_t szNewLeftLocal = TEUCHOS_MAX(left->getColMap()->getNodeNumElements(), right->getColMap()->getNodeNumElements());
+        Teuchos::RCP<std::vector<LocalOrdinal> > NewLeftLocal = Teuchos::rcp(new std::vector<LocalOrdinal>(szNewLeftLocal, Teuchos::as<LocalOrdinal>(right->getColMap()->getMaxLocalIndex()+1)));
 
-	LocalOrdinal j = 0;
-	for (size_t i=0; i < left->getColMap()->getNodeNumElements(); i++) {
-	  while ( (j < Teuchos::as<LocalOrdinal>(right->getColMap()->getNodeNumElements())) &&
-		  (right->getColMap()->getGlobalElement(j) < left->getColMap()->getGlobalElement(i)) ) j++;
-	  if (right->getColMap()->getGlobalElement(j) == left->getColMap()->getGlobalElement(i)) {
-	    (*NewLeftLocal)[i] = j;
-	  }
-	}
+        LocalOrdinal j = 0;
+        for (size_t i=0; i < left->getColMap()->getNodeNumElements(); i++) {
+          while ( (j < Teuchos::as<LocalOrdinal>(right->getColMap()->getNodeNumElements())) &&
+                  (right->getColMap()->getGlobalElement(j) < left->getColMap()->getGlobalElement(i)) ) j++;
+          if (right->getColMap()->getGlobalElement(j) == left->getColMap()->getGlobalElement(i)) {
+            (*NewLeftLocal)[i] = j;
+          }
+        }
 
-	/*for (size_t i=0; i < right->getColMap()->getNodeNumElements(); i++) {
-	  std::cout << "left col map: " << (*NewLeftLocal)[i] << " GID: " << left->getColMap()->getGlobalElement((*NewLeftLocal)[i]) << " GID: " << right->getColMap()->getGlobalElement(i) << " right col map: " << i << std::endl;
-	  }*/
+        /*for (size_t i=0; i < right->getColMap()->getNodeNumElements(); i++) {
+          std::cout << "left col map: " << (*NewLeftLocal)[i] << " GID: " << left->getColMap()->getGlobalElement((*NewLeftLocal)[i]) << " GID: " << right->getColMap()->getGlobalElement(i) << " right col map: " << i << std::endl;
+          }*/
 
-	Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
-	Teuchos::RCP<std::vector<Scalar> > temp_array = Teuchos::rcp(new std::vector<Scalar>(right->getColMap()->getMaxLocalIndex()+2, 0.0));
+        Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
+        Teuchos::RCP<std::vector<Scalar> > temp_array = Teuchos::rcp(new std::vector<Scalar>(right->getColMap()->getMaxLocalIndex()+2, 0.0));
 
-	for(size_t n=0; n<left->getNodeNumRows(); n++) {
-	  Teuchos::ArrayView<const LocalOrdinal> lindices_left;
-	  Teuchos::ArrayView<const Scalar> lvals_left;
-	  Teuchos::ArrayView<const LocalOrdinal> lindices_right;
-	  Teuchos::ArrayView<const Scalar> lvals_right;
+        for(size_t n=0; n<left->getNodeNumRows(); n++) {
+          Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+          Teuchos::ArrayView<const Scalar> lvals_left;
+          Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+          Teuchos::ArrayView<const Scalar> lvals_right;
 
-	  left->getLocalRowView (n, lindices_left,  lvals_left);
-	  right->getLocalRowView(n, lindices_right, lvals_right);
+          left->getLocalRowView (n, lindices_left,  lvals_left);
+          right->getLocalRowView(n, lindices_right, lvals_right);
 
-	  for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++) {
-	    (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = lvals_left[i];
-	  }
-	  for (size_t i=0; i < Teuchos::as<size_t>(lindices_right.size()); i++) {
-	    InnerProd_local[lindices_right[i]] += (*temp_array)[lindices_right[i] ] * lvals_right[i];
-	  }
-	  for (size_t i=0; i < Teuchos::as<size_t>(lindices_left.size()); i++) {
-	    (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = 0.0;
-	  }
-	}
+          for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++) {
+            (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = lvals_left[i];
+          }
+          for (size_t i=0; i < Teuchos::as<size_t>(lindices_right.size()); i++) {
+            InnerProd_local[lindices_right[i]] += (*temp_array)[lindices_right[i] ] * lvals_right[i];
+          }
+          for (size_t i=0; i < Teuchos::as<size_t>(lindices_left.size()); i++) {
+            (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = 0.0;
+          }
+        }
 
-	// exporter: overlapping map to nonoverlapping map (target map is unique)
-	Teuchos::RCP<const Export> exporter =
-	  ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
+        // exporter: overlapping map to nonoverlapping map (target map is unique)
+        Teuchos::RCP<const Export> exporter =
+          ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
 
-	Teuchos::RCP<Vector> nonoverlap =
-	  VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
+        Teuchos::RCP<Vector> nonoverlap =
+          VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
 
-	nonoverlap->doExport(*InnerProdVec, *exporter, Xpetra::ADD);
+        nonoverlap->doExport(*InnerProdVec, *exporter, Xpetra::ADD);
 
-	// importer: nonoverlapping map to overlapping map
+        // importer: nonoverlapping map to overlapping map
 
-	// importer: source -> target maps
-	Teuchos::RCP<const Import > importer =
-	  ImportFactory::Build(right->getDomainMap(), right->getColMap()); // TODO: change left to right?
-	// doImport target->doImport(*source, importer, action)
-	InnerProdVec->doImport(*nonoverlap, *importer, Xpetra::INSERT);
+        // importer: source -> target maps
+        Teuchos::RCP<const Import > importer =
+          ImportFactory::Build(right->getDomainMap(), right->getColMap()); // TODO: change left to right?
+        // doImport target->doImport(*source, importer, action)
+        InnerProdVec->doImport(*nonoverlap, *importer, Xpetra::INSERT);
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: map of InnerProdVec must be same as column map of left operator? Error.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: map of InnerProdVec must be same as column map of left operator? Error.");
       }
 
 #else // old "safe" code
@@ -576,32 +576,32 @@ namespace MueLu {
       Teuchos::ArrayView<const Scalar> lvals_right;
 
       for(size_t n=0; n<left->getNodeNumRows(); n++)
-	{
+        {
 
-	  left->getLocalRowView (n, lindices_left,  lvals_left);
-	  right->getLocalRowView(n, lindices_right, lvals_right);
+          left->getLocalRowView (n, lindices_left,  lvals_left);
+          right->getLocalRowView(n, lindices_right, lvals_right);
 
-	  for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
-	    {
-	      GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
-	      for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
-		{
-		  GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
-		  if(left_gid == right_gid)
-		    {
-		      InnerProd_local[lindices_left[i]] += lvals_left[i]*lvals_right[j];
-		      break; // skip remaining gids of right operator
-		    }
-		}
-	    }
-	}
+          for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
+            {
+              GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
+              for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
+                {
+                  GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
+                  if(left_gid == right_gid)
+                    {
+                      InnerProd_local[lindices_left[i]] += lvals_left[i]*lvals_right[j];
+                      break; // skip remaining gids of right operator
+                    }
+                }
+            }
+        }
 
       // exporter: overlapping map to nonoverlapping map (target map is unique)
       Teuchos::RCP<const Export> exporter =
-	ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
+        ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
 
       Teuchos::RCP<Vector > nonoverlap =
-	VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
+        VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
 
       nonoverlap->doExport(*InnerProdVec, *exporter, Xpetra::ADD);
 
@@ -609,7 +609,7 @@ namespace MueLu {
 
       // importer: source -> target maps
       Teuchos::RCP<const Import > importer =
-	ImportFactory::Build(left->getDomainMap(), left->getColMap()); // TODO: change left to right?
+        ImportFactory::Build(left->getDomainMap(), left->getColMap()); // TODO: change left to right?
 
       // doImport target->doImport(*source, importer, action)
       InnerProdVec->doImport(*nonoverlap, *importer, Xpetra::INSERT);
@@ -623,31 +623,31 @@ namespace MueLu {
       Teuchos::ArrayView<const Scalar> lvals_right;
 
       for(size_t n=0; n<left->getNodeNumRows(); n++)
-	{
-	  left->getLocalRowView(n, lindices_left, lvals_left);
-	  right->getLocalRowView(n, lindices_right, lvals_right);
+        {
+          left->getLocalRowView(n, lindices_left, lvals_left);
+          right->getLocalRowView(n, lindices_right, lvals_right);
 
-	  for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
-	    {
-	      GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
-	      for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
-		{
-		  GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
-		  if(left_gid == right_gid)
-		    {
-		      InnerProd_local[lindices_right[j]] += lvals_left[i]*lvals_right[j];
-		      break; // skip remaining gids of right operator
-		    }
-		}
-	    }
-	}
+          for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
+            {
+              GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
+              for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
+                {
+                  GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
+                  if(left_gid == right_gid)
+                    {
+                      InnerProd_local[lindices_right[j]] += lvals_left[i]*lvals_right[j];
+                      break; // skip remaining gids of right operator
+                    }
+                }
+            }
+        }
 
       // exporter: overlapping map to nonoverlapping map (target map is unique)
       Teuchos::RCP<const Export> exporter =
-	ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
+        ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
 
       Teuchos::RCP<Vector> nonoverlap =
-	VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
+        VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
 
       nonoverlap->doExport(*InnerProdVec, *exporter, Xpetra::ADD);
 
@@ -655,7 +655,7 @@ namespace MueLu {
 
       // importer: source -> target maps
       Teuchos::RCP<const Import > importer =
-	ImportFactory::Build(right->getDomainMap(), right->getColMap()); // TODO: change left to right?
+        ImportFactory::Build(right->getDomainMap(), right->getColMap()); // TODO: change left to right?
 
       // doImport target->doImport(*source, importer, action)
       InnerProdVec->doImport(*nonoverlap, *importer, Xpetra::INSERT);
@@ -776,7 +776,7 @@ namespace MueLu {
     {
       (*ColBasedOmegas)[i] = (*Numerator)[i]/(*Denominator)[i];
       if((*ColBasedOmegas)[i] < Teuchos::ScalarTraits<Scalar>::zero())
-	(*ColBasedOmegas)[i] = Teuchos::ScalarTraits<Scalar>::zero();
+        (*ColBasedOmegas)[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
 #endif // if 0
 
