@@ -445,8 +445,7 @@ bool StartupSierra(int *			  argc,
     const std::string s((*argv)[i]);
     if (s == "-h" || s == "-help" || s == "--help") {
       std::cout << std::endl
-                << "Sierra Usage: sierra " << lower(product_name) << " [sierra-options...] -O \"[" << lower(product_name) << "-options...]\"" << std::endl << std::endl
-//                << "Usage: (MPI run) " << env_data.m_executablePath << " [options...]" << std::endl
+                << "Sierra Usage: sierra [sierra-options...] " << lower(product_name) << " [" << lower(product_name) << "-options...]" << std::endl << std::endl
                 << "For example:" << std::endl
                 << "" << std::endl
                 << "  sierra " << lower(product_name) << " -i input_deck.i -o sierra.log" << std::endl
