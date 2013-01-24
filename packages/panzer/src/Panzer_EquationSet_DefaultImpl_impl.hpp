@@ -55,6 +55,9 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// For convenience we automate some evalautor registration
+#include "Panzer_Sum.hpp"
+
 // ***********************************************************************
 template <typename EvalT>
 panzer::EquationSet_DefaultImpl<EvalT>::
@@ -541,6 +544,14 @@ panzer::EquationSet_DefaultImpl<EvalT>::getProvidedDOFs() const
 
 // ***********************************************************************
 template <typename EvalT>
+const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > &
+panzer::EquationSet_DefaultImpl<EvalT>::getIntegrationRules() const
+{
+  return m_int_rules;
+}
+
+// ***********************************************************************
+template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setElementBlockId(const std::string & blockId)
 {
@@ -593,9 +604,14 @@ addDOF(const std::string & dofName,
   desc.dofName = dofName;
   desc.basisType = basisType;
   desc.basisOrder = basisOrder;
-  desc.basis = Teuchos::rcp(new panzer::PureBasis(basisType,basisOrder,m_cell_data));
-  desc.integrationOrder = integrationOrder;
-  desc.intRule = Teuchos::rcp(new panzer::IntegrationRule(integrationOrder,m_cell_data));
+  desc.basis = Teuchos::rcp(new panzer::PureBasis(desc.basisType,desc.basisOrder,m_cell_data));
+
+  if (integrationOrder == -1)
+    desc.integrationOrder = m_default_integration_order;
+  else
+    desc.integrationOrder = integrationOrder;
+
+  desc.intRule = Teuchos::rcp(new panzer::IntegrationRule(desc.integrationOrder,m_cell_data));
 
   // this function always creates a residual and scatter
   desc.residualName.first = true;
@@ -695,6 +711,39 @@ panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
   return desc_it->second.intRule;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+					   const std::string dof_name,
+					   const std::vector<std::string>& residual_contributions,
+					   const std::string residual_field_name) const
+{
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+
+  Teuchos::ParameterList p;
+
+  if (residual_field_name != "")
+    p.set("Sum Name", residual_field_name);
+  else
+    p.set("Sum Name", "RESIDUAL_"+dof_name);
+  
+  RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
+  *rcp_residual_contributions = residual_contributions;
+
+  p.set("Values Names", rcp_residual_contributions);
+  
+  DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  
+  p.set("Data Layout", desc_it->second.basis->functional);
+  
+  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+  fm.template registerEvaluator<EvalT>(op);
 }
 
 // ***********************************************************************

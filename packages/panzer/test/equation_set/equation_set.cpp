@@ -61,14 +61,13 @@ namespace panzer {
 
     int default_integration_order = 1;    
     int num_cells = 20;
-    panzer::CellData cell_data(num_cells,
-                        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
+    panzer::CellData cell_data(num_cells,Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   
     user_app::MyFactory my_factory;
     Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
-    eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, false);
+    TEST_NOTHROW(eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, false));
   }
 
   TEUCHOS_UNIT_TEST(equation_set, transient)
@@ -89,7 +88,7 @@ namespace panzer {
   
     user_app::MyFactory my_factory;
     Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
-    eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, true);
+    TEST_NOTHROW(eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, true));
   }
 
 }

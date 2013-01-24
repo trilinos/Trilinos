@@ -99,9 +99,10 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   m_prefix = params->get<std::string>("Prefix");
   std::string basis_type = params->get<std::string>("Basis Type");
   int basis_order = params->get<int>("Basis Order");
+  std::string model_id = params->get<std::string>("Model ID");
 
   // ********************
-  // Assemble DOF names and Residual names
+  // Setup DOFs and closure models
   // ********************
   {
     m_dof_name = m_prefix+"TEMPERATURE";
@@ -112,12 +113,9 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
       this->addDOFTimeDerivative(m_dof_name);
   }
 
-  // ********************
-  // Build Basis Functions and Integration Rules
-  // ********************
-  
-  this->setupDOFs();
+  this->addClosureModel(model_id);
 
+  this->setupDOFs();
 }
 
 // ***********************************************************************
@@ -134,7 +132,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Energy Equation
   // ********************
 
-  Teuchos::RCP<panzer::PureBasis> pb = fl.lookupBasis(m_dof_name);
+  Teuchos::RCP<const panzer::PureBasis> pb = fl.lookupBasis(m_dof_name);
   Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name);
   Teuchos::RCP<panzer::BasisIRLayout> basis = panzer::basisIRLayout(pb,*ir); 
 
@@ -250,26 +248,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // - this way we avoid loading each operator separately into the
   // global residual and Jacobian
   {
-    ParameterList p;
-    p.set("Sum Name", "RESIDUAL_"+m_prefix+"TEMPERATURE");
+    std::vector<std::string> residual_operator_names;
 
-    RCP<std::vector<std::string> > sum_names = 
-      rcp(new std::vector<std::string>);
-
-    sum_names->push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
-    sum_names->push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
+    residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
+    residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
     if (m_do_convection == "ON")
-      sum_names->push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_CONVECTION_OP");
+      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_CONVECTION_OP");
     if (this->buildTransientSupport())
-      sum_names->push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
+      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
 
-    p.set("Values Names", sum_names);
-    p.set("Data Layout", basis->functional);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
-
-    fm.template registerEvaluator<EvalT>(op);
+    this->buildAndRegisterResidualSummationEvalautor(fm,m_dof_name,residual_operator_names);
   }
 
 }

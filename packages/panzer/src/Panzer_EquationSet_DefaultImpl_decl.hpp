@@ -129,7 +129,7 @@ namespace panzer {
 
   protected:
 
-    //! Builds the integration rule, basis, DOFs, and default parameter list
+    //! Builds the integration rule, basis, DOFs, and default parameter list.  This MUST be called in the constructor of all classes derived form this object.
     virtual void setupDOFs();
 
     //! Returns true if transient support should be enabled in the equation set
@@ -215,8 +215,26 @@ namespace panzer {
      */
     void setDefaultValidParameters(Teuchos::ParameterList& valid_parameters);
 
-    //! Returns the integration rule for one of the registered DOFs
+    //! Returns the integration rule associated with the residual contributions for the dof_name.
     Teuchos::RCP<panzer::IntegrationRule> getIntRuleForDOF(const std::string& dof_name) const;
+
+    /** Adds a Sum evaluator that evaluates the local residual
+     * contributions by summing a vector of fields of integrated
+     * residuals.  This is a convenience function for when a user
+     * integrates multiple residual contributions and needs to sum
+     * them together before being loaded into the global matrix.
+     * Almost all implementations do this internally and this function
+     * just automates that process for users.
+     *
+     * \param[in] fm Field Manager to register new evaluator with
+     * \param[in] dof_name Name of DOF that this residual will contribute to
+     * \param[in] residual_contributions Vector of field names that will be summed to produce the residual contributions
+     * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
+     */ 
+    void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+						    const std::string dof_name,
+						    const std::vector<std::string>& residual_contributions,
+						    const std::string residual_field_name = "") const;
 
     // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the physics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
     void setupDeprecatedDOFsSupport();
