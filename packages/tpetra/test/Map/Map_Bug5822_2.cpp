@@ -66,41 +66,49 @@ using std::endl;
 // This test works (and exercises the interesting case) in serial mode
 // or for 1 MPI process, but it was originally written for 2 MPI
 // processes.
-TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
+TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 {
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
-
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef int LO;
   typedef long long GO;
   typedef Kokkos::SerialNode NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
-  if (sizeof (long long) <= 4) {
-    out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
-      "This test only makes sense if sizeof (long long) >= 8, "
-      "since the test is supposed to exercise GIDs > 2 billion.";
-    return;
-  }
-  const size_t localNumElts = 5;
-  const global_size_t globalNumElts = comm->getSize () * localNumElts;
-  const GO globalFirstGid = 3000000000L;
-  const GO localFirstGid = globalFirstGid + 2 * localNumElts * comm->getRank ();
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+  const int myRank = comm->getRank ();
 
-  // Make sure that the GIDs are not contiguous, in case Map tries to
-  // detect contiguous GIDs for us.  The point is to exercise a
-  // noncontiguous Map with GIDs all greater than 2 billion (so that
-  // they would overflow a 32-bit integer).
+  // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
+  // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
+  //
+  // The GIDs are not contiguous in order to prevent Map from
+  // detecting contiguity and bypassing the noncontiguous Map
+  // case.
+  const size_t localNumElts = (myRank == 0) ? 6 : 5;
+  const global_size_t globalNumElts = 1 + 5*comm->getSize ();
+  const GO globalFirstGid = 0L;
+  const GO threeBillion = 3000000000L;
+
   Array<GO> myGids (localNumElts);
+  // Make a copy, just to make sure that Map's constructor didn't
+  // sneakily change the input ArrayView.
   Array<GO> myGidsExpected (localNumElts);
-  for (size_t k = 0; k < localNumElts; ++k) {
-    myGids[k] = localFirstGid + as<GO> (2*k);
-    // Make a copy, just to make sure that Map's constructor didn't
-    // sneakily change the input ArrayView.
-    myGidsExpected[k] = myGids[k]; 
-  }
-  // Proc 0: myGids = [3B, 3B+2, 3B+4, 3B+6, 3B+8].
-  // Proc 1: myGids = [3B+10, 3B+12, 3B+14, 3B+16, 3B+18].
+  if (myRank == 0) {
+    myGids[0] = 0L;
+    myGidsExpected[0] = myGids[0];
+    myGids[1] = threeBillion;
+    myGidsExpected[1] = myGids[1];
+    for (size_t k = 2; k < localNumElts; ++k) {
+      myGids[k] = myGids[k-1] + 2;
+      myGidsExpected[k] = myGids[k];
+    }
+  } else {
+    myGids[0] = threeBillion + as<GO> ((localNumElts+1) * 2);
+    myGidsExpected[0] = myGids[0];
+    for (size_t k = 1; k < localNumElts; ++k) {
+      myGids[k] = myGids[k-1] + 2;
+      myGidsExpected[k] = myGids[k];
+    }
+  }    
   
   RCP<NT> node;
   {
@@ -119,3 +127,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
   return;
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 }
+  
+
+
+
