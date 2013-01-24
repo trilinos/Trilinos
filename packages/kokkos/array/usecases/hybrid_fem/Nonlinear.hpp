@@ -503,9 +503,9 @@ void driver( const char * const label ,
     std::cout << std::endl ;
     std::cout << "\"KokkosArray::HybridFE::Nonlinear " << label << "\"" << std::endl;
     std::cout
-      << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
+      << "\"Size\" ,  \"Size\" ,  \"Graphing\" , \"Element\" ,  \"Fill\" ,     \"Boundary\" , \"CG-Iter\" , \"CG-Iter\" ,      \"Newton-Iter\" , \"Max-node-error\""
       << std::endl
-      << "\"elems\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
+      << "\"elems\" , \"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
       << std::endl ;
   }
 
@@ -519,7 +519,10 @@ void driver( const char * const label ,
     const int ix = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = 1 + ix ;
     const int iz = 2 * iy ;
-    const int n  = ix * iy * iz ;
+    const int global_elem_count = ix * iy * iz ;
+    const int global_node_count = ( 2 * ix + 1 ) *
+                                  ( 2 * iy + 1 ) *
+                                  ( 2 * iz + 1 );
 
     mesh_type mesh =
       fixture_type::create( proc_count , proc_rank , gang_count ,
@@ -545,7 +548,8 @@ void driver( const char * const label ,
 
     if ( comm::rank( machine ) == 0 ) {
 
-      std::cout << std::setw(8) << n << " , "
+      std::cout << std::setw(8) << global_elem_count << " , "
+                << std::setw(8) << global_node_count << " , "
                 << std::setw(10) << perf_best.graph_time * 1000 << " , "
                 << std::setw(10) << perf_best.elem_time * 1000 << " , "
                 << std::setw(10) << perf_best.matrix_gather_fill_time * 1000 << " , "
