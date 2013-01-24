@@ -3004,91 +3004,74 @@ namespace stk {
      *
      */
     void PerceptMesh::
-    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity)
+    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal, int& returnedIndex, int& returnedPolarity)
     {
       bool debug = false;
-      //if (side.identifier() == 4348) debug = true;
-      if (debug) std::cout << "tmp srk element_side_permutation: element= " << element.identifier() << " side= " << side.identifier() << " iSubDimOrd= " << iSubDimOrd << std::endl;
+      //if (side.identifier() == 46832) debug = true;
+      if (debug) {
+        PerceptMesh *eMesh = PerceptMesh::get_static_instance();
+        std::cout << "tmp srk element_side_permutation: element_side_ordinal= " << element_side_ordinal << "  element= "; eMesh->print(element);
+        std::cout << " side= "; eMesh->print(side);
+      }
 
       returnedPolarity = 1;
       returnedIndex = -1;
 
-      stk::mesh::EntityRank needed_entity_rank = side.entity_rank();
+      stk::mesh::EntityRank side_entity_rank = side.entity_rank();
 
-      //const CellTopologyData * const cell_topo_data = get_cell_topology(element).getCellTopologyData();
-      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(element);
 
-      shards::CellTopology cell_topo(cell_topo_data);
+      shards::CellTopology element_topo(element_topo_data);
       const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
       const stk::mesh::PairIterRelation side_nodes = side.relations(stk::mesh::MetaData::NODE_RANK);
 
-      shards::CellTopology cell_topo_side(PerceptMesh::get_cell_topology(side));
+      const CellTopologyData * const side_topo_data = PerceptMesh::get_cell_topology(side);
+      shards::CellTopology side_topo(side_topo_data);
 
       const unsigned *  inodes = 0;
-      unsigned nSubDimNodes = 0;
-      static const unsigned edge_nodes_2[2] = {0,1};
-      static const unsigned face_nodes_3[3] = {0,1,2};
-      static const unsigned face_nodes_4[4] = {0,1,2,3};
+      unsigned n_elem_side_nodes = 0;
 
-      // special case for faces in 3D
-      if (needed_entity_rank == stk::mesh::MetaData::FACE_RANK && needed_entity_rank == element.entity_rank())
+      if (side_entity_rank == stk::mesh::MetaData::EDGE_RANK)
         {
-          nSubDimNodes = cell_topo_data->vertex_count;
-
+          VERIFY_OP_ON(element_side_ordinal, <, element_topo_data->edge_count, "err 1001");
+          inodes = element_topo_data->edge[element_side_ordinal].node;
+          int ned = element_topo_data->edge[element_side_ordinal].topology->vertex_count;
+          VERIFY_OP_ON(ned,==,2,"Logic error in element_side_permutation 3");
+          n_elem_side_nodes = 2;
+        }
+      else if (side_entity_rank == stk::mesh::MetaData::FACE_RANK )
+        {
+          VERIFY_OP_ON(element_side_ordinal, <, element_topo_data->side_count, "err 1002");
+          n_elem_side_nodes = element_topo_data->side[element_side_ordinal].topology->vertex_count;
           // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
-          if (nSubDimNodes ==3 )
-            inodes = face_nodes_3;
-          else
-            inodes = face_nodes_4;
-        }
-      // special case for edges in 2D
-      else if (needed_entity_rank == stk::mesh::MetaData::EDGE_RANK && needed_entity_rank == element.entity_rank())
-        {
-          nSubDimNodes = cell_topo_data->vertex_count;
-
-          if (nSubDimNodes == 2 )
-            {
-              inodes = edge_nodes_2;
-            }
-          else
-            {
-              throw std::runtime_error("NodeRegistry bad for edges");
-            }
-        }
-      else if (needed_entity_rank == stk::mesh::MetaData::EDGE_RANK)
-        {
-          VERIFY_OP_ON(iSubDimOrd, <, cell_topo_data->edge_count, "err 1001");
-          inodes = cell_topo_data->edge[iSubDimOrd].node;
-          nSubDimNodes = 2;
-        }
-      else if (needed_entity_rank == stk::mesh::MetaData::FACE_RANK )
-        {
-          VERIFY_OP_ON(iSubDimOrd, <, cell_topo_data->side_count, "err 1002");
-          nSubDimNodes = cell_topo_data->side[iSubDimOrd].topology->vertex_count;
-          // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
-          inodes = cell_topo_data->side[iSubDimOrd].node;
+          inodes = element_topo_data->side[element_side_ordinal].node;
         }
 
-      // if number of nodes on each side doesn't match, return (this can happen with wedge and pyramid)
-      if (nSubDimNodes > side_nodes.size())
+      VERIFY_OP_ON(n_elem_side_nodes, !=, 0, "Logic error in element_side_permutation - 1");
+
+      // If number of nodes on each side doesn't match, return (this can happen with wedge and pyramid)
+      // It can also happen if the element is a shell/beam
+      int nside_verts = side_topo_data->vertex_count;
+      if ((int)n_elem_side_nodes != nside_verts)
         {
-          if (debug) std::cout << "found wedge/pyr" << std::endl;
+          if (debug) std::cout << "found wedge/pyr or shell/beam" << std::endl;
           returnedIndex = -1;
           returnedPolarity = 1;
           return;
         }
 
       int found_node_offset = -1;
-      for (unsigned node_offset = 0; node_offset < nSubDimNodes; node_offset++)
+      for (unsigned node_offset = 0; node_offset < n_elem_side_nodes; node_offset++)
         {
           unsigned knode = node_offset;
+          // just look for the first node of the element's face, if one matches, break
           if (elem_nodes[inodes[0]].entity().identifier() == side_nodes[ knode ].entity().identifier() )
             {
               found_node_offset = (int)node_offset;
               break;
             }
           if (debug) {
-            std::cout << "nSubDimNodes= " << nSubDimNodes << " inodes[0]= " << inodes[0] << " knode= " << knode
+            std::cout << "n_elem_side_nodes= " << n_elem_side_nodes << " inodes[0]= " << inodes[0] << " knode= " << knode
                       << " enode= " << elem_nodes[inodes[0]].entity().identifier()
                       << " snode= " << side_nodes[ knode ].entity().identifier()
                       << " found_node_offset= " << found_node_offset
@@ -3099,9 +3082,9 @@ namespace stk {
       if (found_node_offset >= 0)
         {
           bool matched = true;
-          for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
+          for (unsigned jnode = 0; jnode < n_elem_side_nodes; jnode++)
             {
-              unsigned knode = (jnode + found_node_offset) % nSubDimNodes;
+              unsigned knode = (jnode + found_node_offset) % n_elem_side_nodes;
               VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
               VERIFY_OP_ON(knode, < , side_nodes.size(), "err 2005");
               if (elem_nodes[inodes[jnode]].entity().identifier() != side_nodes[ knode ].entity().identifier() )
@@ -3122,9 +3105,9 @@ namespace stk {
               // try reverse ordering
               matched = true;
 
-              for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
+              for (unsigned jnode = 0; jnode < n_elem_side_nodes; jnode++)
                 {
-                  int knode = ( found_node_offset + (int)nSubDimNodes - (int)jnode) % ((int)nSubDimNodes);
+                  int knode = ( found_node_offset + (int)n_elem_side_nodes - (int)jnode) % ((int)n_elem_side_nodes);
 
                   VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
                   VERIFY_OP_ON(knode, < , (int)side_nodes.size(), "err 2005");
