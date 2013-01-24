@@ -90,7 +90,7 @@ ADD_SUBDIRECTORY(adapters)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
