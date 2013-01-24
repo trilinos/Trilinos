@@ -2126,7 +2126,7 @@ namespace {
     {
       RCP<ParameterList> plClone = parameterList();
       // default: plClone->set("fillComplete clone",true);
-      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      RCP<Mat2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );
       TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
@@ -2148,7 +2148,7 @@ namespace {
       plClone->set("fillComplete clone",false);
       plClone->set("Static profile clone",false);
       // default: plClone->set("Locally indexed clone",false);
-      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      RCP<Mat2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->hasColMap(), false );
       TEST_EQUALITY_CONST( A2->isFillComplete(), false );
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
@@ -2168,7 +2168,7 @@ namespace {
       plClone->set("Static profile clone", false);
       RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
       plCloneFill->set("Optimize Storage",false);
-      RCP<Mat2> A2 = A1->clone(n2,plClone);
+      RCP<Mat2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );
       TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
       A2->resumeFill();
