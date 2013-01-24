@@ -140,16 +140,18 @@ namespace MueLu {
 
     This cleanup has many phases:
 
-    Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
+     - Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
     all processors have the same view of aggregated vertices
     (e.g., to which aggregate they have been assigned and
     which processor owns that aggregate).
-    Phase 2:  Check for vertices (local or nonlocal) which are Adjacent
+
+     - Phase 2:  Check for vertices (local or nonlocal) which are Adjacent
     to root nodes. Tentatively assign these to the aggregate
     associated with the root. Arbitrate any cases where
     several processors claim the same vertex for one of
     their aggregates via ArbitrateAndCommunicate().
-    Phase 3:  Try to create new aggregates if it looks like there are
+
+    - Phase 3:  Try to create new aggregates if it looks like there are
     root node candidates which have many unaggregated neighbors.
     This decision to make a new aggregate is based on only local
     information. However, the new aggregate will be tentatively
@@ -159,11 +161,14 @@ namespace MueLu {
     The basic idea is that after arbitration, each aggregate
     is guaranteed to keep all local vertices assigned in
     this phase. Thus, by basing the aggregation creation logic
-    on local information, we are guarantee to have a sufficiently
+    on local information, we are guaranteed to have a sufficiently
     large aggregation. The only local vertices that might be
     assigned to another processor's aggregates are unclaimed
     during this phase of the aggregation.
-    Phase 5:  Sweep new points into existing aggregates. Each processor tries
+
+    - Phase 4: EXPERIMENTAL
+
+    - Phase 5:  Sweep new points into existing aggregates. Each processor tries
     to assign any (whether it is a ghost or local) unaggregated
     vertex that it has to an aggregate that it owns. In other words,
     processor p attempts to assign vertex v to aggregate y where
@@ -234,7 +239,8 @@ namespace MueLu {
     occur to address the issue mentioned above where we don't want
     to make assignment decisions based on connections to vertices
     that might be later lost in arbitration.
-    Phase 6:  Aggregate remaining vertices and avoid small aggregates (e.g.,
+
+    - Phase 6:  Aggregate remaining vertices and avoid small aggregates (e.g.,
     singletons) at all costs. Typically, most everything should
     be aggregated by Phase's 1-5.  One way that we could still have
     unaggegated vertices is if processor p was never assigned a
