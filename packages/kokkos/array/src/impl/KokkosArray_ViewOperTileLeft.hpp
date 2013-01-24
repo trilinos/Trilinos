@@ -105,6 +105,36 @@ public:
     }
 
 
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_tile_index_0(iType i) const
+    {
+      return i/M;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_tile_index_1(iType i) const
+    {
+      return i/N;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_local_tile_index_0(iType i) const
+    {
+      return i%M;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_local_tile_index_1(iType i) const
+    {
+      return i%N;
+    }
+
+
+
   template< typename iType0, typename iType1 >
   KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i , const iType1 & j ) const
@@ -174,6 +204,34 @@ public:
     size_t tiles_in_dimension_1() const
     {
       return (m_shape.N1 + N_MASK) >> N_SHIFT;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_tile_index_0(iType i) const
+    {
+      return i>>M_SHIFT;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_tile_index_1(iType i) const
+    {
+      return i>>N_SHIFT;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_local_tile_index_0(iType i) const
+    {
+      return i & M_MASK;
+    }
+
+  template <typename iType>
+  KOKKOSARRAY_INLINE_FUNCTION
+    size_t global_to_local_tile_index_1(iType i) const
+    {
+      return i & N_MASK;
     }
 
   template< typename iType0, typename iType1 >
