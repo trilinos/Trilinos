@@ -232,7 +232,7 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
+     panzer::CellData cellData(worksetSize,topo);
      panzer::IntegrationRule intRule(1,cellData);
 
      return Teuchos::rcp(new panzer::BasisIRLayout("Q1",intRule)); 

@@ -141,8 +141,7 @@ int main(int argc,char * argv[])
 
       testInitialzation(ipb, bcs);
       
-      int base_cell_dimension = mesh->getCellTopology("eblock-0_0")->getDimension();
-      const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,mesh->getCellTopology("eblock-0_0"));
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
       // GobalData sets ostream and parameter interface to physics
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();

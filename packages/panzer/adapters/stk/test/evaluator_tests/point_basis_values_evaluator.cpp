@@ -96,7 +96,7 @@ namespace panzer {
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
-    panzer::CellData cell_data(basis_q1->getNumCells(), 2,basis_q1->getCellTopology());
+    panzer::CellData cell_data(basis_q1->getNumCells(), basis_q1->getCellTopology());
 
     panzer::InputPhysicsBlock ipb;
     testInitialization(ipb);
@@ -189,7 +189,7 @@ namespace panzer {
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
-    panzer::CellData cell_data(basis_q1->getNumCells(), 2,basis_q1->getCellTopology());
+    panzer::CellData cell_data(basis_q1->getNumCells(), basis_q1->getCellTopology());
 
     int integration_order = 4;
     panzer::InputPhysicsBlock ipb;
@@ -270,7 +270,7 @@ namespace panzer {
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
-    panzer::CellData cell_data(basis_q1->getNumCells(), 2,basis_q1->getCellTopology());
+    panzer::CellData cell_data(basis_q1->getNumCells(), basis_q1->getCellTopology());
 
     int integration_order = 4;
     panzer::InputPhysicsBlock ipb;
@@ -362,7 +362,7 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
+     panzer::CellData cellData(worksetSize,topo);
      return Teuchos::rcp(new panzer::PureBasis(basisName,cellData)); 
   }
 
@@ -371,8 +371,7 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     const int base_cell_dimension = 2;
-     const panzer::CellData cell_data(workset_size, base_cell_dimension,topo);
+     const panzer::CellData cell_data(workset_size, topo);
 
      return Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
   }

@@ -311,7 +311,7 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
+     panzer::CellData cellData(worksetSize,topo);
      return Teuchos::rcp(new panzer::PureBasis(basisName,cellData)); 
   }
 
