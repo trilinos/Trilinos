@@ -173,10 +173,15 @@ std::string HostSpace::query_label( const void * p )
 size_t HostSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
+  // Padding 'large' array dimensions to be memory aligned
+  // where 'large' greater than 4 * cacheline-size
+
   const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size
                      ? MEMORY_ALIGNMENT / scalar_size : 0 ;
 
-  if ( align && align < scalar_count && scalar_count % align ) {
+  const size_t threshold = align * 4 ;
+
+  if ( align && threshold < scalar_count && scalar_count % align ) {
     scalar_count += align - scalar_count % align ;
   }
 

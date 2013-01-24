@@ -81,8 +81,14 @@ public:
 
       //TODO: assert within tile bounds
 
-      tile_type t(m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()));
-      return t;
+      // Generate this tile 'subview' with the proper shape (stride == M).
+      // A default constructed Left-shape will attempt to align the leading dimension
+      // on a cache-line length.
+
+      typedef Shape<LayoutLeft,ValueSize,2,M,N> tile_shape_type ;
+
+      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()),
+                        tile_shape_type::create_unpadded() );
     }
 
 
@@ -141,14 +147,21 @@ public:
 
   template< typename iType0, typename iType1 >
   KOKKOSARRAY_INLINE_FUNCTION
-  tile_type tile( const iType0 & i , const iType1 & j ) const
+  tile_type tile( const iType0 & itile , const iType1 & jtile ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
 
       //TODO: assert within tile bounds
 
-      tile_type t(m_ptr_on_device + M*N*(i + j*tiles_in_dimension_0()));
-      return t;
+      // Generate this tile 'subview' with the proper shape (stride == M).
+      // A default constructed Left-shape will attempt to align the leading dimension
+      // on a cache-line length.
+
+      typedef Shape<LayoutLeft,ValueSize,2,M,N> tile_shape_type ;
+
+      return tile_type( m_ptr_on_device
+                        + ( (itile + jtile * tiles_in_dimension_0() ) << ( M_SHIFT + N_SHIFT )),
+                        tile_shape_type::create_unpadded() );
     }
 
   KOKKOSARRAY_INLINE_FUNCTION
@@ -169,6 +182,9 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i,j );
+
+      // Use care to insert necessary parentheses as the
+      // shift operators have lower precedence than the arithmatic operators.
 
       return  *  (m_ptr_on_device                                                                       //base ptr
                  + ((((i>>M_SHIFT) + (j>>N_SHIFT)*((m_shape.N0+M_MASK)>>M_SHIFT)) << (M_SHIFT + N_SHIFT))  //tile

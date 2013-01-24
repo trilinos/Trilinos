@@ -278,7 +278,7 @@ void assert_shape_bounds( const ShapeType & shape ,
 
 #if defined( KOKKOSARRAY_EXPRESSION_CHECK )
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) assert_shape_bounds(S,I0);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) assert_shape_bounds(S,I0,i1);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) assert_shape_bounds(S,I0,I1);
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( S , I0 , I1 , I2 ) assert_shape_bounds(S,I0,I1,I2);
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( S , I0 , I1 , I2 , I3 ) assert_shape_bounds(S,I0,I1,I2,I3);
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( S , I0 , I1 , I2 , I3 , I4 ) assert_shape_bounds(S,I0,I1,I2,I3,I4);
@@ -385,6 +385,14 @@ struct Shape {
     Shape shape ;
     shape.Stride = 0 ; // to suppress compiler warning
     shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
+    return shape ;
+  }
+
+  static inline
+  Shape create_unpadded()
+  {
+    Shape shape ;
+    shape.Stride = shape.N0 ;
     return shape ;
   }
 

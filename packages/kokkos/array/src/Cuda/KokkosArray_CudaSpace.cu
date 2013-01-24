@@ -172,8 +172,9 @@ size_t CudaSpace::preferred_alignment(
 {
   const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size 
                      ? MEMORY_ALIGNMENT / scalar_size : 0 ;
+  const size_t threshold = align ;
 
-  if ( align && align < scalar_count && scalar_count % align ) {
+  if ( align && threshold < scalar_count && scalar_count % align ) {
     scalar_count += align - scalar_count % align ;
   }
 

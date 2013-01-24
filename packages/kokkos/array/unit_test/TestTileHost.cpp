@@ -63,14 +63,14 @@ struct TestTileArray
     for (int tj = 0, tile_cols = a.tiles_in_dimension_1(); tj < tile_cols; ++tj) {
     for (int ti = 0, tile_rows = a.tiles_in_dimension_0(); ti < tile_rows; ++ti) {
       typename TiledArray::tile_type tile = a.tile(ti,tj);
-      for (int i=0, rows = tile.dimension_0(); i < rows; ++i) {
       for (int j=0, cols = tile.dimension_1(); j < cols; ++j) {
-        tile(i,j) = rows*cols*(ti + a.tiles_in_dimension_1()*tj) + i + j*rows;
+      for (int i=0, rows = tile.dimension_0(); i < rows; ++i) {
+        tile(i,j) = rows*cols*(ti + a.tiles_in_dimension_0()*tj) + i + j*rows;
       }}
     }}
 
-    for (int i=0; i<dimension; ++i) {
     for (int j=0; j<dimension; ++j) {
+    for (int i=0; i<dimension; ++i) {
       ptrdiff_t offset = &a(i,j) - &a(0,0);
       EXPECT_EQ( offset, a(i,j) );
     }}
@@ -131,7 +131,6 @@ TEST( host_tile, tile_8x8)
   TestTileArray< View< ptrdiff_t**, LayoutTileLeft<8,8>, Host> >::run(9);
 }
 
-#if 0
 TEST( host_tile, tile_9x9)
 {
   using namespace KokkosArray;
@@ -143,5 +142,4 @@ TEST( host_tile, tile_10x10)
   using namespace KokkosArray;
   TestTileArray< View< ptrdiff_t**, LayoutTileLeft<10,10>, Host> >::run(9);
 }
-#endif
 
