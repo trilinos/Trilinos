@@ -89,7 +89,7 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
     const panzer::CellData volume_cell_data(workset_size,cellTopo);
     
     // find physics block parameter sublist
-    TEUCHOS_TEST_FOR_EXCEPTION(physics_blocks_plist->isSublist(physics_block_id),
+    TEUCHOS_TEST_FOR_EXCEPTION(!physics_blocks_plist->isSublist(physics_block_id),
 			       std::runtime_error,
 			       "Failed to find physics id: \""
 			       << physics_block_id 
