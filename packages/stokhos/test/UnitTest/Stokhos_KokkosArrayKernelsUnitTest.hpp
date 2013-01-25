@@ -151,8 +151,8 @@ namespace KokkosArrayKernelsUnitTest {
     // Can't be a constructor because MPI will not be initialized
     void setup() {
 
-      p = 5;
-      d = 3;
+      p = 3;
+      d = 2;
       nGrid = 5;
       rel_tol = 1e-12;
       abs_tol = 1e-12;
@@ -558,8 +558,251 @@ namespace KokkosArrayKernelsUnitTest {
     KokkosArray::deep_copy( hy , y );
 
     bool success = setup.test_commuted(hy, out);
-    //bool success = setup.test_commuted_x(hx, out);
     return success;
+  }
+
+  template< typename ScalarType , class Device >
+  bool
+  test_crs_dense_block(const UnitTestSetup& setup,
+		       Teuchos::FancyOStream& out)
+  {
+    typedef ScalarType value_type ;
+    typedef KokkosArray::View< value_type**, KokkosArray::LayoutLeft , Device > block_vector_type ;
+    
+    //------------------------------
+
+    typedef KokkosArray::BlockCrsMatrix< KokkosArray::SymmetricDiagonalSpec< Device > , value_type , Device > matrix_type ;
+    
+    typedef typename matrix_type::graph_type  graph_type ;
+    
+    //------------------------------
+    // Generate product tensor from variables' degrees
+    
+    const std::vector<unsigned> var_degree( setup.d , setup.p );
+    
+    const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+      tensor( var_degree );
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      setup.stoch_length != static_cast<int>(tensor.bases_count()), 
+      std::logic_error,
+      "tensor.bases_count() == " << tensor.bases_count() << " != " << 
+      "setup.stoch_length == " << setup.stoch_length << std::endl);
+    
+    
+    //------------------------------
+    
+    block_vector_type x = block_vector_type( "x" , setup.stoch_length , setup.fem_length );
+    block_vector_type y = block_vector_type( "y" , setup.stoch_length , setup.fem_length );
+    
+    typename block_vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
+
+    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
+      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+	hx(setup.perm[iColStoch],iColFEM) =
+	  generate_vector_coefficient<ScalarType>( 
+	    setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
+      }
+    }
+
+    KokkosArray::deep_copy( x , hx );
+
+    //------------------------------
+    // Generate CRS matrix of blocks with symmetric diagonal storage
+
+    matrix_type matrix ;
+
+    matrix.block  = KokkosArray::SymmetricDiagonalSpec< Device >( setup.stoch_length );
+    matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test product tensor graph") , setup.fem_graph );
+    matrix.values = block_vector_type( "matrix" , matrix.block.matrix_size() , setup.fem_graph_length );
+
+    {
+      typename block_vector_type::HostMirror hM =
+	KokkosArray::create_mirror( matrix.values );
+
+      for ( int iRowStoch = 0 ; iRowStoch < setup.stoch_length ; ++iRowStoch ) {
+	for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
+
+	  for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+	    const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM];
+
+	    for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+	      
+	      const size_t offset = 
+		matrix.block.matrix_offset( setup.perm[iRowStoch] , 
+					    setup.perm[iColStoch] );
+	      
+	      ScalarType value = 0 ;
+	      
+	      for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
+		value += tensor( setup.perm[iRowStoch] , 
+				 setup.perm[iColStoch] , 
+				 setup.perm[k] ) *
+		  generate_matrix_coefficient<ScalarType>( 
+		    setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
+	      }
+
+	      hM( offset , iEntryFEM ) = value ;
+	    }
+	  }
+
+	}
+      }
+
+      KokkosArray::deep_copy( matrix.values , hM );
+    }
+
+    //------------------------------
+
+    KokkosArray::multiply( matrix , x , y );
+
+    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+    KokkosArray::deep_copy( hy , y );
+
+    bool success = setup.test_commuted(hy, out);
+
+    return success;
+  }
+
+  template< typename ScalarType , class Device >
+  bool
+  test_crs_flat_commuted(const UnitTestSetup& setup,
+			 Teuchos::FancyOStream& out)
+  {
+    typedef ScalarType value_type ;
+    typedef KokkosArray::View< value_type[] , Device > vector_type ;
+
+    //------------------------------
+
+    typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+    typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+
+    //------------------------------
+    // Tensor evaluation:
+
+    const std::vector<unsigned> var_degree( setup.d , setup.p );
+
+    const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+      tensor( var_degree );
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      setup.stoch_length != static_cast<int>(tensor.bases_count()), 
+      std::logic_error,
+      "tensor.bases_count() == " << tensor.bases_count() << " != " << 
+      "setup.stoch_length == " << setup.stoch_length << std::endl);
+
+    std::vector< std::vector< int > > stoch_graph( setup.stoch_length );
+
+    for ( int i = 0 ; i < setup.stoch_length ; ++i ) {
+      for ( int j = 0 ; j < setup.stoch_length ; ++j ) {
+	if ( KokkosArray::matrix_nonzero(tensor,i,j) ) {
+	  stoch_graph[i].push_back(j);
+	}
+      }
+    }
+
+    //------------------------------
+    // Generate flattened graph with FEM outer and stochastic inner
+
+    const int flat_length = setup.fem_length * setup.stoch_length ;
+
+    std::vector< std::vector<int> > flat_graph( flat_length );
+
+    for ( int iOuterRow = 0 ; iOuterRow < setup.fem_length ; ++iOuterRow ) {
+
+      const size_t iOuterRowNZ = setup.fem_graph[iOuterRow].size();
+
+      for ( int iInnerRow = 0 ; iInnerRow < setup.stoch_length ; ++iInnerRow ) {
+
+	const size_t iInnerRowNZ = stoch_graph[ iInnerRow ].size(); ;
+	const int iFlatRowNZ  = iOuterRowNZ * iInnerRowNZ ;
+	const int iFlatRow    = iInnerRow + iOuterRow * setup.stoch_length ;
+
+	flat_graph[iFlatRow].resize( iFlatRowNZ );
+
+	int iFlatEntry = 0 ;
+
+	for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterRowNZ ; ++iOuterEntry ) {
+
+	  const int iOuterCol = setup.fem_graph[iOuterRow][iOuterEntry];
+
+	  for ( size_t iInnerEntry = 0 ; iInnerEntry < iInnerRowNZ ; ++iInnerEntry ) {
+
+	    const int iInnerCol   = stoch_graph[iInnerRow][iInnerEntry] ;
+	    const int iFlatColumn = iInnerCol + iOuterCol * setup.stoch_length ;
+
+	    flat_graph[iFlatRow][iFlatEntry] = iFlatColumn ;
+
+	    ++iFlatEntry ;
+	  }
+	}
+      }
+    }
+
+    //------------------------------
+
+    vector_type x = vector_type( "x" , flat_length );
+    vector_type y = vector_type( "y" , flat_length );
+
+    typename vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+
+    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
+      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+	hx(setup.perm[iColStoch] + iColFEM*setup.stoch_length) =
+	  generate_vector_coefficient<ScalarType>( 
+	    setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
+      }
+    }
+
+    KokkosArray::deep_copy( x , hx );
+
+    //------------------------------
+
+    matrix_type matrix ;
+
+    matrix.graph = KokkosArray::create_crsarray<crsarray_type>( 
+      std::string("testing") , flat_graph );
+
+    const size_t flat_graph_length = matrix.graph.entries.dimension(0);
+
+    matrix.values = vector_type( "matrix" , flat_graph_length );
+    {
+      typename vector_type::HostMirror hM =
+	KokkosArray::create_mirror( matrix.values );
+
+      for ( int iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
+	const int iRowFEM   = iRow / setup.stoch_length ;
+	const int iRowStoch = iRow % setup.stoch_length ;
+
+	for ( size_t iRowEntry = 0 ; iRowEntry < flat_graph[ iRow ].size() ; ++iRowEntry , ++iEntry ) {
+	  const int iCol = flat_graph[ iRow ][ iRowEntry ];
+	  const int iColFEM   = iCol / setup.stoch_length ;
+	  const int iColStoch = iCol % setup.stoch_length ;
+
+	  double value = 0 ;
+	  for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
+	    const double A_fem_k = 
+	      generate_matrix_coefficient<ScalarType>( 
+		setup.fem_length , setup.stoch_length , iRowFEM, iColFEM, k );
+	    value += tensor(iRowStoch,iColStoch,k) * A_fem_k ;
+	  }
+	  hM( iEntry ) = value ;
+	}
+      }
+
+      KokkosArray::deep_copy( matrix.values , hM );
+    }
+
+    //------------------------------
+
+    
+    KokkosArray::multiply( matrix , x , y );
+
+    typename vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+    KokkosArray::deep_copy( hy , y );
+
+    bool success = setup.test_commuted_flat(hy, out);
+  
   }
 
 }

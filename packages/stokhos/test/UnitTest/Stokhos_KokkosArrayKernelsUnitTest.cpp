@@ -61,6 +61,13 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductLegendre_Host ) {
   success = test_crs_product_legendre<Scalar,Device>(setup, out);
 }
 
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  
+  success = test_crs_dense_block<Scalar,Device>(setup, out);
+}
+
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
   success = true; 
   
