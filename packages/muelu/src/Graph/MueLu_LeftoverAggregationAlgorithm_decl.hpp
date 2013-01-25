@@ -175,13 +175,9 @@ namespace MueLu {
     \f$y\f$ is owned by p but \f$v\f$ may be a ghost vertex (and so really
     assigned to another processor). Deciding which aggregate
     a vertex is assigned to is done by scoring. Roughly, we want
-
-     -a) larger scores for \f$y\f$ if \f$v\f$ is is close (graph distance)
-    to \f$y\f$'s root.
-     -b) larger scores for \f$y\f$ if \f$v\f$ has direct connections to
-    several different vertices already assigned to \f$y\f$.
-     -c) lower scores for \f$y\f$ if several vertices have already
-    been swept into \f$y\f$ during this phase.
+        - larger scores for \f$y\f$ if \f$v\f$ is close (graph distance) to \f$y\f$'s root.
+        - larger scores for \f$y\f$ if \f$v\f$ has direct connections to several different vertices already assigned to \f$y\f$.
+        - lower scores for \f$y\f$ if several vertices have already been swept into \f$y\f$ during this phase.
 
     Some care must be taken for vertices that are shared (either
     local vertices that are sent to other processors or ghost
@@ -237,10 +233,12 @@ namespace MueLu {
     assigned to \f$y\f$.
 
     One last wrinkle, is that we have wrapped the whole
-    scoring/assigning of vertices around a big loop that
+    scoring/assigning of vertices inside a big loop that
     looks something like
 
+    @code
     for ( Threshold = big; Threshold >= 0; Reduce(Threshold));
+    @endcode
 
     New vertices are swept into aggregates only if their best
     score is >= a Threshold.  This encourages only very good
@@ -253,7 +251,7 @@ namespace MueLu {
 
     - Phase 6:  Aggregate remaining vertices and avoid small aggregates (e.g.,
     singletons) at all costs. Typically, most everything should
-    be aggregated by Phase's 1-5.  One way that we could still have
+    be aggregated by Phases 1-5.  One way that we could still have
     unaggregated vertices is if processor p was never assigned a
     root node (perhaps because the number of local vertices on p
     is less than minNodesPerAggregate) and additionally p has
