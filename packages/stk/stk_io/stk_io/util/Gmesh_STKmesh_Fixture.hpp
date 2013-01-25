@@ -40,38 +40,6 @@ class Gmesh_STKmesh_Fixture
   void commit();
 
   /**
-   * For a given surface, return the number of elements in the surface
-   *
-   * @param surf_id The surface we are interested in.
-   */
-  size_t getSurfElemCount(size_t surf_id) const;
-
-  /**
-   * For a given surface, return the relevant dimension and expected value
-   * of that dimension. For example, for surface PY, (1, m_num_y) would be
-   * returned; 1 refers to the Y dimension and m_num_y is the expected
-   * Y-coordinate value for all the nodes on the PY surface.
-   *
-   * @surf_id The surface we are interested in.
-   */
-  std::pair<int, double> getSurfCoordInfo(size_t surf_id) const;
-
-  /**
-   * Get the total number of side entities in this mesh.
-   */
-  size_t getSideCount() const;
-
-  /**
-   * Get the total number of elements in this mesh.
-   */
-  size_t getElemCount() const;
-
-  /**
-   * Get the total number of nodes in this mesh.
-   */
-  size_t getNodeCount() const;
-
-  /**
    * Get the names of all the sideset parts.
    */
   const std::vector<std::string> & getSidesetNames() const
@@ -114,15 +82,6 @@ class Gmesh_STKmesh_Fixture
 
   ///> Collection of all the side parts
   stk::mesh::PartVector m_sideset_parts;
-
-  ///> The number of elements in the X dimension for the mesh
-  int m_num_x;
-
-  ///> The number of elements in the Y dimension for the mesh
-  int m_num_y;
-
-  ///> The number of elements in the Z dimension for the mesh
-  int m_num_z;
 };
 
 }//namespace util
