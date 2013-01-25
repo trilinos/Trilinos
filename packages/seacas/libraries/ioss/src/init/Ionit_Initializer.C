@@ -65,6 +65,12 @@
 
 namespace Ioss {
   namespace Init {
+    Initializer &Initializer::initialize_ioss()
+    {
+      static Initializer ionit;
+      return ionit;
+    }
+    
     Initializer::Initializer()
     {
 #if !defined(NO_EXODUS_SUPPORT)
