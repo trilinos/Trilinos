@@ -74,7 +74,7 @@
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
     Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > in_model,
+    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
     Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
   model(in_model),
   num_p(in_model->Np()),
@@ -218,9 +218,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
@@ -244,10 +244,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar initialTime,
     Scalar finalTime,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),

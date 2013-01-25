@@ -43,7 +43,6 @@
 #ifndef PIRO_RYTHMOSSOLVER_H
 #define PIRO_RYTHMOSSOLVER_H
 
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 #include "Rythmos_DefaultIntegrator.hpp"
@@ -74,7 +73,7 @@ public:
   /** \brief Initialize with internally built objects according to the given parameter list. */
   RythmosSolver(
       Teuchos::RCP<Teuchos::ParameterList> appParams,
-      Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model,
+      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
       Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -82,9 +81,9 @@ public:
       const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -93,10 +92,10 @@ public:
       const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -135,8 +134,8 @@ private:
   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
 
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > initialConditionModel;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel;
 
   Scalar t_initial;
   Scalar t_final;

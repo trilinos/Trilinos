@@ -63,7 +63,7 @@
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
 NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-	  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
+	  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_) :
   appParams(appParams_),
   model(model_),
   num_p(model->Np()),
