@@ -45,6 +45,8 @@
 
 #include "MockModelEval_A.hpp"
 
+#include "Piro_SolverFactory.hpp"
+
 #include "Piro_PerformSolve.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -56,14 +58,6 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 
 #include "Piro_ConfigDefs.hpp"
-
-#ifdef Piro_ENABLE_NOX
-#include "Piro_NOXSolver.hpp"
-//#include "Piro_LOCASolver.hpp"
-#endif
-#ifdef Piro_ENABLE_Rythmos
-#include "Piro_RythmosSolver.hpp"
-#endif
 
 int main(int argc, char *argv[]) {
 
@@ -86,6 +80,8 @@ int main(int argc, char *argv[]) {
 
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
+
+  Piro::SolverFactory solverFactory;
 
 #ifdef Piro_ENABLE_Rythmos
   int numTests=3;
@@ -130,11 +126,9 @@ int main(int argc, char *argv[]) {
       // Use these two objects to construct a Piro solved application
       RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double> > piro;
       {
-        RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
+        const std::string& solver = piroParams->get("Piro Solver","NOX");
 
-        std::string& solver = piroParams->get("Piro Solver","NOX");
         RCP<Teuchos::ParameterList> stratParams;
-
         if (solver=="NOX" || solver=="LOCA") {
           stratParams = Teuchos::rcp(&(piroParams->sublist("NOX").sublist("Direction").
             sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
@@ -143,35 +137,17 @@ int main(int argc, char *argv[]) {
           piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
           stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
         }
+
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         linearSolverBuilder.setParameterList(stratParams);
+
         RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
           createLinearSolveStrategy(linearSolverBuilder);
-        thyraModel = Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
 
+        const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel =
+          Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
 
-#ifdef Piro_ENABLE_NOX
-        if (solver=="NOX") {
-          piro = rcp(new Piro::NOXSolver<double>(piroParams, thyraModel));
-        }
-        else
-#ifdef NO_LOCA_YET
-   if (solver=="LOCA") {
-          piro = rcp(new Piro::LOCASolver<double>(piroParams, thyraModel, Teuchos::null));
-        }
-        else
-#endif
-#endif
-#ifdef Piro_ENABLE_Rythmos
-        if (solver=="Rythmos") {
-          piro = rcp(new Piro::RythmosSolver<double>(piroParams, thyraModel));
-        }
-        else
-#endif
-        {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-            "Error: Unknown Piro Solver : " << solver);
-        }
+        piro = solverFactory.createSolver(piroParams, thyraModel);
       }
 
       Teuchos::Array<RCP<const Thyra::VectorBase<double> > > responses;
