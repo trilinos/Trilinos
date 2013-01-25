@@ -81,3 +81,10 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Cuda ) {
   
   success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {
+  typedef double Scalar;
+  typedef KokkosArray::Cuda Device;
+  
+  success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
+}

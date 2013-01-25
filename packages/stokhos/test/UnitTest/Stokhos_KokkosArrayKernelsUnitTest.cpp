@@ -82,6 +82,13 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Host ) {
   success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
 
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  
+  success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
+}
+
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
   success = true; 
   
@@ -130,6 +137,42 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
 	    success = false;
 	  }
 	}
+      }
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
+  success = true; 
+
+  typedef double value_type;
+  typedef KokkosArray::Host Device;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
+  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
+  
+  const std::vector<unsigned> var_degree( setup.d , setup.p );
+
+  tensor_type tensor = 
+    KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  for (int i=0; i<setup.stoch_length; ++i) {
+    const size_t iEntryBeg = tensor.tensor().entry_begin(i);
+    const size_t iEntryEnd = tensor.tensor().entry_end(i);
+    for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+      const size_t j = tensor.tensor().coord(iEntry,0);
+      const size_t k = tensor.tensor().coord(iEntry,1);
+      double c2 = tensor.tensor().value(iEntry);
+      if (j == k) c2 *= 2.0;
+
+      int ii = setup.inv_perm2[i];
+      int jj = setup.inv_perm2[j];
+      int kk = setup.inv_perm2[k];
+      double c = setup.Cijk->getValue(ii,jj,kk);
+      
+      if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+	out << "(" << ii << "," << jj << "," << kk << "):  " << c 
+	    << " == " << c2 << " failed!" << std::endl;
+	success = false;
       }
     }
   }

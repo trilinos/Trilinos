@@ -146,12 +146,12 @@ namespace KokkosArrayKernelsUnitTest {
     RCP<Cijk_type> Cijk;
     RCP<Stokhos::EpetraVectorOrthogPoly> sg_x, sg_y;
     RCP<Stokhos::ProductEpetraVector> sg_y_commuted;
-    Teuchos::Array<int> perm, inv_perm;
+    Teuchos::Array<int> perm, inv_perm, perm2, inv_perm2;
 
     // Can't be a constructor because MPI will not be initialized
     void setup() {
 
-      p = 3;
+      p = 5;
       d = 2;
       nGrid = 5;
       rel_tol = 1e-12;
@@ -281,6 +281,23 @@ namespace KokkosArrayKernelsUnitTest {
 	perm[idx] = i;
 	inv_perm[i] = idx;
       }
+
+      typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
+      typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::CrsProductTensor > tensor_type ;
+
+      tensor_type tensor2 = 
+	KokkosArray::create_product_tensor< tensor_type >( var_degree );
+  
+      perm2.resize(stoch_length);
+      inv_perm2.resize(stoch_length);
+      for (int i=0; i<stoch_length; ++i) {
+	Stokhos::MultiIndex<int> term(d);
+	for (int j=0; j<d; ++j)
+	  term[j] = tensor2.bases_degree(i,j);
+	int idx = basis->index(term);
+	perm2[idx] = i;
+	inv_perm2[i] = idx;
+      }
     }
 
     template <typename vec_type>
@@ -311,6 +328,29 @@ namespace KokkosArrayKernelsUnitTest {
       bool success = true;
       for (int block=0; block<stoch_length; ++block) {
 	int b = perm[block];
+	for (int i=0; i<fem_length; ++i) {
+	  double diff = std::abs( (*sg_y)[block][i] - y(b,i) );
+	  double tol = rel_tol*std::abs((*sg_y)[block][i]) + abs_tol;
+	  bool s = diff < tol;
+	  if (!s) {
+	    out << "y_expected[" << block << "][" << i << "] - "
+		<< "y(" << b << "," << i << ") == "
+		<< diff << " < " << tol << " : failed"
+		<< std::endl;
+	  }
+	  success = success && s;
+	}
+      }
+
+      return success;
+    }
+
+    template <typename vec_type>
+    bool test_commuted2(const vec_type& y,
+			Teuchos::FancyOStream& out) const {
+      bool success = true;
+      for (int block=0; block<stoch_length; ++block) {
+	int b = perm2[block];
 	for (int i=0; i<fem_length; ++i) {
 	  double diff = std::abs( (*sg_y)[block][i] - y(b,i) );
 	  double tol = rel_tol*std::abs((*sg_y)[block][i]) + abs_tol;
@@ -991,6 +1031,87 @@ namespace KokkosArrayKernelsUnitTest {
     KokkosArray::deep_copy( hy , y );
 
     bool success = setup.test_original_flat(hy, out);
+    return success;
+  }
+
+  template< typename ScalarType , class Device ,
+	    template< unsigned , typename , class > class TensorType >
+  bool test_crs_product_tensor(const UnitTestSetup& setup,
+			       Teuchos::FancyOStream& out) {
+    typedef ScalarType value_type ;
+    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
+                               Device > block_vector_type ;
+
+    typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
+
+    typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
+
+    typedef KokkosArray::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+    typedef typename matrix_type::graph_type graph_type ;
+
+    const std::vector<unsigned> var_degree( setup.d , setup.p );
+
+    //------------------------------
+    // Generate input multivector:
+
+    block_vector_type x = 
+      block_vector_type( "x" , setup.stoch_length , setup.fem_length );
+    block_vector_type y = 
+      block_vector_type( "y" , setup.stoch_length , setup.fem_length );
+
+    typename block_vector_type::HostMirror hx = 
+      KokkosArray::create_mirror( x );
+
+    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
+      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+	hx(setup.perm2[iColStoch],iColFEM) = 
+	  generate_vector_coefficient<ScalarType>( 
+	    setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
+      }
+    }
+
+    KokkosArray::deep_copy( x , hx );
+
+    //------------------------------
+
+    matrix_type matrix ;
+
+    matrix.block = 
+      KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+    matrix.graph = KokkosArray::create_crsarray<graph_type>( 
+      std::string("test crs graph") , setup.fem_graph );
+
+    matrix.values = block_vector_type( 
+      "matrix" , setup.stoch_length , setup.fem_graph_length );
+
+    typename block_vector_type::HostMirror hM = 
+      KokkosArray::create_mirror( matrix.values );
+
+    for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
+      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+	const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
+
+	for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
+	  hM(setup.perm2[k],iEntryFEM) = 
+	    generate_matrix_coefficient<ScalarType>(
+	      setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
+	  //hM(k,iEntryFEM) = 1.0;
+	}
+      }
+    }
+    
+    KokkosArray::deep_copy( matrix.values , hM );
+    
+    //------------------------------
+    
+    KokkosArray::multiply( matrix , x , y );
+
+    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+    KokkosArray::deep_copy( hy , y );
+
+    bool success = setup.test_commuted2(hy, out);
+    //bool success = true;
     return success;
   }
 
