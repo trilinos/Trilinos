@@ -191,14 +191,16 @@ public:
     }
 
     // Pad each row to have size divisble by 32
+    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
     for ( size_type i = 0 ; i < dimension ; ++i ) {
-      const size_t rem = coord_work[i] % 32;
+      const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
-	const size_t pad = 32 - rem;
+	const size_t pad = Align - rem;
 	coord_work[i] += pad;
 	entry_count += pad;
       }
     }
+    
 
     // Sort based on number of non-zeros
     std::vector< CijkRowCount > row_count( dimension );
@@ -212,7 +214,6 @@ public:
       coord_work[i] = row_count[i].count;
       sorted_row_map[ row_count[i].basis ] = i;
     }
-    
 
     type tensor ;
 
