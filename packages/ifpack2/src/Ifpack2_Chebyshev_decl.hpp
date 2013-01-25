@@ -37,6 +37,8 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include "Ifpack2_Details_Chebyshev_def.hpp"
 
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
@@ -508,11 +510,17 @@ public:
   //! \name Utility methods
   //@{
 
-  //! Simple power method to compute lambda_max.
-  static void PowerMethod(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-                         const vector_type& InvPointDiagonal,
-                         const int MaximumIterations, 
-                         scalar_type& LambdaMax);
+  /// Simple power method to compute lambda_max.
+  ///
+  /// This method is DEPRECATED.  Please don't call it any more.  You
+  /// don't normally need to, because this class now automatically
+  /// uses the power method (a different implementation) to estimate
+  /// the max eigenvalue, if you don't give it an estimate yourself.
+  static void TEUCHOS_DEPRECATED 
+  PowerMethod (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+	       const vector_type& InvPointDiagonal,
+	       const int MaximumIterations, 
+	       scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
   static void CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
@@ -535,32 +543,6 @@ private:
   //! Assignment operator (use is syntactically forbidded)
   Chebyshev<MatrixType>& operator= (const Chebyshev<MatrixType>&);
 
-  /// \brief Set V and W to temporary multivectors with the same Map as X.
-  ///
-  /// \param V [out] 
-  /// \param W [out]
-  /// \param X [in] Multivector, whose Map to use when making V and W.
-  ///
-  /// This is an optimization for apply().  This method caches the
-  /// created multivectors in the class instance as V_ resp. W_.
-  /// Caching optimizes the common case of calling apply() many times.
-  void
-  makeTempMultiVectors (Teuchos::RCP<MV>& V,
-			Teuchos::RCP<MV>& W,
-			const MV& X) const;
-
-  /// \brief Compute the residual V = X - Op(A)*Y.
-  ///
-  /// \param V [out] Output multivector; must have the same Map as X.
-  /// \param X [in] Right-hand side(s).
-  /// \param Y [in] Current approximate solution(s).  Must not alias V.
-  /// \param mode [in] Whether Op(A) means A, \f$A^T\f$, or \f$A^H\f$.
-  void 
-  computeResidual (MV& V, 
-		   const MV& X, 
-		   const MV& Y, 
-		   const Teuchos::ETransp mode) const;
-
   /// \brief Y := beta*Y + alpha*M*X.
   ///
   /// M*X represents the result of Chebyshev iteration with right-hand
@@ -575,72 +557,17 @@ private:
 	     scalar_type alpha,
 	     scalar_type beta) const;
 
-  /// \brief Old implementation of apply().
-  ///
-  /// Please don't call this anymore.  We keep it around for reference,
-  /// so that we know what the old implementation was doing.
-  void TEUCHOS_DEPRECATED
-  applyImplOld (const MV& X,
-		MV& Y,
-		Teuchos::ETransp mode,
-		scalar_type alpha,
-		scalar_type beta) const;
-
-  //@}
-  //! \name The sparse matrix and related data
+  //! \name Internal state
   //@{
 
-  //! The matrix A to be preconditioned.
-  const Teuchos::RCP<const row_matrix_type> A_;
-
-  /// \brief The inverse of the diagonal elements of the matrix A.
+  /// The actual implementation of Chebyshev iteration.
   ///
-  /// This is distributed according to the range Map of the matrix.
-  /// If the user has not supplied this (see userSuppliedInvDiag_ and
-  /// setParameters()), we compute this each time compute() is called.
-  /// This ensures that compute() will respect changes to the values
-  /// of the matrix.  
-  /// 
-  /// If the user <i>has</i> supplied the inverse diagonal elements,
-  /// this is just a pointer to userSuppliedInvDiag_.
-  mutable Teuchos::RCP<vector_type> InvDiagonal_;
-
-  //@}
-  //! \name Algorithmic parameters (set via setParameters())
-  //@{
-
-  /// User-supplied inverse of the diagonal elements of the matrix A.
-  /// It must be distributed according to the range Map of the matrix.
-  Teuchos::RCP<vector_type> userSuppliedInvDiag_;
-  //! The number of iterations to apply; the degree of the Chebyshev polynomial.
-  int PolyDegree_;
-  //! Estimate of the ratio LambdaMax_ / LambdaMin_.
-  magnitude_type EigRatio_;
-  //! Approximation of the smallest eigenvalue.
-  scalar_type LambdaMin_;
-  //! Approximation of the largest eigenvalue.
-  scalar_type LambdaMax_;
-  //! Minimum allowed value on the diagonal of the matrix.
-  scalar_type MinDiagonalValue_;
-  /// If \c true, then the starting solution is always the zero vector.
-  bool ZeroStartingSolution_;
-
-  //@}
-  //! \name Other internal state
-  //@{
-
-  /// In applyImpl(): the result of A*Y.
-  ///
-  /// We cache this multivector here to avoid creating on each call to
-  /// applyImpl().  It is "mutable" because applyImpl() is const,
-  /// because apply() is const.
-  mutable Teuchos::RCP<MV> V_;
-  /// In applyImpl(): Iteration update multivector.
-  ///
-  /// We cache this multivector here to avoid creating on each call to
-  /// applyImpl().  It is "mutable" because applyImpl() is const,
-  /// because apply() is const.
-  mutable Teuchos::RCP<MV> W_;
+  /// This is declared "mutable" because the implementation caches
+  /// things in its apply() method, which makes it "morally" nonconst.
+  /// I prefer that morals and syntax go together, so I didn't declare
+  /// this class' apply() method const.  Hence, we have to declare the
+  /// whole thing mutable here.
+  mutable Details::Chebyshev<scalar_type, MV, row_matrix_type> impl_;
 
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
