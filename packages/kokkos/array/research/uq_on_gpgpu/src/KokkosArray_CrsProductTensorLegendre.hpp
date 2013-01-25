@@ -64,7 +64,8 @@ enum CrsProductTensorLegendreVariant {
 
 template< typename TensorScalar , class Device ,
           // CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_SeparateDiagonal >
-          CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_Tiled >
+	  CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_HalfDiagonal >
+          // CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_Tiled >
 struct CrsProductTensorLegendre ;
 
 } // namespace KokkosArray
@@ -145,7 +146,7 @@ struct CrsProductTensorLegendre {
   , m_nonzero_count(0)
   , m_multiply_add_flops(0)
   {
-    enum { Align = 1 }; // Impl::is_same<Device,Cuda>::value ? 32 : 1 };
+    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
 
     const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
       combinatorial( variable_poly_degree , maximum_poly_degree );
