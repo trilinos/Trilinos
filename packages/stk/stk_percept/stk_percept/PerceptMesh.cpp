@@ -78,7 +78,6 @@ namespace stk {
       m_metaData(NULL),
       m_bulkData(NULL),
       m_fixture(NULL),
-      m_iossRegion(NULL),
       m_iossMeshData_created(false),
       m_sync_io_regions(true),
       m_coordinatesField(NULL),
@@ -288,14 +287,7 @@ namespace stk {
       m_isCommitted = false;
       m_isAdopted = false;
       destroy();
-      if (m_iossRegion)
-        //if (m_iossRegion)
-        {
-          delete m_iossRegion;
-          m_iossRegion = 0;
-          if (m_iossMeshData_created)
-            m_iossMeshData->m_input_region=0;
-        }
+      m_iossRegion = Teuchos::null;
     }
 
 
@@ -1243,12 +1235,6 @@ namespace stk {
     PerceptMesh::~PerceptMesh()
     {
       destroy();
-      if (m_iossRegion && !m_iossMeshData_created)
-        //if (m_iossRegion)
-        {
-          delete m_iossRegion;
-          m_iossRegion = 0;
-        }
     }
 
     stk::mesh::BulkData * PerceptMesh::get_bulk_data()
@@ -1842,10 +1828,6 @@ namespace stk {
     {
       EXCEPTWATCH;
       //checkState("read_metaDataNoCommit");
-      // Initialize IO system.  Registers all element types and storage
-      // types and the exodusII default database type.
-      Ioss::Init::Initializer init_db;
-
       //         std::cout << "========================================================================\n"
       //                   << " Use Case: Subsetting with df and attribute field input/output          \n"
       //                   << "========================================================================\n";
@@ -1867,9 +1849,7 @@ namespace stk {
       }
 
       // NOTE: 'in_region' owns 'dbi' pointer at this time...
-      //m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
-      if (m_iossRegion) { delete m_iossRegion; m_iossRegion = 0; }
-      m_iossRegion = new Ioss::Region(dbi, "input_model");
+      m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
       Ioss::Region& in_region = *m_iossRegion;
 
       checkForPartsToAvoidReading(in_region, s_omit_part);
@@ -1898,11 +1878,10 @@ namespace stk {
 
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
-
-      mesh_data.m_input_region = m_iossRegion;
-      stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
-
-      stk::io::define_input_fields(mesh_data, meta_data);
+      mesh_data.set_input_io_region(m_iossRegion);
+      mesh_data.set_meta_data(meta_data);
+      mesh_data.create_input_mesh();
+      mesh_data.define_input_fields();
     }
 
     void PerceptMesh::create_metaDataNoCommit( const std::string& gmesh_spec)
@@ -1912,18 +1891,19 @@ namespace stk {
 
       if (m_metaData)
         delete m_metaData;
-      if (m_bulkData)
-        delete m_bulkData;
 
       m_metaData = &m_fixture->getMetaData();
-      m_bulkData = &m_fixture->getBulkData();
       m_ownData = false;
     }
 
     void PerceptMesh::commit_metaData()
     {
-      if (m_fixture)
+      if (m_fixture) {
         m_fixture->commit();
+	if (m_bulkData)
+	  delete m_bulkData;
+	m_bulkData = &m_fixture->getBulkData();
+      }
       else
         m_metaData->commit();
     }
@@ -1960,8 +1940,8 @@ namespace stk {
 
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
-      stk::io::MeshData& mesh_data = *m_iossMeshData;
-      stk::io::populate_bulk_data(bulk_data, mesh_data);
+      m_iossMeshData->set_bulk_data(bulk_data);
+      m_iossMeshData->populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
       ///std::cout << "tmp timestep_count= " << timestep_count << std::endl;
@@ -1969,9 +1949,9 @@ namespace stk {
 
       // FIXME
       if (timestep_count == 0)
-        stk::io::process_input_request(mesh_data, bulk_data, 0);
+        m_iossMeshData->process_input_request(0);
       else
-        stk::io::process_input_request(mesh_data, bulk_data, 1);
+        m_iossMeshData->process_input_request(1);
 
 #endif
     }
@@ -1987,15 +1967,13 @@ namespace stk {
 
     int PerceptMesh::get_database_time_step_count()
     {
-      Ioss::Region * region = m_iossRegion;
-      int timestep_count = region->get_property("state_count").get_int();
+      int timestep_count = m_iossRegion->get_property("state_count").get_int();
       return timestep_count;
     }
 
     double PerceptMesh::get_database_time_at_step(int step)
     {
-      Ioss::Region * region = m_iossRegion;
-      int timestep_count = region->get_property("state_count").get_int();
+      int timestep_count = m_iossRegion->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -2004,18 +1982,17 @@ namespace stk {
           throw std::runtime_error("step is out of range for PerceptMesh::get_database_time_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
 
-      double state_time = timestep_count > 0 ? region->get_state_time(step) : 0.0;
+      double state_time = timestep_count > 0 ? m_iossRegion->get_state_time(step) : 0.0;
       return state_time;
     }
 
     int PerceptMesh::get_database_step_at_time(double time)
     {
-      Ioss::Region * region = m_iossRegion;
-      int step_count = region->get_property("state_count").get_int();
+      int step_count = m_iossRegion->get_property("state_count").get_int();
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
-        double state_time = region->get_state_time(istep+1);
+        double state_time = m_iossRegion->get_state_time(istep+1);
         double delta = state_time - time;
         if (delta < 0.0) delta = -delta;
         if (delta < delta_min) {
@@ -2041,12 +2018,13 @@ namespace stk {
       //----------------------------------
       // Process Bulkdata for all Entity Types. Subsetting is possible.
       //stk::mesh::BulkData bulk_data(meta_data, comm);
-      stk::mesh::BulkData& bulk_data = *m_bulkData;
 
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      stk::io::populate_bulk_data(bulk_data, mesh_data);
+      mesh_data.set_input_io_region(m_iossRegion);
+      mesh_data.set_bulk_data(*m_bulkData);
+      mesh_data.populate_bulk_data();
 
       int timestep_count = in_region.get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
@@ -2060,7 +2038,7 @@ namespace stk {
       // FIXME
       m_exodusStep = step;
       m_exodusTime = get_database_time_at_step(step);
-      stk::io::process_input_request(mesh_data, bulk_data, step);
+      mesh_data.process_input_request(step);
     }
 
     void PerceptMesh::read_database_at_time(double time)
@@ -2351,7 +2329,7 @@ namespace stk {
                                            stk::mesh::BulkData &bulk_data,
                                            stk::io::MeshData &mesh_data)
     {
-      Ioss::Region *out_region = NULL;
+      Teuchos::RCP<Ioss::Region> out_region;
 
       std::string out_filename = filename;
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
@@ -2364,7 +2342,7 @@ namespace stk {
       }
 
       // NOTE: 'out_region' owns 'dbo' pointer at this time...
-      out_region = new Ioss::Region(dbo, "results_output");
+      out_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
 
       int my_processor = 0;
       int processor_count = 0;
@@ -2380,9 +2358,10 @@ namespace stk {
       out_region->property_add(Ioss::Property("my_processor", my_processor));
 
       bool sort_stk_parts = true;
-      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region, mesh_data.m_anded_selector, sort_stk_parts);
-      stk::io::write_output_db(*out_region,  bulk_data, mesh_data.m_anded_selector);
-      mesh_data.m_output_region = out_region;
+      stk::io::define_output_db(*out_region.getRawPtr(), bulk_data, mesh_data.input_io_region().getRawPtr(),
+				mesh_data.selector(), sort_stk_parts);
+      stk::io::write_output_db(*out_region.getRawPtr(),  bulk_data, mesh_data.selector());
+      mesh_data.set_output_io_region(out_region);
     }
 
     void PerceptMesh::writeModel( const std::string& out_filename)
@@ -2398,41 +2377,40 @@ namespace stk {
       checkForPartsToAvoidWriting();
 
       //checkState("writeModel" );
-      stk::mesh::MetaData& meta_data = *m_metaData;
       stk::mesh::BulkData& bulk_data = *m_bulkData;
 
       //----------------------------------
       // OUTPUT...Create the output "mesh" portion
-      Ioss::Init::Initializer init_db;
-
       std::string dbtype("exodusII");
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data_0;
       stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
 
+      if (!(m_iossMeshData_created && m_sync_io_regions)) {
+	mesh_data.set_bulk_data(bulk_data);
+      }
+
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
         percept_create_output_mesh(out_filename, comm, bulk_data, mesh_data);
       else
         {
-          if (m_iossMeshData_created && m_iossMeshData->m_output_region)
-            {
-              delete m_iossMeshData->m_output_region;
-            }
-          stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+          mesh_data.create_output_mesh(out_filename);
         }
 
-      stk::io::define_output_fields(mesh_data, meta_data, false);
+      mesh_data.define_output_fields(false);
 
       //deprecated omitted_output_db_processing(out_region);
 
       // Read and Write transient fields...
       double time = 0.0;
-      stk::io::process_output_request(mesh_data, bulk_data, time);
+      mesh_data.process_output_request(time);
 
-      if (mesh_data.m_input_region) mesh_data.m_input_region->get_database()->closeDatabase();
-      if (mesh_data.m_output_region) mesh_data.m_output_region->get_database()->closeDatabase();
+      if (!Teuchos::is_null(mesh_data.input_io_region()))
+	mesh_data.input_io_region()->get_database()->closeDatabase();
+      if (!Teuchos::is_null(mesh_data.output_io_region()))
+	mesh_data.output_io_region()->get_database()->closeDatabase();
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }
 

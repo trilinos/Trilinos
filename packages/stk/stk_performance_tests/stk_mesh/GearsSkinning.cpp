@@ -20,6 +20,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
 
+#include <Teuchos_RCP.hpp>
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
@@ -270,7 +271,7 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
 //-----------------------------------------------------------------------------
 //
 
-Ioss::Region *create_output_mesh(
+Teuchos::RCP<Ioss::Region> create_output_mesh(
     const std::string &mesh_filename,
     stk::mesh::BulkData &bulk_data,
     const bool skin = false)
@@ -290,7 +291,7 @@ Ioss::Region *create_output_mesh(
 
   // NOTE: 'out_region' owns 'dbo' pointer at this time...
   const std::string name = std::string("results_output_")+mesh_filename;
-  Ioss::Region *out_region = new Ioss::Region(dbo, name);
+  Teuchos::RCP<Ioss::Region> out_region = Teuchos::rcp(new Ioss::Region(dbo, name));
 
   const Ioss::Region * null_in_region = NULL;
   stk::io::define_output_db(*out_region, bulk_data, null_in_region);
@@ -448,8 +449,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   const double z = 0;
   const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
 
-  Ioss::Region * volume_out_region = NULL;
-  Ioss::Region * surface_out_region = NULL;
+  Teuchos::RCP<Ioss::Region> volume_out_region;
+  Teuchos::RCP<Ioss::Region> surface_out_region;
 
   stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
 
@@ -523,8 +524,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
       const bool create_output_file = do_separate_wedge || !time_step;
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
       if (create_output_file)  {
-        delete volume_out_region;   volume_out_region = NULL;
-        delete surface_out_region; surface_out_region = NULL;
         std::ostringstream volume_out_filename;
         volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         volume_out_region = create_output_mesh( volume_out_filename.str(), fixture.bulk_data,  false);
@@ -533,18 +532,17 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
       }
 
-      stk::io::MeshData mesh;
-      mesh.m_output_region=volume_out_region;
-      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0, skin_io_parts);
-      mesh.m_output_region = NULL;
-      mesh.m_output_region=surface_out_region;
-      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0);
-      mesh.m_output_region = NULL;
+      stk::io::MeshData vol_mesh;
+      vol_mesh.set_output_io_region(volume_out_region);
+      vol_mesh.set_bulk_data(fixture.bulk_data);
+      vol_mesh.process_output_request(time_step/60.0, skin_io_parts);
+
+      stk::io::MeshData surf_mesh;
+      surf_mesh.set_output_io_region(surface_out_region);
+      surf_mesh.set_bulk_data(fixture.bulk_data);
+      surf_mesh.process_output_request(time_step/60.0);
     }
   }
-
-  delete volume_out_region;  volume_out_region = NULL;
-  delete surface_out_region; surface_out_region = NULL;
 
   if (p_rank == 0) {
     double total_time = stk::wall_time() - start_time;

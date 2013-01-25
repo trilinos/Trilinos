@@ -720,8 +720,7 @@ namespace stk {
       stk::mesh::MetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
-      //Teuchos::RCP<Ioss::Region>            m_iossRegion;
-      Ioss::Region*                         m_iossRegion;   // the input region
+      Teuchos::RCP<Ioss::Region>            m_iossRegion;
       Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
       bool                                  m_iossMeshData_created;
       bool                                  m_sync_io_regions;

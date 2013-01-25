@@ -25,18 +25,16 @@ class io_fixture {
     Ioss::Init::Initializer init_db;
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, file_name, Ioss::READ_MODEL, comm);
   
-    Ioss::Region *region = new Ioss::Region(dbi, "input_model");
+    Ioss::Region region(dbi, "input_model");
   
-    sierra::mesh::io::ModifiableMeshReader reader(region, mmesh);
+    sierra::mesh::io::ModifiableMeshReader reader(&region, mmesh);
     reader.process_mesh();
   
     // Get Ioss::Region to query fields, ...
-    Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
+    Ioss::NodeBlockContainer node_blocks = region.get_node_blocks();
   
     // Read in the coordinates field.
     reader.process_field(coords, node_blocks.begin(), node_blocks.end(), "mesh_model_coordinates");
-
-    delete region;
   }
 
   ~io_fixture(){}

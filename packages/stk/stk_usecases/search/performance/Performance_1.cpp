@@ -73,8 +73,6 @@ performance_driver(stk::ParallelMachine  comm,
 		   const stk::search::Options &domain,
 		   bool performance)
 {
-  static const size_t spatial_dimension = 3;
-
   stk::diag::WriterThrowSafe _write_throw_safe(dw());
 
   stk::diag::Timer timer("SearchPerformance", use_case::TIMER_SEARCH, use_case::timer());
@@ -115,16 +113,12 @@ performance_driver(stk::ParallelMachine  comm,
   dw() << "Range  Entity Type =  " << range.entity  << stk::diag::dendl;
   dw() << "Domain Entity Type =  " << domain.entity << stk::diag::dendl;
 
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  stk::mesh::MetaData range_meta_data( spatial_dimension );
-  stk::io::MeshData range_mesh_data;
 
   dw() << "Build range metadata...\n";
   std::string filename = working_directory + range.mesh_filename;
-  stk::io::create_input_mesh(range.mesh_type, filename, comm, range_meta_data, range_mesh_data);
+  stk::io::MeshData range_mesh_data;
+  range_mesh_data.create_input_mesh(range.mesh_type, filename, comm);
+  stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
 
   stk::mesh::Part *range_skin_part = NULL;
   stk::mesh::Part *domain_skin_part = NULL;
@@ -138,8 +132,8 @@ performance_driver(stk::ParallelMachine  comm,
   range_meta_data.commit();
 
   dw() << "Build range bulkdata...\n";
-  stk::mesh::BulkData range_bulk_data(range_meta_data, comm);
-  stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
+  range_mesh_data.populate_bulk_data();
+  stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
 
   if ((range.entity == "face" && range_use_universal_set) ||
       (same_mesh && domain.entity == "face" && domain_use_universal_set)) {
@@ -149,24 +143,24 @@ performance_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData *domain_meta_data = NULL;
   stk::mesh::BulkData *domain_bulk_data = NULL;
 
+  stk::io::MeshData domain_mesh_data;
   if (!same_mesh) {
-    stk::io::MeshData domain_mesh_data;
     dw() << "Build domain metadata...\n";
-    domain_meta_data = new stk::mesh::MetaData( spatial_dimension );
     filename = working_directory + domain.mesh_filename;
-    stk::io::create_input_mesh(domain.mesh_type, filename, comm, *domain_meta_data, domain_mesh_data);
-
+    domain_mesh_data.create_input_mesh(domain.mesh_type, filename, comm);
+    domain_meta_data = &domain_mesh_data.meta_data();
+    
     if (domain.entity == "face" && domain_use_universal_set) {
       domain_skin_part = &domain_meta_data->declare_part("skin", skin_top);
     }
     domain_meta_data->commit();
 
     dw() << "Build domain bulkdata...\n";
-    domain_bulk_data = new stk::mesh::BulkData(*domain_meta_data, comm);
-    stk::io::populate_bulk_data(*domain_bulk_data, domain_mesh_data);
-
+    domain_mesh_data.populate_bulk_data();
+    domain_bulk_data = &domain_mesh_data.bulk_data();
+    
     if (domain.entity == "face" && domain_use_universal_set) {
-      stk::mesh::skin_mesh( *domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, domain_skin_part);
+      stk::mesh::skin_mesh(*domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, domain_skin_part);
     }
   } else {
     dw() << "Domain shares metadata and bulkdata with range...\n";
@@ -324,11 +318,6 @@ performance_driver(stk::ParallelMachine  comm,
   //    one range object.
   // -- expect few matches
   // -- large domain/small range or vice-versa
-
-  if (!same_mesh) {
-    delete domain_bulk_data;
-    delete domain_meta_data;
-  }
 }
 
 namespace {

@@ -332,11 +332,12 @@ bool use_case_5_driver( MPI_Comm comm ,
       const std::string out_filename("mesh.e");
 
       stk::io::MeshData mesh;
-      stk::io::create_output_mesh(out_filename, comm, mesh_bulk_data, mesh);
-      stk::io::define_output_fields(mesh, fem_meta);
+      mesh.set_bulk_data(mesh_bulk_data);
+      mesh.create_output_mesh(out_filename);
+      mesh.define_output_fields();
 
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
-      stk::io::process_output_request(mesh, mesh_bulk_data, 0.0);
+      mesh.process_output_request(0.0);
     }
 
     //Write out our assembled linear-system to files:

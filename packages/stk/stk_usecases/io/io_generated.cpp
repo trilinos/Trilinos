@@ -116,12 +116,6 @@ namespace {
 	      bool compression_shuffle,
 	      int  db_integer_size)
   {
-
-    // Initialize IO system.  Registers all element types and storage
-    // types and the exodusII default database type.
-    Ioss::Init::Initializer init_db;
-
-    stk::mesh::MetaData meta_data;
     stk::io::MeshData mesh_data;
 
     bool use_netcdf4 = false;
@@ -153,25 +147,22 @@ namespace {
 
     std::string file = working_directory;
     file += filename;
-    stk::io::create_input_mesh(type, file, comm, meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, meta_data);
-
-    meta_data.commit();
-    stk::mesh::BulkData bulk_data(meta_data , comm);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    mesh_data.create_input_mesh(type, file, comm);
+    mesh_data.define_input_fields();
+    mesh_data.populate_bulk_data();
 
     //------------------------------------------------------------------
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
-    stk::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
-    stk::io::define_output_fields(mesh_data, meta_data);
+    mesh_data.create_output_mesh(output_filename);
+    mesh_data.define_output_fields();
 
     // Determine number of timesteps on input database...
-    int timestep_count = mesh_data.m_input_region->get_property("state_count").get_int();
+    int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
     for (int step=1; step <= timestep_count; step++) {
-      double time = mesh_data.m_input_region->get_state_time(step);
-      stk::io::process_input_request(mesh_data, bulk_data, step);
-      stk::io::process_output_request(mesh_data, bulk_data, time);
+      double time = mesh_data.input_io_region()->get_state_time(step);
+      mesh_data.process_input_request(step);
+      mesh_data.process_output_request(time);
     }
   }
 }

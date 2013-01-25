@@ -102,7 +102,7 @@ STKUNIT_UNIT_TEST( IOFixture, active_only )
 
   // Set the output filter on the mesh_data...
   stk::mesh::Selector active_selector(active);
-  fixture.mesh_data().m_anded_selector = &active_selector;
+  fixture.mesh_data().set_selector(&active_selector);
 
   // exodus file creation
   std::string output_base_filename = "unit_test_output_filtered.e";
@@ -142,7 +142,7 @@ STKUNIT_UNIT_TEST( IOFixture, active_and_all )
 
   // Set the output filter on the mesh_data...
   stk::mesh::Selector active_selector(active);
-  fixture.mesh_data().m_anded_selector = &active_selector;
+  fixture.mesh_data().set_selector(&active_selector);
 
   // exodus file creation
   std::string filtered_output_base_filename = "unit_test_output_first_of_two.e";
@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST( IOFixture, active_and_all )
 
   // Set the output filter on the mesh_data...
   stk::mesh::Selector universal_selector(meta_data.universal_part());
-  fixture.mesh_data().m_anded_selector = &universal_selector;
+  fixture.mesh_data().set_selector(&universal_selector);
 
   // exodus file creation
   std::string unfiltered_output_base_filename = "unit_test_output_second_of_two.e";
@@ -169,21 +169,21 @@ STKUNIT_UNIT_TEST( IOFixture, active_and_all )
   ++time_step;
 
   fixture.output_ioss_region(active_output_ioss_region);
-  fixture.mesh_data().m_anded_selector = &active_selector;
+  fixture.mesh_data().set_selector(&active_selector);
   fixture.add_timestep_to_output_mesh( time_step );
 
   fixture.output_ioss_region(universal_output_ioss_region);
-  fixture.mesh_data().m_anded_selector = &universal_selector;
+  fixture.mesh_data().set_selector(&universal_selector);
   fixture.add_timestep_to_output_mesh( time_step );
 
   ++time_step;
 
   fixture.output_ioss_region(active_output_ioss_region);
-  fixture.mesh_data().m_anded_selector = &active_selector;
+  fixture.mesh_data().set_selector(&active_selector);
   fixture.add_timestep_to_output_mesh( time_step );
 
   fixture.output_ioss_region(universal_output_ioss_region);
-  fixture.mesh_data().m_anded_selector = &universal_selector;
+  fixture.mesh_data().set_selector(&universal_selector);
   fixture.add_timestep_to_output_mesh( time_step );
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.

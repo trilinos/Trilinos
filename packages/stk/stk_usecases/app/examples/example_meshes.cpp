@@ -257,7 +257,8 @@ void use_case_5_write_mesh( stk::ParallelMachine comm ,
   use_case_5_generate_mesh_bulk_data( bulk_data , node_coord );
 
   stk::io::MeshData mesh;
-  stk::io::create_output_mesh(filename, comm, bulk_data, mesh);
+  mesh.set_bulk_data(bulk_data);
+  mesh.create_output_mesh(filename);
 }
 
 } // namespace stk_examples

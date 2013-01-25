@@ -41,8 +41,6 @@ using namespace stk::diag;
 typedef stk::mesh::Field<double>                        ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField ;
 
-static const size_t spatial_dimension = 3;
-
 void
 use_case_4_driver(stk::ParallelMachine  comm,
 		  const std::string &working_directory,
@@ -58,37 +56,28 @@ use_case_4_driver(stk::ParallelMachine  comm,
   dw().m(LOG_SEARCH) << "Use case 4" << stk::diag::push << stk::diag::dendl;
 
   // ========================================================================
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
   // Define range mesh...
-  stk::mesh::MetaData range_meta_data( spatial_dimension );
   stk::io::MeshData range_mesh_data;
   std::string filename = working_directory + range_mesh_filename;
-  stk::io::create_input_mesh(range_mesh_type, filename, comm,
-			     range_meta_data, range_mesh_data);
-  range_meta_data.commit();
-
-  stk::mesh::BulkData range_bulk_data(range_meta_data, comm);
-  stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
-
+  range_mesh_data.create_input_mesh(range_mesh_type, filename, comm);
+  range_mesh_data.populate_bulk_data();
 
   // Define domain mesh...
-  stk::mesh::MetaData domain_meta_data( spatial_dimension );
   stk::io::MeshData domain_mesh_data;
   filename = working_directory + domain_mesh_filename;
-  stk::io::create_input_mesh(domain_mesh_type, domain_mesh_filename, comm,
-			     domain_meta_data, domain_mesh_data);
-  domain_meta_data.commit();
-
-  stk::mesh::BulkData domain_bulk_data(domain_meta_data, comm);
-  stk::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
-
+  domain_mesh_data.create_input_mesh(domain_mesh_type, domain_mesh_filename, comm);
+  domain_mesh_data.populate_bulk_data();
   // ========================================================================
+
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is also an
   // axis-aligned bounding box of each 'range_entity'.
+
+  stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
+  stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
+
+  stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
+  stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
 
   VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
   std::vector<AxisAlignedBoundingBox3D> range_vector;

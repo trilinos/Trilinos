@@ -838,12 +838,12 @@ bool use_case_14a_driver(MPI_Comm comm,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::MetaData meta_data( SpatialDim );
     stk::io::MeshData mesh_data;
     std::string filename = working_directory + mesh_filename;
-    stk::io::create_input_mesh(mesh_type, filename, comm,
-			       meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, meta_data);
+    mesh_data.create_input_mesh(mesh_type, filename, comm);
+    mesh_data.define_input_fields();
+
+    stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
     stk::mesh::Part & universal              = meta_data.universal_part();
     const stk::mesh::EntityRank node_rank    = stk::mesh::MetaData::NODE_RANK;
@@ -963,16 +963,15 @@ bool use_case_14a_driver(MPI_Comm comm,
     time_max[0] = stk::wall_dtime( wtime );
 
     //------------------------------------------------------------------
-    // stk::mesh::BulkData bulk data conforming to the meta data.
-    stk::mesh::BulkData bulk_data(meta_data , comm, max_entity_per_bucket);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    mesh_data.populate_bulk_data();
+    stk::mesh::BulkData &bulk_data = mesh_data.bulk_data();
 
     //------------------------------------------------------------------
     // Create output mesh...  (input filename + ".out14")
     if (output) {
       filename = working_directory + mesh_filename + ".out14a";
-      stk::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
-      stk::io::define_output_fields(mesh_data, meta_data, true);
+      mesh_data.create_output_mesh(filename);
+      mesh_data.define_output_fields(true);
     }
 
     stk::app::use_case_14_initialize_nodal_data(bulk_data ,
@@ -1133,7 +1132,7 @@ bool use_case_14a_driver(MPI_Comm comm,
       time_max[4] += stk::wall_dtime( wtime );
 
       if (output) {
-        stk::io::process_output_request(mesh_data, bulk_data, n);
+        mesh_data.process_output_request(n);
       }
 
     }//end for(..num_trials...

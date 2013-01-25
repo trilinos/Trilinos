@@ -606,23 +606,11 @@ namespace stk
 
     void SweepMesher::writeSTKMesh(const char *filename)
     {
-      //const std::string out_filename("tp2.e");
       const std::string out_filename(filename);
 
-      std::vector< stk::mesh::Part * > parts;
-      for (unsigned ielemType = 0; ielemType < NUM_ELEM_TYPES; ielemType++)
-        {
-          if (m_elems[ielemType].size())
-            {
-              parts.push_back(m_parts[ielemType]);
-            }
-        }
-
-      const stk::ParallelMachine& comm = m_bulkData->parallel();
-
-      Ioss::Init::Initializer init_db;
       stk::io::MeshData mesh;
-      stk::io::create_output_mesh(out_filename, comm, *m_bulkData, mesh);
+      mesh.set_bulk_data(*m_bulkData);
+      mesh.create_output_mesh(out_filename);
     }
 
     void SweepMesher::sweep(const VectorOfCoord& path, const VectorOfCoord& dir)

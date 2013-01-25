@@ -95,12 +95,17 @@ bool use_case_24_driver(
     std::cout.flush();
   }
 
-  //--------------------------------------------------------------------
+  //-------------------------------- Read the exodusII mesh file.
+  //Create parts and fields for all io parts, attributes, and fields
+  //found in the input mesh file.
+  const std::string dbtype("exodusii");
+  std::string filename = working_directory + meshName;
+  stk::io::MeshData mesh_data;
+  mesh_data.create_input_mesh(dbtype, filename, comm);
 
   //------------------------------------------------------------------
   // Declare the mesh meta data: element blocks and associated fields
-  stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim);
+  stk::mesh::MetaData &fem_meta = mesh_data.meta_data();
   const mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   const mesh::EntityRank side_rank    = fem_meta.side_rank();
   const mesh::EntityRank edge_rank    = mesh::MetaData::EDGE_RANK;
@@ -225,36 +230,22 @@ bool use_case_24_driver(
   // second on all interior element ips
   mesh::put_field(mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
 
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  //-------------------------------- Read the exodusII mesh file.
-  //Create parts and fields for all io parts, attributes, and fields
-  //found in the input mesh file.
-
-  const std::string dbtype("exodusii");
-  stk::io::MeshData mesh_data;
-  std::string filename = working_directory + meshName;
-  stk::io::create_input_mesh(dbtype, filename, comm, fem_meta, mesh_data);
-
-  // Commit (finalize) the meta data (part and field definitions).
-  // Is now ready to be used in the creation and management of mesh bulk data.
-
   // Output the pressure and velocity fields...
   stk::io::set_field_role(pressure, Ioss::Field::TRANSIENT);
   stk::io::set_field_role(velocity, Ioss::Field::TRANSIENT);
 
+  // Commit (finalize) the meta data (part and field definitions).
+  // Is now ready to be used in the creation and management of mesh bulk data.
   fem_meta.commit();
 
   //------------------------------------------------------------------
   // mesh::BulkData bulk data (nodes, faces, node date, etc)
   // conforming to the meta data.
 
-  mesh::BulkData mesh_bulk_data( fem_meta , comm );
 
   // Read bulk data from mesh file
-  stk::io::populate_bulk_data(mesh_bulk_data, mesh_data);
+  mesh_data.populate_bulk_data();
+  mesh::BulkData &mesh_bulk_data = mesh_data.bulk_data();
 
   {
     std::vector<unsigned> count ;
@@ -283,9 +274,9 @@ bool use_case_24_driver(
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
-  stk::io::create_output_mesh(outputName, comm, mesh_bulk_data, mesh_data);
-  stk::io::define_output_fields(mesh_data, fem_meta);
-  stk::io::process_output_request(mesh_data, mesh_bulk_data, 0.0);
+  mesh_data.create_output_mesh(outputName);
+  mesh_data.define_output_fields();
+  mesh_data.process_output_request(0.0);
 
   return true;
 }

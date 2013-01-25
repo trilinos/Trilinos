@@ -308,9 +308,10 @@ bool use_case_7_driver( MPI_Comm comm ,
       const std::string out_filename("mesh.e");
 
       stk::io::MeshData mesh;
-      stk::io::create_output_mesh(out_filename, comm, mesh_bulk_data, mesh);
-      stk::io::define_output_fields(mesh, mesh_meta_data);
-      stk::io::process_output_request(mesh, mesh_bulk_data, 0.0);
+      mesh.set_bulk_data(mesh_bulk_data);
+      mesh.create_output_mesh(out_filename);
+      mesh.define_output_fields();
+      mesh.process_output_request(0.0);
     }
   }
   return true;

@@ -116,23 +116,18 @@ bool use_case_blas_driver(MPI_Comm comm,
   }
 
   //--------------------------------------------------------------------
-
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
   {
     wtime = stk::wall_time();
 
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::MetaData meta_data(  spatial_dimension );
     stk::io::MeshData mesh_data;
     std::string filename = working_directory + mesh_filename;
-    stk::io::create_input_mesh(mesh_type, filename, comm,
-			       meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, meta_data);
+    mesh_data.create_input_mesh(mesh_type, filename, comm);
+    mesh_data.define_input_fields();
+
+    stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
     Fields fields;
     use_case_14_declare_fields(fields, meta_data);
@@ -149,15 +144,15 @@ bool use_case_blas_driver(MPI_Comm comm,
 
     //------------------------------------------------------------------
     // stk::mesh::BulkData bulk data conforming to the meta data.
-    stk::mesh::BulkData bulk_data(meta_data, comm, bucket_size);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    mesh_data.populate_bulk_data();
 
+    stk::mesh::BulkData &bulk_data = mesh_data.bulk_data();
     //------------------------------------------------------------------
     // Create output mesh...  (input filename + ".out14")
     if (output) {
       filename = working_directory + mesh_filename + ".blas";
-      stk::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
-      stk::io::define_output_fields(mesh_data, meta_data, true);
+      mesh_data.create_output_mesh(filename);
+      mesh_data.define_output_fields(true);
     }
 
     stk::app::use_case_14_initialize_nodal_data(bulk_data ,
@@ -216,7 +211,7 @@ bool use_case_blas_driver(MPI_Comm comm,
       time_max[4] += stk::wall_dtime( wtime );
 
       if (output) {
-        stk::io::process_output_request(mesh_data, bulk_data, n);
+        mesh_data.process_output_request(n);
       }
 
     }//end for(..num_trials...

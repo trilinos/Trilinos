@@ -57,29 +57,19 @@ void example_io_1( stk::ParallelMachine comm,
                    const std::string& in_filename,
                    const std::string& out_filename)
 {
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  static const size_t spatial_dimension = 3;
-
   std::cout
  << "========================================================================\n"
  << " Use Case 1: Simple mesh I/O                                            \n"
  << "========================================================================\n";
 
-  stk::mesh::MetaData meta_data( spatial_dimension );
-  stk::mesh::Part & universal        = meta_data.universal_part();
-  stk::mesh::put_field(meta_data.declare_field< CartesianField >( "coordinates" ) , stk::mesh::MetaData::NODE_RANK, universal , spatial_dimension );
-
-  //----------------------------------
   const std::string dbtype("exodusii");
 
   // Open, read, filter meta data from the input mesh file:
   // The coordinates field will be set to the correct dimension.
 
   stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
+  mesh_data.create_input_mesh(dbtype, in_filename, comm);
+  stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
   //----------------------------------
   // Print the parts that were read from the file:
@@ -109,23 +99,15 @@ void example_io_1( stk::ParallelMachine comm,
 
   meta_data.commit();
 
-  //----------------------------------
-  // Create mesh bulk data conforming to the mesh meta data
-  // and distributed among the given parallel machine.
-
-  stk::mesh::BulkData bulk_data(meta_data, comm);
-
   // Read the model (topology, coordinates, attributes, etc)
   // from the mesh-file into the mesh bulk data.
-  stk::io::populate_bulk_data(bulk_data, mesh_data);
+  mesh_data.populate_bulk_data();
 
   //----------------------------------
   // Create a mesh writer that will simply write out what was read.
   // the parts, attributes, and transient arguments can be different
   // that what was read.
-
-  stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
-
+  mesh_data.create_output_mesh(out_filename);
 }
 
 //----------------------------------------------------------------------
