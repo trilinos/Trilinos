@@ -49,7 +49,7 @@ namespace Details {
 /// \brief Left-scaled Chebyshev iteration.
 /// \tparam ScalarType The type of entries in the matrix and vectors.
 /// \tparam MV Specialization of Tpetra::MultiVector.
-/// \tparam MAT Corresponding specialization of Tpetra::CrsMatrix.
+/// \tparam MAT Corresponding specialization of Tpetra::RowMatrix.
 ///
 /// This class implements two variants of Chebyshev iteration:
 /// 1. A direct imitation of Ifpack's implementation
@@ -227,11 +227,8 @@ public:
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   MT apply (const MV& B, MV& X);
 
-  //! The Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap () const;
-
-  //! The Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  //! Get the matrix given to the constructor.
+  Teuchos::RCP<const MAT> getMatrix () const;
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply () const;
@@ -247,8 +244,14 @@ private:
 
   /// The inverse of the diagonal entries of A.
   ///
-  /// This is either computed, or provided by the user as a parameter
-  /// (see setParameters()).  Either way, it is set in compute().
+  /// This is distributed using the range Map of the matrix.  If the
+  /// user has not supplied the inverse diagonal (in setParameters(),
+  /// as userInvDiag_), we compute this each time compute() is called.
+  /// This ensures that compute() will respect changes to the values
+  /// of the matrix.
+  /// 
+  /// If the user <i>has</i> supplied the inverse diagonal elements,
+  /// compute() sets this to point to userInvDiag_.
   Teuchos::RCP<const V> D_;
 
   //@}
@@ -303,6 +306,9 @@ private:
   //@}
   //! \name Computational helper methods
   //@{
+
+  //! Called by constructors to verify their input.
+  void checkConstructorInput () const;
 
   /// \brief Set V and W to temporary multivectors with the same Map as X.
   ///

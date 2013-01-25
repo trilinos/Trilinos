@@ -41,6 +41,36 @@ namespace Ifpack2 {
 namespace Details {
 
 template<class ScalarType, class MV, class MAT>
+void
+Chebyshev<ScalarType, MV, MAT>::
+checkConstructorInput () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
+    "Ifpack2::Details::Chebyshev: Input matrix to constructor is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_->getGlobalNumRows() != A_->getGlobalNumCols(), 
+    std::invalid_argument,
+    "Ifpack2::Details::Chebyshev: The input matrix A must be square.  "
+    "A has " << A_->getGlobalNumRows() << " rows and " 
+    << A_->getGlobalNumCols() << " columns.");
+#ifdef HAVE_TEUCHOS_DEBUG
+  Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
+  Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
+
+  // The relation 'isSameAs' is transitive.  It's also a collective,
+  // so we don't have to do a "shared" test for exception (i.e., a
+  // global reduction on the test value).
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     ! domainMap->isSameAs (*rangeMap),
+     std::invalid_argument,
+     "Ifpack2::Details::Chebyshev: The domain Map and range Map of the matrix "
+     "must be the same (in the sense of isSameAs()).  We only check for this "
+     "if Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
+     "DEBUG set to ON.");
+#endif // HAVE_TEUCHOS_DEBUG
+}
+
+template<class ScalarType, class MV, class MAT>
 Chebyshev<ScalarType, MV, MAT>::
 Chebyshev (Teuchos::RCP<const MAT> A) : 
   A_ (A),
@@ -54,7 +84,9 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
   textbookAlgorithm_ (false)
-{}
+{
+  checkConstructorInput ();
+}
 
 template<class ScalarType, class MV, class MAT>
 Chebyshev<ScalarType, MV, MAT>::
@@ -71,6 +103,7 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   zeroStartingSolution_ (true),
   textbookAlgorithm_ (false)
 {
+  checkConstructorInput ();
   setParameters (params);
 }
 
@@ -82,6 +115,15 @@ setParameters (Teuchos::ParameterList& plist) {
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
+
+  // Note to developers: The logic for this method is complicated,
+  // because we want to accept Ifpack and ML parameters whenever
+  // possible, but we don't want to add their default values to the
+  // user's ParameterList.  That's why we do all the isParameter()
+  // checks, instead of using the two-argument version of get()
+  // everywhere.  The min and max eigenvalue parameters are also a
+  // special case, because we decide whether or not to do eigenvalue
+  // analysis based on whether the user supplied the max eigenvalue.
 
   // Default values of all the parameters.
   const ST defaultLambdaMax = STS::nan ();
@@ -118,7 +160,12 @@ setParameters (Teuchos::ParameterList& plist) {
   // ParameterList interaction.  This makes the method satisfy the
   // strong exception guarantee.
 
-  // Check for a raw pointer, for Ifpack compatibility.
+  // Get the user-supplied inverse diagonal.
+  //
+  // Check for a raw pointer (const V* or V*), for Ifpack
+  // compatibility, as well as for an RCP<const V> or RCP<V>.  We'll
+  // copy the vector anyway, so it doesn't matter whether it's const
+  // or nonconst.
   if (plist.isParameter ("chebyshev: operator inv diagonal")) {
     try { // Could the type be const V*?
       const V* rawUserInvDiag = plist.get<const V*> ("chebyshev: operator inv diagonal");
@@ -154,22 +201,39 @@ setParameters (Teuchos::ParameterList& plist) {
     }
   }
 
-  lambdaMax = plist.get ("chebyshev: max eigenvalue", lambdaMax);
-  lambdaMin = plist.get ("chebyshev: min eigenvalue", lambdaMin);
+  // Don't fill in defaults for the max or min eigenvalue, because
+  // this class uses the existence of those parameters to determine
+  // whether it should do eigenanalysis.
+  if (plist.isParameter ("chebyshev: max eigenvalue")) {
+    lambdaMax = plist.get<ST> ("chebyshev: max eigenvalue");
+  }
+  if (plist.isParameter ("chebyshev: min eigenvalue")) {
+    lambdaMin = plist.get<ST> ("chebyshev: min eigenvalue");
+  }
 
-  // The last parameter name overrides the first.
-  eigRatio = plist.get ("smoother: Chebyshev alpha", eigRatio); // ML compatibility
+  // Only fill in Ifpack2's name for the default parameter, not ML's.
+  if (plist.isParameter ("smoother: Chebyshev alpha")) { // ML compatibility
+    eigRatio = plist.get<ST> ("smoother: Chebyshev alpha");
+  }
+  // Ifpack2's name overrides ML's name.
   eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
 
+  // Same name in Ifpack2 and Ifpack.
   minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
 
-  // Each parameter name overrides the one above it.
-  numIters = plist.get ("smoother: sweeps", numIters); // ML compatibility
-  numIters = plist.get ("relaxation: sweeps", numIters); // Ifpack compatibility
+  // Only fill in Ifpack2's name, not ML's or Ifpack's.
+  if (plist.isParameter ("smoother: sweeps")) { // ML compatibility
+    numIters = plist.get<int> ("smoother: sweeps");
+  } // Ifpack's name overrides ML's name.
+  if (plist.isParameter ("relaxation: sweeps")) { // Ifpack compatibility
+    numIters = plist.get<int> ("relaxation: sweeps");
+  } // Ifpack2's name overrides Ifpack's name.
   numIters = plist.get ("chebyshev: degree", numIters);
 
   // The last parameter name overrides the first.
-  eigMaxIters = plist.get ("eigen-analysis: iterations", eigMaxIters); // ML compatibility
+  if (plist.isParameter ("eigen-analysis: iterations")) { // ML compatibility
+    eigMaxIters = plist.get<int> ("eigen-analysis: iterations");
+  } // Ifpack2's name overrides ML's name.
   eigMaxIters = plist.get ("chebyshev: eigenvalue max iterations", eigMaxIters);
 
   zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution);
@@ -197,14 +261,17 @@ setParameters (Teuchos::ParameterList& plist) {
   // Test for Ifpack parameters that we haven't implemented yet.
   //
   // For now, we only check that this ML parameter, if provided, has
-  // the one value that we support.
+  // the one value that we support.  We consider other values "invalid
+  // arguments" rather than "logic errors," because Ifpack does not
+  // implement eigenanalyses other than the power method.
   std::string eigenAnalysisType ("power-method");
   if (plist.isParameter ("eigen-analysis: type")) {
     eigenAnalysisType = plist.get<std::string> ("eigen-analysis: type");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      eigenAnalysisType != "power-method" && eigenAnalysisType != "power method",
+      eigenAnalysisType != "power-method" && 
+      eigenAnalysisType != "power method",
       std::invalid_argument,
-      "Ifpack2::Chebyshev: This class does support the ML parameter \"eigen-"
+      "Ifpack2::Chebyshev: This class supports the ML parameter \"eigen-"
       "analysis: type\" for backwards compatibility.  However, Ifpack2 "
       "currently only supports the \"power-method\" option for this "
       "parameter.  This imitates Ifpack, which only implements the power "
@@ -572,17 +639,10 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters) {
 }
 
 template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::map_type>
+Teuchos::RCP<const MAT>
 Chebyshev<ScalarType, MV, MAT>::
-getDomainMap() const {
-  return A_->getDomainMap ();
-}
-
-template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::map_type>
-Chebyshev<ScalarType, MV, MAT>::
-getRangeMap() const {
-  return A_->getRangeMap ();
+getMatrix() const {
+  return A_;
 }
 
 template<class ScalarType, class MV, class MAT>

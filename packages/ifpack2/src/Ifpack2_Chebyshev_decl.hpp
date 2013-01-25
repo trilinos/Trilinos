@@ -54,7 +54,7 @@ namespace Ifpack2 {
 
 /// \class Chebyshev 
 /// \brief Diagonally scaled Chebyshev iteration for Tpetra sparse matrices.
-/// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix or Tpetra::CrsMatrix.
 ///
 /// \section Ifpack_Chebyshev_Summary Summary
 ///
@@ -62,9 +62,9 @@ namespace Ifpack2 {
 /// smoother for a Tpetra sparse matrix.  Given a matrix A, it applies
 /// Chebyshev iteration to the left-scaled matrix \f$D^{-1} A\f$,
 /// where D = diag(A) is the matrix of the diagonal entries of A.
-/// This class accepts either a Tpetra::RowMatrix or a
-/// Tpetra::CrsMatrix; its template parameter must be a specialization
-/// of Tpetra::CrsMatrix.
+/// This class' constructor accepts either a Tpetra::RowMatrix or a
+/// Tpetra::CrsMatrix.  Its template parameter may be a specialization
+/// of either class.
 ///
 /// Chebyshev is derived from Preconditioner, which itself is derived
 /// from Tpetra::Operator.  Therefore, a Chebyshev instance may be
@@ -79,13 +79,13 @@ namespace Ifpack2 {
 /// \section Ifpack_Chebyshev_Algorithm Algorithm
 ///
 /// Given a matrix A, a right-hand side X, and an initial guess Y,
-/// this class performs Chebyshev iteration using the left-scaled
-/// matrix \f$D^{-1} A\f$, where D is the matrix of the diagonal
-/// elements of A.  (You may control left scaling yourself if you
-/// wish, by providing an optional vector of the entries of
-/// \f$D^{-1}\f$.)  While Chebyshev iteration works for any matrix, we
-/// have chosen only to allow real-valued, symmetric positive definite
-/// matrices.
+/// this class computes an approximate solution to \f$AY=X\f$ via
+/// Chebyshev iteration using the left-scaled matrix \f$D^{-1} A\f$,
+/// where D is the matrix of the diagonal elements of A.  (You may
+/// control left scaling yourself if you wish, by providing an
+/// optional vector of the entries of \f$D^{-1}\f$.)  While Chebyshev
+/// iteration works for any matrix, we have chosen only to allow
+/// real-valued, symmetric positive definite matrices.
 ///
 /// Chebyshev iteration was originally intended as an iterative solver
 /// for linear systems.  See the following publication (the spelling
