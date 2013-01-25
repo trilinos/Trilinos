@@ -47,6 +47,7 @@
 #include <cstddef>
 #include <vector>
 #include <map>
+#include <iostream>
 #include "Teuchos_ArrayRCP.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Shards_Array.hpp"
@@ -87,6 +88,8 @@ namespace panzer {
     double time;
     bool evaluate_transient_terms;
   };
+
+  std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);
 
 } // namespace panzer
 
