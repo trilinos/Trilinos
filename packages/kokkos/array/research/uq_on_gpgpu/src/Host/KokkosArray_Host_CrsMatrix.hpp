@@ -216,7 +216,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    //const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
     const size_t num_vecs = m_x.size();
 
     for (size_t j=0; j<num_vecs; j++) {
