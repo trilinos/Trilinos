@@ -79,7 +79,7 @@ TripleProductTensorLegendre::TripleProductTensorLegendre()
     for ( unsigned i = 0 ; i <= MaximumPolyDegree ; ++i ) {
     for ( unsigned j = i ; j <= MaximumPolyDegree ; ++j ) {
     for ( unsigned k = j ; k <= MaximumPolyDegree ; ++k ) {
-      tmp[ offset(i,j,k) ] += gauss.weights[ig] * value[i] * value[j] * value[k] ;
+      tmp[ offset(i,j,k) ] += 0.5 * gauss.weights[ig] * value[i] * value[j] * value[k] ;
     }}}
   }
 
