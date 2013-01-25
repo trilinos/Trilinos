@@ -85,6 +85,7 @@ class MockOptions:
     self.extraReposType = ""
     self.extraRepos = ""
     self.ignoreMissingExtraRepos = ""
+    self.withCmake = "cmake"
 
 
 def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
@@ -422,7 +423,8 @@ def run_extrarepo_test(testObject, testName, extraReposFile, expectedReposList, 
   extraCmakeVars=None, expectedErrOutput=None \
   ):
   extraReposPythonOutFile = os.getcwd()+"/"+testName+".py"
-  cmnd = "cmake"+ \
+  global g_withCmake
+  cmnd = g_withCmake+ \
     " -DPROJECT_SOURCE_DIR="+mockProjectBaseDir+ \
     " -DTRIBITS_BASE_DIR="+tribitsBaseDir
   if extraCmakeVars:
@@ -633,6 +635,7 @@ def test_TribitsGitRepos_run_case(testObject, testName, inOptions, \
   consoleRegexMatches=None, consoleRegexNotMatches=None, \
   exceptionRegexMatches=None \
   ):
+  inOptions.withCmake = g_withCmake
   currDir = os.getcwd()
   if os.path.exists(testName):
     runSysCmnd("rm -rf "+testName)
@@ -1119,7 +1122,7 @@ g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_cmndinterceptsExtraRepo1ThroughStatusPasses = \
-  "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+  "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
   +g_cmndinterceptsCurrentBranch \
   +g_cmndinterceptsStatusPasses \
   +g_cmndinterceptsStatusPasses
@@ -1228,6 +1231,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     
     cmndArgs = [
       scriptsDir + "/../checkin-test.py",
+      "--with-cmake="+g_withCmake,
       "--project-name=Trilinos",
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
@@ -1247,7 +1251,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
-      "FT: cmake .*TribitsGetExtraReposForCheckinTest.cmake.*\n" \
+      "FT: .*cmake .*TribitsGetExtraReposForCheckinTest.cmake.*\n" \
       "FT: date\n" \
       "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
@@ -1910,7 +1914,7 @@ class test_checkin_test(unittest.TestCase):
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -1943,7 +1947,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --default-builds=MPI_DEBUG --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -2021,7 +2025,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --pull --extra-pull-from=somemachine:someotherbranch", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2341,7 +2345,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2387,7 +2391,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Nightly" \
       " --extra-builds=MPI_DEBUG_SS --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2434,7 +2438,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --default-builds=MPI_DEBUG --pull --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2549,7 +2553,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "ERROR! Skipping missing extra repo .Dakota. since\n" \
       "MockTrilinos/packages/TriKota/Dakota\n" \
-      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      "Error, the command ..*cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
       ,
       mustHaveCheckinTestOut=False
       )
@@ -2572,7 +2576,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos" \
       " --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2616,7 +2620,7 @@ class test_checkin_test(unittest.TestCase):
       False,
       \
       "ERROR! Skipping missing extra repo .MissingRepo. since\n" \
-      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      "Error, the command ..*cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
       ,
       mustHaveCheckinTestOut=False
       )
@@ -2638,7 +2642,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting1Missing1.cmake" \
       " --extra-repos-type=Continuous --ignore-missing-extra-repos --pull" , \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2668,7 +2672,7 @@ class test_checkin_test(unittest.TestCase):
 #      \
 #      "--extra-repos-file=default --pull --configure", \
 #      \
-#      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+#      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
 #      +g_cmndinterceptsCurrentBranch \
 #      +g_cmndinterceptsDiffOnlyPasses \
 #      ,
@@ -4228,7 +4232,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4259,7 +4263,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4292,7 +4296,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4327,7 +4331,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4548,7 +4552,24 @@ def suite():
     return suite
 
 
+from optparse import OptionParser
+
+
 if __name__ == '__main__':
+
+  # Look for --with-cmake=??? argument and process and remove it
+  global g_withCmake
+  g_withCmake = "cmake"
+  args = []
+  for arg in sys.argv:
+    arg_find_cmake = arg.find("--with-cmake")
+    if arg_find_cmake == 0:
+      g_withCmake = arg.split("=")[1]
+    else:
+      args.append(arg)
+  sys.argv = args
+  
   if os.path.exists(g_checkin_test_tests_dir):
     echoRunSysCmnd("rm -rf "+g_checkin_test_tests_dir, verbose=g_verbose)
+
   unittest.main()
