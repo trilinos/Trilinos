@@ -67,3 +67,17 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Cuda ) {
   
   success = test_crs_dense_block<Scalar,Device>(setup, out);
 }
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatCommuted_Cuda ) {
+  typedef double Scalar;
+  typedef KokkosArray::Cuda Device;
+  
+  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Cuda ) {
+  typedef double Scalar;
+  typedef KokkosArray::Cuda Device;
+  
+  success = test_crs_flat_original<Scalar,Device>(setup, out);
+}

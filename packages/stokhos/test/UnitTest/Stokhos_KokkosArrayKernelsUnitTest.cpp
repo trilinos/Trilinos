@@ -68,6 +68,20 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Host ) {
   success = test_crs_dense_block<Scalar,Device>(setup, out);
 }
 
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatCommuted_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  
+  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  
+  success = test_crs_flat_original<Scalar,Device>(setup, out);
+}
+
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
   success = true; 
   
