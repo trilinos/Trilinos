@@ -62,7 +62,7 @@ private:
   enum { NONZERO_COUNT = 36 };
 
   unsigned char m_map[ N * N * N ];
-  float m_terms[ NONZERO_COUNT ];
+  double m_terms[ NONZERO_COUNT ];
 
   static
   KOKKOSARRAY_INLINE_FUNCTION
@@ -90,7 +90,7 @@ public:
 
   /** \brief  Value of <i,j,k> tensor entry */
   KOKKOSARRAY_INLINE_FUNCTION
-  float operator()( const unsigned i , const unsigned j , const unsigned k ) const
+  double operator()( const unsigned i , const unsigned j , const unsigned k ) const
   {
     return m_terms[ m_map[ offset(i,j,k) ] ];
   }
