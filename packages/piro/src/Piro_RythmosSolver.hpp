@@ -49,6 +49,10 @@
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Piro_RythmosStepperFactory.hpp"
+
+#include <map>
+#include <string>
 
 /** \brief Thyra-based Model Evaluator subclass for Charon!
  *
@@ -69,6 +73,9 @@ public:
 
   /** \name Constructors/initializers */
   //@{
+
+  /** \brief Initializes the internals, though the object is a blank slate. To initialize it call <code>initialize</code> */
+  RythmosSolver();
 
   /** \brief Initialize with internally built objects according to the given parameter list. */
   RythmosSolver(
@@ -99,6 +106,11 @@ public:
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
+  void initialize(
+      Teuchos::RCP<Teuchos::ParameterList> appParams,
+      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
+      Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
+
   Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
@@ -112,6 +124,9 @@ public:
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
+
+  void addStepperFactory(const std::string & stepperName,
+                         const Teuchos::RCP<RythmosStepperFactory<Scalar> > & stepperFactories);
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -145,9 +160,15 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel solnVerbLevel;
+
+  // used for adding user defined steppers externally, this gives us "the open-close principal"
+  std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > > stepperFactories;
+  
+  bool isInitialized;
 };
 
 }
 
 #include "Piro_RythmosSolver_Def.hpp"
+
 #endif
