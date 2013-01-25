@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
+/*  Copyright 2010, 2011, 2012, 2013 Sandia Corporation.                  */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -12,7 +12,10 @@
 #include <vector>
 #include <set>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 #include <Ioss_PropertyManager.h>
+#include <init/Ionit_Initializer.h>
+#include <Teuchos_RCP.hpp>
 
 namespace Ioss {
   class Region;
@@ -30,12 +33,209 @@ namespace stk {
       // Used to maintain state between the meta data and bulk data
       // portions of the mesh generation process for use cases.
     public:
-      MeshData() : m_input_region(NULL), m_output_region(NULL),
-		   m_anded_selector(NULL)
-      {}
+      MeshData();
 
       ~MeshData();
 
+      void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
+      void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
+
+      Teuchos::RCP<Ioss::Region> input_io_region()  { return m_input_region; }
+      Teuchos::RCP<Ioss::Region> output_io_region() { return m_output_region; }
+
+      stk::mesh::Selector *selector()
+      {
+	return m_anded_selector;
+      }
+
+      void set_selector(stk::mesh::Selector *selector)
+      {
+	m_anded_selector = selector;
+      }
+      
+      /**
+       * Set meta data directly with your own meta data. If this is
+       * not called, a meta data will be created during the
+       * create_input_mesh() call.
+       */
+      void set_meta_data(Teuchos::RCP<stk::mesh::MetaData> arg_meta_data);
+      void set_meta_data(stk::mesh::MetaData &arg_meta_data)
+      { set_meta_data(Teuchos::rcpFromRef(arg_meta_data));}
+
+      /**
+       * Set bulk data directly with your own meta data. If this is
+       * not called prior to the populate_bulk_data() call, it will be
+       * created automatically using the communicator of the m_input_region.
+       */
+      void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
+      void set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
+      { set_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+
+      /**
+       * Read/Generate the metadata for mesh of the specified type. By
+       * default, all entities in the mesh (nodeblocks, element blocks,
+       * nodesets, sidesets) will have an associated stk mesh part
+       * created for it.
+       *
+       * If m_input_region is non-null then this is assumed to be a
+       * valid Ioss::Region* that should be used instead of opening
+       * the file and creating a new Ioss::Region. This can be set via
+       * the set_input_io_region(Ioss::Region *region) call prior to
+       * calling this function.
+       *
+       * Following this call, the 'populate_bulk_data()' function should
+       * be called to read the bulk data from the mesh and generate the
+       * corresponding stk mesh entities (nodes, elements, faces, ...)
+       *
+       * Only the non-transient data stored in the mesh database will be
+       * accessed in this function.  To access any transient field data
+       * that may be on the mesh database, use the
+       * 'define_input_fields()' function.
+       *
+       * The meta_data will not be committed by this function, so the
+       * caller will need to call meta_data.commit() after the
+       * function returns.
+       *
+       * \param[in] type   The format of the mesh that will be
+       * "read".  Valid types are "exodus", "generated", "pamgen".
+       *
+       * \param[in] filename If the mesh type is file based ("exodus"),
+       * then this contains the full pathname to the file containing the
+       * mesh information.  If the mesh type is a generated type, then
+       * this parameter contains data used by the generation routines.
+       * See the output from the show_mesh_help() function for details.
+       *
+       * \param[in] comm  MPI Communicator to be used for all parallel
+       * communication needed to generate the mesh.
+       *
+       */
+      void create_input_mesh(const std::string &type,
+			     const std::string &filename,
+			     MPI_Comm comm);
+
+      void create_input_mesh();
+
+      /**
+       * Read/Generate the bulk data for the mesh.  This function will
+       * create all stk mesh entities (nodes, elements) with the
+       * correct nodeal coordinates, element connectivity, element
+       * attribute data, and nodeset and sideset membership.  Note
+       * that meta_data.commit() needs to be called prior to calling
+       * this function.
+       */
+      void populate_bulk_data();
+
+      /**
+       * Iterate over all Ioss entities in the input mesh database and
+       * define a stk field for each transient field found.  The stk
+       * field will have the same name as the field on the database.
+       *
+       * Note that all transient fields found on the mesh database will
+       * have a corresponding stk field defined.  If you want just a
+       * selected subset of the database fields defined in the stk mesh,
+       * you need to define the fields manually.
+       *
+       * To populate the stk field with data from the database, call
+       * process_input_request().
+       *
+       */
+      void define_input_fields();
+
+      /**
+       * For all transient input fields defined either manually or via
+       * the define_input_fields() function, read the data at the
+       * specified database step 'step' (1-based) and populate the stk
+       * data structures with those values.
+       */
+      void process_input_request(int step);
+
+      /**
+       * For all transient input fields defined either manually or via
+       * the define_input_fields() function, read the data at the
+       * specified database time 'time' and populate the stk
+       * data structures with those values.  The database time closest
+       * to the specified time will be used with no interpolation (yet).
+       */
+      void process_input_request(double time);
+
+      /**
+       * Create an exodus mesh database with the specified
+       * filename. This function creates the exodus metadata which
+       * is the number and type of element blocks, nodesets, and
+       * sidesets; and then outputs the mesh bulk data such as the
+       * node coordinates, id maps, element connectivity.  When the
+       * function returns, the non-transient portion of the mesh will
+       * have been defined.
+       *
+       * A stk part will have a corresponding exodus entity (element
+       * block, nodeset, sideset) defined if the "is_io_part()" function
+       * returns true.  By default, all parts read from the mesh
+       * database in the create_input_mesh() function will return true
+       * as will all stk parts on which the function
+       * stk::io::put_io_part_attribute() was called.  The function
+       * stk::io::remove_io_part_attribute(part) can be called to omit a
+       * part from being output.
+       *
+       * \param[in] filename The full pathname to the file which will be
+       * created and the mesh data written to. If the file already
+       * exists, it will be overwritten.
+       */
+      void create_output_mesh(const std::string &filename);
+      void create_output_mesh();
+
+      /**
+       * Iterate over all stk fields and for each transient field
+       * defined on a part that is output to the mesh file, define a
+       * corresponding database field. The database field will have the
+       * same name as the stk field.  A transient field will be defined
+       * if the stk::io::is_valid_part_field() returns true.  This can
+       * be set via a call to stk::io::set_field_role().
+       *
+       * If the 'add_all_fields' param is true, then all transient
+       * stk fields will have a corresponding database field defined.
+       */
+      void define_output_fields(bool add_all_fields = false);
+
+      /**
+       * Add a transient step to the mesh database at time 'time' and
+       * output the data for all defined fields to the database.
+       */
+      int process_output_request(double time);
+      int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
+
+      /**
+       * Method to query a MeshData for the number of element blocks and the
+       * number of elements in each. MeshData is input, std:vector is output
+       * The size of the vector matches the number of element blocks and each
+       * entry in the vector is the number of elements in that element block.
+       */
+      template <typename INT>
+      void get_element_block_sizes(std::vector<INT>& el_blocks);
+
+      stk::mesh::MetaData &meta_data()
+      {
+	ThrowRequire( !Teuchos::is_null(m_meta_data)) ;
+	return *m_meta_data;
+      }
+
+      stk::mesh::BulkData &bulk_data()
+      {
+	ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
+	return *m_bulk_data;
+      }
+
+      const stk::mesh::MetaData &meta_data() const
+      {
+	ThrowRequire( !Teuchos::is_null(m_meta_data)) ;
+	return *m_meta_data;
+      }
+
+      const stk::mesh::BulkData &bulk_data() const
+      {
+	ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
+	return *m_bulk_data;
+      }
+      
       /*!
        * The `m_property_manager` member data contains properties that
        * can be used to set database-specific options in the
@@ -56,9 +256,15 @@ namespace stk {
        */
       Ioss::PropertyManager m_property_manager;
 
-      Ioss::Region *m_input_region;
-      Ioss::Region *m_output_region;
+    private:
+      void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
 
+      Teuchos::RCP<Ioss::Region> m_input_region;
+      Teuchos::RCP<Ioss::Region> m_output_region;
+
+      Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
+      Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
+      
       /*!
        * An optional selector used for filtering entities on the
        * output database. This can be used for specifying
@@ -67,176 +273,14 @@ namespace stk {
        */
       stk::mesh::Selector *m_anded_selector;
 
-    private:
       MeshData(const MeshData&); // Do not implement
       MeshData& operator=(const MeshData&); // Do not implement
-
     };
 
     /** Output a help message showing the valid options for the mesh
 	read and options for generated mesh.
     */
     void show_mesh_help();
-
-    /**
-     * Read/Generate the metadata for mesh of the specified type. By
-     * default, all entities in the mesh (nodeblocks, element blocks,
-     * nodesets, sidesets) will have an associated stk mesh part
-     * created for it.
-     *
-     * If the mesh_data argument contains a non-null m_input_region
-     * data member, then this is assumed to be a valid Ioss::Region*
-     * that should be used instead of opening the file and creating a
-     * new Ioss::Region.
-     *
-     * Following this call, the 'populate_bulk_data()' function should
-     * be called to read the bulk data from the mesh and generate the
-     * corresponding stk mesh entities (nodes, elements, faces, ...)
-     *
-     * Only the non-transient data stored in the mesh database will be
-     * accessed in this function.  To access any transient field data
-     * that may be on the mesh database, use the
-     * 'define_input_fields()' function.
-     *
-     * \param[in] type   The format of the mesh that will be
-     * "read".  Valid types are "exodus", "generated", "pamgen".
-     *
-     * \param[in] filename If the mesh type is file based ("exodus"),
-     * then this contains the full pathname to the file containing the
-     * mesh information.  If the mesh type is a generated type, then
-     * this parameter contains data used by the generation routines.
-     * See the output from the show_mesh_help() function for details.
-     *
-     * \param[in] comm  MPI Communicator to be used for all parallel
-     * communication needed to generate the mesh.
-     *
-     * \param[in,out] meta_data The STK meta data object which will
-     * be populated with parts and fields based on the mesh model
-     * described by the mesh in filename.  The meta_data will not be
-     * committed by this function, so the caller will need to call
-     * meta_data.commit() after the function returns.
-     *
-     * \param[in,out] mesh_data A small class used for maintaining
-     * some state used by the stk_io routines.
-     *
-     */
-    void create_input_mesh(const std::string &type,
-			   const std::string &filename,
-			   MPI_Comm comm,
-			   stk::mesh::MetaData &metadata,
-			   MeshData &mesh_data);
-
-    /**
-     * Read/Generate the bulk data for the mesh.  The bulk_data must
-     * have been constructed using the meta_data passed to the
-     * create_input_mesh() function and the mesh_data must also be the
-     * same. This function will create all stk mesh entities (nodes,
-     * elements) with the correct nodeal coordinates, element
-     * connectivity, element attribute data, and nodeset and sideset
-     * membership.  Note that meta_data.commit() needs to be called
-     * prior to calling this function.
-     */
-    void populate_bulk_data(stk::mesh::BulkData &bulk_data, stk::io::MeshData &mesh_data);
-
-    /**
-     * Iterate over all Ioss entities in the input mesh database and
-     * define a stk field for each transient field found.  The stk
-     * field will have the same name as the field on the database.
-     *
-     * Note that all transient fields found on the mesh database will
-     * have a corresponding stk field defined.  If you want just a
-     * selected subset of the database fields defined in the stk mesh,
-     * you need to define the fields manually.
-     *
-     * To populate the stk field with data from the database, call
-     * process_input_request().
-     *
-     */
-    void define_input_fields(MeshData &mesh_data, stk::mesh::MetaData &meta_data);
-
-    /**
-     * For all transient input fields defined either manually or via
-     * the define_input_fields() function, read the data at the
-     * specified database step 'step' (1-based) and populate the stk
-     * data structures with those values.
-     */
-    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, int step);
-
-    /**
-     * For all transient input fields defined either manually or via
-     * the define_input_fields() function, read the data at the
-     * specified database time 'time' and populate the stk
-     * data structures with those values.  The database time closest
-     * to the specified time will be used with no interpolation (yet).
-     */
-    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time);
-
-    /**
-     * Create an exodus mesh database with the specified
-     * filename. This function creates the exodus metadata which
-     * is the number and type of element blocks, nodesets, and
-     * sidesets; and then outputs the mesh bulk data such as the
-     * node coordinates, id maps, element connectivity.  When the
-     * function returns, the non-transient portion of the mesh will
-     * have been defined.
-     *
-     * A stk part will have a corresponding exodus entity (element
-     * block, nodeset, sideset) defined if the "is_io_part()" function
-     * returns true.  By default, all parts read from the mesh
-     * database in the create_input_mesh() function will return true
-     * as will all stk parts on which the function
-     * stk::io::put_io_part_attribute() was called.  The function
-     * stk::io::remove_io_part_attribute(part) can be called to omit a
-     * part from being output.
-     *
-     * \param[in] filename The full pathname to the file which will be
-     * created and the mesh data written to. If the file already
-     * exists, it will be overwritten.
-     *
-     * \param[in] comm  MPI Communicator to be used for all parallel
-     * communication needed by the mesh routines.
-     *
-     * \param[in] bulk The STK bulk data object defining the stk mesh.
-     *
-     * \param[in,out] mesh_data A small class used for maintaining
-     * some state used by the stk_io routines.
-     *
-     */
-    void create_output_mesh(const std::string &filename,
-			    MPI_Comm comm,
-			    stk::mesh::BulkData &bulk_data,
-			    MeshData &mesh_data);
-
-    /**
-     * Iterate over all stk fields and for each transient field
-     * defined on a part that is output to the mesh file, define a
-     * corresponding database field. The database field will have the
-     * same name as the stk field.  A transient field will be defined
-     * if the stk::io::is_valid_part_field() returns true.  This can
-     * be set via a call to stk::io::set_field_role().
-     *
-     * If the 'add_all_fields' param is true, then all transient
-     * stk fields will have a corresponding database field defined.
-     */
-    void define_output_fields(const MeshData &mesh_data,
-			      const stk::mesh::MetaData &meta,
-			      bool add_all_fields = false);
-
-    /**
-     * Add a transient step to the mesh database at time 'time' and
-     * output the data for all defined fields to the database.
-     */
-    int process_output_request(MeshData &mesh_data,
-			       stk::mesh::BulkData &bulk,
-			       double time,
-                               const std::set<const stk::mesh::Part*> &exclude=std::set<const stk::mesh::Part*>());
-    /**
-     * Method to query a MeshData for the number of element blocks and the
-     * number of elements in each. MeshData is input, std:vector is output
-     */
-    template <typename INT>
-    void get_element_block_sizes(MeshData &mesh_data,
-                                 std::vector<INT>& el_blocks);
   }
 }
 #endif

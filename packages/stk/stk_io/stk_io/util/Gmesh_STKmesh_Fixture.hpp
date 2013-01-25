@@ -87,27 +87,21 @@ class Gmesh_STKmesh_Fixture
    * Get a reference to the meta data for the stk-mesh.
    */
   const stk::mesh::MetaData & getMetaData() const
-  { return m_meta_data; }
+  { return m_mesh_data.meta_data(); }
 
   stk::mesh::MetaData & getMetaData()
-  { return m_meta_data; }
+  { return m_mesh_data.meta_data(); }
 
   /**
    * Get a reference to the bulk data for the stk-mesh.
    */
   const stk::mesh::BulkData & getBulkData() const
-  { return m_bulk_data; }
+  { return m_mesh_data.bulk_data(); }
 
   stk::mesh::BulkData & getBulkData()
-  { return m_bulk_data; }
+  { return m_mesh_data.bulk_data(); }
 
  private:
-  ///> The meta data for the stk-mesh
-  stk::mesh::MetaData m_meta_data;
-
-  ///> The bulk data for the stk-mesh
-  stk::mesh::BulkData m_bulk_data;
-
   /**
    * The mesh-data for the mesh. This is a special object that maintains some
    * state between the meta data and bulk data portions of the mesh generation

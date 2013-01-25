@@ -26,22 +26,14 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
                                              const std::string& gmesh_spec)
 ///////////////////////////////////////////////////////////////////////////////
   :
-    m_meta_data(spatial_dimension),
-    m_bulk_data(m_meta_data, comm),
     m_num_x(0),
     m_num_y(0),
     m_num_z(0)
 {
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh("generated", gmesh_spec, comm,
-			     m_meta_data, m_mesh_data);
+  m_mesh_data.create_input_mesh("generated", gmesh_spec, comm);
 
   const Iogn::DatabaseIO* database =
-    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.m_input_region->get_database());
+    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.input_io_region()->get_database());
 
   // compute m_num_{x|y|z}
   m_num_x = database->get_generated_mesh()->get_num_x();
@@ -54,7 +46,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   for (std::vector<std::string>::const_iterator itr = sideset_names.begin();
        itr != sideset_names.end(); ++itr) {
     m_sideset_names.push_back(*itr);
-    m_sideset_parts.push_back(m_meta_data.get_part(*itr));
+    m_sideset_parts.push_back(m_mesh_data.meta_data().get_part(*itr));
   }
 }
 
@@ -62,9 +54,8 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
 void Gmesh_STKmesh_Fixture::commit()
 ///////////////////////////////////////////////////////////////////////////////
 {
-  m_meta_data.commit();
-
-  stk::io::populate_bulk_data(m_bulk_data, m_mesh_data);
+  m_mesh_data.meta_data().commit();
+  m_mesh_data.populate_bulk_data();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

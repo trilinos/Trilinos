@@ -53,16 +53,6 @@ class IO_Fixture
   void add_timestep_to_output_mesh( double time );
 
   /**
-   * Set this fixture's meta data directly with your own meta data.
-   */
-  void set_meta_data( Teuchos::RCP<stk::mesh::MetaData> arg_meta_data );
-
-  /**
-   * Set this fixture's bulk data directly with your own meta data.
-   */
-  void set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data );
-
-  /**
    * Set the input region. Use this if you initialzed meta/bulk data with the
    * setters instead of the initializers.
    */
@@ -86,14 +76,12 @@ class IO_Fixture
 
   stk::mesh::MetaData & meta_data()
   {
-    ThrowRequire( !Teuchos::is_null(m_fem_meta_data)) ;
-    return *m_fem_meta_data;
+    return m_mesh_data.meta_data();
   }
 
   stk::mesh::BulkData & bulk_data()
   {
-    ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
-    return *m_bulk_data;
+    return m_mesh_data.bulk_data();
   }
 
   stk::io::MeshData & mesh_data()
@@ -108,18 +96,12 @@ class IO_Fixture
     return * coord_field;
   }
 
-  Teuchos::RCP<Ioss::Region> input_ioss_region()  { return m_ioss_input_region; }
-  Teuchos::RCP<Ioss::Region> output_ioss_region() { return m_ioss_output_region; }
+  Teuchos::RCP<Ioss::Region> input_ioss_region()  { return m_mesh_data.input_io_region(); }
+  Teuchos::RCP<Ioss::Region> output_ioss_region() { return m_mesh_data.output_io_region(); }
   void output_ioss_region(Teuchos::RCP<Ioss::Region>);
 
  private:
   stk::ParallelMachine                       m_comm;
-  Teuchos::RCP<stk::mesh::MetaData>  m_fem_meta_data;
-  Teuchos::RCP<stk::mesh::BulkData>          m_bulk_data;
-
-  Teuchos::RCP<Ioss::Region>                 m_ioss_input_region;
-  Teuchos::RCP<Ioss::Region>                 m_ioss_output_region;
-
   std::string                                m_mesh_type;
   stk::io::MeshData                          m_mesh_data;
 
