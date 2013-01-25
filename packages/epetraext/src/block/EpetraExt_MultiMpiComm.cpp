@@ -45,13 +45,14 @@
 
 namespace EpetraExt {
 
-MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_) :
+MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_,
+			   const Teuchos::EVerbosityLevel verbLevel) :
 	Epetra_MpiComm(globalMpiComm),
+	Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
 	myComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
         subComm(0)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
   // The default output stream only outputs to proc 0, which is not what
   // we generally want.  Manually override this if necessary so we get output
@@ -113,8 +114,10 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 
 // This constructor is for just one subdomain, so only adds the info
 // for multiple time steps on the domain. No two-level parallelism.
-MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_) :
+MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_,
+			   const Teuchos::EVerbosityLevel verbLevel) :
 	Epetra_MpiComm(EpetraMpiComm_),
+	Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
 	myComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
         subComm(0)
 {

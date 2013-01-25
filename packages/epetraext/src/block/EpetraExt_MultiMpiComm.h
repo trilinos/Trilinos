@@ -79,7 +79,8 @@ class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
 	\param In 
 	numTimeSteps (Default=-1) - Piece of partitioning data needed specifically for parallel space-time project, corresponding to the total number of time steps.
   */
-  MultiMpiComm(MPI_Comm globalComm, int subDomainProcs, int numTimeSteps_=-1);
+  MultiMpiComm(MPI_Comm globalComm, int subDomainProcs, int numTimeSteps_=-1,
+	       const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT);
   
   //! MultiMpiComm constuctor, no parallelism over domains
   /*! Creates a MultiMpiComm object for the simple case of no parallelism over
@@ -90,7 +91,8 @@ class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
 	\param In 
 	numTimeSteps - Number of steps 
   */
-  MultiMpiComm(const Epetra_MpiComm& Comm, int numTimeSteps_);
+  MultiMpiComm(const Epetra_MpiComm& Comm, int numTimeSteps_,
+	       const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT);
 
   //! Copy constructor.
   MultiMpiComm( const MultiMpiComm &MMC );
