@@ -70,6 +70,10 @@
 #include "Teko_RequestHandler.hpp"
 #endif
 
+namespace Piro {
+  template <typename ScalarT> class RythmosSolver;
+}
+
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
   template<typename ScalarT> class LinearOpWithSolveFactoryBase;
@@ -120,7 +124,8 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > buildResponseOnlyModelEvaluator(
                                   const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
- 		                  const Teuchos::RCP<panzer::GlobalData>& global_data);
+ 		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > & rythmosSolver=Teuchos::null);
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
