@@ -160,7 +160,7 @@ private:
   void populate_tensor()
   {
     const double  tolerance( 1e-12 );
-    const double  scaling( std::sqrt( (double)( 1 << m_variable_count )));
+    const double  scaling( (double)( 1 << m_variable_count ));
 
     // Integration rule required for integration of triple product of 
     // maximum degree polynomial
@@ -205,7 +205,7 @@ private:
             }
           }
 
-          double value = scaling ;
+          double value = 1.0/scaling ;
           for ( int iv = 0 ; iv < m_variable_count ; ++iv ) {
             value *= integral_sum[iv] ;
           }
