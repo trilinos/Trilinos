@@ -470,7 +470,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -508,7 +512,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -556,7 +564,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -597,7 +609,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -639,7 +655,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -686,7 +706,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: textbook algorithm", true);
   myCheby.setParameters (params);
   myCheby.compute ();
-  maxResNormTextbook = myCheby.apply (b, x);
+  (void) myCheby.apply (b, x);
+  r = b;
+  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2 (norms ());
+  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
 
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
@@ -698,7 +722,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
-
 
   // For this case, if there are enough eigenanalysis iterations,
   // Ifpack2 should do quite a bit better than the textbook version of

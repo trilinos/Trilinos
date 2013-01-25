@@ -83,7 +83,8 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
-  textbookAlgorithm_ (false)
+  textbookAlgorithm_ (false),
+  computeMaxResNorm_ (false)
 {
   checkConstructorInput ();
 }
@@ -101,7 +102,8 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
-  textbookAlgorithm_ (false)
+  textbookAlgorithm_ (false),
+  computeMaxResNorm_ (false)
 {
   checkConstructorInput ();
   setParameters (params);
@@ -140,6 +142,7 @@ setParameters (Teuchos::ParameterList& plist) {
   const int defaultEigMaxIters = 10;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultTextbookAlgorithm = false;
+  const bool defaultComputeMaxResNorm = false;
 
   // We'll set the instance data transactionally, after all reads
   // from the ParameterList.  That way, if any of the ParameterList
@@ -154,6 +157,7 @@ setParameters (Teuchos::ParameterList& plist) {
   int eigMaxIters = defaultEigMaxIters;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
+  bool computeMaxResNorm = defaultComputeMaxResNorm;
 
   // Fetch the parameters from the ParameterList.  Defer all
   // externally visible side effects until we have finished all
@@ -237,7 +241,15 @@ setParameters (Teuchos::ParameterList& plist) {
   eigMaxIters = plist.get ("chebyshev: eigenvalue max iterations", eigMaxIters);
 
   zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution);
-  textbookAlgorithm = plist.get ("chebyshev: textbook algorithm", textbookAlgorithm);
+
+  // We don't want to fill these parameters in, because they shouldn't
+  // be visible to Ifpack2::Chebyshev users.
+  if (plist.isParameter ("chebyshev: textbook algorithm")) {
+    textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+  }
+  if (plist.isParameter ("chebyshev: compute max residual norm")) {
+    computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
+  }
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -287,6 +299,7 @@ setParameters (Teuchos::ParameterList& plist) {
   eigMaxIters_ = eigMaxIters;
   zeroStartingSolution_ = zeroStartingSolution;
   textbookAlgorithm_ = textbookAlgorithm;
+  computeMaxResNorm_ = computeMaxResNorm;
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -367,8 +380,7 @@ apply (const MV& B, MV& X) {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
   }
 
-  const bool computeResidualNorms = true;
-  if (computeResidualNorms) {
+  if (computeMaxResNorm_) {
     MV R (B.getMap (), B.getNumVectors ());
     computeResidual (R, B, *A_, X);
     Teuchos::Array<MT> norms (B.getNumVectors ());

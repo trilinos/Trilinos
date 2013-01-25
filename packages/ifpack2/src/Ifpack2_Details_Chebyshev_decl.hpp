@@ -192,6 +192,9 @@ public:
   ///   textbook version of Chebyshev iteration.  We recommend against
   ///   this, since the default algorithm is less sensitive to the
   ///   quality of the eigenvalue bounds.
+  /// - "chebyshev: compute max residual norm" (\c bool): If true,
+  ///   apply() will compute and return the max (absolute) residual
+  ///   norm.  Otherwise, apply() returns 0.  This defaults to false.
   ///
   /// \pre lambdaMin, lambdaMax, and eigRatio are real
   /// \pre 0 < lambdaMin <= lambdaMax
@@ -224,7 +227,10 @@ public:
   /// \param B [in] Right-hand side(s) in the linear system to solve.
   /// \param X [in] Initial guess(es) for the linear system to solve.
   ///
-  /// \return Max (over all columns) absolute residual 2-norm after iterating.
+  /// If the "chebyshev: compute max residual norm" parameter is true
+  /// (not the default), then this method returns the maximum (over
+  /// all columns) absolute residual 2-norm after iterating.
+  /// Otherwise, it returns zero.
   MT apply (const MV& B, MV& X);
 
   //! Get the matrix given to the constructor.
@@ -302,6 +308,8 @@ private:
   bool zeroStartingSolution_;
   //! Whether to use the textbook version of the algorithm.
   bool textbookAlgorithm_;
+  //! Whether apply() will compute and return the max residual norm.
+  bool computeMaxResNorm_;
 
   //@}
   //! \name Computational helper methods
