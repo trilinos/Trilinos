@@ -83,6 +83,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Prefix","","Prefix for using multiple instatiations of thei equation set");
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
+    valid_parameters.set("Integration Order",-1,"Order of the integration rule");
 
     Teuchos::setStringToIntegralParameter<int>(
       "CONVECTION",
@@ -100,6 +101,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   std::string basis_type = params->get<std::string>("Basis Type");
   int basis_order = params->get<int>("Basis Order");
   std::string model_id = params->get<std::string>("Model ID");
+  int integration_order = params->get<int>("Integration Order");
 
   // ********************
   // Setup DOFs and closure models
@@ -107,7 +109,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   {
     m_dof_name = m_prefix+"TEMPERATURE";
 
-    this->addDOF(m_dof_name,basis_type,basis_order);
+    this->addDOF(m_dof_name,basis_type,basis_order,integration_order);
     this->addDOFGrad(m_dof_name);
     if (this->buildTransientSupport())
       this->addDOFTimeDerivative(m_dof_name);
@@ -140,7 +142,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   if (this->buildTransientSupport()) {
     ParameterList p("Transient Residual");
     p.set("Residual Name", "RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
-    p.set("Value Name", "DOT_"+m_prefix+"TEMPERATURE");
+    p.set("Value Name", "DXDT_"+m_prefix+"TEMPERATURE");
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
