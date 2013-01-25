@@ -108,9 +108,10 @@ namespace Ifpack2 {
 /// \f$D^{-1} A\f$.  
 ///
 /// Suppose \f$[\lambda_{min}, \lambda_{max}]\f$ is the interval of
-/// the eigenvalues of \f$D^{-1} A\f$.  We require users to give us at
-/// least (an estimate of) the maximum eigenvalue \f$\lambda_{max}\f$.
-/// They may optionally also give us the (estimated) ratio \f$\eta =
+/// the eigenvalues of \f$D^{-1} A\f$.  Users may either give us an
+/// estimate of the maximum eigenvalue \f$\lambda_{max}\f$, or let us
+/// compute it (which we do with a few power iterations).  They may
+/// optionally also give us the (estimated) ratio \f$\eta =
 /// \lambda_{max} / \lambda_{min}\f$, or (an estimate of) the minimum
 /// eigenvalue \f$\lambda_{min}\f$.  The \f$\eta\f$ parameter
 /// corresponds to the "smoother: Chebyshev alpha" parameter of ML.
@@ -139,13 +140,13 @@ namespace Ifpack2 {
 /// accounts for the fact that typical methods for estimating extremal
 /// eigenvalues (like Lanczos or CG) underestimate them.
 ///
-/// Some Chebyshev implementations attempt to estimate the eigenvalue
-/// interval automatically.  We do not attempt to do this.  Users who
-/// want estimates of both the smallest and largest eigenvalues should
-/// run a few iterations of Lanczos or CG.  For just the largest
-/// eigenvalue, a few iterations of the power method may be enough.
-/// For an example of a Chebyshev implementation that estimates
-/// eigenvalue bounds, see Steve Ashby's CHEBYCODE:
+/// If you do not give us an estimate for the maximum eigenvalue, we
+/// estimate it using a few iterations of the power method in the
+/// compute() method.  We do not attempt to refine the eigenvalue
+/// bounds over Chebyshev iterations, as the typical smoother case
+/// does not use very many iterations.  For an example of a Chebyshev
+/// implementation that updates eigenvalue bound estimates, see Steve
+/// Ashby's CHEBYCODE:
 ///
 /// S. ASHBY, "CHEBYCODE: A Fortran implementation of Manteuffel's
 /// adaptive Chebyshev algorithm," Tech. Rep. UIUCDCS-R-85-1203,
@@ -154,12 +155,11 @@ namespace Ifpack2 {
 /// \section Ifpack_Chebyshev_Params Setting parameters
 ///
 /// Call the setParameters() method to give this instance your
-/// estimates of \f$\lambda_{max}\f$ and \f$\eta = \lambda_{max} /
-/// \lambda_{min}\f$, as well as to set other options controlling the
-/// behavior of Chebyshev iteration.  The documentation of
-/// setParameters() lists all the parameters that this class accepts.
-/// Where possible, we list comparable parameters in the Ifpack
-/// package and the ML multigrid package.
+/// eigenvalue bound estimates (if you have them), as well as to set
+/// other options controlling the behavior of Chebyshev iteration.
+/// The documentation of setParameters() lists all the parameters that
+/// this class accepts.  Where possible, we list comparable parameters
+/// in the Ifpack package and the ML multigrid package.
 ///
 /// \section Ifpack_Chebyshev_Performance Performance
 ///
@@ -260,8 +260,10 @@ public:
   ///
   /// We do <i>not</i> require that the row Map and the range Map of A
   /// be the same.  However, set-up will take less time if they are
-  /// identical, in terms of pointer equality.  We do not check
-  /// isSameAs(), because that requires at least one global reduction.
+  /// identical (in terms of pointer equality).  This is because we
+  /// have to extract the diagonal entries of A as a row Map vector:
+  /// if the row and range Maps are not identical, we have to
+  /// redistribute the vector from the row Map to the range Map.
   ///
   /// The constructor will only check the requirements on the various
   /// Maps of A if the CMake configuration option
@@ -278,37 +280,96 @@ public:
   //! \name Preconditioner computation methods
   //@{ 
 
-  /// \brief Set parameters for the preconditioner.
+  /// \brief Set (or reset) parameters.
   ///
-  /// The following parameters control the Chebyshev coefficients, the
-  /// number of iterations, and other properties of the algorithm.
-  /// - "chebyshev: max eigenvalue" (\c scalar_type): (An estimate of) the
-  ///   largest eigenvalue \f$\lambda_{max}\f$ of the matrix.  You
-  ///   should always provide this value, since otherwise Chebyshev
-  ///   will not be an effective smoother.
-  /// - "chebyshev: ratio eigenvalue" (\c magnitude_type): (Estimated)
-  ///   ratio \f$\eta\f$ between the largest and smallest eigenvalue.
-  ///   The default value is 30.0.  We use this to define the interval
-  ///   on the real line that determines the Chebyshev coefficients.
-  /// - "chebyshev: min eigenvalue" (\c scalar_type): (An estimate of) the
-  ///   smallest eigenvalue \f$\lambda_{min}\f$ of the matrix.  This
-  ///   parameter is optional and is only used to check whether the
-  ///   input matrix is the identity matrix.  We do <i>not</i> use
-  ///   this to define the interval on the real line that determines
-  ///   the Chebyshev coefficients.
-  /// - "chebyshev: degree" (\c int): The polynomial degree; the
-  ///   number of times that apply() invokes sparse matrix-vector
-  ///   multiply.
-  /// - "chebyshev: min diagonal value" (\c scalar_type): Threshold for
-  ///   diagonal values.  Values smaller than this are not inverted.
-  /// - "chebyshev: zero starting solution" (\c bool): If true, the
-  ///   input vector(s) is/are filled with zeros on entry to the
-  ///   apply() method.
-  /// - "chebyshev: operator inv diagonal" (<tt>vector_type</tt>):
-  ///   A (raw) pointer to the inverse of the diagonal entries of the
-  ///   matrix, stored as a <tt>vector_type</tt>.  If provided, we
-  ///   will make a deep copy of this.  If not provided, we compute
-  ///   this ourselves from the matrix.  See details below.
+  /// This method fills in the input ParameterList with missing
+  /// parameters set to their default values.  You may call this
+  /// method as many times as you want.  On each call, the input
+  /// ParameterList is treated as a complete list of the desired
+  /// parameters, not as a "delta" or change list from the current set
+  /// of parameters.  (That is, if you remove parameters from the list
+  /// that were there in the last call to setParameters() and call
+  /// setParameters() again with the revised list, this method will
+  /// use default values for the removed parameters, rather than
+  /// letting the current settings remain.)  However, since the method
+  /// fills in missing parameters, you may keep calling it with the
+  /// ParameterList used in the previous call in order to get the same
+  /// behavior as before.
+  ///
+  /// \section Ifpack2_Chebyshev_setParameters_List List of parameters
+  ///
+  /// Parameters that govern spectral bounds of the matrix:
+  /// - "chebyshev: max eigenvalue" (\c ScalarType): lambdaMax, an
+  ///   upper bound of the bounding ellipse of the eigenvalues of the
+  ///   matrix A.  If you do not set this parameter, we will compute
+  ///   an approximation.  See "Parameters that govern eigenvalue
+  ///   analysis" to control this approximation process.
+  /// - "chebyshev: ratio eigenvalue" (\c ScalarType): eigRatio, the
+  ///   ratio of lambdaMax to the lower bound of the bounding ellipse
+  ///   of the eigenvalues of A.  We use lambdaMax and eigRatio to
+  ///   determine the Chebyshev iteration coefficients.  This
+  ///   parameter is optional and defaults to 30.
+  /// - "chebyshev: min eigenvalue" (\c ScalarType): lambdaMin, a
+  ///   lower bound of real part of bounding ellipse of eigenvalues of
+  ///   the matrix A.  This parameter is optional and only used for a
+  ///   quick check if the matrix is the identity matrix (if lambdaMax
+  ///   == lambdaMin == 1).
+  ///
+  /// Parameters that govern the number of Chebyshev iterations:
+  /// - "chebyshev: degree" (\c int): numIters, the number of
+  ///   iterations.  This overrides "relaxation: sweeps" and
+  ///   "smoother: sweeps" (see below).
+  /// - "relaxation: sweeps" (\c int): numIters, the number of
+  ///   iterations.  We include this for compatibility with Ifpack.
+  ///   This overrides "smoother: sweeps" (see below).
+  /// - "smoother: sweeps" (\c int): numIters, as above.
+  ///   We include this for compatibility with ML.
+  ///
+  /// Parameters that govern eigenvalue analysis:
+  /// - "chebyshev: eigenvalue max iterations" (\c int): eigMaxIters,
+  ///   the number of power method iterations used to compute the
+  ///   maximum eigenvalue.  This overrides "eigen-analysis:
+  ///   iterations" (see below).
+  /// - "eigen-analysis: iterations" (\c int): eigMaxIters, as above.
+  ///   We include this parameter for compatibility with ML.
+  /// - "eigen-analysis: type" (<tt>std::string</tt>): The algorithm
+  ///   to use for estimating the max eigenvalue.  This parameter is
+  ///   optional.  Currently, we only support "power-method" (or
+  ///   "power method"), which is what Ifpack::Chebyshev uses for
+  ///   eigenanalysis.  We include this parameter for compatibility
+  ///   with ML.
+  ///
+  /// Parameters that govern other algorithmic details:
+  /// - "chebyshev: operator inv diagonal" (<tt>RCP<const V></tt> or
+  ///   <tt>const V*</tt>): If nonnull, we will use a deep copy of
+  ///   this vector for left scaling as the inverse diagonal of the
+  ///   matrix A, instead of computing the inverse diagonal ourselves.
+  ///   We will make a copy every time you call setParameters().  If
+  ///   you ever call setParameters() without this parameter, we will
+  ///   clear our copy and compute the inverse diagonal ourselves
+  ///   again.  You are responsible for updating this if the matrix
+  ///   has changed.
+  /// - "chebyshev: min diagonal value" (\c ST): minDiagVal.  If any
+  ///   entry of the diagonal of the matrix is less than this in
+  ///   magnitude, it will be replaced with this value in the inverse
+  ///   diagonal used for left scaling.
+  /// - "chebyshev: zero starting solution" (\c bool): If true, then
+  ///   always use the zero vector(s) as the initial guess(es).  If
+  ///   false, then apply() will use X on input as the initial
+  ///   guess(es).
+  ///
+  /// \pre lambdaMin, lambdaMax, and eigRatio are real
+  /// \pre 0 < lambdaMin <= lambdaMax
+  /// \pre numIters >= 0
+  /// \pre eigMaxIters >= 0
+  ///
+  /// \section Ifpack2_Chebyshev_setParameters_compat Note on compatibility with Ifpack and ML
+  ///
+  /// Both the Ifpack and ML
+  /// packages implement a Chebyshev smoother.  We accept Ifpack and
+  /// ML names for parameters whenever Ifpack2 has an equivalent
+  /// parameter.  Default settings for parameters relating to spectral
+  /// bounds come from Ifpack.
   ///
   /// The following list maps from an ML parameter to its
   /// corresponding Ifpack2 parameter.
@@ -317,8 +378,8 @@ public:
   ///
   /// ML does not have a parameter corresponding to "chebyshev: max
   /// eigenvalue", because ML estimates the spectral radius
-  /// automatically.  Ifpack2 does not do this automatically, but a
-  /// multigrid package such as MueLu that uses Ifpack2 could do this.
+  /// automatically.  Ifpack and Ifpack2 both can estimate this
+  /// automatically, but also let the user provide an estimate.
   /// Similarly, ML does not have a parameter corresponding to
   /// "chebyshev: min eigenvalue".
   ///
@@ -336,7 +397,7 @@ public:
   /// - "relaxation: zero starting solution": "chebyshev: zero starting solution"
   /// - "chebyshev: operator inv diagonal": same
   ///
-  /// Details on parameters:
+  /// \section Ifpack2_Chebyshev_setParameters_details Details on parameters
   ///
   /// The optional user-provided vector of diagonal entries of the
   /// matrix may have any distribution for which an Export to the
@@ -364,17 +425,26 @@ public:
     return(IsInitialized_);
   }
 
-  /// \brief Compute the preconditioner.
+  /// \brief (Re)compute the left scaling, and (if applicable)
+  ///   estimate max and min eigenvalues of D_inv * A.
   ///
-  /// You must call this method before calling apply().  If any of the
-  /// values of the diagonal entries of the matrix have changed, or if
-  /// the structure of the matrix has changed, you must call this
-  /// method again before calling apply().
+  /// You must call this method before calling apply(),
+  /// - if you have not yet called this method,
+  /// - if the matrix (either its values or its structure) has changed, or
+  /// - any time after you call setParameters().
+  ///
+  /// Advanced users may omit calling compute() after calling
+  /// setParameters(), as long as none of the changed parameters
+  /// affect either computation of the inverse diagonal, or estimation
+  /// of the max or min eigenvalues.
+  ///
+  /// If estimation of the eigenvalues is required, this method may
+  /// take as long as several Chebyshev iterations.
   ///
   /// This method will call initialize() if it has not already been
   /// called.  However, you may call initialize() before calling this
   /// method if you wish.
-  void compute();
+  void compute ();
 
   /// Whether the preconditioner has been successfully computed
   /// (by calling compute()).
@@ -523,10 +593,11 @@ public:
 	       scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
-  static void CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
-                const vector_type& InvPointDiagonal, 
-                const int MaximumIterations, 
-                scalar_type& lambda_min, scalar_type& lambda_max);
+  static void TEUCHOS_DEPRECATED 
+  CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
+      const vector_type& InvPointDiagonal, 
+      const int MaximumIterations, 
+      scalar_type& lambda_min, scalar_type& lambda_max);
 
   //@}
 
