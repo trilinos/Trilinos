@@ -433,7 +433,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   for (std::vector<std::string>::const_iterator model_name = m_closure_model_ids.begin();
        model_name != m_closure_model_ids.end(); ++model_name) {
     
-    buildAndRegisterClosureModelEvaluators(fm,fl,ir,factory,*model_name,models,user_data);
+    this->buildAndRegisterClosureModelEvaluators(fm,fl,ir,factory,*model_name,models,user_data);
   }
 }
 
