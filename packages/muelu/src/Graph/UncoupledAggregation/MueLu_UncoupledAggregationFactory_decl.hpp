@@ -90,7 +90,7 @@ public:
   //@{
 
   //! Constructor.
-  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = false, bool bEmergencyAggregation = true);
+  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = true, bool bEmergencyAggregation = true);
 
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
