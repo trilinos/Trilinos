@@ -93,7 +93,9 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
     FactoryMonitor m(*this, "Build", currentLevel);
     if(predrop_ != Teuchos::null) {
       GetOStream(Parameters0, 0) << predrop_->description();
@@ -158,7 +160,16 @@ namespace MueLu {
           LocalOrdinal realnnz = 0;
           for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); ++col) {
     
-            if ( STS::magnitude(vals[col]) > STS::squareroot(STS::magnitude(threshold * ghostedDiagVals[col]*ghostedDiagVals[row])) ) {
+            // eps*|a_ii|*|a_jj|
+            typename STS::magnitudeType aiiajj = STS::magnitude(threshold)*STS::magnitude(ghostedDiagVals[col]*ghostedDiagVals[row]);
+            // (eps*|a_ii|*|a_jj|)^2
+            aiiajj *= aiiajj;
+            // |a_ij|
+            typename STS::magnitudeType aij = STS::magnitude(vals[col]);
+            // |a_ij|^2
+            aij *= aij;
+            // if |a_ij|^2 > (eps*|a_ii|*|a_jj|)^2, thus avoiding a squareroot
+            if ( aij > aiiajj) {
               columns[realnnz++] = col;
             }
           }
