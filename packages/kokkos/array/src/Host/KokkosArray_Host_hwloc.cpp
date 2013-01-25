@@ -225,10 +225,18 @@ void HostInternalHWLOC::print_configuration( std::ostream & s ) const
   default: name_node = name_unknown ; break ;
   }
 
+  const int total_node_count =
+    hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
+
   s << std::endl
-    << "KokkosArray::Host HWLOC { " << name_node << "("
-    << HostInternal::m_gang_capacity
-    << ")" ;
+    << "KokkosArray::Host HWLOC { " << name_node << "( "
+    << total_node_count
+    << " : binding("
+    ;
+  for ( Host::size_type i = 0 ; i < HostInternal::m_gang_capacity ; ++i ) {
+    s << " " << m_node_rank[i] ;
+  }
+  s << " ) )" ;
 
   if ( 1 < m_node_core_count ) {
     s << " x CORE(" << m_node_core_count << ")" ;

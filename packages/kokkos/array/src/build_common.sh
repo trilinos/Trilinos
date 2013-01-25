@@ -86,6 +86,7 @@ MIC | mic )
 #-------------------------------
 MPIMIC | mpimic )
   CXX="mpiicpc -mmic -ansi-alias -Wall"
+  CXX="${CXX} -DHAVE_MPI"
   CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
