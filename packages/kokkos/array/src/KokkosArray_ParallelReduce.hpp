@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <sstream>
+#include <KokkosArray_ParallelFor.hpp>
 #include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_ReduceOperator.hpp>
 
@@ -77,6 +78,16 @@ template< class FunctorType , class FinalizeType >
 void parallel_reduce( const size_t         work_count ,
                       const FunctorType  & functor ,
                       const FinalizeType & finalize );
+
+template< class FunctorType >
+typename FunctorType::value_type
+vector_parallel_reduce( const size_t        work_count ,
+                        const FunctorType & functor );
+
+template< class FunctorType , class FinalizeType >
+void vector_parallel_reduce( const size_t         work_count ,
+                             const FunctorType  & functor ,
+                             const FinalizeType & finalize );
 
 } // namespace KokkosArray
 
@@ -119,7 +130,8 @@ namespace Impl {
 template< class FunctorType  /* parallel work operator */ ,
           class ValueOper    /* value_type, init, join */ ,
           class FinalizeType /* serial finalization of reduction value */ ,
-          class DeviceType >
+          class DeviceType ,
+          class WorkSpec = void >
 class ParallelReduce ;
 
 template< class FunctorType ,
@@ -153,6 +165,25 @@ parallel_reduce( const size_t work_count ,
   const FinalizeType finalize ; 
 
   Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+
+  return finalize.result();
+}
+
+template< class FunctorType >
+typename FunctorType::value_type
+vector_parallel_reduce( const size_t work_count ,
+                        const FunctorType & functor )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize ; 
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type , Impl::VectorParallel >
     ( work_count , functor , finalize );
 
   return finalize.result();

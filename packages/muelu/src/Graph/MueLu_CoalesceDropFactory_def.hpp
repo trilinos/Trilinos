@@ -49,16 +49,22 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_StridedMap.hpp>
+#include <Xpetra_Map.hpp>
 
 #include "MueLu_CoalesceDropFactory_decl.hpp"
 
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
@@ -72,6 +78,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
+    validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
     return validParamList;
   }
 
@@ -86,6 +93,9 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
     FactoryMonitor m(*this, "Build", currentLevel);
     if(predrop_ != Teuchos::null) {
       GetOStream(Parameters0, 0) << predrop_->description();
@@ -95,6 +105,103 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
+    const ParameterList  & pL = GetParameterList();
+    bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
+
+    if (doExperimentalWrap) {
+
+      Scalar threshold = STS::zero();
+      if (predrop_ != null) {
+        RCP<PreDropFunctionConstVal> predropConstVal = rcp_dynamic_cast<PreDropFunctionConstVal>(predrop_);
+        TEUCHOS_TEST_FOR_EXCEPTION(predropConstVal == Teuchos::null,Exceptions::BadCast,
+                                   "MueLu::CoalesceFactory::Build: cast to PreDropFunctionConstVal failed.");
+        threshold = predropConstVal->GetThreshold();
+      }
+
+      // Case 1:  scalar problem, no dropping => just use matrix graph
+      if ( (A->GetFixedBlockSize()==1) && ( (predrop_==null) || (predrop_!=null && threshold==STS::zero()) ) ) {
+
+          RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+          Set(currentLevel, "DofsPerNode", 1);
+          Set(currentLevel, "Graph", graph);
+          return;
+      }
+
+      // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
+      //                                          graph's map information, e.g., whether index is local
+      if ( (A->GetFixedBlockSize() == 1) && (predrop_ != null) ) {
+
+        // allocate space for the local graph
+        ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
+        ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+        RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+        const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+
+        RCP<PreDropFunctionConstVal> predropConstVal = rcp_dynamic_cast<PreDropFunctionConstVal>(predrop_);
+        TEUCHOS_TEST_FOR_EXCEPTION(predropConstVal == Teuchos::null,Exceptions::BadCast,
+                                   "MueLu::CoalesceFactory::Build: cast to PreDropFunctionConstVal failed.");
+        //Scalar threshold = predropConstVal->GetThreshold();
+
+        rows[0] = 0;
+        for(LocalOrdinal row=0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
+
+          size_t nnz = A->getNumEntriesInLocalRow(row);
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar> vals;
+          A->getLocalRowView(row, indices, vals);
+
+
+          //FIXME the current predrop function uses the following
+          //FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
+          //FIXME but the threshold doesn't take into account the rows' diagonal entries
+          //FIXME For now, hardwiring the dropping in here
+    
+          LocalOrdinal realnnz = 0;
+          for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); ++col) {
+    
+            // eps*|a_ii|*|a_jj|
+            typename STS::magnitudeType aiiajj = STS::magnitude(threshold)*STS::magnitude(ghostedDiagVals[col]*ghostedDiagVals[row]);
+            // (eps*|a_ii|*|a_jj|)^2
+            aiiajj *= aiiajj;
+            // |a_ij|
+            typename STS::magnitudeType aij = STS::magnitude(vals[col]);
+            // |a_ij|^2
+            aij *= aij;
+            // if |a_ij|^2 > (eps*|a_ii|*|a_jj|)^2, thus avoiding a squareroot
+            if ( aij > aiiajj) {
+              columns[realnnz++] = col;
+            }
+          }
+          rows[row+1] = realnnz;
+    
+        }
+
+        RCP<GraphBase> graph = rcp(new LWGraph(rows,columns,A->getCrsGraph(), "amalgamated graph of A"));
+        Set(currentLevel, "Graph", graph);
+        Set(currentLevel, "DofsPerNode", 1);
+        return;
+
+      } //if ( (A->GetFixedBlockSize() == 1) && (predrop_ != null) )
+
+      // TODO
+      // Case 3:  Multiple DOF/node problem without dropping
+      if ( (A->GetFixedBlockSize() > 1) && (predrop_ == null) ) {
+        throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs is not yet implemented.");
+      }
+
+      // TODO
+      // Case 4:  Multiple DOF/node problem with dropping
+      if ( (A->GetFixedBlockSize() > 1) && (predrop_ != null) ) {
+        throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
+      }
+
+
+    }
+
+    else {
+
+    //what Tobias has implemented
 
     LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
     GlobalOrdinal offset = 0;          // global offset of dof gids
@@ -203,13 +310,16 @@ namespace MueLu {
     //////////////////////////////
 
     // 6) create MueLu Graph object
-    RCP<Graph> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
+    RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
     // 7) store results in Level
     graph->SetBoundaryNodeMap(gBoundaryNodeMap);
     Set(currentLevel, "DofsPerNode", blockdim);
     Set(currentLevel, "Graph", graph);
-  }
+
+    } //if (doExperimentalWrap) ... else ...
+
+  } //Build
 
 } //namespace MueLu
 

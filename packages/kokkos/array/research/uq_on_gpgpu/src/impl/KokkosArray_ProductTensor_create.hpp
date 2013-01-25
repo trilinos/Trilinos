@@ -118,6 +118,27 @@ public:
   }
 };
 
+struct CijkRowCount {
+  unsigned count ;
+  unsigned basis ;
+
+  CijkRowCount()
+  : count(0)
+  , basis(0)
+  {}
+};
+
+struct CompareCijkRowCount {
+
+  bool operator()( const CijkRowCount & lhs ,
+                   const CijkRowCount & rhs ) const
+  {
+    return lhs.count != rhs.count ? lhs.count > rhs.count : (
+      lhs.basis < rhs.basis );
+
+  }
+};
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Create a sparse product tensor on the device
@@ -169,6 +190,30 @@ public:
       if ( i != k && j != k ) { ++coord_work[k]; ++entry_count ; }
     }
 
+    // Pad each row to have size divisble by 32
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      const size_t rem = coord_work[i] % 32;
+      if (rem > 0) {
+	const size_t pad = 32 - rem;
+	coord_work[i] += pad;
+	entry_count += pad;
+      }
+    }
+
+    // Sort based on number of non-zeros
+    std::vector< CijkRowCount > row_count( dimension );
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      row_count[i].count = coord_work[i];
+      row_count[i].basis = i;
+    }
+    std::sort( row_count.begin() , row_count.end() , CompareCijkRowCount() );
+    std::vector<size_type> sorted_row_map( dimension );
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      coord_work[i] = row_count[i].count;
+      sorted_row_map[ row_count[i].basis ] = i;
+    }
+    
+
     type tensor ;
 
     tensor.m_coord = create_crsarray< coord_array_type >( "tensor_coord" , coord_work );
@@ -201,8 +246,9 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
       coord_work[iCoord] = host_coord.row_map[iCoord];
     }
 
+    /*
     for ( typename input_type::const_iterator
-          iter = input.begin() ; iter != input.end() ; ++iter ) {
+	    iter = input.begin() ; iter != input.end() ; ++iter ) {
 
       const size_type i = (*iter).first.coord(0);
       const size_type j = (*iter).first.coord(1);
@@ -210,7 +256,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 
       {
         const size_type n = coord_work[i]; ++coord_work[i];
-        host_value(n) = (*iter).second ;
+        host_value(n) = (*iter).second / 2.0 ;
         host_coord.entries(n,0) = j ;
         host_coord.entries(n,1) = k ;
       }
@@ -227,6 +273,46 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
         host_coord.entries(n,1) = j ;
       }
     }
+    */
+
+    for ( typename input_type::const_iterator
+	    iter = input.begin() ; iter != input.end() ; ++iter ) {
+
+      const size_type i = (*iter).first.coord(0);
+      const size_type j = (*iter).first.coord(1);
+      const size_type k = (*iter).first.coord(2);
+
+      {
+	const size_type row = sorted_row_map[i];
+        const size_type n = coord_work[row]; ++coord_work[row];
+        host_value(n) = (*iter).second / 2.0 ;
+        host_coord.entries(n,0) = j ;
+        host_coord.entries(n,1) = k ;
+	//host_coord.entries(n,0) = ( k << 16 ) | j ;
+      }
+      if ( i != j ) {
+	const size_type row = sorted_row_map[j];
+        const size_type n = coord_work[row]; ++coord_work[row];
+        host_value(n) = (*iter).second ;
+        host_coord.entries(n,0) = i ;
+        host_coord.entries(n,1) = k ;
+	//host_coord.entries(n,0) = ( k << 16 ) | i ;
+      }
+      if ( i != k && j != k ) {
+	const size_type row = sorted_row_map[k];
+        const size_type n = coord_work[row]; ++coord_work[row];
+        host_value(n) = (*iter).second ;
+        host_coord.entries(n,0) = i ;
+        host_coord.entries(n,1) = j ;
+	//host_coord.entries(n,0) = ( j << 16 ) | i ;
+      }
+    }
+
+    // for (size_type i=0; i<dimension; ++i) {
+    //   size_type iBeg = host_coord.row_map[i];
+    //   size_type iEnd = host_coord.row_map[i+1];
+    //   std::cout << "Row " << i << " has size " << iEnd-iBeg << std::endl;
+    // }
 
     KokkosArray::deep_copy( tensor.m_coord.entries , host_coord.entries );
     KokkosArray::deep_copy( tensor.m_value , host_value );

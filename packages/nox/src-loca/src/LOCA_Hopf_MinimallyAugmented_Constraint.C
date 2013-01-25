@@ -296,7 +296,7 @@ setParam(int paramID, double val)
 
 void
 LOCA::Hopf::MinimallyAugmented::Constraint::
-setParams(const vector<int>& paramIDs, 
+setParams(const std::vector<int>& paramIDs, 
 	  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -311,7 +311,7 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -397,20 +397,20 @@ computeConstraints()
 //     (*b_vector)[1].innerProduct((*v_vector)[0]);
 //   rs1 -= one;
 
-//   cout << "rV = " << endl;
+//   std::cout << "rV = " << std::endl;
 //   rV->print(cout);
 
-//   cout << "rs1 = " << endl;
+//   std::cout << "rs1 = " << std::endl;
 //   rs1.print(cout);
 
-//   cout << "checking error..." << endl;
+//   std::cout << "checking error..." << std::endl;
 //   Teuchos::RCP<NOX::Abstract::MultiVector> rV = 
 //     V->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs1(2,1);
 //   borderedSolver->apply(*V, s1, *rV, rs1);
 //   rs1 -= one;
-//   cout << "rV->norm() = " << (*rV)[0].norm() << endl;
-//   cout << "rs1.norm() = " << rs1.normInf() << endl;
+//   std::cout << "rV->norm() = " << (*rV)[0].norm() << std::endl;
+//   std::cout << "rs1.norm() = " << rs1.normInf() << std::endl;
 
   // Compute sigma_2 and left null vector w
   NOX::Abstract::MultiVector::DenseMatrix s2(2,1);
@@ -461,10 +461,10 @@ computeConstraints()
 //     (*a_vector)[1].innerProduct((*w_vector)[0]);
 //   rs2 -= one;
 
-//   cout << "rW = " << endl;
+//   std::cout << "rW = " << std::endl;
 //   rW->print(cout);
 
-//   cout << "rs2 = " << endl;
+//   std::cout << "rs2 = " << std::endl;
 //   rs2.print(cout);
 
 //   Teuchos::RCP<NOX::Abstract::MultiVector> rW = 
@@ -472,8 +472,8 @@ computeConstraints()
 //   NOX::Abstract::MultiVector::DenseMatrix rs2(2,1);
 //   borderedSolver->applyTranspose(*W, s2, *rW, rs2);
 //   rs2 -= one;
-//   cout << "rW->norm() = " << (*rW)[0].norm() << endl;
-//   cout << "rs2.norm() = " << rs2.normInf() << endl;
+//   std::cout << "rW->norm() = " << (*rW)[0].norm() << std::endl;
+//   std::cout << "rs2.norm() = " << rs2.normInf() << std::endl;
   
   // Compute sigma = -w^T*J*v
   status = grpPtr->applyComplex((*v_vector)[0], (*v_vector)[1],
@@ -551,7 +551,7 @@ computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -583,11 +583,11 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::Constraint::
-computeDP(const vector<int>& paramIDs, 
+computeDP(const std::vector<int>& paramIDs, 
 	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 	  bool isValidG)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -687,7 +687,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::Constraint::
 computeDOmega(NOX::Abstract::MultiVector::DenseMatrix& domega)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDOmega()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

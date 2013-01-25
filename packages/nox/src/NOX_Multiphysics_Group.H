@@ -50,9 +50,10 @@
 
 #include "NOX_Abstract_Group.H"         // Base class
 #include "NOX_MultiVector.H" 
-#include "NOX_Common.H"                 // for string 
+#include "NOX_Common.H"                 // for std::string 
 #include "NOX.H"                        // for NOX::Solver::Manager
 #include "Teuchos_RCP.hpp" 
+#include <vector>
 
 namespace NOX {
   namespace Parameter {
@@ -95,7 +96,7 @@ namespace Multiphysics {
      \note Constructors for any derived object should always define a default
      x-value so that getX() is always defined.
    */
-   Group( const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+   Group( const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
           const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
           const Teuchos::RCP<Teuchos::ParameterList>& p);
 
@@ -241,7 +242,7 @@ protected:
 protected:
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
+  Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
 
   /** @name IsValid flags 
    *  

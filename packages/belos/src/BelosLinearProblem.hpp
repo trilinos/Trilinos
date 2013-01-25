@@ -186,7 +186,7 @@ namespace Belos {
     /// We make no attempt to detect the symmetry of the operators, so
     /// we cannot check whether this method has been called
     /// incorrectly.
-    void setHermitian() { isHermitian_ = true; }
+    void setHermitian( bool isSym = true ) { isHermitian_ = isSym; }
    
     /// \brief Set the label prefix used by the timers in this object.  
     ///

@@ -47,6 +47,7 @@
 
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 namespace panzer {
 
@@ -133,9 +134,12 @@ public:
    //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
 
+   //! Access to volume worksets
+   Teuchos::RCP<std::vector<Workset> > getWorksets(const WorksetDescriptor & wd);
+
    //! Access, and construction of volume worksets
    Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > getVolumeWorksets() const;
- 
+
    //! Access, and construction of side worksets
    Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
 
@@ -166,7 +170,8 @@ public:
    void allocateSideWorksets(const std::vector<BC> & bcs);
 
 private:
-   typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
+   // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
+   typedef boost::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
    typedef std::map<SideId,Teuchos::RCP<std::map<unsigned,Workset> >,LessSide> SideMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets

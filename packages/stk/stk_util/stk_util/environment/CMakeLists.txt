@@ -42,7 +42,7 @@ FormatTime.hpp
 FormatMemorySize.hpp
   )
 
-IF ( TPL_ENABLE_BoostLib )
+IF ( STK_ENABLE_BoostLib )
   APPEND_SET(HEADERS ProgramOptions.hpp)
 ENDIF()
 
@@ -61,12 +61,12 @@ FormatTime.cpp
 FormatMemorySize.cpp
   )
 
-IF ( TPL_ENABLE_BoostLib )
+IF ( STK_ENABLE_BoostLib )
   APPEND_SET(SOURCES ProgramOptions.cpp)
 ENDIF()
 
 
-IF (TPL_ENABLE_MPI)
+IF (STK_ENABLE_MPI)
 ENDIF()
 
 #

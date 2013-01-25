@@ -52,28 +52,33 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_BaseClass.hpp"
 #include "MueLu_Graph_fwd.hpp"
-
-/******************************************************************************
-   MueLu representation of a graph.
-******************************************************************************/
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 
+/*!
+   @class Graph
+   @brief MueLu representation of a compressed row storage graph.
+
+   This class holds an underlying Xpetra_CrsGraph.
+   This class can be considered a facade, as MueLu needs only limited functionality for aggregation.
+*/
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class Graph
-    : public BaseClass {
+    : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> { //FIXME  shortnames isn't working
 #undef MUELU_GRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
 
+    //! @name Constructors/Destructors.
+    //@{
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
-      //setObjectLabel(objectLabel);
     }
 
     virtual ~Graph() {}
+    //@}
 
     size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
     size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
@@ -83,29 +88,29 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
 
-    //! returns overlapping import map (nodes)
+    //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
 
-    //! set map with global ids of boundary nodes
+    //! Set map with global ids of boundary nodes.
     void SetBoundaryNodeMap(const RCP<const Map> & gBoundaryNodeMap) { gBoundaryNodeMap_ = gBoundaryNodeMap; }
 
-    //! returns map with global ids of boundary nodes
+    //! Returns map with global ids of boundary nodes.
     const RCP<const Map> GetBoundaryNodeMap() const { return gBoundaryNodeMap_; }
 
-    //! Return the list of vertices adjacent to the vertex 'v'
+    //! Return the list of vertices adjacent to the vertex 'v'.
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
-    //! Return true if vertex with local id 'v' is on current proc
+    //! Return true if vertex with local id 'v' is on current process.
     bool isLocalNeighborVertex(LocalOrdinal v) const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
 #endif
 
-    /// Return a simple one-line description of this object.
+    /// Return a simple one-line description of the Graph.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    //! Print the Graph with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
@@ -114,8 +119,8 @@ namespace MueLu {
 
     RCP<const CrsGraph> graph_;
 
-    // vector of global boundary node IDs on current proc
     //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
+    //! Vector of global boundary node IDs on current process.
     RCP<const Map> gBoundaryNodeMap_;
 
   };

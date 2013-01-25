@@ -565,6 +565,22 @@ namespace Tpetra {
 
     //@}
 
+    //! Advanced methods
+    //@{
+
+    //! \brief Create a shallow copy of this map, templated on a different node type
+    template <class Node2>
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const;
+
+    //@}
+
+  protected:
+
+    template <class LO, class GO, class N> friend class Map;
+
+    //! Empty constructor; used for post-construction initialization in clone()
+    Map() {}
+
   private:
 
     //! Create this Map's Directory, if it hasn't been created already.
@@ -662,16 +678,17 @@ namespace Tpetra {
     /// noncontiguous map constructor.  For noncontiguous maps, the \c
     /// getLocalElement() and \c isNodeGlobalElement() methods use
     /// this mapping.
-    global_to_local_table_type glMap_;
+    RCP<global_to_local_table_type> glMap_;
 
     /// \brief A Directory for looking up nodes for this Map.
     ///
-    /// This directory is a nonowning RCP and is therefore not allowed
-    /// to persist beyond the lifetime of this Map.  Never allow this
-    /// pointer to escape the Map.  It must be a nonowning RCP since
-    /// the directory in turn must hold an RCP to this Map; making
-    /// this an owning RCP would cause a circular dependency which
-    /// would break reference counting.
+    /// *** This directory is not allowed to persist beyond the lifetime of this Map ***
+    ///
+    /// Never allow this pointer to escape the Map.
+    /// The directory must hold an RCP to this Map, which must be non-owning
+    /// to prevent a circular dependency.
+    /// Therefore, allowing the Directory to persist beyond this Map would result
+    /// in a dangling RCP. We avoid this by not sharing the Directory.
     Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
@@ -796,7 +813,40 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
+
 } // Tpetra namespace
+
+#include "Tpetra_Directory_decl.hpp"
+
+namespace Tpetra {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Node2>
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> >
+  Map<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
+  {
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+    RCP<Map2> map = rcp(new Map2());
+    // the same old stuff...
+    map->comm_              = comm_;
+    map->indexBase_         = indexBase_;
+    map->numGlobalElements_ = numGlobalElements_;
+    map->numLocalElements_  = numLocalElements_;
+    map->minMyGID_          = minMyGID_;
+    map->maxMyGID_          = maxMyGID_;
+    map->minAllGID_         = minAllGID_;
+    map->maxAllGID_         = maxAllGID_;
+    map->contiguous_        = contiguous_;
+    map->distributed_       = distributed_;
+    map->lgMap_             = lgMap_;
+    map->glMap_             = glMap_;
+    // the hot new stuff!
+    map->node_              = node2;
+    if (directory_ != null) {
+      map->directory_ = directory_->template clone<Node2>(map.create_weak());
+    }
+    return map;
+  }
+}
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map

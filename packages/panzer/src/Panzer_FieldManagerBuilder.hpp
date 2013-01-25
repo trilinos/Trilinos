@@ -72,12 +72,12 @@ namespace panzer {
 
   class GenericEvaluatorFactory {
   public:
-    virtual bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const = 0;
+    virtual bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm,const WorksetDescriptor & wd, const PhysicsBlock & pb) const = 0;
   };
 
   class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
   public:
-    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const 
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const WorksetDescriptor & wd, const PhysicsBlock & pb) const 
     { return false; }
   };
 
@@ -107,19 +107,19 @@ namespace panzer {
 
     //! Look up field manager by an element block ID
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> >
-    getVolumeFieldManager(const std::string & blockId) const 
+    getVolumeFieldManager(const WorksetDescriptor & wd) const 
     {
-       const std::vector<std::string> & blockNames = getElementBlockNames();
-       std::vector<std::string>::const_iterator itr = std::find(blockNames.begin(),blockNames.end(),blockId);
-       TEUCHOS_ASSERT(itr!=blockNames.end());
+       const std::vector<WorksetDescriptor> & wkstDesc = getVolumeWorksetDescriptors();
+       std::vector<WorksetDescriptor>::const_iterator itr = std::find(wkstDesc.begin(),wkstDesc.end(),wd);
+       TEUCHOS_ASSERT(itr!=wkstDesc.end());
 
        // get volume field manager associated with the block ID
-       int index = itr - blockNames.begin();
+       int index = itr - wkstDesc.begin();
        return getVolumeFieldManagers()[index];
     }
 
-    const std::vector<std::string> &
-      getElementBlockNames() const {return element_block_names_;}
+    const std::vector<WorksetDescriptor> &
+      getVolumeWorksetDescriptors() const { return volume_workset_desc_; }
 
     const std::map<panzer::BC, 
 		   std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
@@ -142,6 +142,7 @@ namespace panzer {
 				  const Teuchos::ParameterList& user_data);
 
     void setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                  const std::vector<WorksetDescriptor> & wkstDesc,
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
@@ -191,9 +192,9 @@ namespace panzer {
       phx_volume_field_managers_;
 
     /** \brief Matches volume field managers so you can determine
-      *        the element block name for each field manager.
+      *        the appropriate set of worksets for each field manager.
       */
-    std::vector<std::string> element_block_names_;
+    std::vector<WorksetDescriptor> volume_workset_desc_;
     
     /*! \brief Field managers for the boundary conditions
 

@@ -220,8 +220,8 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
       (*evecs_i)[i].update(-1.0, (*evecs)[i], 0.0);
     }
     else {
-      string func = "LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues()";
-      stringstream ss;
+      std::string func = "LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues()";
+      std::stringstream ss;
       ss << "Unknown anasazi index " << anasaziSolution.index[i];
       globalData->locaErrorCheck->throwError(func, ss.str());
     }

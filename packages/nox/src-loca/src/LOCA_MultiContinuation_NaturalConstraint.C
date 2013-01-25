@@ -129,7 +129,7 @@ LOCA::MultiContinuation::NaturalConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::NaturalConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   isValidConstraints = false;
@@ -166,11 +166,11 @@ LOCA::MultiContinuation::NaturalConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::NaturalConstraint::computeDP(
-		                const vector<int>& paramIDs, 
+		                const std::vector<int>& paramIDs, 
 		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 				bool isValidG)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::MultiContinuation::NaturalConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -191,7 +191,7 @@ LOCA::MultiContinuation::NaturalConstraint::computeDP(
   // If a param ID is equal to a constraint param ID, then that column
   // of dgdp is given by that column of the identity matrix, other wise
   // that column is zero
-  vector<int>::const_iterator it;
+  std::vector<int>::const_iterator it;
   for (unsigned int i=0; i<paramIDs.size(); i++) {
     for (int k=0; k<constraints.numRows(); k++)
 	dgdp(k,i+1) = 0.0;

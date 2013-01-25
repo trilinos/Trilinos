@@ -67,6 +67,7 @@ public:
   ValueType & operator * () const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
+
       return *m_ptr_on_device ;
     }
 
@@ -74,6 +75,7 @@ public:
   ValueType & operator()( void ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
+
       return *m_ptr_on_device ;
     }
 };
@@ -99,6 +101,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -109,6 +112,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -135,6 +139,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * i1 ];
     }
@@ -164,6 +169,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * i2 ) ];
@@ -195,6 +201,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * (
@@ -229,6 +236,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * (
@@ -264,6 +272,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * (
@@ -302,6 +311,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * (
@@ -341,6 +351,7 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_shape.Stride * (
                               i1 + m_shape.N1 * (

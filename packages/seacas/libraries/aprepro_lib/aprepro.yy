@@ -50,7 +50,9 @@ namespace SEAMS {
 %token	<string> QSTRING	/* Quoted string			*/
 %token	<tptr>	UNDVAR 	/* Variable and function		*/
 %token  <tptr>  VAR
-%token	<tptr>	SVAR 	/* String Variable and function		*/
+%token	<tptr>	SVAR 	/* String Variable */
+%token  <tptr>  IMMVAR  /* Immutable Variable */
+%token	<tptr>	IMMSVAR /* Immutable String Variable */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
 %type	<val>	exp 
@@ -133,23 +135,22 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
 
 sexp:     QSTRING		{ $$ = $1;				}
         | SVAR			{ $$ = (char*)$1->value.svar;			}
+        | IMMSVAR		{ $$ = (char*)$1->value.svar;			}
     	| UNDVAR EQUAL sexp	{ $$ = $3; $1->value.svar = $3;
-				  $1->type = token::SVAR;			}
-        | SVAR EQUAL sexp		{ $$ = $3; 
+		                  set_type(aprepro, $1, Parser::token::SVAR);	}
+        | SVAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar = $3;
 				  redefined_warning(aprepro, $1->name);          }
-        | VAR EQUAL sexp		{ $$ = $3; 
+        | VAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1->name);          
-				  $1->type = token::SVAR; 		}
+		                  set_type(aprepro, $1, token::SVAR);		}
+	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
+        | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | SFNCT LPAR sexp RPAR	{ $$ = (char*)(*($1->value.strfnct_c))($3);	}
 	| SFNCT LPAR RPAR	{ $$ = (char*)(*($1->value.strfnct))();	}
         | SFNCT LPAR exp  RPAR	{ $$ = (char*)(*($1->value.strfnct_d))($3);	}
-        | sexp CONCAT sexp	{ int len1 = strlen($1);
-				  int len3 = strlen($3);
-				  $$ = (char*)calloc(1, (len1+len3+1));
-				  memcpy($$, $1, len1+1);
-				  strcat($$, $3); }
+        | sexp CONCAT sexp	{ concat_string($1, $3, &$$); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
 				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR
@@ -162,6 +163,7 @@ exp:	  NUM			{ $$ = $1; 				}
         | INC NUM		{ $$ = $2 + 1;				}
         | DEC NUM		{ $$ = $2 - 1;				}
         | VAR			{ $$ = $1->value.var;			}
+        | IMMVAR		{ $$ = $1->value.var;			}
 	| INC VAR		{ $$ = ++($2->value.var);		}
 	| DEC VAR		{ $$ = --($2->value.var);		}
 	| VAR INC		{ $$ = ($1->value.var)++;		}
@@ -170,7 +172,7 @@ exp:	  NUM			{ $$ = $1; 				}
 				  redefined_warning(aprepro, $1->name);          }
 	| SVAR EQUAL exp		{ $$ = $3; $1->value.var = $3;
 				  redefined_warning(aprepro, $1->name);          
-				  $1->type = token::VAR;			}
+		                  set_type(aprepro, $1, token::VAR);			}
 	| VAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; }
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }
 	| VAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; }
@@ -180,38 +182,50 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = $1->value.var; 
 				  SEAMS::math_error(aprepro, "Power");
 				}
+        | INC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
+	| DEC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
+	| IMMVAR INC		{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR DEC		{ immutable_modify(aprepro, $1); YYERROR; }
+        | IMMVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMSVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_PLUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_MINUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_TIME exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_DIV exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_POW exp	{ immutable_modify(aprepro, $1); YYERROR; }
+
 	| UNDVAR		{ $$ = $1->value.var;
 				  undefined_warning(aprepro, $1->name);          }
 	| INC UNDVAR		{ $$ = ++($2->value.var);		
-				  $2->type = token::VAR;                       
+		                  set_type(aprepro, $2, token::VAR);
 				  undefined_warning(aprepro, $2->name);          }
 	| DEC UNDVAR		{ $$ = --($2->value.var);		
-				  $2->type = token::VAR;                       
+		                  set_type(aprepro, $2, token::VAR);
 				  undefined_warning(aprepro, $2->name);          }
 	| UNDVAR INC		{ $$ = ($1->value.var)++;		
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR DEC		{ $$ = ($1->value.var)--;		
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR EQUAL exp	{ $$ = $3; $1->value.var = $3;
-				  $1->type = token::VAR;                       }
+		                  set_type(aprepro, $1, token::VAR);                      }
 	| UNDVAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; 
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; 
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; 
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  undefined_warning(aprepro, $1->name);          }
 	| UNDVAR EQ_POW exp	{ errno = 0;
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
-				  $1->type = token::VAR;                       
+		                  set_type(aprepro, $1, token::VAR);
 				  SEAMS::math_error(aprepro, "Power");
 				  undefined_warning(aprepro, $1->name);          }
 	| FNCT LPAR RPAR		{ $$ = (*($1->value.fnctptr))();	}

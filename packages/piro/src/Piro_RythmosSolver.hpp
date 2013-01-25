@@ -43,13 +43,16 @@
 #ifndef PIRO_RYTHMOSSOLVER_H
 #define PIRO_RYTHMOSSOLVER_H
 
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Piro_RythmosStepperFactory.hpp"
+
+#include <map>
+#include <string>
 
 /** \brief Thyra-based Model Evaluator subclass for Charon!
  *
@@ -71,10 +74,13 @@ public:
   /** \name Constructors/initializers */
   //@{
 
+  /** \brief Initializes the internals, though the object is a blank slate. To initialize it call <code>initialize</code> */
+  RythmosSolver();
+
   /** \brief Initialize with internally built objects according to the given parameter list. */
   RythmosSolver(
       Teuchos::RCP<Teuchos::ParameterList> appParams,
-      Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model,
+      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
       Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -82,9 +88,9 @@ public:
       const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -93,12 +99,17 @@ public:
       const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
+
+  void initialize(
+      Teuchos::RCP<Teuchos::ParameterList> appParams,
+      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
+      Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
 
   Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
@@ -113,6 +124,9 @@ public:
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
+
+  void addStepperFactory(const std::string & stepperName,
+                         const Teuchos::RCP<RythmosStepperFactory<Scalar> > & stepperFactories);
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -135,8 +149,8 @@ private:
   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
 
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > initialConditionModel;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel;
 
   Scalar t_initial;
   Scalar t_final;
@@ -146,9 +160,15 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel solnVerbLevel;
+
+  // used for adding user defined steppers externally, this gives us "the open-close principal"
+  std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > > stepperFactories;
+  
+  bool isInitialized;
 };
 
 }
 
 #include "Piro_RythmosSolver_Def.hpp"
+
 #endif

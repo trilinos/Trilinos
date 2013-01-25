@@ -59,7 +59,7 @@
 #include "exodusII_int.h"
 
 /*
- * writes the attributes for an element block
+ * \deprecated Use ex_put_partial_attr() instead.
  */
 
 int ex_put_n_elem_attr (int   exoid,
@@ -68,116 +68,5 @@ int ex_put_n_elem_attr (int   exoid,
                         int64_t   num_elems,
                         void *attrib)
 {
-  int status;
-  int numelbdim, numattrdim, attrid, elem_blk_id_ndx;
-  size_t num_elem_this_blk, num_attr, start[2], count[2];
-  char errmsg[MAX_ERR_LENGTH];
-
-  exerrval = 0; /* clear error code */
-
-  /* Determine index of elem_blk_id in VAR_ID_EL_BLK array */
-  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
-    if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg,
-              "Warning: no attributes allowed for NULL block %"PRId64" in file id %d",
-              elem_blk_id, exoid);
-      ex_err("ex_put_n_elem_attr",errmsg,EX_MSG);
-      return (EX_WARN);              /* no attributes for this element block */
-    } else {
-      sprintf(errmsg,
-             "Error: no element block id %"PRId64" in %s array in file id %d",
-              elem_blk_id, VAR_ID_EL_BLK, exoid);
-      ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-
-  /* inquire id's of previously defined dimensions  */
-  if ((status = nc_inq_dimid (exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
-    if (status == NC_EBADDIM) {
-      exerrval = status;
-      sprintf(errmsg,
-         "Error: no element block with id %"PRId64" in file id %d",
-             elem_blk_id, exoid);
-      ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-      return (EX_FATAL);
-    } else {
-      exerrval = status;
-      sprintf(errmsg,
-        "Error: failed to locate number of elements for block %"PRId64" in file id %d",
-             elem_blk_id, exoid);
-      ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-
-
-  if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-           "Error: failed to get number of elements for block %"PRId64" in file id %d",
-            elem_blk_id, exoid);
-    ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_ATT_IN_BLK(elem_blk_id_ndx), &numattrdim)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-           "Error: number of attributes not defined for block %"PRId64" in file id %d",
-            elem_blk_id, exoid);
-    ex_err("ex_put_n_elem_attr",errmsg,EX_MSG);
-    return (EX_FATAL);              /* number of attributes not defined */
-  }
-
-  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-         "Error: failed to get number of attributes for block %"PRId64" in file id %d",
-            elem_blk_id, exoid);
-    ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_varid (exoid, VAR_ATTRIB(elem_blk_id_ndx), &attrid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-        "Error: failed to locate attribute variable for block %"PRId64" in file id %d",
-            elem_blk_id, exoid);
-    ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* do some error checking */
-  if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
-    exerrval = status;
-    sprintf(errmsg,
-      "Error: requested attributes from too many elements in block %"PRId64,
-            elem_blk_id);
-    ex_err("ex_put_n_elem_attr",errmsg, exerrval);
-    return(EX_FATAL);
-  }
-
-  /* write out the attributes  */
-  start[0] = --start_elem_num;
-  start[1] = 0;
-
-  count[0] = num_elems;
-  count[1] = num_attr;
-
-  if (ex_comp_ws(exoid) == 4) {
-    status = nc_put_vara_float(exoid, attrid, start, count, attrib);
-  } else {
-    status = nc_put_vara_double(exoid, attrid, start, count, attrib);
-  }
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: failed to put attributes for block %"PRId64" in file id %d",
-            elem_blk_id, exoid);
-    ex_err("ex_put_n_elem_attr",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-  return(EX_NOERR);
+  return ex_put_partial_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num, num_elems, attrib);
 }

@@ -294,7 +294,7 @@ size_t Ioss::Map::map_field_to_db_scalar_order(T* variables, std::vector<double>
       // Map to storage location.
       ssize_t where = reorder[k++] - offset;
       if (where >= 0) {
-	assert(where < count);
+	assert(where < (ssize_t)count);
 	db_var[where] = variables[j];
 	num_out++;
       }
@@ -361,10 +361,10 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
     else
       local = 0;
     assert(!must_exist || iter.first != iter.second);
-  } else if (!must_exist && global > map.size()-1) {
+  } else if (!must_exist && global > (int64_t)map.size()-1) {
     local = 0;
   }
-  if (local > map.size()-1 || (local <= 0  && must_exist)) {
+  if (local > (int64_t)map.size()-1 || (local <= 0  && must_exist)) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Ioss Mapping routines detected " << entityType << " with global id equal to " << global
 	   << " returns a local id of " << local

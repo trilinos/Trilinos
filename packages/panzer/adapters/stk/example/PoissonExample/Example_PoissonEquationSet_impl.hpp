@@ -95,17 +95,13 @@ PoissonEquationSet(const panzer::InputEquationSet& ies,
    // ********************
    // Assemble DOF names and Residual names
    // ********************
-   this->m_dof_names->push_back("TEMPERATURE");
- 
-   this->m_dof_gradient_names->push_back("GRAD_TEMPERATURE");
- 
-   if(this->m_build_transient_support)
-      this->m_dof_time_derivative_names->push_back("DOT_TEMPERATURE");
- 
-   this->m_residual_names->push_back("RESIDUAL_TEMPERATURE");
- 
    this->m_scatter_name = "Scatter_RESIDUAL_TEMPERATURE";
  
+   this->addProvidedDOF("TEMPERATURE","RESIDUAL_TEMPERATURE");
+   this->addDOFGrad("TEMPERATURE","GRAD_TEMPERATURE");
+   if (this->buildTransientSupport())
+     this->addDOFTimeDerivative("TEMPERATURE","DOT_TEMPERATURE");
+
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************

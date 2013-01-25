@@ -99,7 +99,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = pitchforkParams->get(
+  std::string bifParamName = pitchforkParams->get(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
@@ -258,7 +258,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -308,7 +308,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -371,7 +371,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -479,7 +479,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -688,7 +688,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNewtonPtr() const
 double
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Pitchfork::MooreSpence::ExtendedVector residual = *fVec;
@@ -752,7 +752,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::copy(
 
 void
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -785,7 +785,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(int paramID,
 }
 
 void
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(string paramID, 
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(std::string paramID, 
 						      double val)
 {
   const LOCA::ParameterVector& pVec = grpPtr->getParams();
@@ -808,18 +808,18 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(int paramID) const
 }
 
 double
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(string paramID) const
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti(
-					    const vector<int>& paramIDs, 
+					    const std::vector<int>& paramIDs, 
 					    NOX::Abstract::MultiVector& dfdp, 
 					    bool isValid_F)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1044,7 +1044,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(bool perturbSoln,
      globalData->locaUtils->out() << 
        "\tIn LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(), " << 
        "applying random perturbation to initial solution of size: " << 
-       globalData->locaUtils->sciformat(perturbSize) << endl;
+       globalData->locaUtils->sciformat(perturbSize) << std::endl;
     }
     Teuchos::RCP<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);

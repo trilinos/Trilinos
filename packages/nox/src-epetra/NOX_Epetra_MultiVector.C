@@ -198,14 +198,14 @@ NOX::Epetra::MultiVector::random(bool useSeed, int seed)
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::setBlock(const NOX::Abstract::MultiVector& source, 
-				   const vector<int>& index) {
+				   const std::vector<int>& index) {
   return setBlock(dynamic_cast<const NOX::Epetra::MultiVector&>(source),
 		  index);
 }
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::setBlock(const NOX::Epetra::MultiVector& source, 
-				   const vector<int>& index) {
+				   const std::vector<int>& index) {
   double* vecPtr;
   double *sourceVecPtr;
   int ind;
@@ -262,8 +262,8 @@ NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i)
 {
   if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
-    cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
-	 << i << endl;
+    std::cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << std::endl;
     throw "NOX::Epetra Error";
   }
   if (noxEpetraVectors[i] == NULL) {
@@ -279,8 +279,8 @@ const NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i) const
 {
   if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
-    cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
-	 << i << endl;
+    std::cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << std::endl;
     throw "NOX::Epetra Error";
   }
   if (noxEpetraVectors[i] == NULL) {
@@ -400,7 +400,7 @@ NOX::Epetra::MultiVector::clone(int numvecs) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector> 
-NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
+NOX::Epetra::MultiVector::subCopy(const std::vector<int>& index) const
 {
   int numvecs = index.size();
   Teuchos::RCP<NOX::Epetra::MultiVector> newVec = 
@@ -413,7 +413,7 @@ NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Epetra::MultiVector::subView(const vector<int>& index) const
+NOX::Epetra::MultiVector::subView(const std::vector<int>& index) const
 {
   int numvecs = index.size();
   Teuchos::RCP<NOX::Epetra::MultiVector> newVec = 
@@ -426,7 +426,7 @@ NOX::Epetra::MultiVector::subView(const vector<int>& index) const
 }
 
 void 
-NOX::Epetra::MultiVector::norm(vector<double>& result,
+NOX::Epetra::MultiVector::norm(std::vector<double>& result,
 			       NOX::Abstract::Vector::NormType type) const
 {
   switch (type) {
@@ -486,7 +486,7 @@ void NOX::Epetra::MultiVector::print(std::ostream& stream) const
 void NOX::Epetra::MultiVector::checkIndex(int idx) const 
 {
   if ( idx < 0 || idx >= epetraMultiVec->NumVectors() ) {
-    cerr << "NOX::Epetra::MultiVector:  Error!  Invalid index " << idx << endl;
+    std::cerr << "NOX::Epetra::MultiVector:  Error!  Invalid index " << idx << std::endl;
     throw "NOX::Epetra Error";
   }
 }

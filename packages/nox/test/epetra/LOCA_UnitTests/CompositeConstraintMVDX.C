@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     }
 
 
-    vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintObjs(4);
+    std::vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintObjs(4);
     Teuchos::RCP<LinearConstraint> linear_constraint;
 
     linear_constraint = Teuchos::rcp(new LinearConstraint(dx1->numVectors(),
@@ -321,23 +321,23 @@ int main(int argc, char *argv[])
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 
   if (MyPID == 0) {
     if (ierr == 0)
-      cout << "All tests passed!" << endl;
+      std::cout << "All tests passed!" << std::endl;
     else
-      cout << ierr << " test(s) failed!" << endl;
+      std::cout << ierr << " test(s) failed!" << std::endl;
   }
 
 #ifdef HAVE_MPI

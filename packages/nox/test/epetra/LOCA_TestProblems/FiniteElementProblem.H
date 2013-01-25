@@ -84,7 +84,7 @@ public:
   virtual Epetra_CrsMatrix& getJacobian() = 0;
 
   // Set a bifurcation parameter in the application physics
-  virtual bool setParameter(string label, double value) = 0;
+  virtual bool setParameter(std::string label, double value) = 0;
 
 };
 #endif

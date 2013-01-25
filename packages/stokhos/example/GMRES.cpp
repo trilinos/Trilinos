@@ -9,7 +9,6 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Stokhos.hpp"
-#include "Stokhos_Sacado.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TestForException.hpp"

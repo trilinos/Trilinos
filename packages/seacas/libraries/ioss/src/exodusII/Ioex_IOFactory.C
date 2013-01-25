@@ -50,6 +50,7 @@ namespace Ioss { class DatabaseIO; }
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_external_decomposition_property(MPI_Comm comm);
+  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage);
 }
 #endif
 
@@ -83,25 +84,39 @@ namespace Ioex {
     // 2. There is a DECOMPOSITION_METHOD specified in 'properties'
     // 3. The decomposition method is not "EXTERNAL"
 
+    int proc_count = 1;
+    if (communicator != MPI_COMM_NULL) {
+      MPI_Comm_size(communicator, &proc_count);
+    }
+    
     bool decompose = false;
-    if (db_usage == Ioss::READ_MODEL) {
-      int proc_count = 1;
-      if (communicator != MPI_COMM_NULL) {
-	MPI_Comm_size(communicator, &proc_count);
-
-	if (proc_count > 1) {
-	  // Check for property...
-	  if (properties.exists("DECOMPOSITION_METHOD")) {
-	    std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
-	    if (method != "EXTERNAL") {
-	      decompose = true;
-	    }
-	  } else {
-	    std::string method = check_external_decomposition_property(communicator);
-	    if (!method.empty() && method != "EXTERNAL") {
-	      decompose = true;
-	    }
+    if (proc_count > 1) {
+      if (db_usage == Ioss::READ_MODEL) {
+	// Check for property...
+	if (properties.exists("DECOMPOSITION_METHOD")) {
+	  std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
+	  if (method != "EXTERNAL") {
+	    decompose = true;
 	  }
+	} else {
+	  std::string method = check_external_decomposition_property(communicator);
+	  if (!method.empty() && method != "EXTERNAL") {
+	    decompose = true;
+	  }
+	}
+      }
+      else if (db_usage == Ioss::WRITE_RESULTS) {
+	if (properties.exists("COMPOSE_RESULTS")) {
+	  decompose = true;
+	} else if (check_external_composition_property(communicator, db_usage)) {
+	  decompose = true;
+	}
+      }
+      else if (db_usage == Ioss::WRITE_RESTART) {
+	if (properties.exists("COMPOSE_RESTART")) {
+	  decompose = true;
+	} else if (check_external_composition_property(communicator, db_usage)) {
+	  decompose = true;
 	}
       }
     }
@@ -150,6 +165,37 @@ namespace {
       }
     }
     return decomp_method;
+  }
+
+  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage)
+  {
+    // Check environment variable IOSS_PROPERTIES. If it exists, parse
+    // the contents and see if it specifies the use of a single file for output...
+
+    bool compose = false;
+    Ioss::ParallelUtils util(comm);
+    std::string env_props;
+    if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
+      // env_props string should be of the form
+      // "PROP1=VALUE1:PROP2=VALUE2:..."
+      std::vector<std::string> prop_val;
+      Ioss::tokenize(env_props, ":", prop_val);
+    
+      for (size_t i=0; i < prop_val.size(); i++) {
+	std::vector<std::string> property;
+	Ioss::tokenize(prop_val[i], "=", property);
+	std::string prop = Ioss::Utils::uppercase(property[0]);
+	if (db_usage == Ioss::WRITE_RESULTS && prop == "COMPOSE_RESULTS") {
+	  compose = true;
+	  break;
+	}
+	else if (db_usage == Ioss::WRITE_RESTART && prop == "COMPOSE_RESTART") {
+	  compose = true;
+	  break;
+	}
+      }
+    }
+    return compose;
   }
 }
 #endif

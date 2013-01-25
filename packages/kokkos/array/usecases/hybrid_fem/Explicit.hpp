@@ -362,15 +362,18 @@ static void driver( const char * const label ,
   const size_t proc_count = comm::size( machine );
   const size_t proc_rank  = comm::rank( machine );
 
-  const int space = 16 ;
+  const int space = 15 ;
+  const int steps = 1000 ;
+  const int print_sample = 0 ;
 
   if ( comm::rank( machine ) == 0 ) {
 
     std::cout << std::endl ;
     std::cout << "\"MiniExplicitDynamics with KokkosArray " << label
+              << " time_steps(" << steps << ")"
               << "\"" << std::endl;
     std::cout << std::left << std::setw(space) << "\"Element\" , ";
-    std::cout << std::left << std::setw(space) << "\"Time Steps\" , ";
+    std::cout << std::left << std::setw(space) << "\"Node\" , ";
     std::cout << std::left << std::setw(space) << "\"Initialize\" , ";
     std::cout << std::left << std::setw(space) << "\"ElemForce\" , ";
     std::cout << std::left << std::setw(space) << "\"NodeUpdate\" , ";
@@ -381,7 +384,7 @@ static void driver( const char * const label ,
     std::cout << std::endl;
 
     std::cout << std::left << std::setw(space) << "\"count\" , ";
-    std::cout << std::left << std::setw(space) << "\"iterations\" , ";
+    std::cout << std::left << std::setw(space) << "\"count\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
@@ -391,9 +394,6 @@ static void driver( const char * const label ,
 
     std::cout << std::endl;
   }
-
-  const int steps = 1000 ;
-  const int print_sample = 0 ;
 
   for(int i = elem_count_beg ; i < elem_count_end ; i *= 2 )
   {
@@ -430,6 +430,7 @@ static void driver( const char * const label ,
        ( best.comm_time + best.central_diff ) / ( nnode * perf.number_of_steps );
 
    std::cout << std::setw(space-3) << nelem << " , "
+             << std::setw(space-3) << nnode << " , "
              << std::setw(space-3) << best.number_of_steps << " , "
              << std::setw(space-3) << best.init_time * 1000000 << " , "
              << std::setw(space-3)

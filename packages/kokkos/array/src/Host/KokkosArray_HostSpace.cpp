@@ -68,6 +68,43 @@ Impl::MemoryTracking & host_space_singleton()
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
+namespace Impl {
+
+void host_aligned_free( void * ptr )
+{
+#if defined( __INTEL_COMPILER )
+   _mm_free( ptr );
+#else
+   free( ptr );
+#endif
+}
+
+void * host_aligned_allocate( const size_t n )
+{
+  void * ptr = 0 ;
+
+#if defined( __INTEL_COMPILER )
+
+  ptr = _mm_malloc( n , HostSpace::MEMORY_ALIGNMENT );
+
+#elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
+      ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
+
+  posix_memalign( & ptr , HostSpace::MEMORY_ALIGNMENT , n );
+
+#else
+
+  ptr = malloc( n );
+
+#endif
+
+  return ptr ;
+}
+
+}
+}
+
+namespace KokkosArray {
 
 void * HostSpace::allocate(
   const std::string    & label ,
@@ -81,7 +118,7 @@ void * HostSpace::allocate(
 
   if ( 0 < scalar_size * scalar_count ) {
 
-    ptr = malloc( scalar_size * scalar_count );
+    ptr = Impl::host_aligned_allocate( scalar_size * scalar_count );
 
     if ( 0 == ptr ) {
       std::ostringstream msg ;
@@ -115,7 +152,7 @@ void HostSpace::decrement( const void * ptr )
     void * ptr_alloc = host_space_singleton().decrement( ptr );
 
     if ( 0 != ptr_alloc ) {
-      free( ptr_alloc );
+      Impl::host_aligned_free( ptr_alloc );
     }
   }
 }
@@ -136,17 +173,18 @@ std::string HostSpace::query_label( const void * p )
 size_t HostSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
-  const size_t alignment = Host::detect_cache_line_size();
+  // Padding 'large' array dimensions to be memory aligned
+  // where 'large' greater than 4 * cacheline-size
 
-  // If the array is larger than the cache line
-  // then align the count on cache line boundary.
+  const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size
+                     ? MEMORY_ALIGNMENT / scalar_size : 0 ;
 
-  if ( alignment < scalar_size * scalar_count &&
-       0 == alignment % scalar_size ) {
-    const size_t align = alignment / scalar_size ;
-    const size_t rem   = scalar_count % align ;
-    if ( rem ) scalar_count += align - rem ;
+  const size_t threshold = align * 4 ;
+
+  if ( align && threshold < scalar_count && scalar_count % align ) {
+    scalar_count += align - scalar_count % align ;
   }
+
   return scalar_count ;
 }
 

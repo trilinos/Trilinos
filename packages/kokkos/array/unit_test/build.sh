@@ -25,7 +25,7 @@ TPL_PATH="${KOKKOSARRAY}/TPL"
 INC_PATH="${INC_PATH} -I. -I${TPL_PATH}"
 
 CXX_SOURCES="${CXX_SOURCES} ${TPL_PATH}/gtest/gtest-all.cc"
-CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp TestTileHost.cpp"
 
 #-----------------------------------------------------------------------------
 # If Cuda compiler set build Cuda source code

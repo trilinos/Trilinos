@@ -188,8 +188,8 @@ double
 LOCA::Epetra::LowRankUpdateOp::NormInf() const
 {
   double Jn;
-  vector<double> un(U->NumVectors());
-  vector<double> vn(V->NumVectors());
+  std::vector<double> un(U->NumVectors());
+  std::vector<double> vn(V->NumVectors());
 
   Jn = J->NormInf();
   U->NormInf(&un[0]);

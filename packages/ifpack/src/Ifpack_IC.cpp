@@ -65,6 +65,7 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   InitializeTime_(0.0),
   ComputeTime_(0),
   ApplyInverseTime_(0),
+  Time_(Comm()),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0)
 {
@@ -112,8 +113,10 @@ int Ifpack_IC::Initialize()
 {
 
   IsInitialized_ = false;
+
   // FIXME: construction of ILUK graph must be here
   
+  ++NumInitialize_;
   IsInitialized_ = true;
   return(0);
 }
@@ -200,6 +203,7 @@ int Ifpack_IC::Compute() {
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
 
+  Time_.ResetStartTime();
   IsComputed_ = false;
   
   // copy matrix into L and U.
@@ -272,7 +276,10 @@ int Ifpack_IC::Compute() {
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 #endif
-  
+  ++NumCompute_;
+  ComputeTime_ += Time_.ElapsedTime();
+ 
+ 
   IsComputed_ = true;
   
   return(0);
@@ -290,7 +297,9 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
-  
+ 
+  Time_.ResetStartTime(); 
+
   bool Upper = true;
   bool UnitDiagonal = true;
   
@@ -306,11 +315,14 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
   
-    ++NumApplyInverse_;
 #ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
   ApplyInverseFlops_ += D_->GlobalLength();
 #endif
+
+  ++NumApplyInverse_;
+  ApplyInverseTime_ += Time_.ElapsedTime();
+
   return(0);
 
 }

@@ -75,7 +75,6 @@ using Teuchos::DanglingReferenceError;
 using Teuchos::RangeError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
-using Teuchos::RCP_STRENGTH_INVALID;
 using Teuchos::implicit_ptr_cast;
 using Teuchos::getRawPtr;
 
@@ -809,7 +808,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
 
   ECHO(arcp_strong = null); // This deletes the underlying object of type T!
 
-  TEST_EQUALITY_CONST( arcp_strong.strength(), RCP_STRENGTH_INVALID );
+  TEST_EQUALITY_CONST( arcp_strong.strength(), RCP_STRONG );
   TEST_EQUALITY_CONST( arcp_strong.is_null(), true );
   TEST_EQUALITY_CONST( arcp_strong.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_strong.strong_count(), 0 );
@@ -873,7 +872,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
 
   ECHO(arcp_weak1 = null); // Just deicrements weak count!
 
-  TEST_EQUALITY_CONST( arcp_weak1.strength(), RCP_STRENGTH_INVALID );
+  TEST_EQUALITY_CONST( arcp_weak1.strength(), RCP_STRONG );
   TEST_EQUALITY_CONST( arcp_weak1.is_null(), true );
   TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );
   TEST_EQUALITY_CONST( arcp_weak1.strong_count(), 0 );

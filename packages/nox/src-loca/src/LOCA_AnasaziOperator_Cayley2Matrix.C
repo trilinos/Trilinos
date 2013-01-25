@@ -77,7 +77,7 @@ LOCA::AnasaziOperator::Cayley2Matrix::~Cayley2Matrix()
 {
 }
 
-const string&
+const std::string&
 LOCA::AnasaziOperator::Cayley2Matrix::label() const
 {
   return myLabel;
@@ -87,7 +87,7 @@ void
 LOCA::AnasaziOperator::Cayley2Matrix::apply(const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& output) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::Cayley2Matrix::apply()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -122,7 +122,7 @@ void
 LOCA::AnasaziOperator::Cayley2Matrix::preProcessSeedVector(NOX::Abstract::MultiVector& ivec)
 {
   // Changes random seed vector ivec:   ivec = (J - sigma*M)^{-1}*M*ivec
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::Cayley2Matrix::preProcessSeedVector()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -194,7 +194,7 @@ LOCA::AnasaziOperator::Cayley2Matrix::rayleighQuotient(
 					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::Cayley2Matrix::rayleighQuotient()";
 
   // Allocate temporary vectors

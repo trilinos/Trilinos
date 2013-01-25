@@ -101,6 +101,7 @@
 
 #include "NOX.H"
 #include "NOX_LAPACK_Group.H"
+#include <iostream>
 
 //! An interface to the example described in Rosenbrock.C
 class Rosenbrock : public NOX::LAPACK::Interface {
@@ -162,7 +163,7 @@ private:
 int main()
 {
   // Print out the NOX code version number
-  cout << "\n" << NOX::version() << endl;
+  std::cout << "\n" << NOX::version() << std::endl;
 
   // Set up the problem interface
   Rosenbrock rosenbrock;
@@ -212,25 +213,25 @@ int main()
 
   // Warn user if solve failed
   if (status == NOX::StatusTest::Converged)
-    cout << "Example Passed!" << endl;
+    std::cout << "Example Passed!" << std::endl;
   else
-    cout << "Error: Solve failed to converge!" << endl;
+    std::cout << "Error: Solve failed to converge!" << std::endl;
 
   // Print the parameter list
-  cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver->getList().print(cout);
+  std::cout << "\n" << "-- Parameter List From Solver --" << "\n";
+  solver->getList().print(std::cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
     dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
   
   // Print the answer
-  cout << "\n" << "-- Final Solution From Solver --" << "\n";
+  std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
   solnGrp.print();
 
   // Print the expected answer
   solnGrp.setX(rosenbrock.getSolution());
   solnGrp.computeF();
-  cout << "\n" << "-- Expected Solution --" << "\n";
+  std::cout << "\n" << "-- Expected Solution --" << "\n";
   solnGrp.print();
 }

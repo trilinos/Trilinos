@@ -71,7 +71,7 @@ ChanProblemInterface::ChanProblemInterface(
 
 ChanProblemInterface::ChanProblemInterface(
 		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s, ofstream& file)  : 
+		    int N, double a, double b, double s, std::ofstream& file)  : 
   globalData(global_data),
   initialGuess(N),
   alpha(a),

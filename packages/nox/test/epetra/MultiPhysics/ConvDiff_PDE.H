@@ -94,7 +94,7 @@ public:
 	  double        Tleft                   ,
 	  double        Tright                  ,
           int           NumGlobalUnknowns = 0   ,
-          string        name = ""                 ) ;
+          std::string        name = ""                 ) ;
   
   // Destructor
   ~ConvDiff_PDE();
@@ -135,7 +135,7 @@ public:
   { expandJacobian = setting; }
 
   // Method that allows us to provide off-block structural info
-  void getOffBlockIndices( map<int, vector<int> > & );
+  void getOffBlockIndices( map<int, std::vector<int> > & );
 
   // Inherited method that allows us to compute fluxes before transferring data
   void prepare_data_for_transfer();
@@ -161,7 +161,7 @@ public:
   { return exactSolution; }
 
   // Additional status output
-  virtual void outputStatus( ostream & os );
+  virtual void outputStatus( std::ostream & os );
 
 
 protected:

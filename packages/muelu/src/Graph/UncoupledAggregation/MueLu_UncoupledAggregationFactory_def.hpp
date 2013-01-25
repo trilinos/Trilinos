@@ -67,7 +67,8 @@
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
+//#include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
@@ -115,7 +116,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   RCP<Aggregates> aggregates;
   {
     // Level Get
-    RCP<const Graph> graph   = Get< RCP<Graph> >(currentLevel, "Graph");
+    RCP<const GraphBase> graph   = Get< RCP<GraphBase> >(currentLevel, "Graph");
     LocalOrdinal nDofsPerNode = Get<LocalOrdinal>(currentLevel, "DofsPerNode");
 
     // TODO create a map of Xpetra::Maps for different
@@ -144,14 +145,18 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
       if(SmallAggMap != Teuchos::null) {
          // reconstruct global row id (FIXME only works for contingoous maps)
-         if(SmallAggMap->isNodeGlobalElement(grid)) {
-           aggStat[i] = MueLu::NodeStats::SMALLAGG;
-         }
+        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if(SmallAggMap->isNodeGlobalElement(grid+kr)) {
+            aggStat[i] = MueLu::NodeStats::SMALLAGG;
+          }
+        }
        }
       if(OnePtMap != Teuchos::null) {
         // reconstruct global row id (FIXME only works for contingoous maps)
-        if(OnePtMap->isNodeGlobalElement(grid)) {
-          aggStat[i] = MueLu::NodeStats::ONEPT;
+        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if(OnePtMap->isNodeGlobalElement(grid+kr)) {
+            aggStat[i] = MueLu::NodeStats::ONEPT;
+          }
         }
       }
     }
@@ -167,8 +172,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   // Level Set
   Set(currentLevel, "Aggregates", aggregates);
 
-  aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
-
+  GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
 }
 
 } //namespace MueLu

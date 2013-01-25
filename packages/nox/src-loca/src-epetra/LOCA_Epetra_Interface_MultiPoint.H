@@ -164,8 +164,8 @@ namespace LOCA {
 	virtual EpetraExt::BlockCrsMatrix& getJacobian();
 	
 	//! LOCA Interface exception handler
-	virtual void throwError(const string& functionName, 
-				const string& errorMsg) const;
+	virtual void throwError(const std::string& functionName, 
+				const std::string& errorMsg) const;
 	
       private:
 	

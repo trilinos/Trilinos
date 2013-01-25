@@ -48,7 +48,6 @@
 #include "NOX.H"
 #include "NOX_Thyra.H"
 
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -66,7 +65,7 @@ class NOXSolver
   //@{
   /** \brief Takes the number of elements in the discretization . */
   NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
-            Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model);
+            Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase . */
@@ -101,7 +100,7 @@ class NOXSolver
   //@}
 
   Teuchos::RCP<Teuchos::ParameterList> appParams;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
 
   int num_p;
   int num_g;

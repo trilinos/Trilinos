@@ -102,6 +102,13 @@ public:
    }
    virtual ~TestWorksetFactory() {}
 
+   
+   Teuchos::RCP<std::vector<panzer::Workset> >
+   getWorksets(const WorksetDescriptor & wd,
+               const panzer::PhysicsBlock & pb,
+               std::size_t worksetSize) const
+   { return volume_worksets[wd.getElementBlock()]; } // lazy
+
    Teuchos::RCP<std::vector<panzer::Workset> >
    getVolumeWorksets(const std::string & eBlock,
                      const panzer::PhysicsBlock & pb,

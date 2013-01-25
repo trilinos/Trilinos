@@ -146,7 +146,7 @@ bool FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
     //A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
-    cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
+    std::cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
   }
 

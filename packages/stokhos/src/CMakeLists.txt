@@ -329,7 +329,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Sacado_MP_Vector_ops.hpp
     )
   ENDIF()
-  IF (Stokhos_ENABLE_MueLu)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     SET(HEADERS ${HEADERS}
@@ -341,7 +341,7 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Tpetra)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
@@ -352,7 +352,7 @@ IF (Stokhos_ENABLE_Sacado)
 	)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Ifpack2)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Ifpack2)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ifpack2)
     IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
@@ -382,7 +382,7 @@ ENDIF()
 
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
-  # this is a manual specification of include dirs, necessary because 
+  # this is a manual specification of include dirs, necessary because
   # CUDA_COMPILE doesn't recognize the package architecture system.
   GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   LIST(APPEND Stokhos_CUDA_INC_DIRS ${Teuchos_INCLUDE_DIRS})
@@ -392,7 +392,7 @@ IF (Stokhos_ENABLE_Thrust)
   #message("Stokhos_CUDA_INC_DIRS = ${Stokhos_CUDA_INC_DIRS}")
   CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
   CUDA_COMPILE(CUDA_SOURCES
-    Stokhos_CUDAStorage.cu 
+    Stokhos_CUDAStorage.cu
     Stokhos_CUDAQuadOrthogPolyExpansion.cu
   )
   SET(HEADERS ${HEADERS}
@@ -413,4 +413,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
- 
+
+#

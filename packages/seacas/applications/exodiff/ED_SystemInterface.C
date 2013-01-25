@@ -439,6 +439,11 @@ void SystemInterface::enroll_options()
   options_.enroll("steps",  GetLongOption::MandatoryValue,
 		  "Specify subset of steps to consider. Syntax is beg:end:increment,\n"
 		  "\t\tEnter '-steps last' for just the last step. If only beg set, end=beg", 0);
+  options_.enroll("explicit",  GetLongOption::MandatoryValue,
+		  "Specify an explicit match of a step on database 1 with a step on database 2.\n"
+		  "\t\tSyntax is '-explicit db1_step:db2_step' where 'db*_step' is either\n"
+		  "\t\tthe 1-based step number or 'last' for the last step on the database.\n"
+		  "\t\tExample: '-explicit 42:last' to match step 42 on database 1 with last step on database 2", 0);
   options_.enroll("norms", GetLongOption::NoValue,
 		  "Calculate L2 norm of variable differences and output if > 0.0", 0);
   options_.enroll("status", GetLongOption::NoValue,
@@ -654,6 +659,36 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("steps");
     if (temp) {
       Parse_Steps_Option(temp, time_step_start, time_step_stop, time_step_increment);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("explicit");
+    if (temp) {
+      // temp should be of the form <ts1>:<ts2>  where ts# is either a timestep number
+      // (1-based) or 'last'
+      std::vector<std::string> tokens;
+      SLIB::tokenize(temp, ":", tokens);
+      if (tokens.size() == 2) {
+	if (case_strcmp(tokens[0], "last") == 0) {
+	  explicit_steps.first = -1;
+	} else {
+	  // Try to convert to integer...
+	  explicit_steps.first = strtol(tokens[0].c_str(), NULL, 0);
+	}
+
+	if (case_strcmp(tokens[1], "last") == 0) {
+	  explicit_steps.second = -1;
+	} else {
+	  // Try to convert to integer...
+	  explicit_steps.second = strtol(tokens[1].c_str(), NULL, 0);
+	}
+      }
+      else {
+	std::cout << "exodiff: ERROR: parse error for -explicit keyword. "
+	  "Expected '<int|last>:<int|last>', found '" << temp << "' Aborting..." << std::endl;
+	exit(1);
+      }
     }
   }
 

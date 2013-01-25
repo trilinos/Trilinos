@@ -104,9 +104,9 @@ namespace LOCA {
           are functions of time (nonautonomous systems).
         */
         virtual void setXdot(const Epetra_Vector& xdot, const double time) {
-          cout << "WARNING: "
-               << "LOCA::Epetra::Interface::TimeDependent::setXdot"
-               << "\n\tempty default implementation not overloaded!" << endl;
+	  std::cout << "WARNING: "
+		    << "LOCA::Epetra::Interface::TimeDependent::setXdot"
+		    << "\n\tempty default implementation not overloaded!" << std::endl;
         };
 
       };

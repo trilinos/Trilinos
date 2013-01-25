@@ -63,7 +63,7 @@
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
 NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-	  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
+	  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_) :
   appParams(appParams_),
   model(model_),
   num_p(model->Np()),
@@ -500,21 +500,41 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                   dgdp_deriv.getMultiVector();
                 if (Teuchos::nonnull(dgdp_mv)) {
                   if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
-                    Thyra::apply(
-                        *minus_dxdp_mv,
-                        Thyra::TRANS,
-                        *dgdx_mv,
-                        dgdp_mv.ptr(),
-                        -Teuchos::ScalarTraits<Scalar>::one(),
-                        Teuchos::ScalarTraits<Scalar>::one());
+                    if (Teuchos::nonnull(dxdp_mv)) {
+                      Thyra::apply(
+                          *dxdp_mv,
+                          Thyra::TRANS,
+                          *dgdx_mv,
+                          dgdp_mv.ptr(),
+                          Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    } else {
+                      Thyra::apply(
+                          *minus_dxdp_mv,
+                          Thyra::TRANS,
+                          *dgdx_mv,
+                          dgdp_mv.ptr(),
+                          -Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    }
                   } else {
-                    Thyra::apply(
-                        *dgdx_op,
-                        Thyra::NOTRANS,
-                        *minus_dxdp_mv,
-                        dgdp_mv.ptr(),
-                        -Teuchos::ScalarTraits<Scalar>::one(),
-                        Teuchos::ScalarTraits<Scalar>::one());
+                    if (Teuchos::nonnull(dxdp_mv)) {
+                      Thyra::apply(
+                          *dgdx_op,
+                          Thyra::NOTRANS,
+                          *dxdp_mv,
+                          dgdp_mv.ptr(),
+                          Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    } else {
+                      Thyra::apply(
+                          *dgdx_op,
+                          Thyra::NOTRANS,
+                          *minus_dxdp_mv,
+                          dgdp_mv.ptr(),
+                          -Teuchos::ScalarTraits<Scalar>::one(),
+                          Teuchos::ScalarTraits<Scalar>::one());
+                    }
                   }
                 }
               }

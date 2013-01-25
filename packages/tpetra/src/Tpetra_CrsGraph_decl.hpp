@@ -52,6 +52,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Exceptions.hpp"
 
 namespace Tpetra {
 
@@ -78,14 +79,14 @@ namespace Tpetra {
 
    \tparam LocalOrdinal The type of local indices.  Same as the \c
      LocalOrdinal template parameter of \c Map objects used by this
-     matrix.  (In Epetra, this is just \c int.)  The default type is
+     graph.  (In Epetra, this is just \c int.)  The default type is
      \c int, which should suffice for most users.  This type must be
      big enough to store the local (per process) number of rows or
      columns.
 
    \tparam GlobalOrdinal The type of global indices.  Same as the \c
      GlobalOrdinal template parameter of \c Map objects used by this
-     matrix.  (In Epetra, this is just \c int.  One advantage of
+     graph.  (In Epetra, this is just \c int.  One advantage of
      Tpetra over Epetra is that you can use a 64-bit integer type here
      if you want to solve big problems.)  The default type is
      <tt>LocalOrdinal</tt>.  This type must be big enough to store the
@@ -99,7 +100,7 @@ namespace Tpetra {
      The actual default type depends on your Trilinos build options.
 
    \tparam LocalMatOps Type implementing local sparse
-     matrix-(multi)vector multiply and local sparse triangular solve.
+     graph-(multi)vector multiply and local sparse triangular solve.
      It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
      The default \c LocalMatOps type should suffice for most users.
      The actual default type depends on your Trilinos build options.
@@ -161,6 +162,8 @@ namespace Tpetra {
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
+    template <class LO2, class GO2, class N2, class SpMatOps2>
+    friend class CrsGraph;
 
   public:
     typedef LocalOrdinal                         local_ordinal_type;
@@ -271,6 +274,173 @@ namespace Tpetra {
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
+    /// \brief Create a cloned CrsGraph for a different node type.
+    ///
+    /// This method creates a new CrsGraph on a specified node type,
+    /// with all of the entries of this CrsGraph object.
+    ///
+    /// \param node2 [in] A node for constructing the clone CrsGraph and its constituent objects.
+    ///
+    /// \param params [in/out] Optional list of parameters. If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    ///
+    /// Parameters to \c params:
+    /// - "Static profile clone"  [boolean, default: true] If \c true, creates the clone with a static allocation profile. If false, a dynamic allocation profile is used.
+    /// - "Locally indexed clone" [boolean] If \c true, fills clone using this graph's column map and local indices (requires that this graph have a column map.) If
+    ///   false, fills clone using global indices and does not provide a column map. By default, will use local indices only if this graph is using local indices.
+    /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsGraph object, with parameters from \c params sublist "CrsGraph". The domain map and range maps
+    ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used.
+    template <class Node2>
+    RCP< CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null) const
+    {
+      std::string tfecfFuncName("clone()");
+      bool fillCompleteClone  = true;
+      bool useLocalIndices    = hasColMap();
+      ProfileType pftype = StaticProfile;
+      if (params != null) fillCompleteClone = params->get("fillComplete clone",fillCompleteClone);
+      if (params != null) useLocalIndices = params->get("Locally indexed clone",useLocalIndices);
+      if (params != null && params->get("Static profile clone",true) == false) pftype = DynamicProfile;
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          hasColMap() == false && useLocalIndices == true,
+          std::runtime_error,
+          ": requested clone using local indices, but source graph doesn't have a column map yet."
+      )
+
+      typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
+      typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+      RCP<const Map2> clonedRowMap = rowMap_->template clone(node2);
+
+      RCP<CrsGraph2> clonedGraph;
+      ArrayRCP<const size_t> numEntries;
+      size_t numEntriesForAll = 0;
+      if (indicesAreAllocated() == false) {
+        if (numAllocPerRow_ != null)   numEntries = numAllocPerRow_;
+        else numEntriesForAll =        numAllocForAllRows_;
+      }
+      else if (numRowEntries_ != null) numEntries = numRowEntries_;
+      else if (nodeNumAllocated_ == 0) numEntriesForAll = 0;
+      else {
+        // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
+        TEUCHOS_TEST_FOR_EXCEPTION( getProfileType() != StaticProfile, std::logic_error, "Internal logic error. Please report this to Tpetra team." )
+        const size_t numRows = getNodeNumRows();
+        numEntriesForAll = 0;
+        ArrayRCP<size_t> numEnt;
+        if (numRows) numEnt = arcp<size_t>(numRows);
+        for (size_t i=0; i<numRows; ++i) {
+          numEnt[i] = rowPtrs_[i+1] - rowPtrs_[i];
+        }
+        numEntries = numEnt;
+      }
+
+      RCP<ParameterList> graphparams = sublist(params,"CrsGraph");
+      if (useLocalIndices) {
+        RCP<const Map2> clonedColMap = colMap_->template clone(node2);
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,graphparams));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntries,pftype,graphparams));
+      }
+      else {
+        if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntriesForAll,pftype,graphparams));
+        else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,numEntries,pftype,graphparams));
+      }
+      // done with these
+      numEntries = null;
+      numEntriesForAll = 0;
+
+
+      if (useLocalIndices)
+      {
+        clonedGraph->allocateIndices(LocalIndices);
+        if (this->isLocallyIndexed())
+        {
+          ArrayView<const LocalOrdinal> linds;
+          for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
+                            lrow <= rowMap_->getMaxLocalIndex();
+                            ++lrow)
+          {
+            this->getLocalRowView(lrow, linds);
+            if (linds.size()) clonedGraph->insertLocalIndices(lrow, linds);
+          }
+        }
+        else // this->isGloballyIndexed()
+        {
+          Array<LocalOrdinal> linds;
+          for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
+                            lrow <= rowMap_->getMaxLocalIndex();
+                            ++lrow)
+          {
+            size_t numEntries;
+            linds.resize( this->getNumEntriesInLocalRow(lrow) );
+            this->getLocalRowCopy(rowMap_->getGlobalElement(lrow), linds(), numEntries);
+            if (numEntries) clonedGraph->insertLocalIndices(lrow, linds(0,numEntries) );
+          }
+        }
+      }
+      else /* useGlobalIndices */
+      {
+        clonedGraph->allocateIndices(GlobalIndices);
+        if (this->isGloballyIndexed())
+        {
+          ArrayView<const GlobalOrdinal> ginds;
+          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
+                             grow <= rowMap_->getMaxGlobalIndex();
+                             ++grow)
+          {
+            this->getGlobalRowView(grow, ginds);
+            if (ginds.size()) clonedGraph->insertGlobalIndices(grow, ginds);
+          }
+        }
+        else // this->isLocallyIndexed()
+        {
+          Array<GlobalOrdinal> ginds;
+          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
+                             grow <= rowMap_->getMaxGlobalIndex();
+                             ++grow)
+          {
+            size_t numEntries;
+            ginds.resize( this->getNumEntriesInGlobalRow(grow) );
+            this->getGlobalRowCopy(grow, ginds(), numEntries);
+            if (numEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,numEntries) );
+          }
+        }
+      }
+
+      if (fillCompleteClone) {
+        RCP<ParameterList> fillparams = sublist(params,"fillComplete");
+        try {
+          RCP<const Map2> clonedRangeMap;
+          RCP<const Map2> clonedDomainMap;
+          if (rangeMap_ != null && rangeMap_ != rowMap_) {
+            clonedRangeMap  = rangeMap_->template clone(node2);
+          }
+          else {
+            clonedRangeMap = clonedRowMap;
+          }
+          if (domainMap_ != null && domainMap_ != rowMap_) {
+            clonedDomainMap = domainMap_->template clone(node2);
+          }
+          else {
+            clonedDomainMap = clonedRowMap;
+          }
+          clonedGraph->fillComplete(clonedDomainMap, clonedRangeMap, fillparams);
+        }
+        catch (std::exception &e) {
+          const bool caughtExceptionOnClone = true;
+          TEUCHOS_TEST_FOR_EXCEPTION(caughtExceptionOnClone,
+                             std::runtime_error,
+              Teuchos::typeName(*this)
+              << "\ncaught the following exception while calling fillComplete() on clone of type\n"
+              << Teuchos::typeName(*clonedGraph)
+              << "\n:"
+              << e.what()
+              << "\n");
+        }
+      }
+      return clonedGraph;
+    }
+
     //! Destructor.
     virtual ~CrsGraph();
 
@@ -362,7 +532,7 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
+          \post if parameter "Optimize Storage" was \c true, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
       void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, const RCP<ParameterList> &params = null);
 
@@ -370,14 +540,7 @@ namespace Tpetra {
 
           Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
 
-          \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
-
-          \pre  <tt>isFillActive() == true<tt>
-          \pre <tt>isFillComplete()() == false<tt>
-
-          \post <tt>isFillActive() == false<tt>
-          \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
+          \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
        */
       void fillComplete(const RCP<ParameterList> &params = null);
 
@@ -620,7 +783,6 @@ namespace Tpetra {
                             Distributor &distor,
                             CombineMode CM);
       //@}
-
       //! \name Advanced methods, at increased risk of deprecation.
       //@{
 
@@ -698,22 +860,140 @@ namespace Tpetra {
       template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
       void insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
 
+      /// \brief Transform the given values using local or global indices.
+      ///
+      /// \warning This method is DEPRECATED.  Please use transformLocalValues
+      ///   for local indices, and transformGlobalValues for global indices.
       template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
-      void transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
-      //
-      // Sorting and merging
-      //
-      bool                       isMerged() const;
-      void                       setSorted(bool sorted);
-      void                       setMerged(bool merged);
-      void                       sortAllIndices();
-      void                       sortRowIndices(RowInfo rowinfo);
-      template <class Scalar> void sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values);
-      void                                             mergeAllIndices();
-      void                                             mergeRowIndices(RowInfo rowinfo);
-      template <class Iter, class BinaryFunction> void mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
-      //
-      void setDomainRangeMaps(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
+      void TEUCHOS_DEPRECATED
+      transformValues (RowInfo rowInfo,
+                       const SLocalGlobalViews &inds,
+                       IterO rowVals,
+                       IterN newVals,
+                       BinaryFunction f) const;
+
+      /// \brief Transform the given values using local indices.
+      ///
+      /// \param rowInfo [in] Information about a given row of the graph.
+      ///
+      /// \param rowVals [in/out] The values to be transformed.  They
+      ///   correspond to the row indicated by rowInfo.
+      ///
+      /// \param inds [in] The (local) indices in the row, for which
+      ///   to transform the corresponding values in rowVals.
+      ///
+      /// \param newVals [in] Values to use for transforming rowVals.
+      ///   It's probably OK for these to alias rowVals.
+      ///
+      /// \param f [in] A binary function used to transform rowVals.
+      ///
+      /// This method transforms the values using the expression
+      /// \code
+      /// newVals[k] = f( rowVals[k], newVals[j] );
+      /// \endcode
+      /// where k is the local index corresponding to
+      /// <tt>inds[j]</tt>.  It ignores elements of \c inds that are
+      /// not owned by the calling process.
+      template<class Scalar, class BinaryFunction>
+      void
+      transformLocalValues (RowInfo rowInfo,
+                            const Teuchos::ArrayView<Scalar>& rowVals,
+                            const Teuchos::ArrayView<const LocalOrdinal>& inds,
+                            const Teuchos::ArrayView<const Scalar>& newVals,
+                            BinaryFunction f) const;
+
+      /// \brief Transform the given values using global indices.
+      ///
+      /// \param rowInfo [in] Information about a given row of the graph.
+      ///
+      /// \param rowVals [in/out] The values to be transformed.  They
+      ///   correspond to the row indicated by rowInfo.
+      ///
+      /// \param inds [in] The (global) indices in the row, for which
+      ///   to transform the corresponding values in rowVals.
+      ///
+      /// \param newVals [in] Values to use for transforming rowVals.
+      ///   It's probably OK for these to alias rowVals.
+      ///
+      /// \param f [in] A binary function used to transform rowVals.
+      template<class Scalar, class BinaryFunction>
+      void
+      transformGlobalValues (RowInfo rowInfo,
+                            const Teuchos::ArrayView<Scalar>& rowVals,
+                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
+                            const Teuchos::ArrayView<const Scalar>& newVals,
+                            BinaryFunction f) const;
+
+      //! \name Methods for sorting and merging column indices.
+      //@{
+
+      //! Whether duplicate column indices in each row have been merged.
+      bool isMerged () const;
+
+      //! Set indicesAreSorted_ to merged.  (Just set the Boolean.)
+      void setSorted (bool sorted);
+
+      //! Set noRedundancies_ to merged.  (Just set the Boolean.)
+      void setMerged (bool merged);
+
+      //! Sort the column indices in all the rows.
+      void sortAllIndices ();
+
+      //! Sort the column indices in the given row.
+      void sortRowIndices (RowInfo rowinfo);
+
+      /// \brief Sort the column indices and their values in the given row.
+      ///
+      /// \tparam Scalar The type of the values.  When calling this
+      ///   method from CrsMatrix, this should be the same as the
+      ///   <tt>Scalar</tt> template parameter of CrsMatrix.
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the row.
+      ///
+      /// \param values [in/out] On input: values for the given row.
+      ///   If indices is an array of the column indices in the row,
+      ///   then values and indices should have the same number of
+      ///   entries, and indices[k] should be the column index
+      ///   corresponding to values[k].  On output: the same values,
+      ///   but sorted in the same order as the (now sorted) column
+      ///   indices in the row.
+      template <class Scalar>
+      void sortRowIndicesAndValues (RowInfo rowinfo, ArrayView<Scalar> values);
+
+      /// Merge duplicate row indices in all of the rows.
+      ///
+      /// \pre The graph is locally indexed:
+      ///   <tt>isGloballyIndexed() == false</tt>.
+      ///
+      /// \pre The graph has not already been merged: <tt>isMerged()
+      ///   == false</tt>.  That is, this function would normally only
+      ///   be called after calling sortIndices().
+      void mergeAllIndices ();
+
+      /// Merge duplicate row indices in the given row.
+      ///
+      /// \pre The graph is not already storage optimized:
+      ///   <tt>isStorageOptimized() == false</tt>
+      void mergeRowIndices (RowInfo rowinfo);
+
+      template <class Iter, class BinaryFunction>
+      void mergeRowIndicesAndValues (RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
+
+      //@}
+
+      /// Set the domain and range Maps, and invalidate the Import
+      /// and/or Export objects if necessary.
+      ///
+      /// If the domain Map has changed, invalidate the Import object
+      /// (if there is one).  Likewise, if the range Map has changed,
+      /// invalidate the Export object (if there is one).
+      ///
+      /// \param domainMap [in] The new domain Map
+      /// \param rangeMap [in] The new range Map
+      void
+      setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
+                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
+
       void staticAssertions() const;
       // global consts
       void clearGlobalConstants();
@@ -724,8 +1004,89 @@ namespace Tpetra {
       ArrayView<LocalOrdinal>         getLocalViewNonConst(RowInfo rowinfo);
       ArrayView<const GlobalOrdinal>  getGlobalView(RowInfo rowinfo) const;
       ArrayView<GlobalOrdinal>        getGlobalViewNonConst(RowInfo rowinfo);
-      size_t                          findLocalIndex(RowInfo rowinfo, LocalOrdinal ind) const;
-      size_t                          findGlobalIndex(RowInfo rowinfo, GlobalOrdinal ind) const;
+
+      /// \brief Find the column offset corresponding to the given
+      ///   (local) column index.
+      ///
+      /// The name of this method is a bit misleading.  It does not
+      /// actually find the column index.  Instead, it takes a local
+      /// column index \c ind, and returns the corresponding offset
+      /// into the raw array of column indices (whether that be 1-D or
+      /// 2-D storage).
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the given row.
+      /// \param ind [in] (Local) column index for which to find the offset.
+      /// \param hint [in] Hint for where to find \c ind in the column
+      ///   indices for the given row.  If colInds is the ArrayView of
+      ///   the (local) column indices for the given row, and if
+      ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
+      ///   The hint is ignored if it is out of range (that is,
+      ///   greater than or equal to the number of entries in the
+      ///   given row).
+      ///
+      /// The hint optimizes for the case of calling this method
+      /// several times with the same row (as it would be in
+      /// transformLocalValues) when several index inputs occur in
+      /// consecutive sequence.  This may occur (for example) when
+      /// there are multiple degrees of freedom per mesh point, and
+      /// users are handling the assignment of degrees of freedom to
+      /// global indices manually (rather than letting BlockMap take
+      /// care of it).  In that case, users might choose to assign the
+      /// degrees of freedom for a mesh point to consecutive global
+      /// indices.  Epetra implements the hint for this reason.
+      ///
+      /// The hint only costs two comparisons (one to check range, and
+      /// the other to see if the hint was correct), and it can save
+      /// searching for the indices (which may take a lot more than
+      /// two comparisons).
+      size_t
+      findLocalIndex (RowInfo rowinfo,
+                      LocalOrdinal ind,
+                      size_t hint = 0) const;
+
+      /// Find the column offset corresponding to the given (local)
+      /// column index, given a view of the (local) column indices.
+      ///
+      /// The name of this method is a bit misleading.  It does not
+      /// actually find the column index.  Instead, it takes a local
+      /// column index \c ind, and returns the corresponding offset
+      /// into the raw array of column indices (whether that be 1-D or
+      /// 2-D storage).
+      ///
+      /// It is best to use this method if you plan to call it several
+      /// times for the same row, like in transformLocalValues().  In
+      /// that case, it amortizes the overhead of calling
+      /// getLocalView().
+      ///
+      /// \param rowinfo [in] Result of getRowInfo() for the given row.
+      /// \param ind [in] (Local) column index for which to find the offset.
+      /// \param colInds [in] View of all the (local) column indices
+      ///   for the given row.
+      /// \param hint [in] Hint for where to find \c ind in the column
+      ///   indices for the given row.  If colInds is the ArrayView of
+      ///   the (local) column indices for the given row, and if
+      ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
+      ///   The hint is ignored if it is out of range (that is,
+      ///   greater than or equal to the number of entries in the
+      ///   given row).
+      ///
+      /// See the documentation of the three-argument version of this
+      /// method for an explanation and justification of the hint.
+      size_t
+      findLocalIndex (RowInfo rowinfo,
+                      LocalOrdinal ind,
+                      ArrayView<const LocalOrdinal> colInds,
+                      size_t hint = 0) const;
+
+      /// \brief Find the column offset corresponding to the given (global) column index.
+      ///
+      /// The name of this method is a bit misleading.  It does not
+      /// actually find the column index.  Instead, it takes a global
+      /// column index \c ind, and returns the corresponding offset
+      /// into the raw array of column indices (whether that be 1-D or
+      /// 2-D storage).
+      size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
+
       // local Kokkos objects
       void fillLocalGraph(const RCP<ParameterList> &params);
       const RCP<const local_graph_type> getLocalGraph() const;
@@ -733,9 +1094,28 @@ namespace Tpetra {
       // debugging
       void checkInternalState() const;
 
-      // Tpetra support objects
-      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_, colMap_, rangeMap_, domainMap_;
+      //! The Map describing the distribution of rows of the graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_;
+      //! The Map describing the distribution of columns of the graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > colMap_;
+      //! The Map describing the range of the (matrix corresponding to the) graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
+      //! The Map describing the domain of the (matrix corresponding to the) graph.
+      RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap_;
+
+      /// \brief The Import from the domain Map to the column Map.
+      ///
+      /// This gets constructed by fillComplete.  It may be null if
+      /// the domain Map and the column Map are the same, since no
+      /// Import is necessary in that case for sparse matrix-vector
+      /// multiply.
       RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
+
+      /// \brief The Export from the row Map to the range Map.
+      ///
+      /// This gets constructed by fillComplete.  It may be null if
+      /// the row Map and the range Map are the same, since no Export
+      /// is necessary in that case for sparse matrix-vector multiply.
       RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
       // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
@@ -747,8 +1127,9 @@ namespace Tpetra {
       global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
       size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
 
-      // allocate static or dynamic?
+      //! Whether the graph was allocated with static or dynamic profile.
       ProfileType pftype_;
+
       // requested allocation sizes; we have to preserve these, because we perform late-allocation
       // number of non-zeros to allocate per row; set to null after they are allocated.
       ArrayRCP<const size_t> numAllocPerRow_;
@@ -787,7 +1168,7 @@ namespace Tpetra {
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
-      // This is deleted after fillCOmplete if "Optimize Storage" is set to \c true
+      // This is deleted after fillComplete if "Optimize Storage" is set to \c true
       ArrayRCP<size_t>       numRowEntries_;
 
       bool indicesAreAllocated_,
@@ -800,7 +1181,7 @@ namespace Tpetra {
            noRedundancies_,
            haveGlobalConstants_;
 
-      // non-local data
+      //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
 
       bool haveRowInfo_;
@@ -822,6 +1203,24 @@ namespace Tpetra {
     bool insertLocalIndicesWarnedEfficiency_;
 
   }; // class CrsGraph
+
+  /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
+
+      \return A dynamically allocated (DynamicProfile) graph with specified number of nonzeros per row (defaults to zero).
+
+      \relatesalso CrsGraph
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+                   size_t maxNumEntriesPerRow = 0,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  {
+    using Teuchos::rcp;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
+    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+  }
+
 
 } // namespace Tpetra
 

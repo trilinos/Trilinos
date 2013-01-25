@@ -46,6 +46,7 @@
 #  include <Tpetra_DirectoryImpl_decl.hpp>
 #endif
 #include <Tpetra_Distributor.hpp>
+#include <Tpetra_Map.hpp>
 
 namespace Tpetra {
   namespace Details {
@@ -126,7 +127,7 @@ namespace Tpetra {
 
       // Make room for the min global ID on each proc, plus one
       // entry at the end for the max cap.
-      allMinGIDs_.resize (comm->getSize () + 1);
+      allMinGIDs_ = arcp<GO>(comm->getSize () + 1);
       // Get my process' min global ID.
       GO minMyGID = map->getMinGlobalIndex ();
       // Gather all of the min global IDs into the first getSize()
@@ -135,8 +136,8 @@ namespace Tpetra {
                                    allMinGIDs_.getRawPtr ());
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
-      allMinGIDs_.back() = map->getMaxAllGlobalIndex() +
-        Teuchos::OrdinalTraits<GO>::one();
+      allMinGIDs_[comm->getSize ()] = map->getMaxAllGlobalIndex()
+                                      + Teuchos::OrdinalTraits<GO>::one();
     }
 
     template<class LO, class GO, class NT>
@@ -231,15 +232,15 @@ namespace Tpetra {
         { // We go through all this trouble to avoid overflow and
           // signed / unsigned casting mistakes (that were made in
           // previous versions of this code).
-          const GO one = Teuchos::OrdinalTraits<GO>::one();
-          const GO two = one + one;
-          const GO nOverP_GID = static_cast<GO> (nOverP);
+          const GO one = as<GO> (1);
+          const GO two = as<GO> (2);
+          const GO nOverP_GID = as<GO> (nOverP);
           const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
           // It's probably not OK to cast this to int in general.  It
           // works as long as |GID| <= the global number of entries
           // and nOverP is appropriately sized for int.  Trouble may
           // ensue if the index base has an exotic value.
-          const int lowerBound_int = static_cast<int> (lowerBound);
+          const int lowerBound_int = as<int> (lowerBound);
           curRank = std::min (lowerBound_int, numProcs - 1);
         }
         bool found = false;
@@ -316,6 +317,8 @@ namespace Tpetra {
       // The "Directory Map" (see below) will have a range of elements
       // from the minimum to the maximum GID of the user Map, and a
       // minimum GID of minAllGID from the user Map.
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.
       const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
       // We can't afford to replicate the whole directory on each
@@ -339,8 +342,16 @@ namespace Tpetra {
       // invalid values, in case the user global element list does
       // fill all IDs from minAllGID to maxAllGID (e.g., allows
       // global indices to be all even integers).
-      nodeIDs_.resize (dir_numMyEntries, -1);
-      LIDs_.resize (dir_numMyEntries, LINVALID);
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.  dir_numMyEntries may
+      // be quite large if the difference between the smallest and
+      // largest GID on all processes is large, even if the actual
+      // total number of GIDs is small (i.e., if the noncontiguous Map
+      // is very "sparse").
+      nodeIDs_ = arcp<int>(dir_numMyEntries);
+      std::fill( nodeIDs_.begin(), nodeIDs_.end(), -1 );
+      LIDs_ = arcp<LO>(dir_numMyEntries);
+      std::fill( LIDs_.begin(), LIDs_.end(), LINVALID );
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
@@ -585,9 +596,10 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra::Details namespace!
 //
 #define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)                     \
-  template<> class Directory< LO , GO , NODE >;                       \
-  template<> class ReplicatedDirectory< LO , GO , NODE >;             \
-  template<> class DistributedContiguousDirectory< LO , GO , NODE >;  \
-  template<> class DistributedNoncontiguousDirectory< LO , GO , NODE >;
+  template class Directory< LO , GO , NODE >;                         \
+  template class ReplicatedDirectory< LO , GO , NODE >;               \
+  template class DistributedContiguousDirectory< LO , GO , NODE >;    \
+  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+
 
 #endif // __Tpetra_DirectoryImpl_def_hpp

@@ -76,12 +76,14 @@ namespace MueLu {
       User can supply a factory for generating the nonzero pattern. The nullspace vectors (both fine and coarse) will
       be taken from the corresponding level factories
       */
-    ConstraintFactory();
+    ConstraintFactory() { }
 
     //! Destructor.
-    virtual ~ConstraintFactory();
+    virtual ~ConstraintFactory() { }
 
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! @name Input
     //@{

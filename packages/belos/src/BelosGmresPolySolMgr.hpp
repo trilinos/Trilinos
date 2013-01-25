@@ -66,6 +66,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -123,6 +124,7 @@ class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
     
 private:
   typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -1089,9 +1091,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::ParameterList plist;
       plist.set("Block Size",blockSize_);
       
-      int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-      if (blockSize_*numBlocks_ > dim) {
-	int tmpNumBlocks = 0;
+      ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );  
+      if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {
+	ptrdiff_t tmpNumBlocks = 0;
 	if (blockSize_ == 1)
 	  tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
 	else
@@ -1099,7 +1101,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 	printer_->stream(Warnings) << 
 	  "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
 	  " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
-	plist.set("Num Blocks",tmpNumBlocks);
+	plist.set("Num Blocks",Teuchos::asSafe<int>(tmpNumBlocks));
       } 
       else 
 	plist.set("Num Blocks",numBlocks_);

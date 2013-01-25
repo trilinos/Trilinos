@@ -407,40 +407,18 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     FALSE CACHE BOOL
    "Set if to ignore missing extra repositories (or fail hard)" )
 
-  IF (${PROJECT_NAME}_EXTRAREPOS_FILE)
-  
-    MESSAGE("")
-    MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
-    MESSAGE("")
-  
-    INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
-    TRIBITS_PROCESS_EXTRAREPOS_LISTS()
-    # Above sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
-
-  ELSE()
-
-    SET({PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT)
-
-  ENDIF()
-
   # Even if a project does not support an extra repos file, it can always
   # support extra repositories defined by the user by the very nature of
   # Tribits.
   ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
-    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
+    ""
     CACHE STRING
     "List of external repositories that contain extra ${PROJECT_NAME} packages."
     )
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","
-    ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
-  IF (NOT "${${PROJECT_NAME}_EXTRA_REPOSITORIES}" STREQUAL "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}")
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Wiping the info for extra repositories because passed in list differs"
-        " from extra repos file.")
-    ENDIF()
-    TRIBITS_WIPE_EXTRAREPOS_LISTS()
-  ENDIF()
+  SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST TRUE)
+  TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALLATION_DIR
     ""
@@ -1389,9 +1367,9 @@ ENDFUNCTION()
 # Macro that reads in the project's version file into the current scope
 #
 
-MACRO(TRIBITS_PROJECT_READ_VERSION_FILE  PROJECT_BASE_DIR)
-  IF (EXISTS ${PROJECT_BASE_DIR}/Version.cmake)
-    INCLUDE(${PROJECT_BASE_DIR}/Version.cmake)
+MACRO(TRIBITS_PROJECT_READ_VERSION_FILE  PROJECT_SOURCE_DIR_IN)
+  IF (EXISTS ${PROJECT_SOURCE_DIR_IN}/Version.cmake)
+    INCLUDE(${PROJECT_SOURCE_DIR_IN}/Version.cmake)
   ENDIF()
 ENDMACRO()
 

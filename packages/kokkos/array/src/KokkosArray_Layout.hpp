@@ -46,6 +46,8 @@
 #ifndef KOKKOSARRAY_LAYOUT_HPP
 #define KOKKOSARRAY_LAYOUT_HPP
 
+#include <impl/KokkosArray_ArrayTraits.hpp>
+
 namespace KokkosArray {
 
 /** \brief  Left-to-right striding of multi-indices (Fortran scheme). */
@@ -55,6 +57,26 @@ struct LayoutLeft { typedef LayoutLeft array_layout ; };
  *         (C or lexigraphical scheme).
  */
 struct LayoutRight { typedef LayoutRight array_layout ; };
+
+
+/** \brief  Left-to-right striding of multi-indices (Fortran scheme) by tiles.
+ */
+template < unsigned M , unsigned N,
+           bool IsPowerOfTwo = (Impl::is_power_of_2<M>::value && Impl::is_power_of_2<N>::value)
+         >
+struct LayoutTileLeft { typedef LayoutTileLeft<M,N,IsPowerOfTwo> array_layout ; };
+
+#if 0
+template < typename Outer, typename Inner >
+struct LayoutTile;
+
+
+struct Left {};
+struct Right {};
+
+template < typename Outer, typename Inner, unsigned M, unsigned N >
+struct LayoutTile< Outer, Inner[M][N] >;
+#endif
 
 } /* namespace KokkosArray */
 

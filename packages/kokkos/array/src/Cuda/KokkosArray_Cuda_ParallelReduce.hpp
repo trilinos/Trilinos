@@ -398,10 +398,14 @@ public:
   {
     extern __shared__ size_type shared_data[];
 
-    const size_type tidx = thread_of_block &  CudaTraits::WarpIndexMask ;
-    const size_type tidy = thread_of_block >> CudaTraits::WarpIndexShift ;
+    void * const data = shared_data +
+                        m_data.shared_data_offset(
+                          /* tidx */ thread_of_block &  CudaTraits::WarpIndexMask ,
+                          /* tidy */ thread_of_block >> CudaTraits::WarpIndexShift );
 
-    return m_reduce.init( shared_data + m_data.shared_data_offset(tidx,tidy) );
+    m_reduce.init( data );
+
+    return m_reduce.reference( data );
   }
 
   //--------------------------------------------------------------------------
@@ -551,8 +555,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class ValueOper , class FinalizeType >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
+template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , WorkSpec >
 {
 public:
 
@@ -646,11 +650,11 @@ public:
 
 template< class FunctorType , class ValueOper ,
           class ValueType , class LayoutType ,
-          class ManagedType >
+          class ManagedType , class WorkSpec >
 class ParallelReduce< FunctorType ,
                       ValueOper , 
                       View< ValueType , LayoutType , Host , ManagedType > ,
-                      Cuda >
+                      Cuda , WorkSpec >
 {
 public:
 
@@ -684,7 +688,7 @@ public:
 
     const FinalizeType finalize( functor.value_count );
 
-    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
+    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , void >
       ( work_count , functor , finalize );
 
     finalize.result( host_view.ptr_on_device() );

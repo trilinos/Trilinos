@@ -83,6 +83,13 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_EminPFactory.hpp"
+#include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_NullspacePresmoothFactory.hpp"
+#endif
 
 namespace MueLu {
 
@@ -148,6 +155,9 @@ namespace MueLu {
       if (factoryName == "RebalanceAcFactory") {
         return Build2<RebalanceAcFactory>(paramList, factoryMapIn);
       }
+      if (factoryName == "AggregationExportFactory") {
+        return Build2<AggregationExportFactory>(paramList, factoryMapIn);
+      }
       if (factoryName == "CoupledAggregationFactory") {
         return BuildCoupledAggregationFactory(paramList, factoryMapIn);
       }
@@ -159,6 +169,12 @@ namespace MueLu {
       }
       if (factoryName == "DirectSolver") {
         return BuildDirectSolver(paramList, factoryMapIn);
+      }
+      if (factoryName == "NoSmoother") {
+        return BuildNoSmoother();
+      }
+      if (factoryName == "NoDirectSolver") {
+        return BuildNoDirectSolver();
       }
       if (factoryName == "MultiVectorTransferFactory") {
         return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
@@ -181,6 +197,17 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory") {
         return  Build2<RebalanceTransferFactory>(paramList, factoryMapIn);
       }
+
+#ifdef HAVE_MUELU_EXPERIMENTAL
+      if (factoryName == "EminPFactory")
+        return Build2<EminPFactory>(paramList, factoryMapIn);
+      if (factoryName == "PatternFactory")
+        return Build2<PatternFactory>(paramList, factoryMapIn);
+      if (factoryName == "ConstraintFactory")
+        return Build2<ConstraintFactory>(paramList, factoryMapIn);
+      if (factoryName == "NullspacePresmoothFactory")
+        return Build2<NullspacePresmoothFactory>(paramList, factoryMapIn);
+#endif
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
@@ -234,7 +261,7 @@ namespace MueLu {
       // TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "T", Exceptions::RuntimeError, "");
       RCP<T> factory = rcp(new T());
 
-      ParameterList paramListWithFactories(paramList); // copy
+      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
       paramListWithFactories.remove("factory", false);
 
       // Read the RCP<Factory> parameters of the class T
@@ -367,6 +394,10 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
     }
 
+    RCP<FactoryBase> BuildNoSmoother() const {
+      return Teuchos::null;
+    }
+
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new DirectSolver())));
@@ -378,6 +409,10 @@ namespace MueLu {
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
+    }
+
+    RCP<FactoryBase> BuildNoDirectSolver() const {
+      return Teuchos::null;
     }
 
   }; // class

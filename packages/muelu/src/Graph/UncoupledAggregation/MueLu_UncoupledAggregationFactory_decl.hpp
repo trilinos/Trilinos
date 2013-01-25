@@ -73,7 +73,8 @@
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+//#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
@@ -89,7 +90,7 @@ public:
   //@{
 
   //! Constructor.
-  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = false, bool bEmergencyAggregation = true);
+  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = true, bool bEmergencyAggregation = true);
 
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }

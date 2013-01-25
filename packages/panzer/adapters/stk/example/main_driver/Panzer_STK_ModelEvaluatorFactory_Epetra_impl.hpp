@@ -679,7 +679,8 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
- 		                  const Teuchos::RCP<panzer::GlobalData>& global_data) 
+ 		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > & rythmosSolver)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_lin_obj_factory), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
@@ -726,7 +727,16 @@ namespace panzer_stk {
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
       piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
 
-      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me_db, observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory)));
+      // use the user specfied rythmos solver if they pass one in
+      Teuchos::RCP<Piro::RythmosSolver<double> > piro_rythmos;
+      if(rythmosSolver==Teuchos::null)
+        piro_rythmos = Teuchos::rcp(new Piro::RythmosSolver<double>());
+      else
+        piro_rythmos = rythmosSolver;
+
+      piro_rythmos->initialize(piro_params, thyra_me_db, observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
+
+      piro = piro_rythmos;
     } 
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,

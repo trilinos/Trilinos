@@ -49,3 +49,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     DEPLIBS ifpack2_tpetra_testinst
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ChebyshevConvergence
+  SOURCES 
+    Ifpack2_UnitTestChebyshev2.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  DEPLIBS ifpack2 tpetra
+  STANDARD_PASS_OUTPUT
+  )
+
+
+

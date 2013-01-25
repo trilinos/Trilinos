@@ -118,9 +118,9 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   multsJv = 0;
   
   // Determine the specific type of tensor linesearch to perform
-  string choice = lsParams.get("Method", "Curvilinear");
+  std::string choice = lsParams.get("Method", "Curvilinear");
 
-  utils.out() << choice << endl;
+  utils.out() << choice << std::endl;
   
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -137,7 +137,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     if (utils.isPrintType(NOX::Utils::Error))
       utils.err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Line Search\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
@@ -156,7 +156,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else
   {
     utils.err() << "NOX::Solver::TensorBased::reset() - "
-	 << "Invalid \"Recovery Step Type\"" << endl;
+	 << "Invalid \"Recovery Step Type\"" << std::endl;
     throw "NOX Error";
   }
 #endif
@@ -178,7 +178,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     if (utils.isPrintType(NOX::Utils::Error))
       utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Lambda Selection\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -195,7 +195,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     if (utils.isPrintType(NOX::Utils::Error))
       utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Sufficient Decrease Condition\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -210,7 +210,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   paramsPtr = &params;
 
   // Do line search and compute new soln.
-  string choice = lsparams.get("Submethod", "Curvilinear");
+  std::string choice = lsparams.get("Submethod", "Curvilinear");
 
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -224,7 +224,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     if (utils.isPrintType(NOX::Utils::Warning)) {
       utils.out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	   << "\"Line Search\" \nparameter is invalid.  Using curvilinear "
-	   << "line search." << endl;
+	   << "line search." << std::endl;
     }
     lsparams.set("Submethod", "Curvilinear");
     lsType = Curvilinear;
@@ -240,7 +240,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   }
   else {
     utils.out() << "Warning: NOX::Solver::TensorBasedTest::init() - the choice of "
-	 << "\"Lambda Selection\" parameter is invalid." << endl;
+	 << "\"Lambda Selection\" parameter is invalid." << std::endl;
     lambdaSelection = Halving;
   }
 
@@ -343,13 +343,13 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   bool isFailed = false;
   bool isAccepted = false;
   bool isFirstPass = true;
-  string message = "(STEP ACCEPTED!)";
+  std::string message = "(STEP ACCEPTED!)";
 
   // Set counters
   int lsIterations = 1;
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
-  string dirString = const_cast<Teuchos::ParameterList&>(s.getList()).
+  std::string dirString = const_cast<Teuchos::ParameterList&>(s.getList()).
     sublist("Direction").get("Method", "Tensor");
   double eta = (suffDecrCond == AredPred) ? 
     const_cast<Teuchos::ParameterList&>(s.getList()).sublist("Direction").
@@ -515,7 +515,7 @@ bool NOX::LineSearch::Tensor::checkConvergence(double newValue, double oldValue,
 
   default:
 
-    utils.err() << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << endl;
+    utils.err() << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << std::endl;
     throw "NOX Error";
 
   }
@@ -546,7 +546,7 @@ void NOX::LineSearch::Tensor::printBadSlopeWarning(double slope) const
     utils.out() << "WARNING: Computed slope is positive (slope = " 
 	 << slope
 	 << ").\n" << "Using recovery step!" 
-	 << endl;
+	 << std::endl;
 }
 
 #endif

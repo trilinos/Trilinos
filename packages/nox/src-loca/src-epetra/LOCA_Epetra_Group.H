@@ -55,7 +55,7 @@
 #include "LOCA_Abstract_TransposeSolveGroup.H" // base class
 #include "NOX_Epetra_Group.H"                  // base class
 #include "LOCA_Parameter_Vector.H"             // class data element
-#include "NOX_Common.H"                        // class data element (string)
+#include "NOX_Common.H"                        // class data element (std::string)
 #include "LOCA_Epetra_Interface_TimeDependent.H"
 #include "LOCA_Epetra_Interface_FreeEnergy.H"
 #include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
@@ -304,7 +304,7 @@ namespace LOCA {
       virtual void setParam(int paramID, double val);
   
       //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val);
+      virtual void setParam(std::string paramID, double val);
 
       //! Return a const reference to the ParameterVector owned by the group. 
       const LOCA::ParameterVector& getParams() const;
@@ -313,7 +313,7 @@ namespace LOCA {
       virtual double getParam(int paramID) const;
 
       //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const;
+      virtual double getParam(std::string paramID) const;
 
       //! Perform any preprocessing before a continuation step starts.
       /*!

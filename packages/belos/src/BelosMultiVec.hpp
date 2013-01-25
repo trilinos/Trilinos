@@ -140,7 +140,11 @@ public:
 
   //! The number of rows in the multivector.
   virtual int GetVecLength () const = 0;
-  
+ 
+  //! The number of rows in the multivector.
+  //! \note This method supersedes GetVecLength, which will be deprecated.
+  virtual ptrdiff_t GetGlobalLength () const { return static_cast<ptrdiff_t>( this->GetVecLength() ); }
+ 
   //! The number of vectors (i.e., columns) in the multivector.
   virtual int GetNumberVecs () const = 0;
 

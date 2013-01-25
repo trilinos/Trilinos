@@ -346,8 +346,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     wall_clock.reset();
 
-    fill( 0 , jacobian.coefficients );
-    fill( 0 , residual );
+    fill( jacobian.coefficients.dimension_0(), 0 , jacobian.coefficients );
+    fill( residual.dimension_0() , 0 , residual );
 
     GatherFillFunctor::apply( jacobian , 
                               residual ,
@@ -376,7 +376,9 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     //------------------------------------
     // Has the residual converged?
 
-    residual_norm = sqrt( dot(mesh.parallel_data_map, residual) );
+    residual_norm = norm2( mesh.parallel_data_map.count_owned,
+                           residual,
+                           mesh.parallel_data_map.machine );
 
     if ( 0 == newton_iteration_count ) {
       residual_norm_init = residual_norm ;
@@ -409,9 +411,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     // text:
     // x[n+1] = x[n] + Dx
 
-    waxpby( mesh.parallel_data_map,
-            1.0, nodal_solution,
-           -1.0, delta, nodal_solution);
+    axpy( mesh.parallel_data_map.count_owned ,
+          -1.0, delta, nodal_solution);
 
     ++newton_iteration_count ;
 
@@ -502,9 +503,9 @@ void driver( const char * const label ,
     std::cout << std::endl ;
     std::cout << "\"KokkosArray::HybridFE::Nonlinear " << label << "\"" << std::endl;
     std::cout
-      << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
+      << "\"Size\" ,  \"Size\" ,  \"Graphing\" , \"Element\" ,  \"Fill\" ,     \"Boundary\" , \"CG-Iter\" , \"CG-Iter\" ,      \"Newton-Iter\" , \"Max-node-error\""
       << std::endl
-      << "\"elems\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
+      << "\"elems\" , \"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
       << std::endl ;
   }
 
@@ -518,7 +519,10 @@ void driver( const char * const label ,
     const int ix = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
     const int iy = 1 + ix ;
     const int iz = 2 * iy ;
-    const int n  = ix * iy * iz ;
+    const int global_elem_count = ix * iy * iz ;
+    const int global_node_count = ( 2 * ix + 1 ) *
+                                  ( 2 * iy + 1 ) *
+                                  ( 2 * iz + 1 );
 
     mesh_type mesh =
       fixture_type::create( proc_count , proc_rank , gang_count ,
@@ -544,7 +548,8 @@ void driver( const char * const label ,
 
     if ( comm::rank( machine ) == 0 ) {
 
-      std::cout << std::setw(8) << n << " , "
+      std::cout << std::setw(8) << global_elem_count << " , "
+                << std::setw(8) << global_node_count << " , "
                 << std::setw(10) << perf_best.graph_time * 1000 << " , "
                 << std::setw(10) << perf_best.elem_time * 1000 << " , "
                 << std::setw(10) << perf_best.matrix_gather_fill_time * 1000 << " , "

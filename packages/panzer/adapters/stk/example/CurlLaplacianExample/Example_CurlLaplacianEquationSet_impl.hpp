@@ -95,17 +95,13 @@ CurlLaplacianEquationSet(const panzer::InputEquationSet& ies,
    // ********************
    // Assemble DOF names and Residual names
    // ********************
-   this->m_dof_names->push_back("EFIELD");
- 
-   this->m_dof_curl_names->push_back("CURL_EFIELD");
- 
-   if(this->m_build_transient_support)
-      this->m_dof_time_derivative_names->push_back("DOT_EFIELD");
- 
-   this->m_residual_names->push_back("RESIDUAL_EFIELD");
- 
    this->m_scatter_name = "Scatter_RESIDUAL_EFIELD";
  
+   this->addProvidedDOF("EFIELD","RESIDUAL_EFIELD");
+   this->addDOFCurl("EFIELD","CURL_EFIELD");
+   if (this->buildTransientSupport())
+     this->addDOFTimeDerivative("EFIELD","DOT_EFIELD");
+
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************

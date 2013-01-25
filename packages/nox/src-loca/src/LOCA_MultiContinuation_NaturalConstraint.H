@@ -125,7 +125,7 @@ namespace LOCA {
 
       //! Sets parameters indexed by paramIDs
       virtual void setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Compute continuation constraint equations
@@ -143,7 +143,7 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const vector<int>& paramIDs, 
+      computeDP(const std::vector<int>& paramIDs, 
 		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 		bool isValidG);
 
@@ -194,7 +194,7 @@ namespace LOCA {
       bool isValidConstraints;
 
       //! Continuation parameter IDs
-      vector<int> conParamIDs;
+      std::vector<int> conParamIDs;
 
     }; // Class ArcLengthConstraint
 

@@ -68,8 +68,8 @@ namespace MueLu {
   class Level;
 
   /*!
-    @class ThresholdAFilterFactory class.
-    @brief Factory for building a thresholded operator.
+    @class AggregationExportFactory class.
+    @brief Factory for exporting aggregates data
 
   */
 
@@ -83,11 +83,13 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out");
+    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out") : outputFileName_(outputFileName) { }
 
     //! Destructor.
-    virtual ~AggregationExportFactory();
+    virtual ~AggregationExportFactory() { }
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! Input
     //@{

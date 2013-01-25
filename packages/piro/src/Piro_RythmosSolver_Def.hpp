@@ -53,6 +53,8 @@
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Rythmos_CompositeIntegrationObserver.hpp"
 
+#include "Rythmos_ExampleThetaStepper.hpp"
+
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -72,19 +74,38 @@
 #include <iostream>
 
 template <typename Scalar>
+Piro::RythmosSolver<Scalar>::RythmosSolver() :
+  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  isInitialized(false)
+{
+}
+
+template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
     Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > in_model,
+    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
     Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
-  model(in_model),
-  num_p(in_model->Np()),
-  num_g(in_model->Ng()),
-  out(Teuchos::VerboseObjectBase::getDefaultOStream())
+  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  isInitialized(false)
+{
+  initialize(appParams,in_model,observer);
+}
+
+template <typename Scalar>
+void Piro::RythmosSolver<Scalar>::initialize(
+    Teuchos::RCP<Teuchos::ParameterList> appParams,
+    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
+    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  // set some internals
+  model = in_model;
+  num_p = in_model->Np();
+  num_g = in_model->Ng();
 
   //
   *out << "\nA) Get the base parameter list ...\n";
@@ -156,11 +177,30 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     fwdStateStepper->setInitialCondition(model->getNominalValues());
 
   }
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true, Teuchos::Exceptions::InvalidParameter,
-        std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
-        << stepperType << std::endl);
+  else if (stepperType == "Example Theta Method") {
+    Teuchos::RCP<Teuchos::ParameterList> ThetaParams = Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
+
+    fwdStateStepper = Rythmos::exampleThetaStepper<Scalar>(model,fwdTimeStepSolver,ThetaParams);
+    fwdStateStepper->setInitialCondition(model->getNominalValues());
+  }
+  else {
+    // first (before failing) check to see if the user has added stepper factory
+    typename std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > >::const_iterator 
+        stepFactItr = stepperFactories.find(stepperType);
+    if(stepFactItr!=stepperFactories.end()) { 
+      // the user has added it, hot dog lets build a new stepper!
+      Teuchos::RCP<Teuchos::ParameterList> stepperParams = Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
+
+      // build the stepper using the factory
+      fwdStateStepper = stepFactItr->second->buildStepper(model,fwdTimeStepSolver,stepperParams);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true, Teuchos::Exceptions::InvalidParameter,
+          std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
+          << stepperType << std::endl);
+    }
+  }
 
   // Step control strategy
   {
@@ -210,6 +250,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   if (Teuchos::nonnull(observer)) {
     fwdStateIntegrator->setIntegrationObserver(observer);
   }
+
+  isInitialized = true;
 }
 
 
@@ -218,9 +260,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
@@ -232,7 +274,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   t_initial(0.0),
   t_final(finalTime),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  solnVerbLevel(verbosityLevel)
+  solnVerbLevel(verbosityLevel),
+  isInitialized(true)
 {
   if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
     fwdStateStepper->setNonconstModel(underlyingModel);
@@ -244,10 +287,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar initialTime,
     Scalar finalTime,
-    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
@@ -259,7 +302,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   t_initial(initialTime),
   t_final(finalTime),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  solnVerbLevel(verbosityLevel)
+  solnVerbLevel(verbosityLevel),
+  isInitialized(true)
 {
   if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
     fwdStateStepper->setNonconstModel(underlyingModel);
@@ -741,4 +785,11 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<bool>("Invert Mass Matrix", false, "");
 
   return validPL;
+}
+
+template <typename Scalar>
+void Piro::RythmosSolver<Scalar>::
+addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStepperFactory<Scalar> > & factory)
+{
+  stepperFactories[stepperName] = factory;
 }

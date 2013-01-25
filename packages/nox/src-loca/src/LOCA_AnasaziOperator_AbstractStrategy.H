@@ -109,7 +109,7 @@ namespace LOCA {
       /*!
        * \brief Return name of this operator
        */
-      virtual const string& label() const = 0;
+      virtual const std::string& label() const = 0;
 
       /*! 
        * \brief Apply the operator to \c input with the result in \c output

@@ -3,21 +3,21 @@
 
 #include <mpi.h>
 #include <vector>
+#include <parmetis.h>
+
 #undef MPICPP
 #include <zoltan_cpp.h>
 #include <exodusII_par.h>
 #include <Ioss_PropertyManager.h>
+#include <Ioss_Map.h>
 
 namespace Ioss {
   class Field;
 }
 namespace Iopx {
-  class DecompositionData;
-  typedef int MY_INT;
-  
+
   class BlockDecompositionData
   {
-    friend class DecompositionData;
   public:
     BlockDecompositionData() :
       id_(0), fileCount(0), iossCount(0), nodesPerEntity(0), attributeCount(0), localIossOffset(0)
@@ -27,20 +27,17 @@ namespace Iopx {
       size_t file_count() const {return fileCount;}
       size_t ioss_count() const {return iossCount;}
     
-  private:
       int64_t id_;
       size_t fileCount;
       size_t iossCount;
 
-  public:
       std::string topologyType;
       int nodesPerEntity;
       int attributeCount;
       
-  private:
       // maps from file-block data to ioss-block data
-      // The local_map.size() elements starting at local_ioss_offset are local.
-      // ioss[local_ioss_offset+i] = file[local_map[i]];
+      // The local_map.size() elements starting at localIossOffset are local.
+      // ioss[localIossOffset+i] = file[local_map[i]];
       size_t localIossOffset;
       std::vector<int> localMap;
     
@@ -58,9 +55,8 @@ namespace Iopx {
       std::vector<int> importIndex;
   };
   
-  class SetDecompositionData
+  class SetDecompositionData 
   {
-    friend class DecompositionData;
   public:
     SetDecompositionData() :
       root_(0), fileCount(0), id_(0), distributionFactorCount(0),
@@ -72,47 +68,98 @@ namespace Iopx {
       size_t file_count() const {return fileCount;}
       size_t ioss_count() const {return entitylist_map.size();}
       size_t df_count() const {return distributionFactorCount;}
-  private:
+
       // contains global entity-list positions for all entities in this set on this processor. 
       std::vector<int> entitylist_map;
       std::vector<bool> hasEntities; // T/F if this set exists on processor p
       int root_;  // Lowest number processor that has nodes for this nodest
       size_t fileCount; // Number of nodes in nodelist for file decomposition
       int64_t id_;
-  public:
+
       size_t distributionFactorCount;
       int    distributionFactorValsPerEntity; // number of df / element or node. -1 if nonconstant.
       double distributionFactorValue; // If distributionFactorConstant == true, the constant value
       bool distributionFactorConstant; // T if all distribution factors the same value.
   };
   
-  class DecompositionData {
+  class DecompositionDataBase
+  {
+  public:
+    DecompositionDataBase(MPI_Comm comm) : comm_(comm),
+      myProcessor(0), processorCount(0), spatialDimension(0), globalNodeCount(0),
+      globalElementCount(0), elementCount(0), elementOffset(0), importPreLocalElemIndex(0),
+      nodeCount(0), nodeOffset(0), importPreLocalNodeIndex(0)
+      {}
+      
+      virtual ~DecompositionDataBase() {}
+      virtual int int_size() const = 0;
+      virtual void decompose_model(int exodusId) = 0;
+      virtual size_t ioss_node_count() const = 0;
+      virtual size_t ioss_elem_count() const = 0;
+    
+      MPI_Comm comm_;
+      
+      int myProcessor;
+      int processorCount;
+      
+      size_t spatialDimension;
+      size_t globalNodeCount;
+      size_t globalElementCount;
+    
+      // Values for the file decomposition 
+      size_t elementCount;
+      size_t elementOffset;
+      size_t importPreLocalElemIndex;
+
+      size_t nodeCount;
+      size_t nodeOffset;
+      size_t importPreLocalNodeIndex;
+    
+      std::vector<double> centroids_;
+
+      std::vector<BlockDecompositionData> el_blocks;
+      std::vector<SetDecompositionData> node_sets;
+      std::vector<SetDecompositionData> side_sets;
+
+      const SetDecompositionData &get_decomp_set(ex_entity_type type, ex_entity_id id) const;
+
+      template <typename T>
+	void communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const;
+      
+      template <typename T>
+	void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const;
+
+      void get_block_connectivity(int exodusId, void *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+
+      int get_set_mesh_double(int exodusId, ex_entity_type type, ex_entity_id id,
+			      const Ioss::Field& field, double *ioss_data) const ;
+
+      virtual size_t get_commset_node_size() const = 0;
+    
+      virtual int get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const = 0;
+      virtual int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const = 0;
+      virtual int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id   obj_id, size_t attr_count, double* attrib) const = 0;
+      virtual int get_var(int exodusId, int step, ex_entity_type type,
+			  int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const = 0;
+  };
+
+  template <typename INT>
+    class DecompositionData;
+  
+  template <typename INT>
+    class DecompositionData : public DecompositionDataBase
+  {
   public:
     DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
+    ~DecompositionData() {}
+    
+    int int_size() const {return sizeof(INT);}
 
     void decompose_model(int exodusId);
       
     size_t ioss_node_count() const {return nodeGTL.size();}
     size_t ioss_elem_count() const {return localElementMap.size() + importElementMap.size();}
     
-    MPI_Comm comm_;
-      
-    int myProcessor;
-    int processorCount;
-      
-    size_t spatialDimension;
-
-    // Values for the file decomposition 
-    size_t elementCount;
-    size_t elementOffset;
-    size_t importPreLocalElemIndex;
-
-    size_t nodeCount;
-    size_t nodeOffset;
-    size_t importPreLocalNodeIndex;
-    
-    std::vector<double> centroids_;
-
     // This processor "manages" the elements on the exodus mesh file from
     // element_offset to element_offset+count (0-based). This is
     // 'file' data
@@ -152,43 +199,38 @@ namespace Iopx {
     // the elements for processor p range from [X_proc_disp[p] to
     // X_proc_disp[p+1])
     
-    
-    std::vector<int> localElementMap;
+    std::vector<INT> localElementMap;
 
-    std::vector<int> importElementMap;
-    std::vector<int> importElementCount;
-    std::vector<int> importElementIndex;
+    std::vector<INT> importElementMap;
+    std::vector<INT> importElementCount;
+    std::vector<INT> importElementIndex;
 
-    std::vector<int> exportElementMap;
-    std::vector<int> exportElementCount;
-    std::vector<int> exportElementIndex;
+    std::vector<INT> exportElementMap;
+    std::vector<INT> exportElementCount;
+    std::vector<INT> exportElementIndex;
 
-    std::vector<int> nodeIndex;
+    std::vector<INT> nodeIndex;
 
     // Note that nodeGTL is a sorted vector.
-    std::vector<int> nodeGTL;  // Convert from global index to local index (1-based)
-    std::map<int,int> elemGTL;  // Convert from global index to local index (1-based)
+    std::vector<INT> nodeGTL;  // Convert from global index to local index (1-based)
+    std::map<INT,INT> elemGTL;  // Convert from global index to local index (1-based)
 
-    std::vector<int> exportNodeMap;
-    std::vector<int> exportNodeCount;
-    std::vector<int> exportNodeIndex;
+    std::vector<INT> exportNodeMap;
+    std::vector<INT> exportNodeCount;
+    std::vector<INT> exportNodeIndex;
 
-    std::vector<int> importNodeMap; // Where to put each imported nodes data in the list of all data...
-    std::vector<int> importNodeCount;
-    std::vector<int> importNodeIndex;
+    std::vector<INT> importNodeMap; // Where to put each imported nodes data in the list of all data...
+    std::vector<INT> importNodeCount;
+    std::vector<INT> importNodeIndex;
       
-    std::vector<int> localNodeMap;
+    std::vector<INT> localNodeMap;
       
-    std::vector<int> nodeCommMap; // node/processor pair of the
+    std::vector<INT> nodeCommMap; // node/processor pair of the
     // nodes I communicate with.  Stored node#,proc,node#,proc, ...
       
     // The global element at index 'I' (0-based) is on block B in the file decompositoin.
     // if fileBlockIndex[B] <= I && fileBlockIndex[B+1] < I
     std::vector<size_t> fileBlockIndex;
-
-    std::vector<BlockDecompositionData> el_blocks;
-    std::vector<SetDecompositionData> node_sets;
-    std::vector<SetDecompositionData> side_sets;
 
   public:
     int get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const;
@@ -199,14 +241,15 @@ namespace Iopx {
     template <typename T>
       void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const;
       
-    template <typename INT>
-      void communicate_set_data(INT *file_data, INT *ioss_data, const SetDecompositionData &set, size_t comp_count) const;
+    template <typename T>
+      void communicate_set_data(T *file_data, T *ioss_data, const SetDecompositionData &set, size_t comp_count) const;
       
-    template <typename INT>
-      void communicate_block_data(INT *file_data, INT *ioss_data, size_t blk_seq, size_t comp_count) const;
+    template <typename T>
+      void communicate_block_data(T *file_data, T *ioss_data, size_t blk_seq, size_t comp_count) const;
       
-    template <typename INT>
-      void get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+    void get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+    void get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map, bool do_map) const;
+    size_t get_commset_node_size() const {return nodeCommMap.size()/2;}
 
     int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id   obj_id, size_t attr_count, double* attrib) const;
     int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const;
@@ -223,8 +266,10 @@ namespace Iopx {
     size_t get_block_element_count(size_t blk_seq) const;
     size_t get_block_element_offset(size_t blk_seq) const;
     
-    const SetDecompositionData &get_decomp_set(ex_entity_type type, ex_entity_id id) const;
-
+    void create_implicit_global_map(const std::vector<int> &owning_proc,
+				    std::vector<int64_t> &global_implicit_map,
+				    Ioss::Map &node_map, int64_t *locally_owned_count,
+				    int64_t *processor_offset);
   private:
 
     /*! 
@@ -243,13 +288,17 @@ namespace Iopx {
 
     void zoltan_decompose(const std::string &method);
 
-    template <typename INT>
     void metis_decompose(const std::string &method,
 			 const std::vector<INT> &element_dist,
 			 const std::vector<INT> &pointer,
 			 const std::vector<INT> &adjacency);
 
-    template <typename INT>
+    void internal_metis_decompose(const std::string &method,
+				  idx_t *element_dist,
+				  idx_t *pointer,
+				  idx_t *adjacency,
+				  idx_t *elem_partition);
+
     void simple_decompose(const std::string &method,
 			  const std::vector<INT> &element_dist);
     
@@ -288,26 +337,20 @@ namespace Iopx {
     void get_element_block_communication(size_t num_elem_block);
     void get_element_block_counts(size_t num_elem_block);
 
-    template <typename INT>
     void generate_adjacency_list(int exodusId, std::vector<INT> &pointer, std::vector<INT> &adjacency, size_t block_count);
 
-    template <typename INT>
-      void get_nodeset_data(int exodusId, size_t set_count, INT dummy);
+    void get_nodeset_data(int exodusId, size_t set_count);
 
-    template <typename INT>
-      void get_sideset_data(int exodusId, size_t set_count, INT dummy);
+    void get_sideset_data(int exodusId, size_t set_count);
 
-    template <typename INT>
     void calculate_element_centroids(int exodusId,
 				     const std::vector<INT> &pointer,
 				     const std::vector<INT> &adjacency,
 				     const std::vector<INT> &node_dist);
     void get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count);
 
-    template <typename INT>
-    void get_shared_node_list(INT dummy);
+    void get_shared_node_list();
 
-    template <typename INT>
     void get_local_node_list(const std::vector<INT> &pointer, const std::vector<INT> &adjacency,
 			     const std::vector<INT> &node_dist);
 

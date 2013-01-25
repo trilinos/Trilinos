@@ -108,6 +108,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -292,7 +293,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(_numBlocks <= _nevBlocks, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive and large enough to compute the requested eigenvalues.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(_numBlocks*_blockSize > MVT::GetVecLength(*_problem->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(_numBlocks)*_blockSize > MVText::GetGlobalLength(*_problem->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
   

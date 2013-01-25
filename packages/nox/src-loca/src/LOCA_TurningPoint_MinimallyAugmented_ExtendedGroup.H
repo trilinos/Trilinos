@@ -413,14 +413,14 @@ namespace LOCA {
 
 	//! Set parameters indexed by (integer) paramIDs
 	virtual void setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
 	//! Set the parameter vector in the group to p.
 	virtual void setParams(const ParameterVector& p);
 
 	//! Set parameter indexed by paramID
-	virtual void setParam(string paramID, double val);
+	virtual void setParam(std::string paramID, double val);
 
 	//! Set parameter indexed by paramID
 	virtual void setParam(int paramID, double val);
@@ -432,7 +432,7 @@ namespace LOCA {
 	virtual double getParam(int paramID) const;
 
 	//! Return copy of parameter indexed by paramID
-	virtual double getParam(string paramID) const;
+	virtual double getParam(std::string paramID) const;
 
 	/*! 
 	 * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -441,7 +441,7 @@ namespace LOCA {
 	 * computed.
 	 */
 	virtual NOX::Abstract::Group::ReturnType
-	computeDfDpMulti(const vector<int>& paramIDs, 
+	computeDfDpMulti(const std::vector<int>& paramIDs, 
 			 NOX::Abstract::MultiVector& dfdp, 
 			 bool isValidF);
 

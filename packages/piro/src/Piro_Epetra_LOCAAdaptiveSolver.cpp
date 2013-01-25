@@ -226,7 +226,7 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
   int numParameters = p_in->GlobalLength();
 
   for (int i=0; i< numParameters; i++) pVector->setValue(i, (*p_in)[i]);
-  utils.out() << "eval pVector   " << setprecision(10) << *pVector << endl;
+  utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << endl;
   interface->setParameters(*pVector);
 
   // Solve

@@ -1,6 +1,6 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
-#include "Stokhos_Sacado.hpp"
+#include "Stokhos.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TestForException.hpp"

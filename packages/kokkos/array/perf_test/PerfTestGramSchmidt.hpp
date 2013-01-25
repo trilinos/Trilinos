@@ -109,7 +109,6 @@ struct ModifiedGramSchmidt
 
   multivector_type Q ;
   multivector_type R ;
-  double seconds ;
 
   static double factorization( const multivector_type Q ,
                                const multivector_type R )
@@ -154,7 +153,8 @@ struct ModifiedGramSchmidt
   //--------------------------------------------------------------------------
 
   static double test( const size_t length ,
-                      const size_t count )
+                      const size_t count ,
+                      const size_t iter = 1 )
   {
     multivector_type Q( "Q" , length , count );
     multivector_type R( "R" , count , count );
@@ -170,13 +170,22 @@ struct ModifiedGramSchmidt
       }
     }
 
-    KokkosArray::deep_copy( Q , A );
+    double dt_min = 0 ;
 
-    // A = Q * R
+    for ( size_t i = 0 ; i < iter ; ++i ) {
 
-    return factorization( Q , R );
+      KokkosArray::deep_copy( Q , A );
+
+      // A = Q * R
+
+      const double dt = factorization( Q , R );
+
+      if ( 0 == i ) dt_min = dt ;
+      else dt_min = dt < dt_min ? dt : dt_min ;
+    }
+
+    return dt_min ;
   }
-
 };
 
 

@@ -16,7 +16,7 @@ TAGFILES += \
 #
 # Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
 #
-#USE_MATHJAX            = YES
+USE_MATHJAX            = YES
 # this path *must* be relative to muelu/doc/html
 #MATHJAX_RELPATH        = ../../../../../../../Software/mathjax-MathJax-f5cd294
 #

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -64,7 +64,7 @@
 namespace {
   template<class MV>
   typename Teuchos::ScalarTraits<typename MV::scalar_type>::magnitudeType
-  norm2 (const MV& x) 
+  norm2 (const MV& x)
   {
     typedef typename MV::scalar_type scalar_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
@@ -73,7 +73,6 @@ namespace {
     x.norm2 (normTemp);
     return normTemp[0];
   }
-} // namespace (anonymous)
 
 //
 // Tests for Tpetra::CrsMatrix::gaussSeidel().
@@ -138,7 +137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
 
 
-  ////////////////////////////////////////////////////////////////////  
+  ////////////////////////////////////////////////////////////////////
   // HERE BEGINS THE TEST.
   ////////////////////////////////////////////////////////////////////
 
@@ -182,7 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 
   const LO numLocalPoints = 9;
   const GO numGlobalPoints = numProcs * numLocalPoints;
-  
+
   // Number of rows in the matrix owned by each process.
   const LO numLocalRows = numLocalPoints * numGlobalPoints;
 
@@ -191,7 +190,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const GO numGlobalCols = numGlobalRows;
   // Prevent compile warning for unused variable.
   // (It's not really "variable" if it's const, but oh well.)
-  (void) numGlobalCols; 
+  (void) numGlobalCols;
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;
@@ -227,17 +226,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
       Teuchos::Array<GO> indices;
       if (globalRow - numGlobalPoints >= globalMinAllRow) {
-	indices.push_back (globalRow - numGlobalPoints);
+        indices.push_back (globalRow - numGlobalPoints);
       }
       if (globalRow - 1 >= globalMinAllRow) {
-	indices.push_back (globalRow - 1);
+        indices.push_back (globalRow - 1);
       }
       indices.push_back (globalRow);
       if (globalRow + 1 <= globalMaxAllRow) {
-	indices.push_back (globalRow + 1);
+        indices.push_back (globalRow + 1);
       }
       if (globalRow + numGlobalPoints <= globalMaxAllRow) {
-	indices.push_back (globalRow + numGlobalPoints);
+        indices.push_back (globalRow + numGlobalPoints);
       }
       nonconstGraph->insertGlobalIndices (globalRow, indices ());
     }
@@ -257,22 +256,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
       Teuchos::Array<GO> indices;
       Teuchos::Array<ST> values;
       if (globalRow - numGlobalPoints >= globalMinAllRow) {
-	indices.push_back (globalRow - numGlobalPoints);
-	values.push_back (-STS::one ());
+        indices.push_back (globalRow - numGlobalPoints);
+        values.push_back (-STS::one ());
       }
       if (globalRow - 1 >= globalMinAllRow) {
-	indices.push_back (globalRow - 1);
-	values.push_back (-STS::one ());
+        indices.push_back (globalRow - 1);
+        values.push_back (-STS::one ());
       }
       indices.push_back (globalRow);
       values.push_back (as<ST> (4));
       if (globalRow + 1 <= globalMaxAllRow) {
-	indices.push_back (globalRow + 1);
-	values.push_back (-STS::one ());
+        indices.push_back (globalRow + 1);
+        values.push_back (-STS::one ());
       }
       if (globalRow + numGlobalPoints <= globalMaxAllRow) {
-	indices.push_back (globalRow + numGlobalPoints);
-	values.push_back (-STS::one ());
+        indices.push_back (globalRow + numGlobalPoints);
+        values.push_back (-STS::one ());
       }
       matrix->replaceGlobalValues (globalRow, indices (), values ());
     }
@@ -306,15 +305,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     ArrayRCP<ST> D_data = D->getDataNonConst ();
     for (size_type k = 0; k < D_data.size (); ++k) {
       if (D_data[k] == STS::zero ()) {
-	zeroDiagEltIndex = k;
+        zeroDiagEltIndex = k;
       } else {
-	D_data[k] = STS::one() / D_data[k];
+        D_data[k] = STS::one() / D_data[k];
       }
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
       zeroDiagEltIndex != -1,
       std::logic_error,
-      "On Process " << comm->getRank () << ", diagonal element " 
+      "On Process " << comm->getRank () << ", diagonal element "
       << zeroDiagEltIndex << ", possibly among others, is zero.");
   }
 
@@ -358,10 +357,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const magnitude_type B_norm_orig = norm2 (*B);
   if (myRank == 0) {
     cerr << "Before iterating:" << endl
-	 << "- ||R||_2 = " << residNorms[0] << endl
-	 << "- ||X||_2 = " << X_norm_orig << endl
-	 << "- ||B||_2 = " << B_norm_orig << endl  
-	 << "- ||D||_2 = " << D_norm_orig << endl;      
+         << "- ||R||_2 = " << residNorms[0] << endl
+         << "- ||X||_2 = " << X_norm_orig << endl
+         << "- ||B||_2 = " << B_norm_orig << endl
+         << "- ||D||_2 = " << D_norm_orig << endl;
   }
 
   // Monitor the norms of (X,) D, and B.  If the norms of D or B
@@ -410,10 +409,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     B_norm = norm2 (*B);
     if (myRank == 0) {
       cerr << "After iteration " << iter+1 << " of " << maxNumIters << ":" << endl
-	   << "- ||R||_2 = " << residNorms[iter+1] << endl
-	   << "- ||X||_2 = " << X_norm << endl
-	   << "- ||B||_2 = " << B_norm << endl  
-	   << "- ||D||_2 = " << D_norm << endl;      
+           << "- ||R||_2 = " << residNorms[iter+1] << endl
+           << "- ||X||_2 = " << X_norm << endl
+           << "- ||B||_2 = " << B_norm << endl
+           << "- ||D||_2 = " << D_norm << endl;
     }
   }
 
@@ -443,13 +442,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     std::logic_error,
     "Gauss-Seidel changed the norm of D (the vector of diagonal entries of the "
     "matrix)!  That means either the Gauss-Seidel implementation is broken, or "
-    "we mixed up the order of its arguments.  Original ||D||_2 = " 
+    "we mixed up the order of its arguments.  Original ||D||_2 = "
     << D_norm_orig << "; new ||D||_2 = " << D_norm << ".");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     maxNumIters > 0 && residNorms[maxNumIters] > residNorms[0],
     std::logic_error,
-    "Gauss-Seidel failed to reduce the residual norm after " << maxNumIters 
+    "Gauss-Seidel failed to reduce the residual norm after " << maxNumIters
     << " iterations!  Original ||R||_2 = " << residNorms[0] << "; final "
     "||R||_2 = " << residNorms[maxNumIters] << ".");
 }
@@ -458,15 +457,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 // INSTANTIATE THE TEMPLATED UNIT TESTS
 //////////////////////////////////////////////////////////////////////
 
-#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, NODE )
-
-//TPETRA_ETI_MANGLING_TYPEDEFS()
-
-//TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
-
 typedef Kokkos::SerialNode serial_node_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, int, long, double, serial_node_type )
+#define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, serial_node_type )
 
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
+TPETRA_INSTANTIATE_SLG( UNIT_TEST_GROUP )
 
+} // namespace (anonymous)

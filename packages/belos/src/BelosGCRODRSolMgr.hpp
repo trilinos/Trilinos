@@ -62,6 +62,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -158,6 +159,7 @@ namespace Belos {
     
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -1159,7 +1161,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_) > MVText::GetGlobalLength(*rhsMV),std::invalid_argument,
                          "Belos::GCRODRSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1301,9 +1303,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setLSIndex( currIdx );
 
   // Check the number of blocks and change them is necessary.
-  int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-  if (numBlocks_ > dim) {
-    numBlocks_ = dim;
+  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );  
+  if (static_cast<ptrdiff_t>(numBlocks_) > dim) {
+    numBlocks_ = Teuchos::as<int>(dim);
     printer_->stream(Warnings) << 
       "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
       " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << std::endl;

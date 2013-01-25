@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -76,6 +76,38 @@ struct int_ : public integral_constant<int,I> {};
 /** \brief  If is the same type */
 template< class X , class Y > struct is_same : public false_type {};
 template< class X >           struct is_same<X,X> : public true_type {};
+
+
+template <size_t N>
+struct is_power_of_2
+{
+  enum type { value = (N != 0) && !(N & (N-1)) };
+};
+
+template <size_t N>
+struct power_of_2
+{
+  enum type { value = 1+ power_of_2<(N>>1)>::value };
+};
+
+template <>
+struct power_of_2<2>
+{
+  enum type { value = 1 };
+};
+
+template <>
+struct power_of_2<1>
+{
+  enum type { value = 0 };
+};
+
+template <>
+struct power_of_2<0>
+{
+  enum type { value = 0 };
+};
+
 
 //----------------------------------------------------------------------------
 

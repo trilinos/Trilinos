@@ -43,13 +43,18 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 
 namespace unit_test {
 void product_tensor_legendre();
 }
 
-extern int mainHost(bool test_flat, bool test_orig, bool test_block);
-extern int mainCuda(bool test_flat, bool test_orig, bool test_block);
+template <typename scalar>
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool check);
+
+template <typename scalar>
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -59,10 +64,14 @@ int main(int argc, char *argv[])
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
+  bool check = true;
+  bool single = false;
+  int device = 0;
 
   // Parse command line arguments
   bool print_usage = false;
-  for (int i=1; i<argc; ++i) {
+  int i=1;
+  while (i<argc) {
     std::string s(argv[i]);
     if (s == "cuda")
       test_cuda = true;
@@ -84,28 +93,50 @@ int main(int argc, char *argv[])
       test_orig = true;
     else if (s == "no-orig")
       test_orig = false;
+    else if (s == "check")
+      check = true;
+    else if (s == "no-check")
+      check = false;
+    else if (s == "single")
+      single = true;
+    else if (s == "double")
+      single = false;
+    else if (s == "device") {
+      ++i;
+      device = std::atoi(argv[i]);
+    }
     else if (s == "-h" || s == "--help")
       print_usage = true;
     else {
       std::cout << "Invalid argument:  " << s << std::endl;
       print_usage = true;
     }
-    if (print_usage) {
-      std::cout << "Usage:" << std::endl
-		<< "\t" << argv[0] << " [no-][cuda|host|block|flat|orig]" 
-		<< std::endl << "Defaults are all enabled." << std::endl;
-     return -1;
-    }
+    ++i;
+  }
+  if (print_usage) {
+    std::cout << "Usage:" << std::endl
+	      << "\t" << argv[0] 
+	      << " [no-][cuda|host|block|flat|orig|check] [single|double] [device device_id]" 
+	      << std::endl << "Defaults are all enabled." << std::endl;
+    return -1;
   }
 
   unit_test::product_tensor_legendre();
 
 #if 1
 
-  if (test_host)
-    mainHost(test_flat, test_orig, test_block);
-  if (test_cuda)
-    mainCuda(test_flat, test_orig, test_block);
+  if (test_host) {
+    if (single)
+      mainHost<float>(test_flat, test_orig, test_block, check);
+    else
+      mainHost<double>(test_flat, test_orig, test_block, check);
+  }
+  if (test_cuda) {
+    if (single)
+      mainCuda<float>(test_flat, test_orig, test_block, check, device);
+    else
+      mainCuda<double>(test_flat, test_orig, test_block, check, device);
+  }
 
 #endif
 

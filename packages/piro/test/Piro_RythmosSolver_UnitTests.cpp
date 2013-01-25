@@ -46,6 +46,7 @@
 
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_RythmosSolver.hpp"
+#include "Piro_RythmosStepperFactory.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #include "Piro_NOXSolver.hpp"
@@ -497,6 +498,66 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_ResponseAndDefaultSensitivities)
   }
 }
 
+// builds a simple backward euler stepper factory
+template <typename Scalar>
+class TestStepperFactory : public Piro::RythmosStepperFactory<Scalar> {
+public:
+  Teuchos::RCP<Rythmos::StepperBase<Scalar> > buildStepper(
+                        const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
+                        const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > & solver,
+                        const Teuchos::RCP<Teuchos::ParameterList> & paramList)
+  { return Rythmos::backwardEulerStepper<double>(model, solver); }
+};
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ExternalStepper_Interface)
+{
+  // a simple parameter list to get things started
+  Teuchos::RCP<Teuchos::ParameterList> pl = 
+    Teuchos::getParametersFromXmlString("\
+   <ParameterList>\
+     <ParameterList name=\"Rythmos\">\
+       <Parameter name=\"Nonlinear Solver Type\" type=\"string\" value='Rythmos'/>\
+       <Parameter name=\"Final Time\" type=\"double\" value=\"1\"/>\
+       <ParameterList name=\"Stratimikos\">\
+       </ParameterList>\
+       <Parameter name=\"Stepper Type\" type=\"string\" value=\"Test Stepper\"/>\
+       <ParameterList name=\"Rythmos Stepper\">\
+       </ParameterList>\
+       <ParameterList name=\"Rythmos Integrator\">\
+       </ParameterList>\
+       <ParameterList name=\"Rythmos Integration Control\">\
+         <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>\
+         <Parameter name=\"Number of Time Steps\" type=\"int\" value=\"1\"/>\
+       </ParameterList>\
+     </ParameterList>\
+   </ParameterList>");
+
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  {
+    // this is simply to excercise externally added stepper is easy to use
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>); 
+
+    const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
+    solver->addStepperFactory("Test Stepper",testStepperFactory); // now "Stepper Type" can be used
+
+    solver->initialize(pl,model);
+    // should find the "Test Stepper", so this method call should succeed 
+    TEST_NOTHROW(solver->initialize(pl,model));
+  }
+
+  {
+    // this is simply to excercise externally added stepper is easy to use
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>); 
+
+    const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
+    solver->addStepperFactory("Test Stepper New",testStepperFactory); // now "Stepper Type" can be used
+
+    // There is no "Test Stepper" so this method call should throw
+    TEST_THROW(solver->initialize(pl,model),Teuchos::Exceptions::InvalidParameter);
+  }
+}
+
 #ifdef Piro_ENABLE_NOX
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
 {
@@ -653,6 +714,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_ResponseSensitivityOp_NoDgDpMv
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
+
 #endif /* Piro_ENABLE_NOX */
 
 #endif /* Piro_ENABLE_Rythmos */

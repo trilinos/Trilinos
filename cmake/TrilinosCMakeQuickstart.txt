@@ -32,6 +32,7 @@ Section C: Configuring Trilinos
   --  Enable coverage testing
   --  Viewing configure options and documentation
   --  Enabling extra external repositories with add-on packages
+  --  Enabling extra external repositories through a file
   --  Reconfiguring from scratch
   --  Viewing configure errors
   --  Adding configure timers
@@ -860,6 +861,26 @@ C) Configuring (Makefile Generator)
   After that, all of the extra packages defined in <EXTRAREPO> will appear in
   the list of official Trilinos packages and you are free to enable any that
   you would like just like any other Trilinos package.
+
+  NOTE: If Trilinos_EXTRAREPOS_FILE and
+  Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE are specified then the list of
+  extra repositories <EXTRAREPO> must be a subset of the extra repos read in
+  from this file.
+
+
+(*) Enabling extra external repositories through a file
+
+  -DTrilinos_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE>
+  -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
+
+  NOTE: Specifing extra repositories through an extra repos file allows
+  greater flexibility in the specification of extra repos.  This is not
+  helpful for a basic configure of the project but is useful in automated
+  testing using the TribitsCTestDriverCore.cmake script and the
+  checkin-test.py script.
+
+  NOTE: If Trilinos_IGNORE_MISSING_EXTRA_REPOSITORIES is set to TRUE, then any
+  extra repositories selected who's directory is missing will be ignored.
 
   
 (*) Reconfiguring from scratch

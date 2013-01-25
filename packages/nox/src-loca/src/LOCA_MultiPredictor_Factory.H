@@ -109,7 +109,7 @@ namespace LOCA {
 	const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
 
       //! Return strategy name given by \c predictorParams
-      const string& strategyName(Teuchos::ParameterList& predictorParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& predictorParams) const;
 
     private:
 

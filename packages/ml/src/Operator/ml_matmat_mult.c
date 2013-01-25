@@ -1,6 +1,4 @@
 /* ******************************************************************** */
-static int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
-static int subB_Nnz, Next_est, total_cols = 0;
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
@@ -873,14 +871,13 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                     ML_Operator **Cmatrix)
 /* -------------------------------------------------------------------- */
 {
-   int    i,k, jj, next_nz, Ncols, N, Nnz_estimate, sub_i, accum_size, row;
+   int    i,k, jj, next_nz, Ncols, N, Nnz_estimate, sub_i, accum_size;
    int    *C_ptr, *Ccol, *A_i_cols, rowi_N, *accum_col, row2_N;
    double *Cval, *A_i_vals, multiplier, *accum_val, dtemp;
    ML_Operator *current, *previous_matrix, *next;
    struct ML_CSR_MSRdata *temp;
    int    max_nz_row_new = 0, total_nz = 0, index_length = 0;
    int    min_nz_row_new = 1e6;
-   int    avg_nz_row_new = 0;
    double A_avg_nz_per_row=0.0, B_avg_nz_per_row=0.0, estimated_nz_per_row;
    int    A_i_allocated;
    int    flag;
@@ -1009,6 +1006,30 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       exit(1);
    }
 
+   /* Count the NNZ (and max row) in B */
+#ifdef TO_BE_CHECKED
+   if (Bmatrix->N_nonzeros <= 0) {
+      B_total_Nnz = 0;
+      for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
+         Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
+         B_total_Nnz += row2_N;
+      }
+   }
+   else B_total_Nnz = Bmatrix->N_nonzeros;
+#else
+   B_total_Nnz = 0; 
+   for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
+     Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
+     B_total_Nnz += row2_N;
+     if(row2_N > Bmatrix->max_nz_per_row) Bmatrix->max_nz_per_row = row2_N;
+   }
+#endif
+
+   B_total_Nnz++; /* avoid possible division by zero below */
+   if (Bmatrix->getrow->Nrows > 0) B_avg_nz_per_row  = ((double)B_total_Nnz)/ Bmatrix->getrow->Nrows;
+   if (B_avg_nz_per_row  < 1) B_avg_nz_per_row=100;
+
+
    /**************************************************************************/
    /* Make conservative estimates of the size needed to hold the resulting   */
    /* matrix. NOTE: These arrays can be increased later in the computation   */
@@ -1017,9 +1038,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /* otherwise we probe a few rows to generate a guess.                     */
    /*------------------------------------------------------------------------*/
    ML_estimate_avg_nz_per_row(Amatrix,&A_avg_nz_per_row);
-   if (A_avg_nz_per_row < 5) A_avg_nz_per_row=100;
-   ML_estimate_avg_nz_per_row(Bmatrix,&B_avg_nz_per_row);
-   if (B_avg_nz_per_row < 5) B_avg_nz_per_row=100;
+   if (A_avg_nz_per_row < 1) A_avg_nz_per_row=100;
 
    estimated_nz_per_row = sqrt(A_avg_nz_per_row) + sqrt(B_avg_nz_per_row) - 1.;
    estimated_nz_per_row *= estimated_nz_per_row;
@@ -1054,7 +1073,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
    /**************************************************************************/
    /* Make a copy of Bmatrix and use this copy to speed up the computation.  */
-   /*   1) First count the total number of nonzeros                          */
+   /*   1) First count the total number of nonzeros (done above)             */
    /*   2) allocate space for Bmatrix copy.                                  */
    /*      Note: accum_index is used for hashing. We make it twice the size  */
    /*            of the accumulator for good performance.                    */
@@ -1064,22 +1083,6 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /*      col_inds[].                                                       */
    /*------------------------------------------------------------------------*/
 
-#ifdef TO_BE_CHECKED
-   if (Bmatrix->N_nonzeros <= 0) {
-      B_total_Nnz = 0;
-      for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
-         Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
-         B_total_Nnz += row2_N;
-      }
-   }
-   else B_total_Nnz = Bmatrix->N_nonzeros;
-#endif
-   B_total_Nnz = 0;
-   for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
-     Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
-     B_total_Nnz += row2_N;
-   }
-   B_total_Nnz++; /* avoid possible division by zero below */
 
    /* ******************************************************************
       Try to make the hash table size a power of two.  Doing so makes

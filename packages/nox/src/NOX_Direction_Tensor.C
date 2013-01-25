@@ -230,7 +230,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   outputFreq = localParams.get("Output Frequency", 20);
   isSubspaceAugmented = false;
 
-  string choice = localParams.get("Compute Step", "Tensor");
+  std::string choice = localParams.get("Compute Step", "Tensor");
   if (choice == "Tensor") {
     requestedBaseStep = TensorStep3;
   }
@@ -253,7 +253,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   }
   else {
     utils->out() << "Warning: NOX::Direction::Tensor::reset() - the choice of "
-	 << "\"Compute Step\" parameter is invalid." << endl;
+	 << "\"Compute Step\" parameter is invalid." << std::endl;
     requestedBaseStep = TensorStep3;
   }
 
@@ -469,7 +469,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 #endif // DEBUG_LEVEL
 
   double lsTol = tol;
-//  string lsMethod = solver.getList().sublist("Line Search")
+//  std::string lsMethod = solver.getList().sublist("Line Search")
 //    .get("Method", "Tensor");
 //  if (solver.getList().sublist("Line Search").sublist(lsMethod)
 //      .isParameter("Adjusted Tolerance"))
@@ -479,7 +479,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       isParameter("Adjusted Tolerance"))
     lsTol = const_cast<Teuchos::ParameterList&>(solver.getList()).
       sublist("Line Search").get("Adjusted Tolerance", tol);
-  utils->out() << "Adjusted tolerance = " << lsTol << endl;
+  utils->out() << "Adjusted tolerance = " << lsTol << std::endl;
   
   // Compute inexact forcing term if requested.
   tol = inexactNewtonUtils.computeForcingTerm(soln,
@@ -513,7 +513,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       {
 	*dInitial = *dNewton;
 	utils->out() << " Using Newton step instead of Tensor step in restart " << errTol/tol
-	     << endl;
+	     << std::endl;
       }
 #endif
       else 
@@ -1023,7 +1023,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   int p1 = p; // Save value of this p in the event of block breakdown
   
 #if DEBUG_LEVEL > 1
-  utils->out() << "p = " << p << endl;
+  utils->out() << "p = " << p << std::endl;
   utils->out() << "factorR matrix:\n";
   print_matrix(maxp,maxp,factorR);
 #endif
@@ -1064,7 +1064,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 #endif
 
 #if DEBUG_LEVEL > 1
-  utils->out() << "normS = " << Utils::sci(normS) << endl;
+  utils->out() << "normS = " << Utils::sci(normS) << std::endl;
   utils->out() << "vecg ";
   print_vector(maxDim, vecg);
   utils->out() << "vecq ";
@@ -1884,12 +1884,12 @@ const NOX::Abstract::Vector& NOX::Direction::Tensor::getNewton() const
 
 // private
 
-void NOX::Direction::Tensor::throwError(const string& functionName,
-					const string& errorMsg) const
+void NOX::Direction::Tensor::throwError(const std::string& functionName,
+					const std::string& errorMsg) const
 {
   if (utils->isPrintType(NOX::Utils::Error))
     utils->err() << "NOX::Direction::Tensor::" << functionName << " - " << errorMsg <<
-      endl;
+      std::endl;
   throw "NOX Error";
 }
 

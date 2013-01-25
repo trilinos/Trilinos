@@ -119,7 +119,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
 
   // build D \hat{F}^{-1} G
-  RCP<Matrix> DFhatinvG = Utils::TwoMatrixMultiply(D,false,FhatinvG,false);
+  RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false);
 
   // build full SchurComplement operator
   // S = - 1/omega D \hat{F}^{-1} G + Z

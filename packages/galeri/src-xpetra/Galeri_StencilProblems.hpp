@@ -88,6 +88,9 @@ namespace Galeri {
     Teuchos::RCP<Matrix> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
+      Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      Scalar  stretchx = this->list_.get("stretchx", one);
+      Scalar  stretchy = this->list_.get("stretchy", one);
 
       if (nx == -1 || ny == -1) {
         GlobalOrdinal n = this->Map_->getGlobalNumElements();
@@ -97,7 +100,13 @@ namespace Galeri {
       }
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0, keepBCs);
+      Scalar east   = -stretchx;
+      Scalar west   = -stretchx;
+      Scalar north  = -stretchy;
+      Scalar south  = -stretchy;
+      Scalar center = -(east + west + north + south);
+
+      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -115,6 +124,10 @@ namespace Galeri {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
+      Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      Scalar  stretchx = this->list_.get("stretchx", one);
+      Scalar  stretchy = this->list_.get("stretchy", one);
+      Scalar  stretchz = this->list_.get("stretchz", one);
 
       if (nx == -1 || ny == -1 || nz == -1) {
         GlobalOrdinal n = this->Map_->getGlobalNumElements();
@@ -122,8 +135,17 @@ namespace Galeri {
         ny = nx; nz = nx;
         TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
       }
+      bool keepBCs = this->list_.get("keepBCs", false);
 
-      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
+      Scalar right  = -stretchx;
+      Scalar left   = -stretchx;
+      Scalar front  = -stretchy;
+      Scalar back   = -stretchy;
+      Scalar up     = -stretchz;
+      Scalar down   = -stretchz;
+      Scalar center = -(right + left + front + back + up + down);
+
+      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }

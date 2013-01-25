@@ -111,6 +111,25 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+    //! Map constructor transforming degrees of freedom
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
+      XPETRA_MONITOR("MapFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      LocalOrdinal N = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements()*numDofPerNode);
+      for (LocalOrdinal i = 0; i < N; i++)
+        for (LocalOrdinal j = 0; j < numDofPerNode; j++)
+          newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
+      XPETRA_FACTORY_END;
+    }
+
     //! Create a locally replicated Map with the default node.
     static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
     createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
@@ -255,6 +274,30 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
         return rcp( new EpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Map constructor transforming degrees of freedom
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
+      XPETRA_MONITOR("MapFactory::Build");
+
+      LocalOrdinal N = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements()*numDofPerNode);
+      for (LocalOrdinal i = 0; i < N; i++)
+        for (LocalOrdinal j = 0; j < numDofPerNode; j++)
+          newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraMap(map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
 #endif
 
       XPETRA_FACTORY_END;

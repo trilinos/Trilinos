@@ -54,7 +54,7 @@
 #include "MueLu_LeftoverAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 #include "MueLu_CoupledAggregationCommHelper_fwd.hpp"
 
@@ -140,16 +140,18 @@ namespace MueLu {
 
     This cleanup has many phases:
 
-    Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
+     - Phase 1b: Invoke ArbitrateAndCommunicate() to ensure that
     all processors have the same view of aggregated vertices
     (e.g., to which aggregate they have been assigned and
     which processor owns that aggregate).
-    Phase 2:  Check for vertices (local or nonlocal) which are Adjacent
+
+     - Phase 2:  Check for vertices (local or nonlocal) which are Adjacent
     to root nodes. Tentatively assign these to the aggregate
     associated with the root. Arbitrate any cases where
     several processors claim the same vertex for one of
     their aggregates via ArbitrateAndCommunicate().
-    Phase 3:  Try to create new aggregates if it looks like there are
+
+    - Phase 3:  Try to create new aggregates if it looks like there are
     root node candidates which have many unaggregated neighbors.
     This decision to make a new aggregate is based on only local
     information. However, the new aggregate will be tentatively
@@ -159,24 +161,23 @@ namespace MueLu {
     The basic idea is that after arbitration, each aggregate
     is guaranteed to keep all local vertices assigned in
     this phase. Thus, by basing the aggregation creation logic
-    on local information, we are guarantee to have a sufficiently
+    on local information, we are guaranteed to have a sufficiently
     large aggregation. The only local vertices that might be
     assigned to another processor's aggregates are unclaimed
     during this phase of the aggregation.
-    Phase 5:  Sweep new points into existing aggregates. Each processor tries
+
+    - Phase 4: EXPERIMENTAL
+
+    - Phase 5:  Sweep new points into existing aggregates. Each processor tries
     to assign any (whether it is a ghost or local) unaggregated
     vertex that it has to an aggregate that it owns. In other words,
-    processor p attempts to assign vertex v to aggregate y where
-    y is owned by p but v may be a ghost vertex (and so really
+    processor p attempts to assign vertex \f$v\f$ to aggregate \f$y\f$ where
+    \f$y\f$ is owned by p but \f$v\f$ may be a ghost vertex (and so really
     assigned to another processor). Deciding which aggregate
     a vertex is assigned to is done by scoring. Roughly, we want
-
-    a) larger scores for y if v is is close (graph distance)
-    to y's root.
-    b) larger scores for y if v has direct connections to
-    several different vertices already assigned to y.
-    c) lower scores for y if several vertices have already
-    been swept into y during this phase.
+        - larger scores for \f$y\f$ if \f$v\f$ is close (graph distance) to \f$y\f$'s root.
+        - larger scores for \f$y\f$ if \f$v\f$ has direct connections to several different vertices already assigned to \f$y\f$.
+        - lower scores for \f$y\f$ if several vertices have already been swept into \f$y\f$ during this phase.
 
     Some care must be taken for vertices that are shared (either
     local vertices that are sent to other processors or ghost
@@ -185,11 +186,11 @@ namespace MueLu {
     ArbitrateAndCommunicate() is again used for arbitration
     with the score being given as the weight.
 
-    The main tricky thing occurs when v is tentatively added to y.
-    When assigning vprime to y, the assumed connection with v should
-    not be the sole basis of this decisioin if there is some chance
-    that v might be lost in arbitration. This could actually lead to
-    vprime being disconnected from the rest of the aggregate.  This
+    The main tricky thing occurs when \f$v\f$ is tentatively added to \f$y\f$.
+    When assigning \f$v'\f$ to \f$y\f$, the assumed connection with \f$v\f$ should
+    not be the sole basis of this decision if there is some chance
+    that \f$v\f$ might be lost in arbitration. This could actually lead to
+    \f$v'\f$ being disconnected from the rest of the aggregate.  This
     is by building a list of shared ids and checking that there is
     at least one vertex in the scoring that
     is either not shared or has already been definitively
@@ -200,31 +201,44 @@ namespace MueLu {
     already been assigned to aggregates. This mark essentially
     reflects the distance of this point to the root. Specifically,
 
-    mark(v) <-- MUELU_DISTONE_VERTEX_WEIGHT if v assigned to
-    aggregate prior
-    to this phase.
+    \f[
+    mark(v) \leftarrow MUELU\_DISTONE\_VERTEX\_WEIGHT
+    \f]
+    
+    if \f$v\f$ was assigned to an aggregate prior to this phase,
 
-    mark(v) <-- max(mark(vk))/2              otherwise
+    \f[
+    mark(v) \leftarrow max(mark(v_k))/2
+    \f]
 
-    where max(mark(vk)) considers all vertices definitively
-    assigned to y that have direct connections to v.
+    otherwise, where \f$max(mark(v_k))\f$ considers all vertices definitively
+    assigned to \f$y\f$ that have direct connections to \f$v\f$.
 
     Finally,
-    score(vtilde,y)<--sum(mark(vkhat)) - AggregateIncrementPenalty
 
-    where vtilde is an unaggregated vertex being considered for
-    assignment in aggregate y and vkhat are all vertices in y
-    with a direct connection to vtilde. AggregateIncrementPenalty
+    \f[
+    score(\tilde{v},y) \leftarrow \Sigma(mark(\hat{v}_k)) - AggregateIncrementPenalty
+    \f]
+
+    where \f$\tilde{v}\f$ is an unaggregated vertex being considered for
+    assignment in aggregate \f$y\f$ and \f$hat{v}_k\f$ are all vertices in \f$y\f$
+    with a direct connection to \f$\tilde{v}\f$. AggregateIncrementPenalty
     is equal to
-    max (INCR_SCALING*NNewVtx,
-    sum(mark(vkhat))*(1-MUELU_PENALTYFACTOR))
-    where NNewVtx is the number of phase 5 vertices already
-    assigned to y.
+
+    \f[
+    \max (\mbox{INCR_SCALING}*NNewVtx, \Sigma(mark(\hat{v}_k))*(1-\mbox{MUELU_PENALTYFACTOR}))
+    \f]
+
+    where \f$ NNewVtx \f$ is the number of phase 5 vertices already
+    assigned to \f$y\f$.
 
     One last wrinkle, is that we have wrapped the whole
-    scoring/assigning of vertices around a big loop that
+    scoring/assigning of vertices inside a big loop that
     looks something like
+
+    @code
     for ( Threshold = big; Threshold >= 0; Reduce(Threshold));
+    @endcode
 
     New vertices are swept into aggregates only if their best
     score is >= a Threshold.  This encourages only very good
@@ -234,10 +248,11 @@ namespace MueLu {
     occur to address the issue mentioned above where we don't want
     to make assignment decisions based on connections to vertices
     that might be later lost in arbitration.
-    Phase 6:  Aggregate remaining vertices and avoid small aggregates (e.g.,
+
+    - Phase 6:  Aggregate remaining vertices and avoid small aggregates (e.g.,
     singletons) at all costs. Typically, most everything should
-    be aggregated by Phase's 1-5.  One way that we could still have
-    unaggegated vertices is if processor p was never assigned a
+    be aggregated by Phases 1-5.  One way that we could still have
+    unaggregated vertices is if processor p was never assigned a
     root node (perhaps because the number of local vertices on p
     is less than minNodesPerAggregate) and additionally p has
     local ids which are not shared with any other processors (so
@@ -272,7 +287,7 @@ namespace MueLu {
     Note: procWinners is also set to MyPid() by ArbitrateAndCommunicate()
     for any nonshared gid's with a nonzero weight.
     */
-    void AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const; //AggregateLeftovers
+    void AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const; //AggregateLeftovers
 
       //@}
 
@@ -283,7 +298,7 @@ namespace MueLu {
 
       Candidates are vertices not adjacent to already aggregated vertices.
       */
-    void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
+    void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, GraphBase const &graph,
                         ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const; //RootCandidates
 
       //! @brief Attempt to clean up aggregates that are too small.

@@ -93,7 +93,7 @@ LOCA::Hopf::ComplexMultiVector::ComplexMultiVector(
 
 LOCA::Hopf::ComplexMultiVector::ComplexMultiVector(
 				 const LOCA::Hopf::ComplexMultiVector& source, 
-				 const vector<int>& index, bool view) :
+				 const std::vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -139,14 +139,14 @@ LOCA::Hopf::ComplexMultiVector::clone(int numvecs) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-LOCA::Hopf::ComplexMultiVector::subCopy(const vector<int>& index) const
+LOCA::Hopf::ComplexMultiVector::subCopy(const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(*this, index, false));
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-LOCA::Hopf::ComplexMultiVector::subView(const vector<int>& index) const
+LOCA::Hopf::ComplexMultiVector::subView(const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(*this, index, true));

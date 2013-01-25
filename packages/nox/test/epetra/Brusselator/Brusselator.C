@@ -189,19 +189,19 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   Comm->Barrier();
   printf("[%d] StandardNodeMap :\n", MyPID);
   Comm->Barrier();
-  cout << *StandardNodeMap << endl;
+  std::cout << *StandardNodeMap << std::endl;
   Comm->Barrier();
   printf("[%d] OverlapNodeMap :\n", MyPID);
   Comm->Barrier();
-  cout << *OverlapNodeMap << endl;
+  std::cout << *OverlapNodeMap << std::endl;
   Comm->Barrier();
   printf("[%d] StandardMap :\n", MyPID);
   Comm->Barrier();
-  cout << *StandardMap << endl;
+  std::cout << *StandardMap << std::endl;
   Comm->Barrier();
   printf("[%d] StandardMap :\n", MyPID);
   Comm->Barrier();
-  cout << *OverlapMap << endl;
+  std::cout << *OverlapMap << std::endl;
   Comm->Barrier();
 #endif
 
@@ -290,9 +290,9 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   if( fType == NOX::Epetra::Interface::Required::Jac ) {
     if( overlapType == NODES ) {
-      cout << "This problem only works for Finite-Difference Based Jacobians" 
-           << endl << "when overlapping nodes." << endl
-           << "No analytic Jacobian fill available !!" << endl;
+      std::cout << "This problem only works for Finite-Difference Based Jacobians" 
+           << std::endl << "when overlapping nodes." << std::endl
+           << "No analytic Jacobian fill available !!" << std::endl;
       exit(1);
     }
     flag = MATRIX_ONLY;
@@ -305,8 +305,8 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
       rhs = tmp_rhs;
   }
 
-//  cout << "\nfTpye--> " << fType << endl
-//       << "Incoming soln vector :\n" << endl << *soln << endl;
+//  std::cout << "\nfTpye--> " << fType << std::endl
+//       << "Incoming soln vector :\n" << std::endl << *soln << std::endl;
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
@@ -498,7 +498,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
     tmp_rhs->Export(*rhs, *Importer, Add);
 
 //  Comm->Barrier();
-//  cout << "Returned tmp_rhs residual vector :\n" << endl << *tmp_rhs << endl;
+//  std::cout << "Returned tmp_rhs residual vector :\n" << std::endl << *tmp_rhs << std::endl;
 
   return true;
 }
@@ -512,8 +512,8 @@ Teuchos::RCP<Epetra_CrsMatrix> Brusselator::getJacobian()
 {
   if( Teuchos::is_null(A) ) return A;
   else {
-    cout << "No valid Jacobian matrix for this problem.  This is likely the"
-         << " result of overlapping NODES rather than ELEMENTS.\n" << endl;
+    std::cout << "No valid Jacobian matrix for this problem.  This is likely the"
+         << " result of overlapping NODES rather than ELEMENTS.\n" << std::endl;
     throw "Brusselator Error";
   }
 }

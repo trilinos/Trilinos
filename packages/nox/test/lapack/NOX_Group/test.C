@@ -76,16 +76,16 @@ int main(int argc, char *argv[]) {
   NOX::Utils printing(printParams);
 
   if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    cout << "Starting lapack/NOX_Group/NOX_Group.exe" << endl;
+    std::cout << "Starting lapack/NOX_Group/NOX_Group.exe" << std::endl;
   }
 
   int status = 0;
 
   // Begin real testing here!
   if (status == 0) 
-    cout << "Test passed!" << endl;
+    std::cout << "Test passed!" << std::endl;
   else 
-    cout << "Test failed!" << endl;
+    std::cout << "Test failed!" << std::endl;
 
   // 0 is success
   return status;

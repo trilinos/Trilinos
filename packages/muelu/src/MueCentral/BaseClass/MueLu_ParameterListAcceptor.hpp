@@ -43,7 +43,7 @@ namespace MueLu {
     // If a parameter is unused AND default, it is printed as [default] by std::cout << paramList but printed as unused by paramList.unused(std::cout).
     // So if we set default parameters in getValidParameters() that are not used, user will get a warning message. We don't want that for [default].
     // One solution is to never set any unused parameter in getValidParameters().
-    // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not meet.
+    // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not met.
     //
     virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const = 0;
 
@@ -102,9 +102,11 @@ namespace MueLu {
 
     virtual void SetParameterList(ParameterList & paramList) {
       // Validate and add defaults parameters.
-      RCP<const ParameterList> validParamList = GetValidParameterList();
+      RCP<const ParameterList> validParamList = GetValidParameterList(paramList);
       if (validParamList != Teuchos::null) // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous!)
         paramList.validateParametersAndSetDefaults(*validParamList);
+      //else
+      // issue a warning
       paramList_ = paramList; // copy
     }
 

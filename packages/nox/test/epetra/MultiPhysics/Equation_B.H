@@ -69,7 +69,7 @@ public:
 
   // Constructor
   Equation_B(Epetra_Comm& Comm, int NumGlobalUnknowns,
-                       string name = "");
+                       std::string name = "");
   
   // Destructor
   ~Equation_B();

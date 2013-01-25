@@ -76,8 +76,7 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() : verbLevel_(VerboseObject::GetVerbLevel()), // By default, built hierarchy inherit the current global verb level
-                         numDesiredLevel_(10), maxCoarseSize_(50)   // TODO: default values should be query from Hierarchy class to avoid duplication
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50)   // TODO: default values should be query from Hierarchy class to avoid duplication
     { }
 
     //!
@@ -129,7 +128,6 @@ namespace MueLu {
       SetupExtra(H);
 
       // Setup Hierarchy
-      H.SetDefaultVerbLevel(verbLevel_);
       H.SetMaxCoarseSize(maxCoarseSize_);
 
       // TODO: coarsestLevelManager
@@ -163,7 +161,6 @@ namespace MueLu {
     virtual void SetupExtra(Hierarchy & H) const { }
 
     // Hierarchy parameters
-    VerbLevel             verbLevel_;
     int                   numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
 

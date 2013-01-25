@@ -278,7 +278,7 @@ namespace Anasazi {
     /*! 
      * \brief Print the \c mv multi-vector to the \c os output stream.
      */
-    static void MvPrint( const MV& mv, ostream& os ) 
+    static void MvPrint( const MV& mv, std::ostream& os ) 
     {
       mv.print(os);
     }

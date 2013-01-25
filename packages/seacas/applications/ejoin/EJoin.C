@@ -123,6 +123,21 @@ namespace {
     return (float)v1 == (float)v2;
 #endif
   }
+
+  typedef std::set<std::pair<Ioss::EntityType, int64_t> > EntityIdSet;
+  EntityIdSet id_set;
+
+  void set_id(Ioss::GroupingEntity *old_ge, Ioss::GroupingEntity *new_ge)
+  {
+    if (old_ge->property_exists("id")) {
+      int64_t id = old_ge->get_property("id").get_int();
+      bool succeed = id_set.insert(std::make_pair(new_ge->type(),id)).second;
+      if (succeed) {
+	// Add id as the property "id" to ge
+	new_ge->property_add(Ioss::Property("id", id));
+      }
+    }
+  }
 }
 
 namespace {
@@ -527,10 +542,13 @@ namespace {
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb = *i;
       if (!entity_is_omitted(eb)) {
-	std::string name      = prefix + "_" + eb->name();
+	std::string name = eb->name();
 	if (output_region.get_element_block(name) != NULL) {
-	  std::cerr << "ERROR: Duplicate element blocks named '" << name << "'\n";
-	  exit(EXIT_FAILURE);
+	  name = prefix + "_" + eb->name();
+	  if (output_region.get_element_block(name) != NULL) {
+	    std::cerr << "ERROR: Duplicate element blocks named '" << name << "'\n";
+	    exit(EXIT_FAILURE);
+	  }
 	}
 	if (debug) std::cerr << name << ", ";
 	std::string type      = eb->get_property("topology_type").get_string();
@@ -544,6 +562,8 @@ namespace {
 	  output_region.add(ebn);
 	  transfer_fields(eb, ebn, Ioss::Field::ATTRIBUTE);
 
+	  set_id(eb, ebn);
+	  
 	  if (eb->property_exists("original_topology_type")) {
 	    std::string oes = eb->get_property("original_topology_type").get_string();
 
@@ -565,13 +585,17 @@ namespace {
     size_t total_sides = 0;
     while (i != fss.end()) {
       if (!entity_is_omitted(*i)) {
-	std::string name      = prefix + "_" + (*i)->name();
+	std::string name = (*i)->name();
 	if (output_region.get_sideset(name) != NULL) {
-	  std::cerr << "ERROR: Duplicate side sets named '" << name << "'\n";
-	  exit(EXIT_FAILURE);
+	  name = prefix + "_" + (*i)->name();
+	  if (output_region.get_sideset(name) != NULL) {
+	    std::cerr << "ERROR: Duplicate side sets named '" << name << "'\n";
+	    exit(EXIT_FAILURE);
+	  }
 	}
 	if (debug) std::cerr << name << ", ";
 	Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
+	set_id(*i, surf);
 
 	Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
 	Ioss::SideBlockContainer::const_iterator j = fbs.begin();
@@ -683,17 +707,19 @@ namespace {
     Ioss::NodeSetContainer::const_iterator i = nss.begin();
     while (i != nss.end()) {
       if (!entity_is_omitted(*i)) {
-	std::string name = prefix + "_" + (*i)->name();
+	std::string name = (*i)->name();
 	if (output_region.get_nodeset(name) != NULL) {
-	  std::cerr << "ERROR: Duplicate node sets named '" << name << "'\n";
-	  exit(EXIT_FAILURE);
+	  name = prefix + "_" + (*i)->name();
+	  if (output_region.get_nodeset(name) != NULL) {
+	    std::cerr << "ERROR: Duplicate node sets named '" << name << "'\n";
+	    exit(EXIT_FAILURE);
+	  }
 	}
 	if (debug) std::cerr << name << ", ";
 	size_t count     = (*i)->get_property("entity_count").get_int();
 	Ioss::NodeSet *ns = new Ioss::NodeSet(output_region.get_database(), name, count);
 	output_region.add(ns);
-	size_t id = (*i)->get_property("id").get_int();
-	ns->property_add(Ioss::Property("id", (int64_t)id));
+	set_id(*i, ns);
       }
       ++i;
     }
@@ -820,6 +846,10 @@ namespace {
 	Ioss::ElementBlock *ieb = *J;
 	std::string name = part_mesh[p]->name() + "_" + ieb->name();
 	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	if (oeb == NULL) {
+	  name = ieb->name();
+	  oeb = output_region.get_element_block(name);
+	}
 	if (oeb != NULL) {
 	  std::vector<INT> connectivity;
 	  ieb->get_field_data("connectivity", connectivity);
@@ -862,6 +892,10 @@ namespace {
 	
 	  std::string name = part_mesh[p]->name() + "_" + (*J)->name();
 	  Ioss::NodeSet *ons = output_region.get_nodeset(name);
+	  if (ons == NULL) {
+	    name = (*J)->name();
+	    ons = output_region.get_nodeset(name);
+	  }
 	  SMART_ASSERT(ons != NULL)(name);
 	  SMART_ASSERT((*J)->get_property("entity_count").get_int() == ons->get_property("entity_count").get_int());
 
@@ -909,7 +943,7 @@ namespace {
 	  Ioss::SideBlockContainer::const_iterator JJ = ebs.begin();
 
 	  while (JJ != ebs.end()) {
-	    SMART_ASSERT(part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name())((*JJ)->name())((*II)->name());
+	    SMART_ASSERT(((*JJ)->name() == (*II)->name()) || (part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name()))((*JJ)->name())((*II)->name());
 	    SMART_ASSERT((*JJ)->get_property("entity_count").get_int() == (*II)->get_property("entity_count").get_int());
 	    std::vector<INT> elem_side_list;
 	    (*JJ)->get_field_data("element_side_raw", elem_side_list);
@@ -1037,8 +1071,11 @@ namespace {
       while (J != iebs.end()) {
 	Ioss::ElementBlock *ieb = *J;
 	std::string name = part_mesh[p]->name() + "_" + ieb->name();
-
 	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	if (oeb == NULL) {
+	  name = ieb->name();
+	  oeb = output_region.get_element_block(name);
+	}
 	if (oeb != NULL) {
 	  Ioss::NameList fields;
 	  ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -1068,6 +1105,10 @@ namespace {
 	if (!entity_is_omitted(*J)) {
 	  std::string name = part_mesh[p]->name() + "_" + (*J)->name();
 	  Ioss::NodeSet *ons = output_region.get_nodeset(name);
+	  if (ons == NULL) {
+	    name = (*J)->name();
+	    ons = output_region.get_nodeset(name);
+	  }
 	  SMART_ASSERT(ons != NULL)(name);
 
 	  Ioss::NameList fields;
@@ -1113,7 +1154,8 @@ namespace {
 	  Ioss::SideBlockContainer::const_iterator JJ = ebs.begin();
 
 	  while (JJ != ebs.end()) {
-	    SMART_ASSERT(part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name());
+	    SMART_ASSERT((part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name()) ||
+			 ((*JJ)->name() == (*II)->name()));
 	    Ioss::NameList fields;
 	    (*JJ)->field_describe(Ioss::Field::TRANSIENT, &fields);
 	    Ioss::NameList::const_iterator IF;
@@ -1279,6 +1321,10 @@ namespace {
       while (J != iebs.end()) {
 	std::string name = part_mesh[p]->name() + "_" + (*J)->name();
 	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	if (oeb == NULL) {
+	  name = (*J)->name();
+	  oeb = output_region.get_element_block(name);
+	}
 	if (oeb != NULL) {
 	  size_t id = oeb->get_property("id").get_int();
 	  Ioss::NameList fields;
@@ -1311,6 +1357,10 @@ namespace {
 	if (!entity_is_omitted(*J)) {
 	  std::string name = part_mesh[p]->name() + "_" + (*J)->name();
 	  Ioss::NodeSet *ons = output_region.get_nodeset(name);
+	  if (ons == NULL) {
+	    name = (*J)->name();
+	    ons = output_region.get_nodeset(name);
+	  }
 	  SMART_ASSERT(ons != NULL)(name);
 
 	  size_t id = (*J)->get_property("id").get_int();
@@ -1359,7 +1409,8 @@ namespace {
 	  Ioss::SideBlockContainer::const_iterator JJ = ebs.begin();
 
 	  while (JJ != ebs.end()) {
-	    SMART_ASSERT(part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name());
+	    SMART_ASSERT((part_mesh[p]->name() + "_" + (*JJ)->name() == (*II)->name()) ||
+			 ((*JJ)->name() == (*II)->name()));
 	    Ioss::NameList fields;
 	    (*JJ)->field_describe(Ioss::Field::TRANSIENT, &fields);
 	    Ioss::NameList::const_iterator IF;

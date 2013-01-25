@@ -64,12 +64,12 @@ int main()
   try {
 
     // Create output file to save solutions
-    ofstream outFile("BrusselatorContinuation.dat");
-    outFile.setf(ios::scientific, ios::floatfield);
+    std::ofstream outFile("BrusselatorContinuation.dat");
+    outFile.setf(std::ios::scientific, std::ios::floatfield);
     outFile.precision(14);
 
     // Save size of discretizations
-    outFile << n << endl;
+    outFile << n << std::endl;
 
     // Create parameter list
     Teuchos::RCP<Teuchos::ParameterList> paramList = 
@@ -170,7 +170,7 @@ int main()
 
     // Check for convergence
     if (status == LOCA::Abstract::Iterator::Finished) 
-      cout << "All examples passed" << endl;
+      std::cout << "All examples passed" << std::endl;
     else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
 	globalData->locaUtils->out() 
@@ -192,13 +192,13 @@ int main()
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
   }
 
   return 0;

@@ -109,7 +109,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 {
   const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > &
     volume_field_managers = m_field_manager_builder->getVolumeFieldManagers();
-  const std::vector<std::string> & elmt_blk_names = m_field_manager_builder->getElementBlockNames();
+  const std::vector<WorksetDescriptor> & wkstDesc = m_field_manager_builder->getVolumeWorksetDescriptors();
 
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
@@ -120,9 +120,9 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
-    const std::string & blockId = elmt_blk_names[block];
+    const WorksetDescriptor & wd = wkstDesc[block];
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volume_field_managers[block];
-    std::vector<panzer::Workset>& w = *wkstContainer->getVolumeWorksets(blockId);
+    std::vector<panzer::Workset>& w = *wkstContainer->getWorksets(wd);
 
     fm->template preEvaluate<EvalT>(gedc);
 

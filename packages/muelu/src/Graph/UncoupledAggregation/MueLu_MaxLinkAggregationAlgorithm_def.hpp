@@ -60,7 +60,8 @@
 
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 
-#include "MueLu_Graph.hpp"
+//#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 //#include "MueLu_LinkedList.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -74,7 +75,7 @@ MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Max
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
   Monitor m(*this, "BuildAggregates");
 
   // vertex ids for output

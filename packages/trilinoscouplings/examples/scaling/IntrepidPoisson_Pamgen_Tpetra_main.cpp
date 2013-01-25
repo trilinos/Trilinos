@@ -205,11 +205,20 @@ main (int argc, char *argv[])
   solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
                   X, A, B, Teuchos::null, Teuchos::null);
 
+  // Compute ||X-X_exact||_2
+  MT norm_x = X_exact->norm2();
+  X_exact->update(-1.0, *X, 1.0);
+  MT norm_error = X_exact->norm2();
+  *out << endl
+       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
+       << endl;
+
   // Summarize timings
-  RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
-  reportParams->set ("Report format", std::string ("YAML"));
-  reportParams->set ("writeGlobalStats", true);
-  Teuchos::TimeMonitor::report (*out, reportParams);
+  // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+  // reportParams->set ("Report format", std::string ("YAML"));
+  // reportParams->set ("writeGlobalStats", true);
+  // Teuchos::TimeMonitor::report (*out, reportParams);
+  Teuchos::TimeMonitor::summarize(std::cout);
   return EXIT_SUCCESS;
 }
 

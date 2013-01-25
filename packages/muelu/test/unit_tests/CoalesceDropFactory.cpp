@@ -101,7 +101,7 @@ namespace MueLuTests {
     dropFact.Build(fineLevel);
 
     fineLevel.print(out);
-    RCP<Graph> graph = fineLevel.Get<RCP<Graph> >("Graph", &dropFact);
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
 
     std::cout << graph->GetDomainMap()->getGlobalNumElements() << std::endl;
     graph->print(out, MueLu::Debug);

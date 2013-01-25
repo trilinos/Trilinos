@@ -151,6 +151,22 @@ namespace Galeri {
 
     } // CreateCartesianCoordinates()
 
+    template <typename GlobalOrdinal>
+    static void getSubdomainData(GlobalOrdinal N, GlobalOrdinal M, GlobalOrdinal i, GlobalOrdinal& n, GlobalOrdinal& shift) {
+      GlobalOrdinal start, end;
+      GlobalOrdinal xpid = i % M;
+
+      GlobalOrdinal PerProcSmallXDir = (GlobalOrdinal) (((double) N)/((double) M));
+      GlobalOrdinal NBigXDir         = N - PerProcSmallXDir*M;
+
+      if (xpid < NBigXDir) start =                                        xpid*(PerProcSmallXDir+1);
+      else                 start = (xpid-NBigXDir)*PerProcSmallXDir + NBigXDir*(PerProcSmallXDir+1);
+      end = start + PerProcSmallXDir + ((xpid < NBigXDir) ? 1 : 0);
+
+      shift = start;
+      n = end - start;
+    }
+
   }; // class Utils
   } // namespace Xpetra
 } // namespace Galeri

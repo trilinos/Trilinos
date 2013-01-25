@@ -77,7 +77,7 @@ namespace details {
 ///
 /// This enum is an implementation detail of \c SolverFactory.
 /// Users of \c SolverFactory should not refer to this enum or
-/// rely on the symbols or integer values therein.  We declare 
+/// rely on the symbols or integer values therein.  We declare
 /// it here for later use by \c SolverFactory.
 ///
 /// Belos developers who have implemented a new solver (i.e., a new
@@ -115,7 +115,7 @@ enum EBelosSolverType {
 /// appropriately named subclasses of \c SolverManager.  This factory
 /// class tells users which solvers are supported.  It can initialize
 /// and return any supported subclass of \c SolverManager, given a
-/// short name of the subclass (such as "GMRES" or "CG").  
+/// short name of the subclass (such as "GMRES" or "CG").
 ///
 /// Users ask for the solver they want by a string name, and supply an
 /// optional (but recommended) list of parameters (\c
@@ -146,11 +146,11 @@ enum EBelosSolverType {
 /// \code
 /// using Teuchos::ParameterList;
 /// using Teuchos::parameterList;
-/// using Teuchos::RCP; 
+/// using Teuchos::RCP;
 /// using Teuchos::rcp; // Save some typing
-/// 
-/// // The ellipses represent the code you would normally use to create 
-/// // the sparse matrix, preconditioner, right-hand side, and initial 
+///
+/// // The ellipses represent the code you would normally use to create
+/// // the sparse matrix, preconditioner, right-hand side, and initial
 /// // guess for the linear system AX=B you want to solve.
 /// RCP<OP> A = ...; // The sparse matrix / operator A
 /// RCP<OP> M = ...; // The (right) preconditioner M
@@ -163,8 +163,8 @@ enum EBelosSolverType {
 ///
 /// // Set some GMRES parameters.
 /// //
-/// // "Num Blocks" = Maximum number of Krylov vectors to store.  This 
-/// // is also the restart length.  "Block" here refers to the ability 
+/// // "Num Blocks" = Maximum number of Krylov vectors to store.  This
+/// // is also the restart length.  "Block" here refers to the ability
 /// // of this particular solver (and many other Belos solvers) to solve
 /// // multiple linear systems at a time, even though we are only solving
 /// // one linear system in this example.
@@ -173,20 +173,20 @@ enum EBelosSolverType {
 /// solverParams->set ("Convergence Tolerance", 1.0e-8);
 ///
 /// // Create the GMRES solver.
-/// RCP<Belos::SolverManager<Scalar, MV, OP> > solver = 
+/// RCP<Belos::SolverManager<Scalar, MV, OP> > solver =
 ///   factory.create ("GMRES", solverParams);
 ///
 /// // Create a LinearProblem struct with the problem to solve.
 /// // A, X, B, and M are passed by (smart) pointer, not copied.
-/// RCP<Belos::LinearProblem<Scalar, MV, OP> > problem = 
+/// RCP<Belos::LinearProblem<Scalar, MV, OP> > problem =
 ///   rcp (new Belos::LinearProblem<Scalar, MV, OP> (A, X, B));
 /// problem->setRightPrec (M);
 ///
 /// // Tell the solver what problem you want to solve.
 /// solver->setProblem (problem);
 ///
-/// // Attempt to solve the linear system.  result == Belos::Converged 
-/// // means that it was solved to the desired tolerance.  This call 
+/// // Attempt to solve the linear system.  result == Belos::Converged
+/// // means that it was solved to the desired tolerance.  This call
 /// // overwrites X with the computed approximate solution.
 /// Belos::ReturnType result = solver->solve();
 ///
@@ -198,7 +198,7 @@ enum EBelosSolverType {
 /// subclass of \c SolverManager) and who want to make the solver
 /// available through the factory should do the following:
 /// 1. Add a new symbol corresponding to their solver to the \c
-///    details::EBelosSolverType enum.  
+///    details::EBelosSolverType enum.
 /// 2. If necessary, specialize \c details::makeSolverManagerTmpl for
 ///    their SolverManager subclass.  In most cases, the default
 ///    implementation suffices.
@@ -234,7 +234,7 @@ public:
   ///   list by filling in missing parameters with default values.
   ///   You can then inspect the resulting list to learn what
   ///   parameters the solver accepts.
-  /// 
+  ///
   /// Some solvers may be accessed by multiple names ("aliases").
   /// Each solver has a canonical name, and zero or more aliases.
   /// Using some aliases (such as those that access Flexible GMRES
@@ -254,11 +254,11 @@ public:
   /// default values, and change the returned solver's parameters by
   /// calling its \c setParameters() method with the modified list.
   Teuchos::RCP<solver_base_type>
-  create (const std::string& solverName, 
-	  const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+  create (const std::string& solverName,
+          const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
   /// \brief Number of supported solvers.
-  /// 
+  ///
   /// This may differ from the number of supported solver
   /// <i>names</i>, since we may accept multiple names ("aliases") for
   /// some solvers.
@@ -285,8 +285,8 @@ public:
   /// At higher verbosity levels, this method will print out the list
   /// of names of supported solvers.  You can also get this list
   /// directly by using the \c supportedSolverNames() method.
-  void describe (Teuchos::FancyOStream& out, 
-		 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
+  void describe (Teuchos::FancyOStream& out,
+                 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
@@ -326,14 +326,14 @@ private:
   /// happens in this method.
   void
   reviseParameterListForAlias (const std::string& aliasName,
-			       const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+                               const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
   //! List of canonical solver names.
   Teuchos::Array<std::string> canonicalSolverNames () const;
 
   //! List of supported aliases (to canonical solver names).
   Teuchos::Array<std::string> solverNameAliases () const;
-}; 
+};
 
 
 namespace details {
@@ -390,7 +390,7 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef BlockGmresSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
     break;
-  } 
+  }
   case SOLVER_TYPE_PSEUDO_BLOCK_GMRES: {
     typedef PseudoBlockGmresSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
@@ -430,13 +430,17 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef PseudoBlockStochasticCGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			       "Invalid EBelosSolverType enum value " << solverType 
-			       << ".  Please report this bug to the Belos developers.");
-    // Compiler guard.
-    return Teuchos::null;
+  default: // Fall through; let the code below handle it.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Invalid EBelosSolverType enum value " << solverType
+      << ".  Please report this bug to the Belos developers.");
   }
+
+  // Compiler guard.  This may result in a warning on some compilers
+  // for an unreachable statement, but it will prevent a warning on
+  // other compilers for a "missing return statement at end of
+  // non-void function."
+  return Teuchos::null;
 }
 
 template<class SolverManagerBaseType, class SolverManagerType>
@@ -457,10 +461,10 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
   } else {
     pl = params;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(pl.is_null(), std::logic_error, 
-			     "ParameterList to pass to solver is null.  This "
-			     "should never happen.  Please report this bug to "
-			     "the Belos developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(pl.is_null(), std::logic_error,
+                             "ParameterList to pass to solver is null.  This "
+                             "should never happen.  Please report this bug to "
+                             "the Belos developers.");
   solver->setParameters (pl);
   return solver;
 }
@@ -484,7 +488,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["Recycling CG"] = "RCG";
   aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
   // For compatibility with Stratimikos' Belos adapter.
-  aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";  
+  aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";
   aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
 
   // Mapping from canonical solver name (a string) to its
@@ -505,7 +509,7 @@ template<class Scalar, class MV, class OP>
 void
 SolverFactory<Scalar, MV, OP>::
 reviseParameterListForAlias (const std::string& aliasName,
-			     const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
+                             const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(solverParams.is_null(), std::logic_error,
     "Belos::SolverFactory::reviseParameterListForAlias: the input "
@@ -523,14 +527,14 @@ reviseParameterListForAlias (const std::string& aliasName,
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactory<Scalar, MV, OP>::solver_base_type>
 SolverFactory<Scalar, MV, OP>::
-create (const std::string& solverName, 
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
+create (const std::string& solverName,
+        const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   // Check whether the given name is an alias.
-  std::map<std::string, std::string>::const_iterator aliasIter = 
+  std::map<std::string, std::string>::const_iterator aliasIter =
     aliasToCanonicalName_.find (solverName);
   const bool isAnAlias = (aliasIter != aliasToCanonicalName_.end());
-  const std::string candidateCanonicalName = 
+  const std::string candidateCanonicalName =
     isAnAlias ? aliasIter->second : solverName;
 
   // Get the canonical name.
@@ -542,17 +546,17 @@ create (const std::string& solverName,
   // input name is a valid alias, that's a bug.  Otherwise, the input
   // name is invalid.
   TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && isAnAlias, std::logic_error,
-    "Valid alias \"" << solverName << "\" has candidate canonical name \"" 
+    "Valid alias \"" << solverName << "\" has candidate canonical name \""
     << candidateCanonicalName << "\", which is not a canonical solver name.  "
     "Please report this bug to the Belos developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && ! isAnAlias, 
+  TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && ! isAnAlias,
     std::invalid_argument, "Invalid solver name \"" << solverName << "\".");
 
   // If the input list is null, we create a new list and use that.
   // This is OK because the effect of a null parameter list input is
   // to use default parameter values.  Thus, we can always replace a
   // null list with an empty list.
-  Teuchos::RCP<Teuchos::ParameterList> pl = 
+  Teuchos::RCP<Teuchos::ParameterList> pl =
     solverParams.is_null() ? Teuchos::parameterList() : solverParams;
 
   // Possibly modify the input parameter list as needed.
@@ -581,8 +585,8 @@ SolverFactory<Scalar, MV, OP>::description() const
 template<class Scalar, class MV, class OP>
 void
 SolverFactory<Scalar, MV, OP>::
-describe (Teuchos::FancyOStream& out, 
-	  const Teuchos::EVerbosityLevel verbLevel) const
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
   typedef Teuchos::Array<std::string>::const_iterator iter_type;
@@ -594,26 +598,26 @@ describe (Teuchos::FancyOStream& out,
   if (static_cast<int> (verbLevel) > static_cast<int> (Teuchos::VERB_LOW)) {
     out << ":" << endl;
     Teuchos::OSTab tab2 (out);
-    out << "Number of supported solvers: " << numSupportedSolvers() 
-	<< endl;
+    out << "Number of supported solvers: " << numSupportedSolvers()
+        << endl;
     out << "Supported canonical solver names:";
     {
       Teuchos::Array<std::string> names = canonicalSolverNames();
       for (iter_type iter = names.begin(); iter != names.end(); ++iter) {
-	out << *iter;
-	if (iter + 1 != names.end()) {
-	  out << ", ";
-	}
+        out << *iter;
+        if (iter + 1 != names.end()) {
+          out << ", ";
+        }
       }
     }
     out << "Supported aliases to canonical names:";
     {
       Teuchos::Array<std::string> names = solverNameAliases();
       for (iter_type iter = names.begin(); iter != names.end(); ++iter) {
-	out << *iter;
-	if (iter + 1 != names.end()) {
-	  out << ", ";
-	}
+        out << *iter;
+        if (iter + 1 != names.end()) {
+          out << ", ";
+        }
       }
     }
   }
@@ -632,7 +636,7 @@ SolverFactory<Scalar, MV, OP>::canonicalSolverNames () const
 {
   Teuchos::Array<std::string> canonicalNames;
   typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
-  for (iter_type iter = canonicalNameToEnum_.begin(); 
+  for (iter_type iter = canonicalNameToEnum_.begin();
        iter != canonicalNameToEnum_.end(); ++iter) {
     canonicalNames.push_back (iter->first);
   }
@@ -646,8 +650,8 @@ SolverFactory<Scalar, MV, OP>::solverNameAliases () const
   Teuchos::Array<std::string> names;
   {
     typedef std::map<std::string, std::string>::const_iterator iter_type;
-    for (iter_type iter = aliasToCanonicalName_.begin(); 
-	 iter != aliasToCanonicalName_.end(); ++iter) {
+    for (iter_type iter = aliasToCanonicalName_.begin();
+         iter != aliasToCanonicalName_.end(); ++iter) {
       names.push_back (iter->first);
     }
   }
@@ -661,15 +665,15 @@ SolverFactory<Scalar, MV, OP>::supportedSolverNames () const
   Teuchos::Array<std::string> names;
   {
     typedef std::map<std::string, std::string>::const_iterator iter_type;
-    for (iter_type iter = aliasToCanonicalName_.begin(); 
-	 iter != aliasToCanonicalName_.end(); ++iter) {
+    for (iter_type iter = aliasToCanonicalName_.begin();
+         iter != aliasToCanonicalName_.end(); ++iter) {
       names.push_back (iter->first);
     }
   }
   {
     typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
-    for (iter_type iter = canonicalNameToEnum_.begin(); 
-	 iter != canonicalNameToEnum_.end(); ++iter) {
+    for (iter_type iter = canonicalNameToEnum_.begin();
+         iter != canonicalNameToEnum_.end(); ++iter) {
       names.push_back (iter->first);
     }
   }

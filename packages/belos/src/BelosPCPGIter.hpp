@@ -190,6 +190,7 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -623,7 +624,7 @@ namespace Belos {
       if (!stateStorageInitialized_) 
         setStateSize();
 
-      //TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, errstr );
+      //TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_), std::invalid_argument, errstr );
       //TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < 1, std::invalid_argument, errstr );
 
       newstate.prevUdim =  prevUdim_; // big change in functionality from GCRODR 

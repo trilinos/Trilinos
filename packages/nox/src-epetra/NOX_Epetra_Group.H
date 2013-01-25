@@ -54,7 +54,7 @@
 #include "NOX_Abstract_Group.H"	// base class
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
-#include "NOX_Common.H"         // class data element (string)
+#include "NOX_Common.H"         // class data element (std::string)
 #include "NOX_Epetra_LinearSystem.H"  // class data element 
 #include "NOX_SharedObjectTemplate.H"  // class data element 
 #include "Teuchos_RCP.hpp"  // class data element

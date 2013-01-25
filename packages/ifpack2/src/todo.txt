@@ -1,33 +1,57 @@
-*** Internal to Ifpack2 ***
+Things to do in Ifpack2
 
-* Add Overlap / AdditiveSchwarz capability 
-* Reordering (e.g. RCM), two ways
-  - implicitly for ILUs (as the matrix is being copied into the factors)
-  - explicitly returning a reordering vector (for the application to do itself)
- Reordering routines are to be accessed through Zoltan2, which
-  Ifpack2 will call. 
-* Block Relaxation & Chebyshev 
+* DONE Add Overlap / AdditiveSchwarz capability 
+* DONE Reordering (e.g. RCM)
+** Two ways
+   - implicitly for ILUs (as the matrix is being copied into the factors)
+   - explicitly returning a reordering vector (for the application to
+     do itself)
+** Reordering routines are to be accessed through Zoltan2, 
+   which Ifpack2 will call.
+
+* DONE Block Relaxation
+* Chebyshev
+** Need to see if it's copying too much
+** The Ifpack2 implementation should defer to Tpetra for vector
+   operations; currently they roll their own (not threaded) operations.
+** Current implementation is real Chebyshev with real coefficients.
+   It should forbid complex outright, until we have a complex
+   Chebyshev implementation (CHEBYCODE clone?).  Indefinite real
+   Chebyshev is more reasonable.
 * Filtering
-  - NodeFilter needs to wait until Radu's code is checked in
-  - ReorderFilter/Reordering needs to wait until Zoltan2 is in Trilinos and 
-    we can modify this to use Zoltan2 for reordering.
+** TODO NodeFilter needs to wait until Radu's code is checked in
+** DONE ReorderFilter/Reordering needs to wait until Zoltan2 is in Trilinos and 
+   we can modify this to use Zoltan2 for reordering.
 * Less popular methods - IHSS, SORa
-* Add templated operator methods to all Preconditioners (for multiprecision)
-  - add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects
-  - call this from apply()
-  - do this for all other operators 
-* Local Partitioners (except for the linear one) are to live in
-  Zoltan2, which Ifpack2 will call.
-* Ifpack2's hash table will be removed and it will depend of Teuchos' 
-  hash table instead, once Teuchos' hash table is improved.
-* TPL routines (e.g. HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) will
-  be accessed via an interface to Amesos2.
-* Fix the Ifpack2 Parameter Validation
-  - Allow for templates
-  - Fix organization
+* TODO Add templated operator methods to all Preconditioners (for multiprecision)
+  
+  Do we actually need to do this?  Have we done it already?
+  See Tpetra::CrsMatrixMultiplyOp.
 
-*** Requires Discussion w/ Other Package Devs ***
-* Move to Xpetra?
-* Kokkos kernels?
+** add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects
+** call this from apply()
+** do this for all other operators 
+
+* DONE Local Partitioners (except for the linear one) are to live in
+  Zoltan2, which Ifpack2 will call.
+* Ifpack2's hash table will be removed and it will depend on Teuchos' 
+  hash table instead, once Teuchos' hash table is improved.
+
+  Teuchos' hash table is old and may be discarded.
+  We're going to add a hash table to Tpetra (Jan 2013).
+  Should we share this with Ifpack2?  
+  Problem if (_if_, not when) Ifpack2 moves to Xpetra.
+
+* TODO TPL routines (e.g. HIPS, SuperLU(ILU), Euclid, Hypre, Sparskit) will
+  be accessed via an interface to Amesos2.
+* TODO Fix the Ifpack2 Parameter Validation
+** DONE (more or less) Allow for templates
+** Fix organization
+
+* Things to discuss with other package developers
+** Move to Xpetra?
+*** Only speculation, no plans yet.
+** Kokkos kernels?
+*** Gauss-Seidel has a Kokkos kernel now.
 
 

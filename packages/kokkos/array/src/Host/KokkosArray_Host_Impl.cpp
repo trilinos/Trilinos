@@ -62,6 +62,10 @@
 namespace KokkosArray {
 namespace Impl {
 
+void host_aligned_free( void * );
+
+void * host_aligned_allocate( const size_t );
+
 //----------------------------------------------------------------------------
 
 HostThread::~HostThread()
@@ -73,7 +77,6 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
@@ -88,7 +91,6 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
   m_state        = ThreadActive ;
 
@@ -98,11 +100,17 @@ HostThread::HostThread()
 std::pair< Host::size_type , Host::size_type >
 HostThread::work_range( const size_type work_count ) const
 {
+  // A 'chunk' is HostSpace::WORK_ALIGNMENT atomic units of work
+
   const size_type chunk_count =
-    ( work_count + m_work_chunk - 1 ) / m_work_chunk ;
+    ( work_count + HostSpace::WORK_ALIGNMENT - 1 ) / HostSpace::WORK_ALIGNMENT ;
+
+  // Each thread performs some number of 'chunks' of work:
 
   const size_type work_per_thread =
-    m_work_chunk * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+    HostSpace::WORK_ALIGNMENT * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+
+  // Range of work:
 
   const size_type work_begin =
     std::min( m_thread_rank * work_per_thread , work_count );
@@ -216,9 +224,7 @@ HostInternal::HostInternal()
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
-  , m_work_chunk( m_cache_line_size / sizeof(void*) )
   , m_reduce_scratch_size( 0 )
-  , m_reduce_scratch( 0 )
 {
   m_worker = NULL ;
 
@@ -236,11 +242,20 @@ HostInternal::HostInternal()
   m_master_thread.m_gang_count   = m_gang_count ;
   m_master_thread.m_worker_rank  = 0 ;
   m_master_thread.m_worker_count = m_worker_count ;
-  m_master_thread.m_work_chunk   = m_work_chunk ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
   }
+}
+
+void HostInternal::print_configuration( std::ostream & s ) const
+{
+  s << "KokkosArray::Host thread capacity( "
+    << m_gang_capacity << " x " << m_worker_capacity
+    << " ) used( "
+    << m_gang_count << " x " << m_worker_count
+    << " )"
+    << std::endl ;
 }
 
 //----------------------------------------------------------------------------
@@ -249,12 +264,13 @@ inline
 void HostInternal::resize_reduce_thread( HostThread & thread ) const
 {
   if ( thread.m_reduce ) {
-    free( thread.m_reduce );
+    host_aligned_free( thread.m_reduce );
     thread.m_reduce = 0 ;
   }
 
   if ( m_reduce_scratch_size ) {
-    thread.m_reduce = malloc( m_reduce_scratch_size );
+
+    thread.m_reduce = host_aligned_allocate( m_reduce_scratch_size );
 
     // Guaranteed multiple of 'unsigned'
 
@@ -279,10 +295,6 @@ void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
 
 
 inline
-void * HostInternal::reduce_scratch() const
-{ return m_reduce_scratch ; }
-
-inline
 void HostInternal::resize_reduce_scratch( unsigned size )
 {
   if ( 0 == size || m_reduce_scratch_size < size ) {
@@ -296,9 +308,12 @@ void HostInternal::resize_reduce_scratch( unsigned size )
     const HostWorkerResizeReduce work ;
 
     execute_serial( work );
-
-    m_reduce_scratch = m_master_thread.m_reduce ;
   }
+}
+
+void * HostInternal::reduce_scratch() const
+{
+  return m_master_thread.reduce_data();
 }
 
 void host_resize_scratch_reduce( unsigned size )
@@ -322,7 +337,6 @@ bool HostInternal::initialize_thread(
   thread.m_gang_count   = m_gang_count ;
   thread.m_worker_rank  = worker_rank ;
   thread.m_worker_count = m_worker_count ;
-  thread.m_work_chunk   = m_work_chunk ;
 
   {
     unsigned fan_count = 0 ;
@@ -608,6 +622,9 @@ void Host::initialize( const Host::size_type gang_count ,
 {
   Impl::HostInternal::singleton().initialize( gang_count , gang_worker_count );
 }
+
+void Host::print_configuration( std::ostream & s )
+{ Impl::HostInternal::singleton().print_configuration(s); }
 
 Host::size_type Host::detect_gang_capacity()
 { return Impl::HostInternal::singleton().m_gang_capacity ; }

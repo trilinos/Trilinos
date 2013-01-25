@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.4.3.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Skeleton interface for Bison LALR(1) parsers in C++
    
-      Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 Free
-   Software Foundation, Inc.
+      Copyright (C) 2002-2012 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,30 +30,21 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/**
+ ** \file aprepro_parser.h
+ ** Define the SEAMS::parser class.
+ */
+
 /* C++ LALR(1) parser skeleton written by Akim Demaille.  */
 
-#ifndef PARSER_HEADER_H
-# define PARSER_HEADER_H
+#ifndef YY_SEAMS_APREPRO_PARSER_H_INCLUDED
+# define YY_SEAMS_APREPRO_PARSER_H_INCLUDED
 
 
 
 #include <string>
 #include <iostream>
 #include "stack.hh"
-
-
-namespace SEAMS {
-
-/* Line 35 of lalr1.cc  */
-#line 50 "aprepro_parser.h"
-  class position;
-  class location;
-
-} // SEAMS
-
-/* Line 35 of lalr1.cc  */
-#line 57 "aprepro_parser.h"
-
 #include "location.hh"
 
 /* Enabling traces.  */
@@ -62,43 +52,10 @@ namespace SEAMS {
 # define YYDEBUG 1
 #endif
 
-/* Enabling verbose error messages.  */
-#ifdef YYERROR_VERBOSE
-# undef YYERROR_VERBOSE
-# define YYERROR_VERBOSE 1
-#else
-# define YYERROR_VERBOSE 1
-#endif
-
-/* Enabling the token table.  */
-#ifndef YYTOKEN_TABLE
-# define YYTOKEN_TABLE 0
-#endif
-
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)		\
-do {							\
-  if (N)						\
-    {							\
-      (Current).begin = (Rhs)[1].begin;			\
-      (Current).end   = (Rhs)[N].end;			\
-    }							\
-  else							\
-    {							\
-      (Current).begin = (Current).end = (Rhs)[0].end;	\
-    }							\
-} while (false)
-#endif
-
 
 namespace SEAMS {
-
-/* Line 35 of lalr1.cc  */
-#line 102 "aprepro_parser.h"
+/* Line 33 of lalr1.cc  */
+#line 59 "aprepro_parser.h"
 
   /// A Bison parser.
   class Parser
@@ -108,8 +65,7 @@ namespace SEAMS {
 #ifndef YYSTYPE
     union semantic_type
     {
-
-/* Line 35 of lalr1.cc  */
+/* Line 33 of lalr1.cc  */
 #line 43 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
@@ -117,9 +73,8 @@ namespace SEAMS {
   char   *string;	/* For returning quoted strings		*/
 
 
-
-/* Line 35 of lalr1.cc  */
-#line 123 "aprepro_parser.h"
+/* Line 33 of lalr1.cc  */
+#line 78 "aprepro_parser.h"
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -137,44 +92,46 @@ namespace SEAMS {
      UNDVAR = 260,
      VAR = 261,
      SVAR = 262,
-     FNCT = 263,
-     SFNCT = 264,
-     COMMA = 265,
-     RT = 266,
-     LPAR = 267,
-     RPAR = 268,
-     LBRACK = 269,
-     RBRACK = 270,
-     LBRACE = 271,
-     RBRACE = 272,
-     SEMI = 273,
-     EQUAL = 274,
-     EQ_MINUS = 275,
-     EQ_PLUS = 276,
-     EQ_DIV = 277,
-     EQ_TIME = 278,
-     EQ_POW = 279,
-     COLON = 280,
-     QUEST = 281,
-     LOR = 282,
-     LAND = 283,
-     NE = 284,
-     EQ = 285,
-     GE = 286,
-     LE = 287,
-     GT = 288,
-     LT = 289,
-     SUB = 290,
-     PLU = 291,
-     MOD = 292,
-     TIM = 293,
-     DIV = 294,
-     NOT = 295,
-     UNARY = 296,
-     POW = 297,
-     DEC = 298,
-     INC = 299,
-     CONCAT = 300
+     IMMVAR = 263,
+     IMMSVAR = 264,
+     FNCT = 265,
+     SFNCT = 266,
+     COMMA = 267,
+     RT = 268,
+     LPAR = 269,
+     RPAR = 270,
+     LBRACK = 271,
+     RBRACK = 272,
+     LBRACE = 273,
+     RBRACE = 274,
+     SEMI = 275,
+     EQUAL = 276,
+     EQ_MINUS = 277,
+     EQ_PLUS = 278,
+     EQ_DIV = 279,
+     EQ_TIME = 280,
+     EQ_POW = 281,
+     COLON = 282,
+     QUEST = 283,
+     LOR = 284,
+     LAND = 285,
+     NE = 286,
+     EQ = 287,
+     GE = 288,
+     LE = 289,
+     GT = 290,
+     LT = 291,
+     SUB = 292,
+     PLU = 293,
+     MOD = 294,
+     TIM = 295,
+     DIV = 296,
+     NOT = 297,
+     UNARY = 298,
+     POW = 299,
+     DEC = 300,
+     INC = 301,
+     CONCAT = 302
    };
 
     };
@@ -248,6 +205,14 @@ namespace SEAMS {
     /// The location stack.
     location_stack_type yylocation_stack_;
 
+    /// Whether the given \c yypact_ value indicates a defaulted state.
+    /// \param yyvalue   the value to check
+    static bool yy_pact_value_is_default_ (int yyvalue);
+
+    /// Whether the given \c yytable_ value indicates a syntax error.
+    /// \param yyvalue   the value to check
+    static bool yy_table_value_is_error_ (int yyvalue);
+
     /// Internal symbol numbers.
     typedef unsigned char token_number_type;
     /* Tables.  */
@@ -255,13 +220,13 @@ namespace SEAMS {
     static const short int yypact_[];
     static const signed char yypact_ninf_;
 
-    /// For a state, default rule to reduce.
+    /// For a state, default reduction number.
     /// Unless\a  yytable_ specifies something else to do.
     /// Zero means the default is an error.
     static const unsigned char yydefact_[];
 
     static const signed char yypgoto_[];
-    static const signed char yydefgoto_[];
+    static const short int yydefgoto_[];
 
     /// What to do in a state.
     /// \a yytable_[yypact_[s]]: what to do in state \a s.
@@ -279,18 +244,14 @@ namespace SEAMS {
     /// For a rule, its LHS.
     static const unsigned char yyr1_[];
     /// For a rule, its RHS length.
-    static const unsigned char yyr2_[];
+    static const unsigned char yyr2_[]; 
 
-#if YYDEBUG || YYERROR_VERBOSE || YYTOKEN_TABLE
+    /// Convert the symbol name \a n to a form suitable for a diagnostic.
+    static std::string yytnamerr_ (const char *n);
+
+
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-#endif
-
-#if YYERROR_VERBOSE
-    /// Convert the symbol name \a n to a form suitable for a diagnostic.
-    virtual std::string yytnamerr_ (const char *n);
-#endif
-
 #if YYDEBUG
     /// A type to store symbol numbers and -1.
     typedef signed char rhs_number_type;
@@ -317,6 +278,7 @@ namespace SEAMS {
 
     /// \brief Reclaim the memory associated to a symbol.
     /// \param yymsg        Why this token is reclaimed.
+    ///                     If null, do not display the symbol, just free it.
     /// \param yytype       The symbol type.
     /// \param yyvaluep     Its semantic value.
     /// \param yylocationp  Its location.
@@ -346,10 +308,9 @@ namespace SEAMS {
   };
 
 } // SEAMS
-
-/* Line 35 of lalr1.cc  */
-#line 352 "aprepro_parser.h"
-
+/* Line 33 of lalr1.cc  */
+#line 313 "aprepro_parser.h"
 
 
-#endif /* ! defined PARSER_HEADER_H */
+
+#endif /* !YY_SEAMS_APREPRO_PARSER_H_INCLUDED  */

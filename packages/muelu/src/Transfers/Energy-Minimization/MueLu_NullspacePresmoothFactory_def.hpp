@@ -57,12 +57,15 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspacePresmoothFactory()
-  { }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~NullspacePresmoothFactory() {}
+    validParamList->set< RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for the nonsmoothed nullspace");
+    validParamList->set< RCP<const FactoryBase> >("A"        , Teuchos::null, "Generating factory for A");
+
+    return validParamList;
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
@@ -75,8 +78,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Nullspace presmooth factory", currentLevel);
-
-    RCP<MultiVector> nullspace;
 
     RCP<MultiVector> newB;
     if (currentLevel.GetLevelID() == 0) {
@@ -97,11 +98,8 @@ namespace MueLu {
         Teuchos::ArrayRCP<const SC> Bj    = B->getData(j);
         Teuchos::ArrayRCP<SC>       newBj = newB->getDataNonConst(j);
 
-        for (LO i = 0; i < numElements; i++) {
-          if (newBj[i]/D[i])
-            std::cout << "Update [" << i << "]: " << -damping*newBj[i]/D[i] << std::endl;
+        for (LO i = 0; i < numElements; i++)
           newBj[i] = Bj[i] - damping*newBj[i]/D[i];
-        }
       }
     } else {
       newB = Get< RCP<MultiVector> >(currentLevel, "Nullspace");

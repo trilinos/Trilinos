@@ -84,13 +84,13 @@ ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = turningPointParams->get("Bifurcation Parameter",
+  std::string bifParamName = turningPointParams->get("Bifurcation Parameter",
 						"None");
   const ParameterVector& p = grpPtr->getParams();
   bifParamID = p.getIndex(bifParamName);
 
   // Create constraint equation
-  string constraintMethod = turningPointParams->get("Constraint Method",
+  std::string constraintMethod = turningPointParams->get("Constraint Method",
 						    "Default");
   if (constraintMethod == "Default")
     constraint = 
@@ -111,7 +111,7 @@ ExtendedGroup(
   else 
     globalData->locaErrorCheck->throwError(
 		    func,
-		    string("Unknown constraint method:  ") + constraintMethod);
+		    std::string("Unknown constraint method:  ") + constraintMethod);
 
   // Create constrained group
   std::vector<int> bifParamIDs(1);
@@ -407,7 +407,7 @@ copy(const NOX::Abstract::Group& src)
 
 void
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-setParamsMulti(const vector<int>& paramIDs, 
+setParamsMulti(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   conGroup->setParamsMulti(paramIDs, vals);
@@ -429,7 +429,7 @@ setParam(int paramID, double val)
 
 void
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-setParam(string paramID, double val)
+setParam(std::string paramID, double val)
 {
   conGroup->setParam(paramID, val);
 }
@@ -450,14 +450,14 @@ getParam(int paramID) const
 
 double
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-getParam(string paramID) const
+getParam(std::string paramID) const
 {
   return conGroup->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-computeDfDpMulti(const vector<int>& paramIDs, 
+computeDfDpMulti(const std::vector<int>& paramIDs, 
 		 NOX::Abstract::MultiVector& dfdp, 
 		 bool isValidF)
 {

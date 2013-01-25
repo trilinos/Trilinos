@@ -281,7 +281,7 @@ public:
                                    const std::map<std::string,Teuchos::RCP<RespContVector> > & rsvdVolResp)
      : userData_(userData), rsvdVolResp_(rsvdVolResp) {}
 
-   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm,const WorksetDescriptor & wd, const PhysicsBlock & pb) const
    {
       // verify that block is relevant
       std::string blockId = pb.elementBlockID();
@@ -315,9 +315,13 @@ buildVolumeFieldManagersFromResponses(
 {
    ResponseVolumeEvaluatorsFactory<TraitsT> rvef(user_data,rsvdVolResp_);
 
+   std::vector<WorksetDescriptor> wkstDesc;
+   for(std::size_t i=0;i<physicsBlocks.size();i++)
+     wkstDesc.push_back(blockDescriptor(physicsBlocks[i]->elementBlockID()));
+
    // setup all volume field managers: pass in extra evaluator evaluator
    fmb_->setWorksetContainer(wkstContainer_);
-   fmb_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
+   fmb_->setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
 
    AssemblyEngine_TemplateBuilder builder(fmb_,linObjFactory_); 
    ae_tm_.buildObjects(builder);
@@ -327,7 +331,7 @@ buildVolumeFieldManagersFromResponses(
    for(blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
       std::string blockId = (*blkItr)->elementBlockID();
 
-      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockId);
+      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockDescriptor(blockId));
    }
 }
 
@@ -426,18 +430,30 @@ namespace {
   class ResponseBase_Builder {
     Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > respFact_;
     std::string respName_;
-    std::vector<std::string> eBlocks_;
-    std::vector<std::pair<std::string,std::string> > sidesets_;
+    std::vector<WorksetDescriptor> wkstDesc_;
 
   public:
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
                          const std::string & respName, const std::vector<std::string> & eBlocks)
-      : respFact_(respFact), respName_(respName), eBlocks_(eBlocks) {}
+      : respFact_(respFact), respName_(respName)
+    {
+      for(std::size_t i=0;i<eBlocks.size();i++)
+        wkstDesc_.push_back(blockDescriptor(eBlocks[i]));
+    }
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
                          const std::string & respName, const std::vector<std::pair<std::string,std::string> > & sidesets)
-      : respFact_(respFact), respName_(respName), sidesets_(sidesets) {}
+      : respFact_(respFact), respName_(respName)
+    {
+      for(std::size_t i=0;i<sidesets.size();i++)
+        wkstDesc_.push_back(sidesetDescriptor(sidesets[i].first,sidesets[i].second));
+    }
+
+    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+                         const std::string & respName, const std::vector<WorksetDescriptor> & wkstDesc)
+      : respFact_(respFact), respName_(respName), wkstDesc_(wkstDesc)
+    { }
 
     template <typename T>
     Teuchos::RCP<ResponseBase> build() const 
@@ -446,13 +462,7 @@ namespace {
      
       // only build this templated set of objects if the there is something to build them with
       if(baseObj!=Teuchos::null) {
-
-        if(eBlocks_.size()>0)
-          return baseObj->buildResponseObject(respName_,eBlocks_); 
-        if(sidesets_.size()>0)
-          return baseObj->buildResponseObject(respName_,sidesets_); 
-
-        TEUCHOS_ASSERT(false);
+        return baseObj->buildResponseObject(respName_,wkstDesc_); 
       }
 
       return Teuchos::null;
@@ -485,7 +495,7 @@ addResponse(const std::string responseName,
 
      // add response factory TM to vector that stores them
      std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
-        = respFactories_[blockId];
+        = respFactories_[blockDescriptor(blockId)];
      block_tm.push_back(std::make_pair(responseName,modelFact_tm));
    }
 }
@@ -531,6 +541,36 @@ addResponse(const std::string responseName,
 }
 
 template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<WorksetDescriptor> & wkst_desc,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // build response factory objects for each evaluation type
+  RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+       = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+  modelFact_tm->buildObjects(builder);
+
+  // build a response object for each evaluation type
+  ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,wkst_desc);
+  responseObjects_[responseName].buildObjects(respData_builder);
+
+  // associate response objects with all workset descriptors
+  for(std::size_t i=0;i<wkst_desc.size();i++) {
+    const WorksetDescriptor & desc = wkst_desc[i];
+
+    // add response factory TM to vector that stores them
+    std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
+        = respFactories_[desc];
+    block_tm.push_back(std::make_pair(responseName,modelFact_tm));
+  }
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
 getResponse(const std::string responseName) const
@@ -563,22 +603,21 @@ getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const
 template <typename TraitsT>
 class RVEF2 : public GenericEvaluatorFactory {
 public:
-   typedef boost::unordered_map<std::string,
+   typedef boost::unordered_map<WorksetDescriptor,
                                 std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
-   typedef boost::unordered_set<std::string> StringAccessTable;
 
    RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
      : userData_(userData), rft_(rft) {}
 
-   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm,const WorksetDescriptor & wd, const PhysicsBlock & pb) const
    {
      using Teuchos::RCP;
      using Teuchos::rcp;
 
-     std::string blockId = pb.elementBlockID();
+     TEUCHOS_ASSERT(wd.getElementBlock()==pb.elementBlockID());
 
      // because we reduce the physics blocks to only ones we need, this find should succeed
-     typename RespFactoryTable::iterator itr=rft_.find(blockId);
+     typename RespFactoryTable::iterator itr=rft_.find(wd);
 
      TEUCHOS_ASSERT(itr!=rft_.end() && itr->second.size()>0);
 
@@ -625,24 +664,52 @@ buildResponseEvaluators(
 {
    using Teuchos::RCP;
 
-   typedef boost::unordered_map<std::string,
+   typedef boost::unordered_map<WorksetDescriptor,
                                 std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
 
    // first compute subset of physics blocks required to build responses
    ////////////////////////////////////////////////////////////////////////////////
 
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
+   std::vector<WorksetDescriptor> requiredWorksetDesc;
+/*
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
      std::string blockId = physicsBlocks[i]->elementBlockID();
+     WorksetDescriptor wd = blockDescriptor(blockId);
      
      // is this element block required
-     typename RespFactoryTable::const_iterator itr = respFactories_.find(blockId);
+     typename RespFactoryTable::const_iterator itr = respFactories_.find(wd);
 
      if(itr!=respFactories_.end()) {
        // one last check for nonzero size
-       if(itr->second.size()>0)
+       if(itr->second.size()>0) {
          requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
+         requiredWorksetDesc.push_back(wd);
+       }
      } 
+   }
+*/
+   for(typename RespFactoryTable::const_iterator itr=respFactories_.begin();
+       itr!=respFactories_.end();++itr) {
+     // is there something to do?
+     if(itr->second.size()==0) 
+       continue;
+
+     const WorksetDescriptor & wd = itr->first;
+     requiredWorksetDesc.push_back(wd);
+
+     // find physics block with right element block
+     bool failure = true;
+     for(std::size_t i=0;i<physicsBlocks.size();i++) {
+       if(physicsBlocks[i]->elementBlockID()==wd.getElementBlock()) {
+         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
+         failure = false;
+         break;
+       } 
+     }
+
+     // we must find at least one physics block
+     TEUCHOS_ASSERT(!failure);
    }
 
    // build boundary response array
@@ -664,7 +731,7 @@ buildResponseEvaluators(
    fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
-   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
    if(eqset_factory==Teuchos::null)
      fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
    else

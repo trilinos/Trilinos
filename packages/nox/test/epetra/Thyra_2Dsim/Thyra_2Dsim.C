@@ -95,9 +95,9 @@ int main(int argc, char *argv[])
     return parse_return;
 
   if (verbose) 
-    cout << "Verbosity Activated" << endl;
+    std::cout << "Verbosity Activated" << std::endl;
   else
-    cout << "Verbosity Disabled" << endl;
+    std::cout << "Verbosity Disabled" << std::endl;
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
 
 //   nox_group->computeF();
-//   cout << "ComputedF!" << endl;
+//   std::cout << "ComputedF!" << std::endl;
 //   const NOX::Thyra::Vector& t_vec = 
 //     dynamic_cast<const NOX::Thyra::Vector&>(nox_group->getF());
   

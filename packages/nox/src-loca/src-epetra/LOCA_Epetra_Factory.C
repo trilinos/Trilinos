@@ -78,7 +78,7 @@ LOCA::Epetra::Factory::init(
 
 bool
 LOCA::Epetra::Factory::createBorderedSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
@@ -105,7 +105,7 @@ LOCA::Epetra::Factory::createBorderedSolverStrategy(
 
 bool
 LOCA::Epetra::Factory::createAnasaziOperatorStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,

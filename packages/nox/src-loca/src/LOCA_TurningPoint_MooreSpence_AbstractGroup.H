@@ -102,7 +102,7 @@ namespace LOCA {
 	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDpMulti(const vector<int>& paramIDs, 
+	computeDJnDpMulti(const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::Vector& nullVector,
 			  NOX::Abstract::MultiVector& result,
 			  bool isValid) = 0;

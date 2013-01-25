@@ -225,7 +225,7 @@ namespace MueLuTests {
     }
 
     // check normalization and orthogonality of prolongator columns
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(Ptent,true,Ptent,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*Ptent,true,*Ptent,false);
     Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     //std::cout << diagVec->norm1() << " " << diagVec->normInf() << " " << diagVec->meanValue() << std::endl;
@@ -565,7 +565,7 @@ namespace MueLuTests {
             TEST_EQUALITY(R2->getGlobalNumRows(), 7);
             TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
             Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO>::Build(PtentTPtent->getRowMap());
             PtentTPtent->getLocalDiagCopy(*diagVec);
             TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 1e-12, true);

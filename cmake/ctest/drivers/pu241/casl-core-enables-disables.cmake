@@ -29,6 +29,10 @@ SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables
 SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 
+# Turn off MPI support in SEACAS because it that triggers usage of paralllel
+# NETCSF which we don't need for CASL (VRI Kanban #2823)
+SET(SEACASExodus_ENABLE_MPI OFF CACHE BOOL "")
+
 # We don't have the Matio TPL for SEACAS
 SET(TPL_ENABLE_Matio OFF CACHE BOOL "")
 

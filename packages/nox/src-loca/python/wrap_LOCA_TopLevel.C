@@ -348,7 +348,7 @@ SWIG_TypeClientData(swig_type_info *ti, void *clientdata) {
   }
 }
 
-/* Pack binary data into a string */
+/* Pack binary data into a std::string */
 static char *
 SWIG_PackData(char *c, void *ptr, size_t sz) {
   static char hex[17] = "0123456789abcdef";
@@ -363,7 +363,7 @@ SWIG_PackData(char *c, void *ptr, size_t sz) {
   return c;
 }
 
-/* Unpack binary data from a string */
+/* Unpack binary data from a std::string */
 static char *
 SWIG_UnpackData(char *c, void *ptr, size_t sz) {
   register unsigned char uu = 0;
@@ -491,7 +491,7 @@ typedef struct swig_const_info {
  * Pointer declarations
  * ----------------------------------------------------------------------------- */
 /*
-  Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
+  Use SWIG_NO_COBJECT_TYPES to force the use of std::strings to represent
   C/C++ pointers in the python side. Very useful for debugging, but
   not always safe.
 */
@@ -917,7 +917,7 @@ type_error:
   return -1;
 }
 
-/* Create a new pointer string */
+/* Create a new pointer std::string */
 static char *
 SWIG_Python_PointerStr(char *buff, void *ptr, const char *name, size_t bsz) {
   char *r = buff;
@@ -1209,9 +1209,9 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize)
   SWIGINTERN int
     SWIG_AsPtr_std_string(PyObject* obj, std::string **val)
     {
-      static swig_type_info* string_info = SWIG_TypeQuery("std::string *");
+      static swig_type_info* std::string_info = SWIG_TypeQuery("std::string *");
       std::string *vptr;    
-      if (SWIG_ConvertPtr(obj, (void**)&vptr, string_info, 0) != -1) {
+      if (SWIG_ConvertPtr(obj, (void**)&vptr, std::string_info, 0) != -1) {
 	if (val) *val = vptr;
 	return SWIG_OLDOBJ;
       } else {
@@ -1226,7 +1226,7 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize)
 	  PyErr_Clear();
 	}  
 	if (val) {
-	  PyErr_SetString(PyExc_TypeError,"a string is expected");
+	  PyErr_SetString(PyExc_TypeError,"a std::string is expected");
 	}
 	return 0;
       }
@@ -2701,7 +2701,7 @@ static PyObject *_wrap_ParameterVector_length(PyObject *, PyObject *args) {
 static PyObject *_wrap_ParameterVector_Print(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::ParameterVector *arg1 = (LOCA::ParameterVector *) 0 ;
-    ostream *arg2 = 0 ;
+    std::ostream *arg2 = 0 ;
     PyObject * obj0 = 0 ;
     PyObject * obj1 = 0 ;
     
@@ -2728,15 +2728,15 @@ static PyObject *_wrap_ParameterVector_Print(PyObject *, PyObject *args) {
 static PyObject *_wrap_ParameterVector_getValuesVector(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::ParameterVector *arg1 = (LOCA::ParameterVector *) 0 ;
-    vector<double > *result;
+    std::vector<double > *result;
     PyObject * obj0 = 0 ;
     
     if(!PyArg_ParseTuple(args,(char *)"O:ParameterVector_getValuesVector",&obj0)) goto fail;
     SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__ParameterVector, SWIG_POINTER_EXCEPTION | 0);
     if (SWIG_arg_fail(1)) SWIG_fail;
     {
-        vector<double > const &_result_ref = ((LOCA::ParameterVector const *)arg1)->getValuesVector();
-        result = (vector<double > *) &_result_ref;
+        std::vector<double > const &_result_ref = ((LOCA::ParameterVector const *)arg1)->getValuesVector();
+        result = (std::vector<double > *) &_result_ref;
     }
     
     resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_vectorTdouble_t, 0);
@@ -2749,15 +2749,15 @@ static PyObject *_wrap_ParameterVector_getValuesVector(PyObject *, PyObject *arg
 static PyObject *_wrap_ParameterVector_getNamesVector(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::ParameterVector *arg1 = (LOCA::ParameterVector *) 0 ;
-    vector<std::string > *result;
+    std::vector<std::string > *result;
     PyObject * obj0 = 0 ;
     
     if(!PyArg_ParseTuple(args,(char *)"O:ParameterVector_getNamesVector",&obj0)) goto fail;
     SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__ParameterVector, SWIG_POINTER_EXCEPTION | 0);
     if (SWIG_arg_fail(1)) SWIG_fail;
     {
-        vector<std::string > const &_result_ref = ((LOCA::ParameterVector const *)arg1)->getNamesVector();
-        result = (vector<std::string > *) &_result_ref;
+        std::vector<std::string > const &_result_ref = ((LOCA::ParameterVector const *)arg1)->getNamesVector();
+        result = (std::vector<std::string > *) &_result_ref;
     }
     
     resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_vectorTstd__string_t, 0);

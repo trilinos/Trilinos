@@ -272,7 +272,7 @@ namespace MueLu {
     //
 
     // Hierarchy options
-    this->verbLevel_       = toMueLuVerbLevel(eVerbLevel);
+    this->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
     this->numDesiredLevel_ = maxLevels;
     this->maxCoarseSize_   = maxCoarseSize;
 
@@ -426,7 +426,12 @@ namespace MueLu {
       ifpackType = paramList.get<std::string>("smoother: ifpack type");
 
       if (ifpackType == "ILU") {
-        MUELU_COPY_PARAM(paramList, "smoother: ifpack level-of-fill", int, 2,  smootherParamList, "fact: level-of-fill");
+        // TODO fix this (type mismatch double vs. int)
+        //MUELU_COPY_PARAM(paramList, "smoother: ifpack level-of-fill", double /*int*/, 0.0 /*2*/,  smootherParamList, "fact: level-of-fill");
+        if (paramList.isParameter("smoother: ifpack level-of-fill"))
+          smootherParamList.set<int>("fact: level-of-fill", paramList.get<double>("smoother: ifpack level-of-fill"));
+        else smootherParamList.set<int>("fact: level-of-fill", 0);
+
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
 
         // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack

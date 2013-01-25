@@ -43,9 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ExplicitInstantiation.hpp"
-
+#include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_PatternFactory_def.hpp"
 
@@ -70,4 +70,4 @@ template class MueLu::PatternFactory<std::complex<double>, int, int, Kokkos::Def
 # endif
 #endif
 
-#endif // #ifdef HAVE_MUELU_EXPERIMENTAL
+#endif

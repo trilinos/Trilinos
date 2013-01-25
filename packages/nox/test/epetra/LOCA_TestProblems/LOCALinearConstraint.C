@@ -135,7 +135,7 @@ LinearConstraint::setParam(int paramID, double val)
 
 void
 LinearConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
@@ -162,7 +162,7 @@ LinearConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-LinearConstraint::computeDP(const vector<int>& paramIDs, 
+LinearConstraint::computeDP(const std::vector<int>& paramIDs, 
 			  NOX::Abstract::MultiVector::DenseMatrix& dp, 
 			  bool isValidG)
 {

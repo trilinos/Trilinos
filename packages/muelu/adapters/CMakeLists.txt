@@ -40,6 +40,24 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 ENDIF()
 
 #
+# Tpetra
+#
+
+#IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+
+#  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+
+#  APPEND_SET(HEADERS
+#    tpetra/MueLu_TpetraOperator.hpp
+#    )
+
+#  APPEND_SET(SOURCES
+#    tpetra/MueLu_TpetraOperator.cpp
+#    )
+
+#ENDIF()
+
+#
 # Stratimikos
 #
 
@@ -62,6 +80,23 @@ ENDIF()
 #
 
 APPEND_SET(SOURCES mac.cpp)
+
+# general headers, sources
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/*.cpp)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+   APPEND_GLOB(HEADERS ${DIR}/*.cpp)
+   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+ENDIF()
+
+# Must glob the binary dir last to get all of the auto-generated headers
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+
 
 TRIBITS_ADD_LIBRARY(
   muelu-adapters

@@ -50,6 +50,22 @@
 
 #include <KokkosArray_Macros.hpp>
 
+#if defined( __INTEL_COMPILER ) && 0
+  /*
+   *  Optimization level -O3 generates a seg-fault
+   *  with this parameter in the hybrid parallel
+   *  nonlinear use case boundary condition
+   *  residual enforcement function.
+   */
+
+#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) __assume_aligned( P , M :: MEMORY_ALIGNMENT )
+
+#else
+
+#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) /* */
+
+#endif
+
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
@@ -59,8 +75,16 @@ namespace KokkosArray {
 class HostSpace {
 public:
 
+  enum { MEMORY_ALIGNMENT = 64 };
+  enum { WORK_ALIGNMENT   =  8 };
+
   typedef HostSpace  memory_space ;
+
+#if defined( __INTEL_COMPILER )
+  typedef int        size_type ;
+#else
   typedef size_t     size_type ;
+#endif
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.

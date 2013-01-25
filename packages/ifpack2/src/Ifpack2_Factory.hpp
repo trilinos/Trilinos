@@ -37,6 +37,7 @@
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_Krylov.hpp"
 
 /** Classes and functions for templated preconditioning.  */
 namespace Ifpack2 {
@@ -64,6 +65,7 @@ The first argument can assume the following values:
 - \c "CHEBYSHEV"   : returns an instance of Ifpack2::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Ifpack2::ILUT.
 - \c "RILUK"       : returns an instance of Ifpack2::RILUK.
+- \c "Krylov"       : returns an instance of Ifpack2::Krylov.
 - otherwise, create() returns Teuchos::null.
 
 
@@ -156,6 +158,9 @@ Factory::create(const std::string& prec_type,
   }
   else if (prec_type == "DIAGONAL") {
     prec = Teuchos::rcp(new Ifpack2::Diagonal<MatrixType>(matrix));
+  }
+  else if (prec_type == "KRYLOV") {
+    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::ILUT<MatrixType> >(matrix));
   }
   else {
     std::ostringstream os;

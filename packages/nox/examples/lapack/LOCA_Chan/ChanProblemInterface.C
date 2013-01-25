@@ -71,7 +71,7 @@ ChanProblemInterface::ChanProblemInterface(
 
 ChanProblemInterface::ChanProblemInterface(
 		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s, ofstream& file)  : 
+		    int N, double a, double b, double s, std::ofstream& file)  : 
   globalData(global_data),
   initialGuess(N),
   alpha(a),
@@ -156,7 +156,7 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() 
-      << "At parameter value: " << setprecision(8) << conParam
+      << "At parameter value: " << std::setprecision(8) << conParam
       << "   the solution vector (norm="<<x.norm()<<") is\n";
 
     if (n < 8) {

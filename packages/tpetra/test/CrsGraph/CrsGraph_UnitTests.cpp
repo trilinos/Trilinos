@@ -58,6 +58,7 @@ namespace {
   using Teuchos::arcpClone;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
+  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::global_size_t;
   using std::sort;
@@ -1064,9 +1065,96 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< rgraph_node_type           , Node>::value) == true, true );
   }
 
-  //
-  // INSTANTIATIONS
-  //
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
+  {
+    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef Map<LO,GO,N1>      Map1;
+    typedef CrsGraph<LO,GO,N1> Graph1;
+    typedef Map<LO,GO,N2>      Map2;
+    typedef CrsGraph<LO,GO,N2> Graph2;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    //const int myImageID = comm->getRank();
+    const size_t        numLocal  = 10;
+    const global_size_t numGlobal = numImages*numLocal;
+
+    RCP<N1> n1 = getNode<N1>();
+    RCP<N2> n2 = getNode<N2>();
+
+    // create a contiguous uniform distributed map with numLocal entries per node
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
+    RCP<Graph1>       A1 = createCrsGraph(map1,3);
+
+    // empty source, not filled
+    {
+      RCP<ParameterList> plClone = parameterList();
+      // default: plClone->set("fillComplete clone",true);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
+      TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)0 );
+    }
+
+    // one entry per row
+    for (GO grow =map1->getMinGlobalIndex();
+            grow<=map1->getMaxGlobalIndex();
+            ++grow)
+    {
+      if (grow == map1->getMinGlobalIndex())      A1->insertGlobalIndices(grow, tuple<GO>(grow,grow+1));
+      else if (grow == map1->getMaxGlobalIndex()) A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow));
+      else                                        A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow,grow+1));
+    }
+    // source has global indices, not filled, dynamic profile
+    {
+      RCP<ParameterList> plClone = parameterList();
+      plClone->set("fillComplete clone",false);
+      plClone->set("Static profile clone",false);
+      // default: plClone->set("Locally indexed clone",false);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
+      TEST_EQUALITY_CONST( A2->hasColMap(), false );
+      TEST_EQUALITY_CONST( A2->isFillComplete(), false );
+      TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
+      TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
+      TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
+      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMaxLocalIndex(), tuple<GO>(map1->getMinLocalIndex()) ) );
+      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMinLocalIndex(), tuple<GO>(map1->getMaxLocalIndex()) ) );
+      TEST_NOTHROW( A2->fillComplete() );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
+    }
+
+    // source has local indices
+    A1->fillComplete();
+
+    {
+      RCP<ParameterList> plClone = parameterList();
+      plClone->set("Static profile clone", false);
+      RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
+      plCloneFill->set("Optimize Storage",false);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
+      A2->resumeFill();
+      for (LO lrow = map1->getMinLocalIndex();
+              lrow < map1->getMaxLocalIndex()-1;
+              ++lrow)
+      {
+        TEST_NOTHROW( A2->insertLocalIndices(lrow, tuple<LO>(lrow+2)) );
+      }
+      A2->fillComplete();
+      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
+      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
+    }
+
+  }
+
+//
+// INSTANTIATIONS
+//
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
@@ -1088,7 +1176,12 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE )
 
+#define NC_TESTS(N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
+
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
+
+    TPETRA_INSTANTIATE_N(NC_TESTS)
 }

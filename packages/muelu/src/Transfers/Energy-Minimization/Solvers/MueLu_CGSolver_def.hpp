@@ -64,13 +64,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& finalP) const {
-    // Note: this function matrix notations follow Saad's "Iterative methods", ed. 1, pg. 246
+    // Note: this function matrix notations follow Saad's "Iterative methods", ed. 2, pg. 246
     // So, X is the unknown prolongator, P's are conjugate directions, Z's are preconditioned P's
     RCP<const Matrix> A = rcpFromRef(Aref);
 
     RCP<Matrix> X, P, R, Z, AP;
     RCP<Matrix> newX, newR, newP, tmpAP;
     SC oldRZ, newRZ, alpha, beta, app;
+
+    bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
     // T is used only for projecting onto
     RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());
@@ -82,13 +84,11 @@ namespace MueLu {
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
-    tmpAP = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), false, X, false, true, false);
+    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
     C.Apply(*tmpAP, *T);
 
+    // R_0 = -A*X_0
     R = MatrixFactory::BuildCopy(T);
-
-    bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
-
 #ifdef HAVE_MUELU_TPETRA
     if (useTpetra)
       Utils::Op2NonConstTpetraCrs(R)->resumeFill();
@@ -97,15 +97,18 @@ namespace MueLu {
     if (useTpetra)
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
+    // Z_0 = M^{-1}R_0
     Z = MatrixFactory::BuildCopy(R);
     Utils::MyOldScaleMatrix(Z, D, true, true, false);
 
+    // P_0 = Z_0
     P = MatrixFactory::BuildCopy(Z);
 
     oldRZ = Frobenius(*R, *Z);
 
     for (size_t k = 0; k < nIts_; k++) {
-      tmpAP = Utils::TwoMatrixMultiply(rcp_const_cast<Matrix>(A), false, P, false, true, false);
+      // AP = contrain(A*P)
+      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
       C.Apply(*tmpAP, *T);
       AP = T;
 
@@ -119,8 +122,11 @@ namespace MueLu {
         break;
       }
 
+      // alpha = (R_k, Z_k)/(A*P_k, P_k)
       alpha = oldRZ / app;
+      std::cout << "emin: alpha = " << alpha << std::endl;
 
+      // X_{k+1} = X_k + alpha*P_k
       newX = Teuchos::null;
       Utils2::TwoMatrixAdd(P, false, alpha, X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
@@ -129,17 +135,21 @@ namespace MueLu {
       if (k == nIts_ - 1)
         break;
 
+      // R_{k+1} = R_k - alpha*A*P_k
       newR = Teuchos::null;
       Utils2::TwoMatrixAdd(AP, false, -alpha, R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 
+      // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory::BuildCopy(R);
       Utils::MyOldScaleMatrix(Z, D, true, true, false);
 
+      // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
       newRZ = Frobenius(*R, *Z);
       beta = newRZ / oldRZ;
 
+      // P_{k+1} = Z_{k+1} + beta*P_k
       newP = Teuchos::null;
       Utils2::TwoMatrixAdd(P, false, beta, Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());

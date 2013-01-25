@@ -52,8 +52,9 @@
 #define LOCA_STATUSTEST_ABSTRACT_H
 
 // FIXME Replace by LOCA equivalent
-#include "NOX_Common.H"         // for ostream
+#include "NOX_Common.H"         // for std::ostream
 #include "LOCA_Abstract_Iterator.H"
+#include <ostream>
 
 namespace LOCA {
 
@@ -118,13 +119,13 @@ public:
   getStatus() const = 0;
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream&
-  print(ostream& stream, int indent = 0) const = 0;
+  virtual std::ostream&
+  print(std::ostream& stream, int indent = 0) const = 0;
 
 };
 
-ostream&
-operator<<(ostream& os, LOCA::StatusTest::StatusType status);
+std::ostream&
+operator<<(std::ostream& os, LOCA::StatusTest::StatusType status);
 
 } // namespace StatusTest
 } // namespace LOCA

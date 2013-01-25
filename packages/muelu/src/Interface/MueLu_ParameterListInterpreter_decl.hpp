@@ -59,6 +59,12 @@
 
 namespace MueLu {
 
+/*! @class ParameterListInterpreter
+
+    @brief Translates a ParameterList to a form that MueLu can use.
+
+    Either takes a pre-formed ParameterList or reads an XML file and creates an internal Parameterlist
+*/
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
@@ -66,15 +72,19 @@ namespace MueLu {
 
   public:
 
+    //! @name Constructors/Destructors
     //@{
 
-    //!
+    //! Constructor
     ParameterListInterpreter() { }
 
-    //!
+    //! Constructor that accepts a user-provided ParameterList.
     ParameterListInterpreter(Teuchos::ParameterList & paramList);
 
-    //!
+    /*! @brief Constructor that reads parameters from an XML file.
+
+        XML options are converted to ParameterList entries by Teuchos.
+    */
     ParameterListInterpreter(const std::string & xmlFileName);
 
     //! Destructor.
@@ -93,7 +103,8 @@ namespace MueLu {
 
     void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const;
 
-    //@{ Matrix configuration
+    //! @name Matrix configuration
+    //@{
 
     //! Setup Matrix object
     virtual void SetupMatrix(Matrix & Op) const;
@@ -101,7 +112,7 @@ namespace MueLu {
     //! Setup extra data
     virtual void SetupExtra(Hierarchy & H) const;
 
-    // Matrix configuration storage
+    //! Matrix configuration storage
     Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupMatrix()?
 
     //@}

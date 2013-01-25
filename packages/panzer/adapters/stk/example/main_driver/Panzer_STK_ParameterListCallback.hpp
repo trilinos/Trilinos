@@ -54,6 +54,7 @@
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 #include <vector>
+#include <map>
 
 namespace panzer_stk {
 
@@ -67,7 +68,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=Kokkos::D
 class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
   ParameterListCallback(const std::string & coordFieldName,
-                        const map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fp,
+                        const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fp,
                         const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 

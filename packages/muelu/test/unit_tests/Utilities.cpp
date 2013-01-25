@@ -73,7 +73,7 @@ namespace MueLuTests {
     int nx = 37*comm->getSize();
     int ny=nx;
     RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
-    RCP<Matrix> OpOp = Utils::TwoMatrixMultiply(Op,false,Op,false);
+    RCP<Matrix> OpOp = Utils::Multiply(*Op,false,*Op,false);
     RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     Teuchos::Array<ST::magnitudeType> xnorm(1);
@@ -94,7 +94,7 @@ namespace MueLuTests {
 
     //Calculate result = (Op*Op)*X for Tpetra
     Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
-    OpOp = Utils::TwoMatrixMultiply(Op,false,Op,false);
+    OpOp = Utils::Multiply(*Op,false,*Op,false);
     result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     X->setSeed(8675309);

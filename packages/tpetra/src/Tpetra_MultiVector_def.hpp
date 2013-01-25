@@ -115,8 +115,8 @@ namespace Tpetra {
       // not fill the memory by default, otherwise we would lose the
       // first-touch allocation optimization.
       ArrayRCP<Scalar> data = (myLen > 0) ?
-	node->template allocBuffer<Scalar> (myLen * numVecs) :
-	Teuchos::null;
+        node->template allocBuffer<Scalar> (myLen * numVecs) :
+        Teuchos::null;
       const size_t stride = (myLen > 0) ? myLen : size_t (0);
 
       // This just sets the dimensions, pointer, and stride of lclMV_.
@@ -130,23 +130,23 @@ namespace Tpetra {
     }
     else {
       if (myLen > 0) {
-	// allocate data
-	ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
-	MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
-	// copy data
-	{
-	  ArrayRCP<Scalar> dstdata = data;
-	  ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
-	  for (size_t j = 0; j < numVecs; ++j) {
-	    ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
-	    KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
-	      node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
-	    dstdata += myLen;
-	  }
-	}
+        // allocate data
+        ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
+        MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
+        // copy data
+        {
+          ArrayRCP<Scalar> dstdata = data;
+          ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
+          for (size_t j = 0; j < numVecs; ++j) {
+            ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
+            KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
+              node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
+            dstdata += myLen;
+          }
+        }
       }
       else {
-	MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
+        MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
       }
     }
 #else
@@ -169,7 +169,7 @@ namespace Tpetra {
     }
     else {
       MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
-    }    
+    }
 #endif // 0
   }
 
@@ -186,11 +186,11 @@ namespace Tpetra {
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      localMultiVector.getNumRows () < localNumElts, 
+      localMultiVector.getNumRows () < localNumElts,
       std::invalid_argument,
-      "Tpetra::MultiVector constructor: The Map contains " << localNumElts 
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts
       << " on process " << map->getComm ()->getRank () << ", but the given "
-      "Kokkos::MultiVector only has " << localMultiVector.getNumRows () 
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
       << " rows.");
   }
 
@@ -314,11 +314,11 @@ namespace Tpetra {
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      localMultiVector.getNumRows () < localNumElts, 
+      localMultiVector.getNumRows () < localNumElts,
       std::invalid_argument,
-      "Tpetra::MultiVector constructor: The Map contains " << localNumElts 
+      "Tpetra::MultiVector constructor: The Map contains " << localNumElts
       << " on process " << map->getComm ()->getRank () << ", but the given "
-      "Kokkos::MultiVector only has " << localMultiVector.getNumRows () 
+      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
       << " rows.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       WhichVectors.size () == 0,
@@ -515,6 +515,47 @@ namespace Tpetra {
     RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors();
 
+    // Copy rows [0, numSameIDs-1] of the local multivectors.
+    //
+    // For GPU Nodes: All of this happens using device pointers; this
+    // does not require host views of either source or destination.
+    //
+    // mfh 10 Jan 2013: In the current implementation, device data has
+    // already been copied to the host views.  If we do a
+    // device-device copy here, it won't synch the host views
+    // correctly.  Thus, we replace this step with a host copy, if
+    // Node is a GPU Node.  That ensures correctness for now, though
+    // it's really something we need to fix if we plan to run
+    // efficiently on GPUs.
+    if (Node::isHostNode) {
+      if (isConstantStride ()) {
+        const size_t numSrcCols = MVT::getNumCols (sourceMV.lclMV_);
+        const size_t numDestCols = MVT::getNumCols (lclMV_);
+
+        const KMV src = sourceMV.lclMV_.offsetView (numSameIDs, numSrcCols, 0, 0);
+        KMV dest = lclMV_.offsetViewNonConst (numSameIDs, numDestCols, 0, 0);
+        if (sourceMV.isConstantStride ()) {
+          MVT::Assign (dest, src);
+        }
+        else {
+          MVT::Assign (dest, src, sourceMV.whichVectors_ ());
+        }
+      }
+      else {
+        // Copy the columns one at a time, since MVT doesn't have an
+        // Assign method for noncontiguous access to the destination
+        // multivector.
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t destCol = isConstantStride () ? j : whichVectors_[j];
+          const size_t srcCol = sourceMV.isConstantStride () ?
+            j : sourceMV.whichVectors_[j];
+          KMV dest_j = lclMV_.offsetViewNonConst (numSameIDs, 1, 0, destCol);
+          const KMV src_j = sourceMV.lclMV_.offsetView (numSameIDs, 1, 0, srcCol);
+          MVT::Assign (dest_j, src_j); // Copy src_j into dest_j
+        }
+      }
+    }
+
     // Copy the vectors one at a time.  This works whether or not the
     // multivectors have constant stride.
     for (size_t j = 0; j < numCols; ++j) {
@@ -526,10 +567,12 @@ namespace Tpetra {
       ArrayRCP<const Scalar> srcptr = sourceMV.getSubArrayRCP(sourceMV.cview_,j);
       ArrayRCP<      Scalar> dstptr =          getSubArrayRCP(ncview_,j);
 
-      // The first numImportIDs IDs are the same between source and
-      // target, so we can just copy the data.  (This favors faster
-      // contiguous access whenever we can do it.)
-      std::copy(srcptr,srcptr+numSameIDs,dstptr);
+      if (! Node::isHostNode) {
+        // The first numSameIDs IDs are the same between source and
+        // target, so we can just copy the data.  (This favors faster
+        // contiguous access whenever we can do it.)
+        std::copy (srcptr, srcptr+numSameIDs, dstptr);
+      }
 
       // For the remaining GIDs, execute the permutations.  This may
       // involve noncontiguous access of both source and destination
@@ -1010,7 +1053,7 @@ namespace Tpetra {
       SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename ArrayView<Scalar>::iterator i = means.begin();
          i != means.begin() + numVecs;
-         ++i) 
+         ++i)
     {
       (*i) = (*i) * OneOverN;
     }
@@ -1490,21 +1533,21 @@ namespace Tpetra {
         newNumRows + offset > MVT::getNumRows (lclMV_),
         std::runtime_error,
         "Tpetra::MultiVector::offsetView: Invalid input Map.  Input Map owns "
-	<< subMap->getNodeNumElements() << " elements on process " << myRank 
-	<< ".  offset = " << offset << ".  Yet, the MultiVector contains only "
-	<< lclMV_.getOrigNumRows () << " on this process.");
+        << subMap->getNodeNumElements() << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << lclMV_.getOrigNumRows () << " on this process.");
     }
     RCP<const MV> constViewMV;
     if (isConstantStride()) {
-      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
-	lclMV_.offsetView (newNumRows, lclMV_.getNumCols (), offset, 0);
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetView (newNumRows, lclMV_.getNumCols (), offset, 0);
       constViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // Compute the max column being viewed.  This tells us where to stop the view.
       const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
-      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
-	lclMV_.offsetView (newNumRows, maxCol+1, offset, 0);
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetView (newNumRows, maxCol+1, offset, 0);
       constViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return constViewMV;
@@ -1529,21 +1572,21 @@ namespace Tpetra {
         newNumRows + offset > MVT::getNumRows (lclMV_),
         std::runtime_error,
         "Tpetra::MultiVector::offsetViewNonconst: Invalid input Map.  Input Map owns "
-	<< subMap->getNodeNumElements() << " elements on process " << myRank 
-	<< ".  offset = " << offset << ".  Yet, the MultiVector contains only "
-	<< lclMV_.getOrigNumRows () << " on this process.");
+        << subMap->getNodeNumElements() << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << lclMV_.getOrigNumRows () << " on this process.");
     }
     RCP<MV> subViewMV;
     if (isConstantStride()) {
-      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
-	lclMV_.offsetViewNonConst (newNumRows, lclMV_.getNumCols (), offset, 0);
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetViewNonConst (newNumRows, lclMV_.getNumCols (), offset, 0);
       subViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // Compute the max column being viewed.  This tells us where to stop the view.
       const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
-      Kokkos::MultiVector<Scalar, Node> newLocalMV = 
-	lclMV_.offsetViewNonConst (newNumRows, maxCol+1, offset, 0);
+      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+        lclMV_.offsetViewNonConst (newNumRows, maxCol+1, offset, 0);
       subViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
     return subViewMV;
@@ -2160,13 +2203,24 @@ namespace Tpetra {
                      const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("replaceLocalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(),
-      std::runtime_error, ": row index is invalid.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex),
-      std::runtime_error, ": vector index is invalid.");
+    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceLocalValue: row index " << MyRow
+      << " is invalid.  The range of valid row indices on this process "
+      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+      << ", " << maxLocalIndex << "].");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceLocalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
+    const size_t colInd = isConstantStride () ?
+      VectorIndex : whichVectors_[VectorIndex];
+    lclMV_.replaceLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
@@ -2178,44 +2232,73 @@ namespace Tpetra {
                      const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("sumIntoLocalValue");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
-      ": row index is invalid.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-      ": vector index is invalid.");
+    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << MyRow
+      << " is invalid.  The range of valid row indices on this process "
+      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+      << ", " << maxLocalIndex << "].");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
+    const size_t colInd = isConstantStride () ?
+      VectorIndex : whichVectors_[VectorIndex];
+    lclMV_.sumIntoLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  replaceGlobalValue (GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
+  replaceGlobalValue (GlobalOrdinal GlobalRow,
+                      size_t VectorIndex,
+                      const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("replaceGlobalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-        ": row index is not present on this processor.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-        ": vector index is invalid.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: global row index " << GlobalRow
+      << "is not present on this process " << this->getMap()->getComm()->getRank()
+      << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
+    replaceLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  sumIntoGlobalValue (GlobalOrdinal GlobalRow,
+                      size_t VectorIndex,
+                      const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
-    const std::string tfecfFuncName("sumIntoGlobalValue()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-      ": row index is not present on this processor.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
-      ": vector index is invalid.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoGlobalValue: global row index " << GlobalRow
+      << "is not present on this process " << this->getMap()->getComm()->getRank()
+      << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(VectorIndex),
+      std::runtime_error,
+      "Tpetra::MultiVector::sumIntoGlobalValue: vector index " << VectorIndex
+      << " of the multivector is invalid.");
 #endif
-    getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
+    sumIntoLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -82,17 +82,3 @@ from typed_tuple import *
 #
 # Import the typed dict factory
 from typed_dict import *
-
-#
-# In order to handle the nested namespaces properly, the import of NOX and LOCA
-# and their sub-modules needs to be handled at this level.  If, for example, we
-# tried to put the import statement in NOX/__init__.py, we can't fill the
-# PyTrilinos.NOX namespace completely before we need to use it.
-if ('NOX' in __all__):
-    import NOX
-    if (NOX.Have_Epetra):
-        import NOX.Epetra
-if ('LOCA' in __all__):
-    import LOCA
-    if (NOX.Have_Epetra):
-        import LOCA.Epetra

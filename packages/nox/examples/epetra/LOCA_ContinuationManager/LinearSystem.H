@@ -107,12 +107,12 @@ class LinearSystem:
 	GetContinuableParams() const;
 
       // Setting one continuation parameter
-      virtual bool SetContinuableParameter(string label,
+      virtual bool SetContinuableParameter(std::string label,
 	  double value);
 
       // Updates the continuation file
       virtual bool UpdateContinuationFile( 
-	  const string & fileName,
+	  const std::string & fileName,
           const int & idStep,
           const Teuchos::ParameterList & continuationFileParams);
   
@@ -124,7 +124,7 @@ class LinearSystem:
 	GetContinuationFileParameters();
 
       // Printing the solution at each step
-      virtual bool PrintSolutionFile(const string & fileName, 
+      virtual bool PrintSolutionFile(const std::string & fileName, 
 	  const Epetra_Vector & x,
 	  const Teuchos::ParameterList & xParams);
 

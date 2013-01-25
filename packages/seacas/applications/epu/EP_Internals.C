@@ -53,9 +53,13 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
-#include "exodusII.h"                   // for ex_err, ex_opts, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
+
+extern "C" {
+#define NO_NETCDF_2
+#include <netcdf.h>
+#include <exodusII.h>
+#include <exodusII_int.h>
+}
 
 // Explicit Initialization of the functions used...
 namespace Excn {

@@ -72,7 +72,7 @@ reset(const Teuchos::RCP<NOX::Utils>& u)
 }
 
 void NOX::LineSearch::Utils::Printing::
-printOpeningRemarks(const string& lineSearchName) const
+printOpeningRemarks(const std::string& lineSearchName) const
 {
   if (this->isPrintType(NOX::Utils::InnerIteration)) 
     {
@@ -83,18 +83,18 @@ printOpeningRemarks(const string& lineSearchName) const
 
 
 void NOX::LineSearch::Utils::Printing::
-printStep(int n, double step, double oldf, double newf, const string s, 
+printStep(int n, double step, double oldf, double newf, const std::string s, 
 	  bool unscaleF) const
 {
   if (isPrintType(NOX::Utils::InnerIteration)) 
   {
-    this->out() << setw(3) << n << ":";
+    this->out() << std::setw(3) << n << ":";
     this->out() << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
     if (unscaleF == true) {
       this->out() << NOX::Utils::fill(1,' ') << "old f = " 
-		  << sciformat(sqrt(2. * oldf));
+		  << sciformat(std::sqrt(2. * oldf));
       this->out() << NOX::Utils::fill(1,' ') << "new f = " 
-		  << sciformat(sqrt(2. * newf));
+		  << sciformat(std::sqrt(2. * newf));
     }
     else {
       this->out() << NOX::Utils::fill(1,' ') << "old f = " << sciformat(oldf);
@@ -105,6 +105,6 @@ printStep(int n, double step, double oldf, double newf, const string s,
       this->out() << " " << s << "\n";
       this->out() << NOX::Utils::fill(72);
     }
-    this->out() << endl;
+    this->out() << std::endl;
   }
 }

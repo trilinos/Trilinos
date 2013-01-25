@@ -115,6 +115,13 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
 
+  // Krylov smoother
+  params.set("krylov: number of iterations",(int)5);
+  params.set("krylov: residual tolerance",(double)0.001);
+  params.set("krylov: block size",(int)1);
+  params.set("krylov: zero starting solution", true);
+  params.set("krylov: preconditioner type",(int)1);
+
   // Ifpack2_METISPartitioner.hpp
   params.set("partitioner: use symmetric graph", true);
 }

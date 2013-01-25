@@ -286,7 +286,7 @@ void product_tensor_bases( const unsigned nvar ,
   unsigned count_off_diag = 0 ;
 
   for ( unsigned i = 0 ; i < combinatorial.bases_count() ; ++i ) {
-    const unsigned prev_count_diag = count_diag ;
+    const unsigned prev_count_diag     = count_diag ;
     const unsigned prev_count_off_diag = count_off_diag ;
     count_diag = 0 ;
     count_off_diag = 0 ;
@@ -296,7 +296,7 @@ void product_tensor_bases( const unsigned nvar ,
       if ( combinatorial.is_non_zero(i,j,j) ) ++count_diag ;
 
       for ( unsigned k = j + 1 ; k < combinatorial.bases_count() ; ++k ) {
-        if ( combinatorial.is_non_zero(i,j,k) ) count_off_diag += 2 ;
+        if ( combinatorial.is_non_zero(i,j,k) ) count_off_diag += 1 ;
       }
     }
 
@@ -313,8 +313,11 @@ void product_tensor_bases( const unsigned nvar ,
     }
 
     if ( i ) {
-      const bool ok = prev_count_diag     != count_diag     ? prev_count_diag     > count_diag : (
-                      prev_count_off_diag != count_off_diag ? prev_count_off_diag > count_off_diag : true );
+      const unsigned prev_count_total = prev_count_diag + prev_count_off_diag ;
+      const unsigned count_total      = count_diag + count_off_diag ;
+
+      const bool ok = prev_count_total  != count_total ? prev_count_total > count_total : (
+                      prev_count_diag   != count_diag  ? prev_count_diag  > count_diag : true );
 
       if ( ! ok ) {
         std::cout << "product_tensor_bases FAILED : bad ordering at " << i << std::endl ;

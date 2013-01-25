@@ -46,24 +46,29 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DECL_HPP
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
 #include <Xpetra_CrsGraphFactory.hpp> //TODO
-#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_StridedMap_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
+#include "MueLu_PreDropFunctionConstVal_fwd.hpp"
 
 namespace MueLu {
 

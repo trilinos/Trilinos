@@ -104,6 +104,8 @@ namespace Iopx {
 
     void release_memory();
 
+    bool needs_shared_node_information() const {return true;}
+
     // Check to see if database state is ok...
     bool ok(bool write_message = false) const;
 
@@ -218,6 +220,9 @@ namespace Iopx {
     void compute_block_adjacencies() const;
     void compute_node_status() const;
 
+    void create_implicit_global_map() const;
+    void output_node_map() const;
+    
     // Metadata-related functions.
     void read_meta_data();
 
@@ -249,7 +254,6 @@ namespace Iopx {
 				      const Ioss::GroupingEntity *ge,
 				      int64_t count, void *variables) const;
     void write_meta_data();
-    void gather_communication_metadata(Iopx::CommunicationMetaData *meta);
     void write_results_metadata();
 
     template <typename T>
@@ -298,10 +302,10 @@ namespace Iopx {
     {return elemMap.global_to_local(global);}
 
     // Internal data handling
-    int64_t handle_node_ids(void* ids, int64_t num_to_get);
-    int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
-    int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get);
-    int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get);
+    int64_t handle_node_ids(void* ids, int64_t num_to_get, size_t offset, size_t count) const;
+    int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get, size_t offset, size_t count) const;
+    int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get) const;
+    int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get) const;
 
     void add_attribute_fields(ex_entity_type ent_type, Ioss::GroupingEntity *block,
 			      int attribute_count,  const std::string& type);
@@ -344,7 +348,10 @@ namespace Iopx {
 
 
     // Private member data...
-    Iopx::DecompositionData decomp;
+    mutable Iopx::DecompositionDataBase      *decomp;
+    mutable Iopx::DecompositionData<int>     *decomp32;
+    mutable Iopx::DecompositionData<int64_t> *decomp64;
+
     mutable int exodusFilePtr;
     mutable EntityIdSet ids_;
 
@@ -385,8 +392,16 @@ namespace Iopx {
     mutable Ioss::Map faceMap;
     mutable Ioss::Map elemMap;
 
-    // (local==global)
+    mutable IntVector   nodeOwningProcessor;   // Processor that owns each node on this processor
+    mutable Int64Vector nodeGlobalImplicitMap; // Position of this node in the global-implicit ordering
+    mutable Int64Vector elemGlobalImplicitMap; // Position of this element in the global-implicit ordering
 
+    // Contains the indices of all owned nodes in each nodeset on this processor to pull data
+    // from the global list down to the file list.
+    // NOTE: Even though map type is GroupingEntity*, it is only valid
+    // for a GroupingEntity* which is a NodeSet*
+    mutable std::map<const Ioss::GroupingEntity*,Int64Vector> nodesetOwnedNodes; 
+    
     // --- Nodal/Element/Attribute Variable Names -- Maps from sierra
     // field names to index of nodal/element/attribute variable in
     // exodusII. Note that the component suffix of the field is added on
@@ -406,7 +421,7 @@ namespace Iopx {
     time_t timeLastFlush;
 
     mutable bool fileExists; // False if file has never been opened/created
-    mutable bool minimizeOpenFiles;
+    mutable bool metaDataWritten;
 
     mutable bool blockAdjacenciesCalculated; // True if the lazy creation of
     // block adjacencies has been calculated.

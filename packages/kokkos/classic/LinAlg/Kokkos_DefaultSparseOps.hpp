@@ -802,7 +802,7 @@ namespace Kokkos {
     ///   Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward or Backward.
     ///   If you want a symmetric sweep, call this method twice, first
-    ///   with direction = Forward then with direction = Backward.  
+    ///   with direction = Forward then with direction = Backward.
     ///
     /// \note We don't include a separate "Symmetric" direction mode
     ///   in order to avoid confusion when using this method to
@@ -814,12 +814,12 @@ namespace Kokkos {
     ///   and the backward sweep, so we would need to invoke the
     ///   kernel once per sweep direction anyway.
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-		 MultiVector< RangeScalar,Node> &X,
-		 const MultiVector<Scalar,Node> &D,
-		 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-		 const enum ESweepDirection direction = Forward) const;
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                 const enum ESweepDirection direction = Forward) const;
     //@}
 
   protected:
@@ -840,11 +840,11 @@ namespace Kokkos {
                             MultiVector< RangeScalar,Node> &X) const;
 
     template <class DomainScalar, class RangeScalar, class OffsetType>
-    void gaussSeidelPrivate (const MultiVector<DomainScalar,Node> &B,
-			     MultiVector< RangeScalar,Node> &X,
-			     const MultiVector<Scalar,Node> &D,
-			     const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-			     const ESweepDirection direction = Forward) const;
+    void gaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
+                             const MultiVector<DomainScalar,Node> &B,
+                             const MultiVector<Scalar,Node> &D,
+                             const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                             const ESweepDirection direction = Forward) const;
 
     template <class DomainScalar, class RangeScalar, class OffsetType>
     void multiplyPrivate(Teuchos::ETransp trans,
@@ -1060,18 +1060,22 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar, class OffsetType>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
-  gaussSeidelPrivate (const MultiVector<DomainScalar,Node> &B,
-		      MultiVector<RangeScalar,Node> &X,
-		      const MultiVector<Scalar,Node> &D,
-		      const RangeScalar& omega,
-		      const ESweepDirection direction) const
+  gaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+                      const MultiVector<DomainScalar,Node> &B,
+                      const MultiVector<Scalar,Node> &D,
+                      const RangeScalar& omega,
+                      const ESweepDirection direction) const
   {
     typedef Teuchos::ScalarTraits<RangeScalar> STS;
 
+    if (numRows_ == 0) {
+      return; // Nothing to do.
+    }
+    const size_t numCols = B.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
     if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(unit_diag_ != Teuchos::UNIT_DIAG, std::runtime_error,
-        "DefaultHostSparseOps: Gauss-Seidel with an empty matrix is only valid if the matrix has an implicit unit diagonal.");
-
       // All the off-diagonal entries of A are zero, and all the
       // diagonal entries are (implicitly) 1.  Therefore compute:
       //
@@ -1083,10 +1087,6 @@ namespace Kokkos {
       typedef DefaultArithmetic<MultiVector<RangeScalar,Node> > MVT;
       MVT::GESUM (X, omega, B, (STS::one() - omega));
       return;
-    }
-    const size_t numCols = B.getNumCols ();
-    if (numCols == 0) {
-      return; // Nothing to do.
     }
 
     // Get the raw pointers to all the arrays.
@@ -1105,26 +1105,26 @@ namespace Kokkos {
     if (numCols == 1) {
       RangeScalar x_temp;
 
-      if (direction == Forward) { 
-	for (Ordinal i = 0; i < numRows; ++i) {
-	  x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
-	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-	    const Ordinal j = ind[k];
-	    const Scalar A_ij = val[k];
-	    x_temp += A_ij * x[j];
-	  }
-	  x[i] += omega * d[i] * (b[i] - x_temp);
-	}
+      if (direction == Forward) {
+        for (Ordinal i = 0; i < numRows; ++i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
       } else if (direction == Backward) {
-	for (Ordinal i = numRows - 1; i >= 0; --i) {
-	  x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
-	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-	    const Ordinal j = ind[k];
-	    const Scalar A_ij = val[k];
-	    x_temp += A_ij * x[j];
-	  }
-	  x[i] += omega * d[i] * (b[i] - x_temp);
-	}
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
       }
     }
     else { // numCols > 1
@@ -1134,41 +1134,41 @@ namespace Kokkos {
       // It may also be reasonable to parallelize over right-hand
       // sides, if there are enough of them, especially if the matrix
       // fits in cache.
-      Teuchos::Array<RangeScalar> temp (numCols); 
+      Teuchos::Array<RangeScalar> temp (numCols);
       RangeScalar* const x_temp = temp.getRawPtr ();
 
       if (direction == Forward) {
-	for (Ordinal i = 0; i < numRows; ++i) {
-	  for (size_t c = 0; c < numCols; ++c) {
-	    x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
-	  }
-	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-	    const Ordinal j = ind[k];
-	    const Scalar A_ij = val[k];
-	    for (size_t c = 0; c < numCols; ++c) {
-	      x_temp[c] += A_ij * x[j + x_stride*c];
-	    }
-	  }
-	  for (size_t c = 0; c < numCols; ++c) {
-	    x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
-	  }
-	}
+        for (Ordinal i = 0; i < numRows; ++i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
       } else if (direction == Backward) { // backward mode
-	for (Ordinal i = numRows - 1; i >= 0; --i) {
-	  for (size_t c = 0; c < numCols; ++c) {
-	    x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
-	  }
-	  for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-	    const Ordinal j = ind[k];
-	    const Scalar A_ij = val[k];
-	    for (size_t c = 0; c < numCols; ++c) {
-	      x_temp[c] += A_ij * x[j + x_stride*c];
-	    }
-	  }
-	  for (size_t c = 0; c < numCols; ++c) {
-	    x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
-	  }
-	}
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
       }
     }
   }
@@ -1205,34 +1205,58 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
-  void 
+  void
   DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
   gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-	       MultiVector< RangeScalar,Node> &X,
-	       const MultiVector<Scalar,Node> &D,
-	       const RangeScalar& dampingFactor,
-	       const ESweepDirection direction) const
+               MultiVector< RangeScalar,Node> &X,
+               const MultiVector<Scalar,Node> &D,
+               const RangeScalar& dampingFactor,
+               const ESweepDirection direction) const
   {
-    std::string tfecfFuncName("gaussSeidel");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " The solve was not fully initialized."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)X.getNumCols() != (size_t) B.getNumCols(),
-        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)X.getNumRows() < (size_t)numRows_,
-        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
-                            "Likely cause is that the column map was not provided to "
-                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
-    );
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isInitialized_ == false,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The solve was not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "sparse matrix with no entries, but a nonzero number of rows, is only "
+      "valid if the matrix has an implicit unit diagonal.  This matrix does "
+      "not.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumCols() != (size_t) B.getNumCols(),
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The multivectors B and X have different numbers of vectors.  "
+      "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The input/output multivector X does not have enough rows for the "
+      "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.  One possible cause is that the column map "
+      "was not provided to the Tpetra::CrsMatrix in the case of a matrix with "
+      "an implicitly stored unit diagonal.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) B.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The input multivector B does not have enough rows for the "
+      "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.");
+
     if (big_ptrs_ != null) {
-      gaussSeidelPrivate<DomainScalar,RangeScalar,size_t> (B, X, D, dampingFactor, direction);
+      gaussSeidelPrivate<DomainScalar,RangeScalar,size_t> (X, B, D,
+                                                           dampingFactor,
+                                                           direction);
     }
     else {
-      gaussSeidelPrivate<DomainScalar,RangeScalar,Ordinal> (B, X, D, dampingFactor, direction);
+      gaussSeidelPrivate<DomainScalar,RangeScalar,Ordinal> (X, B, D,
+                                                            dampingFactor,
+                                                            direction);
     }
   }
 

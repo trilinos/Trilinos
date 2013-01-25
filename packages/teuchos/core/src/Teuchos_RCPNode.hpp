@@ -73,7 +73,7 @@ enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
  *
  * \ingroup teuchos_mem_mng_grp
  */
-enum ERCPStrength { RCP_STRENGTH_INVALID=-1, RCP_STRONG=0, RCP_WEAK=1 };
+enum ERCPStrength { RCP_STRONG=0, RCP_WEAK=1 };
 
 /** \brief Used to determine if RCPNode lookup is performed or not.
  *
@@ -90,7 +90,6 @@ inline void debugAssertStrength(ERCPStrength strength)
       // fall through
     case RCP_WEAK:
       return; // Fine
-    case RCP_STRENGTH_INVALID:
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
@@ -108,8 +107,6 @@ public:
   static std::string toString( const ERCPStrength &t )
     {
       switch (t) {
-        case RCP_STRENGTH_INVALID:
-          return "RCP_STRENGTH_INVALID";
         case RCP_STRONG:
           return "RCP_STRONG";
         case RCP_WEAK:
@@ -687,7 +684,7 @@ class TEUCHOSCORE_LIB_DLL_EXPORT RCPNodeHandle {
 public:
   /** \brief . */
   RCPNodeHandle(ENull null_arg = null)
-    : node_(0), strength_(RCP_STRENGTH_INVALID)
+    : node_(0), strength_(RCP_STRONG)
     {(void)null_arg;}
   /** \brief . */
   RCPNodeHandle( RCPNode* node, ERCPStrength strength_in = RCP_STRONG,

@@ -130,6 +130,43 @@ namespace Kokkos {
     }
   };
 
+  /// \class ReciprocalThresholdOp
+  /// \brief Compute x[i] = 1.0 / x[i] when the magnitude of x[i] is
+  ///   big enough, else replace x[i] with a given value.
+  template <typename Scalar>
+  struct ReciprocalThresholdOp {
+    typedef Scalar scalar_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    scalar_type* const x_;
+    const scalar_type minDiagVal_;
+    const magnitude_type minDiagMag_;
+
+    /// \brief Constructor.
+    ///
+    /// \param x [in/out] The vector of entries to invert.
+    /// \param minDiagVal [in] The value to use to replace x[i], if
+    ///   x[i] is smaller in magnitude than the magnitude of
+    ///   minDiagVal.
+    ReciprocalThresholdOp (scalar_type* const x,
+			   const scalar_type& minDiagVal) :
+      x_ (x),
+      minDiagVal_ (minDiagVal),
+      minDiagMag_ (STS::magnitude (minDiagVal))
+    {}
+
+    inline KERNEL_PREFIX void execute (int i) const {
+      if (STS::magnitude (x_[i]) < minDiagMag_) {
+	x_[i] = minDiagVal_;
+      }
+      else {
+	x_[i] = STS::one() / x_[i];
+      }
+    }
+  };
+
   template <typename Scalar>
   struct GESUMOp {
     const Scalar *x;

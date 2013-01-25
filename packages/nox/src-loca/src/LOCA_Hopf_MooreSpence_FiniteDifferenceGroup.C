@@ -69,7 +69,7 @@ LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::~FiniteDifferenceGroup()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::computeDCeDp(
-			        const vector<int>& paramIDs,	     
+			        const std::vector<int>& paramIDs,	     
 				const NOX::Abstract::Vector& yVector,
 				const NOX::Abstract::Vector& zVector,
 				double w,

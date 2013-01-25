@@ -307,7 +307,7 @@ namespace LOCA {
       
       //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
-		     const vector<int>& paramIDs, 
+		     const std::vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Set the parameter vector in the group to p (pVector = p).  
@@ -316,8 +316,8 @@ namespace LOCA {
       //! Set parameter indexed by (integer) paramID
       virtual void setParam(int paramID, double val);
 
-      //! Set parameter indexed by (string) paramID
-      virtual void setParam(string paramID, double val);
+      //! Set parameter indexed by (std::string) paramID
+      virtual void setParam(std::string paramID, double val);
 
       //! Return a const reference to the ParameterVector owned by the group.
       virtual const ParameterVector& getParams() const;
@@ -325,8 +325,8 @@ namespace LOCA {
       //! Return copy of parameter indexed by (integer) paramID
       virtual double getParam(int paramID) const;
 
-      //! Return copy of parameter indexed by (string) paramID
-      virtual double getParam(string paramID) const;
+      //! Return copy of parameter indexed by (std::string) paramID
+      virtual double getParam(std::string paramID) const;
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -335,7 +335,7 @@ namespace LOCA {
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const vector<int>& paramIDs, 
+      computeDfDpMulti(const std::vector<int>& paramIDs, 
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF);
 
@@ -545,7 +545,7 @@ namespace LOCA {
       double distProd;
 
       //! Stores indices for getting f part of fMultiVec
-      vector<int> index_f;
+      std::vector<int> index_f;
       
       //! Copy of the ParameterVector for the underlying grpPtr.
       /*! We copy this and then add the homotopy parameter to the list. */
@@ -561,10 +561,10 @@ namespace LOCA {
       int conParamID;
       
       /*! 
-       * \brief Contains the string used to identify the homotopy parameter in 
+       * \brief Contains the std::string used to identify the homotopy parameter in 
        * the ParameterVector object.
        */
-      const string conParamLabel;
+      const std::string conParamLabel;
 
       /*!
        * \brief Tracks whether the LOCA::Homotopy::Group method 

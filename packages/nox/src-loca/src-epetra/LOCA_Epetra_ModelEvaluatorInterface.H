@@ -128,7 +128,7 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType 
       computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
-		  const vector<int>& param_ids,
+		  const std::vector<int>& param_ids,
 		  NOX::Abstract::MultiVector& result,
 		  bool isValidF) const;
 

@@ -46,6 +46,9 @@
 #ifndef MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP
 #define MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class CoupledAggregationFactory;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 #define MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 #endif
+
+
 
 #endif // MUELU_COUPLEDAGGREGATIONFACTORY_FWD_HPP

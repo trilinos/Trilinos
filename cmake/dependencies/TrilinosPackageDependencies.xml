@@ -495,7 +495,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS value="HDF5"/>
+    <LIB_OPTIONAL_DEP_TPLS value="HDF5,MPI"/>
     <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -901,7 +901,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1120,7 +1120,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,KokkosClassic"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Belos,Teuchos,Tpetra,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
@@ -1457,7 +1457,7 @@
   </Package>
   <Package name="PyTrilinos" dir="packages/PyTrilinos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Triutils,EpetraExt,Isorropia,AztecOO,Galeri,Amesos,Ifpack,Komplex,Anasazi,Pliris,ML,NOX"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Triutils,EpetraExt,Isorropia,AztecOO,Galeri,Amesos,Ifpack,Komplex,Anasazi,Pliris,ML,NOX,STK"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>

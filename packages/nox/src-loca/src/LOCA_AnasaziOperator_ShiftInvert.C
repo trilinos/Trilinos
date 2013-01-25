@@ -75,7 +75,7 @@ LOCA::AnasaziOperator::ShiftInvert::~ShiftInvert()
 {
 }
 
-const string&
+const std::string&
 LOCA::AnasaziOperator::ShiftInvert::label() const
 {
   return myLabel;
@@ -86,7 +86,7 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
 				     const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& output) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::ShiftInvert::apply()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -142,7 +142,7 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
 					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient()";
 
   // Allocate temporary vectors

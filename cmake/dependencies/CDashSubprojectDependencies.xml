@@ -304,7 +304,7 @@
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Xpetra" type="LO"/>
     <Dependency name="Galeri" type="TR"/>
-    <Dependency name="Belos" type="TR"/>
+    <Dependency name="Belos" type="LR"/>
     <Dependency name="Anasazi" type="TO"/>
     <Dependency name="Zoltan2" type="LO"/>
     <EmailAddresses>
@@ -850,9 +850,11 @@
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
@@ -863,13 +865,17 @@
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Pamgen" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="Komplex" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="FEI" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
+    <Dependency name="Intrepid" type="ILO"/>
+    <Dependency name="STK" type="LO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="pytrilinos-regression@software.sandia.gov"/>
@@ -878,9 +884,11 @@
   <SubProject name="WebTrilinos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
@@ -891,13 +899,17 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="LR"/>
     <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Pamgen" type="ILO"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="Komplex" type="ILO"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="FEI" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
+    <Dependency name="Intrepid" type="ILO"/>
+    <Dependency name="STK" type="ILO"/>
     <Dependency name="NOX" type="ILO"/>
     <Dependency name="PyTrilinos" type="LR"/>
     <EmailAddresses>

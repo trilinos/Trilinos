@@ -999,6 +999,13 @@ ConditionallyDestroyPreconditioner(const bool CheckPreconditioner)
     ML_CHK_ERR(DestroyPreconditioner());
     
   } // nothing else is left
+  else if ((verbose_) && (CheckPreconditioner == true) && (RateOfConvergence_ == -1.0) &&
+           (Comm().MyPID() == 0)){ 
+     printf("ML Warning: it appears as if 'reuse: enable' has not been set, but\n");
+     printf("             ComputePreconditioner() has been invoked with a 'true'\n");
+     printf("             argument indicating that the preconditioner is to be\n");
+     printf("             checked. This might cause a memory leak!\n");
+  }
 
   return(1);
 }

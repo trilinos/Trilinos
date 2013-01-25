@@ -187,8 +187,8 @@ namespace MueLuTests {
     // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
     //       (for multiplication of a square matrix with a rectangular matrix)
     //       however it seems to work for two rectangular matrices
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::Multiply(*R1,false,*P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
 
     RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
     RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
@@ -200,8 +200,8 @@ namespace MueLuTests {
 
     TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R2,false,P2,false);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P2,true,P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*R2,false,*P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*P2,true,*P2,false);
 
     x = VectorFactory::Build(RP2->getDomainMap());
     bRP  = VectorFactory::Build(RP2->getRangeMap());

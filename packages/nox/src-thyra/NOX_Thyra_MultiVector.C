@@ -126,7 +126,7 @@ random(bool useSeed, int seed)
 
 NOX::Abstract::MultiVector& 
 NOX::Thyra::MultiVector::
-setBlock(const NOX::Abstract::MultiVector& src, const vector<int>& index) 
+setBlock(const NOX::Abstract::MultiVector& src, const std::vector<int>& index) 
 {
   const NOX::Thyra::MultiVector& source = 
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
@@ -300,7 +300,7 @@ clone(int numvecs) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::Thyra::MultiVector::
-subCopy(const vector<int>& index) const
+subCopy(const std::vector<int>& index) const
 {
   Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv;
   if (isContiguous(index))
@@ -314,7 +314,7 @@ subCopy(const vector<int>& index) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::MultiVector::
-subView(const vector<int>& index) const
+subView(const std::vector<int>& index) const
 {
   Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv;
   if (isContiguous(index))
@@ -328,7 +328,7 @@ subView(const vector<int>& index) const
 
 void 
 NOX::Thyra::MultiVector::
-norm(vector<double>& result, NOX::Abstract::Vector::NormType type) const
+norm(std::vector<double>& result, NOX::Abstract::Vector::NormType type) const
 {
   using Teuchos::arrayViewFromVector;
   if (type == NOX::Abstract::Vector::TwoNorm)
@@ -390,7 +390,7 @@ print(std::ostream& stream) const
 
 bool
 NOX::Thyra::MultiVector::
-isContiguous(const vector<int>& index) const
+isContiguous(const std::vector<int>& index) const
 {
   if (index.size()==0)
     return true;

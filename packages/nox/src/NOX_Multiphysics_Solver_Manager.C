@@ -53,7 +53,7 @@
 
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+        const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
         const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 	const Teuchos::RCP<Teuchos::ParameterList>& p) :
@@ -87,12 +87,12 @@ NOX::Multiphysics::Solver::Manager::~Manager()
 }
 
 bool NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+      const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
       const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
       const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  string newmethod = 
+  std::string newmethod = 
     params->get("Coupling Strategy", "Fixed Point Based");
 
   if ((method == newmethod) && (cplPtr != NULL))
@@ -112,13 +112,13 @@ bool NOX::Multiphysics::Solver::Manager::reset(
     } 
     else 
     {
-      utils.out() << "ERROR: NOX::Multiphysics::Solver::Manager::reset - Invalid solver choice " << method << endl;
+      utils.out() << "ERROR: NOX::Multiphysics::Solver::Manager::reset - Invalid solver choice " << method << std::endl;
       throw "NOX Error";
     }
 
     if (cplPtr == NULL) 
     {
-      utils.err() << "NOX::Multiphysics::Solver::Manager::reset - Null pointer error" << endl;
+      utils.err() << "NOX::Multiphysics::Solver::Manager::reset - Null pointer error" << std::endl;
       return false;
     }
 
@@ -142,13 +142,13 @@ reset(const Abstract::Vector& initialGuess)
 }
 
 // PRIVATE
-void NOX::Multiphysics::Solver::Manager::deprecated(const string& oldName, const string& newName) const
+void NOX::Multiphysics::Solver::Manager::deprecated(const std::string& oldName, const std::string& newName) const
 {
   utils.out() << "Warning: NOX::Multiphysics::Solver::Manager::reset - " 
        << "Nonlinear Solver choice \"" << oldName << "\" is deprecated.\n"
        << "                                       " 
        << "Use \"" << newName << "\" instead." 
-       << endl;
+       << std::endl;
 }
 
 NOX::StatusTest::StatusType NOX::Multiphysics::Solver::Manager::getStatus()
@@ -214,11 +214,11 @@ Teuchos::RCP< const Teuchos::ParameterList > NOX::Multiphysics::Solver::Manager:
 }
 
 // PRIVATE
-void NOX::Multiphysics::Solver::Manager::checkNullPtr(const string& fname) const
+void NOX::Multiphysics::Solver::Manager::checkNullPtr(const std::string& fname) const
 {
   if (cplPtr == NULL) 
   {
-    utils.out() << "NOX::Multiphysics::Solver::Manager::" << fname << " - Null pointer error" << endl;
+    utils.out() << "NOX::Multiphysics::Solver::Manager::" << fname << " - Null pointer error" << std::endl;
     throw "NOX Error";
   }
 }

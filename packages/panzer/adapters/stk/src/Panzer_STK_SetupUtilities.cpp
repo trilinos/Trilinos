@@ -81,9 +81,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     }
 
     const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
-
-    worksets.insert(std::make_pair(element_blocks[i],
-                                   panzer_stk::buildWorksets(mesh,element_blocks[i],ipb,workset_size)));
+worksets.insert(std::make_pair(element_blocks[i], panzer_stk::buildWorksets(mesh,element_blocks[i],ipb,workset_size)));
   }
   
   return worksets;
@@ -135,6 +133,109 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   // on this processor
   return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates,
                                workset_size);
+}
+
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildWorksets(const panzer_stk::STK_Interface & mesh,
+              const panzer::PhysicsBlock & pb,
+              const std::string & sideset,
+              const std::size_t workset_size)
+{
+  using namespace workset_utils;
+  using Teuchos::RCP;
+
+  int base_cell_dimension = mesh.getDimension();
+
+  std::vector<stk::mesh::Entity*> sideEntities; 
+
+  try {
+     // grab local entities on this side
+     // ...catch any failure...primarily wrong side set and element block info
+     mesh.getMySides(sideset,pb.elementBlockID(),sideEntities);
+  } 
+  catch(STK_Interface::SidesetException & e) {
+     std::stringstream ss;
+     std::vector<std::string> sideSets; 
+     mesh.getSidesetNames(sideSets);
+ 
+     // build an error message
+     ss << e.what() << "\nChoose one of:\n";
+     for(std::size_t i=0;i<sideSets.size();i++) 
+        ss << "\"" << sideSets[i] << "\"\n";
+
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+  }
+  catch(STK_Interface::ElementBlockException & e) {
+     std::stringstream ss;
+     std::vector<std::string> elementBlocks; 
+     mesh.getElementBlockNames(elementBlocks);
+
+     // build an error message
+     ss << e.what() << "\nChoose one of:\n";
+     for(std::size_t i=0;i<elementBlocks.size();i++) 
+        ss << "\"" << elementBlocks[i] << "\"\n";
+
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+  }
+  catch(std::logic_error & e) {
+     std::stringstream ss;
+     ss << e.what() << "\nUnrecognized logic error.\n";
+
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+  }
+  
+  std::vector<stk::mesh::Entity*> elements;
+  std::vector<std::size_t> local_side_ids;
+  getSideElements(mesh, pb.elementBlockID(),
+		      sideEntities,local_side_ids,elements);
+
+  // build local cell_ids, mapped by local side id
+  std::map<unsigned,std::vector<std::size_t> > local_cell_ids;
+  for(std::size_t elm=0;elm<elements.size();++elm) {
+    stk::mesh::Entity * element = elements[elm];
+	
+    local_cell_ids[local_side_ids[elm]].push_back(mesh.elementLocalId(element));
+  }
+
+  // only build workset if there are elements to worry about
+  // this may be processor dependent, so a defined boundary
+  // condition may have not elements and thus no contribution
+  // on this processor
+  if(elements.size()!=0) {
+    Teuchos::RCP<const shards::CellTopology> topo = mesh.getCellTopology(pb.elementBlockID());
+
+    // worksets to be returned
+    Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
+
+    // loop over each side
+    for(std::map<unsigned,std::vector<std::size_t> >::const_iterator itr=local_cell_ids.begin();
+        itr!=local_cell_ids.end();++itr) {
+ 
+      if(itr->second.size()==0)
+        continue;
+
+      Intrepid::FieldContainer<double> vertices;
+      mesh.getElementVertices(itr->second,vertices);
+  
+      Teuchos::RCP<std::vector<panzer::Workset> > current
+         = panzer::buildWorksets(pb.elementBlockID(),topo, itr->second,
+                                 vertices, pb.getInputPhysicsBlock(),workset_size, base_cell_dimension);
+
+      // correct worksets so the sides are correct
+      for(std::size_t w=0;w<current->size();w++) {
+        (*current)[w].subcell_dim = base_cell_dimension-1;
+        (*current)[w].subcell_index = itr->first;
+      }
+
+      // append new worksets
+      worksets->insert(worksets->end(),current->begin(),current->end());
+    }
+
+    return worksets;
+  }
+  
+  // return Teuchos::null;
+  return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
 
 const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>

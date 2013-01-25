@@ -43,6 +43,9 @@ INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Interface)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
+ENDIF()
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
@@ -51,6 +54,9 @@ APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
+ENDIF()
 
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
@@ -97,6 +103,9 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers/BlockedSmoothers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
+ENDIF()
 
 INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
@@ -110,6 +119,10 @@ ENDIF()
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
   LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
+ENDIF()
+
+if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp)
 ENDIF()
 
 
@@ -133,4 +146,5 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+#
 #

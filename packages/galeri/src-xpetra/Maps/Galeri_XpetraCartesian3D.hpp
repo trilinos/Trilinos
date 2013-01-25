@@ -120,9 +120,9 @@ namespace Galeri {
         vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
         size_t count = 0;
 
-        for (GlobalOrdinal i = startx ; i < endx ; ++i) 
-          for (GlobalOrdinal j = starty ; j < endy ; ++j) 
-            for (GlobalOrdinal k = startz ; k < endz ; ++k) 
+        for (GlobalOrdinal k = startz ; k < endz ; ++k)
+          for (GlobalOrdinal j = starty ; j < endy ; ++j)
+            for (GlobalOrdinal i = startx ; i < endx ; ++i)
               MyGlobalElements[count++] = i + j * nx +k * (nx * ny);
 
         global_size_t numGlobalElements = nx * ny * nz;

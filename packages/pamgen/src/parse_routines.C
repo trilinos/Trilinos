@@ -917,6 +917,14 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       }
       if(sdimension == 2 &&(the_loc == MINUS_K || the_loc == PLUS_K))break;
 
+      if(the_loc == MINUS_I && the_block == 1){
+	if(Inline_Mesh_Desc::static_storage->inline_geometry_type == RADIAL_TRISECTION){
+	  std::stringstream ss;
+	  ss << "Block sideset location disallowed on this block for Trisection Meshes:" << type_token;
+	  token_stream->Semantics_Error(ss.str());   
+	}
+      }
+
       if(Inline_Mesh_Desc::static_storage->getSideset_by_id(the_id)){
 	std::stringstream ss;
 	ss << "Sideset ids may not be reused " << the_id;

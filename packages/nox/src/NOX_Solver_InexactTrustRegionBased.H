@@ -330,10 +330,10 @@ protected:
   virtual void printUpdate();
 
   //! Print an error message and throw an error during parameter reads
-  virtual void invalid(const string& param, double value) const;
+  virtual void invalid(const std::string& param, double value) const;
 
   //! Print an error message and throw an error
-  virtual void throwError(const string& method, const string& mesage) const;
+  virtual void throwError(const std::string& method, const std::string& mesage) const;
 
   //! Resets the counters in the solver.
   virtual void resetCounters();

@@ -75,13 +75,9 @@ namespace MueLu {
     RCP<Aggregates> aggregates;
     {
       //TODO check for reuse of aggregates here
-      //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
-      //FIXME there ever be more than one graph?
-      //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
-      //FIXME TAW: We can distinguish them by their factory!
 
       // Level Get
-      RCP<const Graph> graph = Get< RCP<Graph> >(currentLevel, "Graph");
+      RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
       // Build
       aggregates = rcp(new Aggregates(*graph));

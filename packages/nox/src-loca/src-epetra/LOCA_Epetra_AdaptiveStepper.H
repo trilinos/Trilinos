@@ -257,10 +257,10 @@ namespace Epetra {
     Teuchos::RCP<Teuchos::ParameterList> firstStepperParams;
 
     //! Name of continuation parameter
-    string conParamName;
+    std::string conParamName;
 
     //! Index of continuation parameter
-    vector<int> conParamIDs;
+    std::vector<int> conParamIDs;
 
     //! Starting value of continuation parameter, \f$\lambda_b \f$.
     double startValue;

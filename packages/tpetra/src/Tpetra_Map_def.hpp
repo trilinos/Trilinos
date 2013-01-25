@@ -657,8 +657,9 @@ namespace Tpetra {
     // The length of entryList on this node is the number of local
     // elements (on this node), even though entryList contains global
     // indices.  We assume that the number of local elements can be
-    // stored in a LocalOrdinal.
-    LocalOrdinal numLocalElements_in = as<LocalOrdinal> (entryList.size ());
+    // stored in a size_t; numLocalElements_ is a size_t, so this
+    // variable and that should have the same type.
+    const size_t numLocalElements_in = as<size_t> (entryList.size ());
 
     const std::string errPrefix = typeName (*this) +
       "::Map(numGlobal,entryList,indexBase,comm,node): ";
@@ -790,12 +791,25 @@ namespace Tpetra {
     // numUniqueGIDs counter is a red herring; it just increases by
     // one each iteration.
     size_t numUniqueGIDs = 0;
+    glMap_ = rcp(new global_to_local_table_type());
     if (numLocalElements_ > 0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
+
+      // While iterating through entryList, we compute its (local)
+      // min and max elements.
+      minMyGID_ = entryList[0];
+      maxMyGID_ = entryList[0];
       for (size_t i=0; i < numLocalElements_; i++) {
-        lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_:  LID to GID
-        glMap_[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
+        lgMap_[numUniqueGIDs] = entryList[i];      // lgMap_:  LID to GID
+        (*glMap_)[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
         numUniqueGIDs++;
+
+        if (entryList[i] < minMyGID_) {
+          minMyGID_ = entryList[i];
+        }
+        if (entryList[i] > maxMyGID_) {
+          maxMyGID_ = entryList[i];
+        }
       }
 
       // shrink lgMap appropriately
@@ -803,8 +817,6 @@ namespace Tpetra {
         numLocalElements_ = numUniqueGIDs;
         lgMap_ = lgMap_.persistingView(0,numLocalElements_);
       }
-      minMyGID_ = *std::min_element(lgMap_.begin(), lgMap_.end());
-      maxMyGID_ = *std::max_element(lgMap_.begin(), lgMap_.end());
     }
 
     // Compute the min and max of all processes' global IDs.
@@ -812,9 +824,27 @@ namespace Tpetra {
     reduceAll (*comm_, REDUCE_MAX, maxMyGID_, outArg (maxAllGID_));
     contiguous_  = false;
     distributed_ = checkIsDist();
-    TEUCHOS_TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
-      errPrefix << "Minimum global ID (== " << minAllGID_ << ") over all process"
-      "(es) is less than the given indexBase (== " << indexBase_ << ")");
+
+    using std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      minAllGID_ < indexBase_,
+      std::invalid_argument,
+      errPrefix << std::endl << "Minimum global ID (== " << minAllGID_
+      << ") over all process(es) is less than the given indexBase (== "
+      << indexBase_ << ").");
+#if 0
+    using std::cerr;
+    cerr << "Tpetra::Map: Just for your information:"
+         << endl << "- minMyGID_ = " << minMyGID_
+         << endl << "- minAllGID_ = " << minAllGID_
+         << endl << "- maxMyGID_ = " << maxMyGID_
+         << endl << "- maxAllGID_ = " << maxAllGID_
+         << endl << "- numLocalElements_ = " << numLocalElements_
+         << endl << "- numGlobalElements_ = " << numGlobalElements_
+         << endl << "- entryList = " << toString (entryList)
+         << endl;
+#endif // 0
+
     setupDirectory();
   }
 
@@ -834,8 +864,8 @@ namespace Tpetra {
     }
     else {
       typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_.find(globalIndex);
-      if (i == glMap_.end()) {
+      iter_type i = glMap_->find(globalIndex);
+      if (i == glMap_->end()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       }
       return i->second;
@@ -870,8 +900,8 @@ namespace Tpetra {
     }
     else {
       typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_.find(globalIndex);
-      return (i != glMap_.end());
+      iter_type i = glMap_->find(globalIndex);
+      return (i != glMap_->end());
     }
   }
 

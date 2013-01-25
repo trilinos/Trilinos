@@ -47,7 +47,12 @@ CUDA | Cuda | cuda )
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc -arch=sm_20"
+  NVCC="nvcc"
+  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20"
+  if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
+  then
+    NVCC="${NVCC} -gencode arch=compute_30,code=sm_30"
+  fi
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR}"
   NVCC="${NVCC} -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR}"
@@ -73,7 +78,16 @@ INTEL | intel | icc )
 #-------------------------------
 MIC | mic )
   CXX="icpc -mmic -ansi-alias -Wall"
-  # CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
+  CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
+  # CXX="${CXX} -vec-report6"
+  # CXX="${CXX} -guide-vec"
+  LIB="${LIB} -lstdc++"
+  ;;
+#-------------------------------
+MPIMIC | mpimic )
+  CXX="mpiicpc -mmic -ansi-alias -Wall"
+  CXX="${CXX} -DHAVE_MPI"
+  CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
@@ -81,7 +95,7 @@ MIC | mic )
 #-------------------------------
 curie )
   CXX="CC"
-  HAVE_MPI="/opt/cray/mpt/5.4.4/xt/gemini/mpich2-cray/73"
+  HAVE_MPI="/opt/cray/mpt/default/gni/mpich2-cray/74"
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;  

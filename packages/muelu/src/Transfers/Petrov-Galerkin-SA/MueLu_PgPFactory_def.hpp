@@ -140,7 +140,7 @@ namespace MueLu {
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvAP0 = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvAP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
 
     doFillComplete=true;
     optimizeStorage=false;
@@ -224,6 +224,10 @@ namespace MueLu {
   void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
     FactoryMonitor m(*this, "PgPFactory::ComputeRowBasedOmega", coarseLevel);
 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+    Scalar sZero = Teuchos::ScalarTraits<Scalar>::zero();
+    Magnitude mZero = Teuchos::ScalarTraits<Scalar>::magnitude(sZero);
+
     Teuchos::RCP<Vector > Numerator = Teuchos::null;
     Teuchos::RCP<Vector > Denominator = Teuchos::null;
 
@@ -243,10 +247,10 @@ namespace MueLu {
         // calculate A * P0
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A, false, P0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, doFillComplete, optimizeStorage);
 
         // compute A * D^{-1} * A * P0
-        RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
 
         Numerator =   VectorFactory::Build(ADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(ADinvAP0->getColMap(), true);
@@ -282,7 +286,7 @@ namespace MueLu {
         bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
-        RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
         Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
@@ -311,7 +315,7 @@ namespace MueLu {
     Scalar min_local = 1000000; //Teuchos::ScalarTraits<Scalar>::one() * (Scalar) 1000000;
     Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
     for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
-      if(std::abs(Denominator_local[i]) == 0.0)
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(Denominator_local[i]) == mZero)
         {
           ColBasedOmega_local[i] = 0.0; // fallback: nonsmoothed basis function since denominator == 0.0
           nan_local++;
@@ -321,7 +325,7 @@ namespace MueLu {
           ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];  // default case
         }
 
-      if(std::abs(ColBasedOmega_local[i]) < std::abs(Teuchos::ScalarTraits<Scalar>::zero())) { // negative omegas are not valid. set them to zero
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < mZero) { // negative omegas are not valid. set them to zero
         ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
         zero_local++; // count zero omegas
       }
@@ -330,12 +334,12 @@ namespace MueLu {
       // fallback if ColBasedOmega == 1 -> very strong smoothing may lead to zero rows in P
       // TAW: this is somewhat nonstandard and a rough fallback strategy to avoid problems
       // also avoid "overshooting" with omega > 0.8
-      if(std::abs(ColBasedOmega_local[i]) >= 0.8) {
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) >= 0.8) {
         ColBasedOmega_local[i] = 0.0;
       }
 
-      if(std::abs(ColBasedOmega_local[i]) < std::abs(min_local)) { min_local = std::abs(ColBasedOmega_local[i]); }
-      if(std::abs(ColBasedOmega_local[i]) > std::abs(max_local)) { max_local = std::abs(ColBasedOmega_local[i]); }
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < Teuchos::ScalarTraits<Scalar>::magnitude(min_local)) { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(max_local)) { max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
     }
 
     { // be verbose
@@ -381,14 +385,15 @@ namespace MueLu {
       bAtLeastOneDefined = false;
       for(size_t j=0; j<Teuchos::as<size_t>(lindices.size()); j++) {
         Scalar omega = ColBasedOmega_local[lindices[j]];
-        if (std::abs(omega) != -666) { // TODO bad programming style
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(omega) != -666) { // TODO bad programming style
           bAtLeastOneDefined = true;
-          if(std::abs(RowBasedOmega_local[row]) == -666)    RowBasedOmega_local[row] = omega;
-          else if(std::abs(omega) < std::abs(RowBasedOmega_local[row])) RowBasedOmega_local[row] = omega;
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) == -666)    RowBasedOmega_local[row] = omega;
+          else if(Teuchos::ScalarTraits<Scalar>::magnitude(omega) < Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row])) RowBasedOmega_local[row] = omega;
         }
       }
       if(bAtLeastOneDefined == true) {
-        if(std::abs(RowBasedOmega_local[row]) < 0 /*Teuchos::ScalarTraits<Scalar>::zero()*/) RowBasedOmega_local[row] = 0; /* Teuchos::ScalarTraits<Scalar>::zero();*/
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(RowBasedOmega_local[row]) < mZero)
+          RowBasedOmega_local[row] = sZero;
       }
     }
 
@@ -500,7 +505,7 @@ namespace MueLu {
     } else
 #endif // end remove me
       if(InnerProdVec->getMap()->isSameAs(*right->getColMap())) {
-        size_t szNewLeftLocal = std::max(left->getColMap()->getNodeNumElements(), right->getColMap()->getNodeNumElements());
+        size_t szNewLeftLocal = TEUCHOS_MAX(left->getColMap()->getNodeNumElements(), right->getColMap()->getNodeNumElements());
         Teuchos::RCP<std::vector<LocalOrdinal> > NewLeftLocal = Teuchos::rcp(new std::vector<LocalOrdinal>(szNewLeftLocal, Teuchos::as<LocalOrdinal>(right->getColMap()->getMaxLocalIndex()+1)));
 
         LocalOrdinal j = 0;
@@ -686,10 +691,10 @@ namespace MueLu {
     // calculate A * Ptent
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> AP0 = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> AP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
 
     // compute A * D^{-1} * A * P0
-    RCP<Matrix> ADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
 
     Numerator = MultiplyAll(AP0, ADinvAP0, GID2localgid);
     Denominator = MultiplySelfAll(ADinvAP0, GID2localgid);
@@ -719,7 +724,7 @@ namespace MueLu {
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
@@ -741,7 +746,7 @@ namespace MueLu {
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A, false, DinvAPtent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);

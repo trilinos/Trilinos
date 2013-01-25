@@ -52,6 +52,7 @@
 #define LOCA_MULTICONTINUATION_COMPOSITECONSTRAINT_H
 
 #include "LOCA_MultiContinuation_ConstraintInterface.H" // base class
+#include <vector>
 
 // forward declarations
 namespace LOCA {
@@ -76,7 +77,7 @@ namespace LOCA {
       //! Constructor
       CompositeConstraint(
 	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const vector< Teuchos::RCP<
+	const std::vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects);
       
       //! Copy constructor
@@ -111,7 +112,7 @@ namespace LOCA {
 
       //! Sets parameters indexed by paramIDs
       virtual void setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Compute continuation constraint equations
@@ -129,7 +130,7 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const vector<int>& paramIDs, 
+      computeDP(const std::vector<int>& paramIDs, 
 		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 		bool isValidG);
 
@@ -209,7 +210,7 @@ namespace LOCA {
       //! Initialize object when using default constructor
      virtual void init(
 	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const vector< Teuchos::RCP<
+	const std::vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects);
 
     protected:
@@ -221,11 +222,11 @@ namespace LOCA {
       int numConstraintObjects;
 
       //! Array of constraint pointers
-      vector< Teuchos::RCP<
+      std::vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> > constraintPtrs;
 
       //! Indices of each sub-constraint in the composite constraint
-      vector< vector<int> > indices;
+      std::vector< std::vector<int> > indices;
 
       //! Total number of constraints
       int totalNumConstraints;

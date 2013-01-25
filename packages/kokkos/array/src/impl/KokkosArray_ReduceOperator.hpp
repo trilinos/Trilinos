@@ -187,6 +187,23 @@ public:
   unsigned value_size() const { return sizeof(value_type); }
 
   KOKKOSARRAY_INLINE_FUNCTION
+  reference_type reference( void * const p ) const { return *((value_type*)p); }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  reference_type reference( void * const p , const iType & i ) const
+    { return ((value_type*)p)[i]; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void init( void * update ) const
+    { ValueOper::init( *((value_type*)update) ); }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void init( void * update , const iType & i ) const
+    { ValueOper::init( ((value_type*)update)[i] ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile value_type * vvp ;
@@ -195,12 +212,16 @@ public:
       ValueOper::join( *vvp(update) , *cvvp(input) );
     }
 
+  template< unsigned N >
   KOKKOSARRAY_INLINE_FUNCTION
-  reference_type init( void * update ) const
+  void join( volatile void * update ) const
     {
-      reference_type ref = *((value_type*) update);
-      ValueOper::init( ref );
-      return ref ;
+      typedef       volatile value_type * vvp ;
+      typedef const volatile value_type * cvvp ;
+
+      for ( unsigned i = 1 ; i < N ; ++i ) {
+        ValueOper::join( *vvp(update) , cvvp(update)[i] );
+      }
     }
 
   KOKKOSARRAY_INLINE_FUNCTION
@@ -247,6 +268,29 @@ public:
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
+  reference_type reference( void * const p ) const
+    { return (reference_type)p; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  reference_type reference( void * const p , const iType & i ) const
+    { return ((reference_type)p) + m_finalize.value_count * i ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void init( void * update ) const
+    {
+      ValueOper::init( (reference_type) update , m_finalize.value_count );
+    }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void init( void * update , const iType & i ) const
+    {
+      ValueOper::init( ((reference_type) update) + m_finalize.value_count * i  ,
+                       m_finalize.value_count );
+    }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile MemberType * vvp ;
@@ -255,12 +299,16 @@ public:
       ValueOper::join( vvp(update) , cvvp(input) , m_finalize.value_count );
     }
 
+  template< unsigned N >
   KOKKOSARRAY_INLINE_FUNCTION
-  reference_type init( void * update ) const
+  void join( volatile void * update ) const
     {
-      reference_type ref = (reference_type) update ;
-      ValueOper::init( ref , m_finalize.value_count );
-      return ref ;
+      typedef       volatile MemberType * vvp ;
+      typedef const volatile MemberType * cvvp ;
+
+      for ( unsigned i = 1 ; i < N ; ++i ) {
+        ValueOper::join( vvp(update) , cvvp(update) + m_finalize.value_count * i , m_finalize.value_count );
+      }
     }
 
   KOKKOSARRAY_INLINE_FUNCTION
