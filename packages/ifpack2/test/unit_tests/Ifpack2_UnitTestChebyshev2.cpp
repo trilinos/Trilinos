@@ -30,50 +30,44 @@
 \author Mark Hoemmen
 
 This test compares Ifpack2's implementation of Chebyshev iteration
-against the following implementations:
+(which as of 25 Jan 2013 is a direct imitation of Ifpack's
+implementation) against the following implementations:
 1. A textbook version of the algorithm
-2. A direct imitation of Ifpack's implementation
-3. A textbook implementation of CG
+2. A textbook implementation of CG
 
-All three do the same left diagonal scaling that Ifpack2 does.
-"Textbook" implementations (#1 and #3) come from "Templates for the
-Solution of Linear Systems," 2nd edition.  #2 imitates
-Ifpack::Chebyshev, both in how it sets parameters and in the actual
-iteration (ApplyInverse()).  We include CG just to give us a rough
-measure of how fast the methods "should" converge.
+All three implementations use left diagonal scaling.  "Textbook" means
+"Templates for the Solution of Linear Systems," 2nd edition.  We
+include CG just to give us a rough measure of how fast the methods
+"should" converge.
 
 The test exercises all three algorithms with a 1-D Poisson equation.
 We know the eigenvalues of the matrix exactly as a function of its
-dimensions, so we can give perfect eigenvalue bounds.  We also
-experiment with changing the max eigenvalue bound so that it's either
-an overestimate or an underestimate.
+dimensions (see Chapter 6 of "Applied Numerical Linear Algebra," James
+Demmel, SIAM), so we can give perfect eigenvalue bounds.  We also
+experiment with variations of max and min eigenvalue estimates and the
+eigenvalue ratio parameter.
 
 This test has the following command-line arguments:
 - numIters: The number of iterations of Chebyshev or CG.
 - localNumRows: The number of rows of the matrix on each process.
 - numEigIters: The number of iterations of eigenvalue analysis (the
   power method) to find the max eigenvalue of the matrix.
-- perturbMaxEigenvalue: If true, test sensitivity of the Chebyshev
-  implementations to changes in the provided max eigenvalue estimate.
 
-Currently, Ifpack2::Chebyshev and the Ifpack imitation agree.  In
-fact, the Ifpack imitation is better, because it actually implements
-the power method for eigenanalysis (Ifpack2 currently does not).  The
-textbook implementation of Chebyshev converges much faster if the
-eigenvalue bounds are good, but it is far too sensitive to an
-incorrect upper bound on the eigenvalues.  This gives me confidence
-that Ifpack2's version is correct.
+The textbook implementation of Chebyshev converges faster if the
+eigenvalue bounds are good, but it is much more sensitive than
+Ifpack2::Chebyshev to an incorrect upper bound on the eigenvalues.
+This gives me confidence that Ifpack2's version is correct.
 
 There is also dead code for imitating ML's Chebyshev implementation
-(ML_Cheby(), in packages/ml/src/Smoother/ml_smoother.c).  I couldn't
-get it to converge, and didn't want to waste time.  ML uses
-Ifpack::Chebyshev for the top-level smoother if you give it an Epetra
-matrix, so Ifpack's implementation been tested in the field.
+(ML_Cheby(), in packages/ml/src/Smoother/ml_smoother.c) in
+Ifpack2::Details::Chebyshev.  I couldn't get it to converge, and
+didn't want to waste time.  ML uses Ifpack::Chebyshev for the
+top-level smoother if you give it an Epetra matrix, so Ifpack's
+implementation (which Ifpack2 imitates) been tested in the field.
 */
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Chebyshev.hpp>
-#include <Ifpack2_Details_Chebyshev.hpp>
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_oblackholestream.hpp>
@@ -284,7 +278,6 @@ private:
 int numberOfIterations = 50;
 int numberOfEigenanalysisIterations = 15;
 int localNumberOfRows = 10000;
-bool perturbMaxEigenvalue = false;
 
 } // namespace (anonymous) 
 
@@ -298,10 +291,6 @@ TEUCHOS_STATIC_SETUP()
 		 "Number of iterations of eigenvalue analysis (e.g., power method)");
   clp.setOption ("localNumRows", &localNumberOfRows, 
 		 "Number of rows per process in the sparse matrix.");
-  clp.setOption ("perturbMaxEigenvalue", "dontPerturbMaxEigenvalue", 
-		 &perturbMaxEigenvalue, "If true, test sensitivity of the "
-		 "Chebyshev implementations to changes in the provided max "
-		 "eigenvalue estimate.");
 }
 
 
@@ -343,10 +332,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   const ST zero = STS::zero ();
   const ST one = STS::one ();
   const ST two = one + one;
-
-  // Any real-valued, symmetric positive definite matrix is spectrally
-  // equivalent to a diagonal matrix.  Thus, it suffices to test
-  // Chebyshev with a diagonal matrix.
 
   // Prepare arguments for creating the Map.
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
@@ -457,13 +442,13 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   params.set ("chebyshev: degree", numIters);
   params.set ("chebyshev: max eigenvalue", lambdaMax);
 
-  // Create the operators: Ifpack2, custom Chebyshev, custom CG.
+  // Create the operators: Ifpack2, textbook Chebyshev, and custom CG.
   prec_type ifpack2Cheby (A);
   Ifpack2::Details::Chebyshev<ST, MV, crs_matrix_type> myCheby (A);
   CG<ST, MV, crs_matrix_type> cg (A);
 
   // Residual 2-norms for comparison.
-  MT maxResNormIfpack2, maxResNormTextbook, maxResNormImitateIfpack, maxResNormCg;
+  MT maxResNormIfpack2, maxResNormTextbook, maxResNormCg;
 
   ////////////////////////////////////////////////////////////////////
   // Test 1: set lambdaMax exactly, use default values of eigRatio and
@@ -487,14 +472,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  // No need to call compute() here, since we haven't changed
-  // parameters that affect eigenvalue bounds or the inverse diagonal.
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -503,31 +480,16 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax 
       << ", default lambdaMin and eigRatio:" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
-
-  // At least the first four or so digits of Ifpack2::Chebyshev and
-  // "Chebyshev imitating Ifpack" should be the same.  (We're not so
-  // dreadfully picky, but generally many more digits than this should
-  // match.)
-  {
-    const MT tol = Teuchos::as<MT> (1.0e-4);
-    const MT relDiff = STS::magnitude (maxResNormIfpack2 - maxResNormImitateIfpack) / maxResNormImitateIfpack;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      relDiff > tol, 
-      std::runtime_error, 
-      "After " << numIters << " iterations of Chebyshev, with lambdaMax = " 
-      << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
-      "and an imitation of Ifpack's implementation have a relative difference "
-      "of " << relDiff << " > tol = " << tol << ".");
-  }
 
   ////////////////////////////////////////////////////////////////////
   // Test 2: set lambdaMax and lambdaMin exactly, and set eigRatio =
   // lambdaMax / lambdaMin.
   ////////////////////////////////////////////////////////////////////
 
+  // Reset parameters.
+  params.set ("chebyshev: textbook algorithm", false);
   params.set ("chebyshev: min eigenvalue", lambdaMin);
   params.set ("chebyshev: ratio eigenvalue", eigRatio);
 
@@ -548,12 +510,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -562,10 +518,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax 
       << ", lambdaMin = " << lambdaMin << ", eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
+  // Reset parameters.
+  params.set ("chebyshev: textbook algorithm", false);
   // ParameterList is NOT a delta.  That is, if we remove these
   // parameters from the list, setParameters() will use default
   // values, rather than letting the current settings remain.
@@ -577,8 +534,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // default).
   ////////////////////////////////////////////////////////////////////
 
-  // Now try again, but set the max / min eigenvalue ratio to 20 (ML's
-  // default value for smoothers).
+  // Set new parameter values.
   eigRatio = Teuchos::as<ST> (20);
   params.set ("chebyshev: ratio eigenvalue", eigRatio);
 
@@ -602,12 +558,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -616,9 +566,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax 
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
+
+  // Reset parameters.
+  params.set ("chebyshev: textbook algorithm", false);
 
   ////////////////////////////////////////////////////////////////////
   // Test 4: set lambdaMax exactly, and set eigRatio = 30 (Ifpack's
@@ -647,12 +599,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -661,11 +607,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with lambdaMax = " << lambdaMax 
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters to their original values.
+  params.set ("chebyshev: textbook algorithm", false);
   params.remove ("chebyshev: ratio eigenvalue", false);
   eigRatio = lambdaMax / lambdaMin;
 
@@ -695,12 +641,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -709,13 +649,15 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
     "with numEigIters = " << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Print the computed max and min eigenvalues, and other details.
   os2 << endl;
   myCheby.print (os2);
+
+  // Reset parameters.
+  params.set ("chebyshev: textbook algorithm", false);
 
   ////////////////////////////////////////////////////////////////////
   // Test 6: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
@@ -746,12 +688,6 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   myCheby.compute ();
   maxResNormTextbook = myCheby.apply (b, x);
 
-  // Run our custom version of Chebyshev, but imitate Ifpack.
-  params.set ("chebyshev: textbook algorithm", false);
-  myCheby.setParameters (params);
-  x.putScalar (zero); // Reset the initial guess(es).
-  maxResNormImitateIfpack = myCheby.apply (b, x);
-
   // Run CG, just to compare.
   x.putScalar (zero); // Reset the initial guess(es).
   cg.setParameters (params);
@@ -760,9 +696,30 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
     "with numEigIters = " << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
-      << "- Chebyshev imitating Ifpack: " << maxResNormImitateIfpack / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
+
+
+  // For this case, if there are enough eigenanalysis iterations,
+  // Ifpack2 should do quite a bit better than the textbook version of
+  // the algorithm.  We'll be generous and say that it does "no worse"
+  // than the textbook version.  We give "wiggle room" of four digits
+  // for defining "no worse than."
+  if (numEigIters >= 15) {
+    const MT tol = Teuchos::as<MT> (1.0e-4);
+    // Avoid division by zero when computing relative accuracy.
+    const MT relDiff = maxResNormTextbook == zero ? 
+      STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) :
+      STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      maxResNormIfpack2 > maxResNormTextbook && relDiff > tol, 
+      std::runtime_error, 
+      "After " << numIters << " iterations of Chebyshev, with lambdaMax = " 
+      << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
+      "does quite a bit worse than the textbook version of the algorithm.  The "
+      "former has a max relative residual norm of " << maxResNormIfpack2 << ", "
+      "and the latter of " << maxResNormTextbook << ".");
+  }
 
   // Print the computed max and min eigenvalues, and other details.
   os2 << endl;
