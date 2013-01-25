@@ -86,7 +86,7 @@ public:
   NormalizedLegendrePolynomialBases()
   {
     for ( unsigned k = 0 ; k <= MaximumDegree ; ++k ) {
-      m_norm[k] = std::sqrt( 0.5 + k );
+      m_norm[k] = std::sqrt( 1.0 + 2.0*k );
     }
   }
 
