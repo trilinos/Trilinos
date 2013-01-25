@@ -57,7 +57,7 @@ public:
   template <typename Scalar>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
 };
 
 } // namespace Piro

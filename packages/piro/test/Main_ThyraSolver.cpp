@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
         RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
           createLinearSolveStrategy(linearSolverBuilder);
 
-        const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel =
+        const RCP<Thyra::ModelEvaluator<double> > thyraModel =
           Thyra::epetraModelEvaluator(epetraModel,lowsFactory);
 
         piro = solverFactory.createSolver(piroParams, thyraModel);
