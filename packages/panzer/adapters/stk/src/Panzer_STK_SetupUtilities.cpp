@@ -118,10 +118,11 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
  */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb, 
-              const std::size_t workset_size)
+              const panzer::PhysicsBlock & pb)
 {
   using namespace workset_utils;
+
+  const std::size_t workset_size = pb.cellData().numCells();
 
   std::vector<std::string> element_blocks;
 

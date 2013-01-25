@@ -62,8 +62,7 @@ public:
    virtual
    Teuchos::RCP<std::vector<panzer::Workset> >
    getVolumeWorksets(const std::string & eBlock,
-                     const panzer::PhysicsBlock & pb,
-                     std::size_t worksetSize) const;
+                     const panzer::PhysicsBlock & pb) const;
 
    /** Build sets of boundary condition worksets
      */
