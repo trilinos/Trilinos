@@ -93,6 +93,9 @@ public:
 			 typename MV::local_ordinal_type,
 			 typename MV::global_ordinal_type,
 			 typename MV::node_type> V;
+  typedef Tpetra::Map<typename MV::local_ordinal_type,
+		      typename MV::global_ordinal_type,
+		      typename MV::node_type> map_type;
 
   /// Constructor that takes a sparse matrix and sets default parameters.
   ///
@@ -165,6 +168,25 @@ public:
   ///   eigenanalysis.  We include this parameter for compatibility
   ///   with ML.
   ///
+  /// Parameters that govern other algorithmic details:
+  /// - "chebyshev: operator inv diagonal" (<tt>RCP<const V></tt> or
+  ///   <tt>const V*</tt>): If nonnull, we will use a deep copy of
+  ///   this vector for left scaling as the inverse diagonal of the
+  ///   matrix A, instead of computing the inverse diagonal ourselves.
+  ///   We will make a copy every time you call setParameters().  If
+  ///   you ever call setParameters() without this parameter, we will
+  ///   clear our copy and compute the inverse diagonal ourselves
+  ///   again.  You are responsible for updating this if the matrix
+  ///   has changed.
+  /// - "chebyshev: min diagonal value" (\c ST): minDiagVal.  If any
+  ///   entry of the diagonal of the matrix is less than this in
+  ///   magnitude, it will be replaced with this value in the inverse
+  ///   diagonal used for left scaling.
+  /// - "chebyshev: zero starting solution" (\c bool): If true, then
+  ///   always use the zero vector(s) as the initial guess(es).  If
+  ///   false, then apply() will use X on input as the initial
+  ///   guess(es).
+  ///
   /// Parameters that govern backwards compatibility:
   /// - "chebyshev: textbook algorithm" (\c bool): If true, use the
   ///   textbook version of Chebyshev iteration.  We recommend against
@@ -205,6 +227,15 @@ public:
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   MT apply (const MV& B, MV& X);
 
+  //! The Tpetra::Map representing the domain of this operator.
+  Teuchos::RCP<const map_type> getDomainMap () const;
+
+  //! The Tpetra::Map representing the range of this operator.
+  Teuchos::RCP<const map_type> getRangeMap () const;
+
+  //! Whether it's possible to apply the transpose of this operator.
+  bool hasTransposeApply () const;
+
   //! Print instance data to the given output stream.
   void print (std::ostream& out);
 
@@ -213,11 +244,23 @@ private:
   //@{
 
   Teuchos::RCP<const MAT> A_; //!< The sparse matrix A.
-  Teuchos::RCP<const V> D_; //!< The inverse of the diagonal entries of A.
+
+  /// The inverse of the diagonal entries of A.
+  ///
+  /// This is either computed, or provided by the user as a parameter
+  /// (see setParameters()).  Either way, it is set in compute().
+  Teuchos::RCP<const V> D_;
 
   //@}
-  //! \name Computed values
+  //! \name Cached computed data
   //@{
+
+  /// In ifpackApplyImpl(): the result of A*Y.
+  /// We cache this multivector here to avoid creating it on each call.
+  Teuchos::RCP<MV> V_;
+  /// In ifpackApplyImpl(): Iteration update multivector.
+  /// We cache this multivector here to avoid creating it on each call.
+  Teuchos::RCP<MV> W_;
 
   /// Estimate that we compute for maximum eigenvalue of A.
   /// compute() will always recompute this. 
@@ -232,6 +275,9 @@ private:
   //! \name Parameters (from the user-supplied ParameterList)
   //@{
 
+  //! Range Map version of user-supplied inverse diagonal of the matrix A.
+  Teuchos::RCP<const V> userInvDiag_;
+
   /// User-provided estimate for maximum eigenvalue of A.
   /// This is set to NaN if the user did not provide this.
   ST lambdaMax_; 
@@ -241,6 +287,10 @@ private:
   /// Estimate for ratio of max to max eigenvalue of A.
   /// Not necessarily equal to lambdaMax_/lambdaMin_.
   ST eigRatio_;  
+  /// Minimum allowed value on the diagonal of the matrix.  
+  /// When computing the inverse diagonal, values less than this in
+  /// magnitude are replaced with 1.
+  ST minDiagVal_;
   //! Number of Chebyshev iterations to run on each call to apply().
   int numIters_;
   //! Number of iterations of the power method for estimating lambdaMax_.
@@ -253,6 +303,20 @@ private:
   //@}
   //! \name Computational helper methods
   //@{
+
+  /// \brief Set V and W to temporary multivectors with the same Map as X.
+  ///
+  /// \param V [out] 
+  /// \param W [out]
+  /// \param X [in] Multivector, whose Map to use when making V and W.
+  ///
+  /// This is an optimization for apply().  This method caches the
+  /// created multivectors in the class instance as V_ resp. W_.
+  /// Caching optimizes the common case of calling apply() many times.
+  void
+  makeTempMultiVectors (Teuchos::RCP<MV>& V,
+			Teuchos::RCP<MV>& W,
+			const MV& X);
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void 
@@ -273,10 +337,17 @@ private:
   /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
   static void solve (MV& Z, const ST alpha, const V& D_inv, const MV& R);
 
-  //! Get a copy of the diagonal of the matrix, as a row Map vector.
-  static Teuchos::RCP<V> getDiagonal (const MAT& A);
+  //! Compute the inverse diagonal of the matrix, as a range Map vector.
+  Teuchos::RCP<V> makeInverseDiagonal (const MAT& A) const;
 
-  /// Solve AX=B for X with Chebyshev iteration with left diagonal scaling.
+  /// Return a range Map copy of the vector D.
+  ///
+  /// If *D is a range Map vector, return a copy of D.  Otherwise,
+  /// Export D to a range Map vector and return the result.
+  Teuchos::RCP<V> makeRangeMapVector (const V& D) const;
+
+  /// \brief Solve AX=B for X with Chebyshev iteration with left
+  ///   diagonal scaling, using the textbook version of the algorithm.
   ///
   /// \pre A must be real-valued and symmetric positive definite.
   /// \pre numIters >= 0.
@@ -294,14 +365,14 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as B.
   void
-  applyImpl (const MAT& A,
-	     const MV& B,
-	     MV& X,
-	     const int numIters,
-	     const ST lambdaMax,
-	     const ST lambdaMin,
-	     const ST eigRatio,
-	     const V& D_inv) const;
+  textbookApplyImpl (const MAT& A,
+		     const MV& B,
+		     MV& X,
+		     const int numIters,
+		     const ST lambdaMax,
+		     const ST lambdaMin,
+		     const ST eigRatio,
+		     const V& D_inv) const;
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
@@ -333,7 +404,7 @@ private:
 		   const ST lambdaMax,
 		   const ST lambdaMin,
 		   const ST eigRatio,
-		   const V& D_inv) const;
+		   const V& D_inv);
 
   /// \brief Use numIters power method iterations to estimate the
   ///   maximum eigenvalue of A*D_inv.
@@ -374,7 +445,7 @@ private:
 	       const ST lambdaMax,
 	       const ST lambdaMin,
 	       const ST eigRatio,
-	       const V& D_inv) const
+	       const V& D_inv) 
   {
     const ST zero = Teuchos::as<ST> (0);
     const ST one = Teuchos::as<ST> (1);

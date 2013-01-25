@@ -49,6 +49,7 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   lambdaMax_ (STS::nan ()),
   lambdaMin_ (STS::nan ()),
   eigRatio_ (Teuchos::as<ST> (30)),
+  minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
@@ -64,6 +65,7 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   lambdaMax_ (STS::nan ()),
   lambdaMin_ (STS::nan ()),
   eigRatio_ (Teuchos::as<ST> (30)),
+  minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
@@ -76,6 +78,11 @@ template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 setParameters (Teuchos::ParameterList& plist) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcpFromRef;
+
   // Default values of all the parameters.
   const ST defaultLambdaMax = STS::nan ();
   const ST defaultLambdaMin = STS::nan ();
@@ -86,6 +93,7 @@ setParameters (Teuchos::ParameterList& plist) {
   // ML an Epetra matrix, it will use Ifpack for Chebyshev, in which
   // case it would defer to Ifpack's default settings.)
   const ST defaultEigRatio = Teuchos::as<ST> (30);
+  const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
@@ -95,23 +103,65 @@ setParameters (Teuchos::ParameterList& plist) {
   // from the ParameterList.  That way, if any of the ParameterList
   // reads fail (e.g., due to the wrong parameter type), we will not
   // have left the instance data in a half-changed state.
+  RCP<const V> userInvDiag;
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
+  ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
 
-  // Defer all externally visible side effects until we have
-  // finished all ParameterList interaction.  This makes the method
-  // satisfy the strong exception guarantee.
+  // Fetch the parameters from the ParameterList.  Defer all
+  // externally visible side effects until we have finished all
+  // ParameterList interaction.  This makes the method satisfy the
+  // strong exception guarantee.
+
+  // Check for a raw pointer, for Ifpack compatibility.
+  if (plist.isParameter ("chebyshev: operator inv diagonal")) {
+    try { // Could the type be const V*?
+      const V* rawUserInvDiag = plist.get<const V*> ("chebyshev: operator inv diagonal");
+      // It's OK to have a nonowning reference; we'll copy the vector anyway.
+      userInvDiag = rcp (rawUserInvDiag, false);
+    } catch (Teuchos::Exceptions::InvalidParameterType&) {
+    }
+    if (userInvDiag.is_null ()) {
+      try { // Could the type be V*?
+	V* rawUserInvDiag = plist.get<V*> ("chebyshev: operator inv diagonal");
+	// It's OK to have a nonowning reference; we'll copy the vector anyway.
+	userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
+      } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      }
+    }
+    if (userInvDiag.is_null ()) {
+      try { // Could the type be RCP<const V>?
+	userInvDiag = plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
+      } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      }
+    }
+    if (userInvDiag.is_null ()) {
+      try { // Could the type be RCP<const V>?
+	RCP<V> userInvDiagNonconst = plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
+	userInvDiag = rcp_const_cast<const V> (userInvDiagNonconst);
+      } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      }
+    }
+    // We've tried all the possible types.  If we got something, then
+    // make a range Map copy of it.
+    if (! userInvDiag.is_null ()) {
+      userInvDiag = makeRangeMapVector (*userInvDiag);
+    }
+  }
+
   lambdaMax = plist.get ("chebyshev: max eigenvalue", lambdaMax);
   lambdaMin = plist.get ("chebyshev: min eigenvalue", lambdaMin);
 
   // The last parameter name overrides the first.
   eigRatio = plist.get ("smoother: Chebyshev alpha", eigRatio); // ML compatibility
   eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
+
+  minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
 
   // Each parameter name overrides the one above it.
   numIters = plist.get ("smoother: sweeps", numIters); // ML compatibility
@@ -122,8 +172,8 @@ setParameters (Teuchos::ParameterList& plist) {
   eigMaxIters = plist.get ("eigen-analysis: iterations", eigMaxIters); // ML compatibility
   eigMaxIters = plist.get ("chebyshev: eigenvalue max iterations", eigMaxIters);
 
-  zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution),
-    textbookAlgorithm = plist.get ("chebyshev: textbook algorithm", textbookAlgorithm);
+  zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution);
+  textbookAlgorithm = plist.get ("chebyshev: textbook algorithm", textbookAlgorithm);
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -145,16 +195,7 @@ setParameters (Teuchos::ParameterList& plist) {
     "A^* A, and use Chebyshev to solve A^* A x = A^* b.");
 
   // Test for Ifpack parameters that we haven't implemented yet.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    plist.isParameter ("chebyshev: min diagonal value"),
-    std::logic_error,
-    "Ifpack2::Chebyshev: The Ifpack parameter \"chebyshev: min diagonal "
-    "value\" is not currently supported.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    plist.isParameter ("chebyshev: operator inv diagonal"),
-    std::logic_error,
-    "Ifpack2::Chebyshev: The Ifpack parameter \"chebyshev: operator inv "
-    "diagonal\" is not currently supported.");
+  //
   // For now, we only check that this ML parameter, if provided, has
   // the one value that we support.
   std::string eigenAnalysisType ("power-method");
@@ -170,9 +211,11 @@ setParameters (Teuchos::ParameterList& plist) {
       "method for eigenanalysis.");
   }
 
+  userInvDiag_ = userInvDiag;
   lambdaMax_ = lambdaMax;
   lambdaMin_ = lambdaMin;
   eigRatio_ = eigRatio;
+  minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
   zeroStartingSolution_ = zeroStartingSolution;
@@ -183,9 +226,13 @@ template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 compute () {
-  // The matrix may have changed, and the parameters also affect
-  // this process, so recompute the inverse diagonal.
-  D_ = getDiagonal (*A_);
+  if (userInvDiag_.is_null ()) {
+    // The matrix may have changed, and the parameters also affect
+    // this process, so recompute the inverse diagonal.
+    D_ = makeInverseDiagonal (*A_);
+  } else {
+    D_ = userInvDiag_;
+  }
 
   // The matrix may have changed, so we always compute the
   // eigenvalue estimates, even if we computed them before.
@@ -250,14 +297,19 @@ apply (const MV& B, MV& X) {
     }
     ifpackApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
   } else {
-    applyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
+    textbookApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
   }
 
-  MV R (B.getMap (), B.getNumVectors ());
-  computeResidual (R, B, *A_, X);
-  Teuchos::Array<MT> norms (B.getNumVectors ());
-  R.norm2 (norms ());
-  return *std::max_element (norms.begin (), norms.end ());
+  const bool computeResidualNorms = true;
+  if (computeResidualNorms) {
+    MV R (B.getMap (), B.getNumVectors ());
+    computeResidual (R, B, *A_, X);
+    Teuchos::Array<MT> norms (B.getNumVectors ());
+    R.norm2 (norms ());
+    return *std::max_element (norms.begin (), norms.end ());
+  } else {
+    return Teuchos::as<MT> (0);
+  }
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -303,29 +355,83 @@ solve (MV& Z, const ST alpha, const V& D_inv, const MV& R) {
 template<class ScalarType, class MV, class MAT>
 Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
 Chebyshev<ScalarType, MV, MAT>::
-getDiagonal (const MAT& A) {
-  Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
-  A.getLocalDiagCopy (*D);
+makeInverseDiagonal (const MAT& A) const {
+  using Teuchos::RCP;
+
+  RCP<V> D_rowMap (new V (A.getGraph ()->getRowMap ()));
+  A.getLocalDiagCopy (*D_rowMap);
+  RCP<V> D_rangeMap = makeRangeMapVector (*D_rowMap);
+
   // Invert the diagonal entries, replacing entries less than
   // machine precision with machine precision.
   typedef Kokkos::MultiVector<ST, typename MAT::node_type> KMV;
-  KMV& localDiag = D->getLocalMVNonConst ();
+  KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
   typedef Kokkos::DefaultArithmetic<KMV> KMVT;
-  KMVT::ReciprocalThreshold (localDiag, STS::eps ());
-  return D;
+  KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
+  return D_rangeMap;
 }
+
+template<class ScalarType, class MV, class MAT>
+Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
+Chebyshev<ScalarType, MV, MAT>::
+makeRangeMapVector (const V& D) const {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef Tpetra::Export<typename MV::local_ordinal_type,
+			 typename MV::global_ordinal_type,
+			 typename MV::node_type> export_type;
+  RCP<const map_type> sourceMap = D.getMap ();
+  RCP<const map_type> rangeMap = A_->getRangeMap ();
+  RCP<const map_type> rowMap = A_->getRowMap ();
+  RCP<V> D_out;
+
+  if (rangeMap.getRawPtr () == sourceMap.getRawPtr ()) {
+    // The given vector's Map is identical to the matrix's range Map.
+    // That means we don't need to Export.  (We don't call isSameAs()
+    // here, because that takes at least one global reduction.  This
+    // is the fast path.  We may call isSameAs() in the slow path
+    // below, to avoid an even slower path.
+    D_out = rcp (new V (D));
+  }
+  else { // We need to Export.
+    RCP<const export_type> exporter;
+    // Making an Export object from scratch is expensive enough that
+    // it's worth the O(1) global reductions to call isSameAs(), to
+    // see if we can avoid that cost.
+    if (sourceMap.getRawPtr () == rowMap.getRawPtr () || 
+	sourceMap->isSameAs (*rowMap)) {
+      // We can reuse the matrix's Export object, if there is one.
+      exporter = A_->getGraph ()->getExporter ();
+    }
+    else { // We have to make a new Export object.
+      exporter = rcp (new export_type (sourceMap, rangeMap));
+    }
+     
+    D_out = rcp (new V (D));
+    if (exporter.is_null ()) { 
+      // Row Map and range Map are the same; no need to Export.
+      *D_out = D;
+    }
+    else {
+      D_out->doExport (D, *exporter, Tpetra::ADD);
+    }
+  } // if we don't need to Export, or if we do
+
+  return D_out;
+}
+
 
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-applyImpl (const MAT& A,
-	   const MV& B,
-	   MV& X,
-	   const int numIters,
-	   const ST lambdaMax,
-	   const ST lambdaMin,
-	   const ST eigRatio,
-	   const V& D_inv) const
+textbookApplyImpl (const MAT& A,
+		   const MV& B,
+		   MV& X,
+		   const int numIters,
+		   const ST lambdaMax,
+		   const ST lambdaMin,
+		   const ST eigRatio,
+		   const V& D_inv) const
 {
   (void) lambdaMin; // Forestall compiler warning.
   const ST myLambdaMin = lambdaMax / eigRatio;
@@ -375,7 +481,7 @@ ifpackApplyImpl (const MAT& A,
 		 const ST lambdaMax,
 		 const ST lambdaMin,
 		 const ST eigRatio,
-		 const V& D_inv) const
+		 const V& D_inv) 
 {
   if (numIters <= 0) {
     return;
@@ -396,9 +502,13 @@ ifpackApplyImpl (const MAT& A,
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
 
-  // Define vectors
-  MV V (B.getMap (), B.getNumVectors (), false);
-  MV W (B.getMap (), B.getNumVectors (), false);
+  // Fetch cached temporary vectors.
+  Teuchos::RCP<MV> V_ptr, W_ptr;
+  makeTempMultiVectors (V_ptr, W_ptr, B);
+  //MV V (B.getMap (), B.getNumVectors (), false);
+  //MV W (B.getMap (), B.getNumVectors (), false);
+  MV& V = *V_ptr;
+  MV& W = *W_ptr;
   const ST oneOverTheta = one / theta;
 
   // Special case for the first iteration.
@@ -459,6 +569,46 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters) {
     x.update (one / norm, y, zero);
   }
   return lambdaMax;
+}
+
+template<class ScalarType, class MV, class MAT>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::map_type>
+Chebyshev<ScalarType, MV, MAT>::
+getDomainMap() const {
+  return A_->getDomainMap ();
+}
+
+template<class ScalarType, class MV, class MAT>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::map_type>
+Chebyshev<ScalarType, MV, MAT>::
+getRangeMap() const {
+  return A_->getRangeMap ();
+}
+
+template<class ScalarType, class MV, class MAT>
+bool
+Chebyshev<ScalarType, MV, MAT>::
+hasTransposeApply() const {
+  // Technically, this is true, because the matrix must be symmetric.
+  return true;
+}
+
+template<class ScalarType, class MV, class MAT>
+void
+Chebyshev<ScalarType, MV, MAT>::
+makeTempMultiVectors (Teuchos::RCP<MV>& V,
+		      Teuchos::RCP<MV>& W,
+		      const MV& X)
+{
+  // Don't fill the vectors with zeros.
+  if (V_.is_null ()) {
+    V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
+  }
+  if (W_.is_null ()) {
+    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
+  }
+  V = V_;
+  W = W_;
 }
 
 } // namespace Details
