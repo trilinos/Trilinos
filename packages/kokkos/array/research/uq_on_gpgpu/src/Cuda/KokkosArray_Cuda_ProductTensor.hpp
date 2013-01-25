@@ -490,7 +490,7 @@ public:
       VectorScalar * const sh_x = kokkos_impl_cuda_shared_memory<VectorScalar>();
       VectorScalar * const sh_A = sh_x + BlockSize*dim_align ;
       VectorScalar * const sh_y = sh_A + BlockSize*dim_align ;
-      VectorScalar * const sh_t = sh_A + dim_align ;
+      volatile VectorScalar * const sh_t = sh_y + dim_align ;
 
       const size_type nid = CudaTraits::WarpSize * blockDim.y ;
       const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
@@ -520,9 +520,16 @@ public:
 	  const size_type iBlockColumn = 
 	    m_A.graph.entries( iBlockEntry + iBlock );
 
+	  const VectorScalar * const x = & m_x(        0 , iBlockColumn );
+	  const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry + iBlock );
+
+	  // Wait for X and A to be used in the previous iteration before reading new values.
+        __syncthreads();
+
+	  // Coalesced read by the whole block from global memory:
 	  for ( size_type i = tid ; i < dim ; i += nid ) {
-	    sh_x[iBlock+i*block_size] = m_x( i , iBlockColumn );
-	    sh_A[iBlock+i*block_size] = m_A.values( i , iBlockEntry );
+	    sh_x[iBlock+i*block_size] = x[i] ; // m_x(        i , iBlockColumn );
+	    sh_A[iBlock+i*block_size] = A[i] ; // m_A.values( i , iBlockEntry );
 	  }
 
 	}
@@ -534,24 +541,21 @@ public:
 	for ( size_type iyInner = threadIdx.y ; iyInner < dim ; 
 	      iyInner += blockDim.y) {
 
+	  VectorScalar y = 0 ;
+
 	  // Product tensor entries which this warp will iterate:
 	  //
 	  const size_type iBeg = m_A.block.entry_begin( iyInner ) ;
 	  const size_type iEnd = m_A.block.entry_end(   iyInner ) ;
 
-	  VectorScalar y = 0 ;
-
 	  // Loop through sparse tensor contributions with coalesced reads.
 
 	  for ( size_type i = iBeg + threadIdx.x ; i < iEnd ; 
-		i += CudaTraits::WarpSize ) {
+		i += blockDim.x ) {
 
 	    // Read 'CudaTraits::WarpSize' entries from the tensor
 	    const int j = m_A.block.coord( i , 0 ); // coalesced read
 	    const int k = m_A.block.coord( i , 1 ); // coalesced read
-	    // const unsigned kj = m_A.block.coord(i,0);
-	    // const unsigned j  = kj & 0x0ffff ;
-	    // const unsigned k  = kj >> 16 ;
 	    const MatrixScalar v = m_A.block.value(i);    // coalesced read
 
 	    for ( size_type iBlock = 0; iBlock < block_size ; ++iBlock ) {
@@ -562,7 +566,7 @@ public:
 
 	  }
 
-	  __syncthreads(); // wait for X and A to be used.
+	  //__syncthreads(); // wait for X and A to be used.
 
 	  // Reduction of 'y' within 'CudaTraits::WarpSize'
 
@@ -581,6 +585,8 @@ public:
 
 	iBlockEntry += block_size;
       }
+
+      __syncthreads();
 	
       // Store result back in global memory
       for ( size_type i = tid ; i < dim ; i += nid ) {
