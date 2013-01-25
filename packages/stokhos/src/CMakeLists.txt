@@ -329,7 +329,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Sacado_MP_Vector_ops.hpp
     )
   ENDIF()
-  IF (Stokhos_ENABLE_MueLu)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     SET(HEADERS ${HEADERS}
@@ -341,7 +341,7 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Tpetra)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
