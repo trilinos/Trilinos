@@ -221,11 +221,11 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    //input.f->Print(std::cout);
-    //input.j->Print(std::cout);
-
     eLinearOp = Thyra::epetraLinearOp(eGlobal->get_A());
     eVector = Thyra::create_Vector(eGlobal->get_f(),eLinearOp->range());
+
+//     std::cout << *eVector << std::endl;
+//     std::cout << *eLinearOp << std::endl;
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
