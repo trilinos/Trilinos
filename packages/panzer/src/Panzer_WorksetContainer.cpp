@@ -102,7 +102,7 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
    if(itr==volWorksets_.end()) {
       // couldn't find workset, build it!
       const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      worksetVector = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
+      worksetVector = wkstFactory_->getVolumeWorksets(eBlock,pb);
 
       // store vector for reuse in the future
       volWorksets_[eBlock] = worksetVector;
@@ -157,7 +157,7 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
       const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
 
       // store vector for reuse in the future
-      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
+      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,pb);
    }
 }
 
