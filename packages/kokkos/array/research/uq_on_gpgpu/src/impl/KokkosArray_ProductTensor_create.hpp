@@ -208,7 +208,7 @@ public:
       row_count[i].count = coord_work[i];
       row_count[i].basis = i;
     }
-    std::sort( row_count.begin() , row_count.end() , CompareCijkRowCount() );
+    //std::sort( row_count.begin() , row_count.end() , CompareCijkRowCount() );
     std::vector<size_type> sorted_row_map( dimension );
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       coord_work[i] = row_count[i].count;
@@ -247,35 +247,6 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
       coord_work[iCoord] = host_coord.row_map[iCoord];
     }
 
-    /*
-    for ( typename input_type::const_iterator
-	    iter = input.begin() ; iter != input.end() ; ++iter ) {
-
-      const size_type i = (*iter).first.coord(0);
-      const size_type j = (*iter).first.coord(1);
-      const size_type k = (*iter).first.coord(2);
-
-      {
-        const size_type n = coord_work[i]; ++coord_work[i];
-        host_value(n) = (*iter).second / 2.0 ;
-        host_coord.entries(n,0) = j ;
-        host_coord.entries(n,1) = k ;
-      }
-      if ( i != j ) {
-        const size_type n = coord_work[j]; ++coord_work[j];
-        host_value(n) = (*iter).second ;
-        host_coord.entries(n,0) = i ;
-        host_coord.entries(n,1) = k ;
-      }
-      if ( i != k && j != k ) {
-        const size_type n = coord_work[k]; ++coord_work[k];
-        host_value(n) = (*iter).second ;
-        host_coord.entries(n,0) = i ;
-        host_coord.entries(n,1) = j ;
-      }
-    }
-    */
-
     for ( typename input_type::const_iterator
 	    iter = input.begin() ; iter != input.end() ; ++iter ) {
 
@@ -286,26 +257,26 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
       {
 	const size_type row = sorted_row_map[i];
         const size_type n = coord_work[row]; ++coord_work[row];
-        host_value(n) = (*iter).second / 2.0 ;
+        host_value(n) = (*iter).second ;
+	if (j == k) host_value(n) *= 0.5;
         host_coord.entries(n,0) = j ;
         host_coord.entries(n,1) = k ;
-	//host_coord.entries(n,0) = ( k << 16 ) | j ;
       }
       if ( i != j ) {
 	const size_type row = sorted_row_map[j];
         const size_type n = coord_work[row]; ++coord_work[row];
         host_value(n) = (*iter).second ;
+	if (i == k) host_value(n) *= 0.5;
         host_coord.entries(n,0) = i ;
         host_coord.entries(n,1) = k ;
-	//host_coord.entries(n,0) = ( k << 16 ) | i ;
       }
       if ( i != k && j != k ) {
 	const size_type row = sorted_row_map[k];
         const size_type n = coord_work[row]; ++coord_work[row];
         host_value(n) = (*iter).second ;
+	if (i == j) host_value(n) *= 0.5;
         host_coord.entries(n,0) = i ;
         host_coord.entries(n,1) = j ;
-	//host_coord.entries(n,0) = ( j << 16 ) | i ;
       }
     }
 
