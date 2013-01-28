@@ -1,8 +1,12 @@
 
+// Must be included first on Intel-Phi systems due to
+// redefinition of SEEK_SET in <mpi.h>.
+
+#include <ParallelComm.hpp>
+
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <ParallelComm.hpp>
 #include <KokkosArray_Host.hpp>
 
 //----------------------------------------------------------------------------
@@ -88,8 +92,6 @@ bool run_host( std::istream & input ,
                const size_t host_gang_worker_count )
 {
   bool cmd_error = false ;
-
-  std::cout << "\"Host test on " << host_gang_count << " x " << host_gang_worker_count << " \"" << std::endl ;
 
   std::string which ; input >> which ;
 

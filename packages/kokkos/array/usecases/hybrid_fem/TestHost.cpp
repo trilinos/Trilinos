@@ -1,4 +1,9 @@
 
+// Must be included first on Intel-Phi systems due to
+// redefinition of SEEK_SET in <mpi.h>.
+
+#include <ParallelComm.hpp>
+
 #include <iostream>
 #include <stdexcept>
 #include <limits>

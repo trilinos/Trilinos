@@ -44,10 +44,11 @@
 #ifndef TEST_GRAMSCHMIDT_HPP
 #define TEST_GRAMSCHMIDT_HPP
 
-#include <iostream>
 #include <ParallelComm.hpp>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_Host.hpp>
+
+#include <iostream>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

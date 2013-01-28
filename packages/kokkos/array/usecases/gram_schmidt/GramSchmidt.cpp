@@ -41,8 +41,6 @@
 //@HEADER
 */
 
-#include <iostream>
-
 #include <GramSchmidt.hpp>
 
 #include <KokkosArray_Macros.hpp>
@@ -52,6 +50,8 @@
 #include <impl/KokkosArray_Timer.hpp>
 
 #include <LinAlgBLAS.hpp>
+
+#include <iostream>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -209,9 +209,9 @@ KokkosArray::Host
     const ModifedGramSchmidCounts counts( length , count );
 
     const int local_length_upper = ( length + comm_size - 1 ) / comm_size ;
-    const int local_begin  = local_length_upper * comm_rank ;
-    const int local_next   = local_length_upper * ( comm_rank + 1 );
-    const int local_length = std::min( length , local_next ) - local_begin ;
+    const int local_begin  = std::min( length , local_length_upper * comm_rank );
+    const int local_next   = std::min( length , local_length_upper * ( comm_rank + 1 ) );
+    const int local_length = local_next - local_begin ;
 
     typedef KokkosArray::View< double ** ,
                                KokkosArray::LayoutLeft ,

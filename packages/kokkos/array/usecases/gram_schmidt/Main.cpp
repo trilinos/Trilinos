@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <ParallelComm.hpp>
+
 #include <stdlib.h>
 #include <string>
 #include <iostream>

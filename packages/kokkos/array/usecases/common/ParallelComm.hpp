@@ -44,8 +44,6 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
-#include <cstddef>
-
 //------------------------------------------------------------------------
 
 #if defined( HAVE_MPI )
