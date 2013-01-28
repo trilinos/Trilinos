@@ -231,9 +231,10 @@ public:
 
   /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
   ///
-  /// MatrixType should be a Tpetra::CrsMatrix specialization.  This
-  /// typedef is for the Tpetra::RowMatrix specialization which is the
-  /// parent class of MatrixType.
+  /// MatrixType may be either a Tpetra::CrsMatrix specialization or a
+  /// Tpetra::RowMatrix specialization.  This typedef will always be a
+  /// Tpetra::RowMatrix specialization which is either the same as
+  /// MatrixType, or the parent class of MatrixType.
   typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
 
   //! The Tpetra::Map specialization matching MatrixType.
