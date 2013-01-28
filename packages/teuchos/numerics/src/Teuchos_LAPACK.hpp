@@ -767,7 +767,7 @@ namespace Teuchos
       *rowcond = mOne;
       *colcond = mOne;
       *amax = mZero;
-      return(0);
+      return;
     }
 
     MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin/prec);
