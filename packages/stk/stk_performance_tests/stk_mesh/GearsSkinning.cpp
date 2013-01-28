@@ -457,6 +457,12 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   // Iterate over the time steps, updating the locations of the entities and
   // writing the current mesh state to output files.
   const bool output_exodus_file = true;
+
+  stk::io::MeshData vol_mesh;
+  vol_mesh.set_bulk_data(fixture.bulk_data);
+  stk::io::MeshData surf_mesh;
+  surf_mesh.set_bulk_data(fixture.bulk_data);
+
   for (size_t time_step = 0; time_step < NUM_TIME_STEPS; ++time_step) {
 
     // Determine if it's time to separate a wedge
@@ -527,19 +533,14 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         std::ostringstream volume_out_filename;
         volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         volume_out_region = create_output_mesh( volume_out_filename.str(), fixture.bulk_data,  false);
+	vol_mesh.set_output_io_region(volume_out_region);
         std::ostringstream surface_out_filename;
         surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
+	surf_mesh.set_output_io_region(surface_out_region);
       }
 
-      stk::io::MeshData vol_mesh;
-      vol_mesh.set_output_io_region(volume_out_region);
-      vol_mesh.set_bulk_data(fixture.bulk_data);
       vol_mesh.process_output_request(time_step/60.0, skin_io_parts);
-
-      stk::io::MeshData surf_mesh;
-      surf_mesh.set_output_io_region(surface_out_region);
-      surf_mesh.set_bulk_data(fixture.bulk_data);
       surf_mesh.process_output_request(time_step/60.0);
     }
   }
