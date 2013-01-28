@@ -97,6 +97,13 @@ int all_cores_available( const hwloc_topology_t host_topology ,
                                            node->allowed_cpuset ,
                                            HWLOC_OBJ_CORE , j );
 
+#if 0
+      if ( 0 == hwloc_bitmap_isincluded( core->allowed_cpuset ,
+                                         proc_cpuset ) ) {
+        return 0 ;
+      }
+#else
+
       // If process' cpuset intersects core's cpuset
       // then process can access this core.
       // Must use intersection instead of inclusion because
@@ -106,11 +113,11 @@ int all_cores_available( const hwloc_topology_t host_topology ,
       // then it has ownership of the entire core.
       // This assumes that it would be performance-detrimental
       // to spawn more than one MPI process per core and use nested threading.
-
       if ( 0 == hwloc_bitmap_intersects( proc_cpuset ,
                                          core->allowed_cpuset ) ) {
         return 0 ;
       }
+#endif
     }
   }
 
@@ -214,37 +221,82 @@ void HostInternalHWLOC::print_configuration( std::ostream & s ) const
   static const char name_numa[] = "NUMA" ;
   static const char name_socket[] = "SOCKET" ;
   static const char name_core[] = "CORE" ;
+  static const char name_pu[] = "PU" ;
   static const char name_unknown[] = "unknown" ;
 
-  const char * name_node = 0 ;
+  enum { OBJ_TYPE_COUNT = 4 };
 
-  switch ( m_node_type ) {
-  case HWLOC_OBJ_NODE   : name_node = name_numa ; break ;
-  case HWLOC_OBJ_SOCKET : name_node = name_socket ; break ;
-  case HWLOC_OBJ_CORE   : name_node = name_core ; break ;
-  default: name_node = name_unknown ; break ;
-  }
+  static const char * const obj_names[] = { name_numa , name_socket , name_core , name_pu };
 
-  const int total_node_count =
-    hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
+  static const char * const name_node = 
+    HWLOC_OBJ_NODE   == m_node_type ? name_numa : (
+    HWLOC_OBJ_SOCKET == m_node_type ? name_socket : (
+    HWLOC_OBJ_CORE   == m_node_type ? name_core : (
+    HWLOC_OBJ_PU     == m_node_type ? name_pu : name_unknown )));
 
-  s << std::endl
-    << "KokkosArray::Host HWLOC { " << name_node << "( "
-    << total_node_count
-    << " : binding("
-    ;
-  for ( Host::size_type i = 0 ; i < HostInternal::m_gang_capacity ; ++i ) {
-    s << " " << m_node_rank[i] ;
-  }
-  s << " ) )" ;
+  static const hwloc_obj_type_t obj_types[] =
+    { HWLOC_OBJ_NODE   /* NUMA region     */
+    , HWLOC_OBJ_SOCKET /* hardware socket */
+    , HWLOC_OBJ_CORE   /* hardware core   */
+    , HWLOC_OBJ_PU     /* processing unit */
+    };
 
-  if ( 1 < m_node_core_count ) {
-    s << " x CORE(" << m_node_core_count << ")" ;
+  const int obj_counts[] =
+    { hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_SOCKET )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_CORE )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_PU )
+    };
+
+  s << std::endl << "KokkosArray::Host HWLOC { " ;
+  for ( int k = 0 ; k < OBJ_TYPE_COUNT ; ++k ) {
+    s << " " << obj_names[k] << "(" << obj_counts[k] << ")" ;
   }
-  if ( 1 < m_node_core_pu_count ) {
-    s << " x PU(" << m_node_core_pu_count << ")" ;
+  s << std::endl ;
+
+  hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
+  hwloc_bitmap_t test_cpuset = hwloc_bitmap_alloc();
+
+  hwloc_get_cpubind( m_host_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
+
+  for ( int k = 0 ; k < OBJ_TYPE_COUNT ; ++k ) {
+
+    const hwloc_obj_type_t type  = obj_types[k] ;
+    const int              count = obj_counts[k];
+    const char * const     name  = obj_names[k] ;
+
+    s << "  " << name << " {" ;
+
+    for ( int i = 0 ; i < count ; ++i ) {
+
+      const hwloc_obj_t obj =
+        hwloc_get_obj_by_type( m_host_topology , type , i );
+
+      hwloc_bitmap_and( test_cpuset , proc_cpuset , obj->allowed_cpuset );
+
+      const int obj_weight       = hwloc_bitmap_weight( obj->allowed_cpuset );
+      const int intersect_weight = hwloc_bitmap_weight( test_cpuset );
+
+      if ( intersect_weight ) {
+        if ( intersect_weight == obj_weight ) {
+          s << " " << i ;
+        }
+        else {
+          s << " [ " << i << " : "
+            << intersect_weight << "/" << obj_weight
+            << " ]" ;
+        }
+      }
+    }
+
+    s << " }" << std::endl ;
   }
-  s << " }" << std::endl ;
+  s << "}" << std::endl ;
+
+  hwloc_bitmap_free( proc_cpuset );
+  hwloc_bitmap_free( test_cpuset );
+
+  //------------------------------------
 
   if ( 1 < HostInternal::m_thread_count ) {
     s << "  thread binding {"
