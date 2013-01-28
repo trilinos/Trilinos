@@ -697,31 +697,29 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
-  {
-    //if (X.getNumVectors() != RHS.getNumVectors())
-    //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
-    //const size_t numVecs = X.getNumVectors();
-    const size_t numVecs = 1;
-    RCP<MultiVector> RES = Residual(Op,X,RHS);
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS) {
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
+    const size_t numVecs = X.getNumVectors();
+
+    RCP<MultiVector> RES = Residual(Op, X, RHS);
     Teuchos::Array<Magnitude> norms(numVecs);
     RES->norm2(norms);
+
     return norms;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
-  {
-    SC one = 1.0;
-    SC negone = -1.0;
-    //if (X.getNumVectors() != RHS.getNumVectors())
-    //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
-    //const size_t numVecs = X.getNumVectors();
-    const size_t numVecs = 1;
-    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(),numVecs);
-    Op.apply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    RES->update(one,RHS,negone);
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS) {
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
+    const size_t numVecs = X.getNumVectors();
+
+    SC one    = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
+
+    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(), numVecs);
+    Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
+    RES->update(one, RHS, negone);
+
     return RES;
   }
 
