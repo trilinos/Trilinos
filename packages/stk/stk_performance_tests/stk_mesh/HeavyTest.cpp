@@ -1,4 +1,4 @@
-#include <stk_io/util/IO_Fixture.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -35,7 +35,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
 
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
-  stk::io::util::IO_Fixture fixture(pm);
+  stk::io::MeshData fixture;
 
   // Test constants:
 
@@ -81,7 +81,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time meta_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.initialize_meta_data( input_base_filename, "exodusii" );
+    fixture.create_input_mesh( "exodus", input_base_filename, pm );
     timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -92,7 +92,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time bulk_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.initialize_bulk_data();
+    fixture.populate_bulk_data();
     timings[INIT_BULK_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -105,9 +105,12 @@ STKUNIT_UNIT_TEST( heavy, heavy )
     stk::mesh::Selector selector(meta_data.locally_owned_part());
 
     double start_time = stk::wall_time();
+
+    typedef stk::mesh::Field< double, stk::mesh::Cartesian> coord_field_type;
+    coord_field_type *coord_field = fixture.meta_data().get_field<coord_field_type>("coordinates");
     stk::rebalance::rebalance(bulk_data,
                               selector,
-                              &fixture.get_coordinate_field(),
+                              coord_field,
                               NULL /*weight field*/,
                               zoltan_partition);
     timings[REBALANCE_PHASE_ID] = stk::wall_dtime(start_time);
@@ -123,7 +126,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time exodus file creation
   {
     double start_time = stk::wall_time();
-    fixture.create_output_mesh( output_base_filename, "exodusii" );
+    fixture.create_output_mesh( output_base_filename );
     timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -131,7 +134,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   {
     double time_step = 0;
     double start_time = stk::wall_time();
-    fixture.add_timestep_to_output_mesh( time_step );
+    fixture.process_output_request( time_step );
     timings[PROCESS_OUTPUT_PHASE_ID] = stk::wall_dtime(start_time);
   }
 

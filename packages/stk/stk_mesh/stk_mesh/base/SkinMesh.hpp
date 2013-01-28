@@ -10,6 +10,7 @@
 #define stk_mesh_SkinMesh_hpp
 
 #include <vector>
+#include <stk_mesh/base/Types.hpp>
 
 namespace stk {
 namespace mesh {
