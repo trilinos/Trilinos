@@ -77,7 +77,7 @@ namespace panzer {
 namespace panzer {
 
 
-  /** Non-member function for building the physics blocks
+  /** \brief Nonmember function for building the physics blocks from a Teuchos::ParameterList for a given list of element blocks.  A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
       \relates panzer::PhysicsBlock 
   */
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
@@ -89,6 +89,17 @@ namespace panzer {
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
                           const bool build_transient_support,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+
+  /** \brief Nonmember function for searching and returning a spcific physics block given an element block id. Throws an erro if the physics block is not found.
+      \relates panzer::PhysicsBlock
+
+      \param[in] element_block_id The name of the corresponding element block that this function will search for in the physics block vector.
+      \param[in] physics_blocks Vector of physics blocks
+      ]param[in] throw_on_failure Optional parameter that determines if the function hsould throw on failure.  Default is true.  If set to false and the funtion fails to find the physics block, then a null RCP is returned.
+  */
+  Teuchos::RCP<panzer::PhysicsBlock> findPhysicsBlock(const std::string element_block_id,
+						      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
+						      bool throw_on_failure = true);
   
   //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
   class PhysicsBlock {

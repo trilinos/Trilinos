@@ -61,7 +61,6 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
@@ -85,7 +84,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   struct RespFactoryIPCoords_Builder {
@@ -109,7 +108,7 @@ namespace panzer {
   #endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 1;
 
@@ -134,13 +133,10 @@ namespace panzer {
 
     // setup physic blocks
     /////////////////////////////////////////////
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     {
-       std::map<std::string,panzer::InputPhysicsBlock> 
-             physics_id_to_input_physics_blocks;
-
        testInitialzation(ipb, bcs);
 
        std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -151,14 +147,15 @@ namespace panzer {
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
     
-       physics_id_to_input_physics_blocks["test physics"] = ipb;
-
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
+      int default_integration_order = 1;
+      
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
-                                  physics_id_to_input_physics_blocks,
-                                  2,workset_size,
+				  ipb,
+				  default_integration_order,
+				  workset_size,
                                   eqset_factory,
 				  gd,
 		    	          false,
@@ -376,7 +373,7 @@ namespace panzer {
   #endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 1;
 
@@ -401,13 +398,10 @@ namespace panzer {
 
     // setup physic blocks
     /////////////////////////////////////////////
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     {
-       std::map<std::string,panzer::InputPhysicsBlock> 
-             physics_id_to_input_physics_blocks;
-
        testInitialzation(ipb, bcs);
 
        std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -418,14 +412,15 @@ namespace panzer {
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
     
-       physics_id_to_input_physics_blocks["test physics"] = ipb;
-
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
+      int default_integration_order = 1;
+      
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
-                                  physics_id_to_input_physics_blocks,
-                                  2,workset_size,
+				  ipb,
+				  default_integration_order,
+				  workset_size,
                                   eqset_factory,
 				  gd,
 		    	          false,
@@ -615,27 +610,30 @@ namespace panzer {
 
   }
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q2";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "ion solid";
-    ies_2.prefix = "ION_";
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    
 
     {
       std::size_t bc_id = 0;

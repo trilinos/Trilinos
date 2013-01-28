@@ -108,6 +108,26 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
 }
 
 // *******************************************************************
+Teuchos::RCP<panzer::PhysicsBlock> panzer::findPhysicsBlock(const std::string element_block_id,
+							    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
+							    bool throw_on_failure)
+{
+  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator pb = physics_blocks.begin();
+  
+  while (pb != physics_blocks.end()) {
+    if ((*pb)->elementBlockID() == element_block_id)
+      return *pb;
+    
+    ++pb;
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_on_failure,std::runtime_error,"Error: panzer::findPhysicsBlock(): The requested physics block for element block\"" << element_block_id << "\" was not found in the vecotr of physics blocks!");
+  
+  Teuchos::RCP<panzer::PhysicsBlock> null_pb;
+  return null_pb;
+}
+  
+// *******************************************************************
 panzer::PhysicsBlock::
 PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
              const std::string & element_block_id,

@@ -487,7 +487,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     
     Teuchos::ParameterList p("Scatter");
     p.set("Scatter Name", itr->second.scatterName);
-    p.set("Basis", itr->second.basis);
+    p.set("Basis", itr->second.basis.getConst());
     Teuchos::RCP<std::vector<std::string> > name = Teuchos::rcp(new std::vector<std::string>);
     name->push_back(itr->first);
     p.set("Dependent Names", name);

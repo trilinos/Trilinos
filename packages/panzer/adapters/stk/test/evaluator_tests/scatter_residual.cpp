@@ -99,7 +99,6 @@ namespace panzer {
    #endif
 
     int myRank = eComm->MyPID();
-    int numProcs = eComm->NumProc();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
