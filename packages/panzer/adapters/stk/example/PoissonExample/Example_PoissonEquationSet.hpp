@@ -73,7 +73,8 @@ public:
    /** In the constructor you set all the fields provided by this
      * equation set. 
      */
-   PoissonEquationSet(const panzer::InputEquationSet& ies,
+   PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		      const int& default_integration_order,
                       const panzer::CellData& cell_data,
 		      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const bool build_transient_support);
@@ -81,12 +82,9 @@ public:
    /** The specific evaluators are registered with the field manager argument.
      */
    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                              const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+					      const panzer::FieldLibrary& field_library,
                                               const Teuchos::ParameterList& user_data) const;
 
-protected:
-
-   std::string m_do_convection;
 };
 
 }

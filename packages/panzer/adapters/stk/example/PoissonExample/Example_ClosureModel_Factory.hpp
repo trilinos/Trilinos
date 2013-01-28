@@ -58,8 +58,9 @@ public:
 
    Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
    buildClosureModels(const std::string& model_id,
-                      const panzer::InputEquationSet& set,
                       const Teuchos::ParameterList& models,
+		      const panzer::FieldLayoutLibrary& fl,
+		      const Teuchos::RCP<panzer::IntegrationRule>& ir,
                       const Teuchos::ParameterList& default_params,
                       const Teuchos::ParameterList& user_data,
 		      const Teuchos::RCP<panzer::GlobalData>& global_data,

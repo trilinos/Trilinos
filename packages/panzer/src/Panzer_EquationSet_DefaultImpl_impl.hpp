@@ -715,6 +715,17 @@ panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_
 
 // ***********************************************************************
 template <typename EvalT>
+Teuchos::RCP<panzer::BasisIRLayout> 
+panzer::EquationSet_DefaultImpl<EvalT>::getBasisIRLayoutForDOF(const std::string& dof_name) const
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+
+  return panzer::basisIRLayout(desc_it->second.basis,*(desc_it->second.intRule));
+}
+
+// ***********************************************************************
+template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
 					   const std::string dof_name,

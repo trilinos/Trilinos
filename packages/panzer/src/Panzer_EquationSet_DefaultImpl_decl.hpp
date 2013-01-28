@@ -218,6 +218,9 @@ namespace panzer {
     //! Returns the integration rule associated with the residual contributions for the dof_name.
     Teuchos::RCP<panzer::IntegrationRule> getIntRuleForDOF(const std::string& dof_name) const;
 
+    //! Returns the BasisIRLayout for the dof_name.
+    Teuchos::RCP<panzer::BasisIRLayout> getBasisIRLayoutForDOF(const std::string& dof_name) const;
+
     /** Adds a Sum evaluator that evaluates the local residual
      * contributions by summing a vector of fields of integrated
      * residuals.  This is a convenience function for when a user

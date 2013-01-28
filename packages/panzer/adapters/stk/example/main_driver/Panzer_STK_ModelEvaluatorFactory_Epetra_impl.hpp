@@ -48,9 +48,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_BasisIRLayout.hpp"
@@ -66,7 +64,7 @@
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ModelEvaluator.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
 
@@ -146,6 +144,7 @@ namespace panzer_stk {
       {
 	Teuchos::ParameterList& p = pl->sublist("Assembly");
 	p.set<unsigned long>("Workset Size", 1);
+	p.set<int>("Default Integration Order",-1);
 	p.set<std::string>("Field Order","");
 	p.set<bool>("Use DOFManager FEI",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
@@ -169,7 +168,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 							    const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                                            const panzer::EquationSetFactory & eqset_factory,
+                                                            const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
                                                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
 							    const Teuchos::Ptr<const panzer::ResponseAggregatorFactory<panzer::Traits> > ra_factory)
@@ -221,8 +220,7 @@ namespace panzer_stk {
        TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
     }
     
-    std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks; 
-    panzer::buildInputPhysicsBlocks(physics_id_to_input_physics_blocks, p.sublist("Physics Blocks"));
+    Teuchos::RCP<Teuchos::ParameterList> physics_block_plist = Teuchos::sublist(this->getMyNonconstParamList(),"Physics Blocks");
 
     std::vector<panzer::BC> bcs;
     panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
@@ -247,11 +245,10 @@ namespace panzer_stk {
     // build physics blocks
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                block_ids_to_cell_topo,
-			       physics_id_to_input_physics_blocks,
-			       Teuchos::as<int>(mesh->getDimension()),
+			       physics_block_plist,
+			       assembly_params.get<int>("Default Integration Order"),
 			       workset_size,
 			       eqset_factory,
 			       global_data,
@@ -398,9 +395,10 @@ namespace panzer_stk {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wkstContainer);
     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {

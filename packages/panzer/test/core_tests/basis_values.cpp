@@ -532,7 +532,6 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    
@@ -613,7 +612,6 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
-    const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    

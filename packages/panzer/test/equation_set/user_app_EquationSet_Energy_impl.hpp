@@ -134,9 +134,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Energy Equation
   // ********************
 
-  Teuchos::RCP<const panzer::PureBasis> pb = fl.lookupBasis(m_dof_name);
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name);
-  Teuchos::RCP<panzer::BasisIRLayout> basis = panzer::basisIRLayout(pb,*ir); 
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name); 
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name); 
 
   // Transient Operator
   if (this->buildTransientSupport()) {

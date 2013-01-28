@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     *out << *input_params << std::endl;
     
     // Add in the application specific equation set factory
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
 
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;

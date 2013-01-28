@@ -63,14 +63,32 @@
 // ***********************************************************************
 template <typename EvalT>
 Example::PoissonEquationSet<EvalT>::
-PoissonEquationSet(const panzer::InputEquationSet& ies,
+PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		   const int& default_integration_order,
 		   const panzer::CellData& cell_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   const bool build_transient_support) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, global_data, build_transient_support )
+  panzer::EquationSet_DefaultImpl<EvalT>(params, default_integration_order, cell_data, global_data, build_transient_support )
 {
-   TEUCHOS_ASSERT(ies.prefix==""); // have an assertion to gurantee no prefix
-   this->m_eqset_prefix = "";      // for simplicity assume no prefix
+  // ********************
+  // Validate and parse parameter list
+  // ********************
+  {    
+    Teuchos::ParameterList valid_parameters;
+    this->setDefaultValidParameters(valid_parameters);
+    
+    valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
+    valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
+    valid_parameters.set("Basis Order",1,"Order of the basis");
+    valid_parameters.set("Integration Order",-1,"Order of the integration rule");
+    
+    params->validateParametersAndSetDefaults(valid_parameters);
+  }
+  
+  std::string basis_type = params->get<std::string>("Basis Type");
+  int basis_order = params->get<int>("Basis Order");
+  int integration_order = params->get<int>("Integration Order");
+  std::string model_id = params->get<std::string>("Model ID");
 
    // ********************
    // Panzer uses strings to match fields. In this section we define the
@@ -95,47 +113,46 @@ PoissonEquationSet(const panzer::InputEquationSet& ies,
    // ********************
    // Assemble DOF names and Residual names
    // ********************
-   this->m_scatter_name = "Scatter_RESIDUAL_TEMPERATURE";
- 
-   this->addProvidedDOF("TEMPERATURE","RESIDUAL_TEMPERATURE");
-   this->addDOFGrad("TEMPERATURE","GRAD_TEMPERATURE");
+
+   this->addDOF("TEMPERATURE",basis_type,basis_order,integration_order);
+   this->addDOFGrad("TEMPERATURE");
    if (this->buildTransientSupport())
-     this->addDOFTimeDerivative("TEMPERATURE","DOT_TEMPERATURE");
+     this->addDOFTimeDerivative("TEMPERATURE");
 
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************
    
-   this->setupDOFs(cell_data.baseCellDimension());
- 
-   // ********************
-   // Parse valid options
-   // ********************
-   // The "Options" parameter list is included in ies.params
+   this->addClosureModel(model_id);
+
+   this->setupDOFs();
 }
 
 // ***********************************************************************
 template <typename EvalT>
 void Example::PoissonEquationSet<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+				      const panzer::FieldLibrary& fl,
 				      const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF("TEMPERATURE");
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF("TEMPERATURE"); 
+
   // ********************
   // Energy Equation
   // ********************
 
   // Transient Operator: Assembles \int \dot{T} v
-  if (this->m_build_transient_support) {
+  if (this->buildTransientSupport()) {
     ParameterList p("Transient Residual");
     p.set("Residual Name", "RESIDUAL_TEMPERATURE_TRANSIENT_OP"); // we are defining the name of this operator
-    p.set("Value Name", "DOT_TEMPERATURE"); // this field is constructed by the panzer library
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Value Name", "DXDT_TEMPERATURE"); // this field is constructed by the panzer library
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", 1.0);
 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -151,8 +168,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     ParameterList p("Diffusion Residual");
     p.set("Residual Name", "RESIDUAL_TEMPERATURE_DIFFUSION_OP");
     p.set("Flux Name", "GRAD_TEMPERATURE"); // this field is constructed by the panzer library
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -167,8 +184,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", "RESIDUAL_TEMPERATURE_SOURCE_OP");
     p.set("Value Name", "SOURCE_TEMPERATURE"); // this field must be provided by the closure model factory
                                                // and specified by the user
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", -1.0);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -179,26 +196,15 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // Use a sum operator to form the overall residual for the equation
   {
-    RCP<std::vector<std::string> > sum_names = 
-      rcp(new std::vector<std::string>);
+    std::vector<std::string> sum_names;
 
     // these are the names of the residual values to sum together
-    sum_names->push_back("RESIDUAL_TEMPERATURE_DIFFUSION_OP");
-    sum_names->push_back("RESIDUAL_TEMPERATURE_SOURCE_OP");
-    if (this->m_build_transient_support)
-      sum_names->push_back("RESIDUAL_TEMPERATURE_TRANSIENT_OP");
+    sum_names.push_back("RESIDUAL_TEMPERATURE_DIFFUSION_OP");
+    sum_names.push_back("RESIDUAL_TEMPERATURE_SOURCE_OP");
+    if (this->buildTransientSupport())
+      sum_names.push_back("RESIDUAL_TEMPERATURE_TRANSIENT_OP");
 
-    ParameterList p;
-    p.set("Sum Name", "RESIDUAL_TEMPERATURE"); 
-       // this name is special, the scatter evalutor depends on the field
-       // named "RESIDUAL_TEMPERATURE" for evaluation
-    p.set("Values Names", sum_names);
-    p.set("Data Layout", this->m_basis->functional);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
-
-    fm.template registerEvaluator<EvalT>(op);
+    this->buildAndRegisterResidualSummationEvalautor(fm,"TEMPERATURE",sum_names);
   }
 
 }
