@@ -106,6 +106,16 @@ namespace Teuchos {
     UNIT_DIAG,	/*!< Unit diagaonal */ 
     NON_UNIT_DIAG	/*!< Not unit diagonal */ 
   };
+
+  enum EType {
+    FULL,	/*!< Full matrix */
+    LOWER,	/*!< Lower triangular */
+    UPPER,	/*!< Upper triangular */
+    HESSENBERG, /*!< Upper Hessenberg */
+    SYM_BAND_L, /*!< Symmetric band, lower half stored */
+    SYM_BAND_U, /*!< Symmetric band, upper half stored */
+    BAND        /*!< General band */
+  };
 }
 
 #endif // TEUCHOS_BLAS_TYPES_HPP

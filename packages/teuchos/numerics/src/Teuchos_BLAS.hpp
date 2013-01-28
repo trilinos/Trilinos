@@ -110,6 +110,7 @@ namespace Teuchos
   extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char ETranspChar[];
   extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char EUploChar[];
   extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char EDiagChar[];
+  extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char ETypeChar[];
 
   //! Default implementation for BLAS routines
   /*!
