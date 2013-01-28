@@ -215,6 +215,9 @@ namespace panzer {
      */
     void setDefaultValidParameters(Teuchos::ParameterList& valid_parameters);
 
+    //! Returns the PureBasis associated with the residual contributions for the dof_name.
+    Teuchos::RCP<panzer::PureBasis> getBasisForDOF(const std::string& dof_name) const;
+
     //! Returns the integration rule associated with the residual contributions for the dof_name.
     Teuchos::RCP<panzer::IntegrationRule> getIntRuleForDOF(const std::string& dof_name) const;
 

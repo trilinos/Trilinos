@@ -705,6 +705,16 @@ setDefaultValidParameters(Teuchos::ParameterList& valid_parameters)
 
 // ***********************************************************************
 template <typename EvalT>
+Teuchos::RCP<panzer::PureBasis> 
+panzer::EquationSet_DefaultImpl<EvalT>::getBasisForDOF(const std::string& dof_name) const
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  return desc_it->second.basis;
+}
+
+// ***********************************************************************
+template <typename EvalT>
 Teuchos::RCP<panzer::IntegrationRule> 
 panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_name) const
 {
