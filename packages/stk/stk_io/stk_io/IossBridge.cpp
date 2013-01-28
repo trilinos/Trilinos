@@ -32,6 +32,8 @@
 
 namespace {
 
+  std::string internal_selector_name = "stk_io_internal_selector";
+  
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta)
 {
@@ -936,10 +938,10 @@ void delete_selector_property(Ioss::GroupingEntity *io_entity)
 {
   // If the Ioss::GroupingEntity has a property named 'selector' of
   // type 'pointer', delete the pointer and remove the property.
-  if (io_entity->property_exists("selector")) {
-    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property("selector").get_pointer());
+  if (io_entity->property_exists(internal_selector_name)) {
+    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property(internal_selector_name).get_pointer());
     delete select;
-    io_entity->property_erase("selector");
+    io_entity->property_erase(internal_selector_name);
   }
 }
 
@@ -973,9 +975,9 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
     }
   } else {
     // Output database...
-    assert(io_entity->property_exists("selector"));
+    assert(io_entity->property_exists(internal_selector_name));
     
-    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property("selector").get_pointer());
+    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property(internal_selector_name).get_pointer());
     get_selected_entities(*select, bulk.buckets(part_type), entities);
   }
 }
@@ -1115,7 +1117,7 @@ void define_side_block(const stk::mesh::BulkData &bulk,
   }
 
   mesh::Selector *select = new mesh::Selector(selector);
-  side_block->property_add(Ioss::Property("selector", select, false));
+  side_block->property_add(Ioss::Property(internal_selector_name, select, false));
 
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), side_block, Ioss::Field::ATTRIBUTE);
@@ -1195,7 +1197,7 @@ void define_node_block(stk::mesh::Part &part,
   io_region.add( nb );
 
   mesh::Selector *node_select = new mesh::Selector(all_selector);
-  nb->property_add(Ioss::Property("selector", node_select, false));
+  nb->property_add(Ioss::Property(internal_selector_name, node_select, false));
   
   // Add locally-owned property...
   nb->property_add(Ioss::Property("locally_owned_count", own_nodes));
@@ -1240,7 +1242,7 @@ void define_element_block(stk::mesh::Part &part,
   io_region.add(eb);
 
   mesh::Selector *select = new mesh::Selector(selector);
-  eb->property_add(Ioss::Property("selector", select, false));
+  eb->property_add(Ioss::Property(internal_selector_name, select, false));
 
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), eb, Ioss::Field::ATTRIBUTE);
@@ -1274,7 +1276,7 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
     io_region.add(io_cs);
 
     mesh::Selector *select = new mesh::Selector(selector);
-    io_cs->property_add(Ioss::Property("selector", select, false));
+    io_cs->property_add(Ioss::Property(internal_selector_name, select, false));
   }
 }
 
@@ -1329,7 +1331,7 @@ void define_node_set(stk::mesh::Part &part,
   ns->property_add(Ioss::Property("locally_owned_count", own_nodes));
 
   mesh::Selector *select = new mesh::Selector(all_selector);
-  ns->property_add(Ioss::Property("selector", select, false));
+  ns->property_add(Ioss::Property(internal_selector_name, select, false));
 
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), ns, Ioss::Field::ATTRIBUTE);
