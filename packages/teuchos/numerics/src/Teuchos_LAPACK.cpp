@@ -61,7 +61,7 @@ functions that include the macro:
 namespace {
 
 #if defined (INTEL_CXML)
-        unsigned int one=1;
+	unsigned int one=1;
 #endif
 
 // Use a warpper function to handle claling ILAENV().  This removes
@@ -78,7 +78,7 @@ int ilaenv_wrapper(
     return ILAENV_F77(ispec, name, name_length, opts, opts_length, N1, N2, N3, N4 );
 #else
     return ILAENV_F77(ispec, name, opts, N1, N2, N3, N4, name_length, opts_length );
-#endif  
+#endif
 }
 
 } // namespace
@@ -166,14 +166,19 @@ namespace Teuchos
   void LAPACK<int,float>::GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const
   { SGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info); }
 
+
+  void LAPACK<int,float>::LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, float* A, const int lda, int* info) const
+  { SLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
+
+
   void LAPACK<int, float>::
   LASWP (const int N,
-         float A[],
-         const int LDA,
-         const int K1,
-         const int K2,
-         const int IPIV[],
-         const int INCX) const
+	 float A[],
+	 const int LDA,
+	 const int K1,
+	 const int K2,
+	 const int IPIV[],
+	 const int INCX) const
   {
     SLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
@@ -199,28 +204,28 @@ namespace Teuchos
 
   void
   LAPACK<int, float>::LATRS (const char UPLO,
-                             const char TRANS,
-                             const char DIAG,
-                             const char NORMIN,
-                             const int N,
-                             float* A,
-                             const int LDA,
-                             float* X,
-                             float* SCALE,
-                             float* CNORM,
-                             int* INFO) const
+			     const char TRANS,
+			     const char DIAG,
+			     const char NORMIN,
+			     const int N,
+			     float* A,
+			     const int LDA,
+			     float* X,
+			     float* SCALE,
+			     float* CNORM,
+			     int* INFO) const
   {
     SLATRS_F77(CHAR_MACRO(UPLO),
-               CHAR_MACRO(TRANS),
-               CHAR_MACRO(DIAG),
-               CHAR_MACRO(NORMIN),
-               &N,
-               A,
-               &LDA,
-               X,
-               SCALE,
-               CNORM,
-               INFO);
+	       CHAR_MACRO(TRANS),
+	       CHAR_MACRO(DIAG),
+	       CHAR_MACRO(NORMIN),
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
   }
 
 
@@ -326,7 +331,7 @@ namespace Teuchos
 
   void LAPACK<int,float>::GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* info) const
   { SGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, WR, WI, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, info); }
-  
+
 
   void LAPACK<int,float>::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const
   { SGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info); }
@@ -514,14 +519,19 @@ namespace Teuchos
   void LAPACK<int,double>::GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const
   { DGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info); }
 
+
+  void LAPACK<int,double>::LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, double* A, const int lda, int* info) const
+  { DLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
+
+
   void LAPACK<int, double>::
   LASWP (const int N,
-         double A[],
-         const int LDA,
-         const int K1,
-         const int K2,
-         const int IPIV[],
-         const int INCX) const
+	 double A[],
+	 const int LDA,
+	 const int K1,
+	 const int K2,
+	 const int IPIV[],
+	 const int INCX) const
   {
     DLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
@@ -547,28 +557,28 @@ namespace Teuchos
 
   void
   LAPACK<int, double>::LATRS (const char UPLO,
-                              const char TRANS,
-                              const char DIAG,
-                              const char NORMIN,
-                              const int N,
-                              double* A,
-                              const int LDA,
-                              double* X,
-                              double* SCALE,
-                              double* CNORM,
-                              int* INFO) const
+			      const char TRANS,
+			      const char DIAG,
+			      const char NORMIN,
+			      const int N,
+			      double* A,
+			      const int LDA,
+			      double* X,
+			      double* SCALE,
+			      double* CNORM,
+			      int* INFO) const
   {
     DLATRS_F77(CHAR_MACRO(UPLO),
-               CHAR_MACRO(TRANS),
-               CHAR_MACRO(DIAG),
-               CHAR_MACRO(NORMIN),
-               &N,
-               A,
-               &LDA,
-               X,
-               SCALE,
-               CNORM,
-               INFO);
+	       CHAR_MACRO(TRANS),
+	       CHAR_MACRO(DIAG),
+	       CHAR_MACRO(NORMIN),
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
   }
 
   void LAPACK<int,double>::GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const
@@ -690,10 +700,10 @@ namespace Teuchos
 
 
   void LAPACK<int,double>::GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* info) const
-  { 
+  {
     DGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, WR, WI, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, info);
   }
-  
+
 
   void LAPACK<int, double>::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const
   {
@@ -933,14 +943,19 @@ namespace Teuchos
     CGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
   }
 
+
+  void LAPACK<int,std::complex<float> >::LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const
+  { CLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
+
+
   void LAPACK<int, std::complex<float> >::
   LASWP (const int N,
-         std::complex<float> A[],
-         const int LDA,
-         const int K1,
-         const int K2,
-         const int IPIV[],
-         const int INCX) const
+	 std::complex<float> A[],
+	 const int LDA,
+	 const int K1,
+	 const int K2,
+	 const int IPIV[],
+	 const int INCX) const
   {
     CLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
@@ -977,28 +992,28 @@ namespace Teuchos
 
   void
   LAPACK<int, std::complex<float> >::LATRS (const char UPLO,
-                                            const char TRANS,
-                                            const char DIAG,
-                                            const char NORMIN,
-                                            const int N,
-                                            std::complex<float>* A,
-                                            const int LDA,
-                                            std::complex<float>* X,
-                                            float* SCALE,
-                                            float* CNORM,
-                                            int* INFO) const
+					    const char TRANS,
+					    const char DIAG,
+					    const char NORMIN,
+					    const int N,
+					    std::complex<float>* A,
+					    const int LDA,
+					    std::complex<float>* X,
+					    float* SCALE,
+					    float* CNORM,
+					    int* INFO) const
   {
     CLATRS_F77(CHAR_MACRO(UPLO),
-               CHAR_MACRO(TRANS),
-               CHAR_MACRO(DIAG),
-               CHAR_MACRO(NORMIN),
-               &N,
-               A,
-               &LDA,
-               X,
-               SCALE,
-               CNORM,
-               INFO);
+	       CHAR_MACRO(TRANS),
+	       CHAR_MACRO(DIAG),
+	       CHAR_MACRO(NORMIN),
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
   }
 
 
@@ -1129,10 +1144,10 @@ namespace Teuchos
 
 
   void LAPACK<int, std::complex<float> >::GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const
-  { 
-    CGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, RWORK, info); 
+  {
+    CGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, RWORK, info);
   }
-  
+
 
   void LAPACK<int, std::complex<float> >::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* ALPHA, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float* RWORK, int* IWORK, int* BWORK, int* info) const
   {
@@ -1311,14 +1326,19 @@ namespace Teuchos
     ZGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
   }
 
+
+  void LAPACK<int,std::complex<double> >::LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, std::complex<double>* A, const int lda, int* info) const
+  { ZLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
+
+
   void LAPACK<int, std::complex<double> >::
   LASWP (const int N,
-         std::complex<double> A[],
-         const int LDA,
-         const int K1,
-         const int K2,
-         const int IPIV[],
-         const int INCX) const
+	 std::complex<double> A[],
+	 const int LDA,
+	 const int K1,
+	 const int K2,
+	 const int IPIV[],
+	 const int INCX) const
   {
     ZLASWP_F77(&N, A, &LDA, &K1, &K2, IPIV, &INCX);
   }
@@ -1354,28 +1374,28 @@ namespace Teuchos
 
   void
   LAPACK<int, std::complex<double> >::LATRS (const char UPLO,
-                                             const char TRANS,
-                                             const char DIAG,
-                                             const char NORMIN,
-                                             const int N,
-                                             std::complex<double>* A,
-                                             const int LDA,
-                                             std::complex<double>* X,
-                                             double* SCALE,
-                                             double* CNORM,
-                                             int* INFO) const
+					     const char TRANS,
+					     const char DIAG,
+					     const char NORMIN,
+					     const int N,
+					     std::complex<double>* A,
+					     const int LDA,
+					     std::complex<double>* X,
+					     double* SCALE,
+					     double* CNORM,
+					     int* INFO) const
   {
     ZLATRS_F77(CHAR_MACRO(UPLO),
-               CHAR_MACRO(TRANS),
-               CHAR_MACRO(DIAG),
-               CHAR_MACRO(NORMIN),
-               &N,
-               A,
-               &LDA,
-               X,
-               SCALE,
-               CNORM,
-               INFO);
+	       CHAR_MACRO(TRANS),
+	       CHAR_MACRO(DIAG),
+	       CHAR_MACRO(NORMIN),
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
   }
 
   void LAPACK<int,std::complex<double> >::GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const
@@ -1504,10 +1524,10 @@ namespace Teuchos
   }
 
   void LAPACK<int, std::complex<double> >::GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const
-  { 
-    ZGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, RWORK, info); 
+  {
+    ZGEEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, ilo, ihi, SCALE, abnrm, RCONDE, RCONDV, WORK, &lwork, RWORK, info);
   }
-  
+
   void LAPACK<int, std::complex<double> >::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* ALPHA, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* WORK, const int lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const
   {
     ZGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, ALPHA, BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, RWORK, IWORK, BWORK, info);

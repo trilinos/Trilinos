@@ -73,6 +73,7 @@ const char Teuchos::ESideChar[] = {'L' , 'R' };
 const char Teuchos::ETranspChar[] = {'N' , 'T' , 'C' };
 const char Teuchos::EUploChar[] = {'U' , 'L' };
 const char Teuchos::EDiagChar[] = {'U' , 'N' };
+const char Teuchos::ETypeChar[] = {'G' , 'L', 'U', 'H', 'B', 'Q', 'Z' };
 //const char Teuchos::EFactChar[] = {'F', 'N' };
 //const char Teuchos::ENormChar[] = {'O', 'I' };
 //const char Teuchos::ECompQChar[] = {'N', 'I', 'V' };

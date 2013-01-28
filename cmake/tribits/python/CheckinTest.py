@@ -384,7 +384,7 @@ def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
     extraReposFile = inOptions.srcDir+"/cmake/ExtraRepositoriesList.cmake"
   else:
     extraReposFile = inOptions.extraReposFile
-  cmnd = "cmake"+ \
+  cmnd = inOptions.withCmake+ \
     " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
     " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
     " -DEXTRA_REPOS_FILE="+extraReposFile+ \

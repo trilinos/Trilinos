@@ -39,9 +39,9 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TEUCHOS_SERIALDENSESOLVER_HPP_
-#define _TEUCHOS_SERIALDENSESOLVER_HPP_
-/*! \file Teuchos_SerialDenseSolver.hpp
+#ifndef _TEUCHOS_SERIALBANDDENSESOLVER_HPP_
+#define _TEUCHOS_SERIALBANDDENSESOLVER_HPP_
+/*! \file Teuchos_SerialBandDenseSolver.hpp
   \brief Templated class for solving dense linear problems.
 */
 
@@ -51,41 +51,40 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialBandDenseMatrix.hpp"
+#include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-#ifdef HAVE_TEUCHOS_EIGEN
-#include "Eigen/Dense"
-#endif
+/*! \class Teuchos::SerialBandDenseSolver
+  \brief A class for solving banded dense linear problems.
 
-/*! \class Teuchos::SerialDenseSolver
-  \brief A class for solving dense linear problems.
-
-  The Teuchos::SerialDenseSolver class enables the definition, in terms of Teuchos::SerialDenseMatrix
+  The Teuchos::SerialBandDenseSolver class enables the definition, in terms of Teuchos::SerialBandDenseMatrix
   and Teuchos::SerialDenseVector objects, of a dense linear problem, followed by the solution of that
-  problem via the most sophisticated techniques available in LAPACK.
+  problem via the most sophisticated techniques available in LAPACK. The Teuchos::SerialBandDenseMatrix used to
+  store the banded matrix must contain KL extra superdiagonals to store the L and U factors (see details below).
 
-  The Teuchos::SerialDenseSolver class is intended to provide full-featured support for solving linear
-  problems for general dense rectangular (or square) matrices.  It is written on top of BLAS and LAPACK
+  The Teuchos::SerialBandDenseSolver class is intended to provide full-featured support for solving linear
+  problems for general banded dense rectangular (or square) matrices.  It is written on top of BLAS and LAPACK
   and thus has excellent performance and numerical capabilities.  Using this class, one can either perform
   simple factorizations and solves or apply all the tricks available in LAPACK to get the best possible
   solution for very ill-conditioned problems.
 
-  <b>Teuchos::SerialDenseSolver vs. Teuchos::LAPACK</b>
+  <b>Teuchos::SerialBandDenseSolver vs. Teuchos::LAPACK</b>
 
-  The Teuchos::LAPACK class provides access to most of the same functionality as Teuchos::SerialDenseSolver.
-  The primary difference is that Teuchos::LAPACK is a "thin" layer on top of LAPACK and Teuchos::SerialDenseSolver
+  The Teuchos::LAPACK class provides access to most of the same functionality as Teuchos::SerialBandDenseSolver.
+  The primary difference is that Teuchos::LAPACK is a "thin" layer on top of LAPACK and Teuchos::SerialBandDenseSolver
   attempts to provide easy access to the more sophisticated aspects of solving dense linear and eigensystems.
   <ul>
   <li> When you should use Teuchos::LAPACK:  If you are simply looking for a convenient wrapper around
   the Fortran LAPACK routines and you have a well-conditioned problem, you should probably use Teuchos::LAPACK directly.
-  <li> When you should use Teuchos::SerialDenseSolver: If you want to (or potentially want to) solve
+  <li> When you should use Teuchos::SerialBandDenseSolver: If you want to (or potentially want to) solve
   ill-conditioned problems or want to work with a more object-oriented interface, you should probably use
-  Teuchos::SerialDenseSolver.
+  Teuchos::SerialBandDenseSolver.
   </ul>
 
-  <b>Constructing Teuchos::SerialDenseSolver Objects</b>
+  <b>Constructing Teuchos::SerialBandDenseSolver Objects</b>
 
-  There is a single Teuchos::SerialDenseSolver constructor.   However, the matrix, right hand side and solution
+  There is a single Teuchos::SerialBandDenseSolver constructor.   However, the matrix, right hand side and solution
   vectors must be set prior to executing most methods in this class.
 
   <b>Setting vectors used for linear solves</b>
@@ -98,11 +97,26 @@
   <li> setVectors() - Sets the left and right hand side vector(s).
   </ul>
 
+  <b>Format of the matrix A</b>
+
+  The Teuchos::SerialBandDenseMatrix must contain KL extra superdiagonals to store the L and U factors, where KL
+  is the upper bandwidth. Consider using the non-member conversion routines generalToBanded and bandedToGeneral if the
+  full Teuchos::SerialDenseMatrix is already in storage. However, it is more efficient to simply construct the
+  Teuchos::SerialBandDenseMatrix with the desired parameters and use the provided matrix access operators so
+  that the full rectangular matrix does not need to be stored. The conversion routine generalToBanded has a flag to store
+  the input Teuchos::SerialDenseMatrix in banded format with KL extra superdiagonals so this class can use it. Again,
+  it is more efficient to simply construct a Teuchos::SerialBandDenseMatrix object with KL extra superdiagonals than are
+  needed for the matrix data and fill the matrix using the matrix access operators.
+
+See the documentation on Teuchos::SerialBandDenseMatrix
+  for further details on the storge.
+
   <b>Vector and Utility Functions</b>
 
-  Once a Teuchos::SerialDenseSolver is constructed, several mathematical functions can be applied to
+  Once a Teuchos::SerialBandDenseSolver is constructed, several mathematical functions can be applied to
   the object.  Specifically:
   <ul>
+  <li> Conversion between storage formats.
   <li> Factorizations.
   <li> Solves.
   <li> Condition estimates.
@@ -117,60 +131,45 @@
   these situations, equilibration and iterative refinement may improve the accuracy, or prevent a breakdown in
   the factorization.
 
-  Teuchos::SerialDenseSolver will use equilibration with the factorization if, once the object
+  Teuchos::SerialBandDenseSolver will use equilibration with the factorization if, once the object
   is constructed and \e before it is factored, you call the function factorWithEquilibration(true) to force
   equilibration to be used.  If you are uncertain if equilibration should be used, you may call the function
   shouldEquilibrate() which will return true if equilibration could possibly help.  shouldEquilibrate() uses
   guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to
   determine if equilibration \e might be useful.
 
-  Teuchos::SerialDenseSolver will use iterative refinement after a forward/back solve if you call
+  Teuchos::SerialBandDenseSolver will use iterative refinement after a forward/back solve if you call
   solveToRefinedSolution(true).  It will also compute forward and backward error estimates if you call
   estimateSolutionErrors(true).  Access to the forward (back) error estimates is available via FERR() (BERR()).
 
-  Examples using Teuchos::SerialDenseSolver can be found in the Teuchos test directories.
+  Examples using Teuchos::SerialBandDenseSolver can be found in the Teuchos test directories.
 */
 
 namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
-  class SerialDenseSolver : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>,
-			    public LAPACK<OrdinalType, ScalarType>
+  class SerialBandDenseSolver : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>,
+				public LAPACK<OrdinalType, ScalarType>
   {
 
   public:
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-#ifdef HAVE_TEUCHOS_EIGEN
-    typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> EigenMatrix;
-    typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,1> EigenVector;
-    typedef typename Eigen::InnerStride<Eigen::Dynamic> EigenInnerStride;
-    typedef typename Eigen::OuterStride<Eigen::Dynamic> EigenOuterStride;
-    typedef typename Eigen::Map<EigenVector,0,EigenInnerStride > EigenVectorMap;
-    typedef typename Eigen::Map<const EigenVector,0,EigenInnerStride > EigenConstVectorMap;
-    typedef typename Eigen::Map<EigenMatrix,0,EigenOuterStride > EigenMatrixMap;
-    typedef typename Eigen::Map<const EigenMatrix,0,EigenOuterStride > EigenConstMatrixMap;
-    typedef typename Eigen::PermutationMatrix<Eigen::Dynamic,Eigen::Dynamic,OrdinalType> EigenPermutationMatrix;
-    typedef typename Eigen::Array<OrdinalType,Eigen::Dynamic,1> EigenOrdinalArray;
-    typedef typename Eigen::Map<EigenOrdinalArray> EigenOrdinalArrayMap;
-    typedef typename Eigen::Array<ScalarType,Eigen::Dynamic,1> EigenScalarArray;
-    typedef typename Eigen::Map<EigenScalarArray> EigenScalarArrayMap;
-#endif
 
     //! @name Constructor/Destructor Methods
     //@{
     //! Default constructor; matrix should be set using setMatrix(), LHS and RHS set with setVectors().
-    SerialDenseSolver();
+    SerialBandDenseSolver();
 
-    //! SerialDenseSolver destructor.
-    virtual ~SerialDenseSolver();
+    //! SerialBandDenseSolver destructor.
+    virtual ~SerialBandDenseSolver();
     //@}
 
     //! @name Set Methods
     //@{
 
-    //! Sets the pointers for coefficient matrix
-    int setMatrix(const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& A);
+    //! Sets the pointer for coefficient matrix
+    int setMatrix(const RCP<SerialBandDenseMatrix<OrdinalType, ScalarType> >& AB);
 
     //! Sets the pointers for left and right hand side vector(s).
     /*! Row dimension of X must match column dimension of matrix A, row dimension of B
@@ -178,13 +177,15 @@ namespace Teuchos {
     */
     int setVectors(const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& X,
 		   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
+
+
     //@}
 
     //! @name Strategy Modifying Methods
     //@{
 
     //! Causes equilibration to be called just before the matrix factorization as part of the call to \c factor.
-    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    /*! This function must be called before the factorization is performed.
    */
     void factorWithEquilibration(bool flag) {equilibrate_ = flag; return;}
 
@@ -199,22 +200,19 @@ namespace Teuchos {
     void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
 
     //! Causes all solves to compute solution to best ability using iterative refinement.
-    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
-    */
     void solveToRefinedSolution(bool flag) {refineSolution_ = flag; return;}
 
     //! Causes all solves to estimate the forward and backward solution error.
-    /*! \note Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
-      These arrays are accessible via the FERR() and BERR() access functions.  This method must be called before
-      the factorization is performed, otherwise it will have no effect.
+    /*! Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
+      These arrays are accessible via the FERR() and BERR() access functions.
     */
     void estimateSolutionErrors(bool flag);
     //@}
 
-    //! @name Factor/Solve/Invert Methods
+    //! @name Factor/Solve Methods
     //@{
 
-    //! Computes the in-place LU factorization of the matrix using the LAPACK routine \e _GETRF.
+    //! Computes the in-place LU factorization of the matrix using the LAPACK routine \e _GBTRF.
     /*!
       \return Integer error code, set to 0 if successful.
     */
@@ -226,12 +224,6 @@ namespace Teuchos {
     */
     int solve();
 
-    //! Inverts the \e this matrix.
-    /*!
-      \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
-    */
-    int invert();
-
     //! Computes the scaling vector S(i) = 1/sqrt(A(i,i)) of the \e this matrix.
     /*!
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
@@ -240,28 +232,24 @@ namespace Teuchos {
 
     //! Equilibrates the \e this matrix.
     /*!
-      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int equilibrateMatrix();
 
     //! Equilibrates the current RHS.
     /*!
-      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int equilibrateRHS();
 
     //! Apply Iterative Refinement.
     /*!
-      \note This method will be called automatically in solve() method if solveToRefinedSolution( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int applyRefinement();
 
     //! Unscales the solution vectors if equilibration was used to solve the system.
     /*!
-      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int unequilibrateLHS();
@@ -282,13 +270,13 @@ namespace Teuchos {
     //! Returns true if transpose of \e this matrix has and will be used.
     bool transpose() {return(transpose_);}
 
-    //! Returns true if matrix is factored (factor available via getFactoredMatrix()).
+    //! Returns true if matrix is factored (factor available via AF() and LDAF()).
     bool factored() {return(factored_);}
 
-    //! Returns true if factor is equilibrated (factor available via getFactoredMatrix()).
+    //! Returns true if factor is equilibrated (factor available via AF() and LDAF()).
     bool equilibratedA() {return(equilibratedA_);}
 
-    //! Returns true if RHS is equilibrated (RHS available via getRHS()).
+    //! Returns true if RHS is equilibrated (RHS available via B() and LDB()).
     bool equilibratedB() {return(equilibratedB_);}
 
     //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
@@ -296,9 +284,6 @@ namespace Teuchos {
 
     //! Returns true if forward and backward error estimated have been computed (available via FERR() and BERR()).
     bool solutionErrorsEstimated() {return(solutionErrorsEstimated_);}
-
-    //! Returns true if matrix inverse has been computed (inverse available via getFactoredMatrix()).
-    bool inverted() {return(inverted_);}
 
     //! Returns true if the condition number of the \e this matrix has been computed (value available via ReciprocalConditionEstimate()).
     bool reciprocalConditionEstimated() {return(reciprocalConditionEstimated_);}
@@ -314,10 +299,10 @@ namespace Teuchos {
     //@{
 
     //! Returns pointer to current matrix.
-    RCP<SerialDenseMatrix<OrdinalType, ScalarType> > getMatrix()  const {return(Matrix_);}
+    RCP<SerialBandDenseMatrix<OrdinalType, ScalarType> > getMatrix()  const {return(Matrix_);}
 
     //! Returns pointer to factored matrix (assuming factorization has been performed).
-    RCP<SerialDenseMatrix<OrdinalType, ScalarType> > getFactoredMatrix()  const {return(Factor_);}
+    RCP<SerialBandDenseMatrix<OrdinalType, ScalarType> > getFactoredMatrix()  const {return(Factor_);}
 
     //! Returns pointer to current LHS.
     RCP<SerialDenseMatrix<OrdinalType, ScalarType> > getLHS() const {return(LHS_);}
@@ -330,6 +315,12 @@ namespace Teuchos {
 
     //! Returns column dimension of system.
     OrdinalType numCols()  const {return(N_);}
+
+    //! Returns lower bandwidth of system.
+    OrdinalType numLower()  const {return(KL_);}
+
+    //! Returns upper bandwidth of system.
+    OrdinalType numUpper()  const {return(KU_);}
 
     //! Returns pointer to pivot vector (if factorization has been computed), zero otherwise.
     std::vector<OrdinalType> IPIV()  const {return(IPIV_);}
@@ -373,7 +364,7 @@ namespace Teuchos {
     //@}
   protected:
 
-    void allocateWORK() { LWORK_ = 4*N_; WORK_.resize( LWORK_ ); return;}
+    void allocateWORK() { LWORK_ = 3*N_; WORK_.resize( LWORK_ ); return;}
     void resetMatrix();
     void resetVectors();
 
@@ -387,7 +378,6 @@ namespace Teuchos {
     bool estimateSolutionErrors_;
     bool solutionErrorsEstimated_;
     bool solved_;
-    bool inverted_;
     bool reciprocalConditionEstimated_;
     bool refineSolution_;
     bool solutionRefined_;
@@ -396,6 +386,8 @@ namespace Teuchos {
 
     OrdinalType M_;
     OrdinalType N_;
+    OrdinalType KL_;
+    OrdinalType KU_;
     OrdinalType Min_MN_;
     OrdinalType LDA_;
     OrdinalType LDAF_;
@@ -403,6 +395,7 @@ namespace Teuchos {
     OrdinalType LWORK_;
 
     std::vector<OrdinalType> IPIV_;
+    std::vector<int> IWORK_;
 
     MagnitudeType ANORM_;
     MagnitudeType RCOND_;
@@ -410,10 +403,10 @@ namespace Teuchos {
     MagnitudeType COLCND_;
     MagnitudeType AMAX_;
 
-    RCP<SerialDenseMatrix<OrdinalType, ScalarType> > Matrix_;
+    RCP<SerialBandDenseMatrix<OrdinalType, ScalarType> > Matrix_;
     RCP<SerialDenseMatrix<OrdinalType, ScalarType> > LHS_;
     RCP<SerialDenseMatrix<OrdinalType, ScalarType> > RHS_;
-    RCP<SerialDenseMatrix<OrdinalType, ScalarType> > Factor_;
+    RCP<SerialBandDenseMatrix<OrdinalType, ScalarType> > Factor_;
 
     ScalarType * A_;
     ScalarType * AF_;
@@ -422,40 +415,24 @@ namespace Teuchos {
     std::vector<ScalarType> WORK_;
     std::vector<MagnitudeType> R_;
     std::vector<MagnitudeType> C_;
-#ifdef HAVE_TEUCHOS_EIGEN
-    Eigen::PartialPivLU<EigenMatrix> lu_;
-#endif
 
   private:
-    // SerialDenseSolver copy constructor (put here because we don't want user access)
 
-    SerialDenseSolver(const SerialDenseSolver<OrdinalType, ScalarType>& Source);
-    SerialDenseSolver & operator=(const SerialDenseSolver<OrdinalType, ScalarType>& Source);
+    // SerialBandDenseSolver copy constructor (put here because we don't want user access)
+    SerialBandDenseSolver(const SerialBandDenseSolver<OrdinalType, ScalarType>& Source);
+    SerialBandDenseSolver & operator=(const SerialBandDenseSolver<OrdinalType, ScalarType>& Source);
 
   };
 
-  namespace details {
-
-    // Helper traits to distinguish work arrays for real and complex-valued datatypes.
-    template<typename T>
-    struct lapack_traits {
-      typedef int iwork_type;
-    };
-
-    // Complex-valued specialization
-    template<typename T>
-    struct lapack_traits<std::complex<T> > {
-      typedef typename ScalarTraits<T>::magnitudeType iwork_type;
-    };
-
-  } // end namespace details
+  // Helper traits to distinguish work arrays for real and complex-valued datatypes.
+  using namespace details;
 
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-SerialDenseSolver<OrdinalType,ScalarType>::SerialDenseSolver()
+SerialBandDenseSolver<OrdinalType,ScalarType>::SerialBandDenseSolver()
   : CompObject(),
-    Object("Teuchos::SerialDenseSolver"),
+    Object("Teuchos::SerialBandDenseSolver"),
     equilibrate_(false),
     shouldEquilibrate_(false),
     equilibratedA_(false),
@@ -465,19 +442,19 @@ SerialDenseSolver<OrdinalType,ScalarType>::SerialDenseSolver()
     estimateSolutionErrors_(false),
     solutionErrorsEstimated_(false),
     solved_(false),
-    inverted_(false),
     reciprocalConditionEstimated_(false),
     refineSolution_(false),
     solutionRefined_(false),
     TRANS_(Teuchos::NO_TRANS),
     M_(0),
     N_(0),
+    KL_(0),
+    KU_(0),
     Min_MN_(0),
     LDA_(0),
     LDAF_(0),
     INFO_(0),
     LWORK_(0),
-    ANORM_(ScalarTraits<MagnitudeType>::zero()),
     RCOND_(ScalarTraits<MagnitudeType>::zero()),
     ROWCND_(ScalarTraits<MagnitudeType>::zero()),
     COLCND_(ScalarTraits<MagnitudeType>::zero()),
@@ -490,13 +467,13 @@ SerialDenseSolver<OrdinalType,ScalarType>::SerialDenseSolver()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-SerialDenseSolver<OrdinalType,ScalarType>::~SerialDenseSolver()
+SerialBandDenseSolver<OrdinalType,ScalarType>::~SerialBandDenseSolver()
 {}
 
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-void SerialDenseSolver<OrdinalType,ScalarType>::resetVectors()
+void SerialBandDenseSolver<OrdinalType,ScalarType>::resetVectors()
 {
   LHS_ = Teuchos::null;
   RHS_ = Teuchos::null;
@@ -509,18 +486,18 @@ void SerialDenseSolver<OrdinalType,ScalarType>::resetVectors()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-void SerialDenseSolver<OrdinalType,ScalarType>::resetMatrix()
+void SerialBandDenseSolver<OrdinalType,ScalarType>::resetMatrix()
 {
   resetVectors();
   equilibratedA_ = false;
   factored_ = false;
-  inverted_ = false;
   M_ = 0;
   N_ = 0;
+  KL_ = 0;
+  KU_ = 0;
   Min_MN_ = 0;
   LDA_ = 0;
   LDAF_ = 0;
-  ANORM_ = -ScalarTraits<MagnitudeType>::one();
   RCOND_ = -ScalarTraits<MagnitudeType>::one();
   ROWCND_ = -ScalarTraits<MagnitudeType>::one();
   COLCND_ = -ScalarTraits<MagnitudeType>::one();
@@ -535,37 +512,50 @@ void SerialDenseSolver<OrdinalType,ScalarType>::resetMatrix()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& A)
+int SerialBandDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialBandDenseMatrix<OrdinalType,ScalarType> >& AB)
 {
+
+  OrdinalType m = AB->numRows();
+  OrdinalType n = AB->numCols();
+  OrdinalType kl = AB->lowerBandwidth();
+  OrdinalType ku = AB->upperBandwidth();
+
+  // Check that the new matrix is consistent.
+  TEUCHOS_TEST_FOR_EXCEPTION(AB->values()==0, std::invalid_argument,
+		     "SerialBandDenseSolver<T>::setMatrix: A is an empty SerialBandDenseMatrix<T>!");
+
   resetMatrix();
-  Matrix_ = A;
-  Factor_ = A;
-  M_ = A->numRows();
-  N_ = A->numCols();
+  Matrix_ = AB;
+  Factor_ = AB;
+  M_ = m;
+  N_ = n;
+  KL_ = kl;
+  KU_ = ku-kl;
   Min_MN_ = TEUCHOS_MIN(M_,N_);
-  LDA_ = A->stride();
+  LDA_ = AB->stride();
   LDAF_ = LDA_;
-  A_ = A->values();
-  AF_ = A->values();
+  A_ = AB->values();
+  AF_ = AB->values();
+
   return(0);
 }
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& X,
+int SerialBandDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& X,
 							   const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
 {
   // Check that these new vectors are consistent.
   TEUCHOS_TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
-		     "SerialDenseSolver<T>::setVectors: X and B are not the same size!");
+		     "SerialBandDenseSolver<T>::setVectors: X and B are not the same size!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
-		     "SerialDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
+		     "SerialBandDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
-		     "SerialDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
+		     "SerialBandDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
-		     "SerialDenseSolver<T>::setVectors: B has an invalid stride!");
+		     "SerialBandDenseSolver<T>::setVectors: B has an invalid stride!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
-		     "SerialDenseSolver<T>::setVectors: X has an invalid stride!");
+		     "SerialBandDenseSolver<T>::setVectors: X has an invalid stride!");
 
   resetVectors();
   LHS_ = X;
@@ -575,7 +565,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseM
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-void SerialDenseSolver<OrdinalType,ScalarType>::estimateSolutionErrors(bool flag)
+void SerialBandDenseSolver<OrdinalType,ScalarType>::estimateSolutionErrors(bool flag)
 {
   estimateSolutionErrors_ = flag;
 
@@ -585,22 +575,18 @@ void SerialDenseSolver<OrdinalType,ScalarType>::estimateSolutionErrors(bool flag
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
+int SerialBandDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (factored()) return(0); // Already factored
 
-  TEUCHOS_TEST_FOR_EXCEPTION(inverted(), std::logic_error,
-		     "SerialDenseSolver<T>::factor: Cannot factor an inverted matrix!");
-
   ANORM_ = Matrix_->normOne(); // Compute 1-Norm of A
-
 
   // If we want to refine the solution, then the factor must
   // be stored separatedly from the original matrix
 
   if (A_ == AF_)
     if (refineSolution_ ) {
-      Factor_ = rcp( new SerialDenseMatrix<OrdinalType,ScalarType>(*Matrix_) );
+      Factor_ = rcp( new SerialBandDenseMatrix<OrdinalType,ScalarType>(*Matrix_) );
       AF_ = Factor_->values();
       LDAF_ = Factor_->stride();
     }
@@ -610,33 +596,11 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (ierr!=0) return(ierr);
 
-  if ((int)IPIV_.size()!=Min_MN_) IPIV_.resize( Min_MN_ ); // Allocated Pivot vector if not already done.
+  if (IPIV_.size()==0) IPIV_.resize( N_ ); // Allocated Pivot vector if not already done.
 
   INFO_ = 0;
 
-#ifdef HAVE_TEUCHOS_EIGEN
-  EigenMatrixMap aMap( AF_, M_, N_, EigenOuterStride(LDAF_) );
-  EigenPermutationMatrix p;
-  EigenOrdinalArray ind;
-  EigenOrdinalArrayMap ipivMap( &IPIV_[0], Min_MN_ );
-
-  lu_.compute(aMap);
-  p = lu_.permutationP();
-  ind = p.indices();
-
-  EigenMatrix luMat = lu_.matrixLU();
-  for (OrdinalType j=0; j<aMap.outerSize(); j++) {
-    for (OrdinalType i=0; i<aMap.innerSize(); i++) {
-      aMap(i,j) = luMat(i,j);
-    }
-  }
-  for (OrdinalType i=0; i<ipivMap.innerSize(); i++) {
-    ipivMap(i) = ind(i);
-  }
-#else
-  this->GETRF(M_, N_, AF_, LDAF_, &IPIV_[0], &INFO_);
-#endif
-
+  this->GBTRF(M_, N_, KL_, KU_, AF_, LDAF_, &IPIV_[0], &INFO_);
   factored_ = true;
 
   return(INFO_);
@@ -645,13 +609,9 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
+int SerialBandDenseSolver<OrdinalType,ScalarType>::solve() {
 
-  // We will call one of four routines depending on what services the user wants and
-  // whether or not the matrix has been inverted or factored already.
-  //
-  // If the matrix has been inverted, use DGEMM to compute solution.
-  // Otherwise, if the user want the matrix to be equilibrated or wants a refined solution, we will
+  // If the user want the matrix to be equilibrated or wants a refined solution, we will
   // call the X interface.
   // Otherwise, if the matrix is already factored we will call the TRS interface.
   // Otherwise, if the matrix is unfactored we will call the SV interface.
@@ -664,81 +624,45 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
   TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-		     std::logic_error, "SerialDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
+		     std::logic_error, "SerialBandDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
-		     "SerialDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
+		     "SerialBandDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
-		     "SerialDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
+		     "SerialBandDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
   if (shouldEquilibrate() && !equilibratedA_)
-    std::cout << "WARNING!  SerialDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
+    std::cout << "WARNING!  SerialBandDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
 
-  if (inverted()) {
+  if (!factored()) factor(); // Matrix must be factored
 
-    TEUCHOS_TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument,
-			"SerialDenseSolver<T>::solve: X and B must be different vectors if matrix is inverted.");
-
-    INFO_ = 0;
-    this->GEMM(TRANS_, Teuchos::NO_TRANS, N_, RHS_->numCols(), N_, 1.0, AF_, LDAF_,
-	       RHS_->values(), RHS_->stride(), 0.0, LHS_->values(), LHS_->stride());
-    if (INFO_!=0) return(INFO_);
-    solved_ = true;
+  if (RHS_->values()!=LHS_->values()) {
+    (*LHS_) = (*RHS_); // Copy B to X if needed
   }
-  else {
+  INFO_ = 0;
 
-    if (!factored()) factor(); // Matrix must be factored
+  this->GBTRS(ETranspChar[TRANS_], N_, KL_, KU_, RHS_->numCols(), AF_, LDAF_, &IPIV_[0], LHS_->values(), LHS_->stride(), &INFO_);
 
-    if (RHS_->values()!=LHS_->values()) {
-       (*LHS_) = (*RHS_); // Copy B to X if needed
-    }
-    INFO_ = 0;
+  if (INFO_!=0) return(INFO_);
+  solved_ = true;
 
-#ifdef HAVE_TEUCHOS_EIGEN
-    EigenMatrixMap rhsMap( RHS_->values(), RHS_->numRows(), RHS_->numCols(), EigenOuterStride(RHS_->stride()) );
-    EigenMatrixMap lhsMap( LHS_->values(), LHS_->numRows(), LHS_->numCols(), EigenOuterStride(LHS_->stride()) );
-    if ( TRANS_ == Teuchos::NO_TRANS ) {
-      lhsMap = lu_.solve(rhsMap);
-    } else if ( TRANS_ == Teuchos::TRANS ) {
-      lu_.matrixLU().template triangularView<Eigen::Upper>().transpose().solveInPlace(lhsMap);
-      lu_.matrixLU().template triangularView<Eigen::UnitLower>().transpose().solveInPlace(lhsMap);
-      EigenMatrix x = lu_.permutationP().transpose() * lhsMap;
-      lhsMap = x;
-    } else {
-      lu_.matrixLU().template triangularView<Eigen::Upper>().adjoint().solveInPlace(lhsMap);
-      lu_.matrixLU().template triangularView<Eigen::UnitLower>().adjoint().solveInPlace(lhsMap);
-      EigenMatrix x = lu_.permutationP().transpose() * lhsMap;
-      lhsMap = x;
-    }
-#else
-    this->GETRS(ETranspChar[TRANS_], N_, RHS_->numCols(), AF_, LDAF_, &IPIV_[0], LHS_->values(), LHS_->stride(), &INFO_);
-#endif
-
-    if (INFO_!=0) return(INFO_);
-    solved_ = true;
-
-  }
   int ierr1=0;
-  if (refineSolution_ && !inverted()) ierr1 = applyRefinement();
+  if (refineSolution_) ierr1 = applyRefinement();
   if (ierr1!=0)
     return(ierr1);
 
   if (equilibrate_) ierr1 = unequilibrateLHS();
+
   return(ierr1);
 }
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::applyRefinement()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::applyRefinement()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!solved(), std::logic_error,
-		     "SerialDenseSolver<T>::applyRefinement: Must have an existing solution!");
+		     "SerialBandDenseSolver<T>::applyRefinement: Must have an existing solution!");
   TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
-		     "SerialDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
-
-#ifdef HAVE_TEUCHOS_EIGEN
-  // Implement templated GERFS or use Eigen.
-  return (-1);
-#else
+		     "SerialBandDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
   OrdinalType NRHS = RHS_->numCols();
   FERR_.resize( NRHS );
@@ -746,23 +670,23 @@ int SerialDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   allocateWORK();
 
   INFO_ = 0;
-  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GERFS_WORK( N_ );
-  this->GERFS(ETranspChar[TRANS_], N_, NRHS, A_, LDA_, AF_, LDAF_, &IPIV_[0],
+  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GBRFS_WORK( N_ );
+  this->GBRFS(ETranspChar[TRANS_], N_, KL_, KU_, NRHS, A_+KL_, LDA_, AF_, LDAF_, &IPIV_[0],
 	      RHS_->values(), RHS_->stride(), LHS_->values(), LHS_->stride(),
-	      &FERR_[0], &BERR_[0], &WORK_[0], &GERFS_WORK[0], &INFO_);
+	      &FERR_[0], &BERR_[0], &WORK_[0], &GBRFS_WORK[0], &INFO_);
 
   solutionErrorsEstimated_ = true;
   reciprocalConditionEstimated_ = true;
   solutionRefined_ = true;
 
   return(INFO_);
-#endif
+
 }
 
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::computeEquilibrateScaling()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::computeEquilibrateScaling()
 {
   if (R_.size()!=0) return(0); // Already computed
 
@@ -770,7 +694,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::computeEquilibrateScaling()
   C_.resize( N_ );
 
   INFO_ = 0;
-  this->GEEQU (M_, N_, AF_, LDAF_, &R_[0], &C_[0], &ROWCND_, &COLCND_, &AMAX_, &INFO_);
+  this->GBEQU (M_, N_, KL_, KU_, AF_+KL_, LDAF_, &R_[0], &C_[0], &ROWCND_, &COLCND_, &AMAX_, &INFO_);
 
   if (COLCND_<0.1*ScalarTraits<MagnitudeType>::one() ||
       ROWCND_<0.1*ScalarTraits<MagnitudeType>::one() ||
@@ -783,7 +707,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::computeEquilibrateScaling()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
 {
   OrdinalType i, j;
   int ierr = 0;
@@ -791,29 +715,42 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
   if (equilibratedA_) return(0); // Already done.
   if (R_.size()==0) ierr = computeEquilibrateScaling(); // Compute R and C if needed.
   if (ierr!=0) return(ierr);     // If return value is not zero, then can't equilibrate.
+
   if (A_==AF_) {
+
     ScalarType * ptr;
     for (j=0; j<N_; j++) {
-      ptr = A_ + j*LDA_;
+      ptr = A_ + KL_ + j*LDA_ + std::max(KU_-j, 0);
       ScalarType s1 = C_[j];
-      for (i=0; i<M_; i++) {
+      for (i=std::max(0,j-KU_); i<=std::min(M_-1,j+KL_); i++) {
 	*ptr = *ptr*s1*R_[i];
 	ptr++;
       }
     }
-  }
-  else {
+  } else {
+
     ScalarType * ptr;
-    ScalarType * ptr1;
+    ScalarType * ptrL;
+    ScalarType * ptrU;
     for (j=0; j<N_; j++) {
-      ptr = A_ + j*LDA_;
-      ptr1 = AF_ + j*LDAF_;
+      ptr = A_ + KL_ + j*LDA_ + std::max(KU_-j, 0);
       ScalarType s1 = C_[j];
-      for (i=0; i<M_; i++) {
+      for (i=std::max(0,j-KU_); i<=std::min(M_-1,j+KL_); i++) {
 	*ptr = *ptr*s1*R_[i];
 	ptr++;
-	*ptr1 = *ptr1*s1*R_[i];
-	ptr1++;
+      }
+    }
+    for (j=0; j<N_; j++) {
+      ptrU = AF_ + j*LDAF_ + std::max(KL_+KU_-j, 0);
+      ptrL = AF_ + KL_ + KU_ + 1 + j*LDAF_;
+      ScalarType s1 = C_[j];
+      for (i=std::max(0,j-(KL_+KU_)); i<=std::min(M_-1,j); i++) {
+	*ptrU = *ptrU*s1*R_[i];
+	ptrU++;
+      }
+      for (i=std::max(0,j); i<=std::min(M_-1,j+KL_); i++) {
+	*ptrL = *ptrL*s1*R_[i];
+	ptrL++;
       }
     }
   }
@@ -826,7 +763,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
 {
   OrdinalType i, j;
   int ierr = 0;
@@ -854,10 +791,11 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
   return(0);
 }
 
+
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 {
   OrdinalType i, j;
 
@@ -883,55 +821,8 @@ int SerialDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::invert()
+int SerialBandDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(MagnitudeType & Value)
 {
-
-  if (!factored()) factor(); // Need matrix factored.
-
-#ifdef HAVE_TEUCHOS_EIGEN
-  EigenMatrixMap invMap( AF_, M_, N_, EigenOuterStride(LDAF_) );
-  EigenMatrix invMat = lu_.inverse();
-  for (OrdinalType j=0; j<invMap.outerSize(); j++) {
-    for (OrdinalType i=0; i<invMap.innerSize(); i++) {
-      invMap(i,j) = invMat(i,j);
-    }
-  }
-#else
-
-  /* This section work with LAPACK Version 3.0 only
-  // Setting LWORK = -1 and calling GETRI will return optimal work space size in WORK_TMP
-  OrdinalType LWORK_TMP = -1;
-  ScalarType WORK_TMP;
-  GETRI( N_, AF_, LDAF_, &IPIV_[0], &WORK_TMP, &LWORK_TMP, &INFO_);
-  LWORK_TMP = WORK_TMP; // Convert to integer
-  if (LWORK_TMP>LWORK_) {
-  LWORK_ = LWORK_TMP;
-  WORK_.resize( LWORK_ );
-  }
-  */
-  // This section will work with any version of LAPACK
-  allocateWORK();
-
-  INFO_ = 0;
-  this->GETRI( N_, AF_, LDAF_, &IPIV_[0], &WORK_[0], LWORK_, &INFO_);
-#endif
-
-  inverted_ = true;
-  factored_ = false;
-
-  return(INFO_);
-
-}
-
-//=============================================================================
-
-template<typename OrdinalType, typename ScalarType>
-int SerialDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(MagnitudeType & Value)
-{
-#ifdef HAVE_TEUCHOS_EIGEN
-  // Implement templated GECON or use Eigen. Eigen currently doesn't have a condition estimation function.
-  return (-1);
-#else
   if (reciprocalConditionEstimated()) {
     Value = RCOND_;
     return(0); // Already computed, just return it.
@@ -947,19 +838,17 @@ int SerialDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(Magni
 
   // We will assume a one-norm condition number
   INFO_ = 0;
-  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GECON_WORK( 2*N_ );
-  this->GECON( '1', N_, AF_, LDAF_, ANORM_, &RCOND_, &WORK_[0], &GECON_WORK[0], &INFO_);
-
+  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GBCON_WORK( N_ );
+  this->GBCON( '1', N_, KL_, KU_, AF_, LDAF_, &IPIV_[0], ANORM_, &RCOND_, &WORK_[0], &GBCON_WORK[0], &INFO_);
   reciprocalConditionEstimated_ = true;
   Value = RCOND_;
 
   return(INFO_);
-#endif
 }
 //=============================================================================
 
 template<typename OrdinalType, typename ScalarType>
-void SerialDenseSolver<OrdinalType,ScalarType>::Print(std::ostream& os) const {
+void SerialBandDenseSolver<OrdinalType,ScalarType>::Print(std::ostream& os) const {
 
   if (Matrix_!=Teuchos::null) os << "Solver Matrix"          << std::endl << *Matrix_ << std::endl;
   if (Factor_!=Teuchos::null) os << "Solver Factored Matrix" << std::endl << *Factor_ << std::endl;
@@ -968,6 +857,12 @@ void SerialDenseSolver<OrdinalType,ScalarType>::Print(std::ostream& os) const {
 
 }
 
+//=============================================================================
+
+
+//=============================================================================
+
+
 } // namespace Teuchos
 
-#endif /* _TEUCHOS_SERIALDENSESOLVER_HPP_ */
+#endif /* _TEUCHOS_SERIALBANDDENSESOLVER_HPP_ */

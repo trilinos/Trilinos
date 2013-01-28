@@ -186,6 +186,9 @@ In order to do a solid checkin, perform the following recommended workflow
   do something else and just check your email to see if all the builds and
   tests passed and if the push happened or not.
 
+  NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
+  befor running this script.
+
 For more details on using this script, see the detailed documentation below.
 
 
@@ -700,6 +703,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     "--require-extra-repos-exist", dest="ignoreMissingExtraRepos", action="store_false",
     default=False,
     help="If set, then all listed extra repos must exist or the script will exit. [default]" )
+
+  clp.add_option(
+    "--with-cmake", dest="withCmake", type="string", default="cmake",
+    help="CMake executable to use with cmake -P scripts internally (only set" \
+    +" by unit testing code).")
 
   clp.add_option(
     "--skip-deps-update", dest="skipDepsUpdate", action="store_true",

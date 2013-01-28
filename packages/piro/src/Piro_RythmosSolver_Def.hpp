@@ -53,8 +53,6 @@
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Rythmos_CompositeIntegrationObserver.hpp"
 
-#include "Rythmos_ExampleThetaStepper.hpp"
-
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -176,12 +174,6 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<Scalar>(model,fwdTimeStepSolver,BDFparams) );
     fwdStateStepper->setInitialCondition(model->getNominalValues());
 
-  }
-  else if (stepperType == "Example Theta Method") {
-    Teuchos::RCP<Teuchos::ParameterList> ThetaParams = Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
-
-    fwdStateStepper = Rythmos::exampleThetaStepper<Scalar>(model,fwdTimeStepSolver,ThetaParams);
-    fwdStateStepper->setInitialCondition(model->getNominalValues());
   }
   else {
     // first (before failing) check to see if the user has added stepper factory
