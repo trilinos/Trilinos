@@ -543,9 +543,9 @@ bool StartupSierra(int *			  argc,
 
     if(originalFileName == "") {
       //
-      //  If no input file specified, error out (unless just running the --version or --help option)
+      //  If no input file specified, error out (unless just running the --create-xml, --version or --help option)
       //
-      if ( get_param("version").empty() && get_param("help").empty() ) {
+      if ( get_param("create-xml").empty() && get_param("version").empty() && get_param("help").empty() ) {
         if (env_data.m_inputFileRequired) {
           throw RuntimeError() << "No input file specified.  An input file must be specified with the '-i' option";
         } else {
