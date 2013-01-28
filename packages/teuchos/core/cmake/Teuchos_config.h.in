@@ -29,9 +29,6 @@
 /* Define if the (Windows) compiler has intrinsic datatype __int64 */
 #cmakedefine HAVE_TEUCHOS___INT64
 
-/* Define if we have the Eigen library available */
-#cmakedefine HAVE_TEUCHOS_EIGEN
-
 /* Not namespaced so should be depreciated. */
 #cmakedefine HAVE_MPI
 
