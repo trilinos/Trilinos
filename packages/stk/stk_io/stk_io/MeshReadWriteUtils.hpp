@@ -40,18 +40,15 @@ namespace stk {
       void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
       void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
-      Teuchos::RCP<Ioss::Region> input_io_region()  { return m_input_region; }
-      Teuchos::RCP<Ioss::Region> output_io_region() { return m_output_region; }
+      Teuchos::RCP<Ioss::Region> input_io_region()  { return m_input_region;   }
+      Teuchos::RCP<Ioss::Region> output_io_region() { return m_output_region;  }
 
-      stk::mesh::Selector *selector()
-      {
-	return m_anded_selector;
-      }
+      Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
 
-      void set_selector(stk::mesh::Selector *selector)
-      {
-	m_anded_selector = selector;
-      }
+      void set_selector(Teuchos::RCP<stk::mesh::Selector> selector)
+      {	m_anded_selector = selector; }
+      void set_selector(stk::mesh::Selector &selector)
+      { set_selector(Teuchos::rcpFromRef(selector));}
       
       /**
        * Set meta data directly with your own meta data. If this is
@@ -271,7 +268,7 @@ namespace stk {
        * active/inactive entities.  If present, then this selector is
        * *anded* with the normal selectors use for output
        */
-      stk::mesh::Selector *m_anded_selector;
+      Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
 
       MeshData(const MeshData&); // Do not implement
       MeshData& operator=(const MeshData&); // Do not implement

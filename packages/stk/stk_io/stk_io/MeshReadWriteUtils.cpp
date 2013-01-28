@@ -662,8 +662,8 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
 		       "There is no Output database associated with this Mesh Data.");
-      stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector);
-      stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector);
+      stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get());
+      stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
     }
 
     // ========================================================================
@@ -740,7 +740,7 @@ namespace stk {
       // Special processing for nodeblock (all nodes in model)...
       put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
 		     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
-		     m_anded_selector);
+		     m_anded_selector.get());
 
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector & all_parts = meta_data().get_parts();
@@ -756,7 +756,7 @@ namespace stk {
 	  if (entity != NULL && entity->type() != Ioss::SIDESET) {
 	    put_field_data(bulk_data(), *part, stk::io::part_primary_entity_rank(*part),
 			   entity, Ioss::Field::Field::TRANSIENT,
-			   m_anded_selector);
+			   m_anded_selector.get());
 	  }
 	}
       }

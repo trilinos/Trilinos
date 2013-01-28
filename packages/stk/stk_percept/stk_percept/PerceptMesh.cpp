@@ -2359,8 +2359,8 @@ namespace stk {
 
       bool sort_stk_parts = true;
       stk::io::define_output_db(*out_region.getRawPtr(), bulk_data, mesh_data.input_io_region().getRawPtr(),
-				mesh_data.selector(), sort_stk_parts);
-      stk::io::write_output_db(*out_region.getRawPtr(),  bulk_data, mesh_data.selector());
+				mesh_data.selector().get(), sort_stk_parts);
+      stk::io::write_output_db(*out_region.getRawPtr(),  bulk_data, mesh_data.selector().get());
       mesh_data.set_output_io_region(out_region);
     }
 
