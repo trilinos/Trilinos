@@ -76,7 +76,6 @@ namespace Galeri {
         dims.push_back(nx_-1);
         dims.push_back(ny_-1);
 
-        std::cout << "nx = " << nx_ << ", ny = " << ny_ << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0, std::logic_error, "nx and ny must be positive");
         mode_ = list.get<string>("mode", "plane stress");
       }
@@ -332,9 +331,9 @@ namespace Galeri {
           local2Global_[NODE(i,j)] = jj*nx_ + ii;
 
           if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
-              (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  ||
+              (ii == nx  && (this->DirichletBC_ & DIR_RIGHT))  ||
               (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
-              (jj == ny_ && (this->DirichletBC_ & DIR_TOP)))
+              (jj == ny  && (this->DirichletBC_ & DIR_TOP)))
             dirichlet_[NODE(i,j)] = 1;
         }
 
