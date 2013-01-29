@@ -250,7 +250,7 @@ namespace panzer {
     // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the physics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
     void setupDeprecatedDOFsSupport();
 
-  private:
+  protected:
 
     struct DOFDescriptor {
       DOFDescriptor() 
@@ -281,8 +281,10 @@ namespace panzer {
       }
     };
 
-    //! Maps the dof name into a DOFDescriptor
+    //! Maps the dof name into a DOFDescriptor.  Should be private, but is protected so that the aux equaiton sets can access it.
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
+
+  private:
 
     //! For convenience, declare the DOFDescriptor iterator
     typedef typename std::map<std::string,DOFDescriptor>::const_iterator DescriptorIterator;
