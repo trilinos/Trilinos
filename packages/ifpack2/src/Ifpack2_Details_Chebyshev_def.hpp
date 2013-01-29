@@ -370,7 +370,9 @@ apply (const MV& B, MV& X) {
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
-    if (STS::magnitude (lambdaMax - one) < Teuchos::as<ST> (1.0e-6)) {
+    const ST diff = lambdaMax - one;
+    const ST tol = Teuchos::as<ST> (1.0e-6);
+    if (STS::magnitude(diff) < STS::magnitude(tol)) {
       lambdaMin = one;
       lambdaMax = lambdaMin;
       eigRatio = one; // Ifpack doesn't include this line.

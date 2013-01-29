@@ -64,6 +64,7 @@
 #include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
 #include "MueLu_RFactory_fwd.hpp"
 #include "MueLu_SmootherFactoryBase_fwd.hpp"
@@ -187,6 +188,19 @@ namespace MueLu {
     //!
     Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
+    bool SetupRAP(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
+
+    //!
+    Teuchos::ParameterList SetupRAP(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+
+    bool SetupSmoothers(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
+
+    //!
+    Teuchos::ParameterList SetupSmoothers(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+
+    void Recompute(const FactoryManagerBase & manager, const int & startLevel, const int & numDesiredLevels, const RCP<Matrix> & A);
     /*!
       @brief Apply the multigrid preconditioner.
 
