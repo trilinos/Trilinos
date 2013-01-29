@@ -91,7 +91,7 @@ namespace stk {
 
         needed_entities.resize(2);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);    
-        needed_entities[1] = NeededEntityType(m_eMesh.face_rank() , 6u);
+        needed_entities[1] = NeededEntityType(m_eMesh.face_rank() , 3u);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 4; }

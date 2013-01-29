@@ -227,6 +227,10 @@ namespace stk
         }
 
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 3" << std::endl;
+      if (basis.get() == 0)
+        {
+          std::cout << "FieldFunction::operator() basis is null, topo= " << topo.getName() << std::endl;
+        }
       VERIFY_OP(basis.get(), != , 0, "FieldFunction::operator() basis is null");
 
       int numBases = basis->getCardinality();

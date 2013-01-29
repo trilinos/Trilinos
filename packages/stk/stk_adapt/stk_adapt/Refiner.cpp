@@ -1759,7 +1759,13 @@ namespace stk {
               if (num_new_nodes_needed > nodeIds_onSE.size())
                 {
                   std::cout << "Refiner::createNewNeededNodeIds logic err #3:  num_new_nodes_needed= " << num_new_nodes_needed
-                            << " nodeIds_onSE.size() = " << nodeIds_onSE.size() << std::endl;
+                            << " nodeIds_onSE.size() = " << nodeIds_onSE.size() 
+                            << " needed_entity_ranks.first= " << needed_entity_ranks[ineed_ent].first
+                            << " needed_entity_ranks.second= " << needed_entity_ranks[ineed_ent].second
+                            << std::endl;
+                  std::cout << "P[" << m_eMesh.get_rank() << "] element= ";
+                  m_eMesh.print(element);
+
                   throw std::logic_error("Refiner::createNewNeededNodeIds logic err #3");
                 }
 

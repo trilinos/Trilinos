@@ -805,7 +805,7 @@ namespace stk {
               }
             else
               {
-                if (cell_topo.getDimension() == 1 && cell_topo.getNodeCount() == 3)  // Line<3> element
+                if ((cell_topo.getDimension() == 1 || cell_topo.getDimension() == 2) && cell_topo.getNodeCount() == 3)  // Line<3> || Beam<3> element
                   {
                     interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
                   }
