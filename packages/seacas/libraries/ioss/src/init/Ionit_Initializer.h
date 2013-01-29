@@ -40,6 +40,7 @@ namespace Ioss {
     public:
       Initializer();
       ~Initializer();
+      static Initializer &initialize_ioss();
       // Copy constructor
       // Assignment operator
     };

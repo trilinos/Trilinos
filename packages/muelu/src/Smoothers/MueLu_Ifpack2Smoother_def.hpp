@@ -128,7 +128,7 @@ namespace MueLu {
     //        initial value at the end but there is no way right now to get
     //        the current value of the "zero starting solution" in ifpack2.
     //        It's not really an issue, as prec_  can only be used by this method.
-    Teuchos::ParameterList  paramList;
+    Teuchos::ParameterList  paramList = paramList_;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
     }

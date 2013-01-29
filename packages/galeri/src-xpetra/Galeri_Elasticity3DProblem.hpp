@@ -367,11 +367,11 @@ namespace Galeri {
             local2Global_[NODE(i,j,k)] = kk*nx_*ny_ + jj*nx_ + ii;
 
             if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
-                (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  ||
+                (ii == nx  && (this->DirichletBC_ & DIR_RIGHT))  ||
                 (jj == 0   && (this->DirichletBC_ & DIR_FRONT))  ||
-                (jj == ny_ && (this->DirichletBC_ & DIR_BACK))   ||
+                (jj == ny  && (this->DirichletBC_ & DIR_BACK))   ||
                 (kk == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
-                (kk == nz_ && (this->DirichletBC_ & DIR_TOP)))
+                (kk == nz  && (this->DirichletBC_ & DIR_TOP)))
               dirichlet_[NODE(i,j,k)] = 1;
           }
 

@@ -41,9 +41,10 @@
 
 #ifndef _TEUCHOS_SERIALBANDDENSESOLVER_HPP_
 #define _TEUCHOS_SERIALBANDDENSESOLVER_HPP_
-/*! \file Teuchos_SerialBandDenseSolver.hpp
-  \brief Templated class for solving dense linear problems.
-*/
+/// \file Teuchos_SerialBandDenseSolver.hpp
+///
+/// Declaration and definition of SerialBandDenseSolver,
+/// a templated class for solving banded dense linear systems.
 
 #include "Teuchos_CompObject.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -55,97 +56,107 @@
 #include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-/*! \class Teuchos::SerialBandDenseSolver
-  \brief A class for solving banded dense linear problems.
+namespace Teuchos {
 
-  The Teuchos::SerialBandDenseSolver class enables the definition, in terms of Teuchos::SerialBandDenseMatrix
-  and Teuchos::SerialDenseVector objects, of a dense linear problem, followed by the solution of that
-  problem via the most sophisticated techniques available in LAPACK. The Teuchos::SerialBandDenseMatrix used to
-  store the banded matrix must contain KL extra superdiagonals to store the L and U factors (see details below).
+/*! \class SerialBandDenseSolver
+  \brief A class for representing and solving banded dense linear systems.
+  \tparam OrdinalType The index type used by the linear algebra implementation.
+    This should always be \c int.
+  \tparam ScalarType The type of entries in the matrix.
 
-  The Teuchos::SerialBandDenseSolver class is intended to provide full-featured support for solving linear
-  problems for general banded dense rectangular (or square) matrices.  It is written on top of BLAS and LAPACK
-  and thus has excellent performance and numerical capabilities.  Using this class, one can either perform
-  simple factorizations and solves or apply all the tricks available in LAPACK to get the best possible
-  solution for very ill-conditioned problems.
+  \section Teuchos_SerialBandDenseSolver_Intro Introduction
 
-  <b>Teuchos::SerialBandDenseSolver vs. Teuchos::LAPACK</b>
+  This class defines a banded dense matrix, which may have any number
+  of rows or columns (not necessarily equal).  It's called "serial"
+  because the matrix lives in a single memory space.  Thus, it's the
+  kind of matrix that one might give to the BLAS or LAPACK, not a
+  distributed matrix like one would give to ScaLAPACK.
 
-  The Teuchos::LAPACK class provides access to most of the same functionality as Teuchos::SerialBandDenseSolver.
-  The primary difference is that Teuchos::LAPACK is a "thin" layer on top of LAPACK and Teuchos::SerialBandDenseSolver
-  attempts to provide easy access to the more sophisticated aspects of solving dense linear and eigensystems.
-  <ul>
-  <li> When you should use Teuchos::LAPACK:  If you are simply looking for a convenient wrapper around
-  the Fortran LAPACK routines and you have a well-conditioned problem, you should probably use Teuchos::LAPACK directly.
-  <li> When you should use Teuchos::SerialBandDenseSolver: If you want to (or potentially want to) solve
-  ill-conditioned problems or want to work with a more object-oriented interface, you should probably use
-  Teuchos::SerialBandDenseSolver.
-  </ul>
+  This class also has methods for computing the (banded) LU
+  factorization of the matrix, and solving linear systems with the
+  matrix.  We use instances of SerialDenseVector to represent the
+  right-hand side b or the solution x in the linear system \f$Ax=b\f$.
+  The instance of this class used store the banded matrix must contain
+  KL extra superdiagonals to store the L and U factors (see details
+  below).
 
-  <b>Constructing Teuchos::SerialBandDenseSolver Objects</b>
+  Users have the option to do equilibration before factoring the matrix.
+  This may improve accuracy when solving ill-conditioned problems.
 
-  There is a single Teuchos::SerialBandDenseSolver constructor.   However, the matrix, right hand side and solution
-  vectors must be set prior to executing most methods in this class.
+  \section Teuchos_SerialBandDenseSolver_LAPACK SerialBandDenseSolver and LAPACK
 
-  <b>Setting vectors used for linear solves</b>
+  Teuchos' LAPACK class wraps LAPACK's LU factorizations, including
+  the banded factorizations.  It thus gives access to most of the same
+  functionality as SerialBandDenseSolver.  The main difference is that
+  SerialBandDenseSolver offers a higher level of abstraction.  It
+  hides the details of which LAPACK routines to call.  Furthermore, if
+  you have built Teuchos with support for the third-party library
+  Eigen, SerialBandDenseSolver lets you solve linear systems for
+  <tt>ScalarType</tt> other than the four supported by the LAPACK
+  library.
 
-  The matrix A, the left hand side X and the right hand side B (when solving AX = B, for X), can be set by appropriate set
-  methods.  Each of these three objects must be an Teuchos::SerialDenseMatrix or and Teuchos::SerialDenseVector object.  The
-  set methods are as follows:
-  <ul>
-  <li> setMatrix()  - Sets the matrix.
-  <li> setVectors() - Sets the left and right hand side vector(s).
-  </ul>
+  \section Teuchos_SerialBandDenseSolver_Construct Constructing SerialBandDenseSolver objects
 
-  <b>Format of the matrix A</b>
+  There is a single Teuchos::SerialBandDenseSolver constructor.
+  However, the matrix, right hand side and solution vectors must be
+  set prior to executing most methods in this class.
 
-  The Teuchos::SerialBandDenseMatrix must contain KL extra superdiagonals to store the L and U factors, where KL
+  \subsection Teuchos_SerialBandDenseSolver_Construct_Setting Setting vectors used for linear solves
+
+  The matrix A, the left hand side X and the right hand side B (when
+  solving AX = B, for X), can be set by appropriate set methods.  Each
+  of these three objects must be a SerialDenseMatrix or a
+  SerialDenseVector object.  The set methods are as follows:
+  - setMatrix(): Sets the matrix
+  - setVectors() - Sets the left and right hand side vector(s)
+
+  \subsection Teuchos_SerialBandDenseSolver_Construct_Format Format of the matrix A
+
+  The SerialBandDenseMatrix must contain KL extra superdiagonals to store the L and U factors, where KL
   is the upper bandwidth. Consider using the non-member conversion routines generalToBanded and bandedToGeneral if the
-  full Teuchos::SerialDenseMatrix is already in storage. However, it is more efficient to simply construct the
-  Teuchos::SerialBandDenseMatrix with the desired parameters and use the provided matrix access operators so
-  that the full rectangular matrix does not need to be stored. The conversion routine generalToBanded has a flag to store
+  full SerialDenseMatrix is already in storage. However, it is more efficient simply to construct the
+  SerialBandDenseMatrix with the desired parameters and use the provided matrix access operators so
+  that the full rectangular matrix need not be stored. The conversion routine generalToBanded has a flag to store
   the input Teuchos::SerialDenseMatrix in banded format with KL extra superdiagonals so this class can use it. Again,
   it is more efficient to simply construct a Teuchos::SerialBandDenseMatrix object with KL extra superdiagonals than are
   needed for the matrix data and fill the matrix using the matrix access operators.
 
-See the documentation on Teuchos::SerialBandDenseMatrix
-  for further details on the storge.
+  See the documentation of Teuchos::SerialBandDenseMatrix for further details on the storage format.
 
-  <b>Vector and Utility Functions</b>
+  \section Teuchos_SerialBandDenseSolver_Util Vector and Utility Functions
 
   Once a Teuchos::SerialBandDenseSolver is constructed, several mathematical functions can be applied to
   the object.  Specifically:
   <ul>
-  <li> Conversion between storage formats.
-  <li> Factorizations.
-  <li> Solves.
-  <li> Condition estimates.
-  <li> Equilibration.
-  <li> Norms.
+  <li> Conversion between storage formats
+  <li> Factorizations
+  <li> Solves
+  <li> Condition estimates
+  <li> Equilibration
+  <li> Norms
   </ul>
 
-  <b>Strategies for Solving Linear Systems</b>
+  \section Teuchos_SerialBandDenseSolver_Strategies Strategies for Solving Linear Systems
+
   In many cases, linear systems can be accurately solved by simply computing the LU factorization
   of the matrix and then performing a forward back solve with a given set of right hand side vectors.  However,
   in some instances, the factorization may be very poorly conditioned and this simple approach may not work.  In
   these situations, equilibration and iterative refinement may improve the accuracy, or prevent a breakdown in
   the factorization.
 
-  Teuchos::SerialBandDenseSolver will use equilibration with the factorization if, once the object
+  SerialBandDenseSolver will use equilibration with the factorization if, once the object
   is constructed and \e before it is factored, you call the function factorWithEquilibration(true) to force
   equilibration to be used.  If you are uncertain if equilibration should be used, you may call the function
   shouldEquilibrate() which will return true if equilibration could possibly help.  shouldEquilibrate() uses
   guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to
   determine if equilibration \e might be useful.
 
-  Teuchos::SerialBandDenseSolver will use iterative refinement after a forward/back solve if you call
+  SerialBandDenseSolver will use iterative refinement after a forward/back solve if you call
   solveToRefinedSolution(true).  It will also compute forward and backward error estimates if you call
   estimateSolutionErrors(true).  Access to the forward (back) error estimates is available via FERR() (BERR()).
 
-  Examples using Teuchos::SerialBandDenseSolver can be found in the Teuchos test directories.
+  Examples using SerialBandDenseSolver can be found in the Teuchos test directories.
 */
-
-namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   class SerialBandDenseSolver : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>,
@@ -158,13 +169,14 @@ namespace Teuchos {
 
     //! @name Constructor/Destructor Methods
     //@{
+
     //! Default constructor; matrix should be set using setMatrix(), LHS and RHS set with setVectors().
     SerialBandDenseSolver();
 
     //! SerialBandDenseSolver destructor.
     virtual ~SerialBandDenseSolver();
-    //@}
 
+    //@}
     //! @name Set Methods
     //@{
 
@@ -178,28 +190,24 @@ namespace Teuchos {
     int setVectors(const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& X,
 		   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
 
-
     //@}
-
     //! @name Strategy Modifying Methods
     //@{
 
-    //! Causes equilibration to be called just before the matrix factorization as part of the call to \c factor.
-    /*! This function must be called before the factorization is performed.
-   */
+    /// Set whether or not to equilibrate just before the matrix factorization.
+    /// This function must be called before the factorization is performed.
     void factorWithEquilibration(bool flag) {equilibrate_ = flag; return;}
 
-    //! If \c flag is true, causes all subsequent function calls to work with the transpose of \e this matrix, otherwise not.
-    /*! \note This interface will not work correctly for complex-valued linear systems, use solveWithTransposeFlag().
-    */
+    /// If \c flag is true, causes all subsequent function calls to work with the transpose of \e this matrix, otherwise not.
+    ///
+    /// \note This interface will not work correctly for complex-valued linear systems, use solveWithTransposeFlag().
     void solveWithTranspose(bool flag) {transpose_ = flag; if (flag) TRANS_ = Teuchos::TRANS; else TRANS_ = Teuchos::NO_TRANS; return;}
 
-    //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
-    /*! \note This interface will allow correct behavior for complex-valued linear systems, solveWithTranspose() will not.
-    */
+    /// All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
+    /// \note This interface will allow correct behavior for complex-valued linear systems, solveWithTranspose() will not.
     void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
 
-    //! Causes all solves to compute solution to best ability using iterative refinement.
+    //! Set whether or not to use iterative refinement to improve solutions to linear systems.
     void solveToRefinedSolution(bool flag) {refineSolution_ = flag; return;}
 
     //! Causes all solves to estimate the forward and backward solution error.

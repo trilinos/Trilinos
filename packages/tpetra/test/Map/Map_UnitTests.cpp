@@ -390,6 +390,45 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, indexBaseAndAllMin, LO, GO )
+  {
+    typedef Map<LO,GO> Map;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a contiguous uniform distributed map with numLocal entries per node
+    const size_t        numLocal  = 5;
+    const global_size_t numGlobal = numImages*numLocal;
+    const GO indexBase = 0;
+    const GO actualBase = 1;
+    //
+    Array<GO> GIDs(numLocal);
+    GIDs[0] = actualBase + myImageID*numLocal;
+    for (size_t i=1; i<numLocal; ++i) {
+      GIDs[i] = GIDs[i-1]+1;
+    }
+    RCP<Map> map = rcp(new Map(numGlobal,GIDs(),indexBase,comm));
+    //
+    TEST_EQUALITY(map->getGlobalNumElements(), numGlobal);
+    TEST_EQUALITY(map->getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map->getIndexBase(), indexBase);
+    TEST_EQUALITY_CONST(map->getMinLocalIndex(), 0);
+    TEST_EQUALITY(map->getMaxLocalIndex(), numLocal-1);
+    TEST_EQUALITY(map->getMinGlobalIndex(), GIDs[0]);
+    TEST_EQUALITY(map->getMaxGlobalIndex(), as<GO>(GIDs[0]+numLocal-1) );
+    TEST_EQUALITY(map->getMinAllGlobalIndex(), actualBase);
+    TEST_EQUALITY(map->getGlobalElement(0), GIDs[0]);
+    TEST_EQUALITY_CONST((global_size_t)map->getMaxAllGlobalIndex(), actualBase+numGlobal-1);
+    ArrayView<const GO> glist = map->getNodeElementList();
+    TEST_COMPARE_ARRAYS( map->getNodeElementList(), GIDs);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, NodeConversion, LO, GO, N2 )
   {
     typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
@@ -428,6 +467,7 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
 #define NC_TESTS(N) \

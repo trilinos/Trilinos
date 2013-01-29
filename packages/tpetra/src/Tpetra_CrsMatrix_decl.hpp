@@ -475,11 +475,11 @@ namespace Tpetra {
                             lrow <= clonedRowMap->getMaxLocalIndex();
                             ++lrow)
           {
-            size_t numEntries;
+            size_t theNumEntries;
             linds.resize( this->getNumEntriesInLocalRow(lrow) );
             vals.resize( linds.size() );
-            this->getLocalRowCopy(clonedRowMap->getGlobalElement(lrow), linds(), vals(), numEntries);
-            if (numEntries) clonedMatrix->insertLocalValues(lrow, linds(0,numEntries), vals(0,numEntries) );
+            this->getLocalRowCopy(clonedRowMap->getGlobalElement(lrow), linds(), vals(), theNumEntries);
+            if (theNumEntries) clonedMatrix->insertLocalValues(lrow, linds(0,theNumEntries), vals(0,theNumEntries) );
           }
         }
       }
@@ -506,11 +506,11 @@ namespace Tpetra {
                              grow <= clonedRowMap->getMaxGlobalIndex();
                              ++grow)
           {
-            size_t numEntries;
+            size_t theNumEntries;
             ginds.resize( this->getNumEntriesInGlobalRow(grow) );
             vals.resize( ginds.size() );
-            this->getGlobalRowCopy(grow, ginds(), vals(), numEntries);
-            if (numEntries) clonedMatrix->insertGlobalValues(grow, ginds(0,numEntries), vals(0,numEntries) );
+            this->getGlobalRowCopy(grow, ginds(), vals(), theNumEntries);
+            if (theNumEntries) clonedMatrix->insertGlobalValues(grow, ginds(0,theNumEntries), vals(0,theNumEntries) );
           }
         }
       }
