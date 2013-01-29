@@ -370,7 +370,7 @@ apply (const MV& B, MV& X) {
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
-    if (STS::magnitude (lambdaMax - one) < Teuchos::as<ST> (1.0e-6)) {
+    if (STS::magnitude (lambdaMax - one) < Teuchos::as<MT> (1.0e-6)) {
       lambdaMin = one;
       lambdaMax = lambdaMin;
       eigRatio = one; // Ifpack doesn't include this line.
@@ -584,16 +584,19 @@ ifpackApplyImpl (const MAT& A,
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
   makeTempMultiVectors (V_ptr, W_ptr, B);
-  //MV V (B.getMap (), B.getNumVectors (), false);
+
+  // mfh 28 Jan 2013: We write V1 instead of V, so as not to confuse
+  // the multivector V with the typedef V (for Tpetra::Vector).
+  //MV V1 (B.getMap (), B.getNumVectors (), false);
   //MV W (B.getMap (), B.getNumVectors (), false);
-  MV& V = *V_ptr;
+  MV& V1 = *V_ptr;
   MV& W = *W_ptr;
   const ST oneOverTheta = one / theta;
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
-    computeResidual (V, B, A, X); // V = B - A*X
-    solve (W, one/theta, D_inv, V); // W = (1/theta)*D_inv*(B-A*X)
+    computeResidual (V1, B, A, X); // V1 = B - A*X
+    solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
     X.update (one, W, one); // X = X + W
   } else {
     solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
@@ -604,7 +607,7 @@ ifpackApplyImpl (const MAT& A,
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
-    computeResidual (V, B, A, X); // V = B - A*X
+    computeResidual (V1, B, A, X); // V1 = B - A*X
 
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
@@ -612,7 +615,7 @@ ifpackApplyImpl (const MAT& A,
     rhok = rhokp1;
 
     W.scale (dtemp1);
-    W.elementWiseMultiply (dtemp2, D_inv, V, one);
+    W.elementWiseMultiply (dtemp2, D_inv, V1, one);
     X.update (one, W, one);
   }
 }
@@ -668,7 +671,7 @@ hasTransposeApply() const {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-makeTempMultiVectors (Teuchos::RCP<MV>& V,
+makeTempMultiVectors (Teuchos::RCP<MV>& V1,
 		      Teuchos::RCP<MV>& W,
 		      const MV& X)
 {
@@ -679,7 +682,7 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V,
   if (W_.is_null ()) {
     W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
   }
-  V = V_;
+  V1 = V_;
   W = W_;
 }
 

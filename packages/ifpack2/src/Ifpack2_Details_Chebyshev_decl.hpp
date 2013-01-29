@@ -327,8 +327,11 @@ private:
   /// This is an optimization for apply().  This method caches the
   /// created multivectors in the class instance as V_ resp. W_.
   /// Caching optimizes the common case of calling apply() many times.
+  ///
+  /// We call the first argument V1 instead of V, so as not to confuse
+  /// the multivector V with the typedef V (for Tpetra::Vector).
   void
-  makeTempMultiVectors (Teuchos::RCP<MV>& V,
+  makeTempMultiVectors (Teuchos::RCP<MV>& V1,
 			Teuchos::RCP<MV>& W,
 			const MV& X);
 
