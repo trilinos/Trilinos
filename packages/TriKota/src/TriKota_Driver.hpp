@@ -55,11 +55,16 @@ class Driver {
 public:
 
   //! Constructor, with all dakota filenames having default values
+  //! Reading a restart file is off by default. Number of restart 
+  //! entries to read, if turned on, defaults to all (0 flag value)
 
   Driver(const char* dakota_in="dakota.in",  
     const char* dakota_out="dakota.out",
     const char* dakota_err="dakota.err",
-    const char* dakota_restart_out="dakota_restart.out");
+    const char* dakota_restart_out="dakota_restart.out",
+    const char* dakota_restart_in=NULL,
+    const int stop_restart_evals=0
+    );
 
   ~Driver() {};
 

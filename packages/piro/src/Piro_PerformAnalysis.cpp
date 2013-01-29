@@ -166,15 +166,27 @@ Piro::PerformDakotaAnalysis(
     RCP< Thyra::VectorBase<double> >& p)
 {
 #ifdef Piro_ENABLE_TriKota
+  dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
+  using std::string;
+
   string dakotaIn = dakotaParams.get("Input File","dakota.in");
   string dakotaOut= dakotaParams.get("Output File","dakota.out");
   string dakotaErr= dakotaParams.get("Error File","dakota.err");
   string dakotaRes= dakotaParams.get("Restart File","dakota_restart.out");
+  string dakotaRestartIn;
+  const char * dakRestartIn = NULL;
+  if (dakotaParams.isParameter("Restart File To Read")) {
+    dakotaRestartIn = dakotaParams.get<string>("Restart File To Read");
+    dakRestartIn = dakotaRestartIn.c_str();
+  }
+  int dakotaRestartEvals= dakotaParams.get("Restart Evals To Read", 0);
+
   int p_index = dakotaParams.get("Parameter Vector Index", 0);
   int g_index = dakotaParams.get("Response Vector Index", 0);
 
   TriKota::Driver dakota(dakotaIn.c_str(), dakotaOut.c_str(),
-                         dakotaErr.c_str(), dakotaRes.c_str());
+                         dakotaErr.c_str(), dakotaRes.c_str(),
+                         dakRestartIn, dakotaRestartEvals );
 
   RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
     rcp(new TriKota::ThyraDirectApplicInterface
@@ -274,3 +286,21 @@ Piro::getValidPiroAnalysisParameters()
 }
 
 
+RCP<const Teuchos::ParameterList>
+Piro::getValidPiroAnalysisDakotaParameters()
+{
+  Teuchos::RCP<Teuchos::ParameterList> validPL =
+     rcp(new Teuchos::ParameterList("Valid Piro Analysis Dakota Params"));;
+
+  validPL->set<std::string>("Input File", "","Defaults to dakota.in");
+  validPL->set<std::string>("Output File", "","Defaults to dakota.out");
+  validPL->set<std::string>("Error File", "","Defaults to dakota.err");
+  validPL->set<std::string>("Restart File", "","Defaults to dakota_restart.out");
+  validPL->set<std::string>("Restart File To Read", "","Defaults to NULL (no restart file read)");
+  validPL->set<int>("Restart Evals To Read", 0,
+                    "Number of evaluations to read from restart. Defaults to 0 (all)");
+  validPL->set<int>("Parameter Vector Index", 0,"");
+  validPL->set<int>("Response Vector Index", 0,"");
+
+  return validPL;
+}

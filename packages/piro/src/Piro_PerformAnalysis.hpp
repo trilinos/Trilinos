@@ -51,24 +51,29 @@
 
 namespace Piro {
 
+  //! Top level function for performing analysis of a solved model.
+  //! This function calls one of the following methods.
   int PerformAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& analysisParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
+  //! Function that calls MOOCHO for analysis
   int PerformMoochoAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& moochoParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
+  //! Function that calls Dakota via TriKota for analysis
   int PerformDakotaAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& dakotaParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
+  //! Function that calls Optipack for analysis
   int PerformOptiPackAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& optipackParams,
@@ -76,9 +81,13 @@ namespace Piro {
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
-   Teuchos::RCP<const Teuchos::ParameterList>
-     getValidPiroAnalysisParameters();
+  //! Valid parameters for the list sent to PerformAnalysis 
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidPiroAnalysisParameters();
 
+  //! Valid parameters for the list sent to PerformDakotaAnalysis 
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidPiroAnalysisDakotaParameters();
 }
 
 #endif //PIRO_PERFORMANALYSIS
