@@ -134,6 +134,7 @@ namespace panzer {
     /// \name Query Methods
     ///@{
 
+    //! Returns the parameter list that will be passed off from the equaiton set to the closure model evaluator factory.  This allows users to pass parameters from a particular equaiton set to its associated closure models.
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
     
     //! Return the Basis for the equation set, key is the DOF name

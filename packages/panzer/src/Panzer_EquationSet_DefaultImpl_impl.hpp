@@ -775,5 +775,12 @@ void panzer::EquationSet_DefaultImpl<EvalT>::addClosureModel(const std::string& 
 }
 
 // ***********************************************************************
+template <typename EvalT>
+Teuchos::RCP<Teuchos::ParameterList> 
+panzer::EquationSet_DefaultImpl<EvalT>::getEquationSetParameterList() const
+{
+  return m_input_params;
+}
 
+// ***********************************************************************
 #endif

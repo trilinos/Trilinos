@@ -242,6 +242,11 @@ namespace panzer {
 						    const std::vector<std::string>& residual_contributions,
 						    const std::string residual_field_name = "") const;
 
+    //! Returns the parameter list used to build this equation set
+    //object.  Useful for passing off input parameter sublists
+    //directly to evaluators.
+    Teuchos::RCP<Teuchos::ParameterList> getEquationSetParameterList() const;
+    
     // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the physics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
     void setupDeprecatedDOFsSupport();
 
