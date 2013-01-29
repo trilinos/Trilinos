@@ -45,6 +45,15 @@ void
 Chebyshev<ScalarType, MV, MAT>::
 checkConstructorInput () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
+    "Ifpack2::Details::Chebyshev: This class' implementation of Chebyshev "
+    "iteration only works for real-valued, symmetric positive definite "
+    "matrices.  However, you instantiated this class for ScalarType=" 
+    << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a complex-"
+    "valued type.  While this may be algorithmically correct if all of the "
+    "complex numbers in the matrix have zero imaginary part, we forbid using "
+    "complex ScalarType altogether in order to remind you of the limitations "
+    "of our implementation (and of the algorithm itself).");
   TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
     "Ifpack2::Details::Chebyshev: Input matrix to constructor is null.");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -53,14 +62,19 @@ checkConstructorInput () const
     "Ifpack2::Details::Chebyshev: The input matrix A must be square.  "
     "A has " << A_->getGlobalNumRows() << " rows and " 
     << A_->getGlobalNumCols() << " columns.");
+
+  // In a debug build, test that the domain and range Maps of the
+  // matrix are the same.
 #ifdef HAVE_TEUCHOS_DEBUG
   Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
   Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
 
   // The relation 'isSameAs' is transitive.  It's also a collective,
   // so we don't have to do a "shared" test for exception (i.e., a
-  // global reduction on the test value).
+  // global reduction on the test value).  Do the raw pointer
+  // comparison first, to avoid a collective in the common case.
   TEUCHOS_TEST_FOR_EXCEPTION(
+     domainMap.getRawPtr () != rangeMap.getRawPtr () ||
      ! domainMap->isSameAs (*rangeMap),
      std::invalid_argument,
      "Ifpack2::Details::Chebyshev: The domain Map and range Map of the matrix "
@@ -367,12 +381,16 @@ apply (const MV& B, MV& X) {
     STS::isnaninf (eigRatio), 
     std::logic_error, 
     "Chebyshev::apply: eigRatio is NaN or Inf.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_.is_null (),
+    std::runtime_error, 
+    "Chebyshev::apply: The vector of diagonal entries of the matrix is null.  "
+    "This means either that you didn't call compute() before calling apply(), "
+    "or that you didn't call compute() after calling setParameters().");
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
-    const ST diff = lambdaMax - one;
-    const ST tol = Teuchos::as<ST> (1.0e-6);
-    if (STS::magnitude(diff) < STS::magnitude(tol)) {
+    if (STS::magnitude (lambdaMax - one) < Teuchos::as<MT> (1.0e-6)) {
       lambdaMin = one;
       lambdaMax = lambdaMin;
       eigRatio = one; // Ifpack doesn't include this line.
@@ -586,16 +604,19 @@ ifpackApplyImpl (const MAT& A,
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
   makeTempMultiVectors (V_ptr, W_ptr, B);
-  //MV V (B.getMap (), B.getNumVectors (), false);
+
+  // mfh 28 Jan 2013: We write V1 instead of V, so as not to confuse
+  // the multivector V with the typedef V (for Tpetra::Vector).
+  //MV V1 (B.getMap (), B.getNumVectors (), false);
   //MV W (B.getMap (), B.getNumVectors (), false);
-  MV& V = *V_ptr;
+  MV& V1 = *V_ptr;
   MV& W = *W_ptr;
   const ST oneOverTheta = one / theta;
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
-    computeResidual (V, B, A, X); // V = B - A*X
-    solve (W, one/theta, D_inv, V); // W = (1/theta)*D_inv*(B-A*X)
+    computeResidual (V1, B, A, X); // V1 = B - A*X
+    solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
     X.update (one, W, one); // X = X + W
   } else {
     solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
@@ -606,7 +627,7 @@ ifpackApplyImpl (const MAT& A,
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
-    computeResidual (V, B, A, X); // V = B - A*X
+    computeResidual (V1, B, A, X); // V1 = B - A*X
 
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
@@ -614,7 +635,7 @@ ifpackApplyImpl (const MAT& A,
     rhok = rhokp1;
 
     W.scale (dtemp1);
-    W.elementWiseMultiply (dtemp2, D_inv, V, one);
+    W.elementWiseMultiply (dtemp2, D_inv, V1, one);
     X.update (one, W, one);
   }
 }
@@ -670,7 +691,7 @@ hasTransposeApply() const {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-makeTempMultiVectors (Teuchos::RCP<MV>& V,
+makeTempMultiVectors (Teuchos::RCP<MV>& V1,
 		      Teuchos::RCP<MV>& W,
 		      const MV& X)
 {
@@ -681,7 +702,7 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V,
   if (W_.is_null ()) {
     W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
   }
-  V = V_;
+  V1 = V_;
   W = W_;
 }
 
