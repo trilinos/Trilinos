@@ -63,6 +63,7 @@ ENDIF()
 IF (Piro_ENABLE_Rythmos) 
   APPEND_SET(HEADERS Piro_Epetra_RythmosSolver.hpp
                      Piro_RythmosSolver.hpp
+		     Piro_RythmosStepperFactory.hpp
                      Piro_RythmosSolver_Def.hpp) 
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
