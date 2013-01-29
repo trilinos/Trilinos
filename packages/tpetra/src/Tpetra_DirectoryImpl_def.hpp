@@ -339,9 +339,8 @@ namespace Tpetra {
       // it means yet.
       //
       // Allocate process ID List and LID list.  Initialize to
-      // invalid values, in case the user global element list does
-      // fill all IDs from minAllGID to maxAllGID (e.g., allows
-      // global indices to be all even integers).
+      // invalid values, in case the user global element list does not
+      // fill all IDs from minAllGID to maxAllGID.
       //
       // FIXME (mfh 13 Jan 2013) See Bug 5822.  dir_numMyEntries may
       // be quite large if the difference between the smallest and

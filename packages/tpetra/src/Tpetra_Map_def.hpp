@@ -717,7 +717,7 @@ namespace Tpetra {
       // communication as an all-reduce.)
       GlobalOrdinal rootIndexBase = indexBase_in;
       const int rootRank = 0;
-      broadcast (*comm_, rootRank, ptr (&rootIndexBase));
+      broadcast (*comm_, rootRank, outArg(rootIndexBase));
 
       if (indexBase_in != rootIndexBase) {
         localChecks[0] = myImageID;
@@ -726,7 +726,8 @@ namespace Tpetra {
       // After the reduceAll below, globalChecks[0] will be -1 if all
       // processes passed their tests, else it will be the rank
       // ("image ID") of the highest-rank process that did NOT pass.
-      // In the latter case, globalChecks[1] will be the error code.
+      // In the latter case, globalChecks[1] will be an error code, though
+      // not necessarily the error code experienced by that node.
       reduceAll (*comm_, REDUCE_MAX, 2, localChecks, globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
@@ -779,43 +780,30 @@ namespace Tpetra {
 
     // Assume for now that there are numLocalElements (there may be
     // less, if some GIDs are duplicated in entryList).
+    // NOTE: cgb: This could result in an incorrecdt minMyGID_ if indexBase_ is less than all of the GIDs
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
+    //
     // Create the GID to LID map.  Do not assume that the GIDs in
     // entryList are distinct.  In the case that a GID is duplicated,
-    // use the same LID for all duplicates.  This is necessary so that
-    // the LIDs are in [0,numLocal).
+    // each duplication gets a new LID.
     //
-    // FIXME (mfh 20 Mar 2012) This code doesn't do what it claims to
-    // do: it uses a different LID for local duplicates.  The
-    // numUniqueGIDs counter is a red herring; it just increases by
-    // one each iteration.
-    size_t numUniqueGIDs = 0;
     glMap_ = rcp(new global_to_local_table_type());
     if (numLocalElements_ > 0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
-
       // While iterating through entryList, we compute its (local)
       // min and max elements.
       minMyGID_ = entryList[0];
       maxMyGID_ = entryList[0];
       for (size_t i=0; i < numLocalElements_; i++) {
-        lgMap_[numUniqueGIDs] = entryList[i];      // lgMap_:  LID to GID
-        (*glMap_)[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
-        numUniqueGIDs++;
-
+        lgMap_[i] = entryList[i];      // lgMap_:  LID to GID
+        (*glMap_)[entryList[i]] = i;   // glMap_: GID to LID
         if (entryList[i] < minMyGID_) {
           minMyGID_ = entryList[i];
         }
         if (entryList[i] > maxMyGID_) {
           maxMyGID_ = entryList[i];
         }
-      }
-
-      // shrink lgMap appropriately
-      if (numLocalElements_ != numUniqueGIDs) {
-        numLocalElements_ = numUniqueGIDs;
-        lgMap_ = lgMap_.persistingView(0,numLocalElements_);
       }
     }
 
