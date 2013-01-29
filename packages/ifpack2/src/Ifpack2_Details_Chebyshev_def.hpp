@@ -45,6 +45,15 @@ void
 Chebyshev<ScalarType, MV, MAT>::
 checkConstructorInput () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
+    "Ifpack2::Details::Chebyshev: This class' implementation of Chebyshev "
+    "iteration only works for real-valued, symmetric positive definite "
+    "matrices.  However, you instantiated this class for ScalarType=" 
+    << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a complex-"
+    "valued type.  While this may be algorithmically correct if all of the "
+    "complex numbers in the matrix have zero imaginary part, we forbid using "
+    "complex ScalarType altogether in order to remind you of the limitations "
+    "of our implementation (and of the algorithm itself).");
   TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
     "Ifpack2::Details::Chebyshev: Input matrix to constructor is null.");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -53,14 +62,19 @@ checkConstructorInput () const
     "Ifpack2::Details::Chebyshev: The input matrix A must be square.  "
     "A has " << A_->getGlobalNumRows() << " rows and " 
     << A_->getGlobalNumCols() << " columns.");
+
+  // In a debug build, test that the domain and range Maps of the
+  // matrix are the same.
 #ifdef HAVE_TEUCHOS_DEBUG
   Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
   Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
 
   // The relation 'isSameAs' is transitive.  It's also a collective,
   // so we don't have to do a "shared" test for exception (i.e., a
-  // global reduction on the test value).
+  // global reduction on the test value).  Do the raw pointer
+  // comparison first, to avoid a collective in the common case.
   TEUCHOS_TEST_FOR_EXCEPTION(
+     domainMap.getRawPtr () == rangeMap.getRawPtr () ||
      ! domainMap->isSameAs (*rangeMap),
      std::invalid_argument,
      "Ifpack2::Details::Chebyshev: The domain Map and range Map of the matrix "
@@ -367,6 +381,12 @@ apply (const MV& B, MV& X) {
     STS::isnaninf (eigRatio), 
     std::logic_error, 
     "Chebyshev::apply: eigRatio is NaN or Inf.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_.is_null (),
+    std::runtime_error, 
+    "Chebyshev::apply: The vector of diagonal entries of the matrix is null.  "
+    "This means either that you didn't call compute() before calling apply(), "
+    "or that you didn't call compute() after calling setParameters().");
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
