@@ -37,7 +37,21 @@ namespace stk {
 
       ~MeshData();
 
+      /**
+       * Set the output Ioss::Region directly instead of letting it be
+       * created by MeshData during the create_output_mesh() call. 
+       */
       void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
+
+      /**
+       * Set the input Ioss::Region directly instead of letting it be
+       * created by MeshData during the create_input_mesh(type,
+       * filename) call. After setting the input io region, you would
+       * then either set the metadata manually using the
+       * set_meta_data() call, or call the no-argument
+       * create_input_mesh() function which will then create a meta
+       * data corresponding to the data in the Ioss::Region.
+       */
       void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       Teuchos::RCP<Ioss::Region> input_io_region()  { return m_input_region;   }
@@ -45,6 +59,15 @@ namespace stk {
 
       Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
 
+      /**
+       * The selector is an optional selector that can be provided
+       * which will be used to filter the mesh entities (node,
+       * element, face, edge) associated with an
+       * Ioss Entity (element block, node block, node set, ...). The
+       * optional selector will be 'anded' with the normal selector
+       * (typically locally owned part) used to associate entities
+       * when generating the output database.
+       */
       void set_selector(Teuchos::RCP<stk::mesh::Selector> selector)
       {	m_anded_selector = selector; }
       void set_selector(stk::mesh::Selector &selector)

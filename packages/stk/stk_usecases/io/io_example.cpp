@@ -38,6 +38,10 @@
  * an application.  The code here uses the Ioss to/from stk::mesh
  * bridge functions in the stk::io namespace defined in IossBridge.hpp
  * include file.
+ *
+ * This code demonstrates the low-level IossBridge capabilities.
+ * For a higher-level interface, see io_mesh_read_write_example.cpp which uses
+ * the MeshData class defined in MeshReadWriteUtils.{hpp|cpp}.
  */
 namespace stk_example_io {
 

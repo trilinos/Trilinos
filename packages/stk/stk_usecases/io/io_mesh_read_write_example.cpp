@@ -32,6 +32,36 @@
 #include <Ioss_SubSystem.h>
 
 namespace {
+  // Do the actual reading and writing of the mesh database and
+  // creation and population of the MetaData and BulkData.
+  void mesh_read_write(const std::string &type,
+		       const std::string &working_directory,
+		       const std::string &filename,
+		       stk::io::MeshData &mesh_data,
+		       stk::ParallelMachine comm)
+  {
+    std::string file = working_directory;
+    file += filename;
+    
+    mesh_data.create_input_mesh(type, file, comm);
+    mesh_data.define_input_fields();
+    mesh_data.populate_bulk_data();
+
+    //------------------------------------------------------------------
+    // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
+    std::string output_filename = working_directory + type + "_mesh.out";
+    mesh_data.create_output_mesh(output_filename);
+    mesh_data.define_output_fields();
+
+    // Determine number of timesteps on input database...
+    int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
+    for (int step=1; step <= timestep_count; step++) {
+      double time = mesh_data.input_io_region()->get_state_time(step);
+      mesh_data.process_input_request(step);
+      mesh_data.process_output_request(time);
+    }
+  }
+
   void driver(stk::ParallelMachine  comm,
 	      const std::string &parallel_io,
 	      const std::string &working_directory,
@@ -41,7 +71,39 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
-	      int  db_integer_size);
+	      int  db_integer_size)
+  {
+    stk::io::MeshData mesh_data;
+
+    bool use_netcdf4 = false;
+    if (!decomp_method.empty()) {
+      mesh_data.m_property_manager.add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
+    }
+
+    if (compose_output) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESULTS", true));
+      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESTART", true));
+    }
+    if (!parallel_io.empty()) {
+      mesh_data.m_property_manager.add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
+    }
+    if (compression_level > 0) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
+      use_netcdf4 = true;
+    }
+    if (compression_shuffle) {
+      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
+      use_netcdf4 = true;
+    }
+    if (use_netcdf4) {
+      mesh_data.m_property_manager.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+    if (db_integer_size == 8) {
+      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
+    }
+
+    mesh_read_write(type, working_directory, filename, mesh_data, comm);
+  }
 }
 
 namespace bopt = boost::program_options;
@@ -104,65 +166,3 @@ int main(int argc, char** argv)
   return 0;
 }
 
-namespace {
-  void driver(stk::ParallelMachine  comm,
-	      const std::string &parallel_io,
-	      const std::string &working_directory,
-	      const std::string &filename,
-	      const std::string &type,
-	      const std::string &decomp_method,
-	      bool compose_output,
-	      int  compression_level,
-	      bool compression_shuffle,
-	      int  db_integer_size)
-  {
-    stk::io::MeshData mesh_data;
-
-    bool use_netcdf4 = false;
-    if (!decomp_method.empty()) {
-      mesh_data.m_property_manager.add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
-    }
-
-    if (compose_output) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESULTS", true));
-      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESTART", true));
-    }
-    if (!parallel_io.empty()) {
-      mesh_data.m_property_manager.add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
-    }
-    if (compression_level > 0) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
-      use_netcdf4 = true;
-    }
-    if (compression_shuffle) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
-      use_netcdf4 = true;
-    }
-    if (use_netcdf4) {
-      mesh_data.m_property_manager.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-    }
-    if (db_integer_size == 8) {
-      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
-    }
-
-    std::string file = working_directory;
-    file += filename;
-    mesh_data.create_input_mesh(type, file, comm);
-    mesh_data.define_input_fields();
-    mesh_data.populate_bulk_data();
-
-    //------------------------------------------------------------------
-    // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
-    std::string output_filename = working_directory + type + "_mesh.out";
-    mesh_data.create_output_mesh(output_filename);
-    mesh_data.define_output_fields();
-
-    // Determine number of timesteps on input database...
-    int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
-    for (int step=1; step <= timestep_count; step++) {
-      double time = mesh_data.input_io_region()->get_state_time(step);
-      mesh_data.process_input_request(step);
-      mesh_data.process_output_request(time);
-    }
-  }
-}
