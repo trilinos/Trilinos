@@ -371,10 +371,10 @@ namespace Tpetra {
                             lrow <= rowMap_->getMaxLocalIndex();
                             ++lrow)
           {
-            size_t numEntries;
+            size_t theNumEntries;
             linds.resize( this->getNumEntriesInLocalRow(lrow) );
-            this->getLocalRowCopy(rowMap_->getGlobalElement(lrow), linds(), numEntries);
-            if (numEntries) clonedGraph->insertLocalIndices(lrow, linds(0,numEntries) );
+            this->getLocalRowCopy(rowMap_->getGlobalElement(lrow), linds(), theNumEntries);
+            if (theNumEntries) clonedGraph->insertLocalIndices(lrow, linds(0,theNumEntries) );
           }
         }
       }
@@ -399,10 +399,10 @@ namespace Tpetra {
                              grow <= rowMap_->getMaxGlobalIndex();
                              ++grow)
           {
-            size_t numEntries;
+            size_t theNumEntries;
             ginds.resize( this->getNumEntriesInGlobalRow(grow) );
-            this->getGlobalRowCopy(grow, ginds(), numEntries);
-            if (numEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,numEntries) );
+            this->getGlobalRowCopy(grow, ginds(), theNumEntries);
+            if (theNumEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,theNumEntries) );
           }
         }
       }
