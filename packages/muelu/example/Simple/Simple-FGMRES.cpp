@@ -111,31 +111,10 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > L = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
   RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > S = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
   RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > A = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
 
-  // Laplacian
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (2.0, -1.0));
-    }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0));
-    }
-    else {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0, -1.0));
-    }
-  }
-  L->fillComplete();
-
-  // Shifted Helmholtz Operator
+  // Add rows one-at-a-time for shifted matrix
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       S->insertGlobalValues(myGlobalElements[i], 
@@ -153,9 +132,10 @@ int main(int argc, char *argv[]) {
                             Teuchos::tuple<ScalarC> (-1.0, 2.0-shift*kh2, -1.0));
     }
   }
+  // Complete the fill, ask that storage be reallocated and optimized
   S->fillComplete();
 
-  // Original Helmholtz Operator
+  // Add rows one-at-a-time for shifted matrix
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues(myGlobalElements[i], 
@@ -173,21 +153,21 @@ int main(int argc, char *argv[]) {
                             Teuchos::tuple<ScalarC> (-1.0, 2.0-shift2*kh2, -1.0));
     }
   }
+  // Complete the fill, ask that storage be reallocated and optimized
   A->fillComplete();
 
   // Construct a multigrid preconditioner
 
-  // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluL_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(L)); 
-  RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluL  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluL_));
-  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluS_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(S)); 
+  // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
+  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluS_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(S)); //TODO: should not be needed
   RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluS  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluS_));
-  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(A)); 
+
+  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(A)); //TODO: should not be needed
   RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluA_));
 
   // Multigrid Hierarchy
-  RCP< MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO> > H = rcp(new MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO>(mueluL));
-  //H->setVerbLevel(Teuchos::VERB_HIGH);
+  RCP< MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO> > H = rcp(new MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO>(mueluS));
+  H->setVerbLevel(Teuchos::VERB_HIGH);
   MueLu::FactoryManager<ScalarC, LocalOrdinal, GlobalOrdinal> M;
 
   // Prolongation/Restriction
@@ -205,19 +185,19 @@ int main(int argc, char *argv[]) {
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  ifpack2List.set("krylov: preconditioner type",2);
   // ILUT smoother
   //ifpack2Type = "ILUT";
-  //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
-  //ifpack2List.set("fact: absolute threshold", (double)0.0);
-  //ifpack2List.set("fact: relative threshold", (double)1.0);
-  //ifpack2List.set("fact: relax value", (double)0.0);
+  ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
+  ifpack2List.set("fact: absolute threshold", (double)0.0);
+  ifpack2List.set("fact: relative threshold", (double)1.0);
+  ifpack2List.set("fact: relax value", (double)0.0);
   //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<ScalarC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
-  ifpack2List.set("relaxation: sweeps", (LO) 1);
-  ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
-  ifpack2List.set("relaxation: type", "Gauss-Seidel");
+  //ifpack2List.set("relaxation: sweeps", (LO) 1);
+  //ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
+  //ifpack2List.set("relaxation: type", "Gauss-Seidel");
   smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<ScalarC, LO, GO, NO, LMO>(ifpack2Type, ifpack2List) );
   RCP< MueLu::SmootherFactory<ScalarC, LO, GO, NO, LMO> > SmooFact;
   LO maxLevels = 3;
@@ -242,8 +222,8 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Ptent", TentPFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->SetupRAP(M, 0, maxLevels);
-  H->Recompute(M, 0, maxLevels, mueluS);
+  H->Setup(M, 0, maxLevels);
+
   RCP<Tpetra::Vector<ScalarC, LO, GO, NO> > X = Tpetra::createVector<ScalarC, LO, GO, NO>(map);
   RCP<Tpetra::Vector<ScalarC, LO, GO, NO> > B = Tpetra::createVector<ScalarC, LO, GO, NO>(map);
   
