@@ -74,7 +74,7 @@ checkConstructorInput () const
   // global reduction on the test value).  Do the raw pointer
   // comparison first, to avoid a collective in the common case.
   TEUCHOS_TEST_FOR_EXCEPTION(
-     domainMap.getRawPtr () == rangeMap.getRawPtr () ||
+     domainMap.getRawPtr () != rangeMap.getRawPtr () ||
      ! domainMap->isSameAs (*rangeMap),
      std::invalid_argument,
      "Ifpack2::Details::Chebyshev: The domain Map and range Map of the matrix "
