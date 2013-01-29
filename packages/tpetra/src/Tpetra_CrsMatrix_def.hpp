@@ -1924,8 +1924,6 @@ namespace Tpetra {
     Teuchos::barrier( *getRowMap()->getComm() );
 #endif // HAVE_TPETRA_DEBUG
 
-    // We use -1 to indicate that the Frobenius norm need to be recomputed.
-    frobNorm_ = -Teuchos::ScalarTraits<Magnitude>::one();
     if (! isStaticGraph()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
@@ -1954,6 +1952,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clearGlobalConstants() {
+    // We use -1 to indicate that the Frobenius norm need to be recomputed.
+    frobNorm_ = -Teuchos::ScalarTraits<Magnitude>::one();
   }
 
 
