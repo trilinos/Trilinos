@@ -330,14 +330,11 @@ namespace Tpetra {
     /// If getNodeNumElements() == 0, this returns
     /// Teuchos::OrdinalTraits<LO>::invalid().
     inline LocalOrdinal getMaxLocalIndex() const {
-      using Teuchos::as;
-      typedef LocalOrdinal LO;
-
       if (getNodeNumElements () == 0) {
-        return Teuchos::OrdinalTraits<LO>::invalid ();
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
-      else {
-        return as<LO> (getNodeNumElements () - 1);
+      else { // Local indices are always zero-based.
+        return Teuchos::as<LocalOrdinal> (getNodeNumElements () - 1);
       }
     }
 

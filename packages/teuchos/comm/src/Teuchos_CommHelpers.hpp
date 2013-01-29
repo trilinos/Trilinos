@@ -991,10 +991,8 @@ void MinValueReductionOp<Ordinal,Packet>::reduce(
   Packet inoutBuffer[]
   ) const
 {
-  typedef ScalarTraits<Packet> ST;
-  MixMaxUtilities::Min<ST::isComparable,Ordinal,Packet>::min(
-    count,inBuffer,inoutBuffer
-    );
+  typedef MixMaxUtilities::Min<ScalarTraits<Packet>::isComparable, Ordinal, Packet> min_type;
+  min_type::min (count, inBuffer, inoutBuffer);
 }
 
 
@@ -1005,10 +1003,8 @@ void MaxValueReductionOp<Ordinal,Packet>::reduce(
   Packet inoutBuffer[]
   ) const
 {
-  typedef ScalarTraits<Packet> ST;
-  MixMaxUtilities::Max<ST::isComparable,Ordinal,Packet>::max(
-    count,inBuffer,inoutBuffer
-    );
+  typedef MixMaxUtilities::Max<ScalarTraits<Packet>::isComparable, Ordinal, Packet> max_type;
+  max_type::max (count,inBuffer,inoutBuffer);
 }
 
 
@@ -1019,10 +1015,8 @@ void ANDValueReductionOp<Ordinal,Packet>::reduce(
   Packet inoutBuffer[]
   ) const
 {
-  typedef ScalarTraits<Packet> ST;
-  MixMaxUtilities::AND<ST::isComparable,Ordinal,Packet>::andOp(
-    count,inBuffer,inoutBuffer
-    );
+  typedef MixMaxUtilities::AND<ScalarTraits<Packet>::isComparable, Ordinal, Packet> and_type;
+  and_type::andOp (count, inBuffer, inoutBuffer);
 }
 
 
