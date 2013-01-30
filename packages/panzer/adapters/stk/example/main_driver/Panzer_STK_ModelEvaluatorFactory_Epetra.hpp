@@ -114,7 +114,7 @@ namespace panzer_stk {
     */
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
 		      const Teuchos::RCP<panzer::GlobalData>& global_data,
-                      const panzer::EquationSetFactory & eqset_factory,
+                      const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
 		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
 		      const Teuchos::Ptr<const panzer::ResponseAggregatorFactory<panzer::Traits> > ra_factory = Teuchos::null);

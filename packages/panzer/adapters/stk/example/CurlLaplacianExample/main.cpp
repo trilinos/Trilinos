@@ -51,7 +51,6 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -136,7 +135,7 @@ using Teuchos::rcp;
 //
 
 
-void testInitialization(panzer::InputPhysicsBlock& ipb,
+void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		       std::vector<panzer::BC>& bcs);
 
 void solveEpetraSystem(panzer::LinearObjContainer & container);
@@ -171,7 +170,8 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    // factory definitions
-   Example::EquationSetFactory eqset_factory; // where poison equation is defined
+   Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
+     Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
    panzer_stk::SquareQuadMeshFactory mesh_factory;
@@ -195,7 +195,7 @@ int main(int argc,char * argv[])
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
 
-   panzer::InputPhysicsBlock ipb;
+   Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
    std::vector<panzer::BC> bcs;
    std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
    {
@@ -203,15 +203,22 @@ int main(int argc,char * argv[])
 
       testInitialization(ipb, bcs);
       
-      int base_cell_dimension = mesh->getCellTopology("eblock-0_0")->getDimension();
-      const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,mesh->getCellTopology("eblock-0_0"));
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
       // GobalData sets ostream and parameter interface to physics
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
+      // Can be overridden by the equation set
+      int default_integration_order = 1;
+      
       // the physics block nows how to build and register evaluator with the field manager
       RCP<panzer::PhysicsBlock> pb 
-	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0", volume_cell_data, eqset_factory, gd, build_transient_support));
+	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0",
+				       default_integration_order, 
+				       volume_cell_data,
+				       eqset_factory,
+				       gd,
+				       build_transient_support));
 
       // we can have more than one physics block, one per element block
       physicsBlocks.push_back(pb);
@@ -240,7 +247,7 @@ int main(int argc,char * argv[])
          if(basis->getElementSpace()==panzer::PureBasis::HGRAD)
             mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
          else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
-            for(int i=0;i<basis->getDimension();i++) 
+            for(int i=0;i<basis->dimension();i++) 
                mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
          }
       }
@@ -316,7 +323,7 @@ int main(int argc,char * argv[])
          Teuchos::rcp(new panzer::FieldManagerBuilder);
    fmb->setWorksetContainer(wkstContainer);
    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-   fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,
+   fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
    // setup assembly engine
@@ -480,76 +487,75 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   tp_container.get_A()->resumeFill(); // where does this go?
 }
 
-void testInitialization(panzer::InputPhysicsBlock& ipb,
+void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		       std::vector<panzer::BC>& bcs)
 {
-   panzer::InputEquationSet ies;
-   ies.name = "CurlLaplacian";
-   ies.basis = "QEdge1";
-   ies.integration_order = 2;
-   ies.model_id = "solid";
-   ies.prefix = "";
+  {
+    Teuchos::ParameterList& p = ipb->sublist("CurlLapacian Physics");
+    p.set("Type","CurlLaplacian");
+    p.set("Model ID","solid");
+    p.set("Basis Type","HCurl");
+    p.set("Basis Order",1);
+    p.set("Integration Order",2);
+  }
   
-   ipb.physics_block_id = "4";
-   ipb.eq_sets.push_back(ies);
-   
-   {
-      std::size_t bc_id = 0;
-      panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "left";
-      std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "EFIELD";
-      std::string strategy = "Constant";
-      double value = 0.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-  		    strategy, p);
-      bcs.push_back(bc);
-   }    
-
-   {
-      std::size_t bc_id = 1;
-      panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "top";
-      std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "EFIELD";
-      std::string strategy = "Constant";
-      double value = 0.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-  		    strategy, p);
-      bcs.push_back(bc);
-   }    
-
-   {
-      std::size_t bc_id = 2;
-      panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "right";
-      std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "EFIELD";
-      std::string strategy = "Constant";
-      double value = 0.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-  		    strategy, p);
-      bcs.push_back(bc);
-   }    
-
-   {
-      std::size_t bc_id = 3;
-      panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "bottom";
-      std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "EFIELD";
-      std::string strategy = "Constant";
-      double value = 0.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-  		    strategy, p);
-      bcs.push_back(bc);
-   }    
+  {
+    std::size_t bc_id = 0;
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "left";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "EFIELD";
+    std::string strategy = "Constant";
+    double value = 0.0;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
+    bcs.push_back(bc);
+  }    
+  
+  {
+    std::size_t bc_id = 1;
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "top";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "EFIELD";
+    std::string strategy = "Constant";
+    double value = 0.0;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
+    bcs.push_back(bc);
+  }    
+  
+  {
+    std::size_t bc_id = 2;
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "right";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "EFIELD";
+    std::string strategy = "Constant";
+    double value = 0.0;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
+    bcs.push_back(bc);
+  }    
+  
+  {
+    std::size_t bc_id = 3;
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "bottom";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "EFIELD";
+    std::string strategy = "Constant";
+    double value = 0.0;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
+    bcs.push_back(bc);
+  }    
 }

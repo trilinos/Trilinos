@@ -58,16 +58,20 @@ namespace user_app {
 
   public:    
 
-    EquationSet_Energy(const panzer::InputEquationSet& ies,
+    EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		       const int& default_integration_order,
 		       const panzer::CellData& cell_data,
 		       const Teuchos::RCP<panzer::GlobalData>& gd,
 		       const bool build_transient_support);
     
-      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						 const panzer::FieldLibrary& field_library,
 						 const Teuchos::ParameterList& user_data) const;
 
-  protected:
+  private:
 
+      std::string m_prefix;
+      std::string m_dof_name;
       std::string m_do_convection;
   };
 

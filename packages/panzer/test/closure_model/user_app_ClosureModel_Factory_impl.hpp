@@ -46,7 +46,6 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
@@ -65,8 +64,9 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::MyModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -91,6 +91,9 @@ buildClosureModels(const std::string& model_id,
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
+  std::vector<Teuchos::RCP<const panzer::PureBasis> > bases;
+  fl.uniqueBases(bases);
+
   const ParameterList& my_models = models.sublist(model_id);
 
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
@@ -113,17 +116,20 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("UQ", plist.get<double>("UQ"));
 	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
-	input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      { // at BASIS
+      
+      for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	input.set("UQ", plist.get<double>("UQ"));
 	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
-	input.set("Data Layout", default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional);
+	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
+	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
@@ -137,12 +143,15 @@ buildClosureModels(const std::string& model_id,
       if (plist.get<std::string>("Type") == "Parameter") {
 	{ // at IP
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,ir->dl_scalar,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
-	{ // at BASIS
+	
+	for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
+	  Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,basis->functional,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
@@ -154,15 +163,18 @@ buildClosureModels(const std::string& model_id,
       { // at IP
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      { // at BASIS
+      // at BASIS
+      for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) {
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional);
+	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
+	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
@@ -178,7 +190,7 @@ buildClosureModels(const std::string& model_id,
 	if (typeid(EvalT) == typeid(panzer::Traits::Residual)) {
 	  input.set("Comm", user_data.get<Teuchos::RCP<const Teuchos::Comm<int> > >("Comm"));
 	  input.set("Names", value);
-	  input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+	  input.set("IR", ir);
 	  input.set("Global Data", global_data);
 	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e = 
 	    rcp(new panzer::GlobalStatistics<EvalT,panzer::Traits>(input));
@@ -198,7 +210,7 @@ buildClosureModels(const std::string& model_id,
            ParameterList input;
 	   input.set("Name", "Unit Value");
 	   input.set("Value", 1.0);
-	   input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	   input.set("Data Layout", ir->dl_scalar);
 	   RCP< Evaluator<panzer::Traits> > e = 
    	     rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
    	   evaluators->push_back(e);
@@ -208,7 +220,7 @@ buildClosureModels(const std::string& model_id,
            ParameterList input;
 	   input.set("Integral Name", "Volume_Integral");
 	   input.set("Integrand Name", "Unit Value");
-	   input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+	   input.set("IR", ir);
 
 	   RCP< Evaluator<panzer::Traits> > e = 
    	     rcp(new panzer::Integrator_Scalar<EvalT,panzer::Traits>(input));

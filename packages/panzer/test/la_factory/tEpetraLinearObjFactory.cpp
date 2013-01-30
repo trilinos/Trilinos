@@ -199,10 +199,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       // auxiliary information needed to construct basis object
-      int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
 
       // build DOF names
       RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>);
@@ -210,7 +208,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       dofNames->push_back("p");
 
       // build basis
-      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
 
       // build gather parameter list
       gatherParams.set<RCP<std::vector<std::string> > >("DOF Names",dofNames);
@@ -223,13 +221,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       Teuchos::RCP<shards::CellTopology> topo = 
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-      int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
    
       // build basis
-      RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+      RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
    
       std::string scatterName = "Residual_NS";
    
@@ -255,13 +251,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       Teuchos::RCP<shards::CellTopology> topo = 
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-      int baseCellDim = 2;
-      int cubatureDegree = 2;
       std::string basisType = "Q1";
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
    
       // build basis
-      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
    
       std::string scatterName = "Residual_NS";
    

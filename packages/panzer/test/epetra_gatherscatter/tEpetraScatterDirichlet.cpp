@@ -71,13 +71,11 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // auxiliary information needed to construct basis object
    std::size_t numCells = 10;
-   int baseCellDim = 2;
-   int cubatureDegree = 2;
    std::string basisType = "Q1";
-   panzer::CellData cellData(numCells,baseCellDim,topo);
+   panzer::CellData cellData(numCells,topo);
 
    // build basis
-   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
 
    std::string scatterName = "Residual_NS";
 

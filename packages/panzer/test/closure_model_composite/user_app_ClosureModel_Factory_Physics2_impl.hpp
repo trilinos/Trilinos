@@ -46,10 +46,10 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+#include "Panzer_FieldLibrary.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -68,8 +68,9 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::MyModelFactory_Physics2<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -114,7 +115,7 @@ buildClosureModels(const std::string& model_id,
 	if (typeid(EvalT) == typeid(panzer::Traits::Residual)) {
 	  input.set("Comm", user_data.get<Teuchos::RCP<const Teuchos::Comm<int> > >("Comm"));
 	  input.set("Names", value);
-	  input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+	  input.set("IR", ir);
 	  input.set("Global Data", global_data);
 	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e = 
 	    rcp(new panzer::GlobalStatistics<EvalT,panzer::Traits>(input));

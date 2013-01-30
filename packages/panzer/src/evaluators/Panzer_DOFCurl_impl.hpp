@@ -66,10 +66,10 @@ PHX_EVALUATOR_CTOR(DOFCurl,p) :
                              "DOFCurl: Basis of type \"" << basis->name() << "\" in DOF Curl should require orientations. So we are throwing.");
 
   // build dof_curl
-  if(basis->getDimension()==2)
+  if(basis->dimension()==2)
      dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
-  else if(basis->getDimension()==3)
+  else if(basis->dimension()==3)
      dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
   else

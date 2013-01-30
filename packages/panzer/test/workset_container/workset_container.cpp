@@ -66,7 +66,7 @@ namespace panzer {
      virtual
      Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
      getSideWorksets(const panzer::BC & bc,
-                    const panzer::InputPhysicsBlock & pb) const; 
+		     const panzer::PhysicsBlock& pb) const; 
   
   };
 
@@ -90,7 +90,7 @@ namespace panzer {
   
   Teuchos::RCP<std::map<unsigned,panzer::Workset> > unit_test_Factory::
   getSideWorksets(const panzer::BC & bc,
-                 const panzer::InputPhysicsBlock & pb) const
+                 const panzer::PhysicsBlock & pb) const
   {
      calledSide = true;
      return Teuchos::rcp(new std::map<unsigned,panzer::Workset>);

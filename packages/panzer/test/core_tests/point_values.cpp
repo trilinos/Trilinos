@@ -66,7 +66,7 @@ namespace panzer {
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     int num_points = 3;
 
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
@@ -151,7 +151,7 @@ namespace panzer {
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     int num_points = 3;
 
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
@@ -220,7 +220,7 @@ namespace panzer {
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
     int num_points = 3;
 
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));

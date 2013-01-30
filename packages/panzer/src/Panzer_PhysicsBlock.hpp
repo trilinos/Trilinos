@@ -56,6 +56,10 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_FieldLibrary.hpp"
 
+namespace Teuchos {
+  class ParameterList;
+}
+
 namespace shards {
   class CellTopology;
 }
@@ -64,14 +68,40 @@ namespace panzer {
   class RegionFillData;
   class MaterialModel;
   class PureBasis;
+  class IntegrationRule;
   class EquationSetFactory;
   class GlobalData;
+  class PhysicsBlock;
 }
 
 namespace panzer {
 
-  class InputPhysicsBlock;
 
+  /** \brief Nonmember function for building the physics blocks from a Teuchos::ParameterList for a given list of element blocks.  A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
+      \relates panzer::PhysicsBlock 
+  */
+  void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                          const std::map<std::string,Teuchos::RCP<const shards::CellTopology> >& block_ids_to_cell_topo,
+                          const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
+			  const int default_integration_order,
+                          const std::size_t workset_size,
+                          const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
+                          const bool build_transient_support,
+                          std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+
+  /** \brief Nonmember function for searching and returning a spcific physics block given an element block id. Throws an erro if the physics block is not found.
+      \relates panzer::PhysicsBlock
+
+      \param[in] element_block_id The name of the corresponding element block that this function will search for in the physics block vector.
+      \param[in] physics_blocks Vector of physics blocks
+      ]param[in] throw_on_failure Optional parameter that determines if the function hsould throw on failure.  Default is true.  If set to false and the funtion fails to find the physics block, then a null RCP is returned.
+  */
+  Teuchos::RCP<panzer::PhysicsBlock> findPhysicsBlock(const std::string element_block_id,
+						      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
+						      bool throw_on_failure = true);
+  
+  //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
   class PhysicsBlock {
 
   public:    
@@ -80,16 +110,16 @@ namespace panzer {
        : m_build_transient_support(false), m_global_data(Teuchos::null)
     { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; } 
 
-    PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
+    PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
                  const std::string & element_block_id,
+		 const int default_integration_order,
 		 const panzer::CellData & cell_data,
-		 const panzer::EquationSetFactory& factory,
+		 const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
 		 const Teuchos::RCP<panzer::GlobalData>& global_data,
 		 const bool build_transient_support);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
-                 const panzer::CellData & cell_data,
-                 const panzer::EquationSetFactory& factory);
+                 const panzer::CellData & cell_data);
 
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const Teuchos::ParameterList& user_data) const;
@@ -157,10 +187,13 @@ namespace panzer {
 
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrPureBasisPair>& getProvidedDOFs() const;
+
+    //! Returns the unique set of bases, key is the unique panzer::PureBasis::name() of the basis
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;
 
-    const panzer::InputPhysicsBlock & getInputPhysicsBlock() const;
-    
+    //! Returns the unique set of point rules, key is the unique panzer::PointRule::name()
+    const std::map<int,Teuchos::RCP<panzer::IntegrationRule> >& getIntegrationRules() const;
+
     const shards::CellTopology getBaseCellTopology() const;
 
     std::string physicsBlockID() const;
@@ -170,12 +203,7 @@ namespace panzer {
 
     /** Build a copy of this physics block object but use the cell_data
       * passed in by the user. This is useful for creating physics block objects
-      * that reside on the boundaries.
-      */
-    Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data,
-                                                const panzer::EquationSetFactory & factory) const;
-
-    /** Copy using the "Parrot" equation sets.
+      * that reside on the boundaries from physics blocks created for the volume.
       */
     Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data) const;
 
@@ -183,34 +211,43 @@ namespace panzer {
 
     Teuchos::RCP<const FieldLibrary> getFieldLibrary() const 
     { return m_field_lib.getConst(); }
-
+    
     Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const 
     { return m_field_lib.getConst(); }
 
   protected:
-    void initialize(const panzer::InputPhysicsBlock & ipb,
+    void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
+		    const int& default_integration_order,
                     const std::string & element_block_id,
    		    const panzer::CellData & cell_data,
-   		    const panzer::EquationSetFactory& factory,
 		    const bool build_transient_support);
 
     std::string m_physics_id;
     std::string m_element_block_id;
+    int m_default_integration_order;
     panzer::CellData m_cell_data;
-    panzer::InputPhysicsBlock m_initializer;
+    //! store the input parameter list for copy ctors
+    Teuchos::RCP<Teuchos::ParameterList> m_input_parameters;
     const bool m_build_transient_support;
     const Teuchos::RCP<panzer::GlobalData> m_global_data;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
+    //! map of unique bases, key is the panzer::PureBasis::name() corresponding to its value
     std::map<std::string,Teuchos::RCP<panzer::PureBasis> > m_bases;
+    //! map of unique integration rules, key is panzer::IntegrationRule::order() corresponding to its value
+    std::map<int,Teuchos::RCP<panzer::IntegrationRule> > m_integration_rules;
     
     std::vector< Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > m_equation_sets;
     Teuchos::RCP<FieldLibrary> m_field_lib;
-
+    Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
   };
   
 }
+
+// ************************************************************
+// template implementations
+// ************************************************************
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
@@ -224,20 +261,10 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
-    std::vector<StrBasisPair> providedDOFs;
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
-    }
-
-    eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, providedDOFs, user_data);
-
+    eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
   }
 }
 
@@ -254,19 +281,10 @@ void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
-    std::vector<StrBasisPair> providedDOFs;
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
-    }
-
-    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherAndOrientationEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherAndOrientationEvaluators(fm,*m_field_lib,lof,user_data);
 
   }
 }
@@ -283,19 +301,17 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
-    std::vector<StrBasisPair> providedDOFs;
-
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
-    }
+    // Loop over integration rules
+    for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
+	 ir_iter != m_integration_rules.end(); ++ ir_iter) {
+      
+      Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
+      
+      eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,user_data);
 
-    eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs,user_data);
+    }
 
   }
 }
@@ -313,19 +329,10 @@ void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldMa
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
-    std::vector<StrBasisPair> providedDOFs;
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
-    }
-
-    eqstm.getAsObject<EvalT>()->buildAndRegisterScatterEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterScatterEvaluators(fm,*m_field_lib,lof,user_data);
 
   }
 }
@@ -344,19 +351,17 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
   vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
-    std::vector<StrBasisPair> providedDOFs;
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
+    // Loop over integration rules
+    for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
+	 ir_iter != m_integration_rules.end(); ++ ir_iter) {
+      
+      Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
+      
+      eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,factory,models,user_data);
     }
-
-    eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm, providedDOFs, factory, models, user_data);
 
   }
 }
@@ -381,15 +386,7 @@ void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
-    if(providedDOFs.size()==0) {
-       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
-       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
-          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
-       }
-    }
-
-    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, providedDOFs, factory, model_name, models, lof, user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, *m_field_lib, factory, model_name, models, lof, user_data);
 
   }
 }

@@ -57,6 +57,11 @@ namespace panzer {
 
   class CellData;
 
+  /** Derived class for building a point rule based on a finite element integration rule.
+
+      \param[in] cubature_degree Order of the cubature integration.
+      \param[in] cell_data Description of the cell.
+   */
   class IntegrationRule : public PointRule {
   public:
     
@@ -65,6 +70,9 @@ namespace panzer {
 
     void setup(int cubature_degree, const panzer::CellData& cell_data);
   
+    //! Returns the order of integration (cubature degree in intrepid lingo)
+    int order() const;
+
     int cubature_degree;
 
     //! print information about the integration rule

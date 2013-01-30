@@ -87,9 +87,9 @@ void FieldLayoutLibrary::print(std::ostream & os) const
       Teuchos::RCP<BasisIRLayout> basis = itr->second;
 
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
-         << "(dim=" << basis->getDimension() 
-         << ",cells=" << basis->getNumCells() 
-         << ",points=" << basis->getNumPoints() << ")} ";
+         << "(dim=" << basis->dimension() 
+         << ",cells=" << basis->numCells() 
+         << ",points=" << basis->numPoints() << ")} ";
    }
 }
 
@@ -159,8 +159,8 @@ void FieldLibrary::print(std::ostream & os) const
       Teuchos::RCP<PureBasis> basis = itr->second;
 
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
-         << "(dim=" << basis->getDimension() 
-         << ",cells=" << basis->getNumCells() << ") ";
+         << "(dim=" << basis->dimension() 
+         << ",cells=" << basis->numCells() << ") ";
    }
 }
 

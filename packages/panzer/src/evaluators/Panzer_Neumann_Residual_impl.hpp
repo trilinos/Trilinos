@@ -78,7 +78,7 @@ PHX_EVALUATOR_CTOR(NeumannResidual,p)
   this->addDependentField(normal);
   this->addDependentField(flux);
  
-  basis_name = basis->name();
+  basis_name = panzer::basisIRLayout(basis,*ir)->name();
 
   std::string n = "Neumann Residual Evaluator";
   this->setName(n);

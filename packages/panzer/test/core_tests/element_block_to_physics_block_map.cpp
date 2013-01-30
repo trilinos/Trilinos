@@ -40,29 +40,31 @@
 // ***********************************************************************
 // @HEADER
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Panzer_Version.hpp"
+#include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 
-#include <iostream>
+namespace panzer {
 
-int main( int argc, char **argv )
-{  
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  TEUCHOS_UNIT_TEST(ElementBlockToPhsyicsBlockMap,basic)
+  {
+    Teuchos::ParameterList p;
+    p.set("eblock-0_0", "fluid");
+    p.set("eblock-0_1", "fluid");
+    p.set("eblock-1_0", "solid");
+    p.set("eblock-1_1", "solid");
+    
+    std::map<std::string,std::string> b_to_p;
+    
+    panzer::buildBlockIdToPhysicsIdMap(b_to_p, p);
 
-  using std::cout;
-  using std::endl;
-  using Teuchos::RCP;
+    TEST_EQUALITY(b_to_p["eblock-0_0"], "fluid");
+    TEST_EQUALITY(b_to_p["eblock-0_1"], "fluid");
+    TEST_EQUALITY(b_to_p["eblock-1_0"], "solid");
+    TEST_EQUALITY(b_to_p["eblock-1_1"], "solid");
+  }
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-  if (comm->getRank() == 0) 
-    cout << panzer::version() << endl;
-
-  cout << "Process " << comm->getRank() << " of " << comm->getSize() 
-       << " is alive!" << endl; 
-
-  return 0;
 }

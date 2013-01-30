@@ -50,6 +50,17 @@
 
 namespace panzer {
 
+  /** \brief Returns the index in the workset bases for a particular PureBasis name.
+      \param[in] basis_name Name of the basis that corresponds to a particular PureBasis
+      \param[in] workset Worksets to perform the search over
+  */
+  std::vector<std::string>::size_type 
+  getPureBasisIndex(std::string basis_name, panzer::Workset& workset);
+
+  /** \brief Returns the index in the workset bases for a particular BasisIRLayout name.
+      \param[in] basis_name Name of the basis that corresponds to a particular BasisIRLayout
+      \param[in] workset Worksets to perform the search over
+  */
   std::vector<std::string>::size_type 
   getBasisIndex(std::string basis_name, panzer::Workset& workset);
 

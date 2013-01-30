@@ -47,19 +47,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES point_values.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
-      
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  input_equation_set
-  SOURCES input_equation_set.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  )
-   
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  input_physics_block
-  SOURCES input_physics_block.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  )
- 
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   boundary_condition
   SOURCES boundary_condition.cpp ${UNIT_TEST_DRIVER}
@@ -97,8 +85,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  parameter_list_object_builders
-  SOURCES parameter_list_object_builders.cpp ${UNIT_TEST_DRIVER}
+  element_block_to_physics_block_map
+  SOURCES element_block_to_physics_block_map.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 

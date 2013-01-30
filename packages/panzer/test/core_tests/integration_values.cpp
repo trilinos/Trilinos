@@ -65,7 +65,7 @@ namespace panzer {
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 2;    
     RCP<IntegrationRule> int_rule = 

@@ -45,13 +45,12 @@
         <ParameterList name="solid">
 
             <ParameterList name="EQ 0">
-                <Parameter name="Name" type="string" value="Energy"/> 
-                <Parameter name="Basis" type="string" value="Q1"/> 
+                <Parameter name="Type" type="string" value="Energy"/>
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/> 
                 <Parameter name="Integration Order" type="int" value="2"/> 
                 <Parameter name="Model ID" type="string" value="fluid model"/> 
                 <Parameter name="Prefix" type="string" value=""/>
-                <ParameterList name="Options">
-                </ParameterList>
             </ParameterList>
 
         </ParameterList>

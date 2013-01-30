@@ -43,18 +43,21 @@
 #ifndef PANZER_CLOSURE_MODEL_FACTORY_HPP
 #define PANZER_CLOSURE_MODEL_FACTORY_HPP
 
+#include "Panzer_config.hpp"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include <string>
 #include <vector>
 
 namespace panzer {
 
+  class FieldLayoutLibrary;
+  class IntegrationRule;
   class GlobalData;
 
   template<typename EvalT>
@@ -68,9 +71,10 @@ namespace panzer {
     
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     virtual  buildClosureModels(const std::string& model_id,
-				const panzer::InputEquationSet& set,
 				const Teuchos::ParameterList& models,
-				const Teuchos::ParameterList& default_params,
+				const panzer::FieldLayoutLibrary& fl,
+				const Teuchos::RCP<panzer::IntegrationRule>& ir,
+				const Teuchos::ParameterList& equation_set_params,
 				const Teuchos::ParameterList& user_data,
 				const Teuchos::RCP<panzer::GlobalData>& global_data,
 				PHX::FieldManager<panzer::Traits>& fm) const = 0;

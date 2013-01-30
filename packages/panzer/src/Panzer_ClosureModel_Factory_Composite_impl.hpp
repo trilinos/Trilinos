@@ -48,7 +48,6 @@
 #include <string>
 #include <vector>
 #include <list>
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -68,8 +67,9 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 panzer::ClosureModelFactoryComposite<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& default_params, 
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -115,7 +115,7 @@ buildClosureModels(const std::string& model_id,
   for (std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >::const_iterator factory = m_factories.begin(); factory != m_factories.end(); ++factory) {
 
     RCP< vector< RCP<Evaluator<panzer::Traits> > > > tmp_evaluators =
-      (*factory)->getAsObject<EvalT>()->buildClosureModels(model_id,set,copy_of_my_model,default_params,user_data,global_data,fm);
+      (*factory)->getAsObject<EvalT>()->buildClosureModels(model_id,copy_of_my_model,fl,ir,default_params,user_data,global_data,fm);
 
     if (tmp_evaluators->size() > 0) {
       for (vector< RCP<Evaluator<panzer::Traits> > >::const_iterator eval = tmp_evaluators->begin(); eval != tmp_evaluators->end(); ++eval)

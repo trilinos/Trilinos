@@ -70,10 +70,8 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
 
    // auxiliary information needed to construct basis object
    std::size_t numCells = 10;
-   int baseCellDim = 2;
-   int cubatureDegree = 2;
    std::string basisType = "Q1";
-   panzer::CellData cellData(numCells,baseCellDim,topo);
+   panzer::CellData cellData(numCells,topo);
 
    // build DOF names
    RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>); 
@@ -81,7 +79,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    dofNames->push_back("p");
 
    // build basis
-   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
 
    // build gather parameter list
    Teuchos::ParameterList gatherParams;

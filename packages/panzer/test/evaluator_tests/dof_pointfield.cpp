@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 
   // build quadrature values
   int quadOrder = 5;
-  panzer::CellData cellData(2,2,1,topo);
+  panzer::CellData cellData(2,1,topo);
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues = Teuchos::rcp(new panzer::IntegrationValues<double,FieldArray>);
   quadValues->setupArrays(quadRule);
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 
   // build basis values
   std::string basisName = "Q2";
-  Teuchos::RCP<panzer::PureBasis> pureBasis = Teuchos::rcp(new panzer::PureBasis(basisName,numCells,topo));
+  Teuchos::RCP<panzer::PureBasis> pureBasis = Teuchos::rcp(new panzer::PureBasis(basisName,2,numCells,topo));
   Teuchos::RCP<panzer::BasisIRLayout> basisLayout = Teuchos::rcp(new panzer::BasisIRLayout(pureBasis,*quadRule));
   Teuchos::RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > basisValues 
      = Teuchos::rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >());
@@ -202,7 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   workset->ir_degrees->push_back(quadRule->cubature_degree);
   workset->int_rules.push_back(quadValues);
   workset->basis_names = Teuchos::rcp(new std::vector<std::string>);
-  workset->basis_names->push_back(basisName);
+  workset->basis_names->push_back(basisLayout->name());
   workset->bases.push_back(basisValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm

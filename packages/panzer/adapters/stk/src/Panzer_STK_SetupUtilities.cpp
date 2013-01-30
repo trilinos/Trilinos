@@ -45,80 +45,13 @@
 #include "Teuchos_Assert.hpp"
 
 namespace panzer_stk { 
-
-std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
-              const std::size_t workset_size)
-{
-  using namespace workset_utils;
-
-  std::vector<std::string> element_blocks;
-  mesh.getElementBlockNames(element_blocks);
-
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
-
-  for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); 
-	 ++i) {
-
-    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
-      eb_to_ipb.find(element_blocks[i]);
-    
-    // on error print ot all available worksets
-    if(ipb_iterator==eb_to_ipb.end()) {
-       std::stringstream ss;
-
-       ss << "buildWorksets: Could not find input physics block corresponding to element block"
-          << " \"" << element_blocks[i] << "\"\n\n Choose one of:\n";
-
-       std::vector<std::string>::const_iterator str_iter;
-       for(str_iter=element_blocks.begin();str_iter!=element_blocks.end();++str_iter)
-          ss << "   \"" << *str_iter << "\"\n"; 
-
-       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
-
-       // should never get here!
-    }
-
-    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
-worksets.insert(std::make_pair(element_blocks[i], panzer_stk::buildWorksets(mesh,element_blocks[i],ipb,workset_size)));
-  }
-  
-  return worksets;
-}
-
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::string & eBlock,
-              const panzer::InputPhysicsBlock & ipb, 
-              const std::size_t workset_size)
+              const panzer::PhysicsBlock & pb)
 {
   using namespace workset_utils;
 
-  std::vector<std::string> element_blocks;
-  int base_cell_dimension = mesh.getDimension();
-
-  std::vector<std::size_t> local_cell_ids;
-  Intrepid::FieldContainer<double> cell_vertex_coordinates;
-
-  getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
-
-  Teuchos::RCP<const shards::CellTopology> topo =  mesh.getCellTopology(eBlock);
-
-  // only build workset if there are elements to worry about
-  // this may be processor dependent, so an element block
-  // may not have elements and thus no contribution
-  // on this processor
-  return panzer::buildWorksets(eBlock,topo, local_cell_ids, cell_vertex_coordinates,
-                               ipb, workset_size, base_cell_dimension);
-}
-
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb, 
-              const std::size_t workset_size)
-{
-  using namespace workset_utils;
+  const std::size_t workset_size = pb.cellData().numCells();
 
   std::vector<std::string> element_blocks;
 
@@ -138,13 +71,12 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb,
-              const std::string & sideset,
-              const std::size_t workset_size)
+              const std::string & sideset)
 {
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  int base_cell_dimension = mesh.getDimension();
+  const std::size_t workset_size = pb.cellData().numCells();
 
   std::vector<stk::mesh::Entity*> sideEntities; 
 
@@ -218,12 +150,11 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
       mesh.getElementVertices(itr->second,vertices);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
-         = panzer::buildWorksets(pb.elementBlockID(),topo, itr->second,
-                                 vertices, pb.getInputPhysicsBlock(),workset_size, base_cell_dimension);
+         = panzer::buildWorksets(pb, itr->second, vertices, workset_size);
 
       // correct worksets so the sides are correct
       for(std::size_t w=0;w<current->size();w++) {
-        (*current)[w].subcell_dim = base_cell_dimension-1;
+        (*current)[w].subcell_dim = pb.cellData().baseCellDimension()-1;
         (*current)[w].subcell_index = itr->first;
       }
 
@@ -238,54 +169,13 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
 
-const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
-                const std::vector<panzer::BC> & bcs) 
-{
-  using namespace workset_utils;
-  using Teuchos::RCP;
-
-  // int base_cell_dimension = mesh.getDimension();
-
-  std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
-  
-  for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
-	 bc != bcs.end(); ++bc) {
-
-    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
-      eb_to_ipb.find(bc->elementBlockID());
-    
-    TEUCHOS_TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
-		       "Could not find input physics block corresponding to region");
-
-    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
-
-    Teuchos::RCP<std::map<unsigned,panzer::Workset> > wMap = buildBCWorksets(mesh,ipb,*bc);
-    if(wMap!=Teuchos::null)
-       bc_worksets[*bc] = wMap;
-  }
-  
-  return bc_worksets;
-}
-
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
                 const panzer::BC & bc)
 {
-   return buildBCWorksets(mesh,pb.getInputPhysicsBlock(),bc);
-}
-
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
-                const panzer::BC & bc)
-{
   using namespace workset_utils;
   using Teuchos::RCP;
-
-  int base_cell_dimension = mesh.getDimension();
 
   std::vector<stk::mesh::Entity*> sideEntities; 
 
@@ -349,8 +239,8 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
       Intrepid::FieldContainer<double> vertices;
       mesh.getElementVertices(local_cell_ids,vertices);
   
-      return panzer::buildBCWorkset(bc,topo, local_cell_ids, local_side_ids,
-	                            vertices, ipb, base_cell_dimension);
+      return panzer::buildBCWorkset(bc, pb, local_cell_ids, local_side_ids,
+				    vertices);
   }
   
   return Teuchos::null;

@@ -40,29 +40,21 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef PANZER_ELEMENT_BLOCK_ID_TO_PHYSICS_ID_MAP_HPP
+#define PANZER_ELEMENT_BLOCK_ID_TO_PHYSICS_ID_MAP_HPP
 
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Panzer_Version.hpp"
+#include <map>
+#include <string>
 
-#include <iostream>
-
-int main( int argc, char **argv )
-{  
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
-  using std::cout;
-  using std::endl;
-  using Teuchos::RCP;
-
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-  if (comm->getRank() == 0) 
-    cout << panzer::version() << endl;
-
-  cout << "Process " << comm->getRank() << " of " << comm->getSize() 
-       << " is alive!" << endl; 
-
-  return 0;
+namespace Teuchos {
+  class ParameterList;
 }
+
+namespace panzer {
+
+  void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p, 
+				  const Teuchos::ParameterList& p);
+
+}
+
+#endif

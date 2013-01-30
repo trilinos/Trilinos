@@ -45,7 +45,6 @@
 
 #include <iostream>
 #include <sstream>
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -61,8 +60,9 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 user_app::STKModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -86,6 +86,9 @@ buildClosureModels(const std::string& model_id,
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
+  std::vector<Teuchos::RCP<const panzer::PureBasis> > bases;
+  fl.uniqueBases(bases);
+
   const ParameterList& my_models = models.sublist(model_id);
 
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
@@ -99,18 +102,23 @@ buildClosureModels(const std::string& model_id,
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
     
     if (plist.isType<double>("Value")) {
-      { // at IP
+      
+      // at IP
+      { 
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      { // at BASIS
+
+      // at BASIS
+      for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+	   basis_itr != bases.end(); ++basis_itr) {
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional);
+	input.set("Data Layout", (*basis_itr)->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);

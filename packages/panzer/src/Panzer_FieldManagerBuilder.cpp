@@ -61,7 +61,6 @@
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_CellData.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
@@ -191,7 +190,6 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
     Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
     Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
-    int base_cell_dimension = volume_pb->cellData().baseCellDimension();
     
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > currentWkst = getWorksetContainer()->getSideWorksets(*bc);
     if(currentWkst==Teuchos::null) // if there is nothing to do...do nothing!
@@ -210,16 +208,10 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
       
       // register evaluators from strategy      
       const panzer::CellData side_cell_data(wkst->second.num_cells,
-					    base_cell_dimension,
 					    wkst->first,volume_cell_topology);      
 
-      // if there is an equation set factory to use, use it in copying the physics block 
-      // otherwise use the parroted one
-      Teuchos::RCP<panzer::PhysicsBlock> side_pb;
-      if(eqset_factory==Teuchos::null) 
-        side_pb = volume_pb->copyWithCellData(side_cell_data);
-      else
-        side_pb = volume_pb->copyWithCellData(side_cell_data,*eqset_factory);
+      // Copy the physics block for side integrations
+      Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
 
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
 	bc_factory.buildBCStrategy(*bc,side_pb->globalData());

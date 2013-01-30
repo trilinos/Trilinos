@@ -56,7 +56,6 @@ using Teuchos::rcp;
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
@@ -80,6 +79,8 @@ using Teuchos::rcp;
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "user_app_EquationSetFactory.hpp"
+
 #include <cstdio> // for get char
 #include <vector>
 #include <string>
@@ -87,7 +88,7 @@ using Teuchos::rcp;
 namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
-  void testInitialization(panzer::InputPhysicsBlock& ipb);
+  void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb);
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_residual)
@@ -111,9 +112,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
     Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size,"QEdge1");
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
     testInitialization(ipb);
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,"eblock-0_0",ipb,workset_size); 
+
+    const int default_int_order = 1;
+    std::string eBlockID = "eblock-0_0";    
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+    panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -346,9 +356,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
     Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size,"QEdge1");
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
     testInitialization(ipb);
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,"eblock-0_0",ipb,workset_size); 
+
+    const int default_int_order = 1;
+    std::string eBlockID = "eblock-0_0";    
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+    panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -571,8 +590,8 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
-     return Teuchos::rcp(new panzer::PureBasis(basisName,cellData)); 
+     panzer::CellData cellData(worksetSize,topo);
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -594,25 +613,29 @@ namespace panzer {
     return mesh;
   }
 
-  void testInitialization(panzer::InputPhysicsBlock& ipb)
+  void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb)
   {
-    panzer::InputEquationSet ies;
-    ies.name = "Energy";
-    ies.basis = "Q1";
-    ies.integration_order = 1;
-    ies.model_id = "solid";
-    ies.prefix = "";
-
-    panzer::InputEquationSet iesb;
-    iesb.name = "Energy";
-    iesb.basis = "QEdge1";
-    iesb.integration_order = 1;
-    iesb.model_id = "solid";
-    iesb.prefix = "";
-
-    ipb.physics_block_id = "1";
-    ipb.eq_sets.push_back(ies);
-    ipb.eq_sets.push_back(iesb);
+    // Physics block
+    ipb->setName("test physics");
+    {
+      Teuchos::ParameterList& p = ipb->sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = ipb->sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HCurl");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    
   }
 
 }

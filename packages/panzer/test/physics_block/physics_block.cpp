@@ -49,7 +49,6 @@
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_CellData.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
@@ -67,44 +66,38 @@ namespace panzer_test_utils {
   Teuchos::RCP<panzer::PhysicsBlock> createPhysicsBlock()
   {
     
-    panzer::InputEquationSet ies_1;
-    {
-      ies_1.name = "Energy";
-      ies_1.basis = "Q2";
-      ies_1.integration_order = 1;
-      ies_1.model_id = "solid";
-      ies_1.prefix = "";
-    }
-    
-    panzer::InputEquationSet ies_2;
-    {
-      ies_2.name = "Energy";
-      ies_2.basis = "Q1";
-      ies_2.integration_order = 1;
-      ies_2.model_id = "ion solid";
-      ies_2.prefix = "ION_";
-    }
-    
-    std::size_t num_cells = 20;
-    std::size_t base_cell_dimension = 3;
-    panzer::CellData cd(num_cells, base_cell_dimension,
-                        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >())));
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList("4");
 
-    panzer::InputPhysicsBlock ipb;
     {
-      ipb.physics_block_id = "4";
-      ipb.eq_sets.push_back(ies_1);
-      ipb.eq_sets.push_back(ies_2);
+      Teuchos::ParameterList& p = plist->sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
     }
-    
-    user_app::MyFactory eqs_factory;
+
+    {
+      Teuchos::ParameterList& p = plist->sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
+
+    std::size_t num_cells = 20;
+    const int default_int_order = 1;
+    panzer::CellData cd(num_cells,Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >())));
+
+    Teuchos::RCP<user_app::MyFactory> eqs_factory = Teuchos::rcp(new user_app::MyFactory);
     
     std::string element_block_id = "eblock_id";
 
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
-      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory,gd,false));
+      Teuchos::rcp(new panzer::PhysicsBlock(plist,element_block_id,default_int_order,cd,eqs_factory,gd,false));
     
     return physics_block;
   }
@@ -162,10 +155,10 @@ namespace panzer {
     TEST_EQUALITY(basis.size(), 2);
     TEST_EQUALITY(basis[0].first, "TEMPERATURE");
     TEST_EQUALITY(basis[1].first, "ION_TEMPERATURE");
-    TEST_EQUALITY(basis[0].second->name(), "Q2");
-    TEST_EQUALITY(basis[1].second->name(), "Q1");
-    TEST_EQUALITY(basis[0].second->getCardinality(), 27);
-    TEST_EQUALITY(basis[1].second->getCardinality(), 8);
+    TEST_EQUALITY(basis[0].second->name(), "HGrad:2");
+    TEST_EQUALITY(basis[1].second->name(), "HGrad:1");
+    TEST_EQUALITY(basis[0].second->cardinality(), 27);
+    TEST_EQUALITY(basis[1].second->cardinality(), 8);
   }
 
   TEUCHOS_UNIT_TEST(physics_block, getBases)
@@ -177,10 +170,10 @@ namespace panzer {
       physics_block->getBases();
 
     TEST_EQUALITY(unique_basis.size(), 2);
-    TEST_ASSERT(unique_basis.find("Q2") != unique_basis.end());
-    TEST_ASSERT(unique_basis.find("Q1") != unique_basis.end());
-    TEST_EQUALITY(unique_basis.find("Q2")->second->getCardinality(), 27);
-    TEST_EQUALITY(unique_basis.find("Q1")->second->getCardinality(), 8);
+    TEST_ASSERT(unique_basis.find("HGrad:2") != unique_basis.end());
+    TEST_ASSERT(unique_basis.find("HGrad:1") != unique_basis.end());
+    TEST_EQUALITY(unique_basis.find("HGrad:2")->second->cardinality(), 27);
+    TEST_EQUALITY(unique_basis.find("HGrad:1")->second->cardinality(), 8);
   }
 
   TEUCHOS_UNIT_TEST(physics_block, getBaseCellTopology)

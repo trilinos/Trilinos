@@ -114,7 +114,8 @@ namespace panzer {
 
   Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize);
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,std::vector<panzer::BC>& bcs);
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+			 std::vector<panzer::BC>& bcs);
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
@@ -125,7 +126,7 @@ namespace panzer {
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
@@ -148,20 +149,44 @@ namespace panzer {
     fm->registerEvaluator<panzer::Traits::Residual>(eval);
     fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
 
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    {
+      Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+      user_app::BCFactory bc_factory;
+      const int default_integration_order = 1;
+
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+				 block_ids_to_cell_topo,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
+				 eqset_factory,
+				 gd,
+				 false,
+				 physicsBlocks);
+    }
+
+
     // build worksets
     //////////////////////////////////////////////////////////////
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-    eb_id_to_ipb["eblock-0_0"] = ipb;
-    
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
+
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
 
     panzer::Traits::SetupData sd;
-    sd.worksets_ = volume_worksets["eblock-0_0"];
+    sd.worksets_ = volume_worksets;
     fm->postRegistrationSetupForType<panzer::Traits::Residual>(sd);
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
-    std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
+    std::vector<panzer::Workset> & worksets = *volume_worksets;
     GlobalEvaluationDataContainer preEvalData;
     fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
@@ -184,10 +209,10 @@ namespace panzer {
 
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    panzer::CellData cellData(workset_size,2,topo);
+    panzer::CellData cellData(workset_size,topo);
     Teuchos::RCP<panzer::IntegrationRule> intRule = Teuchos::rcp(new panzer::IntegrationRule(1,cellData));
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
@@ -237,20 +262,45 @@ namespace panzer {
        fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
     }
 
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    {
+      Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+      user_app::BCFactory bc_factory;
+      const int default_integration_order = 1;
+
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+				 block_ids_to_cell_topo,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
+				 eqset_factory,
+				 gd,
+				 false,
+				 physicsBlocks);
+    }
+
     // build worksets
     //////////////////////////////////////////////////////////////
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-    eb_id_to_ipb["eblock-0_0"] = ipb;
-    
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
+
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
 
     panzer::Traits::SetupData sd;
-    sd.worksets_ = volume_worksets["eblock-0_0"];
+    sd.worksets_ = volume_worksets;
     fm->postRegistrationSetupForType<panzer::Traits::Residual>(sd);
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
-    std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
+    std::vector<panzer::Workset> & worksets = *volume_worksets;
     GlobalEvaluationDataContainer preEvalData;
     fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
@@ -267,10 +317,10 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
+     panzer::CellData cellData(worksetSize,topo);
      panzer::IntegrationRule intRule(1,cellData);
 
-     return Teuchos::rcp(new panzer::BasisIRLayout("Q1",intRule)); 
+     return Teuchos::rcp(new panzer::BasisIRLayout("Q1",1,intRule)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
@@ -298,29 +348,27 @@ namespace panzer {
     return mesh;
   }
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q2";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-    ies_1.params.set<int>("junk", 1);
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "solid";
-    ies_2.prefix = "ION_";
-    ies_2.params.set<int>("junk", 1);
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
 
     {
       std::size_t bc_id = 0;
@@ -335,7 +383,7 @@ namespace panzer {
       panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    } 
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -364,5 +412,6 @@ namespace panzer {
 		    strategy, p);
       bcs.push_back(bc);
     }
+
   }
 }

@@ -43,7 +43,6 @@
 
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_Factory_Defines.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_CellData.hpp"
 
 // Add my equation sets here
@@ -65,7 +64,8 @@ namespace user_app {
     MyFactory2(bool throw_on_failure) : m_throw_on_failure(throw_on_failure) {}
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
-    buildEquationSet(const panzer::InputEquationSet& ies,
+    buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		     const int& default_integration_order,
 		     const panzer::CellData& cell_data,
 		     const Teuchos::RCP<panzer::GlobalData>& global_data,
 		     const bool build_transient_support) const
@@ -79,7 +79,7 @@ namespace user_app {
 				 EquationSet_Energy)
       
       if (!found && m_throw_on_failure) {
-	std::string msg = "Error - the \"Equation Set\" called \"" + ies.name +
+	std::string msg = "Error - the \"Equation Set\" with \"Type\"= \"" + params->get<std::string>("Type") +
 	  "\" is not a valid equation set identifier. Please supply the correct factory.\n";
 	TEUCHOS_TEST_FOR_EXCEPTION(!found && m_throw_on_failure, std::logic_error, msg);
       }
