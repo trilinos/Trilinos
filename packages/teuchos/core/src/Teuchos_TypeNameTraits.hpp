@@ -49,7 +49,16 @@
 
 #include "Teuchos_ConstTypeTraits.hpp"
 
-#if defined(__IBMCPP__) && __IBMCPP__ < 900
+// mfh 30 Jan 2013: Thanks to Jim Willenbring for reporting this, and
+// to Mike Glass and Paul Lin for updating the fix for dealing with a
+// bug in IBM's XL C++ compiler.  The update was necessary due to a
+// relapse of the bug in a newer version of the compiler.
+//
+// If you don't have this update, you can fix the problem by defining
+// the macro TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM when compiling anything
+// that includes this header file.  If you have the current version of
+// this file, then you don't need to do anything.
+#if defined(__IBMCPP__) && ( __IBMCPP__ < 900 || __IBMCPP__ == 1210 )
 # define TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
 #endif
 
