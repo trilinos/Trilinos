@@ -7,3 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   DEPLIBS stokhos
   )
  
+ADD_SUBDIRECTORY(KokkosArraySPMVKernels)
