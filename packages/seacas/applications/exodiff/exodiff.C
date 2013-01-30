@@ -164,11 +164,11 @@ void Print_Banner(const char *prefix)
 				  size_t idx, size_t fno, const string &name, bool *diff_flag );
 
   template <typename INT>
-  bool do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, TimeInterp t2, int out_file_id, 
+  void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, TimeInterp t2, int out_file_id, 
 		MinMaxData *mm_glob, MinMaxData *mm_node, MinMaxData *mm_elmt,
 		MinMaxData *mm_ns, MinMaxData *mm_ss,
 		INT *node_map, const INT *node_id_map, INT *elmt_map, const INT *elem_id_map,
-		Exo_Block<INT> **blocks2, double *var_vals);
+		Exo_Block<INT> **blocks2, double *var_vals, bool *diff_flag);
 
   template <typename INT>
   bool diff_globals( ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
@@ -689,10 +689,10 @@ namespace {
 	}
       }
 
-      diff_flag = do_diffs(file1, file2, ts1, t2, out_file_id,
-			   mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
-			   node_map, node_id_map, elmt_map, elem_id_map,
-			   blocks2, var_vals);
+      do_diffs(file1, file2, ts1, t2, out_file_id,
+	       mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
+	       node_map, node_id_map, elmt_map, elem_id_map,
+	       blocks2, var_vals, &diff_flag);
     }
     else {
 
@@ -862,10 +862,10 @@ namespace {
 	    continue;
 	  }
 	
-	  diff_flag = do_diffs(file1, file2, time_step1, t2, out_file_id,
-			       mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
-			       node_map, node_id_map, elmt_map, elem_id_map,
-			       blocks2, var_vals);
+	  do_diffs(file1, file2, time_step1, t2, out_file_id,
+		   mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
+		   node_map, node_id_map, elmt_map, elem_id_map,
+		   blocks2, var_vals, &diff_flag);
 			     
 	}  // End of time step loop.
   
@@ -1095,45 +1095,42 @@ namespace {
     }
 
 template <typename INT>
-bool do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, TimeInterp t2, int out_file_id, 
+void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, TimeInterp t2, int out_file_id, 
 	      MinMaxData *mm_glob, MinMaxData *mm_node, MinMaxData *mm_elmt,
 	      MinMaxData *mm_ns, MinMaxData *mm_ss,
 	      INT *node_map, const INT *node_id_map, INT *elmt_map, const INT *elem_id_map,
-	      Exo_Block<INT> **blocks2, double *var_vals)
+	      Exo_Block<INT> **blocks2, double *var_vals, bool *diff_flag)
 {
-  bool diff_flag = false;
-
   if ( diff_globals( file1, file2, time_step1, t2, out_file_id,
 		     mm_glob, var_vals ) )
-    diff_flag = true;
+    *diff_flag = true;
      
   // Nodal variables.
   if ( diff_nodals( file1, file2, time_step1, t2, out_file_id,
 		    node_map, node_id_map, mm_node, var_vals ) )
-    diff_flag = true;
+    *diff_flag = true;
 
   // Element variables.
   if ( diff_element( file1, file2, time_step1, t2, out_file_id,
 		     elmt_map, elem_id_map, blocks2, mm_elmt, var_vals ) )
-    diff_flag = true;
+    *diff_flag = true;
         
   if (interface.map_flag != PARTIAL) {
     // Nodeset variables.
     if ( diff_nodeset( file1, file2, time_step1, t2, out_file_id,
 		       node_id_map, mm_ns, var_vals ) )
-      diff_flag = true;
+      *diff_flag = true;
       
     // Sideset variables.
     if ( diff_sideset( file1, file2, time_step1, t2, out_file_id,
 		       elem_id_map, mm_ss, var_vals ) )
-      diff_flag = true;
+      *diff_flag = true;
   } else {
     if (interface.ns_var_names.size() > 0 || interface.ss_var_names.size() > 0) {
       std::cout << "WARNING: nodeset and sideset variables not (yet) "
 	"compared for partial map\n";
     }
   }
-  return diff_flag;
 }
 
   template <typename INT>

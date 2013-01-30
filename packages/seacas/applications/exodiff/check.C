@@ -388,7 +388,7 @@ namespace {
 	if (node_map != NULL)
 	  set1->apply_map(node_map);
 	
-	if (interface.pedantic || (set1->var_count() > 0 && (set1->Size() == set2->Size()))) {
+	if ((interface.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
 	  size_t node_count = set1->Size();
 	  int diff = -1;
 	  for (size_t i=0; i < node_count; i++) {
@@ -473,7 +473,8 @@ namespace {
 	  set1->apply_map(elmt_map);
       
 	// Don't care if sidesets don't match if there are no variables...
-	if (interface.pedantic || (set1->var_count() > 0 && (set1->Size() == set2->Size()))) {
+	// If different sizes and pedantic, difference caught above.
+	if ((interface.pedantic || set1->var_count() > 0) && (set1->Size() == set2->Size())) {
 	  size_t side_count = set1->Size();
 	  int diff = -1;
 	  for (size_t i=0; i < side_count; i++) {
