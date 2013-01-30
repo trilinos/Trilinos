@@ -2,6 +2,10 @@
 
 #include <Xpetra_UseShortNamesScalar.hpp>
 
+#ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AdaptiveSaMLParameterListInterpreter;
+#endif
+
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationExportFactory;
 #endif
