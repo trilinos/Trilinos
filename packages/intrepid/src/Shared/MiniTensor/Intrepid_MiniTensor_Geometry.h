@@ -336,6 +336,13 @@ namespace Intrepid {
   std::vector<T>
   minimum_distances(std::vector< std::vector<T> > const & distances);
 
+  ///
+  /// Given space dimension and number of (vertex) nodes,
+  /// determine the type of a finite element.
+  ///
+  ELEMENT::Type
+  find_type(Index const dimension, Index const number_nodes);
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Geometry.i.h"

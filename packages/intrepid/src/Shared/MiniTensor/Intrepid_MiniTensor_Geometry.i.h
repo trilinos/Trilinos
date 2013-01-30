@@ -45,6 +45,107 @@
 
 namespace Intrepid {
 
+  //
+  // Helper functions for determining the type of element
+  //
+  namespace {
+
+    inline
+    ELEMENT::Type
+    find_type_1D(Index const nodes)
+    {
+      switch (nodes) {
+      case 2:
+        return ELEMENT::SEGMENTAL;
+        break;
+      default:
+        break;
+      }
+      return ELEMENT::UNKNOWN;
+    }
+
+    inline
+    ELEMENT::Type
+    find_type_2D(Index const nodes)
+    {
+      switch (nodes) {
+      case 3:
+        return ELEMENT::TRIANGULAR;
+        break;
+      case 4:
+        return ELEMENT::QUADRILATERAL;
+        break;
+      default:
+        break;
+      }
+      return ELEMENT::UNKNOWN;
+    }
+
+    inline
+    ELEMENT::Type
+    find_type_3D(Index const nodes)
+    {
+      switch (nodes) {
+      case 4:
+        return ELEMENT::TETRAHEDRAL;
+        break;
+      case 8:
+        return ELEMENT::HEXAHEDRAL;
+        break;
+      default:
+        break;
+      }
+      return ELEMENT::UNKNOWN;
+    }
+
+  } // anonymous namespace
+
+
+  //
+  //
+  //
+  inline
+  ELEMENT::Type
+  find_type(Index const dimension, Index const number_nodes)
+  {
+
+    ELEMENT::Type
+    type = ELEMENT::UNKNOWN;
+
+    switch (dimension) {
+
+    case 1:
+      type = find_type_1D(number_nodes);
+      break;
+
+    case 2:
+      type = find_type_2D(number_nodes);
+      break;
+
+    case 3:
+      type = find_type_3D(number_nodes);
+      break;
+
+    default:
+      break;
+
+    }
+
+    if (type == ELEMENT::UNKNOWN) {
+      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+      std::cerr << std::endl;
+      std::cerr << "Unknown element type." << std::endl;
+      std::cerr << std::endl;
+      std::cerr << "Spatial dimension: ";
+      std::cerr << dimension << std::endl;
+      std::cerr << "Vertices per element: ";
+      std::cerr << number_nodes << std::endl;
+      exit(1);
+    }
+
+    return type;
+  }
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Geometry_i_h
