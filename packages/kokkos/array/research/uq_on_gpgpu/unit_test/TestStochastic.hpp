@@ -42,7 +42,7 @@ test_product_tensor_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
 
@@ -122,6 +122,9 @@ test_product_tensor_matrix(
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops_per_block = 5.0 * matrix.block.tensor().num_non_zeros() +
+    inner_length;
+  const double flops = 1.0e-9*graph_length*flops_per_block / seconds_per_iter;
 
   //------------------------------
 
@@ -144,6 +147,7 @@ test_product_tensor_matrix(
 
   perf[0] = outer_length * inner_length ;
   perf[1] = seconds_per_iter ;
+  perf[2] = flops;
 
   return perf ;
 }
@@ -1020,19 +1024,12 @@ void performance_test_driver_all( const int pdeg ,
             << "\"Original-Flat MXV-GFLOPS\" , "
 	    << "\"Commuted-Flat MXV-Speedup\" , "
             << "\"Commuted-Flat MXV-GFLOPS\" , "
-    //<< "\"Commuted-Flat NNZ\" , "
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
-            << "\"Original-Matrix-Free-Block MXV-Speedup\" , "
-            << "\"Original-Matrix-Free-Block MXV-GFLOPS\" , "
-#endif
 	    << "\"Block-Diagonal MXV-Speedup\" , "
             << "\"Block-Diagonal MXV-GFLOPS\" , "
-    //<< "\"Block-Coord-Tensor MXV-Speedup\" , "
+	    << "\"Block-Legendre-Tensor MXV-Speedup\" , "
+            << "\"Block-Legendre-Tensor MXV-GFLOPS\" , "
 	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
-	    << "\"Block-Crs-Tensor MXV-Time\" , "
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
-#endif
             << std::endl ;
 
   for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
@@ -1056,17 +1053,25 @@ void performance_test_driver_all( const int pdeg ,
 
     //------------------------------
 
-    const std::vector<double> perf_matrix =
-      test_product_tensor_diagonal_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
-
-    const std::vector<double> perf_crs_tensor =
-      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
+    const std::vector<double> perf_flat_original =
+      test_product_flat_original_matrix<Scalar,Device>( 
+	var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_flat_commuted =
-      test_product_flat_commuted_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
+      test_product_flat_commuted_matrix<Scalar,Device>( 
+	var_degree , nGrid , nIter , check );
 
-    const std::vector<double> perf_flat_original =
-      test_product_flat_original_matrix<Scalar,Device>( var_degree , nGrid , nIter , check );
+    const std::vector<double> perf_matrix =
+      test_product_tensor_diagonal_matrix<Scalar,Device>( 
+	var_degree , nGrid , nIter , check );
+
+    const std::vector<double> perf_legendre_tensor =
+      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( 
+	var_degree , nGrid , nIter , check );
+
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>( 
+	var_degree , nGrid , nIter, check );
 
     if ( perf_flat_commuted[0] != perf_flat_original[0] ||
          perf_flat_commuted[3] != perf_flat_original[3] ) {
@@ -1080,11 +1085,6 @@ void performance_test_driver_all( const int pdeg ,
                 << std::endl ;
     }
 
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
-    const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
-#endif
-
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
 	      << tensor.bases_count() << " , "
 	      << stoch_nonzero << " , "
@@ -1094,19 +1094,12 @@ void performance_test_driver_all( const int pdeg ,
               << perf_flat_original[2] << " , "
 	      << perf_flat_original[1] / perf_flat_commuted[1] << " , "
               << perf_flat_commuted[2] << " , "
-      //<< perf_flat_commuted[3] << " , "
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
-	      << perf_flat_original[1] / perf_original_mat_free_block[1] << " , "
-              << perf_original_mat_free_block[2] << " , "
-#endif
 	      << perf_flat_original[1] / perf_matrix[1] << " , "
               << perf_matrix[2] << " , "
-      //<< perf_flat_original.second / perf_tensor.second << " , "
+	      << perf_flat_original[1] / perf_legendre_tensor[1] << " , "
+	      << perf_legendre_tensor[2] << " , "
 	      << perf_flat_original[1] / perf_crs_tensor[1] << " , "
-	      << perf_crs_tensor[1] << " , "
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
-	      << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
-#endif
+	      << perf_crs_tensor[2] << " , "
 	      << std::endl ;
   }
 
@@ -1144,10 +1137,8 @@ void performance_test_driver_poly( const int pdeg ,
 	    << "\"Original-Matrix-Free-Block-MXV-Time\" , "
 	    << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
-	    << "\"Block-Legendre-Tensor MXV-Time\" , "
 	    << "\"Block-Legendre-Tensor MXV-Speedup\" , "
             << "\"Block-Legendre-Tensor MXV-GFLOPS\" , "
-	    << "\"Block-Crs-Tensor MXV-Time\" , "
 	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
             << std::endl ;
@@ -1158,13 +1149,16 @@ void performance_test_driver_poly( const int pdeg ,
     const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
     const std::vector<double> perf_crs_tensor =
-      test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , check );
+      test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>( 
+	var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_legendre_tensor =
-      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( var_degree , nGrid , nIter , check );
+      test_product_tensor_legendre<Scalar,Scalar,Scalar,Device>( 
+	var_degree , nGrid , nIter , check );
 
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_vec<Scalar,Device>( var_degree , nGrid , nIter , print , test_block , check );
+      test_original_matrix_free_vec<Scalar,Device>( 
+	var_degree , nGrid , nIter , print , test_block , check );
 
     std::cout << nGrid << " , "
 	      << nvar << " , " << pdeg << " , "
@@ -1174,12 +1168,10 @@ void performance_test_driver_poly( const int pdeg ,
 	      << perf_original_mat_free_block[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
-	      << perf_legendre_tensor[1] << " , "
 	      << perf_original_mat_free_block[1] / perf_legendre_tensor[1] << " , "
-              << perf_original_mat_free_block[3] / perf_legendre_tensor[1] << " , "
-	      << perf_crs_tensor[1] << " , "
+	      << perf_legendre_tensor[2] << " , "
 	      << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
-              << perf_original_mat_free_block[3] / perf_crs_tensor[1] << " , "
+              << perf_crs_tensor[2] << " , "
 
 	      << std::endl ;
   }

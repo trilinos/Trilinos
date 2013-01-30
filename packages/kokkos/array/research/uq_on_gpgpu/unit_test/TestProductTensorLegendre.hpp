@@ -153,6 +153,8 @@ test_product_tensor_legendre(
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops_per_block = matrix.block.multiply_add_flops();
+  const double flops = 1.0e-9*fem_graph_length*flops_per_block / seconds_per_iter;
 
   //------------------------------
   // Verify result
@@ -188,12 +190,11 @@ test_product_tensor_legendre(
 
   //------------------------------
 
-  std::vector<double> perf(4) ;
+  std::vector<double> perf(3) ;
 
   perf[0] = fem_length * stoch_length ;
   perf[1] = seconds_per_iter ;
-  perf[2] = matrix.block.multiply_add_flops() * fem_graph_length ;
-  perf[3] = fem_graph_length * stoch_length ;
+  perf[2] = flops ;
 
   return perf ;
 }
