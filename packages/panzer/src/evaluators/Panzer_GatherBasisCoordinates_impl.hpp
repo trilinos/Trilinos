@@ -83,7 +83,7 @@ postRegistrationSetup(typename Traits::SetupData sd,
 {
   this->utils.setFieldData(basisCoordinates_,fm);
 
-  basisIndex_ = panzer::getBasisIndex(basisName_, (*sd.worksets_)[0]);
+  basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0]);
 }
 
 // **********************************************************************

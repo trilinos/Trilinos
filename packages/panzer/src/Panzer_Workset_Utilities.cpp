@@ -54,6 +54,29 @@
 namespace panzer {
 
   std::vector<std::string>::size_type 
+  getPureBasisIndex(std::string basis_name, panzer::Workset& workset)
+  {
+    std::vector<std::string>::iterator basis = workset.basis_names->begin();
+    std::vector<std::string>::const_iterator last = workset.basis_names->end();
+    
+    while (basis != last) {
+
+      std::vector<std::string>::size_type index = std::distance(workset.basis_names->begin(), basis);
+      if (workset.bases[index]->basis_layout->getBasis()->name() == basis_name)
+	break;
+
+      ++basis;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(basis == workset.basis_names->end(),
+			       std::logic_error,
+			       "Could not find the basis named \"" 
+                               << basis_name << "\" in the workset!");
+
+    return std::distance(workset.basis_names->begin(), basis);
+  }
+
+  std::vector<std::string>::size_type 
   getBasisIndex(std::string basis_name, panzer::Workset& workset)
   {
     std::vector<std::string>::iterator basis;
