@@ -37,6 +37,7 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_MLParameterListInterpreter_fwd.hpp"
 
 namespace MueLu {
 
@@ -122,17 +123,6 @@ namespace MueLu {
 
     //@{
 
-    //! @name static helper functions translating parameter list to factories
-    //! @brief static helper functions that also can be used from outside for translating ML parameters into MueLu objects
-    //@{
-
-    //! Read smoother options and build the corresponding smoother factory
-    // @param AFact: Factory used by smoother to find 'A'
-    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & paramList, const RCP<FactoryBase> & AFact = Teuchos::null);
-
-    //@}
-
-
     //! @name Handling of additional user-specific transfer factories
     //@{
     /*! @brief Add transfer factory in the end of list of transfer factories for RAPFactory.
@@ -149,6 +139,42 @@ namespace MueLu {
 
   private:
 
+    //! build multigrid hierarchy for improving nullspace
+    //! use ML settings that are also used for the final full multigrid
+    //! hierarchy. In contrary to the final multigrid hierarchy use
+    //! only nonsmoothed transfer operators (safe time of prolongator smoothing)
+    //! and cheap level smoothers (no direct solver on coarsest level).
+    void SetupInitHierarchy(Hierarchy & H) const;
+
+    //! internal routine to add a new factory manager used for the initialization phase
+    void AddInitFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase> manager) {
+      const int lastLevel = startLevel + numDesiredLevel - 1;
+      if (init_levelManagers_.size() < lastLevel + 1) init_levelManagers_.resize(lastLevel + 1);
+
+      for(int iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
+        init_levelManagers_[iLevel] = manager;
+      }
+    }
+
+    //! Used in SetupInitHierarchy() to access levelManagers_
+    //! Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
+    Teuchos::Ptr<FactoryManagerBase> InitLvlMngr(int levelID, int lastLevelID) const {
+
+      // Please not that the order of the 'if' statements is important.
+
+      if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
+      if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
+
+      if (0       == init_levelManagers_.size()) {                     // default factory manager.
+        // the default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager.
+        static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
+        return defaultMngr();
+      }
+      if (levelID >= init_levelManagers_.size()) return init_levelManagers_[init_levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
+
+      return init_levelManagers_[levelID](); // throw exception if out of bound.
+    }
+
     //! nullspace can be embedded in the ML parameter list
     int     nullspaceDim_;
     double* nullspace_;
@@ -162,9 +188,14 @@ namespace MueLu {
     //! capabibilities of ML.
     std::vector<RCP<FactoryBase> > TransferFacts_;
 
+    //! list of levelManagers for adaptive smoothed aggregation
+    //! initialization phase
+    Array<RCP<FactoryManagerBase> > init_levelManagers_;
+
     //@{ Matrix configuration
 
     //! Setup Matrix object
+    //! overloaded from HierarchyManager to set nDofsPerNode
     virtual void SetupMatrix(Matrix & Op) const;
 
     //! Matrix configuration storage
