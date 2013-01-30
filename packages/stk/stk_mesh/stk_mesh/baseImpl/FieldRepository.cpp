@@ -90,20 +90,20 @@ FieldBase * FieldRepository::get_field(
   const shards::ArrayDimTag * const * arg_dim_tags ,
   unsigned                            arg_num_states ) const
 {
-  FieldBase * f = NULL ;
-
   for ( std::vector<FieldBase*>::const_iterator
-        j =  m_fields.begin() ;
-        j != m_fields.end() && NULL == f ; ++j ) {
+        j =  m_fields.begin();
+        j != m_fields.end(); ++j ) {
     if ( equal_case( (*j)->name() , arg_name ) ) {
 
-      f = *j ;
+      FieldBase* f = *j ;
 
       verify_field_type( arg_method , *f , arg_traits ,
                          arg_rank , arg_dim_tags , arg_num_states );
+
+      return f;
     }
   }
-  return f ;
+  return NULL;
 }
 
 FieldBase * FieldRepository::declare_field(

@@ -999,7 +999,6 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
 
 CellTopology get_cell_topology(stk::topology t)
 {
-
   switch(t())
   {
   case stk::topology::NODE:         return CellTopology( shards::getCellTopologyData< shards::Node                  >() );
@@ -1049,7 +1048,18 @@ CellTopology get_cell_topology(stk::topology t)
   }
 
   return CellTopology(NULL);
+}
 
+FieldBase* MetaData::get_field( const std::string& name ) const
+{
+  const FieldVector& fields = m_field_repo.get_fields();
+  for ( std::vector<FieldBase*>::const_iterator i =  fields.begin() ;
+        i != fields.end(); ++i ) {
+    if (equal_case((*i)->name(), name)) {
+      return *i;
+    }
+  }
+  return NULL;
 }
 
 } // namespace mesh

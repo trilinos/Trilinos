@@ -304,6 +304,11 @@ public:
   template< class field_type >
   field_type * get_field( const std::string & name ) const ;
 
+  /**
+   * \brief Get a field by name with unknown type, NULL if does not exist
+   */
+  FieldBase* get_field( const std::string& name ) const;
+
   /** \brief  Get all defined fields */
   const FieldVector & get_fields() const {
     return m_field_repo.get_fields() ;
