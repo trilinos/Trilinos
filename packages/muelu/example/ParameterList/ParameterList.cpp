@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note:
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 5000); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName = "muelu_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'muelu_ParameterList.xml'");
