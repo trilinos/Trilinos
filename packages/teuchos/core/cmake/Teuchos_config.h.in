@@ -66,7 +66,7 @@
 
 #cmakedefine HAVE_TEUCHOS_QD
 
-#cmakedefine HAVE_TEUCHOS_EIGEN
+#cmakedefine HAVE_TEUCHOSNUMERICS_EIGEN
 
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOSCORE_QD
