@@ -181,6 +181,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Matio           "cmake/TPLs/"    SS
   PAPI            "cmake/TPLs/"    SS
   MATLABLib       "cmake/TPLs/"    EX
+  Eigen           "cmake/TPLs/"    EX
   )
 
 # NOTES:

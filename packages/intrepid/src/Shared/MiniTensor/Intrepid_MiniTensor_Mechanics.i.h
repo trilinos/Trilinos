@@ -39,96 +39,40 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor4_i_cc)
-#define Intrepid_MiniTensor_Tensor4_i_cc
+#if !defined(Intrepid_MiniTensor_Mechanics_i_h)
+#define Intrepid_MiniTensor_Mechanics_i_h
 
-namespace Intrepid
-{
-
-  //
-  // R^N 4th-order tensor transpose
-  // per Holzapfel 1.157
-  //
-  template<typename T>
-  inline Tensor4<T> transpose(Tensor4<T> const & A)
-  {
-    Index const N = A.get_dimension();
-
-    Tensor4<T> B(N);
-
-    for (Index i = 0; i < N; ++i) {
-      for (Index j = 0; j < N; ++j) {
-        for (Index k = 0; k < N; ++k) {
-          for (Index l = 0; l < N; ++l) {
-            B(i, j, k, l) = A(k, l, i, j);
-          }
-        }
-      }
-    }
-
-    return B;
-  }
+namespace Intrepid {
 
   //
-  // Dimension
-  // \return dimension
+  // R^N volumetric part of 2nd-order tensor
+  // \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
   //
   template<typename T>
   inline
-  Index
-  Tensor4<T>::get_dimension() const
+  Tensor<T>
+  vol(Tensor<T> const & A)
   {
-    return dimension;
+    const Index
+    N = A.get_dimension();
+
+    const T theta = (1.0/T(N)) * trace(A);
+
+    return theta * eye<T>(N);
   }
 
   //
-  // R^N indexing for constant 4th order tensor
-  // \param i index
-  // \param j index
-  // \param k index
-  // \param l index
+  // R^N deviatoric part of 2nd-order tensor
+  // \return \f$ A - vol(A) \f$
   //
   template<typename T>
   inline
-  T const &
-  Tensor4<T>::operator()(
-      Index const i, Index const j, Index const k, Index const l) const
+  Tensor<T>
+  dev(Tensor<T> const & A)
   {
-    Index const
-    N = get_dimension();
-
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
-    assert(l < N);
-
-    return e[((i * N + j) * N + k) * N + l];
-  }
-
-  //
-  // R^N 4th-order tensor indexing
-  // \param i index
-  // \param j index
-  // \param k index
-  // \param l index
-  //
-  template<typename T>
-  inline
-  T &
-  Tensor4<T>::operator()(
-      Index const i, Index const j, Index const k, Index const l)
-  {
-    Index const
-    N = get_dimension();
-
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
-    assert(l < N);
-
-    return e[((i * N + j) * N + k) * N + l];
+    return A - vol(A);
   }
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor4_i_cc
+#endif // Intrepid_MiniTensor_Mechanics_i_h

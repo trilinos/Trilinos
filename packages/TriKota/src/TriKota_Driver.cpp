@@ -43,7 +43,9 @@ using namespace Dakota;
 TriKota::Driver::Driver(const char* dakota_in,  
                                const char* dakota_out,
                                const char* dakota_err,
-                               const char* dakota_restart_out)
+                               const char* dakota_restart_out,
+                               const char* dakota_restart_in,
+                               const int stop_restart_evals)
  :  parallel_lib(), problem_db(parallel_lib), rank_zero(true)
 {
 
@@ -52,8 +54,8 @@ TriKota::Driver::Driver(const char* dakota_in,
 
   *out << "\nStarting TriKota_Driver!" << endl;
 
-  parallel_lib.specify_outputs_restart(dakota_out, dakota_err, NULL,
-                                       dakota_restart_out, 0);
+  parallel_lib.specify_outputs_restart(dakota_out, dakota_err, dakota_restart_in,
+                                       dakota_restart_out, stop_restart_evals);
   problem_db.manage_inputs(dakota_in);
 
   // instantiate the strategy

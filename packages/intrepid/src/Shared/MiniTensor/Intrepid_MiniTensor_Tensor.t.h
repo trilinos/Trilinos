@@ -39,68 +39,65 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor3_i_cc)
-#define Intrepid_MiniTensor_Tensor3_i_cc
+#if !defined(Intrepid_MiniTensor_Tensor_t_h)
+#define Intrepid_MiniTensor_Tensor_t_h
 
 namespace Intrepid {
 
   //
-  // Dimension
-  // get dimension
+  // R^N tensor input
+  // \param A tensor
+  // \param is input stream
+  // \return is input stream
   //
   template<typename T>
-  inline
-  Index
-  Tensor3<T>::get_dimension() const
+  std::istream &
+  operator>>(std::istream & is, Tensor<T> & A)
   {
-    return dimension;
+
+    Index const
+    N = A.get_dimension();
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        is >> A(i,j);
+      }
+    }
+
+    return is;
   }
 
   //
-  // R^N Indexing for constant 3rd order tensor
-  // \param i index
-  // \param j index
-  // \param k index
+  // R^N tensor output
+  // \param A tensor
+  // \param os output stream
+  // \return os output stream
   //
   template<typename T>
-  inline
-  T const &
-  Tensor3<T>::operator()(
-    Index const i,
-    Index const j,
-    Index const k) const
+  std::ostream &
+  operator<<(std::ostream & os, Tensor<T> const & A)
   {
     Index const
-    N = get_dimension();
+    N = A.get_dimension();
 
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
+    if (N == 0) {
+      return os;
+    }
 
-    return e[(i * N + j) * N + k];
-  }
+    for (Index i = 0; i < N; ++i) {
 
-  //
-  // R^N 3rd-order tensor indexing
-  // \param i index
-  // \param j index
-  // \param k index
-  //
-  template<typename T>
-  inline
-  T &
-  Tensor3<T>::operator()(Index const i, Index const j, Index const k)
-  {
-    Index const
-    N = get_dimension();
+      os << std::scientific << A(i,0);
 
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
+      for (Index j = 1; j < N; ++j) {
+        os << std::scientific << "," << A(i,j);
+      }
 
-    return e[i * N * N + j * N + k];
+      os << std::endl;
+    }
+
+    return os;
   }
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor3_i_cc
+#endif // Intrepid_MiniTensor_Tensor_t_h

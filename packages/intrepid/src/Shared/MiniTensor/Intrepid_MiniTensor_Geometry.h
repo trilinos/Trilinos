@@ -338,7 +338,7 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#include "Intrepid_MiniTensor_Geometry.i.cc"
-#include "Intrepid_MiniTensor_Geometry.t.cc"
+#include "Intrepid_MiniTensor_Geometry.i.h"
+#include "Intrepid_MiniTensor_Geometry.t.h"
 
 #endif // Intrepid_MiniTensor_Geometry_h

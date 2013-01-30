@@ -441,7 +441,7 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#include "Intrepid_MiniTensor_LinearAlgebra.i.cc"
-#include "Intrepid_MiniTensor_LinearAlgebra.t.cc"
+#include "Intrepid_MiniTensor_LinearAlgebra.i.h"
+#include "Intrepid_MiniTensor_LinearAlgebra.t.h"
 
 #endif // Intrepid_MiniTensor_LinearAlgebra_h

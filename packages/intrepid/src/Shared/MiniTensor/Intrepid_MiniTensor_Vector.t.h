@@ -39,13 +39,57 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Geometry_i_cc)
-#define Intrepid_MiniTensor_Geometry_i_cc
-
+#if !defined(Intrepid_MiniTensor_Vector_t_h)
+#define Intrepid_MiniTensor_Vector_t_h
 
 namespace Intrepid {
 
+  //
+  // R^N vector input
+  // \param u vector
+  // \param is input stream
+  // \return is input stream
+  //
+  template<typename T>
+  std::istream &
+  operator>>(std::istream & is, Vector<T> & u)
+  {
+    Index const
+    N = u.get_dimension();
+
+    for (Index i = 0; i < N; ++i) {
+      is >> u(i);
+    }
+
+    return is;
+  }
+
+  //
+  // R^N vector output
+  // \param u vector
+  // \param os output stream
+  // \return os output stream
+  //
+  template<typename T>
+  std::ostream &
+  operator<<(std::ostream & os, Vector<T> const & u)
+  {
+    Index const
+    N = u.get_dimension();
+
+    if (N == 0) {
+      return os;
+    }
+
+    os << std::scientific << u(0);
+
+    for (Index i = 1; i < N; ++i) {
+      os << std::scientific << "," << u(i);
+    }
+
+    return os;
+  }
+
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Geometry_i_cc
-
+#endif // Intrepid_MiniTensor_Vector_t_h

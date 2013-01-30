@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor_i_cc)
-#define Intrepid_MiniTensor_Tensor_i_cc
+#if !defined(Intrepid_MiniTensor_Tensor_i_h)
+#define Intrepid_MiniTensor_Tensor_i_h
 
 namespace Intrepid {
 
@@ -1861,4 +1861,4 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor_i_cc
+#endif // Intrepid_MiniTensor_Tensor_i_h

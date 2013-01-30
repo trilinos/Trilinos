@@ -39,40 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Mechanics_i_cc)
-#define Intrepid_MiniTensor_Mechanics_i_cc
+#if !defined(Intrepid_MiniTensor_Geometry_i_h)
+#define Intrepid_MiniTensor_Geometry_i_h
+
 
 namespace Intrepid {
 
-  //
-  // R^N volumetric part of 2nd-order tensor
-  // \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
-  //
-  template<typename T>
-  inline
-  Tensor<T>
-  vol(Tensor<T> const & A)
-  {
-    const Index
-    N = A.get_dimension();
-
-    const T theta = (1.0/T(N)) * trace(A);
-
-    return theta * eye<T>(N);
-  }
-
-  //
-  // R^N deviatoric part of 2nd-order tensor
-  // \return \f$ A - vol(A) \f$
-  //
-  template<typename T>
-  inline
-  Tensor<T>
-  dev(Tensor<T> const & A)
-  {
-    return A - vol(A);
-  }
-
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Mechanics_i_cc
+#endif // Intrepid_MiniTensor_Geometry_i_h
+

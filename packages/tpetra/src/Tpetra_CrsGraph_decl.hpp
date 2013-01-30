@@ -311,7 +311,7 @@ namespace Tpetra {
 
       typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
       typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-      RCP<const Map2> clonedRowMap = rowMap_->template clone(node2);
+      RCP<const Map2> clonedRowMap = rowMap_->template clone<Node2>(node2);
 
       RCP<CrsGraph2> clonedGraph;
       ArrayRCP<const size_t> numEntries;
@@ -337,7 +337,7 @@ namespace Tpetra {
 
       RCP<ParameterList> graphparams = sublist(params,"CrsGraph");
       if (useLocalIndices) {
-        RCP<const Map2> clonedColMap = colMap_->template clone(node2);
+        RCP<const Map2> clonedColMap = colMap_->template clone<Node2>(node2);
         if (numEntries == null) clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,graphparams));
         else                    clonedGraph = rcp(new CrsGraph2(clonedRowMap,clonedColMap,numEntries,pftype,graphparams));
       }
@@ -413,13 +413,13 @@ namespace Tpetra {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
           if (rangeMap_ != null && rangeMap_ != rowMap_) {
-            clonedRangeMap  = rangeMap_->template clone(node2);
+            clonedRangeMap  = rangeMap_->template clone<Node2>(node2);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
           if (domainMap_ != null && domainMap_ != rowMap_) {
-            clonedDomainMap = domainMap_->template clone(node2);
+            clonedDomainMap = domainMap_->template clone<Node2>(node2);
           }
           else {
             clonedDomainMap = clonedRowMap;

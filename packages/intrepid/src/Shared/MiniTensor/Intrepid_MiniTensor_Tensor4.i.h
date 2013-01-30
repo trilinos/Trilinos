@@ -39,57 +39,96 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Vector_t_cc)
-#define Intrepid_MiniTensor_Vector_t_cc
+#if !defined(Intrepid_MiniTensor_Tensor4_i_h)
+#define Intrepid_MiniTensor_Tensor4_i_h
 
-namespace Intrepid {
+namespace Intrepid
+{
 
   //
-  // R^N vector input
-  // \param u vector
-  // \param is input stream
-  // \return is input stream
+  // R^N 4th-order tensor transpose
+  // per Holzapfel 1.157
   //
   template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Vector<T> & u)
+  inline Tensor4<T> transpose(Tensor4<T> const & A)
   {
-    Index const
-    N = u.get_dimension();
+    Index const N = A.get_dimension();
+
+    Tensor4<T> B(N);
 
     for (Index i = 0; i < N; ++i) {
-      is >> u(i);
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            B(i, j, k, l) = A(k, l, i, j);
+          }
+        }
+      }
     }
 
-    return is;
+    return B;
   }
 
   //
-  // R^N vector output
-  // \param u vector
-  // \param os output stream
-  // \return os output stream
+  // Dimension
+  // \return dimension
   //
   template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Vector<T> const & u)
+  inline
+  Index
+  Tensor4<T>::get_dimension() const
+  {
+    return dimension;
+  }
+
+  //
+  // R^N indexing for constant 4th order tensor
+  // \param i index
+  // \param j index
+  // \param k index
+  // \param l index
+  //
+  template<typename T>
+  inline
+  T const &
+  Tensor4<T>::operator()(
+      Index const i, Index const j, Index const k, Index const l) const
   {
     Index const
-    N = u.get_dimension();
+    N = get_dimension();
 
-    if (N == 0) {
-      return os;
-    }
+    assert(i < N);
+    assert(j < N);
+    assert(k < N);
+    assert(l < N);
 
-    os << std::scientific << u(0);
+    return e[((i * N + j) * N + k) * N + l];
+  }
 
-    for (Index i = 1; i < N; ++i) {
-      os << std::scientific << "," << u(i);
-    }
+  //
+  // R^N 4th-order tensor indexing
+  // \param i index
+  // \param j index
+  // \param k index
+  // \param l index
+  //
+  template<typename T>
+  inline
+  T &
+  Tensor4<T>::operator()(
+      Index const i, Index const j, Index const k, Index const l)
+  {
+    Index const
+    N = get_dimension();
 
-    return os;
+    assert(i < N);
+    assert(j < N);
+    assert(k < N);
+    assert(l < N);
+
+    return e[((i * N + j) * N + k) * N + l];
   }
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Vector_t_cc
+#endif // Intrepid_MiniTensor_Tensor4_i_h

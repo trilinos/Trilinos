@@ -39,65 +39,66 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor_t_cc)
-#define Intrepid_MiniTensor_Tensor_t_cc
+#if !defined(Intrepid_MiniTensor_Utilities_i_h)
+#define Intrepid_MiniTensor_Utilities_i_h
+
+#include <cmath>
+#include <limits>
 
 namespace Intrepid {
 
   //
-  // R^N tensor input
-  // \param A tensor
-  // \param is input stream
-  // \return is input stream
+  // Sign function
   //
-  template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Tensor<T> & A)
+  template <typename T>
+  inline
+  int
+  sgn(T const & s)
   {
-
-    Index const
-    N = A.get_dimension();
-
-    for (Index i = 0; i < N; ++i) {
-      for (Index j = 0; j < N; ++j) {
-        is >> A(i,j);
-      }
-    }
-
-    return is;
+    return (T(0) < s) - (s < T(0));
   }
 
   //
-  // R^N tensor output
-  // \param A tensor
-  // \param os output stream
-  // \return os output stream
+  // Copysign function
   //
   template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Tensor<T> const & A)
+  inline
+  T
+  copysign(T const & a, T const & b)
   {
-    Index const
-    N = A.get_dimension();
+    return b >= 0 ? std::abs(a) : -std::abs(a);
+  }
 
-    if (N == 0) {
-      return os;
-    }
+  //
+  // NaN function. Necessary to choose the proper underlying NaN
+  // for non-floating-point types.
+  // Assumption: non-floating-point types have a typedef that
+  // determines the underlying floating-point type.
+  //
+  template<typename T>
+  inline
+  typename Sacado::ScalarType<T>::type
+  not_a_number()
+  {
+    return
+        std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
+  }
 
-    for (Index i = 0; i < N; ++i) {
-
-      os << std::scientific << A(i,0);
-
-      for (Index j = 1; j < N; ++j) {
-        os << std::scientific << "," << A(i,j);
-      }
-
-      os << std::endl;
-    }
-
-    return os;
+  //
+  // Machine epsilon function. Necessary to choose the proper underlying
+  // machine epsilon for non-floating-point types.
+  // Assumption: non-floating-point types have a typedef that
+  // determines the underlying floating-point type.
+  //
+  template<typename T>
+  inline
+  typename Sacado::ScalarType<T>::type
+  machine_epsilon()
+  {
+    return
+        std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
   }
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor_t_cc
+#endif // Intrepid_MiniTensor_Utilities_i_h

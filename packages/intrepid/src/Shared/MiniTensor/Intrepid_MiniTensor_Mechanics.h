@@ -176,7 +176,7 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#include "Intrepid_MiniTensor_Mechanics.i.cc"
-#include "Intrepid_MiniTensor_Mechanics.t.cc"
+#include "Intrepid_MiniTensor_Mechanics.i.h"
+#include "Intrepid_MiniTensor_Mechanics.t.h"
 
 #endif // Intrepid_MiniTensor_Mechanics_h

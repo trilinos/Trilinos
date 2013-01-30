@@ -39,66 +39,68 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Utilities_i_cc)
-#define Intrepid_MiniTensor_Utilities_i_cc
-
-#include <cmath>
-#include <limits>
+#if !defined(Intrepid_MiniTensor_Tensor3_i_h)
+#define Intrepid_MiniTensor_Tensor3_i_h
 
 namespace Intrepid {
 
   //
-  // Sign function
-  //
-  template <typename T>
-  inline
-  int
-  sgn(T const & s)
-  {
-    return (T(0) < s) - (s < T(0));
-  }
-
-  //
-  // Copysign function
+  // Dimension
+  // get dimension
   //
   template<typename T>
   inline
-  T
-  copysign(T const & a, T const & b)
+  Index
+  Tensor3<T>::get_dimension() const
   {
-    return b >= 0 ? std::abs(a) : -std::abs(a);
+    return dimension;
   }
 
   //
-  // NaN function. Necessary to choose the proper underlying NaN
-  // for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
+  // R^N Indexing for constant 3rd order tensor
+  // \param i index
+  // \param j index
+  // \param k index
   //
   template<typename T>
   inline
-  typename Sacado::ScalarType<T>::type
-  not_a_number()
+  T const &
+  Tensor3<T>::operator()(
+    Index const i,
+    Index const j,
+    Index const k) const
   {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
+    Index const
+    N = get_dimension();
+
+    assert(i < N);
+    assert(j < N);
+    assert(k < N);
+
+    return e[(i * N + j) * N + k];
   }
 
   //
-  // Machine epsilon function. Necessary to choose the proper underlying
-  // machine epsilon for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
+  // R^N 3rd-order tensor indexing
+  // \param i index
+  // \param j index
+  // \param k index
   //
   template<typename T>
   inline
-  typename Sacado::ScalarType<T>::type
-  machine_epsilon()
+  T &
+  Tensor3<T>::operator()(Index const i, Index const j, Index const k)
   {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
+    Index const
+    N = get_dimension();
+
+    assert(i < N);
+    assert(j < N);
+    assert(k < N);
+
+    return e[i * N * N + j * N + k];
   }
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Utilities_i_cc
+#endif // Intrepid_MiniTensor_Tensor3_i_h

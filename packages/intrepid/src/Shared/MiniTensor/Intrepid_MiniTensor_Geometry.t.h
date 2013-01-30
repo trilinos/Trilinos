@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Geometry_t_cc)
-#define Intrepid_MiniTensor_Geometry_t_cc
+#if !defined(Intrepid_MiniTensor_Geometry_t_h)
+#define Intrepid_MiniTensor_Geometry_t_h
 
 #include <iterator>
 
@@ -765,4 +765,4 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Geometry_t_cc
+#endif // Intrepid_MiniTensor_Geometry_t_h
