@@ -109,7 +109,7 @@ void gauss_legendre_poly( const unsigned ng , const unsigned p , const double c 
 template< unsigned P , bool Print >
 void normalized_legendre_polynomial_bases()
 {
-  const double sqrt2 = std::sqrt( 2.0 );
+  //const double sqrt2 = std::sqrt( 2.0 );
   double pt[32] , wgt[32] ;
   double value[P+1];
   double inner_product[P+1][P+1];
@@ -146,11 +146,11 @@ void normalized_legendre_polynomial_bases()
       bases.evaluate( P , pt[i] , value );
 
       for ( unsigned j = 0 ; j <= P ; ++j ) {
-        integral[j] += wgt[i] * value[j] ;
+        integral[j] += 0.5 * wgt[i] * value[j] ;
       }
       for ( unsigned j = 0 ; j <= P ; ++j ) {
       for ( unsigned k = 0 ; k <= P ; ++k ) {
-        inner_product[j][k] += wgt[i] * value[j] * value[k] ;
+        inner_product[j][k] += 0.5 * wgt[i] * value[j] * value[k] ;
       }}
     }
 
@@ -168,7 +168,7 @@ void normalized_legendre_polynomial_bases()
 
     // Verify integrals
     for ( unsigned j = 0 ; j <= P ; ++j ) {
-      const double e = std::abs( integral[j] - ( 0 == j ? sqrt2 : 0 ) );
+      const double e = std::abs( integral[j] - ( 0 == j ? 1 : 0 ) );
 
       if ( Print ) {
         std::cout << "  integral <" << j << "> = " << integral[j] << std::endl ;
@@ -214,7 +214,7 @@ void product_tensor_integration()
     for ( unsigned i = 0 ; i <= P ; ++i ) {
     for ( unsigned j = 0 ; j <= P ; ++j ) {
     for ( unsigned k = 0 ; k <= P ; ++k ) {
-      integral[i][j][k] += gauss.weights[ig] * value[i] * value[j] * value[k] ;
+      integral[i][j][k] += 0.5 * gauss.weights[ig] * value[i] * value[j] * value[k] ;
     }}}
   }
 
