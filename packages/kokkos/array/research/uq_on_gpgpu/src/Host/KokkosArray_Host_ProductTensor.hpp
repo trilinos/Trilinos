@@ -126,9 +126,7 @@ public:
 
         const size_type j = tensor.coord(iEntry,0);
         const size_type k = tensor.coord(iEntry,1);
-
-        // ytmp += tensor.value(iEntry) *
-	//   ( j == k ? a[j] * x[j] : a[j] * x[k] + a[k] * x[j] );
+        
 	ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
