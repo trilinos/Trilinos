@@ -155,12 +155,11 @@ namespace {
   double errorTolSlack = 1e+1;
   string filedir;
 
-#define DYN_ARRAYVIEW_TO_ARRAY(Type, arr, av) \
-  { \
-    ArrayView<Type> av2 = av; \
-    arr.resize(av2.size()); \
-    arr.assign(av2.begin(),av2.end()); \
-  }
+template <class tuple, class T>
+inline void tupleToArray(Array<T> &arr, const tuple &tup)
+{
+  arr.assign(tup.begin(), tup.end());
+}
 
 #define STD_TESTS(matrix) \
   { \
@@ -820,16 +819,16 @@ namespace {
     Array<GO> ginds;
     Array<LO> linds;
     if (myImageID==0) {
-      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds, tuple<GO>(myrowind,myrowind+1) );
-      DYN_ARRAYVIEW_TO_ARRAY( LO, linds, tuple<LO>(0,1) );
+      tupleToArray( ginds, tuple<GO>(myrowind,myrowind+1) );
+      tupleToArray( linds, tuple<LO>(0,1) );
     }
     else if (myImageID==numImages-1) {
-      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds , tuple<GO>(myrowind-1,myrowind) );
-      DYN_ARRAYVIEW_TO_ARRAY( LO, linds , tuple<LO>(0,1) );
+      tupleToArray( ginds , tuple<GO>(myrowind-1,myrowind) );
+      tupleToArray( linds , tuple<LO>(0,1) );
     }
     else {
-      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds , tuple<GO>(myrowind-1,myrowind,myrowind+1) );
-      DYN_ARRAYVIEW_TO_ARRAY( LO, linds , tuple<LO>(0,1,2) );
+      tupleToArray( ginds , tuple<GO>(myrowind-1,myrowind,myrowind+1) );
+      tupleToArray( linds , tuple<LO>(0,1,2) );
     }
     Array<Scalar> vals(ginds.size(),ST::one());
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm,node) );
