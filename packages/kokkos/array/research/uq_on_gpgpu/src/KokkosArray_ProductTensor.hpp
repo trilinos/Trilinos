@@ -230,6 +230,9 @@ public:
 
   /** \brief  Value of an entry */
   const value_type & value( size_type entry ) const ;
+
+  /** \brief Number of non-zero's */
+  size_type num_non_zeros() const ;
 };
 
 template< typename ValueType , class DeviceType >
@@ -247,6 +250,7 @@ private:
   KokkosArray::CrsArray< size_type[2] , device_type >  m_coord ;
   KokkosArray::View< value_type[] , device_type >      m_value ;
   size_type                                            m_entry_max ;
+  size_type                                            m_nnz ;
 
   template< class T , class I >
   friend class Impl::CreateSparseProductTensor ;
@@ -257,11 +261,11 @@ public:
   ~CrsProductTensor() {}
 
   inline
-  CrsProductTensor() : m_coord() , m_value() , m_entry_max(0) {}
+  CrsProductTensor() : m_coord() , m_value() , m_entry_max(0) , m_nnz(0) {}
 
   inline
   CrsProductTensor( const CrsProductTensor & rhs )
-  : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_entry_max( rhs.m_entry_max ) {}
+    : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_entry_max( rhs.m_entry_max ), m_nnz( rhs.m_nnz ) {}
 
   inline
   CrsProductTensor & operator = ( const CrsProductTensor & rhs )
@@ -269,6 +273,7 @@ public:
     m_coord = rhs.m_coord ;
     m_value = rhs.m_value ;
     m_entry_max = rhs.m_entry_max ;
+    m_nnz = rhs.m_nnz;
     return *this ;
   }
 
@@ -298,6 +303,10 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type num_non_zeros() const 
+  { return m_nnz; }
 
 };
 

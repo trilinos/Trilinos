@@ -261,6 +261,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 	if (j == k) host_value(n) *= 0.5;
         host_coord.entries(n,0) = j ;
         host_coord.entries(n,1) = k ;
+	++tensor.m_nnz;
       }
       if ( i != j ) {
 	const size_type row = sorted_row_map[j];
@@ -269,6 +270,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 	if (i == k) host_value(n) *= 0.5;
         host_coord.entries(n,0) = i ;
         host_coord.entries(n,1) = k ;
+	++tensor.m_nnz;
       }
       if ( i != k && j != k ) {
 	const size_type row = sorted_row_map[k];
@@ -277,6 +279,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 	if (i == j) host_value(n) *= 0.5;
         host_coord.entries(n,0) = i ;
         host_coord.entries(n,1) = j ;
+	++tensor.m_nnz;
       }
     }
 
