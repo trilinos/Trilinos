@@ -381,9 +381,9 @@ namespace Belos {
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *R_, *Z_ );
         if ( lp_->getRightPrec() != Teuchos::null ) {
-          Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, numRHS_ );
-          lp_->applyRightPrec( *Z_, *tmp );
-          Z_ = tmp;
+          Teuchos::RCP<MV> tmp2 = MVT::Clone( *Z_, numRHS_ );
+          lp_->applyRightPrec( *Z_, *tmp2 );
+          Z_ = tmp2;
         }
       }
       else if ( lp_->getRightPrec() != Teuchos::null ) {

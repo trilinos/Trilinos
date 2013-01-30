@@ -611,7 +611,6 @@ ifpackApplyImpl (const MAT& A,
   //MV W (B.getMap (), B.getNumVectors (), false);
   MV& V1 = *V_ptr;
   MV& W = *W_ptr;
-  const ST oneOverTheta = one / theta;
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {

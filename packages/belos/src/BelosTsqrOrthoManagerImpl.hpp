@@ -1368,11 +1368,11 @@ namespace Belos {
 	  mat_type C_k_copy (Copy, *C[k], C[k]->numRows(), C[k]->numCols());
 
 	  // C[k] := C2[k]*B_copy + C[k].
-	  const int err = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
+	  const int err1 = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
 					  *C2[k], B_copy, SCT::one());
-	  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(err1 != 0, std::logic_error, 
 			     "Teuchos::SerialDenseMatrix::multiply "
-			     "returned err = " << err << " != 0");
+			     "returned err = " << err1 << " != 0");
 	}
 	// Compute post-second-pass (pre-normalization) norms, using
 	// B2 (the coefficients from the second normalization step) in
@@ -1445,7 +1445,6 @@ namespace Belos {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
-    typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
 
     if (defaultParams_.is_null()) {
       RCP<ParameterList> params = parameterList ("TsqrOrthoManagerImpl");

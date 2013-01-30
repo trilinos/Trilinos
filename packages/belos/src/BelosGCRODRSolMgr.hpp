@@ -1675,8 +1675,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             // Create the restart vector (first block in the current Krylov basis)
             problem_->computeCurrPrecResVec( &*r_ );
             index.resize( 1 ); index[0] = 0;
-            RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
-            MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
+            RCP<MV> v00 =  MVT::CloneViewNonConst( *V_,  index );
+            MVT::SetBlock(*r_,index,*v00); // V(:,0) = r
 
             // Set the new state and initialize the solver.
             GCRODRIterState<ScalarType,MV> restartState;
@@ -2062,7 +2062,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m, 
+int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m, 
 						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
 						     const Teuchos::RCP<const MV>& VV,
 						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
@@ -2096,25 +2096,25 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   
   // A_tmp = | C'*U        0 |
   //         | V_{m+1}'*U  I |
-  Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keff+m+1, keff+m );
+  Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keffloc+m+1, keffloc+m );
 
-  // A_tmp(1:keff,1:keff) = C' * U;
-  index.resize(keff);
-  for (int i=0; i<keff; ++i) { index[i] = i; }
+  // A_tmp(1:keffloc,1:keffloc) = C' * U;
+  index.resize(keffloc);
+  for (i=0; i<keffloc; ++i) { index[i] = i; }
   Teuchos::RCP<const MV> Ctmp  = MVT::CloneView( *C_, index );
   Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_, index );
-  Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
+  Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keffloc, keffloc );
   MVT::MvTransMv( one, *Ctmp, *Utmp, A11 );
 
-  // A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
-  Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keff, keff );
+  // A_tmp(keffloc+1:m-k+keffloc+1,1:keffloc) = V' * U;
+  Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keffloc, keffloc );
   index.resize(m+1);
   for (i=0; i < m+1; i++) { index[i] = i; }
   Teuchos::RCP<const MV> Vp = MVT::CloneView( *VV, index );
   MVT::MvTransMv( one, *Vp, *Utmp, A21 );
 
-  // A_tmp(keff+1:m-k+keff,keff+1:m-k+keff) = eye(m-k);
-  for( i=keff; i<keff+m; i++ ) {
+  // A_tmp(keffloc+1:m-k+keffloc,keffloc+1:m-k+keffloc) = eye(m-k);
+  for( i=keffloc; i<keffloc+m; i++ ) {
     A_tmp(i,i) = one;
   }
 
