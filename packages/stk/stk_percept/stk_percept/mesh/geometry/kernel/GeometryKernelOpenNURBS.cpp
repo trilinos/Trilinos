@@ -16,6 +16,40 @@ GeometryKernelOpenNURBS::~GeometryKernelOpenNURBS()
   ON::End();
 }
 
+bool GeometryKernelOpenNURBS::debug_dump_file(const std::string& file_name)
+{
+  //ONX_Model onModel;
+  FILE* archive_fp = ON::OpenFile( file_name.c_str(), "rb");
+  if ( !archive_fp )
+  {
+    return false;
+  }
+
+  ON_BinaryFile archive( ON::read3dm, archive_fp );
+
+  // read the contents of the file into "model"
+  bool rc = onModel.Read( archive );
+
+  // close the file
+  ON::CloseFile( archive_fp );
+
+  if ( !onModel.IsValid() )
+    return false;
+
+  std::cout << "\n\n ------ DEBUG DUMP of 3dm file: " << file_name << "\n\n" << std::endl;
+  std::cout << "Number of objects in file= " << onModel.m_object_table.Count() << std::endl;
+  for (int i=0; i<onModel.m_object_table.Count(); i++)
+  {
+    std::cout << ">> geom object[" << i << "] = "
+              << (onModel.m_object_table[i].m_object ? typeid(*onModel.m_object_table[i].m_object).name() : "null") 
+              << " name = " << (onModel.m_object_table[i].m_object ?  get_attribute(i) : " no name ")
+              << " type= " << ( (is_curve(i) ? "curve" : (is_surface(i) ? "surface" : "unknowns")))
+              << std::endl;
+  }
+  return rc;
+
+}
+
 bool GeometryKernelOpenNURBS::read_file
 (
   const std::string& file_name,

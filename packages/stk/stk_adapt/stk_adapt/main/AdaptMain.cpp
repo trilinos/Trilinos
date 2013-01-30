@@ -44,6 +44,10 @@
 
 #include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+#include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
+#endif
+
 #define ALLOW_MEM_TEST 1
 
 namespace stk {
@@ -464,10 +468,39 @@ namespace stk {
         }
     }
 
+    static void check_args(int argc, char **argv)
+    {
+      std::string errors="";
+      for (int i = 0; i < argc; i++)
+        {
+          if (i > 0)
+            {
+              std::string av(argv[i]);
+              size_t equal_pos = av.find("=",0);
+              if (equal_pos == std::string::npos)
+                {
+                  errors += "ERROR in options: no '=' found in option: "+av+"\n";
+                }
+              if (av.length() < equal_pos+2)
+                {
+                  errors += "ERROR in options: no value given after '=', found in option: "+av+"\n";
+                }
+            }
+        }
+      if (errors.length())
+        {
+          std::cout << "ERRORS found in options: debug dump of options= " << std::endl;
+          dump_args(argc, argv);
+          std::cout << errors << std::endl;
+          throw std::runtime_error(errors);
+        }
+    }
+
     int adapt_main(int argc, char **argv)
     {
       if (debug)
         dump_args(argc, argv);
+      check_args(argc, argv);
       // allow positional arguments, etc.
       if (check_for_simple_options(argc, argv))
         return adapt_main_simple_options(argc, argv);
@@ -513,6 +546,7 @@ namespace stk {
       int smooth_surfaces = 0;
       //double min_spacing_factor = 0.25; // range [0,0.5]
       int remove_geometry_blocks = 0;
+      int dump_geometry_file = 0;
       int sync_io_regions = 1;
       int delete_parents = 1;
       int print_memory_usage = 0;
@@ -580,6 +614,7 @@ namespace stk {
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
       run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
+      run_environment.clp.setOption("dump_geometry_file"       , &dump_geometry_file       , "debug print geometry (OpenNURBS 3dm) file contents");
       run_environment.clp.setOption("verify_meshes"            , &verify_meshes            , "verify positive volumes for input and output meshes");
       run_environment.clp.setOption("compute_hmesh"            , &compute_hmesh            , "compute mesh parameter using method eigens|edges");
       run_environment.clp.setOption("print_hmesh_surface_normal"  , &print_hmesh_surface_normal            , "prints a table of normal mesh spacing at each surface");
@@ -674,6 +709,17 @@ namespace stk {
       MPI_Barrier( MPI_COMM_WORLD );
 #endif
 
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+      if (dump_geometry_file)
+        {
+          GeometryKernelOpenNURBS gko;
+          gko.debug_dump_file(input_geometry);
+        }
+#endif
+
+      // ========================================================================================================================================================================================================
+      //    START
+      // ========================================================================================================================================================================================================
       std::string input_mesh_save = input_mesh;
       std::string output_mesh_save = output_mesh;
 
@@ -872,7 +918,7 @@ namespace stk {
                           }
                       }
 
-                    // ==============  START  ==================================================================
+                    // ==============  START Normal Pass  ==================================================================
 
                     if (do_normal_pass)
                       {

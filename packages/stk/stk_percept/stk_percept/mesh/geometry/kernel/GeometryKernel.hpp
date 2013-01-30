@@ -16,6 +16,7 @@ public:
     virtual bool read_file(const std::string& file_name,
                            std::vector<GeometryHandle>& geometry_entities ) = 0;
 
+    virtual bool debug_dump_file(const std::string& file_name) { return true; }
     virtual std::string get_attribute(GeometryHandle geom) = 0;
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom,

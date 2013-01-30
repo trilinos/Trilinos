@@ -13,6 +13,7 @@ public:
 
     virtual bool read_file(const std::string& file_name,
                            std::vector<GeometryHandle>& geometry_entities);
+    virtual bool debug_dump_file(const std::string& file_name);
 
     virtual std::string get_attribute(GeometryHandle geom);
 
@@ -25,6 +26,8 @@ public:
     virtual bool is_curve(GeometryHandle geom) const;
 
     virtual bool is_surface(GeometryHandle geom) const;
+
+    
 
 private:
     ONX_Model onModel;
