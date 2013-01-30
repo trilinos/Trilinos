@@ -17,4 +17,10 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     COMM serial mpi
     DEPLIBS muelu xpetra
     )
+  TRIBITS_ADD_EXECUTABLE(
+    SeparateSetups
+    SOURCES SmoothedAggregation.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra
+    )
 ENDIF()
