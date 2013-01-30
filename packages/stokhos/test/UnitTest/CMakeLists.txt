@@ -341,6 +341,8 @@ IF(Stokhos_ENABLE_Sacado)
     IF (Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTest_Cuda.cu)
       SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
+    ELSE()
+      SET(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestStubs.cpp)
     ENDIF()
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest

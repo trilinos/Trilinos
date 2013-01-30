@@ -178,6 +178,9 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
   }
 }
 
+extern void initialize_cuda(int device_id);
+extern void finalize_cuda();
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   setup.setup();
@@ -190,14 +193,14 @@ int main( int argc, char* argv[] ) {
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
   // Initialize Cuda
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+  initialize_cuda(0);
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
   KokkosArray::Host::finalize();
-  KokkosArray::Cuda::finalize();
+  finalize_cuda();
 
   return ret;
 }
