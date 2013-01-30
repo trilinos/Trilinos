@@ -143,19 +143,19 @@ namespace panzer {
       * This automatically sets up the gather/scatter routines neccessary
       * to evaluate and assemble with this unknown.
       *
-      * \param[in] dofName Name of field to lookup in the unique global
+      * \param[in] dofName (Required) Name of field to lookup in the unique global
       *                        indexer. This also serves as a key for the remaining
       *                        <code>addDOF*</code> methods.
-      * \param[in] basisType Name of the basis type for this DOF.
-      * \param[in] basisOrder Polynomial order for the basis for this DOF.
-      * \param[in] integrationOrder Order of the integration rule associated with this
+      * \param[in] basisType (Required) Name of the basis type for this DOF.
+      * \param[in] basisOrder (Required) Polynomial order for the basis for this DOF.
+      * \param[in] integrationOrder (Optional) Order of the integration rule associated with this
       *                             DOF.  If set to -1 (default), it will use the default
       *                             integration order.
-      * \param[in] residualName Name of field that is to be scattered associated with
+      * \param[in] residualName (Optional) Name of field that is to be scattered associated with
       *                         this DOF.  If not supplied or an empty string used, the
       *                         default is to add the prefix "RESIDUAL_" to the dofName for
       *                         the residual field name.
-      * \param[in] scatterName Name of the required scatter field associated with
+      * \param[in] scatterName (Optional) Name of the required scatter field associated with
       *                        this DOF.  If not supplied or an empty string used,
       *                        the default is to add the prefix "SCATTER_"
       *                        to the dofName for the scatter field name.
@@ -169,8 +169,8 @@ namespace panzer {
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
-      * \param[in] dofName Name of field to lookup in the unique global indexer. 
-      * \param[in] gradName Name of the gradient field associated with
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] gradName (Optional) Name of the gradient field associated with
       *                     this DOF.  If not supplied or an empty string used,
       *                     the default is to add the prefix "GRAD_"
       *                     to the dofName for the name of the gradient field.
@@ -180,8 +180,8 @@ namespace panzer {
 
     /** Alert the panzer library that a curl of particular a DOF is needed.
       *
-      * \param[in] dofName Name of field to lookup in the unique global indexer. 
-      * \param[in] curlName Name of the curl field associated with
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] curlName (Optional) Name of the curl field associated with
       *                     this DOF.  If not supplied or an empty string used,
       *                     the default is to add the prefix "CURL_"
       *                     to the dofName for the naem of the curl field.
@@ -191,8 +191,8 @@ namespace panzer {
 
     /** Alert the panzer library that a time derivative of particular a DOF is needed.
       *
-      * \param[in] dofName Name of field to lookup in the unique global indexer. 
-      * \param[in] dotName Name of the time derivative field associated with
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] dotName (Optional) Name of the time derivative field associated with
       *                    this DOF.  If not supplied or an empty string used,
       *                    the default is to add the prefix "DXDT_"
       *                    to the dofName for the name of the time derivative field.
