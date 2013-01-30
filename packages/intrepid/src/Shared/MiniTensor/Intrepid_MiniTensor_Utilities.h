@@ -139,6 +139,6 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#include "Intrepid_MiniTensor_Utilities.i.cc"
+#include "Intrepid_MiniTensor_Utilities.i.h"
 
 #endif // Intrepid_MiniTensor_Utilities_h

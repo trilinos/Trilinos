@@ -349,7 +349,7 @@ namespace Intrepid {
 
 } // namespace Intrepid
 
-#include "Intrepid_MiniTensor_Vector.i.cc"
-#include "Intrepid_MiniTensor_Vector.t.cc"
+#include "Intrepid_MiniTensor_Vector.i.h"
+#include "Intrepid_MiniTensor_Vector.t.h"
 
 #endif //Intrepid_MiniTensor_Vector_h
