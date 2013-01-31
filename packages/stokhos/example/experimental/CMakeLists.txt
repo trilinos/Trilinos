@@ -16,7 +16,6 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
        SOURCES linear2d_diffusion_pce.cpp 
                twoD_diffusion_problem_tpetra.hpp 
 	       twoD_diffusion_problem_tpetra_def.hpp
-               BelosPCETpetraAdapter.hpp
        COMM serial mpi
        DEPLIBS stokhos muelu xpetra
       )
@@ -25,7 +24,6 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
        SOURCES linear2d_diffusion_pce_ifpack2.cpp 
                twoD_diffusion_problem_tpetra.hpp 
 	       twoD_diffusion_problem_tpetra_def.hpp
-               BelosPCETpetraAdapter.hpp
        COMM serial mpi
        DEPLIBS stokhos
       )
