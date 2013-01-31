@@ -261,19 +261,19 @@ void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename Matri
   Zeros->putScalar((scalar_type) 0.0);
 
   // Belos Linear Problem
-  Teuchos::RCP< Belos::LinearProblem<scalar_type,
+  Teuchos::RCP< Belos::LinearProblem<belos_scalar_type,
     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
     Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem = 
-    Teuchos::rcp( new Belos::LinearProblem<scalar_type,
+    Teuchos::rcp( new Belos::LinearProblem<belos_scalar_type,
 		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 		  Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (A_, Zeros, Xcopy) );
   belosProblem->setLeftPrec(ifpack2_prec_);
   belosProblem->setProblem(Zeros,Xcopy);
   // Belos Solver Manager
-  Teuchos::RCP< Belos::SolverManager<scalar_type,
+  Teuchos::RCP< Belos::SolverManager<belos_scalar_type,
     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
     Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver = 
-    Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,
+    Teuchos::rcp( new Belos::BlockGmresSolMgr<belos_scalar_type,
 		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 		  Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem, belosList_) );
   // iterative solve

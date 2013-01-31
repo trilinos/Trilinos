@@ -75,6 +75,16 @@ namespace Teuchos {
 }
 
 namespace Ifpack2 {
+
+  //! A traits class for determining the scalar type to use for Belos
+  /*
+   * This exists to allow a ScalarType to override what scalar type is used
+   * for Belos, if those are not equal, by specializing this class.
+   */
+  template <typename ScalarType>
+  struct BelosScalarType {
+    typedef ScalarType type;
+  };
   
   //! A class for constructing and using a CG/GMRES smoother
   // for a given Tpetra::RowMatrix.
@@ -93,6 +103,9 @@ namespace Ifpack2 {
     
     //! The type of the entries of the input MatrixType.
     typedef typename MatrixType::scalar_type scalar_type;
+
+    //! The scalar type used by Belos (which may not be scalar_type)
+    typedef typename BelosScalarType<scalar_type>::type belos_scalar_type;
     
     //! Preserved only for backwards compatibility.  Please use "scalar_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
@@ -317,10 +330,10 @@ namespace Ifpack2 {
     global_size_t NumGlobalNonzeros_;
     
     //! Belos Objects
-    Teuchos::RCP< Belos::LinearProblem<scalar_type,
+    Teuchos::RCP< Belos::LinearProblem<belos_scalar_type,
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
-    Teuchos::RCP< Belos::SolverManager<scalar_type,
+    Teuchos::RCP< Belos::SolverManager<belos_scalar_type,
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
     Teuchos::RCP<Teuchos::ParameterList> belosList_;
