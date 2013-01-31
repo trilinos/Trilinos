@@ -304,7 +304,11 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* indices) {
      }
   }
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   EPETRA_CHK_ERR(InsertIndicesIntoSorted(Row, NumIndices, indices));
+#else
+  throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted: Failure because neither 32 bit nor 64 bit indices insertable.", -1);
+#endif
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
@@ -664,7 +668,12 @@ int Epetra_CrsGraph::TRemoveGlobalIndices(long long Row) {
   if(CrsGraphData_->CV_ == View) 
     EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
-  int locRow = LRID(Row); // Normalize row range
+  // Normalize row range
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int locRow = LRID((int) Row);
+#else
+  int locRow = LRID(Row);
+#endif
     
   if(locRow < 0 || locRow >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -1301,7 +1310,11 @@ int Epetra_CrsGraph::DetermineTriangular()
   for(int i = 0; i < numMyBlockRows; i++) {
     int NumIndices = NumMyIndices(i);
     if(NumIndices > 0) {
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES) && !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+      int ig = rowMap.GID(i);
+#else
       long long ig = rowMap.GID64(i);
+#endif
       int* col_indices = this->Indices(i);
 
       int jl_0 = col_indices[0];
@@ -2139,7 +2152,11 @@ int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& targIndice
 
 //==============================================================================
 int Epetra_CrsGraph::NumGlobalIndices(long long Row) const {
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int locRow = LRID((int) Row);
+#else
   int locRow = LRID(Row);
+#endif
   if(locRow != -1) 
     return(NumMyIndices(locRow));
   else 
@@ -2148,7 +2165,11 @@ int Epetra_CrsGraph::NumGlobalIndices(long long Row) const {
 
 //==============================================================================
 int Epetra_CrsGraph::NumAllocatedGlobalIndices(long long Row) const {
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int locRow = LRID((int) Row);
+#else
   int locRow = LRID(Row);
+#endif
   if(locRow != -1) 
     return(NumAllocatedMyIndices(locRow));
   else 
@@ -2319,16 +2340,16 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
   if(!A.RowMatrixRowMap().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A.RowMatrixRowMap().GlobalIndicesInt())
     return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
-
-  if(A.RowMatrixRowMap().GlobalIndicesLongLong())
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
-#else
-    throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+  else
 #endif
-
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A.RowMatrixRowMap().GlobalIndicesLongLong())
+    return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  else
+#endif
   throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Unable to determine global index type of map", -1);
 }
 
@@ -2695,9 +2716,6 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
   if(NumImportIDs <= 0) 
     return(0);
 
-  int NumIndices;
-  int i;
-  
   // Unpack it...
 
   // Each segment of Sends will be filled by a packed row of information for each row as follows:
@@ -2705,7 +2723,10 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
   // next int:  NumIndices, Number of indices in row.
   // next NumIndices: The actual indices for the row.
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Source.Map().GlobalIndicesInt()) {
+    int NumIndices;
+    int i;
     int* indices;
     int ToRow;
     int* intptr = (int*) Imports;
@@ -2721,8 +2742,12 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
       intptr += (NumIndices+2); // Point to next segment
     }
   }
-  else if(Source.Map().GlobalIndicesLongLong()) {
+  else
+#endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Source.Map().GlobalIndicesLongLong()) {
+    int NumIndices;
+    int i;
     long long* indices;
     long long ToRow;
     long long* LLptr = (long long*) Imports;
@@ -2737,11 +2762,9 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
         EPETRA_CHK_ERR(ierr);
       LLptr += (NumIndices+2); // Point to next segment
     }
-#else
-    throw ReportError("Epetra_CrsGraph::UnpackAndCombine: ERROR, GlobalIndicesLongLong but no API for it.",-1);
-#endif
   }
   else
+#endif
     throw ReportError("Epetra_CrsGraph::UnpackAndCombine: Unable to determine source global index type",-1);
 
   //destroy buffers since this operation is usually only done once

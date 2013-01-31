@@ -1,12 +1,13 @@
-// @HEADER
-// ***********************************************************************
+/*
+//@HEADER
+// ************************************************************************
 // 
-//                 TriUtils: Trilinos Utilities Package
-//                 Copyright (2011) Sandia Corporation
+//               Epetra: Linear Algebra Services Package 
+//                 Copyright 2011 Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,33 +37,47 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ***********************************************************************
-// @HEADER
+// ************************************************************************
+//@HEADER
+*/
 
-#include <vector>
+#ifndef EPETRA_GIDTYPEVECTOR_H
+#define EPETRA_GIDTYPEVECTOR_H
+
 #include "Epetra_ConfigDefs.h"
-#include "Epetra_Comm.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_LongLongVector.h"
+
+//! Epetra_GIDTypeVector: A class for constructing and using dense "int" and "long long" vectors on a parallel computer.
+
+/*! The Epetra_GIDTypeVector class enables the construction and use of integer
+    dense vectors in a distributed memory environment.
+*/
+
+//=========================================================================
+template<typename int_type>
+class Epetra_GIDTypeVector;
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
-void Trilinos_Util_CountTriples( const char *data_file, 
-				 bool symmetric, 
-				 std::vector<int> &non_zeros,
-				 int &N_rows, int &nnz, 
-				 const Epetra_Comm  &comm, 
-				 bool TimDavisHeader=false, 
-				 bool ZeroBased=false ) ;
+template<>
+class Epetra_GIDTypeVector<int>
+{
+public:
+	typedef Epetra_IntVector impl;
+};
 
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
-void Trilinos_Util_CountTriples( const char *data_file, 
-				 bool symmetric, 
-				 std::vector<int> &non_zeros,
-				 long long &N_rows, long long &nnz, 
-				 const Epetra_Comm  &comm, 
-				 bool TimDavisHeader=false, 
-				 bool ZeroBased=false ) ;
+template<>
+class Epetra_GIDTypeVector<long long>
+{
+public:
+	typedef Epetra_LongLongVector impl;
+};
 
 #endif
+
+#endif /* EPETRA_GIDTYPEVECTOR_H */

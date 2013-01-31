@@ -42,6 +42,7 @@
 */
 
 #include "AztecOO.h"
+#include "Epetra_ConfigDefs.h"
 #ifdef AZTEC_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -908,12 +909,17 @@ int AztecOO::Iterate(long long MaxIters, double Tolerance)
 
   if (UserMatrixData_!=0)
     if (GetUserMatrix()!=0) {
-      long long nnz = GetUserMatrix()->RowMatrixRowMap().GlobalIndicesInt() ?
-         GetUserMatrix()->NumGlobalNonzeros() :
-         GetUserMatrix()->NumGlobalNonzeros64();
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      long long nnz = GetUserMatrix()->NumGlobalNonzeros64();
+#elif !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+      int nnz = GetUserMatrix()->NumGlobalNonzeros();
+#endif
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (nnz==0) {
 	EPETRA_CHK_ERR(-12); // Matrix has no entries.
       }
+#endif
     }
 
   // MaxIters not greater than INT_MAX because of check above.
@@ -1358,6 +1364,11 @@ void AztecOO::PrintLinearSystem(const char* name)
           }
         }
         else {
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // CJ: TODO FIXME
+          // ifdef-out dynamic_cast to Epetra_VbrMatrix to avoid linker
+          // error of missing typeinfo.  Issue in Epetra 64 bit.
+
           Epetra_VbrMatrix* vbr =
             dynamic_cast<Epetra_VbrMatrix*>(GetUserMatrix());
           if (vbr != 0) {
@@ -1370,6 +1381,7 @@ void AztecOO::PrintLinearSystem(const char* name)
                    << afilename << "'."<<std::endl;
             }
           }
+#endif
         }
       }
     }

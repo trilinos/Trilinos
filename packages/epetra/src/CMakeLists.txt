@@ -68,6 +68,8 @@ SET(HEADERS ${HEADERS}
 #  Epetra_FastCrsMatrix.h
   Epetra_Flops.h
   Epetra_Fortran_wrappers.h
+  Epetra_GIDTypeSerialDenseVector.h
+  Epetra_GIDTypeVector.h
   Epetra_HashTable.h
   Epetra_Import.h
   Epetra_IntSerialDenseMatrix.h

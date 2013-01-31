@@ -47,13 +47,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include <limits>
 #include "Trilinos_Util_CountTriples.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-int Trilinos_Util_ReadTriples2Epetra( char *data_file,
+template<typename int_type>
+int Trilinos_Util_ReadTriples2Epetra_internal( char *data_file,
 				      bool symmetric, 
 				      const Epetra_Comm  &comm, 
 				      Epetra_Map *& map, 
@@ -65,7 +68,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) {
   FILE *in_file ;
-  int N_rows = 0, nnz = 0; 
+  int_type N_rows = 0, nnz = 0; 
   
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
@@ -74,19 +77,19 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
 #if 0
   cout << " Trilinos_Util_ReadTriples2Epetra.cpp::" << __LINE__ << "  N_rows = " << N_rows << endl << "non_zeros = " ; 
-  for (int i= 0; i<N_rows; i++ )  cout << non_zeros[i] ; 
+  for (int_type i= 0; i<N_rows; i++ )  cout << non_zeros[i] ; 
   cout << endl ; 
   comm.Barrier();
 #endif
  
-  int NumNonZeroRows=0;
-  std::vector<int> MapIndices;
+  int_type NumNonZeroRows=0;
+  std::vector<int_type> MapIndices;
   if(comm.MyPID() == 0)  { 
     if ( NonUniformMap ) {
-      for (int i= 0; i<N_rows; i++ )  if( non_zeros[i] > 0 ) NumNonZeroRows++;
+      for (int_type i= 0; i<N_rows; i++ )  if( non_zeros[i] > 0 ) NumNonZeroRows++;
       MapIndices.resize(NumNonZeroRows);
-      int IndexNumber =0;
-      for (int i= 0; i<N_rows; i++ ) if( non_zeros[i] > 0 ) MapIndices[IndexNumber++]=i;
+      int_type IndexNumber =0;
+      for (int_type i= 0; i<N_rows; i++ ) if( non_zeros[i] > 0 ) MapIndices[IndexNumber++]=i;
     }
   }
   //
@@ -100,8 +103,8 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     comm.Broadcast( &MapIndices[0], NumNonZeroRows, 0 ) ; 
   }
 
-  std::vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
-  std::vector<int> inds(nnz);     //  Column Indices
+  std::vector<int_type> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
+  std::vector<int_type> inds(nnz);     //  Column Indices
   std::vector<double> vals(nnz);  //  Matrix values
 
   if(comm.MyPID() == 0)  { 
@@ -112,21 +115,26 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     assert (in_file != NULL) ;  // Checked in T_U_CountTriples() 
 
     ptrs[0] = 0 ; 
-    for( int i=0; i< N_rows; i++ ) { 
+    for( int_type i=0; i< N_rows; i++ ) { 
       ptrs[i+1] = ptrs[i] + non_zeros[i]; 
     }
 
-    std::vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
+    std::vector<int_type> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
     if ( TimDavisHeader ) fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
-      int i, j; 
+      int_type i, j; 
       double val ; 
-      sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
-      const int i_index = ( ZeroBased?i:i-1 );
-      const int j_index = ( ZeroBased?j:j-1 );
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ; 
+      else
+        assert(false);
+      const int_type i_index = ( ZeroBased?i:i-1 );
+      const int_type j_index = ( ZeroBased?j:j-1 );
 
-      int iptr = iptrs[i_index] ; 
+      int_type iptr = iptrs[i_index] ; 
       iptrs[i_index]++ ;
       vals[iptr] = val ; 
       inds[iptr] = j_index ; 
@@ -146,18 +154,28 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
   int nlocal = 0;
   if ( NonUniformMap ) {
-    if (comm.MyPID()==0) nlocal = NumNonZeroRows;
-    map = new Epetra_Map(NumNonZeroRows, nlocal, &MapIndices[0], 0, comm); // Create map with all elements on PE 0
+    if (comm.MyPID()==0) {
+      if(NumNonZeroRows > std::numeric_limits<int>::max())
+        throw "Triutils: Trilinos_Util_ReadTriples2Epetra_internal: NumNonZeroRows > std::numeric_limits<int>::max()";
+      nlocal = static_cast<int>(NumNonZeroRows);
+	}
+    map = new Epetra_Map(NumNonZeroRows, nlocal, &MapIndices[0], (int_type) 0, comm); // Create map with all elements on PE 0
   } else { 
-    if (comm.MyPID()==0) nlocal = N_rows;
-    map = new Epetra_Map(N_rows, nlocal, 0, comm); // Create map with all elements on PE 0
+    if (comm.MyPID()==0) {
+      if(N_rows > std::numeric_limits<int>::max())
+        throw "Triutils: Trilinos_Util_ReadTriples2Epetra_internal: N_rows > std::numeric_limits<int>::max()";
+      nlocal = static_cast<int>(N_rows);
+	}
+    map = new Epetra_Map(N_rows, nlocal, (int_type) 0, comm); // Create map with all elements on PE 0
   }
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
 
   if (comm.MyPID()==0)
-    for (int i=0; i<N_rows; i++) {
-      if ( ptrs[i+1]>ptrs[i]) A->InsertGlobalValues(i, ptrs[i+1]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    for (int_type i=0; i<N_rows; i++) {
+      if(ptrs[i+1]-ptrs[i] > std::numeric_limits<int>::max())
+        throw "Triutils: Trilinos_Util_ReadTriples2Epetra_internal: ptrs[i+1]-ptrs[i] > std::numeric_limits<int>::max()";
+      if ( ptrs[i+1]>ptrs[i]) A->InsertGlobalValues(i, (int) (ptrs[i+1]-ptrs[i]), &vals[ptrs[i]], &inds[ptrs[i]]);
     }
   A->FillComplete();
 
@@ -176,3 +194,41 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
   return 0;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadTriples2Epetra( char *data_file,
+				      bool symmetric, 
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact,
+				      bool NonUniformMap=false,
+				      bool TimDavisHeader=false,
+				      bool ZeroBased=false ) {
+  return Trilinos_Util_ReadTriples2Epetra_internal<int>(data_file, symmetric, comm, map, A, x, b,
+	  xexact, NonUniformMap, TimDavisHeader, ZeroBased);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadTriples2Epetra64( char *data_file,
+				      bool symmetric, 
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact,
+				      bool NonUniformMap=false,
+				      bool TimDavisHeader=false,
+				      bool ZeroBased=false ) {
+  return Trilinos_Util_ReadTriples2Epetra_internal<long long>(data_file, symmetric, comm, map, A, x, b,
+	  xexact, NonUniformMap, TimDavisHeader, ZeroBased);
+}
+
+#endif

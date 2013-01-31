@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <vector>
 // #include "Trilinos_Util_Triples.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 
@@ -53,10 +54,11 @@
 //
 //  Returns:  N_rows and nnz replicated across all processes
 //
-void Trilinos_Util_CountTriples( const char *data_file, 
+template<typename int_type>
+void Trilinos_Util_CountTriples_internal( const char *data_file, 
 				 bool symmetric, 
 				 std::vector<int> &non_zeros,
-				 int &N_rows, int &nnz, 
+				 int_type &N_rows, int_type &nnz, 
 				 const Epetra_Comm  &comm, 
 				 bool TimDavisHeader=false,
 				 bool ZeroBased=false 
@@ -66,16 +68,16 @@ void Trilinos_Util_CountTriples( const char *data_file,
 
   N_rows = 0 ; 
   nnz = 0 ; 
-  int vecsize = non_zeros.size(); 
+  int_type vecsize = non_zeros.size(); 
   assert( vecsize == 0 ) ; 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
   bool first_off_diag = true ; 
   bool upper ;
 
-  int num_rows = -1 ; 
-  int num_cols = -1 ; 
-  int num_nz = -1 ; 
+  int_type num_rows = -1 ; 
+  int_type num_cols = -1 ; 
+  int_type num_nz = -1 ; 
   int hdr_type = -131313 ; 
     
   if(comm.MyPID() == 0)  { 
@@ -91,7 +93,12 @@ void Trilinos_Util_CountTriples( const char *data_file,
     
     if ( TimDavisHeader ) { 
       fgets( buffer, BUFSIZE, in_file );
-      sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %lld %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+      else
+        assert(false);
       if( hdr_type != 0 ) {
 	if ( hdr_type == -131313 ) 
 	  printf("Bad Tim Davis header line.  Should have four  values and the fourth must be zero.\n"); 
@@ -106,19 +113,25 @@ void Trilinos_Util_CountTriples( const char *data_file,
     } 
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
-      int i, j; 
+      int_type i, j; 
       float val ; 
       i = -13 ;   // Check for blank lines 
-      sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ; 
+      else
+        assert(false);
+	  
       if ( ZeroBased ) { i++; j++ ; } 
       if ( i > 0 ) { 
-	int needvecsize = i;
+	int_type needvecsize = i;
 	if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
 	if ( needvecsize >= vecsize ) {
-	  int oldvecsize = vecsize; 
-	  vecsize += EPETRA_MAX(1000,needvecsize-vecsize) ; 
+	  int_type oldvecsize = vecsize; 
+	  vecsize += EPETRA_MAX((int_type) 1000,needvecsize-vecsize) ; 
 	  non_zeros.resize(vecsize) ; 
-	  for ( int i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
+	  for ( int_type i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
 	}
 	N_rows = EPETRA_MAX( N_rows, i ) ; 
 	if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ; 
@@ -143,8 +156,14 @@ void Trilinos_Util_CountTriples( const char *data_file,
 
   if ( TimDavisHeader && comm.MyPID() == 0)  { 
     if ( num_rows != N_rows ) {
-      printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %d, but the actual number of rows is: %d\n",
+      if(sizeof(int) == sizeof(int_type))
+        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %d, but the actual number of rows is: %d\n",
 	      num_rows, N_rows );
+      else if(sizeof(long long) == sizeof(int_type))
+        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %lld, but the actual number of rows is: %lld\n",
+	      num_rows, N_rows );
+      else
+        assert(false);
     }
     if ( num_nz != nnz ) {
       printf( " Bad Tim Davis Header Line.  The third value should be the number of non-zeros.  We see %d, but the actual number of non-zeros is: %d\n",
@@ -156,3 +175,33 @@ void Trilinos_Util_CountTriples( const char *data_file,
   comm.Broadcast( &nnz, 1, 0 );
   return;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountTriples( const char *data_file, 
+				 bool symmetric, 
+				 std::vector<int> &non_zeros,
+				 int &N_rows, int &nnz, 
+				 const Epetra_Comm  &comm, 
+				 bool TimDavisHeader=false, 
+				 bool ZeroBased=false ) {
+  Trilinos_Util_CountTriples_internal<int>(data_file, symmetric, non_zeros,
+    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountTriples( const char *data_file, 
+				 bool symmetric, 
+				 std::vector<int> &non_zeros,
+				 long long &N_rows, long long &nnz, 
+				 const Epetra_Comm  &comm, 
+				 bool TimDavisHeader=false, 
+				 bool ZeroBased=false ) {
+  Trilinos_Util_CountTriples_internal<long long>(data_file, symmetric, non_zeros,
+    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+}
+
+#endif

@@ -41,12 +41,14 @@
 
 #include "Trilinos_Util.h"
 #include "iohb.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-void Trilinos_Util_ReadHpc2Epetra(char *data_file,
+template<typename int_type>
+void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 				 const Epetra_Comm  &comm, 
 				 Epetra_Map *& map, 
 				 Epetra_CrsMatrix *& A, 
@@ -77,10 +79,19 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
       printf("Error: Cannot open file: %s\n",data_file);
       exit(1);
     }
-  int numGlobalEquations, total_nnz;
-  fscanf(in_file,"%d",&numGlobalEquations);
-  fscanf(in_file,"%d",&total_nnz);
-  map = new Epetra_Map(numGlobalEquations, 0, comm); // Create map with uniform distribution
+  int_type numGlobalEquations, total_nnz;
+  if(sizeof(int) == sizeof(int_type)) {
+    fscanf(in_file,"%d",&numGlobalEquations);
+    fscanf(in_file,"%d",&total_nnz);
+  }
+  else if(sizeof(long long) == sizeof(int_type)) {
+    fscanf(in_file,"%lld",&numGlobalEquations);
+    fscanf(in_file,"%lld",&total_nnz);
+  }
+  else
+    assert(false);
+
+  map = new Epetra_Map(numGlobalEquations, (int_type) 0, comm); // Create map with uniform distribution
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
 
@@ -103,9 +114,9 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 
   // Allocate arrays that are of length local_nnz
   double * list_of_vals = new double[max_nnz];
-  int *list_of_inds = new int   [max_nnz];
+  int_type *list_of_inds = new int_type   [max_nnz];
 
-  {for (int i=0; i<numGlobalEquations; i++)
+  {for (int_type i=0; i<numGlobalEquations; i++)
     {
       int cur_nnz;
       fscanf(in_file, "%d",&cur_nnz);
@@ -130,7 +141,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
     }}
 
   double xt, bt, xxt;
-  {for (int i=0; i<numGlobalEquations; i++) 
+  {for (int_type i=0; i<numGlobalEquations; i++) 
     {
       if (map->MyGID(i)) // See if entry should be added
 	{
@@ -151,8 +162,8 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
   
   if (debug)
     cout << "Process "<<rank<<" of "<<size<<" has "<<numMyEquations
-	 << " rows. Min global row "<< map->MinMyGID()
-	 <<" Max global row "<< map->MaxMyGID() <<endl
+	 << " rows. Min global row "<< map->MinMyGID64()
+	 <<" Max global row "<< map->MaxMyGID64() <<endl
 	 <<" and "<<A->NumMyNonzeros()<<" nonzeros."<<endl;
 
   A->FillComplete();
@@ -175,3 +186,32 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 
   return;
 }
+
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHpc2Epetra(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact) {
+  Trilinos_Util_ReadHpc2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHpc2Epetra64(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact) {
+  Trilinos_Util_ReadHpc2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact);
+}
+
+#endif
