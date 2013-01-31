@@ -214,7 +214,7 @@ generalToBanded(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& A,
     rcp( new SerialBandDenseMatrix<OrdinalType,ScalarType>(m,n,kl,extraBands+ku,true));
 
   for (OrdinalType j = 0; j < n; j++) {
-    for (OrdinalType i=std::max(0,j-ku); i<=std::min(m-1,j+kl); i++) {
+    for (OrdinalType i=TEUCHOS_MAX(0,j-ku); i<=TEUCHOS_MIN(m-1,j+kl); i++) {
       (*AB)(i,j) = (*A)(i,j);
     }
   }
@@ -244,7 +244,7 @@ bandedToGeneral(const RCP<SerialBandDenseMatrix<OrdinalType,ScalarType> >& AB)
 
   Teuchos::RCP<SerialDenseMatrix<OrdinalType, ScalarType> > A = rcp( new SerialDenseMatrix<OrdinalType,ScalarType>(m,n) );
   for (OrdinalType j = 0; j < n; j++) {
-    for (OrdinalType i=std::max(0,j-ku); i<=std::min(m-1,j+kl); i++) {
+    for (OrdinalType i=TEUCHOS_MAX(0,j-ku); i<=TEUCHOS_MIN(m-1,j+kl); i++) {
       (*A)(i,j) = (*AB)(i,j);
     }
   }

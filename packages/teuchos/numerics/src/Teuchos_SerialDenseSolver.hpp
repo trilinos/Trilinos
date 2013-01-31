@@ -53,7 +53,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
 #include "Eigen/Dense"
 #endif
 
@@ -141,7 +141,7 @@ namespace Teuchos {
   public:
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
     typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> EigenMatrix;
     typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,1> EigenVector;
     typedef typename Eigen::InnerStride<Eigen::Dynamic> EigenInnerStride;
@@ -422,7 +422,7 @@ namespace Teuchos {
     std::vector<ScalarType> WORK_;
     std::vector<MagnitudeType> R_;
     std::vector<MagnitudeType> C_;
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
     Eigen::PartialPivLU<EigenMatrix> lu_;
 #endif
 
@@ -614,7 +614,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 
   INFO_ = 0;
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap aMap( AF_, M_, N_, EigenOuterStride(LDAF_) );
   EigenPermutationMatrix p;
   EigenOrdinalArray ind;
@@ -693,7 +693,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
     }
     INFO_ = 0;
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
     EigenMatrixMap rhsMap( RHS_->values(), RHS_->numRows(), RHS_->numCols(), EigenOuterStride(RHS_->stride()) );
     EigenMatrixMap lhsMap( LHS_->values(), LHS_->numRows(), LHS_->numCols(), EigenOuterStride(LHS_->stride()) );
     if ( TRANS_ == Teuchos::NO_TRANS ) {
@@ -735,7 +735,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
 		     "SerialDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   // Implement templated GERFS or use Eigen.
   return (-1);
 #else
@@ -888,7 +888,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::invert()
 
   if (!factored()) factor(); // Need matrix factored.
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap invMap( AF_, M_, N_, EigenOuterStride(LDAF_) );
   EigenMatrix invMat = lu_.inverse();
   for (OrdinalType j=0; j<invMap.outerSize(); j++) {
@@ -928,7 +928,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::invert()
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(MagnitudeType & Value)
 {
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   // Implement templated GECON or use Eigen. Eigen currently doesn't have a condition estimation function.
   return (-1);
 #else

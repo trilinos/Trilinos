@@ -53,7 +53,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
 #include "Eigen/Dense"
 #endif
 
@@ -135,7 +135,7 @@ namespace Teuchos {
   public:
 
     typedef typename ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
     typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> EigenMatrix;
     typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,1> EigenVector;
     typedef typename Eigen::InnerStride<Eigen::Dynamic> EigenInnerStride;
@@ -378,7 +378,7 @@ namespace Teuchos {
     ScalarType * Q_;
     ScalarType * R_;
     std::vector<ScalarType> WORK_;
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
     Eigen::HouseholderQR<EigenMatrix> qr_;
 #endif
 
@@ -558,7 +558,7 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::factor() {
   INFO_ = 0;
 
   // Factor
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap aMap( AF_, M_, N_, EigenOuterStride(LDAF_) );
   EigenScalarArray tau;
   EigenScalarArrayMap tauMap(&TAU_[0],TEUCHOS_MIN(M_,N_));
@@ -851,7 +851,7 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::formQ() {
   INFO_ = 0;
 
   // Form Q
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap qMap( Q_, M_, N_, EigenOuterStride(LDQ_) );
   EigenMatrix qMat = qr_.householderQ();
   for (OrdinalType j=0; j<qMap.outerSize(); j++) {
@@ -915,7 +915,7 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::multiplyQ(ETransp transq, Ser
   INFO_ = 0;
 
   // Multiply
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap cMap( C.values(), C.numRows(), C.numCols(), EigenOuterStride(C.stride()) );
   if ( transq == Teuchos::NO_TRANS ) {
     // C = Q * C
@@ -976,7 +976,7 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::solveR(ETransp transr, Serial
   INFO_ = 0;
 
   // Solve
-#ifdef HAVE_TEUCHOS_EIGEN
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   EigenMatrixMap cMap( C.values(), N_, C.numCols(), EigenOuterStride(C.stride()) );
   // Check for singularity first like TRTRS
   for (OrdinalType j=0; j<N_; j++) {

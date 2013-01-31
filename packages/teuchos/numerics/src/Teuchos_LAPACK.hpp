@@ -611,13 +611,12 @@ namespace Teuchos
   void LAPACK<OrdinalType,ScalarType>::LASCL(const char TYPE, const OrdinalType kl, const OrdinalType ku, const MagnitudeType cfrom, const MagnitudeType cto, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const
   {
     MagnitudeType safeMin = ScalarTraits<ScalarType>::sfmin();
-    MagnitudeType prec = ScalarTraits<ScalarType>::prec();
     ScalarType sZero = ScalarTraits<ScalarType>::zero();
     ScalarType sOne  = ScalarTraits<ScalarType>::one();
     MagnitudeType mZero = ScalarTraits<ScalarType>::magnitude(sZero);
     MagnitudeType mOne = ScalarTraits<ScalarType>::magnitude(sOne);
 
-    MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin/prec);
+    MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin);
     MagnitudeType bignum = ScalarTraits<ScalarType>::magnitude(sOne/smlnum);
 
     OrdinalType i, j;
@@ -756,13 +755,26 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GEEQU(const OrdinalType m, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* R, ScalarType* C, ScalarType* rowcond, ScalarType* colcond, ScalarType* amax, OrdinalType* info) const
   {
-    MagnitudeType safeMin = ScalarTraits<ScalarType>::sfmin();
-    MagnitudeType prec = ScalarTraits<ScalarType>::prec();
+
+    // Test the input parameters
+    info = 0;
+    if (m < 0) {
+      info = -1;
+    } else if (n < 0) {
+      info = -2;
+    } else if (lda < TEUCHOS_MAX(1, m)) {
+      info = -4;
+    }
+    if (info != 0) {
+      return;
+    }
+
     ScalarType sZero = ScalarTraits<ScalarType>::zero();
     ScalarType sOne  = ScalarTraits<ScalarType>::one();
     MagnitudeType mZero = ScalarTraits<ScalarType>::magnitude(sZero);
     MagnitudeType mOne = ScalarTraits<ScalarType>::magnitude(sOne);
 
+    // Quick return
     if (m == 0 || n == 0) {
       *rowcond = mOne;
       *colcond = mOne;
@@ -770,7 +782,8 @@ namespace Teuchos
       return;
     }
 
-    MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin/prec);
+    MagnitudeType safeMin = ScalarTraits<ScalarType>::sfmin();
+    MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin);
     MagnitudeType bignum = ScalarTraits<ScalarType>::magnitude(sOne/smlnum);
 
     // Compute the row scale factors
@@ -854,7 +867,111 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GBEQU(const OrdinalType m, const OrdinalType n, const OrdinalType kl, const OrdinalType ku, const ScalarType* A, const OrdinalType lda, MagnitudeType* R, MagnitudeType* C, MagnitudeType* rowcond, MagnitudeType* colcond, MagnitudeType* amax, OrdinalType* info) const
   {
-    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+
+    // Test the input parameters
+    info = 0;
+    if (m < 0) {
+      info = -1;
+    } else if (n < 0) {
+      info = -2;
+    } else if (kl < 0) {
+      info = -3;
+    } else if (ku < 0) {
+      info = -4;
+    } else if (lda < kl+ku+1) {
+      info = -6;
+    }
+    if (info != 0) {
+      return;
+    }
+
+    ScalarType sZero = ScalarTraits<ScalarType>::zero();
+    ScalarType sOne  = ScalarTraits<ScalarType>::one();
+    MagnitudeType mZero = ScalarTraits<ScalarType>::magnitude(sZero);
+    MagnitudeType mOne = ScalarTraits<ScalarType>::magnitude(sOne);
+
+    // Quick return
+    if (m == 0 || n == 0) {
+      *rowcond = mOne;
+      *colcond = mOne;
+      *amax = mZero;
+      return;
+    }
+
+    MagnitudeType safeMin = ScalarTraits<ScalarType>::sfmin();
+    MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin);
+    MagnitudeType bignum = ScalarTraits<ScalarType>::magnitude(sOne/smlnum);
+
+    // Compute the row scale factors
+    for (OrdinalType i=0; i<m; i++) {
+      R[i] = mZero;
+    }
+
+    // Find the maximum element in each row
+    for (OrdinalType j=0; j<n; j++) {
+      for (OrdinalType i=TEUCHOS_MAX(j-ku,0); i<TEUCHOS_MIN(j+kl,m-1); i++) {
+	R[i] = TEUCHOS_MAX( R[i], ScalarTraits<ScalarType>::magnitude( A[j*lda + ku+i-j] ) );
+      }
+    }
+
+    // Find the maximum and minimum scale factors
+    MagnitudeType rcmin = bignum;
+    MagnitudeType rcmax = mZero;
+    for (OrdinalType i=0; i<m; i++) {
+      rcmax = TEUCHOS_MAX( rcmax, R[i] );
+      rcmin = TEUCHOS_MIN( rcmin, R[i] );
+    }
+    *amax = rcmax;
+
+    if (rcmin == mZero) {
+      // Find the first zero scale factor and return an error code
+      for (OrdinalType i=0; i<m; i++) {
+	if (R[i] == mZero)
+	  *info = i;
+      }
+    } else {
+      // Invert the scale factors
+      for (OrdinalType i=0; i<m; i++) {
+	R[i] = mOne / TEUCHOS_MIN( TEUCHOS_MAX( R[i], smlnum ), bignum );
+      }
+      // Compute rowcond = min(R(i)) / max(R(i))
+      *rowcond = TEUCHOS_MAX( rcmin, smlnum ) / TEUCHOS_MIN( rcmax, bignum );
+    }
+
+    // Compute the column scale factors
+    for (OrdinalType j=0; j<n; j++) {
+      C[j] = mZero;
+    }
+
+    // Find the maximum element in each column, assuming the row scaling computed above
+    for (OrdinalType j=0; j<n; j++) {
+      for (OrdinalType i=TEUCHOS_MAX(j-ku,0); i<TEUCHOS_MIN(j+kl,m-1); i++) {
+	C[j] = TEUCHOS_MAX( C[j], R[i]*ScalarTraits<ScalarType>::magnitude( A[j*lda + ku+i-j] ) );
+      }
+    }
+
+    // Find the maximum and minimum scale factors
+    rcmin = bignum;
+    rcmax = mZero;
+    for (OrdinalType j=0; j<n; j++) {
+      rcmax = TEUCHOS_MAX( rcmax, C[j] );
+      rcmin = TEUCHOS_MIN( rcmin, C[j] );
+    }
+
+    if (rcmin == mZero) {
+      // Find the first zero scale factor and return an error code
+      for (OrdinalType j=0; j<n; j++) {
+	if (C[j] == mZero)
+	  *info = m+j;
+      }
+    } else {
+      // Invert the scale factors
+      for (OrdinalType j=0; j<n; j++) {
+	C[j] = mOne / TEUCHOS_MIN( TEUCHOS_MAX( C[j], smlnum ), bignum );
+      }
+      // Compute colcond = min(C(j)) / max(C(j))
+      *colcond = TEUCHOS_MAX( rcmin, smlnum ) / TEUCHOS_MIN( rcmax, bignum );
+    }
   }
 
   template<typename OrdinalType, typename ScalarType>

@@ -56,6 +56,10 @@
 #include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+#include "Eigen/Dense"
+#endif
+
 namespace Teuchos {
 
 /*! \class SerialBandDenseSolver
@@ -166,6 +170,22 @@ namespace Teuchos {
   public:
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+    typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> EigenMatrix;
+    typedef typename Eigen::internal::BandMatrix<ScalarType,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> EigenBandMatrix;
+    typedef typename Eigen::Matrix<ScalarType,Eigen::Dynamic,1> EigenVector;
+    typedef typename Eigen::InnerStride<Eigen::Dynamic> EigenInnerStride;
+    typedef typename Eigen::OuterStride<Eigen::Dynamic> EigenOuterStride;
+    typedef typename Eigen::Map<EigenVector,0,EigenInnerStride > EigenVectorMap;
+    typedef typename Eigen::Map<const EigenVector,0,EigenInnerStride > EigenConstVectorMap;
+    typedef typename Eigen::Map<EigenMatrix,0,EigenOuterStride > EigenMatrixMap;
+    typedef typename Eigen::Map<const EigenMatrix,0,EigenOuterStride > EigenConstMatrixMap;
+    typedef typename Eigen::PermutationMatrix<Eigen::Dynamic,Eigen::Dynamic,OrdinalType> EigenPermutationMatrix;
+    typedef typename Eigen::Array<OrdinalType,Eigen::Dynamic,1> EigenOrdinalArray;
+    typedef typename Eigen::Map<EigenOrdinalArray> EigenOrdinalArrayMap;
+    typedef typename Eigen::Array<ScalarType,Eigen::Dynamic,1> EigenScalarArray;
+    typedef typename Eigen::Map<EigenScalarArray> EigenScalarArrayMap;
+#endif
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -423,6 +443,9 @@ namespace Teuchos {
     std::vector<ScalarType> WORK_;
     std::vector<MagnitudeType> R_;
     std::vector<MagnitudeType> C_;
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+    Eigen::PartialPivLU<EigenMatrix> lu_;
+#endif
 
   private:
 
@@ -608,7 +631,31 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::factor() {
 
   INFO_ = 0;
 
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+  EigenMatrixMap aMap( AF_+KL_, KL_+KU_+1, N_, EigenOuterStride(LDAF_) );
+  EigenMatrix fullMatrix(M_, N_);
+  for (OrdinalType j=0; j<N_; j++) {
+    for (OrdinalType i=TEUCHOS_MAX(0,j-KU_); i<=TEUCHOS_MIN(M_-1, j+KL_); i++) {
+      fullMatrix(i,j) = aMap(KU_+i-j, j);
+    }
+  }
+
+  EigenPermutationMatrix p;
+  EigenOrdinalArray ind;
+  EigenOrdinalArrayMap ipivMap( &IPIV_[0], Min_MN_ );
+
+  lu_.compute(fullMatrix);
+  p = lu_.permutationP();
+  ind = p.indices();
+
+  for (OrdinalType i=0; i<ipivMap.innerSize(); i++) {
+    ipivMap(i) = ind(i);
+  }
+
+#else
   this->GBTRF(M_, N_, KL_, KU_, AF_, LDAF_, &IPIV_[0], &INFO_);
+#endif
+
   factored_ = true;
 
   return(INFO_);
@@ -648,7 +695,25 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::solve() {
   }
   INFO_ = 0;
 
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+    EigenMatrixMap rhsMap( RHS_->values(), RHS_->numRows(), RHS_->numCols(), EigenOuterStride(RHS_->stride()) );
+    EigenMatrixMap lhsMap( LHS_->values(), LHS_->numRows(), LHS_->numCols(), EigenOuterStride(LHS_->stride()) );
+    if ( TRANS_ == Teuchos::NO_TRANS ) {
+      lhsMap = lu_.solve(rhsMap);
+    } else if ( TRANS_ == Teuchos::TRANS ) {
+      lu_.matrixLU().template triangularView<Eigen::Upper>().transpose().solveInPlace(lhsMap);
+      lu_.matrixLU().template triangularView<Eigen::UnitLower>().transpose().solveInPlace(lhsMap);
+      EigenMatrix x = lu_.permutationP().transpose() * lhsMap;
+      lhsMap = x;
+    } else {
+      lu_.matrixLU().template triangularView<Eigen::Upper>().adjoint().solveInPlace(lhsMap);
+      lu_.matrixLU().template triangularView<Eigen::UnitLower>().adjoint().solveInPlace(lhsMap);
+      EigenMatrix x = lu_.permutationP().transpose() * lhsMap;
+      lhsMap = x;
+    }
+#else
   this->GBTRS(ETranspChar[TRANS_], N_, KL_, KU_, RHS_->numCols(), AF_, LDAF_, &IPIV_[0], LHS_->values(), LHS_->stride(), &INFO_);
+#endif
 
   if (INFO_!=0) return(INFO_);
   solved_ = true;
@@ -672,6 +737,11 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
 		     "SerialBandDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+  // Implement templated GERFS or use Eigen.
+  return (-1);
+#else
+
   OrdinalType NRHS = RHS_->numCols();
   FERR_.resize( NRHS );
   BERR_.resize( NRHS );
@@ -688,7 +758,7 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   solutionRefined_ = true;
 
   return(INFO_);
-
+#endif
 }
 
 //=============================================================================
@@ -728,9 +798,9 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
 
     ScalarType * ptr;
     for (j=0; j<N_; j++) {
-      ptr = A_ + KL_ + j*LDA_ + std::max(KU_-j, 0);
+      ptr = A_ + KL_ + j*LDA_ + TEUCHOS_MAX(KU_-j, 0);
       ScalarType s1 = C_[j];
-      for (i=std::max(0,j-KU_); i<=std::min(M_-1,j+KL_); i++) {
+      for (i=TEUCHOS_MAX(0,j-KU_); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
 	*ptr = *ptr*s1*R_[i];
 	ptr++;
       }
@@ -741,22 +811,22 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
     ScalarType * ptrL;
     ScalarType * ptrU;
     for (j=0; j<N_; j++) {
-      ptr = A_ + KL_ + j*LDA_ + std::max(KU_-j, 0);
+      ptr = A_ + KL_ + j*LDA_ + TEUCHOS_MAX(KU_-j, 0);
       ScalarType s1 = C_[j];
-      for (i=std::max(0,j-KU_); i<=std::min(M_-1,j+KL_); i++) {
+      for (i=TEUCHOS_MAX(0,j-KU_); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
 	*ptr = *ptr*s1*R_[i];
 	ptr++;
       }
     }
     for (j=0; j<N_; j++) {
-      ptrU = AF_ + j*LDAF_ + std::max(KL_+KU_-j, 0);
+      ptrU = AF_ + j*LDAF_ + TEUCHOS_MAX(KL_+KU_-j, 0);
       ptrL = AF_ + KL_ + KU_ + 1 + j*LDAF_;
       ScalarType s1 = C_[j];
-      for (i=std::max(0,j-(KL_+KU_)); i<=std::min(M_-1,j); i++) {
+      for (i=TEUCHOS_MAX(0,j-(KL_+KU_)); i<=TEUCHOS_MIN(M_-1,j); i++) {
 	*ptrU = *ptrU*s1*R_[i];
 	ptrU++;
       }
-      for (i=std::max(0,j); i<=std::min(M_-1,j+KL_); i++) {
+      for (i=TEUCHOS_MAX(0,j); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
 	*ptrL = *ptrL*s1*R_[i];
 	ptrL++;
       }
@@ -831,6 +901,11 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 template<typename OrdinalType, typename ScalarType>
 int SerialBandDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(MagnitudeType & Value)
 {
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+  // Implement templated GECON or use Eigen. Eigen currently doesn't have a condition estimation function.
+  return (-1);
+#else
+
   if (reciprocalConditionEstimated()) {
     Value = RCOND_;
     return(0); // Already computed, just return it.
@@ -852,6 +927,7 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(M
   Value = RCOND_;
 
   return(INFO_);
+#endif
 }
 //=============================================================================
 

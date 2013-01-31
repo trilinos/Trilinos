@@ -209,7 +209,9 @@ int main(int argc, char* argv[])
 #endif
 
   // Test2:  Solve with iterative refinement.
-
+#ifdef HAVE_TEUCHOSNUMERICS_EIGEN
+  // Iterative refinement not implemented in Eigen
+#else
   // Create random linear system
   Teuchos::RCP<DMatrix> A2 = GetRandomBandedMatrix(n,n,kl,ku);
   Teuchos::RCP<DVector> x2 = GetRandomVector(n);
@@ -270,6 +272,7 @@ int main(int argc, char* argv[])
   testName = "Solve with iterative refinement: solve() random A (CONJ_TRANS):";
   numberFailedTests += CompareVectors( *x2, xhat, tol );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
+#endif
 #endif
 
   // Test3:  Solve with matrix equilibration.
