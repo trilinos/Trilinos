@@ -10,6 +10,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_MatrixIO.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 
 /// \brief Is the given character c not a white space character?
@@ -95,163 +96,31 @@ read_matrix_hb(const std::string& hb_file,
 ///
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-read_matrix_mm(const std::string& mm_file,
-               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+read_matrix_mm (const std::string& mm_file,
+		const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+		const Teuchos::RCP<Node>& node)
 {
-  Teuchos::Time timer("read_matrix");
-  timer.start();
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
+  using std::cout;
+  using std::endl;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
 
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
- 
-  int my_proc = comm->getRank();
-
-  GlobalOrdinal num_global_rows = 0;
-  LocalOrdinal nnz_per_row = 0;
-
-  // infile will only be non-NULL on Proc 0.
-  std::ifstream* infile = NULL;
-  if (my_proc == 0) {
-    std::cout << "Proc 0: Opening Matrix Market sparse matrix file \"" + mm_file + "\"" << std::endl;
-    infile = new std::ifstream (mm_file.c_str());
-    std::ifstream& in = *infile;
-    if (! in) {
-      // e.g. file not included in PACKAGE_COPY_FILES_TO_BINARY_DIR
-      throw std::runtime_error("Failed to open Matrix Market file \"" + mm_file + "\"");
-    }
-
-    // Skip over the file header, which has lines beginning with '%'.
-    std::string line;
-    do {
-      getline(in, line);
-    } while(line[0] == '%');
-    if (in.eof())
-      {
-	delete infile;
-	infile = NULL;
-	throw std::runtime_error("Matrix Market file \"" + mm_file + "\" has a header, but no content");
-      }
-
-    // Get the matrix dimensions from the next line in the file.  The
-    // line has the form
-    //
-    // <num_rows> <num_cols> <nnz>
-    //
-    // where <num_rows> is the number of rows in the matrix,
-    // <num_cols> the number of columns, and <nnz> the number of
-    // structurally nonzero elements stored in this file.
-    // ("Structurally nonzero" means that the actual value could be
-    // zero.)
-    int numrows, numcols, nnz;
-    std::istringstream isstr(line);
-    isstr >> numrows >> numcols >> nnz;
-
-    // Make sure we successfully read the three integers (the matrix
-    // dimensions) from that line.
-    if (isstr.fail()) {
-      delete infile;
-      infile = NULL;
-      throw std::runtime_error("Failed to parse header of Matrix Market file \"" + mm_file + "\"");
-    }
-    std::cout << "numRow  " <<  numrows << " numCol "  << numcols << " numNz  " << nnz << std::endl;
-
-    num_global_rows = numrows;
-    nnz_per_row = nnz/numrows;
+  RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewCounter ("read_matrix");
+  RCP<crs_matrix_type> A;
+  {
+    Teuchos::TimeMonitor timeMon (*timer);
+    A = reader_type::readSparseFile (mm_file, comm, node); 
   }
 
-  Teuchos::broadcast<int,GlobalOrdinal>(*comm, (int)0, (int)1, &num_global_rows);
-  Teuchos::broadcast<int,LocalOrdinal>(*comm, (int)0, (int)1, &nnz_per_row);
-
-  const LocalOrdinal indexBase = 0;
-  Teuchos::RCP<const TMap> rowmap = Teuchos::rcp(new TMap(num_global_rows, indexBase, comm));
-
-  Teuchos::RCP<TCRS> A = Teuchos::rcp(new TCRS(rowmap, nnz_per_row));
-
-  if (my_proc == 0) {
-    Teuchos::Array<GlobalOrdinal> col;
-    Teuchos::Array<Scalar> coef;
-
-    GlobalOrdinal g_row=0;
-    int last_row=-1;
-    int irow=0, icol=0;
-    double val=0;
-
-    std::string line;
-    std::ifstream& in = *infile;
-    while(!in.eof()) {
-      getline(in, line);
-
-      // Skip over white space lines (esp. the last line of the file,
-      // which may be a blank line).
-      if (isWhiteSpace (line))
-	continue;
-
-      // Try to read a matrix entry from the current line of the
-      // file.  Each matrix entry has the form
-      //
-      // <row_index> <column_index> <value>
-      //
-      // where <row_index> is the row index (one-based),
-      // <column_index> the column index (one-based also), and <value>
-      // the real, floating-point matrix value at that position in the
-      // matrix.
-      std::istringstream isstr(line);
-      isstr >> irow >> icol >> val;
-
-      //std::cout << "Matrix(" << irow << ","  << icol << ")= " << val << std::endl;
- 
-      if (isstr.fail()) 
-	{
-	  delete infile;
-	  infile = NULL;
-	  throw std::runtime_error("Failed to read data from Matrix Market "
-				   "file \"" + mm_file + "\"");
-	} 
-      else // Got valid data
-	{
-	  g_row = irow-1;
-	  if (g_row != last_row) {
-	    if (col.size() > 0) {
-	      A->insertGlobalValues (last_row, col(), coef());
-	      col.clear();
-	      coef.clear();
-	    }
-	    last_row = g_row;
-	  }
-	  col.push_back(icol-1);
-	  coef.push_back(val);
-	}
-    }
-
-    if (col.size() > 0) {
-      A->insertGlobalValues (g_row, col(), coef());
-    }
-
-    if (infile == NULL)
-      throw std::logic_error("You should never have gotten here.  How could "
-			     "you possibly have read from the Matrix Market "
-			     "file if its ifstream pointer were NULL?!?");
-    else
-      {
-	delete infile; // This also closes the file
-	infile = NULL;
-      }
-    if (my_proc == 0) {
-      std::cout << "Proc 0: Finished reading the Matrix Market - "
-	"format sparse matrix" << std::endl;
-    }
+  if (comm->getRank () == 0) {
+    cout << "Proc 0: Time in seconds to read the Matrix Market - format sparse "
+	 << "matrix and finish fillComplete(): " 
+	 << timer->totalElapsedTime () << endl;
   }
-
-  A->fillComplete();
-
-  timer.stop();
-  if (my_proc==0) {
-    std::cout << "Proc 0: Time to read the Matrix Market - format sparse "
-      "matrix and finish fillComplete(): " << 
-      timer.totalElapsedTime() << std::endl;
-  }
-
-  return A;
+  return rcp_const_cast<const crs_matrix_type> (A);
 }
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>

@@ -468,6 +468,13 @@ public:
   /// be the case that \f$A = A^T = A^H\f$, but we will still respect
   /// the <tt>mode</tt> argument.
   ///
+  /// \warning If you did not set the "chebyshev: zero starting
+  ///   solution" parameter to true, then this method will use X as
+  ///   the starting guess for Chebyshev iteration.  If you did not
+  ///   initialize X before calling this method, then the resulting
+  ///   solution will be undefined, since it will be computed using
+  ///   uninitialized data.
+  ///
   /// \param X [in] A (multi)vector to which to apply the preconditioner.
   /// \param Y [in/out] A (multi)vector containing the result of
   ///   applying the preconditioner to X.

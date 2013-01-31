@@ -81,6 +81,25 @@ checkConstructorInput () const
      "must be the same (in the sense of isSameAs()).  We only check for this "
      "if Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
      "DEBUG set to ON.");
+
+  // mfh 30 Jan 2013: Make sure that A is not bogus.
+  const MT frobNormA = A_->getFrobeniusNorm ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
+    std::invalid_argument,
+    "Ifpack2::Details::Chebyshev: Frobenius norm of A is " 
+    << frobNormA << ", which is Inf or NaN.");
+
+  V X (domainMap);
+  V Y (rangeMap);
+  X.putScalar (STS::one ());
+  A_->apply (X, Y);
+  const MT infNorm = Y.normInf ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
+    std::invalid_argument,
+    "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
+    << infNorm << ", which is Inf or NaN.");
 #endif // HAVE_TEUCHOS_DEBUG
 }
 
@@ -320,6 +339,28 @@ template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 compute () {
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    // mfh 30 Jan 2013: Make sure that A is not bogus.
+    const MT frobNormA = A_->getFrobeniusNorm ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
+      std::runtime_error,
+      "Ifpack2::Details::Chebyshev::compute: Frobenius norm of A is " 
+      << frobNormA << ", which is Inf or NaN.");
+    V X (A_->getDomainMap ());
+    V Y (A_->getRangeMap ());
+    X.putScalar (STS::one ());
+    A_->apply (X, Y);
+    const MT infNorm = Y.normInf ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
+      std::runtime_error,
+      "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
+      << infNorm << ", which is Inf or NaN.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
+
   if (userInvDiag_.is_null ()) {
     // The matrix may have changed, and the parameters also affect
     // this process, so recompute the inverse diagonal.
@@ -327,6 +368,19 @@ compute () {
   } else {
     D_ = userInvDiag_;
   }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    // mfh 30 Jan 2013: Make sure that D_ contains no Inf or Nan entries.
+    const MT infNormD = D_->normInf ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<MT>::isnaninf (infNormD),
+      std::runtime_error,
+      "Ifpack2::Details::Chebyshev::compute: Infinity norm of the "
+      "vector of inverse diagonal entries of A is " << infNormD 
+      << ", which is Inf or NaN.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
 
   // The matrix may have changed, so we always compute the
   // eigenvalue estimates, even if we computed them before.
@@ -384,9 +438,20 @@ apply (const MV& B, MV& X) {
   TEUCHOS_TEST_FOR_EXCEPTION(
     D_.is_null (),
     std::runtime_error, 
-    "Chebyshev::apply: The vector of diagonal entries of the matrix is null.  "
+    "Chebyshev::apply: The vector of inverse diagonal entries of the matrix is null.  "
     "This means either that you didn't call compute() before calling apply(), "
     "or that you didn't call compute() after calling setParameters().");
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    const MT infNormD = D_->normInf ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (infNormD),
+      std::runtime_error,
+      "Chebyshev::apply: The vector of inverse diagonal entries of the matrix "
+      "has infinity norm " << infNormD << ", which is Inf or NaN.  This will "
+      "make left-scaled Chebyshev iteration produce invalid results.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
@@ -433,8 +498,18 @@ Chebyshev<ScalarType, MV, MAT>::
 computeResidual (MV& R, const MV& B, const MAT& A, const MV& X, 
 		 const Teuchos::ETransp mode) 
 {
+#ifdef HAVE_TEUCHOS_DEBUG
+  using std::cerr;
+  using std::endl;
+  cerr << "- computeResidual:" << endl
+       << "--- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl
+       << "--- \\|B\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
   R = B;
   A.apply (X, R, mode, -STS::one(), STS::one());
+#ifdef HAVE_TEUCHOS_DEBUG
+  cerr << "--- \\|B - A*X\\|_{\\infty} = " << maxNormInf (R) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -571,6 +646,14 @@ textbookApplyImpl (const MAT& A,
 }
 
 template<class ScalarType, class MV, class MAT>
+typename Chebyshev<ScalarType, MV, MAT>::MT
+Chebyshev<ScalarType, MV, MAT>::maxNormInf (const MV& X) {
+  std::vector<MT> norms (X.getNumVectors ());
+  X.normInf (norms);
+  return *std::max_element (norms.begin (), norms.end ());
+}
+
+template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 ifpackApplyImpl (const MAT& A,
@@ -582,6 +665,13 @@ ifpackApplyImpl (const MAT& A,
 		 const ST eigRatio,
 		 const V& D_inv) 
 {
+#ifdef HAVE_TEUCHOS_DEBUG
+  using std::cerr;
+  using std::endl;
+  cerr << "\\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
+  cerr << "\\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
   if (numIters <= 0) {
     return;
   }
@@ -601,6 +691,14 @@ ifpackApplyImpl (const MAT& A,
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
 
+#ifdef HAVE_TEUCHOS_DEBUG
+  cerr << "alpha = " << alpha << endl
+       << "beta = " << beta << endl
+       << "delta = " << delta << endl
+       << "theta = " << theta << endl
+       << "s1 = " << s1 << endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
   makeTempMultiVectors (V_ptr, W_ptr, B);
@@ -612,30 +710,70 @@ ifpackApplyImpl (const MAT& A,
   MV& V1 = *V_ptr;
   MV& W = *W_ptr;
 
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "Iteration " << 1 << ":" << endl
+	 << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
     X.update (one, W, one); // X = X + W
   } else {
     solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
     X = W; // X = 0 + W
   }
+#ifdef HAVE_TEUCHOS_DEBUG
+  cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
 
   // The rest of the iterations.
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "Iteration " << deg+1 << ":" << endl;
+    cerr << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+    cerr << "- \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
+    cerr << "- \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl;
+    cerr << "- rhok = " << rhok << endl;
+    V1.putScalar (STS::zero ());
+#endif // HAVE_TEUCHOS_DEBUG
+
     computeResidual (V1, B, A, X); // V1 = B - A*X
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
 
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
 
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- dtemp1 = " << dtemp1 << endl
+	 << "- dtemp2 = " << dtemp1 << endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
     W.scale (dtemp1);
     W.elementWiseMultiply (dtemp2, D_inv, V1, one);
     X.update (one, W, one);
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+    cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // HAVE_TEUCHOS_DEBUG
   }
 }
 

@@ -37,82 +37,133 @@
 
 namespace Ifpack2 {
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal, class Node>
+/// \fn Condest
+/// \brief Estimate the condition number of the matrix.
+///
+/// The template parameters of this function are the same and occur in
+/// the same order as the template parameters for the Preconditioner
+/// class.
+///
+/// \param TIFP [in] The Ifpack2 preconditioner.  We need this if
+///   <tt>matrix_in</tt> is null.
+///
+/// \param CT [in] The method to use for computing the condition
+///   number estimate.  Currently, the only supported option is
+///   <tt>Cheap</tt>.  Unsupported options will throw
+///   <tt>std::logic_error</tt>.
+///
+/// \param MaxIters [in] The number of iterations used to compute the
+///   condition number estimate.  Currently, this parameter is ignored.
+///
+/// \param Tol [in] The convergence tolerance used to compute the
+///   condition number estimate.  Currently, this parameter is
+///   ignored.
+///
+/// \param matrix_in [in] Pointer to a Tpetra::RowMatrix.  If nonnull,
+///   estimate the condition number of this matrix.  If null, estimate
+///   the condition number of TIFP's matrix (as returned by its
+///   getMatrix() method).
+///
+/// The "Cheap" condition number estimate is just \f$\max_i |y_i|\f$,
+/// where \f$y = A*[1, \dots, 1]^T\f$.  That is, if the input matrix
+/// is \f$A\f$, we multiply it on the right by a vector of ones, and
+/// return the infinity norm (maximum absolute value) of the result.
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Condest(const Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
-		           const Ifpack2::CondestType CT,
-               const int MaxIters = 1550,
-               const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = 1e-9,
-               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix_in = Teuchos::null)
+Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>& TIFP,
+	 const Ifpack2::CondestType CT,
+	 const int MaxIters = 1550,
+	 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = Teuchos::as<Scalar> (1e-9),
+	 const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix_in = Teuchos::null)
 {
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  magnitudeType ConditionNumberEstimate = -1.0;
-  Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrix = matrix_in;
+  using Teuchos::Ptr;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType MT;
+  typedef Teuchos::ScalarTraits<MT> STM;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
+
+  MT condNumEst = -STS::one ();
+
+  // Users may either provide a matrix for which to estimate the
+  // condition number, or use the Preconditioner's built-in matrix.
+  Ptr<const row_matrix_type> matrix = matrix_in;
   if (matrix_in == Teuchos::null) {
-    matrix = TIFP.getMatrix().ptr();
+    matrix = TIFP.getMatrix ().ptr ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matrix == Teuchos::null,
+      std::logic_error,
+      "Ifpack2::Condest: Both the input matrix (matrix_in) and the Ifpack2 preconditioner's matrix are null, so we have no matrix with which to compute a condition number estimate.  This probably indicates a bug in Ifpack2, since no Ifpack2::Preconditioner subclass should accept a null matrix.");
   }
 
   if (CT == Ifpack2::Cheap) {
+#ifdef HAVE_TEUCHOS_DEBUG
+    {
+      MT infNorm = STS::zero ();
 
-    // Create a vector with all values equal to one
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ones(TIFP.getDomainMap());
-    Ones.putScalar(1.0);
-    // Create the vector of results
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(TIFP.getRangeMap());
-    // Compute the effect of the solve on the vector of ones
-    TIFP.apply(Ones, OnesResult);
-    ConditionNumberEstimate = OnesResult.normInf();
-  }
-  else if (CT == Ifpack2::CG) {
+      // mfh 30 Jan 2013: Make sure that A is not bogus.
+      std::cerr << "*** Ifpack2::Condest ***" << std::endl;
 
-#ifdef HAVE_IFPACK2_AZTECOO
-this code not yet converted!!!
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
-    LHS.PutScalar(0.0);
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
-    RHS.Random();
-    Tpetra_LinearProblem Problem;
-    Problem.SetOperator(matrix);
-    Problem.SetLHS(&LHS);
-    Problem.SetRHS(&RHS);
+      const MT frobNormA = matrix->getFrobeniusNorm ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
+        std::runtime_error,
+        "Ifpack2::Condest: Frobenius norm of the (original) matrix is " 
+        << frobNormA << ", which is Inf or NaN.");
+      vec_type X (matrix->getDomainMap ());
+      vec_type Y (matrix->getRangeMap ());
+      X.putScalar (STS::one ());
+      Y.putScalar (STS::zero ());
+      matrix->apply (X, Y);
+      infNorm = Y.normInf ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
+        std::runtime_error,
+        "Ifpack2::Condest: inf-norm of A*[1,...,1]^T is " 
+        << infNorm << ", which is Inf or NaN.");
 
-    AztecOO Solver(Problem);
-    Solver.SetAztecOption(AZ_output,AZ_none);
-    Solver.SetAztecOption(AZ_solver,AZ_cg_condnum);
-    Solver.Iterate(MaxIters,Tol);
+      X.putScalar (STS::zero ());
+      Y.putScalar (STS::zero ());
+      matrix->apply (X, Y);
+      infNorm = Y.normInf ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
+        std::runtime_error,
+        "Ifpack2::Condest: inf-norm of A*[0,...,0]^T is " 
+        << infNorm << ", which is Inf or NaN.");
 
-    const double* status = Solver.GetAztecStatus();
-    ConditionNumberEstimate = status[AZ_condnum];
-#endif
-
+      X.putScalar (STS::zero ());
+      Y.putScalar (STS::zero ());
+      TIFP.apply (X, Y);
+      infNorm = Y.normInf ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
+        std::runtime_error,
+        "Ifpack2::Condest: The result of applying the preconditioner "
+	"to the zero vector has infinity norm " << infNorm << ", which "
+	"is Inf or NaN.");
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+    vec_type ones (TIFP.getDomainMap ()); // Vector of ones
+    ones.putScalar (STS::one ());
+    vec_type onesResult (TIFP.getRangeMap ()); // A*ones
+    onesResult.putScalar (STS::zero ());
+    TIFP.apply (ones, onesResult);
+    condNumEst = onesResult.normInf (); // max (abs (A*ones))
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STM::isnaninf (condNumEst),
+      std::runtime_error,
+      "Ifpack2::Condest: $\\|A*[1, ..., 1]^T\\|_{\\infty}$ = " << condNumEst << " is NaN or Inf.");
+  } else if (CT == Ifpack2::CG) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Ifpack2::Condest: Condition number estimation using CG is not currently supported.");
   } else if (CT == Ifpack2::GMRES) {
-
-#ifdef HAVE_IFPACK2_AZTECOO
-this code not yet converted!!!
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
-    LHS.PutScalar(0.0);
-    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
-    RHS.Random();
-    Tpetra_LinearProblem Problem;
-    Problem.SetOperator(matrix);
-    Problem.SetLHS(&LHS);
-    Problem.SetRHS(&RHS);
-
-    AztecOO Solver(Problem);
-    Solver.SetAztecOption(AZ_solver,AZ_gmres_condnum);
-    Solver.SetAztecOption(AZ_output,AZ_none);
-    // the following can be problematic for large problems,
-    // but any restart would destroy useful information about
-    // the condition number.
-    Solver.SetAztecOption(AZ_kspace,MaxIters);
-    Solver.Iterate(MaxIters,Tol);
-
-    const double* status = Solver.GetAztecStatus();
-    ConditionNumberEstimate = status[AZ_condnum];
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Ifpack2::Condest: Condition number estimation using GMRES is not currently supported.");
   }
-
-  return(ConditionNumberEstimate);
+  return condNumEst;
 }
 
 }//namespace Ifpack2

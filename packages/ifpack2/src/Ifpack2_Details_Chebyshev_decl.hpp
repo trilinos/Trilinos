@@ -231,6 +231,13 @@ public:
   /// (not the default), then this method returns the maximum (over
   /// all columns) absolute residual 2-norm after iterating.
   /// Otherwise, it returns zero.
+  ///
+  /// \warning If you did not set the "chebyshev: zero starting
+  ///   solution" parameter to true, then this method will use X as
+  ///   the starting guess for Chebyshev iteration.  If you did not
+  ///   initialize X before calling this method, then the resulting
+  ///   solution will be undefined, since it will be computed using
+  ///   uninitialized data.
   MT apply (const MV& B, MV& X);
 
   //! Get the matrix given to the constructor.
@@ -427,6 +434,9 @@ private:
   ///   maximum eigenvalue of A*D_inv.
   static ST
   powerMethod (const MAT& A, const V& D_inv, const int numIters);
+
+  //! The maximum infinity norm of all the columns of X.
+  static MT maxNormInf (const MV& X);
 
   // mfh 22 Jan 2013: This code builds correctly, but does not
   // converge.  I'm leaving it in place in case someone else wants to

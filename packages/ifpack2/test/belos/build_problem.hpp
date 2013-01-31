@@ -68,14 +68,13 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
 }
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<
-    Belos::LinearProblem<
-        Scalar,
-        Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-        Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-   > build_problem(Teuchos::ParameterList& test_params,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                   Teuchos::RCP<Node> node)
+Teuchos::RCP<Belos::LinearProblem<
+	       Scalar,
+	       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+	       Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
+build_problem (Teuchos::ParameterList& test_params,
+	       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+	       Teuchos::RCP<Node> node)
 {
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
@@ -98,7 +97,7 @@ Teuchos::RCP<
     if (comm->getRank() == 0) {
       std::cout << "Matrix-Market file: " << mm_file << std::endl;
     }
-    A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm);
+    A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm, node);
 
     if (rhs_mm_file != "not specified") {
       if (comm->getRank() == 0) {
