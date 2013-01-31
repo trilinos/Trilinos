@@ -29,6 +29,7 @@
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_Sacado.hpp"
+#include "Stokhos_Ifpack2.hpp"
 
 // Class implementing our problem
 #include "twoD_diffusion_problem_tpetra.hpp"
@@ -44,7 +45,6 @@
 #include "Ifpack2_Factory.hpp"
 #include "BelosLinearProblem.hpp"
 #include "kokkos_pce_specializations.hpp"
-#include "BelosPCETpetraAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "MatrixMarket_Tpetra.hpp"

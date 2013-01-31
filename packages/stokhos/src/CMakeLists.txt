@@ -355,11 +355,14 @@ IF (Stokhos_ENABLE_Sacado)
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Belos)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
     SET(HEADERS ${HEADERS}
-	belos/BelosPCETpetraAdapter.hpp
-	)
+      belos/BelosPCETpetraAdapter.hpp
+      )
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_Belos)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ifpack2)
+    SET(HEADERS ${HEADERS}
+      ifpack2/Stokhos_Ifpack2.hpp
+      )
     IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
 	ifpack2/ifpack2_pce_instantiations.cpp
