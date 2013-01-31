@@ -44,13 +44,13 @@
 #include <gtest/gtest.h>
 #include "TestTile.hpp"
 
-#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
 TEST( host_tile, tile_1x1)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<1,1> tile_layout;
-  typedef ReduceTileErrors< KokkosArray::Host, tile_layout > functor_type;
+  typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
@@ -61,7 +61,7 @@ TEST( host_tile, tile_2x2)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<2,2> tile_layout;
-  typedef ReduceTileErrors< KokkosArray::Host, tile_layout > functor_type;
+  typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
@@ -72,7 +72,7 @@ TEST( host_tile, tile_4x4)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<4,4> tile_layout;
-  typedef ReduceTileErrors< KokkosArray::Host, tile_layout > functor_type;
+  typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
@@ -83,7 +83,7 @@ TEST( host_tile, tile_8x8)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<8,8> tile_layout;
-  typedef ReduceTileErrors< KokkosArray::Host, tile_layout > functor_type;
+  typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
@@ -94,7 +94,7 @@ TEST( host_tile, tile_16x16)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<16,16> tile_layout;
-  typedef ReduceTileErrors< KokkosArray::Host, tile_layout > functor_type;
+  typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );

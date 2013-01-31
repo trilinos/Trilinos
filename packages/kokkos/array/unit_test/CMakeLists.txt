@@ -14,9 +14,10 @@ SET(SOURCES
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
 IF(KokkosArray_ENABLE_DeviceCuda)
+
   TRIBITS_ADD_LIBRARY(
     unit_cuda
-    SOURCES TestCudaFunctions.cu
+    SOURCES TestCudaFunctions.cu TestTileCuda.cu
     DEPLIBS
     CUDALIBRARY
   )

@@ -261,13 +261,13 @@ private:
     oper_type::m_shape          = shape ;
     oper_type::m_ptr_on_device  = ptr ;
 
-    internal_management::increment( oper_type::m_ptr_on_device ); 
+    internal_management::increment( oper_type::m_ptr_on_device );
   }
 
   KOKKOSARRAY_INLINE_FUNCTION
   void internal_private_clear()
   {
-    internal_management::decrement( oper_type::m_ptr_on_device ); 
+    internal_management::decrement( oper_type::m_ptr_on_device );
     oper_type::m_ptr_on_device = 0 ;
   }
 
@@ -701,7 +701,7 @@ public:
   {
     typedef typename
       Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-    
+
     internal_private_create( label , shape );
   }
 
@@ -821,6 +821,7 @@ public:
   /*------------------------------------------------------------------*/
   /* Create an unmannaged view */
 
+  KOKKOSARRAY_INLINE_FUNCTION
   View( scalar_type * data_ptr , const shape_type shape )
   {
     typedef typename

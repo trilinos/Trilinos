@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -344,13 +344,13 @@ struct Shape< Layout , ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
 template < class Layout ,
            unsigned ScalarSize ,
            unsigned Rank ,
-           unsigned s0 , 
-           unsigned s1 , 
-           unsigned s2 , 
-           unsigned s3 , 
-           unsigned s4 , 
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s0 ,
+           unsigned s1 ,
+           unsigned s2 ,
+           unsigned s3 ,
+           unsigned s4 ,
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape {
   typedef Layout  array_layout ;
@@ -388,7 +388,8 @@ struct Shape {
     return shape ;
   }
 
-  static inline
+  static
+  KOKKOSARRAY_INLINE_FUNCTION
   Shape create_unpadded()
   {
     Shape shape ;
@@ -409,12 +410,12 @@ struct Shape {
 template < class Layout ,
            unsigned ScalarSize ,
            unsigned Rank ,
-           unsigned s1 , 
-           unsigned s2 , 
-           unsigned s3 , 
-           unsigned s4 , 
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s1 ,
+           unsigned s2 ,
+           unsigned s3 ,
+           unsigned s4 ,
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 {
@@ -468,11 +469,11 @@ struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 
 // 2 == dynamic_rank <= rank <= 8
 template < class Layout , unsigned ScalarSize , unsigned Rank ,
-           unsigned s2 , 
-           unsigned s3 , 
-           unsigned s4 , 
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s2 ,
+           unsigned s3 ,
+           unsigned s4 ,
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 {
@@ -529,10 +530,10 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 
 // 3 == dynamic_rank <= rank <= 8
 template < class Layout , unsigned Rank , unsigned ScalarSize ,
-           unsigned s3 , 
-           unsigned s4 , 
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s3 ,
+           unsigned s4 ,
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 {
@@ -592,9 +593,9 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 
 // 4 == dynamic_rank <= rank <= 8
 template < class Layout , unsigned ScalarSize , unsigned Rank ,
-           unsigned s4 , 
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s4 ,
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 {
@@ -657,8 +658,8 @@ struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 
 // 5 == dynamic_rank <= rank <= 8
 template < class Layout , unsigned ScalarSize , unsigned Rank ,
-           unsigned s5 , 
-           unsigned s6 , 
+           unsigned s5 ,
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
 {
@@ -725,7 +726,7 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
 
 // 6 == dynamic_rank <= rank <= 8
 template < class Layout , unsigned ScalarSize , unsigned Rank ,
-           unsigned s6 , 
+           unsigned s6 ,
            unsigned s7 >
 struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
 {
