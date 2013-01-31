@@ -158,9 +158,15 @@ using std::strcmp;
 using std::strlen;
 using std::strchr;
 using std::strtok;
+/*
+For xlC 12.1, malloc and related functions are provided outside the std
+namespace, so the below three using statements cause conflicting declarations.
+*/
+#if !defined __IBMCPP__ || ( __IBMCPP__ != 1210 )
 using std::realloc;
 using std::malloc;
 using std::free;
+#endif
 
 using std::istream;
 using std::ostream;
