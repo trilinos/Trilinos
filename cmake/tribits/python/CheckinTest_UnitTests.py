@@ -424,7 +424,7 @@ def run_extrarepo_test(testObject, testName, extraReposFile, expectedReposList, 
   ):
   extraReposPythonOutFile = os.getcwd()+"/"+testName+".py"
   global g_withCmake
-  cmnd = g_withCmake+ \
+  cmnd = "\""+g_withCmake+"\""+ \
     " -DPROJECT_SOURCE_DIR="+mockProjectBaseDir+ \
     " -DTRIBITS_BASE_DIR="+tribitsBaseDir
   if extraCmakeVars:
@@ -1231,7 +1231,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     
     cmndArgs = [
       scriptsDir + "/../checkin-test.py",
-      "--with-cmake="+g_withCmake,
+      "--with-cmake=\""+g_withCmake+"\"",
       "--project-name=Trilinos",
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
