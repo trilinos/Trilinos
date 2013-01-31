@@ -682,7 +682,7 @@
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="TO"/>
+    <Dependency name="Belos" type="LO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="Zoltan2" type="ILO"/>
     <Dependency name="Ifpack2" type="LO"/>
