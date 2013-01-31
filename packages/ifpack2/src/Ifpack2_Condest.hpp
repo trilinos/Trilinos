@@ -93,57 +93,14 @@ Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node
     TEUCHOS_TEST_FOR_EXCEPTION(
       matrix == Teuchos::null,
       std::logic_error,
-      "Ifpack2::Condest: Both the input matrix (matrix_in) and the Ifpack2 preconditioner's matrix are null, so we have no matrix with which to compute a condition number estimate.  This probably indicates a bug in Ifpack2, since no Ifpack2::Preconditioner subclass should accept a null matrix.");
+      "Ifpack2::Condest: Both the input matrix (matrix_in) and the Ifpack2 "
+      "preconditioner's matrix are null, so we have no matrix with which to "
+      "compute a condition number estimate.  This probably indicates a bug "
+      "in Ifpack2, since no Ifpack2::Preconditioner subclass should accept a"
+      "null matrix.");
   }
 
   if (CT == Ifpack2::Cheap) {
-#ifdef HAVE_TEUCHOS_DEBUG
-    {
-      MT infNorm = STS::zero ();
-
-      // mfh 30 Jan 2013: Make sure that A is not bogus.
-      std::cerr << "*** Ifpack2::Condest ***" << std::endl;
-
-      const MT frobNormA = matrix->getFrobeniusNorm ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
-        std::runtime_error,
-        "Ifpack2::Condest: Frobenius norm of the (original) matrix is " 
-        << frobNormA << ", which is Inf or NaN.");
-      vec_type X (matrix->getDomainMap ());
-      vec_type Y (matrix->getRangeMap ());
-      X.putScalar (STS::one ());
-      Y.putScalar (STS::zero ());
-      matrix->apply (X, Y);
-      infNorm = Y.normInf ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
-        std::runtime_error,
-        "Ifpack2::Condest: inf-norm of A*[1,...,1]^T is " 
-        << infNorm << ", which is Inf or NaN.");
-
-      X.putScalar (STS::zero ());
-      Y.putScalar (STS::zero ());
-      matrix->apply (X, Y);
-      infNorm = Y.normInf ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
-        std::runtime_error,
-        "Ifpack2::Condest: inf-norm of A*[0,...,0]^T is " 
-        << infNorm << ", which is Inf or NaN.");
-
-      X.putScalar (STS::zero ());
-      Y.putScalar (STS::zero ());
-      TIFP.apply (X, Y);
-      infNorm = Y.normInf ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
-        std::runtime_error,
-        "Ifpack2::Condest: The result of applying the preconditioner "
-	"to the zero vector has infinity norm " << infNorm << ", which "
-	"is Inf or NaN.");
-    }
-#endif // HAVE_TEUCHOS_DEBUG
     vec_type ones (TIFP.getDomainMap ()); // Vector of ones
     ones.putScalar (STS::one ());
     vec_type onesResult (TIFP.getRangeMap ()); // A*ones

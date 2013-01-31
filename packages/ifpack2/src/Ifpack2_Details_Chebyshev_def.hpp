@@ -37,6 +37,13 @@
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
 #include <cmath>
 
+// Uncommit the #define line below if you want Chebyshev to do extra
+// debug checking and generate a lot of debugging output to stderr (on
+// all processes in the communicator).  Even if you uncomment this
+// line, the debugging code will only be enabled if the CMake option
+// Teuchos_ENABLE_DEBUG was set to ON when configuring Trilinos.
+#define IFPACK_DETAILS_CHEBYSHEV_DEBUG 1
+
 namespace Ifpack2 {
 namespace Details {
 
@@ -82,6 +89,7 @@ checkConstructorInput () const
      "if Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
      "DEBUG set to ON.");
 
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   // mfh 30 Jan 2013: Make sure that A is not bogus.
   const MT frobNormA = A_->getFrobeniusNorm ();
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -100,6 +108,7 @@ checkConstructorInput () const
     std::invalid_argument,
     "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
     << infNorm << ", which is Inf or NaN.");
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 }
 
@@ -340,6 +349,7 @@ void
 Chebyshev<ScalarType, MV, MAT>::
 compute () {
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   {
     // mfh 30 Jan 2013: Make sure that A is not bogus.
     const MT frobNormA = A_->getFrobeniusNorm ();
@@ -359,6 +369,7 @@ compute () {
       "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
       << infNorm << ", which is Inf or NaN.");
   }
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   if (userInvDiag_.is_null ()) {
@@ -370,6 +381,7 @@ compute () {
   }
 
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   {
     // mfh 30 Jan 2013: Make sure that D_ contains no Inf or Nan entries.
     const MT infNormD = D_->normInf ();
@@ -380,6 +392,7 @@ compute () {
       "vector of inverse diagonal entries of A is " << infNormD 
       << ", which is Inf or NaN.");
   }
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   // The matrix may have changed, so we always compute the
@@ -441,7 +454,9 @@ apply (const MV& B, MV& X) {
     "Chebyshev::apply: The vector of inverse diagonal entries of the matrix is null.  "
     "This means either that you didn't call compute() before calling apply(), "
     "or that you didn't call compute() after calling setParameters().");
+
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   {
     const MT infNormD = D_->normInf ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -451,6 +466,7 @@ apply (const MV& B, MV& X) {
       "has infinity norm " << infNormD << ", which is Inf or NaN.  This will "
       "make left-scaled Chebyshev iteration produce invalid results.");
   }
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   if (! textbookAlgorithm_) {
@@ -481,15 +497,30 @@ void
 Chebyshev<ScalarType, MV, MAT>::
 print (std::ostream& out) {
   using std::endl;
+  // YAML 1.2 (see http://www.yaml.org/spec/1.2/spec.html) block
+  // mapping (see Section 8.2.2).  It should parse as follows:
+  // { 
+  //   Chebyshev: { 
+  //     computedLambdaMax_: <value>,
+  //     computedLambdaMin_: <value>,
+  //     ...
+  //     computeMaxResNorm_: <value>
+  //   }
+  // }
+  // The spec says that the first line ("Chebyshev:") is limited to
+  // 1024 characters, because this particular format requires
+  // lookahead.
   out << "Chebyshev:" << endl
-      << "- computedLambdaMax_ = " << computedLambdaMax_ << endl
-      << "- computedLambdaMin_ = " << computedLambdaMin_ << endl
-      << "- lambdaMax_ = " << lambdaMax_ << endl
-      << "- lambdaMin_ = " << lambdaMin_ << endl
-      << "- eigRatio_ = " << eigRatio_ << endl
-      << "- numIters_ = " << numIters_ << endl
-      << "- eigMaxIters_ = " << eigMaxIters_ << endl
-      << "- textbookAlgorithm_ = " << textbookAlgorithm_ << endl;
+      << "  computedLambdaMax_: " << computedLambdaMax_ << endl
+      << "  computedLambdaMin_: " << computedLambdaMin_ << endl
+      << "  lambdaMax_: " << lambdaMax_ << endl
+      << "  lambdaMin_: " << lambdaMin_ << endl
+      << "  eigRatio_: " << eigRatio_ << endl
+      << "  numIters_: " << numIters_ << endl
+      << "  eigMaxIters_: " << eigMaxIters_ << endl
+      << "  zeroStartingSolution_: " << zeroStartingSolution_ << endl
+      << "  textbookAlgorithm_: " << textbookAlgorithm_ << endl
+      << "  computeMaxResNorm_: " << computeMaxResNorm_ << endl;
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -499,16 +530,22 @@ computeResidual (MV& R, const MV& B, const MAT& A, const MV& X,
 		 const Teuchos::ETransp mode) 
 {
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   using std::cerr;
   using std::endl;
   cerr << "- computeResidual:" << endl
        << "--- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl
        << "--- \\|B\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
+
   R = B;
   A.apply (X, R, mode, -STS::one(), STS::one());
+
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   cerr << "--- \\|B - A*X\\|_{\\infty} = " << maxNormInf (R) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 }
 
@@ -666,10 +703,12 @@ ifpackApplyImpl (const MAT& A,
 		 const V& D_inv) 
 {
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   using std::cerr;
   using std::endl;
   cerr << "\\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
   cerr << "\\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   if (numIters <= 0) {
@@ -692,11 +731,13 @@ ifpackApplyImpl (const MAT& A,
   const ST s1 = theta * delta;
 
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   cerr << "alpha = " << alpha << endl
        << "beta = " << beta << endl
        << "delta = " << delta << endl
        << "theta = " << theta << endl
        << "s1 = " << s1 << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   // Fetch cached temporary vectors.
@@ -711,30 +752,45 @@ ifpackApplyImpl (const MAT& A,
   MV& W = *W_ptr;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    cerr << "Iteration " << 1 << ":" << endl
-	 << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
+  cerr << "Iteration " << 1 << ":" << endl
+       << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
+
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
+
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
+
     X.update (one, W, one); // X = X + W
   } else {
     solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
+
     X = W; // X = 0 + W
   }
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
   // The rest of the iterations.
@@ -742,18 +798,22 @@ ifpackApplyImpl (const MAT& A,
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "Iteration " << deg+1 << ":" << endl;
     cerr << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
     cerr << "- \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
     cerr << "- \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl;
     cerr << "- rhok = " << rhok << endl;
     V1.putScalar (STS::zero ());
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
 
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
     rhokp1 = one / (two * s1 - rhok);
@@ -762,8 +822,10 @@ ifpackApplyImpl (const MAT& A,
     rhok = rhokp1;
 
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- dtemp1 = " << dtemp1 << endl
 	 << "- dtemp2 = " << dtemp1 << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
     W.scale (dtemp1);
@@ -771,8 +833,10 @@ ifpackApplyImpl (const MAT& A,
     X.update (one, W, one);
 
 #ifdef HAVE_TEUCHOS_DEBUG
+#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
   }
 }
