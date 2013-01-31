@@ -179,12 +179,17 @@ namespace panzer {
 
     const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
       fmb.getVolumeFieldManagers();
-    
-    Teuchos::RCP<const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > > fmb_vol_worksets = 
-      wkstContainer->getVolumeWorksets();
-    
+
     TEST_EQUALITY(fmb_vol_fm.size(), 2);
-    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets->size());
+    
+    Teuchos::RCP<std::vector<panzer::Workset> > fmb_vol_worksets;
+
+    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-0_0");
+    TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
+
+    fmb_vol_worksets = wkstContainer->getVolumeWorksets("eblock-1_0");
+    TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
+    
 
     const std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,

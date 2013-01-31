@@ -53,7 +53,7 @@ void panzer::setupInitialConditionFieldManagers(WorksetContainer & wkstContainer
 						const Teuchos::ParameterList& user_data,
 						const bool write_graphviz_file,
 						const std::string& graphviz_file_prefix,
-						std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
+						std::map< std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
 {
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
@@ -81,25 +81,24 @@ void panzer::setupInitialConditionFieldManagers(WorksetContainer & wkstContainer
     setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
 
     fm->postRegistrationSetup(setupData);
-    phx_ic_field_managers.push_back(fm);
+    phx_ic_field_managers[blockId] = fm;
     
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"IC_"+blockId);
   }
 }
 
-void panzer::evaluateInitialCondition(const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-				      const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
+void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
+				      const std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
 				      Teuchos::RCP<panzer::LinearObjContainer> loc,
 				      const double time_stamp)
 {   
-  for (std::size_t block = 0; block < worksets.size(); ++block) {
+  for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
+      itr!=phx_ic_field_managers.end();++itr) {
+    std::string blockId = itr->first;
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = itr->second;
+    std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);
     
-    std::vector<panzer::Workset>& w = *worksets[block]; 
-    
-    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
-      phx_ic_field_managers[block];
-
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
