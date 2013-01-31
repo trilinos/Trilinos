@@ -1,0 +1,7 @@
+#ifndef KOKKOS_ARRAY_CONFIG_H
+#define KOKKOS_ARRAY_CONFIG_H
+
+/* Define if Cuda is enabled */
+#cmakedefine HAVE_KOKKOSARRAY_CUDA
+
+#endif
