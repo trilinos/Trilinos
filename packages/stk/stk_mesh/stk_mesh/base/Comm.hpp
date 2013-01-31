@@ -24,9 +24,9 @@ namespace mesh {
  */
 
 /** \brief Global counts for a mesh's entities. */
-bool comm_mesh_counts( BulkData & ,
+bool comm_mesh_counts( const BulkData &bulk_data ,
                        std::vector<size_t> & counts ,
-                       bool = false );
+                       bool localFlag= false );
 
 //----------------------------------------------------------------------
 

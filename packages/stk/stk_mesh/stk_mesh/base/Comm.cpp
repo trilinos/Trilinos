@@ -22,7 +22,7 @@
 namespace stk {
 namespace mesh {
 
-bool comm_mesh_counts( BulkData & M ,
+bool comm_mesh_counts( const BulkData & M ,
                        std::vector<size_t> & counts ,
                        bool local_flag )
 {
