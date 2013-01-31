@@ -44,6 +44,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#include "KokkosArray_config.h"
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_ProductTensor.hpp>
 #include <KokkosArray_LegendrePolynomial.hpp>

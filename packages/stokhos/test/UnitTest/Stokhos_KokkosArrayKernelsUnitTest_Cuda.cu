@@ -88,11 +88,3 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {
   
   success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
 }
-
-void initialize_cuda(int device_id) {
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(device_id) );
-}
-
-void finalize_cuda() {
-  KokkosArray::Cuda::finalize();
-}
