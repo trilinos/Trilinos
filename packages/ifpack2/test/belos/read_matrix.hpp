@@ -13,36 +13,6 @@
 #include "MatrixMarket_Tpetra.hpp"
 
 
-/// \brief Is the given character c not a white space character?
-///
-/// Is the given character c not a white space character?  Here "white
-/// space" means a space or tab.
-static bool
-notWhiteSpaceCharacter (const char c)
-{
-  return c != ' ' && c != '\t';
-}
-
-/// Is the given line a line of white space (or an empty line)?
-///
-/// \note This function works if the input line was retrieved using
-/// getline(), because getline() discards the end-of-line terminator.
-static bool 
-isWhiteSpace (const std::string& line)
-{
-  if (line.size() == 0)
-    return true; // An empty line is "white space" too
-  else 
-    {
-      // If the line does _not_ contain a _non_-whitespace character,
-      // it is a white space line.  Sorry about the double negative...
-      if (std::find_if (line.begin(), line.end(), notWhiteSpaceCharacter) == line.end())
-	return true;
-      else
-	return false;
-    }
-}
-
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_hb(const std::string& hb_file,
@@ -72,28 +42,15 @@ read_matrix_hb(const std::string& hb_file,
 ///
 /// \param mm_file [in] Path of a Matrix Market file.  To be opened
 ///   and read only by Process 0 of the given communicator.
+/// \param comm [in] Communicator object, over which to distribute the
+///   sparse matrix to return.
+/// \param node [in] Kokkos Node instance to be used by the returned
+///   sparse matrix.
 ///
-/// \param comm [in] Communicator object
+/// \return The sparse matrix, distributed over the given communicator.
 ///
-/// \return The sparse matrix, distributed using the communicator
-///
-/// \warning This is a fragile stopgap implementation.  It only
-///   supports real-valued matrices, and it does not check the Matrix
-///   Market header for whether the data represents a sparse matrix
-///   (Matrix Market format also supports dense matrices).  It also
-///   does not support Matrix Market features like symmetric storage
-///   or pattern-only sparse matrices.  For example, even if the
-///   Matrix Market file claims that it's using symmetric storage,
-///   you'll only get the data that's in the file (which could be
-///   either the upper or lower triangle).
-///
-/// \note The fact that Ifpack2 is under development becomes apparent
-///   to new users when attempting to input a Matrix Market format
-///   matrix.  A design principle of Tpetra and Ifpack2 is to avoid
-///   coupling to Epetra and EpetraExt.  Certain Epetra* components
-///   will be reimplemented in Tpetra*, a task that has not yet begun.
-///   The input files and this parser are coupled.
-///
+/// \note This defers to Tpetra::MatrixMarket::Reader for reading the
+///   sparse matrix from the Matrix Market file.
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_mm (const std::string& mm_file,

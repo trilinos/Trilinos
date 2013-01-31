@@ -42,7 +42,7 @@
 // all processes in the communicator).  Even if you uncomment this
 // line, the debugging code will only be enabled if the CMake option
 // Teuchos_ENABLE_DEBUG was set to ON when configuring Trilinos.
-#define IFPACK_DETAILS_CHEBYSHEV_DEBUG 1
+//#define IFPACK_DETAILS_CHEBYSHEV_DEBUG 1
 
 namespace Ifpack2 {
 namespace Details {
@@ -761,6 +761,7 @@ ifpackApplyImpl (const MAT& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
+
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
@@ -797,6 +798,7 @@ ifpackApplyImpl (const MAT& A,
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
+
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "Iteration " << deg+1 << ":" << endl;

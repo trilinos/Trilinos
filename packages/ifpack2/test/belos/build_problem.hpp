@@ -80,6 +80,8 @@ build_problem (Teuchos::ParameterList& test_params,
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
+  typedef Tpetra::MatrixMarket::Reader<TCRS> reader_type;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
   Teuchos::RCP<const TCRS> A;
   Teuchos::RCP<TMV> b = Teuchos::null;
@@ -95,22 +97,27 @@ build_problem (Teuchos::ParameterList& test_params,
 
   if (mm_file != "not specified") {
     if (comm->getRank() == 0) {
-      std::cout << "Matrix-Market file: " << mm_file << std::endl;
+      std::cout << "Matrix Market file for sparse matrix A: " << mm_file << std::endl;
     }
-    A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm, node);
+    A = reader_type::readSparseFile (mm_file, comm, node);
+    Teuchos::RCP<const map_type> domainMap = A->getDomainMap ();
+    Teuchos::RCP<const map_type> rangeMap = A->getRangeMap ();
 
     if (rhs_mm_file != "not specified") {
       if (comm->getRank() == 0) {
-        std::cout << "Right-hand-side Matrix-Market file: " << rhs_mm_file << std::endl;
+        std::cout << "Matrix Market file for right-hand-side(s) B: " << rhs_mm_file << std::endl;
       }
-      b = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm);
+      b = reader_type::readDenseFile (rhs_mm_file, comm, node, rangeMap);
     }
 
     if (nullMvec_mm_file != "not specified") {
       if (comm->getRank() == 0) {
-        std::cout << "null multivector Matrix-Market file: " << nullMvec_mm_file << std::endl;
+        std::cout << "Matrix Market file for null multivector: " << nullMvec_mm_file << std::endl;
       }
-      nullVec = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm);
+      // mfh 31 Jan 2013: I'm not sure what a "null multivector" means
+      // in this context, so I'm only guessing that it's a domain Map
+      // multivector.
+      nullVec = reader_type::readDenseFile (nullMvec_mm_file, comm, node, domainMap);
     }
 
   }
