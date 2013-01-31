@@ -208,12 +208,21 @@ test_original_matrix_free_epetra(
 
   // Compute number of fem mat-vec's
   int n_apply = 0;
-  for (typename Cijk_type::k_iterator k_it=Cijk->k_begin(); 
+  int n_add = 0;
+  for (Cijk_type::k_iterator k_it=Cijk->k_begin(); 
        k_it!=Cijk->k_end(); ++k_it) {
-    n_apply += Cijk->num_j(k_it);
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
+      ++n_apply;
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it); 
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+	++n_add;
+      }
+    }
   }
 
-  const double flops = 2.0*1.0e-9*n_apply*nnz;
+  const double flops = 1.0e-9*(2.0*static_cast<double>(n_apply)*nnz + 
+			       static_cast<double>(n_add)*fem_length);
 
   //------------------------------
 
