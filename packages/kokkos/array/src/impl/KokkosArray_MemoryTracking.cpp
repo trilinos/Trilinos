@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <stddef.h>
+#include <limits>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -52,32 +54,58 @@ namespace KokkosArray {
 namespace Impl {
 namespace {
 
-bool contains( const MemoryTracking::Info & block ,
-               const void * const ptr )
+//----------------------------------------------------------------------------
+
+const void * upper_bound()
 {
-  return block.begin <= ptr && ptr < block.end ;
+  return (const void *) std::numeric_limits<ptrdiff_t>::max();
+}
+
+// Fast search for result[-1] <= val < result[0].
+// Requires result[max] == upper_bound.
+// Start with a binary search until the search range is
+// less than LINEAR_LIMIT, then switch to linear search.
+
+int upper_bound( const void * const * const begin , unsigned length ,
+                 const void * const val )
+{
+  typedef const void * const * ptr_type ;
+
+  enum { LINEAR_LIMIT = 32 };
+
+  // precondition: begin[length-1] == upper_bound()
+
+  ptr_type first = begin ;
+
+  while ( LINEAR_LIMIT < length ) {
+    unsigned half   = length >> 1 ;
+    ptr_type middle = first + half ;
+
+    if ( val < *middle ) {
+      length = half ;
+    }
+    else {
+      first   = ++middle ;
+      length -= ++half ;
+    }
+  }
+
+  for ( ; ! ( val < *first ) ; ++first );
+
+  return first - begin ;
 }
 
 } // namespace
 
-struct LessMemoryTrackingInfo {
-
-  LessMemoryTrackingInfo() {}
-
-  bool operator()( const MemoryTracking::Info & lhs ,
-                   const void * const rhs_ptr ) const
-  { return lhs.end < rhs_ptr ; }
-
-  bool operator()( const void * const lhs_ptr ,
-                   const MemoryTracking::Info & rhs ) const
-  { return lhs_ptr < rhs.end ; }
-};
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 void MemoryTracking::Info::print( std::ostream & s ) const
 {
+  const void * const end =
+    ((const unsigned char *) begin ) + size * length ;
   s << "{ "
-    << "begin(" << begin << ") "
-    << "end(" << end << ") "
+    << "range[ " << begin << " : " << end << " )"
     << "typeid(" << type->name() << ") "
     << "size(" << size << ") "
     << "length(" << length << ") "
@@ -85,17 +113,47 @@ void MemoryTracking::Info::print( std::ostream & s ) const
     << "label(" << label << ") }" ;
 }
 
-MemoryTracking::MemoryTracking() {}
+//----------------------------------------------------------------------------
+
+bool MemoryTracking::empty() const
+{
+  return 1 == m_tracking.size();
+}
 
 MemoryTracking::MemoryTracking( const std::string & space )
-  : m_space( space ), m_tracking() {}
+  : m_space( space ), m_tracking(), m_tracking_end()
+{
+  const void * const max = upper_bound();
+
+  // Sentinal value of end [ max , max )
+
+  m_tracking.reserve(64);
+  m_tracking_end.reserve(64);
+
+  Info info ;
+
+  info.begin  = max ;
+  info.type   = NULL ;
+  info.size   = 0 ;
+  info.length = 0 ;
+  info.count  = 0 ;
+
+  m_tracking.push_back( info );
+  m_tracking_end.push_back( max );
+}
 
 MemoryTracking::~MemoryTracking()
 {
   try {
-    if ( ! m_tracking.empty() ) {
+    if ( 1 < m_tracking.size() ) {
       std::cerr << m_space << " destroyed with memory leaks:" << std::endl ;
       print( std::cerr , std::string("  ") );
+    }
+    else if ( 1 != m_tracking.size() ||
+              1 != m_tracking_end.size() ||
+              m_tracking.back().begin != upper_bound() ||
+              m_tracking_end.back() != upper_bound() ) {
+      std::cerr << m_space << " corrupted data structure" << std::endl ;
     }
   } catch( ... ) {}
 }
@@ -107,12 +165,29 @@ void MemoryTracking::track(
   const size_t           length ,
   const std::string      label )
 {
-  const LessMemoryTrackingInfo compare ;
+  const int offset = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , ptr );
+  const std::vector<Info>::iterator i = m_tracking.begin() + offset ;
 
-  std::vector<Info>::iterator i =
-    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+  // Guaranteed:
+  //   i == 0 || m_tracking_end[i-1] <= ptr < m_tracking_end[i]
+  //   ptr < m_tracking_end[i]
 
-  if ( i != m_tracking.end() && contains( *i , ptr ) ) {
+  if ( ptr < i->begin ) {
+    const std::vector<const void *>::iterator j = m_tracking_end.begin() + offset ;
+
+    Info info ;
+
+    info.label  = label ;
+    info.begin  = ptr ;
+    info.type   = type ;
+    info.size   = size ;
+    info.length = length ;
+    info.count  = 1 ;
+
+    m_tracking.insert( i , info );
+    m_tracking_end.insert( j , ((const unsigned char *)ptr) + size * length );
+  }
+  else {
     std::ostringstream msg ;
     msg << "MemoryTracking::track( "
         << "ptr(" << ptr << ") ,"
@@ -124,46 +199,47 @@ void MemoryTracking::track(
     i->print( msg );
     throw_runtime_exception( msg.str() );
   }
-
-  Info info ;
-
-  info.label  = label ;
-  info.begin  = ptr ;
-  info.end    = ((const char *)ptr) + size * length ;
-  info.type   = type ;
-  info.size   = size ;
-  info.length = length ;
-  info.count  = 1 ;
-
-  m_tracking.insert( i , info );
 }
 
 void MemoryTracking::increment( const void * ptr )
 {
-  const LessMemoryTrackingInfo compare ;
+  const std::vector<Info>::iterator i = m_tracking.begin() +
+    upper_bound( & m_tracking_end[0] , m_tracking_end.size() , ptr );
 
-  std::vector<Info>::iterator i =
-    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
-
-  if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
+  if ( i->begin <= ptr ) {
+    ++( i->count );
+  }
+  else {
     std::ostringstream msg ;
     msg << "MemoryTracking(" << (void *) this
         << ")::increment( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
     throw_runtime_exception( msg.str() );
   }
-
-  ++( i->count );
 }
 
 void * MemoryTracking::decrement( const void * ptr )
 {
-  const LessMemoryTrackingInfo compare ;
+  const int offset =
+    upper_bound( & m_tracking_end[0] , m_tracking_end.size() , ptr );
 
-  std::vector<Info>::iterator i =
-    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
+  const std::vector<Info>::iterator i = m_tracking.begin() + offset ;
 
-  if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
+  void * ptr_alloc = 0 ;
+
+  if ( i->begin <= ptr ) {
+    --( i->count );
+
+    if ( 0 == i->count ) {
+      const std::vector<const void*>::iterator j = m_tracking_end.begin() + offset ;
+
+      ptr_alloc = const_cast<void*>( i->begin );
+
+      m_tracking.erase( i );
+      m_tracking_end.erase( j );
+    }
+  }
+  else {
     std::ostringstream msg ;
     msg << "MemoryTracking(" << (void *) this
         << ")::decrement( "
@@ -171,14 +247,6 @@ void * MemoryTracking::decrement( const void * ptr )
     throw_runtime_exception( msg.str() );
   }
 
-  --( i->count );
-
-  void * ptr_alloc = 0 ;
-
-  if ( 0 == i->count ) {
-    ptr_alloc = const_cast<void*>( i->begin );
-    m_tracking.erase( i );
-  }
 
   return ptr_alloc ;
 }
@@ -186,18 +254,17 @@ void * MemoryTracking::decrement( const void * ptr )
 MemoryTracking::Info
 MemoryTracking::query( const void * ptr ) const
 {
-  const LessMemoryTrackingInfo compare ;
+  const std::vector<Info>::const_iterator i = m_tracking.begin() +
+    upper_bound( & m_tracking_end[0] , m_tracking_end.size() , ptr );
 
-  std::vector<Info>::const_iterator i =
-    std::upper_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
-
-  return ( i != m_tracking.end() && contains( *i , ptr ) ) ? *i : Info();
+  return ( i->begin <= ptr ) ? *i : Info();
 }
 
 void MemoryTracking::print( std::ostream & s , const std::string & lead ) const
 {
-  for ( std::vector<Info>::const_iterator
-        i = m_tracking.begin() ; i != m_tracking.end() ; ++i ) {
+  const std::vector<Info>::const_iterator iend = m_tracking.end() - 1 ;
+
+  for ( std::vector<Info>::const_iterator i = m_tracking.begin() ; i != iend ; ++i ) {
     s << lead ;
     i->print( s );
     s << std::endl ;

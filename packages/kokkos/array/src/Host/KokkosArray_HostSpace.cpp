@@ -42,6 +42,7 @@
 */
 
 #include <memory.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
@@ -70,35 +71,75 @@ Impl::MemoryTracking & host_space_singleton()
 namespace KokkosArray {
 namespace Impl {
 
-void host_aligned_free( void * ptr )
-{
-#if defined( __INTEL_COMPILER )
-   _mm_free( ptr );
-#else
-   free( ptr );
-#endif
-}
-
-void * host_aligned_allocate( const size_t n )
+void * host_allocate_not_thread_safe(
+  const std::string    & label ,
+  const std::type_info & scalar_type ,
+  const size_t           scalar_size ,
+  const size_t           scalar_count )
 {
   void * ptr = 0 ;
 
+  if ( 0 < scalar_size && 0 < scalar_count ) {
+    void * ptr_alloc = 0 ;
+    size_t count_alloc = scalar_count ;
+
 #if defined( __INTEL_COMPILER )
 
-  ptr = _mm_malloc( n , HostSpace::MEMORY_ALIGNMENT );
-
+    ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , HostSpace::MEMORY_ALIGNMENT );
+   
 #elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
       ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
 
-  posix_memalign( & ptr , HostSpace::MEMORY_ALIGNMENT , n );
+    posix_memalign( & ptr_alloc , HostSpace::MEMORY_ALIGNMENT , scalar_size * count_alloc );
+    ptr = ptr_alloc ;
 
 #else
 
-  ptr = malloc( n );
+    // Over-allocate to guarantee enough aligned space.
+
+    count_alloc += ( HostSpace::MEMORY_ALIGNMENT + scalar_size - 1 ) / scalar_size ;
+
+    ptr_alloc = malloc( scalar_size * count_alloc );
+
+    ptr = static_cast<unsigned char *>(ptr_alloc) + 
+          ( HostSpace::MEMORY_ALIGNMENT - reinterpret_cast<ptrdiff_t>(ptr_alloc) % HostSpace::MEMORY_ALIGNMENT );
 
 #endif
 
+    if ( ptr_alloc && ptr_alloc <= ptr &&
+         0 == ( reinterpret_cast<ptrdiff_t>(ptr) % HostSpace::MEMORY_ALIGNMENT ) ) {
+      host_space_singleton()
+        .track( ptr_alloc, & scalar_type, scalar_size, count_alloc, label );
+    }
+    else {
+      std::ostringstream msg ;
+      msg << "KokkosArray::Impl::host_allocate_not_thread_safe( "
+          << label
+          << " , " << scalar_type.name()
+          << " , " << scalar_size
+          << " , " << scalar_count
+          << " ) FAILED aligned memory allocation" ;
+      KokkosArray::Impl::throw_runtime_exception( msg.str() );
+    }
+  }
+
   return ptr ;
+}
+
+void host_decrement_not_thread_safe( const void * ptr )
+{
+  if ( 0 != ptr ) {
+
+    void * ptr_alloc = host_space_singleton().decrement( ptr );
+
+    if ( 0 != ptr_alloc ) {
+#if defined( __INTEL_COMPILER )
+       _mm_free( ptr_alloc );
+#else
+       free( ptr_alloc );
+#endif
+    }
+  }
 }
 
 }
@@ -114,28 +155,7 @@ void * HostSpace::allocate(
 {
   assert_master_thread( "KokkosArray::HostSpace::allocate" );
 
-  void * ptr = 0 ;
-
-  if ( 0 < scalar_size * scalar_count ) {
-
-    ptr = Impl::host_aligned_allocate( scalar_size * scalar_count );
-
-    if ( 0 == ptr ) {
-      std::ostringstream msg ;
-      msg << "KokkosArray::Impl::HostSpace::allocate( "
-          << label
-          << " , " << scalar_type.name()
-          << " , " << scalar_size
-          << " , " << scalar_count
-          << " ) FAILED memory allocation" ;
-      KokkosArray::Impl::throw_runtime_exception( msg.str() );
-    }
-
-    host_space_singleton()
-      .track( ptr, & scalar_type, scalar_size, scalar_count, label );
-  }
-
-  return ptr ;
+  return Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
 }
 
 void HostSpace::increment( const void * ptr )
@@ -147,13 +167,8 @@ void HostSpace::increment( const void * ptr )
 
 void HostSpace::decrement( const void * ptr )
 {
-  if ( 0 != ptr && Impl::HostInternal::singleton().is_master_thread() ) {
-
-    void * ptr_alloc = host_space_singleton().decrement( ptr );
-
-    if ( 0 != ptr_alloc ) {
-      Impl::host_aligned_free( ptr_alloc );
-    }
+  if ( Impl::HostInternal::singleton().is_master_thread() ) {
+    Impl::host_decrement_not_thread_safe( ptr );
   }
 }
 

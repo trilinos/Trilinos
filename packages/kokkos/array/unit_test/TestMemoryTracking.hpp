@@ -57,7 +57,7 @@ public:
 
   void run_test()
   {
-    KokkosArray::Impl::MemoryTracking tracking ;
+    KokkosArray::Impl::MemoryTracking tracking( "test" );
     KokkosArray::Impl::MemoryTracking::Info info ;
 
     int a ;

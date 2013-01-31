@@ -62,6 +62,18 @@ namespace Impl {
 template< class MemorySpace , class ValueType , class Shape >
 class ViewOper ;
 
+/*
+template< class MemorySpace , class ValueType , class Shape , class Layout , class Enable >
+class ViewOper ;
+
+template< class MemorySpace , class ValueType , class Shape , class Layout , class Enable >
+class ViewOper {
+
+  ShapeMap< Shape , Layout > shape_map ;
+
+};
+*/
+
 template< class DstScalar , class DstMemory , class DstManagement ,
           class SrcScalar , class SrcMemory , class SrcManagement >
 struct ViewAssignable ;
@@ -818,6 +830,7 @@ public:
     internal_private_assign( shape , data_ptr );
   }
 
+#if 0
   explicit View( scalar_type * data_ptr )
   {
     typedef typename
@@ -934,6 +947,7 @@ public:
 
     internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) , data_ptr );
   }
+#endif
 };
 
 //----------------------------------------------------------------------------

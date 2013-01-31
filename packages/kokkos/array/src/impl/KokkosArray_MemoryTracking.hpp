@@ -60,33 +60,30 @@ public:
   struct Info {
     std::string            label ;
     const void           * begin ;
-    const void           * end ;
     const std::type_info * type ;
     size_t                 size ;
     size_t                 length ;
     size_t                 count ;
 
     Info()
-    : label(), begin(0), end(0), type(0)
+    : label(), begin(0), type(0)
     , size(0), length(0), count(0)
     {}
 
     Info( const Info & rhs )
-    : label(rhs.label), begin(rhs.begin), end(rhs.end), type(rhs.type)
+    : label(rhs.label), begin(rhs.begin), type(rhs.type)
     , size(rhs.size), length(rhs.length), count(rhs.count)
     {}
 
     Info & operator = ( const Info & rhs )
-    { label = rhs.label ; begin = rhs.begin ; end = rhs.end ; type = rhs.type ;
+    {
+      label = rhs.label ; begin = rhs.begin ; type = rhs.type ;
       size  = rhs.size ;  length = rhs.length ; count = rhs.count ;
       return *this ;
     }
 
     ~Info()
-    {
-      begin = 0 ; end = 0 ; type = 0 ;
-      size  = 0 ; length = 0 ; count = 0 ;
-    }
+    { begin = 0 ; type = 0 ; size  = 0 ; length = 0 ; count = 0 ; }
 
     void print( std::ostream & ) const ;
   };
@@ -125,20 +122,20 @@ public:
    *  Intent: A memory manager destructor queries if non-empty
    *  which would indicate memory leaks.
    */
-  bool empty() const 
-  { return m_tracking.empty(); }
+  bool empty() const ;
 
   explicit MemoryTracking( const std::string & space );
 
-  MemoryTracking();
   ~MemoryTracking();
 
 private:
+  MemoryTracking();
   MemoryTracking( const MemoryTracking & );
   MemoryTracking & operator = ( const MemoryTracking & );
 
-  std::string       m_space ;
-  std::vector<Info> m_tracking ;
+  std::string                m_space ;
+  std::vector<Info>          m_tracking ;
+  std::vector<const void *>  m_tracking_end ;
 };
 
 
