@@ -61,7 +61,6 @@ using Teuchos::rcp;
 #include "Panzer_SGEpetraLinearObjFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -93,37 +92,35 @@ public:
                       std::vector<std::size_t> & cellIds,
                       std::vector<std::size_t> & sideIds,
                       Intrepid::FieldContainer<double> coords,
-                      panzer::InputPhysicsBlock& ipb,
+                      const panzer::PhysicsBlock& pb,
                       int workset_size,
                       std::vector<panzer::BC> & bcs,
                       int myRank) {
-      volume_worksets["block_0"] = panzer::buildWorksets("block_0",topo,cellIds,coords, ipb, workset_size,2);
-      bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],topo,cellIds,sideIds,coords, ipb,2);
+     volume_worksets["block_0"] = panzer::buildWorksets(pb,cellIds,coords,workset_size);
+     bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],pb,cellIds,sideIds,coords);
    }
    virtual ~TestWorksetFactory() {}
 
    
    Teuchos::RCP<std::vector<panzer::Workset> >
    getWorksets(const WorksetDescriptor & wd,
-               const panzer::PhysicsBlock & pb,
-               std::size_t worksetSize) const
+               const panzer::PhysicsBlock & pb) const
    { return volume_worksets[wd.getElementBlock()]; } // lazy
 
    Teuchos::RCP<std::vector<panzer::Workset> >
    getVolumeWorksets(const std::string & eBlock,
-                     const panzer::PhysicsBlock & pb,
-                     std::size_t worksetSize) const
+                     const panzer::PhysicsBlock & pb) const
    { return volume_worksets[eBlock]; }
 
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
-                 const panzer::PhysicsBlock & pb) const
+		   const panzer::PhysicsBlock & pb) const
    { return bc_worksets[bc]; }
 };
 
 
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
-			 std::vector<panzer::BC>& bcs);
+void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+		       std::vector<panzer::BC>& bcs);
 
 Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order)
 {
@@ -164,7 +161,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   RCP<unit_test::UniqueGlobalIndexer> indexer
         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
 
-  panzer::InputPhysicsBlock ipb;
+  Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
   std::vector<panzer::BC> bcs;
   testInitialzation(ipb, bcs);
 
@@ -174,7 +171,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   // build physics blocks
   //////////////////////////////////////////////////////////////
   const std::size_t workset_size = 20;
-  user_app::MyFactory eqset_factory;
+  Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
   user_app::BCFactory bc_factory;
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
 
@@ -187,14 +184,13 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
     std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
     block_ids_to_cell_topo["block_0"] = topo;
     
-    std::map<std::string,panzer::InputPhysicsBlock> 
-      physics_id_to_input_physics_blocks;
-    physics_id_to_input_physics_blocks["test physics"] = ipb;
-
+    int default_integration_order = 1;
+      
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                block_ids_to_cell_topo,
-                               physics_id_to_input_physics_blocks,
-                               Teuchos::as<int>(2), workset_size,
+			       ipb,
+			       default_integration_order,
+			       workset_size,
                                eqset_factory,
                                global_data,
 			       false,
@@ -210,9 +206,9 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   indexer->getCoordinates(cellIds[0],coords);
 
    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
-      = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,ipb,workset_size,bcs,myRank));
+     = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,*physicsBlocks[0],workset_size,bcs,myRank));
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+     = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
   // build DOF Manager
   /////////////////////////////////////////////////////////////
@@ -239,7 +235,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   fmb->setWorksetContainer(wkstContainer);
   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-  fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+  fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
@@ -328,27 +324,27 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
      }
   }
 }
-
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
-{
-  panzer::InputEquationSet ies_1;
-  ies_1.name = "Energy";
-  ies_1.basis = "Q1";
-  ies_1.integration_order = 1;
-  ies_1.model_id = "solid";
-  ies_1.prefix = "";
-
-  panzer::InputEquationSet ies_2;
-  ies_2.name = "Energy";
-  ies_2.basis = "Q1";
-  ies_2.integration_order = 1;
-  ies_2.model_id = "ion solid";
-  ies_2.prefix = "ION_";
-
-  ipb.physics_block_id = "4";
-  ipb.eq_sets.push_back(ies_1);
-  ipb.eq_sets.push_back(ies_2);
+  {
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
 
   {
     std::size_t bc_id = 0;

@@ -59,7 +59,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 {
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename LocalOrdinalT>

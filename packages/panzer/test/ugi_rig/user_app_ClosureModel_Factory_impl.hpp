@@ -107,7 +107,7 @@ buildClosureModels(const std::string& model_id,
       { // at IP
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", ir);
+	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
