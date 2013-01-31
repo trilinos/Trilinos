@@ -168,9 +168,9 @@ int main(int argc, char *argv[]) {
   H.Keep("R", RFact.get());    //RFact is the generating factory for R.
   H.Keep("Ptent", TentativePFact.get());  //SaPFact is the generating factory for P.
 
-  Teuchos::ParameterList status = H.Setup(M,startLevel,maxLevels);
+  H.Setup(M,startLevel,maxLevels);
+  Teuchos::ParameterList status = H.Summarize(MueLu::None);
   int numLevels = status.get("number of levels",-1);
-  int endLevel = status.get("end level",-1);
 
   std::cout << std::endl << std::endl;
 
@@ -200,7 +200,8 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
-  H.Setup(M,startLevel, endLevel > -1 ? endLevel+1 : maxLevels);
+  // Note that we pass the number of levels back in.
+  H.Setup(M,startLevel, numLevels);
 
   std::cout << "=============== Solve ====================" << std::endl;
 
@@ -210,6 +211,9 @@ int main(int argc, char *argv[]) {
 
   LO nIts = 9;
   H.Iterate(*B, nIts, *X);
+
+  status = H.Summarize(MueLu::High);
+
 
   //
   // Print relative residual norm

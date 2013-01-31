@@ -19,7 +19,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     )
   TRIBITS_ADD_EXECUTABLE(
     SeparateSetups
-    SOURCES SmoothedAggregation.cpp
+    SOURCES SeparateSetups.cpp
     COMM serial mpi
     DEPLIBS muelu xpetra
     )

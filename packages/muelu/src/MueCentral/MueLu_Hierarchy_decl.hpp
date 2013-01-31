@@ -185,7 +185,13 @@ namespace MueLu {
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //!
-    Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+    void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+
+    /*! @brief Report number of levels and complexity.
+
+        @param[in] verbLevel Print std::out if enough verbose enough.
+    */
+    Teuchos::ParameterList Summarize(MsgType verbLevel = Statistics0);
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -246,6 +252,10 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
+    int GetNumberOfLevels() {
+      return Teuchos::as<int>(Levels_.size());
+    }
+
   private:
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
@@ -261,6 +271,10 @@ namespace MueLu {
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
+
+    //! statistics
+    Xpetra::global_size_t totalNnz_;
+    double operatorComplexity_;
 
   }; //class Hierarchy
 

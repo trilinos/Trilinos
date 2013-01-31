@@ -67,14 +67,16 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1),
+      totalNnz_(0), operatorComplexity_(0.)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1),
+      totalNnz_(0), operatorComplexity_(0.)
   {
     RCP<Level> Finest = rcp( new Level() );
     AddLevel(Finest);
@@ -230,7 +232,6 @@ namespace MueLu {
       RCP<Matrix> Ac;
       if (level.IsAvailable("A")) {
         Ac = level.Get<RCP<Matrix> >("A");
-        // sumCoarseNnz += Ac->getGlobalNumEntries();
       } else {
         //TODO: happen when Ac factory = do nothing (ie: SetSmoothers)
       }
@@ -266,14 +267,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase & manager, const int &startLevel, const int &numDesiredLevels) {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase & manager, const int &startLevel, const int &numDesiredLevels) {
     PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")"); // Use MueLu::BaseClass::description()to avoid printing "{numLevels = 1}" (numLevels is increasing...)
 
     RCP<const FactoryManagerBase> rcpManager = rcpFromRef(manager);
 
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
-
-    //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
     TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2"); //FIXME: it has to work for one level method (numDesiredLevels==1)!!
 
@@ -307,24 +306,31 @@ namespace MueLu {
     // TODO: this is not exception safe: manager will still hold default factories if you exit this function with an exception
     manager.Clean();
 
-    // Gather statistics
-    //TODO    Xpetra::global_size_t fineNnz = Levels_[startLevel]->Get< RCP<Matrix> >("A")->getGlobalNumEntries();
-    //TODO    Xpetra::global_size_t totalNnz = fineNnz + sumCoarseNnz;
-
-    Teuchos::ParameterList status;
-    //TODO
-    // status.set("fine nnz", fineNnz);
-//     status.set("total nnz", totalNnz);
-//     status.set("start level", startLevel);
-//     status.set("end level", iLevel); //TODO: check if it's actually correct (exit by break vs. end of loop)
-//     status.set("operator complexity", ((double)totalNnz) / fineNnz);
-
-    return status;
-
   } // Setup()
 
+  // ---------------------------------------- Summarize Hierarchy information -------------------------------
 
-    // #define GimmeNorm(someVec, someLabel) { (someVec).norm2(norms); GetOStream(Statistics1, 0) << someLabel << " = " << norms << std::endl; }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Summarize(MsgType verbLevel) {
+     // TODO smoother information from each level
+  
+    Teuchos::ParameterList status;
+    status.set("number of levels", Teuchos::as<int>(Levels_.size()));
+    totalNnz_ = 0.;
+    for (size_t i=0; i<Levels_.size(); ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
+      totalNnz_ += Levels_[i]->Get<RCP<Matrix> >("A")->getGlobalNumEntries();
+    }
+    operatorComplexity_ = Teuchos::as<double>(totalNnz_) / Levels_[0]->Get< RCP<Matrix> >("A")->getGlobalNumEntries();
+    status.set("complexity", operatorComplexity_);
+
+    GetOStream(verbLevel, 0) << "Number of levels    = " << status.get<int>("number of levels") << std::endl;
+    GetOStream(verbLevel, 0) << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed) << status.get<double>("complexity") << std::endl;
+
+    return status;
+  } //Summarize()
+
+  // ---------------------------------------- Iterate -------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
