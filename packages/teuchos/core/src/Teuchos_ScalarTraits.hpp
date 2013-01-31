@@ -268,6 +268,7 @@ struct ScalarTraits<unsigned int>
   static inline unsigned int conjugate(unsigned int x) { return x; }
   static inline unsigned int real(unsigned int x) { return x; }
   static inline unsigned int imag(unsigned int) { return 0; }
+  static inline bool isnaninf(unsigned int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -303,6 +304,7 @@ struct ScalarTraits<long int>
   static inline long int conjugate(long int x) { return x; }
   static inline long int real(long int x) { return x; }
   static inline long int imag(long int) { return 0; }
+  static inline bool isnaninf(long int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -340,6 +342,7 @@ struct ScalarTraits<long unsigned int>
   static inline long unsigned int conjugate(long unsigned int x) { return x; }
   static inline long unsigned int real(long unsigned int x) { return x; }
   static inline long unsigned int imag(long unsigned int) { return 0; }
+  static inline bool isnaninf(long unsigned int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -378,6 +381,7 @@ struct ScalarTraits<long long int>
   static inline long long int conjugate(long long int x) { return x; }
   static inline long long int real(long long int x) { return x; }
   static inline long long int imag(long long int) { return 0; }
+  static inline bool isnaninf(long long int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -414,6 +418,7 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int conjugate(unsigned long long int x) { return x; }
   static inline unsigned long long int real(unsigned long long int x) { return x; }
   static inline unsigned long long int imag(unsigned long long int) { return 0; }
+  static inline bool isnaninf(unsigned long long int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
