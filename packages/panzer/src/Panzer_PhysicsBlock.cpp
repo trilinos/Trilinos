@@ -145,6 +145,9 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
   m_eqset_factory(factory)
 {
   TEUCHOS_ASSERT(nonnull(physics_block_plist));
+  TEUCHOS_ASSERT(nonnull(factory));
+  TEUCHOS_ASSERT(nonnull(global_data));
+
   m_physics_id = physics_block_plist->name();
 
   initialize(m_input_parameters,
