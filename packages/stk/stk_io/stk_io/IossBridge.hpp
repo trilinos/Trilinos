@@ -157,7 +157,6 @@ void write_output_db( Ioss::Region & io_region ,
 bool is_valid_part_field(const stk::mesh::FieldBase *field,
                          const stk::mesh::EntityRank part_type,
                          const stk::mesh::Part &part,
-                         const stk::mesh::Part &universal,
                          const Ioss::Field::RoleType filter_role,
                          const bool add_all = false);
 

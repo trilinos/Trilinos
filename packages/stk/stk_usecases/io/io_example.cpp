@@ -765,13 +765,12 @@ namespace stk_example_io {
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
-    stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
     std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
-      if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
+      if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
 	stk::io::field_data_from_ioss(f, entities, io_entity, f->name());
       }
     }
@@ -838,13 +837,12 @@ namespace stk_example_io {
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
-    stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
     std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
-      if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
+      if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
 	stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
       }
     }

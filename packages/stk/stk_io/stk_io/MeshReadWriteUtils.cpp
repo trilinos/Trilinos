@@ -552,11 +552,13 @@ namespace stk {
 	stk::io::delete_selector_property(*m_output_region);
     }
 
-    void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region) {
+    void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
+    {
       m_output_region = ioss_output_region;
     }
 
-    void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region) {
+    void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
+    {
       m_input_region = ioss_input_region;
     }
 
@@ -743,7 +745,7 @@ namespace stk {
 		     m_anded_selector.get());
 
       // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector & all_parts = meta_data().get_parts();
+      const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
       for ( stk::mesh::PartVector::const_iterator
 	      ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
@@ -751,12 +753,24 @@ namespace stk {
 
 	// Check whether this part should be output to results database.
 	if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
+	  stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
 	  // Get Ioss::GroupingEntity corresponding to this part...
 	  Ioss::GroupingEntity *entity = region->get_entity(part->name());
 	  if (entity != NULL && entity->type() != Ioss::SIDESET) {
-	    put_field_data(bulk_data(), *part, stk::io::part_primary_entity_rank(*part),
-			   entity, Ioss::Field::Field::TRANSIENT,
-			   m_anded_selector.get());
+	    put_field_data(bulk_data(), *part, rank, entity,
+			   Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+	  }
+
+	  // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+	  // (should probably do edges and faces also...)
+	  // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+	  if (rank != stk::mesh::MetaData::NODE_RANK) {
+	    std::string nodes_name = part->name() + "_nodes";
+	    Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+	    if (node_entity != NULL) {
+	      put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
+			     Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+	    }
 	  }
 	}
       }
@@ -946,7 +960,7 @@ namespace stk {
 				 region->get_node_blocks()[0],
 				 Ioss::Field::TRANSIENT, add_all_fields);
 
-	const stk::mesh::PartVector & all_parts = meta_data().get_parts();
+	const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
 	for ( stk::mesh::PartVector::const_iterator
 		ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
@@ -954,11 +968,23 @@ namespace stk {
 
 	  // Check whether this part should be output to results database.
 	  if (stk::io::is_part_io_part(*part)) {
+	    stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
 	    // Get Ioss::GroupingEntity corresponding to this part...
 	    Ioss::GroupingEntity *entity = region->get_entity(part->name());
 	    if (entity != NULL) {
-	      stk::io::ioss_add_fields(*part, part_primary_entity_rank(*part),
-				       entity, Ioss::Field::TRANSIENT, add_all_fields);
+	      stk::io::ioss_add_fields(*part, rank, entity, Ioss::Field::TRANSIENT, add_all_fields);
+	    }
+
+	    // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+	    // (should probably do edges and faces also...)
+	    // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+	    if (rank != stk::mesh::MetaData::NODE_RANK) {
+	      std::string nodes_name = part->name() + "_nodes";
+	      Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+	      if (node_entity != NULL) {
+		stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK,
+					 node_entity, Ioss::Field::TRANSIENT, add_all_fields);
+	      }
 	    }
 	  }
 	}
