@@ -93,13 +93,17 @@ int main(int argc, char *argv[]) {
   // Parameters
 
   // problem size
-  GlobalOrdinal numGlobalElements = 1024;
-  ScalarC kh=0.625;
+  GlobalOrdinal numGlobalElements = 10000;
+  ScalarC h(1.0/((double) (numGlobalElements-1)),0.0);
+  ScalarC kh(0.625,0.0);
   ScalarC kh2=kh*kh;
+  ScalarC k=kh/h;
   double alpha=1.0;
-  double beta=1.0;
+  double beta=0.0;
   ScalarC shift(alpha,beta);
-  ScalarC shift2(1.0,0.1);
+  ScalarC one(1.0,0.0);
+  ScalarC two(2.0,0.0);
+  ScalarC complexone(0.0,1.0);
 
   // Construct the problem
 
@@ -111,63 +115,84 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
+  RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > L = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
   RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > S = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
   RCP<Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > A = rcp(new Tpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO>(map, 3));
 
-  // Add rows one-at-a-time for shifted matrix
+  // Laplacian
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      S->insertGlobalValues(myGlobalElements[i], 
+      L->insertGlobalValues(myGlobalElements[i], 
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (2.0-shift*kh2, -1.0));
+                            Teuchos::tuple<ScalarC> (two, -one));
+    }
+    else if (myGlobalElements[i] == numGlobalElements - 1) {
+      L->insertGlobalValues(myGlobalElements[i], 
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+                            Teuchos::tuple<ScalarC> (-one, two));
+    }
+    else {
+      L->insertGlobalValues(myGlobalElements[i], 
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+                            Teuchos::tuple<ScalarC> (-one, two, -one));
+    }
+  }
+  L->fillComplete();
+
+  // Shifted Helmholtz Operator
+  for (size_t i = 0; i < numMyElements; i++) {
+    if (myGlobalElements[i] == 0) {
+      S->insertGlobalValues(myGlobalElements[i],
+			    Teuchos::tuple<GlobalOrdinal> (myGlobalElements[i]),
+			    Teuchos::tuple<ScalarC> (one));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
       S->insertGlobalValues(myGlobalElements[i], 
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0-shift*kh2));
+                            Teuchos::tuple<ScalarC> (-one, one-complexone*kh));
     }
     else {
       S->insertGlobalValues(myGlobalElements[i], 
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0-shift*kh2, -1.0));
+                            Teuchos::tuple<ScalarC> (-one, two-shift*kh2, -one));
     }
   }
-  // Complete the fill, ask that storage be reallocated and optimized
   S->fillComplete();
 
-  // Add rows one-at-a-time for shifted matrix
+  // Original Helmholtz Operator
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (2.0-shift2*kh2, -1.0));
+      A->insertGlobalValues(myGlobalElements[i],
+			    Teuchos::tuple<GlobalOrdinal> (myGlobalElements[i]),
+			    Teuchos::tuple<ScalarC> (one));
+
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
       A->insertGlobalValues(myGlobalElements[i], 
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0-shift2*kh2));
+                            Teuchos::tuple<ScalarC> (-one,one-complexone*kh) );
     }
     else {
       A->insertGlobalValues(myGlobalElements[i], 
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<ScalarC> (-1.0, 2.0-shift2*kh2, -1.0));
+                            Teuchos::tuple<ScalarC> (-one, two-kh2, -one));
     }
   }
-  // Complete the fill, ask that storage be reallocated and optimized
   A->fillComplete();
 
   // Construct a multigrid preconditioner
 
-  // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
-  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluS_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(S)); //TODO: should not be needed
+  // Turn Tpetra::CrsMatrix into MueLu::Matrix
+  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluL_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(L)); 
+  RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluL  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluL_));
+  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluS_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(S)); 
   RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluS  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluS_));
-
-  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(A)); //TODO: should not be needed
+  RCP<Xpetra::CrsMatrix<ScalarC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<ScalarC, LO, GO, NO, LMO>(A)); 
   RCP<Xpetra::Matrix <ScalarC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<ScalarC, LO, GO, NO, LMO>(mueluA_));
 
   // Multigrid Hierarchy
-  RCP< MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO> > H = rcp(new MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO>(mueluS));
-  H->setVerbLevel(Teuchos::VERB_HIGH);
+  RCP< MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO> > H = rcp(new MueLu::Hierarchy<ScalarC, LO, GO, NO, LMO>(mueluL));
+  //H->setVerbLevel(Teuchos::VERB_HIGH);
   MueLu::FactoryManager<ScalarC, LocalOrdinal, GlobalOrdinal> M;
 
   // Prolongation/Restriction
@@ -185,13 +210,13 @@ int main(int argc, char *argv[]) {
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",2);
+  ifpack2List.set("krylov: preconditioner type",1);
   // ILUT smoother
   //ifpack2Type = "ILUT";
-  ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
-  ifpack2List.set("fact: absolute threshold", (double)0.0);
-  ifpack2List.set("fact: relative threshold", (double)1.0);
-  ifpack2List.set("fact: relax value", (double)0.0);
+  //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
+  //ifpack2List.set("fact: absolute threshold", (double)0.0);
+  //ifpack2List.set("fact: relative threshold", (double)1.0);
+  //ifpack2List.set("fact: relax value", (double)0.0);
   //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<ScalarC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
@@ -200,7 +225,7 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("relaxation: type", "Gauss-Seidel");
   smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<ScalarC, LO, GO, NO, LMO>(ifpack2Type, ifpack2List) );
   RCP< MueLu::SmootherFactory<ScalarC, LO, GO, NO, LMO> > SmooFact;
-  LO maxLevels = 3;
+  LO maxLevels = 6;
   if (maxLevels > 1)
     SmooFact = rcp( new MueLu::SmootherFactory<ScalarC, LO, GO, NO, LMO>(smooProto) );
   // create coarsest smoother
@@ -215,21 +240,30 @@ int main(int argc, char *argv[]) {
 #endif
   RCP< MueLu::SmootherFactory<ScalarC, LO, GO, NO, LMO> > coarsestSmooFact = rcp(new MueLu::SmootherFactory<ScalarC, LO, GO, NO, LMO>(coarsestSmooProto, Teuchos::null));
 
-  // Setup
+  // Setup R's and P's
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
+  H->Keep("P", Pfact.get());
+  H->Keep("R", Rfact.get());
+  H->Keep("Ptent", TentPFact.get());
+  H->Setup(M, 0, maxLevels);
+  Teuchos::ParameterList status = H->Summarize(MueLu::None);
+  int numLevels = status.get("number of levels",-1);
+  H->print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
+  // Setup coarse grid operators and smoothers
+  RCP<Level> finestLevel = H->GetLevel();
+  finestLevel->Set("A", mueluS);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->Setup(M, 0, maxLevels);
+  H->Setup(M, 0, numLevels);
 
   RCP<Tpetra::Vector<ScalarC, LO, GO, NO> > X = Tpetra::createVector<ScalarC, LO, GO, NO>(map);
-  RCP<Tpetra::Vector<ScalarC, LO, GO, NO> > B = Tpetra::createVector<ScalarC, LO, GO, NO>(map);
-  
+  RCP<Tpetra::Vector<ScalarC, LO, GO, NO> > B = Tpetra::createVector<ScalarC, LO, GO, NO>(map);  
   X->putScalar((ScalarC) 0.0);
   B->putScalar((ScalarC) 0.0);
-  B->replaceGlobalValue(numGlobalElements/2, 1.0);
+  B->replaceGlobalValue(0, 1.0);
 
   // Matrix and Multivector type that will be used with Belos
   typedef Tpetra::MultiVector<ScalarC, LO, GO, NO> MV;
@@ -293,6 +327,11 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+
+  // print solution entries
+  // using Teuchos::VERB_EXTREME;
+  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );
+  // X->describe(*out,VERB_EXTREME);  
 
   return EXIT_SUCCESS;
 }
