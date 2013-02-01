@@ -164,6 +164,30 @@ namespace stk {
               VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");
 
               DenseMatrix<3,3>& A = jacA.m_J[inode];
+              double detJ = jacA.m_detJ[inode];
+              if (detJ < 1.e-12)
+                {
+                  std::cout << "ERROR: bad Jacobian in SpacingFieldUtil, detJ = " << detJ << std::endl;
+                  for (unsigned jn=0; jn < elem_nodes.size(); jn++)
+                    {
+                      double *cr = stk::mesh::field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , elem_nodes[jn].entity() );
+                      for (int idim=0; idim < spatial_dim; idim++)
+                        {
+                          std::cout << "coord[node-" << jn << ", " << idim << "]= " << cr[idim] << std::endl;
+                        }
+                    }
+                  for (int idim=0; idim < spatial_dim; idim++)
+                    {
+                      for (int jdim=0; jdim < spatial_dim; jdim++)
+                        {
+                          std::cout << "(i,j)= " << idim << " " << jdim << " coord= " << coord[0] << " " << coord[1]
+                                    << " AI= " << AI(idim,jdim) <<  " num_elem= " << num_elem << " i_element= " << i_element
+                                    << " A_ = " << A_ << " A= " << A(idim,jdim) << " uv= " << unit_vector_dir[jdim] << " topo= " << topo.getName() << "\n";
+                        }
+                    }
+                  VERIFY_OP_ON(detJ, >=, 1.e-12, "ERROR: bad Jacobian in SpacingFieldUtil.");
+                }
+
               inverse(A, AI);
               double spacing[3] = {0,0,0};
               for (int idim=0; idim < spatial_dim; idim++)

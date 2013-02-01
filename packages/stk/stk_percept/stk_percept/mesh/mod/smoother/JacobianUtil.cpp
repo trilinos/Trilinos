@@ -123,26 +123,28 @@ namespace stk {
 
       const double h = 0.5;		/* h = 1 / (2*height) */
 
+      // grad[i][j] += dMdA(j,m)*D[A(j,m),x[i,j]]
+
       /* Calculate M = A*inv(W). */
-      //matr[0] = x1[0] - x0[0];
+      //matr[0] = x1[0] - x0[0];  A(0,0)
       grad[indices[1]][0] += dMdA(0,0)*(+1); grad[indices[0]][0] += dMdA(0,0)*(-1);
-      //matr[1] = x2[0] - x0[0];
+      //matr[1] = x2[0] - x0[0];  A(0,1)
       grad[indices[2]][0] += dMdA(0,1)*(+1); grad[indices[0]][0] += dMdA(0,1)*(-1);
-      //matr[2] = (2.0*x3[0] - x1[0] - x2[0])*h;
+      //matr[2] = (2.0*x3[0] - x1[0] - x2[0])*h;  A(0,2)
       grad[indices[3]][0] += dMdA(0,2)*(+2.0*h); grad[indices[1]][0] += dMdA(0,2)*(-1.0*h); grad[indices[2]][0] += dMdA(0,2)*(-1.0*h);
   
-      //matr[3] = x1[1] - x0[1];
+      //matr[3] = x1[1] - x0[1];  A(1,0)
       grad[indices[1]][1] += dMdA(1,0)*(+1); grad[indices[0]][1] += dMdA(1,0)*(-1);
-      //matr[4] = x2[1] - x0[1];
+      //matr[4] = x2[1] - x0[1];  A(1,1)
       grad[indices[2]][1] += dMdA(1,1)*(+1); grad[indices[0]][1] += dMdA(1,1)*(-1);
-      //matr[5] = (2.0*x3[1] - x1[1] - x2[1])*h;
+      //matr[5] = (2.0*x3[1] - x1[1] - x2[1])*h;  A(1,2)
       grad[indices[3]][1] += dMdA(1,2)*(+2.0*h); grad[indices[1]][1] += dMdA(1,2)*(-1.0*h); grad[indices[2]][1] += dMdA(1,2)*(-1.0*h);
   
-      //matr[6] = x1[2] - x0[2];
+      //matr[6] = x1[2] - x0[2]; A(2,0)
       grad[indices[1]][2] += dMdA(2,0)*(+1); grad[indices[0]][2] += dMdA(2,0)*(-1);
-      //matr[7] = x2[2] - x0[2];
+      //matr[7] = x2[2] - x0[2];  A(2,1)
       grad[indices[2]][2] += dMdA(2,1)*(+1); grad[indices[0]][2] += dMdA(2,1)*(-1);
-      //matr[8] = (2.0*x3[2] - x1[2] - x2[2])*h;
+      //matr[8] = (2.0*x3[2] - x1[2] - x2[2])*h;  A(2,2)
       grad[indices[3]][2] += dMdA(2,2)*(+2.0*h); grad[indices[1]][2] += dMdA(2,2)*(-1.0*h); grad[indices[2]][2] += dMdA(2,2)*(-1.0*h);
     }
 
@@ -283,18 +285,32 @@ namespace stk {
           break;
 
         case shards::Pyramid<5>::key:
-          for (i = 0; i < 4; ++i) {
-            metric_valid = jacobian_matrix_pyramid_3D(m_detJ[i], m_J[i],
-                                                      VERTEX(v_i[ i     ]),
-                                                      VERTEX(v_i[(i+1)%4]),
-                                                      VERTEX(v_i[(i+3)%4]),
-                                                      VERTEX(v_i[ 4     ]));
+          {
+            bool err=false;
+            for (i = 0; i < 5; ++i) {
+              metric_valid = jacobian_matrix_pyramid_3D_new(i,
+                                                            m_detJ[i], m_J[i],
+                                                            VERTEX(v_i[0]),
+                                                            VERTEX(v_i[1]),
+                                                            VERTEX(v_i[2]),
+                                                            VERTEX(v_i[3]),
+                                                            VERTEX(v_i[4]));
+              if (m_detJ[i] < 1.e-12) err=true;
+            }
+
+            // FIXME
+            m = average_metrics(m_detJ, 5);
+            if (m < 1.e-12 || err)
+              {
+                std::cout << "pyramid detJ= " << m << std::endl;
+                for (i = 0; i < 5; ++i) {
+                  std::cout << " detJ[" << i << "]= " << m_detJ[i] << std::endl;
+                }
+                for (i = 0; i < 5; ++i) {
+                  std::cout << " J[" << i << "]= " << m_J[i] << std::endl;
+                }
+              }
           }
-          // FIXME
-          m_J[4] = (m_J[0]+m_J[1]+m_J[2]+m_J[3]);
-          m_J[4] *= 0.25;
-          m_detJ[4] = det(m_J[4]);
-          m = average_metrics(m_detJ, 5);
           break;
 
         case shards::Wedge<6>::key:

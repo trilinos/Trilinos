@@ -63,13 +63,13 @@ namespace stk {
       // element "h" based on gradient of a given field - "h" is computed by the "h" in the direction
       //   of the field's gradient - uses the formula h = || grad u || / || J^-1 grad u ||
       //   If || grad u || ~0, it returns approx_diameter()
-      double grad_based_diameter(PerceptMesh& eMesh, stk::mesh::Entity element, 
+      double grad_based_diameter(PerceptMesh& eMesh, stk::mesh::Entity element,
                                  stk::mesh::FieldBase *field_for_grad,
                                  stk::mesh::FieldBase *coord_field = 0,
                                  const CellTopologyData * topology_data_in = 0 );
 
       /// compute edge length min, max and average between pairs of vertices that form element edges
-      void edge_lengths(PerceptMesh& eMesh, stk::mesh::Entity element, 
+      void edge_lengths(PerceptMesh& eMesh, stk::mesh::Entity element,
                         double& min_edge_length, double& max_edge_length, double& ave_edge_length,
                         stk::mesh::FieldBase *coord_field = 0,
                         const CellTopologyData * topology_data_in = 0 );
@@ -79,7 +79,7 @@ namespace stk {
       ///   axes of the element, and are thus somewhat representative of mesh parameter.  Here, J is
       ///   the average J from the vertex-based (corner-based) Jacobians.
       /// Uses the jacobian w.r.t. "equilateral" reference elements, i.e. unit edge lengths
-      void stretch_eigens(PerceptMesh& eMesh, stk::mesh::Entity element, 
+      void stretch_eigens(PerceptMesh& eMesh, stk::mesh::Entity element,
                           double stretch_eigens[3],
                           stk::mesh::FieldBase *coord_field = 0,
                           const CellTopologyData * topology_data_in = 0 );
@@ -156,7 +156,7 @@ namespace stk {
       inline bool jacobian_matrix_wedge_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {
 
-        /********************************************************************* 
+        /*********************************************************************
          * Reference tetrahedral elements to corners of an ideal wedge element.
          * Vertices should be ordered such that the first three vertices form
          * the ideally-equaliteral face of the tetrahedron (the end of the
@@ -174,11 +174,11 @@ namespace stk {
         matr[0] = x1[0] - x0[0];
         matr[1] = isqrt3 * (2 * x2[0] - x1[0] - x0[0]);
         matr[2] = x3[0] - x0[0];
-  
+
         matr[3] = x1[1] - x0[1];
         matr[4] = isqrt3 * (2 * x2[1] - x1[1] - x0[1]);
         matr[5] = x3[1] - x0[1];
-  
+
         matr[6] = x1[2] - x0[2];
         matr[7] = isqrt3 * (2 * x2[2] - x1[2] - x0[2]);
         matr[8] = x3[2] - x0[2];
@@ -189,7 +189,7 @@ namespace stk {
 
       inline bool jacobian_matrix_pyramid_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {
-        /********************************************************************* 
+        /*********************************************************************
          * Reference tetrahedral elements to halves of an ideal pyramid.
          * Vertices should be ordered such that the edge between the 2nd and
          * 3rd vertices is the one longer edge in the reference tetrahedron
@@ -209,17 +209,180 @@ namespace stk {
         matr[0] = x1[0] - x0[0];
         matr[1] = x2[0] - x0[0];
         matr[2] = (2.0*x3[0] - x1[0] - x2[0])*h;
-  
+
         matr[3] = x1[1] - x0[1];
         matr[4] = x2[1] - x0[1];
         matr[5] = (2.0*x3[1] - x1[1] - x2[1])*h;
-  
+
         matr[6] = x1[2] - x0[2];
         matr[7] = x2[2] - x0[2];
         matr[8] = (2.0*x3[2] - x1[2] - x2[2])*h;
         /* Calculate det(M). */
         detJ = det(A);
         return detJ < 0.0;
+      }
+
+      inline double XI(int I, int J, const double *x0, const double *x1, const double *x2, const double *x3, const double *x4)
+      {
+        switch (I-1)
+          {
+          case 0: return x0[J-1];
+          case 1: return x1[J-1];
+          case 2: return x2[J-1];
+          case 3: return x3[J-1];
+          case 4: return x4[J-1];
+          }
+        return 0;
+      }
+
+      /** Corrected basis functions, derivatives, and Jacobian at the node @param ibasis of the pyramid.
+          @see cs.brown.edu/cgc/cgc98/final/final19.ps and   www.global-sci.org/aamm/freedownload/32-131.pdf
+          Reference element is [0,1]x[0,1]x[0,1/2]
+          See pyr-correct.nb in this directory
+      */
+      inline bool jacobian_matrix_pyramid_3D_new(const int ibasis, double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3, const double *x4)
+      {
+        // parametric coordinates at vertices
+        double rst[5][3] = {{0,0,0},{1,0,0},{1,1,0},{0,1,0},{.5,.5,.49999}};  //note: avoid singularity at top vertex
+
+        double r = rst[ibasis][0];
+        double s = rst[ibasis][1];
+        double t = rst[ibasis][2];
+
+        // bases
+        double bases[] = {-(((-1 + r + t)*(-1 + s + t))/(-1 + 2*t)),
+                          ((r - t)*(-1 + s + t))/(-1 + 2*t),
+                          -(((r - t)*(s - t))/(-1 + 2*t)),
+                          ((s - t)*(-1 + r + t))/(-1 + 2*t),
+                          2*t};
+        (void)bases;
+
+#define List(x,y,z) {x,y,z}
+#define Power(x,y) (y==2?(x)*(x):std::pow(x,y))
+#define xi(I,J) XI(I,J,x0,x1,x2,x3,x4)
+
+        // Jacobian at (r,s,t)[ibasis] for top vertex (1/2,1/2,1/2)
+        double dxidxij_top_vertex[3][3] =
+          List(List((-xi(1,1) + xi(2,1) + xi(3,1) - xi(4,1))/2.,(-xi(1,1) - xi(2,1) + xi(3,1) + xi(4,1))/2.,(-xi(1,1) - xi(2,1) - xi(3,1) - xi(4,1) + 4*xi(5,1))/2.),
+               List((-xi(1,2) + xi(2,2) + xi(3,2) - xi(4,2))/2.,(-xi(1,2) - xi(2,2) + xi(3,2) + xi(4,2))/2.,(-xi(1,2) - xi(2,2) - xi(3,2) - xi(4,2) + 4*xi(5,2))/2.),
+               List((-xi(1,3) + xi(2,3) + xi(3,3) - xi(4,3))/2.,(-xi(1,3) - xi(2,3) + xi(3,3) + xi(4,3))/2.,(-xi(1,3) - xi(2,3) - xi(3,3) - xi(4,3) + 4*xi(5,3))/2.));
+
+        // at base vertices [0,1]x[0,1] t=0
+        double dxidxij_base_vertices[3][3] =
+          List(List((-1 + s)*xi(1,1) - (-1 + s)*xi(2,1) + s*(xi(3,1) - xi(4,1)),(-1 + r)*xi(1,1) + xi(4,1) - r*(xi(2,1) - xi(3,1) + xi(4,1)),
+                    -xi(2,1) + r*(-1 + 2*s)*(xi(1,1) - xi(2,1) + xi(3,1) - xi(4,1)) - xi(4,1) + s*(-xi(1,1) + xi(2,1) - xi(3,1) + xi(4,1)) + 2*xi(5,1)),
+               List((-1 + s)*xi(1,2) - (-1 + s)*xi(2,2) + s*(xi(3,2) - xi(4,2)),(-1 + r)*xi(1,2) + xi(4,2) - r*(xi(2,2) - xi(3,2) + xi(4,2)),
+                    -xi(2,2) + r*(-1 + 2*s)*(xi(1,2) - xi(2,2) + xi(3,2) - xi(4,2)) - xi(4,2) + s*(-xi(1,2) + xi(2,2) - xi(3,2) + xi(4,2)) + 2*xi(5,2)),
+               List((-1 + s)*xi(1,3) - (-1 + s)*xi(2,3) + s*(xi(3,3) - xi(4,3)),(-1 + r)*xi(1,3) + xi(4,3) - r*(xi(2,3) - xi(3,3) + xi(4,3)),
+                    -xi(2,3) + r*(-1 + 2*s)*(xi(1,3) - xi(2,3) + xi(3,3) - xi(4,3)) - xi(4,3) + s*(-xi(1,3) + xi(2,3) - xi(3,3) + xi(4,3)) + 2*xi(5,3))) ;
+
+        // at general point
+        double dxidxij[3][3] = 
+          List(List((-((-1 + s + t)*xi(1,1)) + (-1 + s + t)*xi(2,1) + (-s + t)*(xi(3,1) - xi(4,1)))/(-1 + 2*t),
+                    (-((-1 + r + t)*xi(1,1)) + r*xi(2,1) - r*xi(3,1) - xi(4,1) + r*xi(4,1) + t*(-xi(2,1) + xi(3,1) + xi(4,1)))/(-1 + 2*t),
+                    -((r*xi(1,1) + xi(2,1) - r*xi(2,1) + r*xi(3,1) - (-1 + 2*r)*s*(xi(1,1) - xi(2,1) + xi(3,1) - xi(4,1)) + xi(4,1) - r*xi(4,1) - 
+                       2*t*(xi(1,1) + xi(2,1) + xi(3,1) + xi(4,1) - 4*xi(5,1)) + 2*Power(t,2)*(xi(1,1) + xi(2,1) + xi(3,1) + xi(4,1) - 4*xi(5,1)) - 2*xi(5,1))/
+                      Power(1 - 2*t,2))),List((-((-1 + s + t)*xi(1,2)) + (-1 + s + t)*xi(2,2) + (-s + t)*(xi(3,2) - xi(4,2)))/(-1 + 2*t),
+                                              (-((-1 + r + t)*xi(1,2)) + r*xi(2,2) - r*xi(3,2) - xi(4,2) + r*xi(4,2) + t*(-xi(2,2) + xi(3,2) + xi(4,2)))/(-1 + 2*t),
+                                              -((r*xi(1,2) + xi(2,2) - r*xi(2,2) + r*xi(3,2) - (-1 + 2*r)*s*(xi(1,2) - xi(2,2) + xi(3,2) - xi(4,2)) + xi(4,2) - r*xi(4,2) - 
+                                                 2*t*(xi(1,2) + xi(2,2) + xi(3,2) + xi(4,2) - 4*xi(5,2)) + 2*Power(t,2)*(xi(1,2) + xi(2,2) + xi(3,2) + xi(4,2) - 4*xi(5,2)) - 2*xi(5,2))/
+                                                Power(1 - 2*t,2))),List((-((-1 + s + t)*xi(1,3)) + (-1 + s + t)*xi(2,3) + (-s + t)*(xi(3,3) - xi(4,3)))/(-1 + 2*t),
+                                                                        (-((-1 + r + t)*xi(1,3)) + r*xi(2,3) - r*xi(3,3) - xi(4,3) + r*xi(4,3) + t*(-xi(2,3) + xi(3,3) + xi(4,3)))/(-1 + 2*t),
+                                                                        -((r*xi(1,3) + xi(2,3) - r*xi(2,3) + r*xi(3,3) - (-1 + 2*r)*s*(xi(1,3) - xi(2,3) + xi(3,3) - xi(4,3)) + xi(4,3) - r*xi(4,3) - 
+                                                                           2*t*(xi(1,3) + xi(2,3) + xi(3,3) + xi(4,3) - 4*xi(5,3)) + 2*Power(t,2)*(xi(1,3) + xi(2,3) + xi(3,3) + xi(4,3) - 4*xi(5,3)) - 2*xi(5,3))/
+                                                                          Power(1 - 2*t,2))));
+
+        (void)dxidxij;
+
+        /* Calculate M = A */
+        for (int i=0; i < 3; i++)
+          {
+            for (int j = 0; j < 3; j++)
+              {
+                if (ibasis == 4)
+                  A(i,j) = dxidxij_top_vertex[i][j];
+                else
+                  A(i,j) = dxidxij_base_vertices[i][j];
+              }
+          }
+
+        /* set inv(W) */
+        DenseMatrix<3,3> WI;
+        WI.zero();
+        WI(0,0) = 1;
+        WI(0,2) = -1./std::sqrt(2.);
+        WI(1,1) = 1;
+        WI(1,2) = -1./std::sqrt(2.);
+        WI(2,2) = std::sqrt(2.);
+
+        A = A * WI;
+
+        /* Calculate det(M). */
+        detJ = det(A);
+        return detJ < 0.0;
+      }
+
+      void grad_util_pyramid_3d_new(int ibasis, const DenseMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind)
+      {
+        double rst[5][3] = {{0,0,0},{1,0,0},{1,1,0},{0,1,0},{.5,.5,.49999}};  //note: avoid singularity at top vertex
+
+        double r = rst[ibasis][0];
+        double s = rst[ibasis][1];
+        double t = rst[ibasis][2];
+
+        for (int i=0; i < nnode; i++)
+          for (int j=0; j < spd; j++)
+            grad[i][j]=0.0;
+
+#define Rule(x,y) x += y
+#define GRAD(i,j) grad[i-1][j-1]
+#define DMDA(i,j) dMdA(i-1,j-1)
+#define Sqrt(x) std::sqrt(x)
+        Rule(GRAD(1,1),-(((-1 + s + t)*DMDA(1,1))/(-1 + 2*t)));
+        Rule(GRAD(1,1),-(((-1 + r + t)*DMDA(1,2))/(-1 + 2*t)));
+        Rule(GRAD(1,1),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
+                        DMDA(1,3))/(Sqrt(2)*Power(1 - 2*t,2)));
+        Rule(GRAD(1,2),-(((-1 + s + t)*DMDA(2,1))/(-1 + 2*t)));
+        Rule(GRAD(1,2),-(((-1 + r + t)*DMDA(2,2))/(-1 + 2*t)));
+        Rule(GRAD(1,2),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
+                        DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2)));
+        Rule(GRAD(1,3),-(((-1 + s + t)*DMDA(3,1))/(-1 + 2*t)));
+        Rule(GRAD(1,3),-(((-1 + r + t)*DMDA(3,2))/(-1 + 2*t)));
+        Rule(GRAD(1,3),((-2*(1 + Sqrt(2) - 2*t)*(-1 + t) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) + r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*
+                        DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2)));
+        Rule(GRAD(2,1),((-1 + s + t)*DMDA(1,1))/(-1 + 2*t));
+        Rule(GRAD(2,1),((r - t)*DMDA(1,2))/(-1 + 2*t));
+        Rule(GRAD(2,1),-(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
+                           r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(1,3))/(Sqrt(2)*Power(1 - 2*t,2))));
+        Rule(GRAD(2,2),((-1 + s + t)*DMDA(2,1))/(-1 + 2*t));
+        Rule(GRAD(2,2),((r - t)*DMDA(2,2))/(-1 + 2*t));
+        Rule(GRAD(2,2),
+             -(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
+                 r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2)))); Rule(GRAD(2,3),((-1 + s + t)*DMDA(3,1))/(-1 + 2*t));
+        Rule(GRAD(2,3),((r - t)*DMDA(3,2))/(-1 + 2*t));
+        Rule(GRAD(2,3),
+             -(((1 + 3*Sqrt(2) - 2*t - 6*Sqrt(2)*t + 4*Sqrt(2)*Power(t,2) + s*(-1 - 3*Sqrt(2) + 2*(1 + Sqrt(2))*t) +
+                 r*(-1 - 3*Sqrt(2) + 4*Sqrt(2)*s + 2*(1 + Sqrt(2))*t))*DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2)))); Rule(GRAD(3,1),((-s + t)*DMDA(1,1))/(-1 + 2*t));
+        Rule(GRAD(3,1),((-r + t)*DMDA(1,2))/(-1 + 2*t));
+        Rule(GRAD(3,1),
+             -(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*DMDA(1,3))/
+               (Sqrt(2)*Power(1 - 2*t,2))));
+        Rule(GRAD(3,2),((-s + t)*DMDA(2,1))/(-1 + 2*t)); Rule(GRAD(3,2),((-r + t)*DMDA(2,2))/(-1 + 2*t));
+        Rule(GRAD(3,2),-(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*
+                          DMDA(2,3))/(Sqrt(2)*Power(1 - 2*t,2))));
+        Rule(GRAD(3,3),((-s + t)*DMDA(3,1))/(-1 + 2*t));
+        Rule(GRAD(3,3),((-r + t)*DMDA(3,2))/(-1 + 2*t));
+        Rule(GRAD(3,3),-(((s*(1 + 3*Sqrt(2) - 2*(1 + Sqrt(2))*t) + r*(1 + 3*Sqrt(2) - 4*Sqrt(2)*s - 2*(1 + Sqrt(2))*t) + 2*t*(-1 - 3*Sqrt(2) + (2 + 4*Sqrt(2))*t))*
+                          DMDA(3,3))/(Sqrt(2)*Power(1 - 2*t,2))));
+
+
+
+#undef List
+#undef Power
+#undef xi
+#undef GRAD
+#undef DMDA
+#undef Rule
       }
 
       inline bool jacobian_matrix_tri_2D(double &detJ, DenseMatrix<3,3>& A, const double *x[3])

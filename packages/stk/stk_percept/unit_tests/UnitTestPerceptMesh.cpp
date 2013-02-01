@@ -502,7 +502,7 @@ namespace stk
 
 
       template<typename T>
-      static std::string example_histogram(bool print_table=false, bool use_percentage=false)
+      static std::string example_histogram(bool print_table=false, bool use_percentage=false, bool print_simple_table=false)
       {
         std::ostringstream str;
         Histogram<T> h;
@@ -512,12 +512,16 @@ namespace stk
         str << "example_histogram uniform buckets= " << std::endl;
         if (print_table)
           h.print_table(str,use_percentage);
+        else if (print_simple_table)
+          h.print_simple_table(str);
         else
           h.print(str);
         str << "example_histogram log buckets= " << std::endl;
         h.compute_uniform_buckets(2, true); // use log scale
         if (print_table)
           h.print_table(str,use_percentage);
+        else if (print_simple_table)
+          h.print_simple_table(str);
         else
           h.print(str);
         T ranges[] = {T(1.1),4,9,T(13.1)};
@@ -527,8 +531,11 @@ namespace stk
         str << "example_histogram specified buckets= " << std::endl;
         if (print_table)
           h.print_table(str,use_percentage);
+        else if (print_simple_table)
+          h.print_simple_table(str);
         else
           h.print(str);
+
         return str.str();
       }
 
@@ -596,6 +603,12 @@ namespace stk
         std::cout << "test_histogram print_table, result_double= \n"  << result_double;
         result_int = example_histogram<int>(true,true);
         std::cout << "test_histogram print_table, result_int= \n"  << result_int;
+
+        result_double = example_histogram<double>(false,false,true);
+        std::cout << "test_histogram print_simple_table, result_double= \n"  << result_double;
+
+        result_double = example_histogram<double>(false,true,true);
+        std::cout << "test_histogram print_simple_table, %, result_double= \n"  << result_double;
 
       }
 

@@ -4,6 +4,7 @@
 #include <stk_util/diag/PrintTable.hpp>
 
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <utility>
 #include <string>
@@ -21,7 +22,7 @@ namespace stk {
      *
      *   Histogram<double> h;
      *   double data[] = {1,2,3,5,8,13};
-     *   // create the data - any std::vector methods usable 
+     *   // create the data - any std::vector methods usable
      *   h.assign(data,data+6);
      *   h.compute_ranges();
      *   h.compute_uniform_buckets(2);
@@ -159,6 +160,45 @@ namespace stk {
             stream << " " << m_counts[i];
           }
         stream << std::endl;
+      }
+
+      void print_simple_table(std::ostream& stream, std::string title1="Ranges", std::string title2="Counts", std::string title3="Percentage")
+      {
+        std::pair<unsigned,unsigned> max_tot_count = compute_count();
+        size_t width1 = title1.length()+2; // for "# "
+        size_t width2 = title2.length();
+        size_t width3 = title3.length();
+
+        for (unsigned i=0; i < m_counts.size(); ++i)
+          {
+            std::ostringstream ostr0, ostr1, ostr2, ostr3;
+            ostr0 << m_ranges[i];
+            ostr1 << m_ranges[i+1];
+            width1 = std::max(width1, ostr0.str().length()+ostr1.str().length()+1);
+
+            unsigned count = m_counts[i];
+            double percent = 100.0*double(count)/double(max_tot_count.second);
+            //stream << " " << count << " " << percent << std::endl;
+            ostr2 << count;
+            ostr3 << percent;
+            width2 = std::max(width2, ostr2.str().length());
+            width3 = std::max(width3, ostr3.str().length());
+          }
+
+        stream << std::setw(width1) << "# " + title1 << " " << std::setw(width2) << title2 << " " << std::setw(width3) << title3 << std::endl;
+        std::string line(width1+width2+width3+2,'-');
+        stream << line << std::endl;
+        for (unsigned i=0; i < m_counts.size(); ++i)
+          {
+            std::ostringstream ostr, ostr0, ostr1, ostr2, ostr3;
+            ostr0 << m_ranges[i];
+            ostr1 << m_ranges[i+1];
+            ostr << ostr0.str() << " " << ostr1.str();
+            stream << std::setw(width1) << ostr.str();
+            unsigned count = m_counts[i];
+            double percent = 100.0*double(count)/double(max_tot_count.second);
+            stream << " " << std::setw(width2) << count << " " << std::setw(width3) << percent << std::endl;
+          }
       }
 
       void print_table(std::ostream& os, bool use_percentage=false)
