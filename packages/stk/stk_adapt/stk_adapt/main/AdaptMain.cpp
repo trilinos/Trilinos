@@ -454,6 +454,7 @@ namespace stk {
         {
           argv_new_cstr[i] = (char *)argv_new[i].c_str();
         }
+      //check_args(argc_new, argv_new_cstr);
       int ret_val = adapt_main_full_options(argc_new, argv_new_cstr);
       delete[] argv_new_cstr;
       return ret_val;
@@ -500,12 +501,14 @@ namespace stk {
     {
       if (debug)
         dump_args(argc, argv);
-      check_args(argc, argv);
       // allow positional arguments, etc.
       if (check_for_simple_options(argc, argv))
         return adapt_main_simple_options(argc, argv);
       else
-        return adapt_main_full_options(argc, argv);
+        {
+          check_args(argc, argv);
+          return adapt_main_full_options(argc, argv);
+        }
     }
 
     int adapt_main_full_options(int argc, char **argv)
