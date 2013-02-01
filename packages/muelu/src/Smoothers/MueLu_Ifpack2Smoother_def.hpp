@@ -115,6 +115,8 @@ namespace MueLu {
     prec_->compute();
 
     SmootherPrototype::IsSetup(true);
+
+    this->GetOStream(Statistics1, 0) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -171,8 +173,12 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    if (SmootherPrototype::IsSetup()) {
+      out << prec_->description();
+    } else {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    }
     return out.str();
   }
 
