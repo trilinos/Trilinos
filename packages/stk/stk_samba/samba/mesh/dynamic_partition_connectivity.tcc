@@ -249,10 +249,7 @@ private:
   { return (num + chunk_size -1u)/chunk_size; }
 
   bool has_orientation() const
-  {
-    const static bool rv = ToEntityRank::value != entity_rank::node_type::value && m_from_rank != entity_rank::node();
-    return rv;
-  }
+  { return ToEntityRank::value != entity_rank::node_type::value && m_from_rank != entity_rank::node(); }
 
   //begin entity_key
   const entity_key * begin(entity_key_helper offset) const
