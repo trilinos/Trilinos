@@ -278,8 +278,25 @@ namespace Teuchos {
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_scasum(n, x, incx);
-#else
-    return CASUM_F77(&n, x, &incx);
+#elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+    return (float) SCASUM_F77(&n, x, &incx);
+#elif defined(HAVE_TEUCHOS_BLASFLOAT)
+    return SCASUM_F77(&n, x, &incx);
+#else // Wow, you just plain don't have this routine.
+    // mfh 01 Feb 2013: See www.netlib.org/blas/scasum.f.
+    // I've enhanced this by accumulating in double precision.
+    double result = 0;
+    if (incx == 1) {
+      for (int i = 0; i < n; ++i) {
+	result += std::abs (std::real (x[i])) + std::abs (std::imag (x[i]));
+      }
+    } else {
+      const int nincx = n * incx;
+      for (int i = 0; i < nincx; i += incx) {
+	result += std::abs (std::real (x[i])) + std::abs (std::imag (x[i]));
+      }
+    }
+    return static_cast<float> (result);
 #endif
   }
 
@@ -299,8 +316,34 @@ namespace Teuchos {
     std::complex<float> z;
     CDOT_F77(&z, &n, x, &incx, y, &incy);
     return z;
-#else
+#elif defined(HAVE_TEUCHOS_BLASFLOAT)
     return CDOT_F77(&n, x, &incx, y, &incy);
+#else // Wow, you just plain don't have this routine.
+    // mfh 01 Feb 2013: See www.netlib.org/blas/cdotc.f.
+    // I've enhanced this by accumulating in double precision.
+    std::complex<double> result (0, 0);
+    if (n >= 0) {
+      if (incx == 1 && incy == 1) {
+	for (int i = 0; i < n; ++i) {
+	  result += std::conj (x[i]) * y[i];
+	}
+      } else {
+	int ix = 0;
+	int iy = 0;
+	if (incx < 0) {
+	  ix = (1-n) * incx;
+	}
+	if (incy < 0) {
+	  iy = (1-n) * incy;    
+	}
+	for (int i = 0; i < n; ++i) {
+	  result += std::conj (x[ix]) * y[iy];
+	  ix += incx;
+	  iy += incy;
+	}
+      }
+    }
+    return static_cast<std::complex<float> > (result);
 #endif
   }
 
@@ -311,8 +354,52 @@ namespace Teuchos {
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_scnrm2(n, x, incx);
-#else
-    return CNRM2_F77(&n, x, &incx);
+#elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+    return (float) SCNRM2_F77(&n, x, &incx);
+#elif defined(HAVE_TEUCHOS_BLASFLOAT)
+    return SCNRM2_F77(&n, x, &incx);
+#else // Wow, you just plain don't have this routine.
+    // mfh 01 Feb 2013: See www.netlib.org/blas/scnrm2.f.
+    // I've enhanced this by accumulating in double precision.
+    if (n < 1 || incx < 1) {
+      return 0;
+    } else {
+      double scale = 0;
+      double ssq = 1;
+
+      const int upper = 1 + (n-1)*incx;
+      for (int ix = 0; ix < upper; ix += incx) {
+	// The reference BLAS implementation cleverly scales the
+	// intermediate result. so that even if the square of the norm
+	// would overflow, computing the norm itself does not.  Hence,
+	// "ssq" for "scaled square root."
+	if (std::real (x[ix]) != 0) {
+	  const double temp = std::abs (std::real (x[ix]));
+	  if (scale < temp) {
+	    const double scale_over_temp = scale / temp;
+	    ssq = 1 + ssq * scale_over_temp*scale_over_temp;
+	    // New scaling factor: biggest (in magnitude) real or imaginary part seen thus far.
+	    scale = temp;
+	  } else {
+	    const double temp_over_scale = temp / scale;
+	    ssq = ssq + temp_over_scale*temp_over_scale;
+	  }
+	}
+	if (std::imag (x[ix]) != 0) {
+	  const double temp = std::abs (std::imag (x[ix]));
+	  if (scale < temp) {
+	    const double scale_over_temp = scale / temp;
+	    ssq = 1 + ssq * scale_over_temp*scale_over_temp;
+	    // New scaling factor: biggest (in magnitude) real or imaginary part seen thus far.
+	    scale = temp;
+	  } else {
+	    const double temp_over_scale = temp / scale;
+	    ssq = ssq + temp_over_scale*temp_over_scale;
+	  }
+	}
+      }
+      return static_cast<float> (scale * std::sqrt (ssq));
+    }
 #endif
   }
 
@@ -366,10 +453,40 @@ namespace Teuchos {
     std::complex<double> z;
     cblas_zdotc_sub(n,x,incx,y,incy,&z);
     return z;
-#elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+#elif defined(HAVE_COMPLEX_BLAS_PROBLEM)
+#  if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
     std::complex<double> z;
     ZDOT_F77(&z, &n, x, &incx, y, &incy);
     return z;
+#  else 
+    // mfh 01 Feb 2013: Your complex BLAS is broken, but the problem
+    // doesn't have the easy workaround.  I'll just reimplement the
+    // missing routine here.  See www.netlib.org/blas/zdotc.f.
+    std::complex<double> ztemp (0, 0);
+    if (n > 0) {
+      if (incx == 1 && incy == 1) {
+	for (int i = 0; i < n; ++i) {
+	  ztemp += std::conj (x[i]) * y[i];
+	}
+      } else {
+	int ix = 0;
+	int iy = 0;
+	if (incx < 0) {
+	  ix = (1-n)*incx;
+	}
+	if (incy < 0) {
+	  iy = (1-n)*incy;
+	}
+	for (int i = 0; i < n; ++i) {
+	  ztemp += std::conj (x[ix]) * y[iy];
+	  ix += incx;
+	  iy += incy;
+	}
+      }
+    }
+    return ztemp;
+
+#  endif // defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 #else
     return ZDOT_F77(&n, x, &incx, y, &incy);
 #endif

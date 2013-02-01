@@ -134,11 +134,11 @@
 
 #define CROTG_F77   F77_BLAS_MANGLE(crotg,CROTG)
 #define CROT_F77    F77_BLAS_MANGLE(crot,CROT)
-#define CASUM_F77   F77_BLAS_MANGLE(scasum,SCASUM)
+#define SCASUM_F77  F77_BLAS_MANGLE(scasum,SCASUM)
 #define CAXPY_F77   F77_BLAS_MANGLE(caxpy,CAXPY)
 #define CCOPY_F77   F77_BLAS_MANGLE(ccopy,CCOPY)
 #define CDOT_F77    F77_BLAS_MANGLE(cdotc,CDOTC)
-#define CNRM2_F77   F77_BLAS_MANGLE(scnrm2,SCNRM2)
+#define SCNRM2_F77   F77_BLAS_MANGLE(scnrm2,SCNRM2)
 #define CSCAL_F77   F77_BLAS_MANGLE(cscal,CSCAL)
 #define ICAMAX_F77  F77_BLAS_MANGLE(icamax,ICAMAX)
 #define CGEMV_F77   F77_BLAS_MANGLE(cgemv,CGEMV)
@@ -174,16 +174,21 @@ int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 /* Double std::complex precision BLAS 1 */
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
-#if defined(HAVE_COMPLEX_BLAS_PROBLEM)
-#if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+#  if defined(HAVE_COMPLEX_BLAS_PROBLEM)
+#    if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 void PREFIX ZDOT_F77(std::complex<double> *ret, const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
-#elif defined(HAVE_VECLIB_COMPLEX_BLAS)
+#    elif defined(HAVE_VECLIB_COMPLEX_BLAS)
 // no declarations; they're in cblas.h
-#include <vecLib/cblas.h>
-#endif // HAVE_COMPLEX_BLAS_PROBLEM
-#else // no problem
+#      include <vecLib/cblas.h>
+#    else
+  // mfh 01 Feb 2013: If the code reaches this point, it means that
+  // some complex BLAS routines are broken, but there is no easy
+  // workaround.  We deal with this in Teuchos_BLAS.cpp by
+  // reimplementing the offending routines.
+#    endif // HAVE_COMPLEX_BLAS_PROBLEM
+#  else // no problem
 std::complex<double> PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
-#endif
+#  endif // defined(HAVE_COMPLEX_BLAS_PROBLEM)
 
 double PREFIX ZNRM2_F77(const int* n, const std::complex<double> x[], const int* incx);
 double PREFIX ZASUM_F77(const int* n, const std::complex<double> x[], const int* incx);
@@ -220,19 +225,18 @@ int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
 /* Single std::complex precision BLAS 1 */
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
-
-#if defined(HAVE_TEUCHOS_BLASFLOAT)
-#if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
+#  if defined(HAVE_TEUCHOS_BLASFLOAT)
+#    if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
 // no declarations; they're in cblas.h
-#include <vecLib/cblas.h>
-#elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
-double PREFIX CASUM_F77(const int* n, const std::complex<float> x[], const int* incx);
-double PREFIX CNRM2_F77(const int* n, const std::complex<float> x[], const int* incx);
-#else
-float PREFIX CASUM_F77(const int* n, const std::complex<float> x[], const int* incx);
-float PREFIX CNRM2_F77(const int* n, const std::complex<float> x[], const int* incx);
-#endif // which blasfloat
-#endif // ifdef blasfloat
+#      include <vecLib/cblas.h>
+#    elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+double PREFIX SCASUM_F77(const int* n, const std::complex<float> x[], const int* incx);
+double PREFIX SCNRM2_F77(const int* n, const std::complex<float> x[], const int* incx);
+#    else
+float PREFIX SCASUM_F77(const int* n, const std::complex<float> x[], const int* incx);
+float PREFIX SCNRM2_F77(const int* n, const std::complex<float> x[], const int* incx);
+#  endif // Whether or not we have the veclib bugfix
+#endif // defined(HAVE_TEUCHOS_BLASFLOAT)
 
 #if defined(HAVE_COMPLEX_BLAS_PROBLEM)
 #if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
