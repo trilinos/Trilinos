@@ -83,7 +83,7 @@ Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
 
-  MT condNumEst = -STS::one ();
+  MT condNumEst = -STS::magnitude( STS::one() );
 
   // Users may either provide a matrix for which to estimate the
   // condition number, or use the Preconditioner's built-in matrix.
