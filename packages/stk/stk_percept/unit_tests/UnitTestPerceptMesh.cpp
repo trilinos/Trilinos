@@ -27,6 +27,9 @@
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
+#include <stk_percept/Histogram.hpp>
+
+
 #include <stdexcept>
 #include <sstream>
 #include <vector>
@@ -495,6 +498,105 @@ namespace stk
         eMesh.save_as(output_files_loc+"hex_copy_fields_rot.e");
         eMesh.copy_field(coordinates_None, coordinates_N);
         eMesh.save_as(output_files_loc+"hex_copy_fields.e");
+      }
+
+
+      template<typename T>
+      static std::string example_histogram(bool print_table=false, bool use_percentage=false)
+      {
+        std::ostringstream str;
+        Histogram<T> h;
+        T data[] = {T(1.1),T(2.1),T(3.1),T(5.1),T(8.1),T(13.1)};
+        h.assign(data,data+6);
+        h.compute_uniform_buckets(2);
+        str << "example_histogram uniform buckets= " << std::endl;
+        if (print_table)
+          h.print_table(str,use_percentage);
+        else
+          h.print(str);
+        str << "example_histogram log buckets= " << std::endl;
+        h.compute_uniform_buckets(2, true); // use log scale
+        if (print_table)
+          h.print_table(str,use_percentage);
+        else
+          h.print(str);
+        T ranges[] = {T(1.1),4,9,T(13.1)};
+        std::vector<T> vranges(ranges,ranges+4);
+        //std::cout << "vranges= " << vranges << std::endl;
+        h.set_ranges(vranges);
+        str << "example_histogram specified buckets= " << std::endl;
+        if (print_table)
+          h.print_table(str,use_percentage);
+        else
+          h.print(str);
+        return str.str();
+      }
+
+      STKUNIT_UNIT_TEST(perceptMesh, test_histogram)
+      {
+        std::string result_double = example_histogram<double>();
+        std::cout << "test_histogram, result_double= \n"  << result_double;
+        std::string result_int = example_histogram<int>();
+        std::cout << "test_histogram, result_int= \n"  << result_int;
+        std::string expected_double =
+          "example_histogram uniform buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1.1 2.1 3.1 5.1 8.1 13.1\n"
+          "Histogram::print:: ranges= \n"
+          " 1.1 7.1 13.1\n"
+          "Histogram::print:: counts= \n"
+          " 4 2\n"
+          "example_histogram log buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1.1 2.1 3.1 5.1 8.1 13.1\n"
+          "Histogram::print:: ranges= \n"
+          " 1.1 3.79605 13.1\n"
+          "Histogram::print:: counts= \n"
+          " 3 3\n"
+          "example_histogram specified buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1.1 2.1 3.1 5.1 8.1 13.1\n"
+          "Histogram::print:: ranges= \n"
+          " 1.1 4 9 13.1\n"
+          "Histogram::print:: counts= \n"
+          " 3 2 1\n";
+
+        std::string expected_int =
+          "example_histogram uniform buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1 2 3 5 8 13\n"
+          "Histogram::print:: ranges= \n"
+          " 1 7 13\n"
+          "Histogram::print:: counts= \n"
+          " 4 2\n"
+          "example_histogram log buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1 2 3 5 8 13\n"
+          "Histogram::print:: ranges= \n"
+          " 1 2 13\n"
+          "Histogram::print:: counts= \n"
+          " 1 5\n"
+          "example_histogram specified buckets= \n"
+          "Histogram::print:: data= \n"
+          " 1 2 3 5 8 13\n"
+          "Histogram::print:: ranges= \n"
+          " 1 4 9 13\n"
+          "Histogram::print:: counts= \n"
+          " 3 2 1\n";
+
+        STKUNIT_EXPECT_TRUE(result_double == expected_double);
+        STKUNIT_EXPECT_TRUE(result_int == expected_int);
+
+        result_double = example_histogram<double>(true);
+        std::cout << "test_histogram print_table, result_double= \n"  << result_double;
+        result_int = example_histogram<int>(true);
+        std::cout << "test_histogram print_table, result_int= \n"  << result_int;
+
+        result_double = example_histogram<double>(true,true);
+        std::cout << "test_histogram print_table, result_double= \n"  << result_double;
+        result_int = example_histogram<int>(true,true);
+        std::cout << "test_histogram print_table, result_int= \n"  << result_int;
+
       }
 
     }
