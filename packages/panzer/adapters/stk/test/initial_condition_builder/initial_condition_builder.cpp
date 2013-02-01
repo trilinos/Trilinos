@@ -196,7 +196,7 @@ namespace panzer {
     ic_closure_models.sublist("eblock-1_0").sublist("TEMPERATURE").set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
 
-    std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
+    std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
     panzer::setupInitialConditionFieldManagers(*wkstContainer,
 					       physics_blocks,
 					       cm_factory,
@@ -212,7 +212,7 @@ namespace panzer {
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->get_x()->PutScalar(0.0);
-    panzer::evaluateInitialCondition(*wkstContainer->getVolumeWorksets(), phx_ic_field_managers, loc, 0.0);
+    panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
     
     Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     for (int i=0; i < x->MyLength(); ++i)

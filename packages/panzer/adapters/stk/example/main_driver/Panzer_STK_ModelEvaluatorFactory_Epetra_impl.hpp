@@ -502,7 +502,7 @@ namespace panzer_stk {
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
       prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
       
-      std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
+      std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(*wkstContainer,
                                                  physicsBlocks,
                                                  user_cm_factory,
@@ -525,7 +525,7 @@ namespace panzer_stk {
         bloc->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
       }
       
-      panzer::evaluateInitialCondition(*wkstContainer->getVolumeWorksets(), phx_ic_field_managers, loc, 0.0);
+      panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
 
       // Write the epetra vector into the STK mesh: use response library
       //////////////////////////////////////////////////////////////////////////
