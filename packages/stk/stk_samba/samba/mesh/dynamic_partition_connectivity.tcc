@@ -443,7 +443,7 @@ private:
         m_target_by_key[i] = m_target_by_key[i-1u];
         m_ordinal[i] = m_ordinal[i-1u];
         if (has_orientation()) {
-          m_orientation[i] = m_orientation[i];
+          m_orientation[i] = m_orientation[i-1u];
         }
         //insert if on last iteration
         if ((i-1)==e) {
@@ -519,7 +519,7 @@ private:
         m_target_by_key[i] = m_target_by_key[i-1u];
         m_ordinal[i] = m_ordinal[i-1u];
         if (has_orientation()) {
-          m_orientation[i] = m_orientation[i];
+          m_orientation[i] = m_orientation[i-1u];
         }
         //insert if on last iteration
         if ((i-1u)==e) {
@@ -591,7 +591,7 @@ private:
         m_target_by_key[i] = m_target_by_key[i-1u];
         m_ordinal[i] = m_ordinal[i-1u];
         if (has_orientation()) {
-          m_orientation[i] = m_orientation[i];
+          m_orientation[i] = m_orientation[i-1u];
         }
         //insert if on last iteration
         if ((i-1u)==e) {
