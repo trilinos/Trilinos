@@ -16,7 +16,7 @@ doxygen_objdb_*.tmp
 
 # Trilinos extra repos
 /preCopyrightTrilinos/
-/Panzer/
+/Drekar/
 /DrekarResearch/
 /LIMEExt/
 /TerminalApplication/

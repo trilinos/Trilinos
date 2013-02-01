@@ -92,56 +92,6 @@ FUNCTION(TRIBITS_LIBRARY_LIST_TO_STRING LIST PREFIX OUTPUT_STRING)
 ENDFUNCTION()
 
 #
-#  This function checks to see if DEPENDENT_PACKAGE is either a direct or 
-#  indirect dependency of PACKAGE_NAME. Optional dependencies are only
-#  considered a "dependency" if they are enabled for the package.
-#
-FUNCTION(TRIBITS_CHECK_IS_DEPENDENCY PACKAGE_NAME DEPENDENT_PACKAGE IS_DEPENDENCY)
-  #IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-  #  MESSAGE("checking dependency for package ${PACKAGE_NAME} on package ${DEPENDENT_PACKAGE}")
-  #ENDIF()
-  SET(_IS_DEPENDENCY FALSE)
-
-  #check if the package is being checked against itself
-  #a package is always dependent on itself
-  IF(PACKAGE_NAME STREQUAL ${DEPENDENT_PACKAGE})
-    SET(_IS_DEPENDENCY TRUE)
-  ENDIF()
-
-  #check if this is a required dependency
-  IF(${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES)
-    LIST(FIND ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES ${DEPENDENT_PACKAGE} PACKAGE_IS_REQUIRED_DEP)
-    IF(PACKAGE_IS_REQUIRED_DEP GREATER -1)
-      SET(_IS_DEPENDENCY TRUE)
-    ENDIF()
-  ENDIF()
-
-  #check if this is an optional dependency
-  IF(${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES)
-    LIST(FIND ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES ${DEPENDENT_PACKAGE} PACKAGE_IS_OPTIONAL_DEP)
-    IF(PACKAGE_IS_OPTIONAL_DEP GREATER -1 AND ${PACKAGE_NAME}_ENABLE_${DEPENDENT_PACKAGE})
-      SET(_IS_DEPENDENCY TRUE)
-    ENDIF()
-  ENDIF()
-
-  #if the package is not a direct dependency then test if it is a dependency of the direct
-  #dependencies
-  IF(NOT _IS_DEPENDENCY)
-    #setting to empty because the scoping in cmake has us using the parents list of dependencies
-    SET(FULL_DEP_PACKAGES "")
-    LIST(APPEND FULL_DEP_PACKAGES ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES} ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES})
-    FOREACH(TRIBITS_PACKAGE ${FULL_DEP_PACKAGES})
-      TRIBITS_CHECK_IS_DEPENDENCY(${TRIBITS_PACKAGE} ${DEPENDENT_PACKAGE} _IS_INDIRECT_DEPENDENCY)
-      IF(_IS_INDIRECT_DEPENDENCY)
-        SET(_IS_DEPENDENCY TRUE)
-      ENDIF()
-    ENDFOREACH()
-  ENDIF()
-
-  SET(${IS_DEPENDENCY} ${_IS_DEPENDENCY} PARENT_SCOPE)
-ENDFUNCTION()
-
-#
 # CMAKE_CURRENT_LIST_DIR is not defined in CMake versions < 2.8.3, but the
 # Trilinos writes paths that use the value of that variable to this file.
 # Make sure it is available at *find_package* time. Note that all variable
@@ -173,37 +123,17 @@ FUNCTION(TRIBITS_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
     MESSAGE("For package ${PACKAGE_NAME} creating ${PACKAGE_NAME}Config.cmake")
   ENDIF()
 
-  # Remove from the package list all packages after ${TRIBITS_PACKAGE} in the dependency
-  # chain. This way each package can create its own minimalist export makefile
-  # with no upstream libraries. 
-  SET(TMP_PACK_LIST)
-  SET(SKIP FALSE)
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-    IF(NOT SKIP)
-      LIST(APPEND TMP_PACK_LIST ${TRIBITS_PACKAGE})
-      IF(PACKAGE_NAME STREQUAL ${TRIBITS_PACKAGE})
-        SET(SKIP TRUE)
+  #Create the full package set only for those packages which are enabled
+  SET(FULL_PACKAGE_SET)
+  SET(FULL_LIBRARY_SET)
+  FOREACH(TRIBITS_PACKAGE ${${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES})
+    LIST(FIND ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES ${TRIBITS_PACKAGE} PACKAGE_IS_OPTIONAL_DEP)
+    IF(PACKAGE_IS_OPTIONAL_DEP GREATER -1)
+      IF(${PACKAGE_NAME}_ENABLE_${TRIBITS_PACKAGE})
+        LIST(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
+        LIST(APPEND FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
       ENDIF()
-    ENDIF()
-  ENDFOREACH()
-
-  SET(PACKAGE_LIST ${TMP_PACK_LIST})
-
-  # Reverse the order of the package list, letting us loop 
-  # from most-dependent to least-dependent. 
-  LIST(REVERSE PACKAGE_LIST)
-
-  # Now that we have a reduced set of packages check each one to see if A. PACKAGE_NAME actually
-  # depends on TRIBITS_PACKAGE and B. TRIBITS_PACKAGE is enabled (since it could be an optional dependency.) If
-  # both A and B are true then we add their libraries to the list and to the list of packages so
-  # we can then loop over their tpls later
-
-  SET(FULL_PACKAGE_SET "")
-  SET(FULL_LIBRARY_SET "")
-  FOREACH(TRIBITS_PACKAGE ${PACKAGE_LIST})
-    TRIBITS_CHECK_IS_DEPENDENCY(${PACKAGE_NAME} ${TRIBITS_PACKAGE} IS_DEPENDENCY)
-    
-    IF(IS_DEPENDENCY)
+    ELSE()
       LIST(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
       LIST(APPEND FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
     ENDIF()
