@@ -84,7 +84,7 @@ Piro::PerformAnalysis(
 
   if (analysis=="Solve") {
     *out << "Piro PerformAnalysis: Model Solve Being Performed " << endl;
-    Piro::PerformSolveBase<double>(piroModel, result);
+    Piro::PerformSolveBase(piroModel, analysisParams.sublist("Solve"), result);
     status = 0; // Succeeds or throws
   }
 #ifdef Piro_ENABLE_TriKota
@@ -285,10 +285,11 @@ Piro::getValidPiroAnalysisParameters()
 
   validPL->set<std::string>("Analysis Package", "","Must be: Solve, MOOCHO, Dakota, or OptiPack.");
   validPL->set<bool>("Output Final Parameters", false, "");
-  validPL->sublist("MOOCHO",   false, "");
-  validPL->sublist("OptiPack", false, "");
+  validPL->sublist("Solve",     false, "");
+  validPL->sublist("MOOCHO",    false, "");
+  validPL->sublist("OptiPack",  false, "");
   validPL->sublist("GlobiPack", false, "");
-  validPL->sublist("Dakota",   false, "");
+  validPL->sublist("Dakota",    false, "");
 
   return validPL;
 }

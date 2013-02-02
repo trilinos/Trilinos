@@ -63,8 +63,15 @@ void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
     Teuchos::RCP<Thyra::VectorBase<Scalar> > &response);
 
+//! Evaluates the solved model and returns the specified (first by default) response.
+template <typename Scalar>
+void PerformSolve(
+    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response);
+
 //! Evaluates the solved model.
-//! Returns the first response and optionally the sensitivity with respect to the first parameter.
+//! Returns the specified (first by default) response and optionally the corresponding sensitivity with respect to the first parameter.
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -97,8 +104,16 @@ void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,
     Teuchos::RCP<Thyra::VectorBase<Scalar> > &response);
 
+//! Evaluates the solved model and returns the specified (first by default) response.
+//! This driver does not statically check that the model is of the response-only variety.
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response);
+
 //! Evaluates the solved model.
-//! Returns the first response and optionally the sensitivity with respect to the first parameter.
+//! Returns the specified (first by default) response and optionally the corresponding sensitivity with respect to the first parameter.
 //! This driver does not statically check that the model is of the response-only variety.
 template <typename Scalar>
 void PerformSolveBase(
