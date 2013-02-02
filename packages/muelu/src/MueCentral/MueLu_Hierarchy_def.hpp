@@ -329,6 +329,25 @@ namespace MueLu {
     GetOStream(verbLevel, 0) << "Number of levels    = " << status.get<int>("number of levels") << std::endl;
     GetOStream(verbLevel, 0) << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed) << status.get<double>("complexity") << std::endl;
 
+    for (int i=0; i<Levels_.size()-1; ++i) {
+      RCP<SmootherBase> preSmoo, postSmoo;
+      if (Levels_[i]->IsAvailable("PreSmoother"))
+        preSmoo = Levels_[i]->Get< RCP<SmootherBase> >("PreSmoother");
+      if (Levels_[i]->IsAvailable("PostSmoother"))
+        postSmoo = Levels_[i]->Get< RCP<SmootherBase> >("PostSmoother");
+      if (preSmoo != null && preSmoo == postSmoo)
+        GetOStream(verbLevel, 0) << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
+      else {
+        if (preSmoo != null)  GetOStream(verbLevel, 0) << "Smoother (level " << i << ") pre  : "
+                                                       << preSmoo->description() << std::endl;
+        if (postSmoo != null) GetOStream(verbLevel, 0) << "Smoother (level " << i << ") post : "
+                                                       << postSmoo->description() << std::endl;
+      }
+
+      GetOStream(verbLevel, 0) << std::endl;
+
+    } //for (int i=0; i<Levels_.size(); ++i)
+
     return status;
   } //Summarize()
 
