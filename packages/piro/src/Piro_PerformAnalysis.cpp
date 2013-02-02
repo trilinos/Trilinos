@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -107,7 +107,7 @@ Piro::PerformAnalysis(
 #endif
   {
     if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO")
-      *out << "ERROR: Trilinos/Piro was not configured to include \n " 
+      *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
@@ -117,7 +117,7 @@ Piro::PerformAnalysis(
 
   // Output status and paramters
   if (status==0)  *out << "\nPiro Analysis Finished successfully." << endl;
-  else  *out << "\nPiro Analysis failed with status: " << status << endl; 
+  else  *out << "\nPiro Analysis failed with status: " << status << endl;
 
   if ( analysisParams.get("Output Final Parameters", true) )
     if (p != Teuchos::null) {
@@ -190,20 +190,20 @@ Piro::PerformDakotaAnalysis(
 
   RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
     rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index), 
+         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
 	false);
 
   dakota.run(trikota_interface.get());
 
   Dakota::RealVector finalValues;
-  if (dakota.rankZero()) 
+  if (dakota.rankZero())
     finalValues = dakota.getFinalSolution().all_continuous_variables();
 
   // Copy Dakota parameters into Thyra
   p = Thyra::createMember(piroModel.get_p_space(p_index));
   {
       Thyra::DetachedVectorView<double> global_p(p);
-      for (int i = 0; i < finalValues.length(); ++i) 
+      for (int i = 0; i < finalValues.length(); ++i)
         global_p[i] = finalValues[i];
   }
 
@@ -248,7 +248,7 @@ Piro::PerformOptiPackAnalysis(
 
   const RCP<ParameterList> pl = rcp(&optipackParams,false);
   cgSolver->setParameterList(pl);
-  
+
   // Temporary Debug Info
   *out << "\nCurrent nonlinearCG parameter list" << endl;
   pl->print(*out);
