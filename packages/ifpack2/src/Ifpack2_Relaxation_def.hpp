@@ -64,6 +64,7 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   NumGlobalRows_ (0),
   NumGlobalNonzeros_ (0)
 {
+  this->setObjectLabel("Ifpack2::Relaxation");
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (),
     std::runtime_error,
@@ -803,24 +804,26 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
 template<class MatrixType>
 std::string Relaxation<MatrixType>::description() const {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << Teuchos::LabeledObject::getObjectLabel();
   if (isInitialized()) {
     if (isComputed()) {
-      oss << "{status = initialized, computed";
+      oss << "{status = initialized, computed, ";
     }
     else {
-      oss << "{status = initialized, not computed";
+      oss << "{status = initialized, not computed, ";
     }
   }
   else {
-    oss << "{status = not initialized, not computed";
+    oss << "{status = not initialized, not computed, ";
   }
   //
   if (PrecType_ == Ifpack2::JACOBI)   oss << "Type = Jacobi, " << std::endl;
   else if (PrecType_ == Ifpack2::GS)  oss << "Type = Gauss-Seidel, " << std::endl;
   else if (PrecType_ == Ifpack2::SGS) oss << "Type = Symmetric Gauss-Seidel, " << std::endl;
-  //
-  oss << ", global rows = " << A_->getGlobalNumRows()
+
+  oss << "Sweeps = " << NumSweeps_
+      << ", damping factor = " << DampingFactor_
+      << ", global rows = " << A_->getGlobalNumRows()
       << ", global cols = " << A_->getGlobalNumCols();
 
   if (DoL1Method_)
