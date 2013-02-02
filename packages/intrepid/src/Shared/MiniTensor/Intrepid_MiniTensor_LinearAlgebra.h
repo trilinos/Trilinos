@@ -184,13 +184,50 @@ namespace Intrepid {
   exp_pade(Tensor<T> const & A);
 
   ///
-  /// Logarithmic map by Taylor series, converges for \f$ |A-I| < 1 \f$
+  /// Logarithmic map.
   /// \param A tensor
   /// \return \f$ \log A \f$
   ///
   template<typename T>
   Tensor<T>
   log(Tensor<T> const & A);
+
+  ///
+  /// Logarithmic map by Taylor series, converges for \f$ |A-I| < 1 \f$
+  /// \param A tensor
+  /// \return \f$ \log A \f$
+  ///
+  template<typename T>
+  Tensor<T>
+  log_taylor(Tensor<T> const & A);
+
+  ///
+  /// Logarithmic map by Gregory series,
+  /// converges for \f$ \min_i \text{Re} \lambda_i(A) > 0 \f$
+  /// \param A tensor
+  /// \return \f$ \log A \f$
+  ///
+  template<typename T>
+  Tensor<T>
+  log_gregory(Tensor<T> const & A);
+
+  ///
+  /// Logarithmic map for symmetric tensor.
+  /// \param A tensor
+  /// \return \f$ \log A \f$
+  ///
+  template<typename T>
+  Tensor<T>
+  log_sym(Tensor<T> const & A);
+
+  ///
+  /// Logarithmic map for symmetric tensor using eigenvalue decomposition.
+  /// \param A tensor
+  /// \return \f$ \log A \f$
+  ///
+  template<typename T>
+  Tensor<T>
+  log_eig_sym(Tensor<T> const & A);
 
   ///
   /// Logarithmic map of a rotation
