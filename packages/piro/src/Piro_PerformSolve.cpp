@@ -40,36 +40,55 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_EPETRA_PERFORMSOLVE_HPP
-#define PIRO_EPETRA_PERFORMSOLVE_HPP
+#include "Piro_PerformSolve.hpp"
 
-#include "EpetraExt_ModelEvaluator.h"
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-class Epetra_Vector;
-class Epetra_MultiVector;
+#include "Teuchos_TestForException.hpp"
 
 namespace Piro {
 
-namespace Epetra {
+namespace Detail {
 
-void PerformSolve(
-    const EpetraExt::ModelEvaluator &piroSolver,
-    Teuchos::ParameterList &solveParams,
-    Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities);
+Teuchos::Array<bool> createResponseList(int count, const std::string selectionType, const Teuchos::ArrayView<const int> &list)
+{
+  Teuchos::Array<bool> result;
 
-void PerformSolve(
-    const EpetraExt::ModelEvaluator &piroSolver,
-    Teuchos::ParameterList &solveParams,
-    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Epetra_MultiVector> > > &sensitivities);
+  if (count > 0) {
+    result.reserve(count);
+    if (selectionType == "All") {
+      result.resize(count, true);
+    } else if (selectionType == "Last") {
+      result.resize(count - 1, false);
+      result.push_back(true);
+    } else if (selectionType == "AllButLast") {
+      result.resize(count - 1, true);
+      result.push_back(false);
+    } else if (selectionType == "List") {
+      result.resize(count, false);
+      for (Teuchos::ArrayView<const int>::const_iterator it = list.begin(), it_end = list.end(); it != it_end; ++it) {
+        const int idx = *it;
+        TEUCHOS_TEST_FOR_EXCEPT(idx < 0 || idx >= count);
+        result[idx] = true;
+      }
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPT(false);
+    }
+  }
 
-} // namespace Epetra
+  return result;
+}
+
+Teuchos::Array<bool> parseResponseParameters(Teuchos::ParameterList &params, int responseCount)
+{
+  const std::string selectionType = params.get("Response Selection", "All");
+  const Teuchos::Array<int> userList = params.get("Response List", Teuchos::Array<int>());
+  return createResponseList(responseCount, selectionType, userList);
+}
+
+bool parseSensitivityParameters(Teuchos::ParameterList &params)
+{
+  return params.get("Compute Sensitivities", false);
+}
+
+} // namespace Detail
 
 } // namespace Piro
-
-#endif /* PIRO_EPETRA_PERFORMSOLVE_HPP */

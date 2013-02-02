@@ -57,23 +57,26 @@ namespace Piro {
 
 namespace Epetra {
 
-void PerformSolve(
+namespace Detail {
+
+template <typename VectorType, typename MultiVectorType>
+void PerformSolveImpl(
     const EpetraExt::ModelEvaluator &piroSolver,
     Teuchos::ParameterList &solveParams,
-    Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities)
+    Teuchos::Array<Teuchos::RCP<VectorType> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities)
 {
   const Teuchos::RCP<const EpetraExt::ModelEvaluator> epetraSolver = Teuchos::rcpFromRef(piroSolver);
   const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = Teuchos::null;
   const Thyra::EpetraModelEvaluator thyraSolver(epetraSolver, lowsFactory);
 
-  typedef Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<double> > > ThyraResponseArray;
+  typedef Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<double> > > ThyraResponseArray;
   ThyraResponseArray thyraResponses;
 
-  typedef Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<double> > > > ThyraSensitivityArray;
+  typedef Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<double> > > > ThyraSensitivityArray;
   ThyraSensitivityArray thyraSensitivities;
 
-  PerformSolveImpl(thyraSolver, solveParams, thyraResponses, thyraSensitivities);
+  PerformSolveBase(thyraSolver, solveParams, thyraResponses, thyraSensitivities);
 
   responses.clear();
   responses.reserve(thyraResponses.size());
@@ -84,8 +87,8 @@ void PerformSolve(
       ++it) {
     const int j = std::distance(it_begin, it);
     const Epetra_Map g_map = *piroSolver.get_g_map(j);
-    const Teuchos::RCP<const Thyra::VectorBase<double> > g_thyra = *it;
-    const Teuchos::RCP<const Epetra_Vector> g =
+    const Teuchos::RCP<Thyra::VectorBase<double> > g_thyra = *it;
+    const Teuchos::RCP<VectorType> g =
       Teuchos::nonnull(g_thyra) ? Thyra::get_Epetra_Vector(g_map, g_thyra) : Teuchos::null;
     responses.push_back(g);
   }
@@ -100,12 +103,32 @@ void PerformSolve(
     const int j = std::distance(it_begin, it);
     const Epetra_Map g_map = *piroSolver.get_g_map(j);
     for (ThyraSensitivityArray::value_type::const_iterator jt = it->begin(), jt_end = it->end(); jt != jt_end; ++jt) {
-      const Teuchos::RCP<const Thyra::MultiVectorBase<double> > dgdp_thyra = *jt;
-      const Teuchos::RCP<const Epetra_MultiVector> dgdp =
+      const Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdp_thyra = *jt;
+      const Teuchos::RCP<MultiVectorType> dgdp =
         Teuchos::nonnull(dgdp_thyra) ? Thyra::get_Epetra_MultiVector(g_map, dgdp_thyra) : Teuchos::null;
       sensitivities[j].push_back(dgdp);
     }
   }
+}
+
+} // namespace Detail
+
+void PerformSolve(
+    const EpetraExt::ModelEvaluator &piroSolver,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Epetra_MultiVector> > > &sensitivities)
+{
+  Detail::PerformSolveImpl(piroSolver, solveParams, responses, sensitivities);
+}
+
+void PerformSolve(
+    const EpetraExt::ModelEvaluator &piroSolver,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities)
+{
+  Detail::PerformSolveImpl(piroSolver, solveParams, responses, sensitivities);
 }
 
 } // namespace Epetra

@@ -42,61 +42,107 @@
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
-#include "Teuchos_Assert.hpp"
-
 namespace Piro {
 
-template <typename Scalar>
-void PerformSolveImpl(
-    const Thyra::ModelEvaluator<Scalar> &piroModel,
-    Teuchos::ParameterList &solveParams,
-    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
-{
-  // Empty function in/out arguments
-  sensitivities.clear();
-  responses.clear();
+namespace Detail {
 
-  // Parse parameters
-  const bool computeSensitivities = solveParams.get("Compute Sensitivities", false);
+Teuchos::Array<bool> createResponseList(int count, const std::string selectionType, const Teuchos::ArrayView<const int> &list);
+Teuchos::Array<bool> parseResponseParameters(Teuchos::ParameterList &params, int responseCount);
+bool parseSensitivityParameters(Teuchos::ParameterList &params);
+
+template <typename Scalar, typename VectorType, typename MultiVectorType>
+void PerformSolveImpl(
+    const Thyra::ModelEvaluator<Scalar> &model,
+    const Teuchos::Array<bool> &computeResponses,
+    bool computeSensitivities,
+    Teuchos::Array<Teuchos::RCP<VectorType> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities)
+{
+  const int responseCount = model.Ng();
+  const int parameterCount = model.Np();
+
+  // Empty function in/out arguments
+  responses.resize(responseCount);
+  sensitivities.resize(responseCount, Teuchos::Array<Teuchos::RCP<MultiVectorType> >(parameterCount));
 
   // Setup output arguments
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = piroModel.createOutArgs();
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = model.createOutArgs();
   {
-    const int num_g = outArgs.Ng(); // Number of vectors of responses (including state at index num_g - 1)
-    responses.resize(num_g);
-    sensitivities.resize(num_g);
-
-    for (int j = 0; j < num_g; ++j) {
-      {
-        const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(*piroModel.get_g_space(j));
+    for (int j = 0; j < responseCount; ++j) {
+      if (computeResponses[j]) {
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(*model.get_g_space(j));
         outArgs.set_g(j, g);
         responses[j] = g;
-      }
 
-      const int num_p = outArgs.Np(); // Number of vectors of parameters
-      sensitivities[j].resize(num_p);
-
-      if (computeSensitivities) {
-        for (int l = 0; l < num_p; ++l) {
-          const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-            outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-          const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-            Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-          if (dgdp_support.supports(dgdp_orient)) {
-            const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
-              Thyra::create_DgDp_mv(piroModel, j, l, dgdp_orient);
-            outArgs.set_DgDp(j, l, dgdp);
-            sensitivities[j][l] = dgdp.getMultiVector();
+        if (computeSensitivities) {
+          for (int l = 0; l < parameterCount; ++l) {
+            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+              outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
+              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
+            if (dgdp_support.supports(dgdp_orient)) {
+              const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
+                Thyra::create_DgDp_mv(model, j, l, dgdp_orient);
+              outArgs.set_DgDp(j, l, dgdp);
+              sensitivities[j][l] = dgdp.getMultiVector();
+            }
           }
         }
       }
     }
   }
 
-  // Solve the problem using the nominal values for the parameters
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = piroModel.getNominalValues();
-  piroModel.evalModel(inArgs, outArgs);
+  // Solve the problem using the default values for the parameters
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
+  model.evalModel(inArgs, outArgs);
+}
+
+template <typename Scalar, typename VectorType, typename MultiVectorType>
+void PerformSolveImpl(
+    const Thyra::ModelEvaluator<Scalar> &model,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<VectorType> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities)
+{
+  const int responseCount = model.Ng();
+
+  // Parse parameters
+  const Teuchos::Array<bool> computeResponses = parseResponseParameters(solveParams, responseCount);
+  const bool computeSensitivities = parseSensitivityParameters(solveParams);
+
+  PerformSolveImpl(model, computeResponses, computeSensitivities, responses, sensitivities);
+}
+
+} // namespace Detail
+
+// PerformSolve overlaods (Simple wrappers around PerformSolveBase)
+
+template <typename Scalar>
+void PerformSolve(
+    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response)
+{
+  PerformSolveBase(piroModel, response);
+}
+
+template <typename Scalar>
+void PerformSolve(
+    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response,
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > &sensitivity)
+{
+  PerformSolveBase(piroModel, solveParams, response, sensitivity);
+}
+
+template <typename Scalar>
+void PerformSolve(
+    const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
+{
+  PerformSolveBase(piroModel, solveParams, responses, sensitivities);
 }
 
 template <typename Scalar>
@@ -106,7 +152,75 @@ void PerformSolve(
     Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
 {
-  PerformSolveImpl(piroModel, solveParams, responses, sensitivities);
+  PerformSolveBase(piroModel, solveParams, responses, sensitivities);
+}
+
+// PerformSolveBase overloads (less statically safe versions)
+
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response)
+{
+  const int responseCount = piroModel.Ng();
+  if (responseCount > 0) {
+    Teuchos::Array<bool> computeResponses(responseCount, false);
+    computeResponses.front() = true;
+    const bool computeSensitivities = false;
+
+    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > responses;
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > sensitivities;
+    Detail::PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities);
+
+    response = responses.front();
+  } else {
+    response.reset();
+  }
+}
+
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > &response,
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > &sensitivity)
+{
+  const int responseCount = piroModel.Ng();
+  if (responseCount > 0) {
+    Teuchos::Array<bool> computeResponses(responseCount, false);
+    computeResponses.front() = true;
+    const bool computeSensitivities = Detail::parseSensitivityParameters(solveParams);
+
+    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > responses;
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > sensitivities;
+    Detail::PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities);
+
+    response = responses.front();
+    sensitivity = (piroModel.Np() > 0) ? sensitivities.front().front() : Teuchos::null;
+  } else {
+    response.reset();
+    sensitivity.reset();
+  }
+}
+
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
+{
+  Detail::PerformSolveImpl(piroModel, solveParams, responses, sensitivities);
+}
+
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
+{
+  Detail::PerformSolveImpl(piroModel, solveParams, responses, sensitivities);
 }
 
 } // namespace Piro
