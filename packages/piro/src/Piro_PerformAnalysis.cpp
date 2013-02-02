@@ -41,6 +41,9 @@
 // @HEADER
 
 #include "Piro_PerformAnalysis.hpp"
+
+#include "Piro_PerformSolve.hpp"
+
 #include "Teuchos_FancyOStream.hpp"
 #include <iostream>
 #include <string>
@@ -68,7 +71,7 @@ int
 Piro::PerformAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& p)
+    RCP< Thyra::VectorBase<double> >& result)
 {
 
   analysisParams.validateParameters(*Piro::getValidPiroAnalysisParameters(),0);
@@ -79,39 +82,44 @@ Piro::PerformAnalysis(
   string analysis = analysisParams.get<string>("Analysis Package");
   *out << "\n\nPiro::PerformAnalysis() requests: " << analysis << endl;
 
+  if (analysis=="Solve") {
+    *out << "Piro PerformAnalysis: Model Solve Being Performed " << endl;
+    Piro::PerformSolveBase<double>(piroModel, result);
+    status = 0; // Succeeds or throws
+  }
 #ifdef Piro_ENABLE_TriKota
-  if (analysis=="Dakota") {
+  else if (analysis=="Dakota") {
     *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
 
     status = Piro::PerformDakotaAnalysis(piroModel,
-                         analysisParams.sublist("Dakota"), p);
+                         analysisParams.sublist("Dakota"), result);
 
-  } else
+  }
 #endif
 #ifdef Piro_ENABLE_MOOCHO
-  if (analysis == "MOOCHO") {
+  else if (analysis == "MOOCHO") {
     *out << "Piro PerformAnalysis: MOOCHO Optimization Being Performed " << endl;
     status = Piro::PerformMoochoAnalysis(piroModel,
-                          analysisParams.sublist("MOOCHO"), p);
+                          analysisParams.sublist("MOOCHO"), result);
 
-  } else
+  }
 #endif
 #ifdef Piro_ENABLE_OptiPack
-  if (analysis == "OptiPack") {
+  else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
     status = Piro::PerformOptiPackAnalysis(piroModel,
                     analysisParams.sublist("OptiPack"),
-                    analysisParams.sublist("GlobiPack"), p);
+                    analysisParams.sublist("GlobiPack"), result);
 
-  } else
+  }
 #endif
-  {
+  else {
     if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Dakota, MOOCHO, OptiPack\n" << endl;
+           << "       Valid analysis types are: Solve, Dakota, MOOCHO, OptiPack\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -120,9 +128,9 @@ Piro::PerformAnalysis(
   else  *out << "\nPiro Analysis failed with status: " << status << endl;
 
   if ( analysisParams.get("Output Final Parameters", true) )
-    if (p != Teuchos::null) {
+    if (result != Teuchos::null) {
        *out << "\tFinal parameters are: " << "\n\tp = ";
-       *out << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+       *out << Teuchos::describe(*result, Teuchos::VERB_EXTREME ) << endl;
     }
 
   return status;
@@ -275,7 +283,7 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: MOOCHO, Dakota, or OptiPack.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve, MOOCHO, Dakota, or OptiPack.");
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("MOOCHO",   false, "");
   validPL->sublist("OptiPack", false, "");
