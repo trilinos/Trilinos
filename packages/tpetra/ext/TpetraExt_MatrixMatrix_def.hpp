@@ -111,14 +111,14 @@ void Multiply(
   RCP<const Matrix_t > Aprime = null;
   RCP<const Matrix_t > Bprime = null;
   if(transposeA){
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
     Aprime = at.createTranspose();
   }
   else{
     Aprime = rcpFromRef(A);
   }
   if(transposeB){
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> bt (Teuchos::rcpFromRef (B));
     Bprime=bt.createTranspose();
   }
   else{
@@ -247,7 +247,7 @@ void Add(
     SpMatOps> CrsMatrix_t;
   RCP<const CrsMatrix_t> Aprime = null;
   if( transposeA ){
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer (Teuchos::rcpFromRef (A));
     Aprime = theTransposer.createTranspose(DoOptimizeStorage); 
   }
   else{
@@ -323,7 +323,7 @@ void Add(
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer (Teuchos::rcpFromRef (A));
     Aprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
@@ -332,7 +332,7 @@ void Add(
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer (Teuchos::rcpFromRef (B));
     Bprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
