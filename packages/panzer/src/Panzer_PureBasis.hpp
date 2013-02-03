@@ -137,6 +137,8 @@ namespace panzer {
     { return topology_; }
 
   public:
+    //! <Cell> 
+    Teuchos::RCP<PHX::DataLayout> cell_data;
     //! <Cell,Basis> or <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
     //! <Cell,Basis,Dim>

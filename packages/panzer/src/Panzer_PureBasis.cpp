@@ -127,6 +127,8 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
   using Teuchos::rcp;
   using PHX::MDALayout;
 
+  cell_data = rcp(new MDALayout<Cell>(numCells()));
+
   functional = rcp(new MDALayout<Cell,BASIS>(numCells(), cardinality()));
 
   functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(numCells(),
