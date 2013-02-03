@@ -91,6 +91,11 @@ namespace MueLu {
       tau_[0] = localQR[0];
       localQR[0] = dtemp;
     } else {
+      // Use the SerialQRDenseSolver class instead of calling LAPACK directly.
+      Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> localQRMatrix(Teuchos::View, localQR.getRawPtr(), myAggSize, myAggSize, NSDim_);
+      qrSolver_.setMatrix( Teuchos::rcp(&localQRMatrix, false));
+      qrSolver_.factor();
+      /*
       lapack_.GEQRF( myAggSize, Teuchos::as<int>(NSDim_), localQR.getRawPtr(), myAggSize,
                     tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
       if (info_ != 0) {
@@ -105,6 +110,7 @@ namespace MueLu {
         workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]));
         work_ = ArrayRCP<Scalar>(workSize_);
       }
+      */
     }
   } //Compute()
 
@@ -123,6 +129,16 @@ namespace MueLu {
       //lapack_.ORGQR(myAggSize, Teuchos::as<int>(workSize_), Teuchos::as<int>(workSize_), localQR.getRawPtr(),
       //             myAggSize, tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
       //call nonmember function (perhaps specialized)
+
+      // Use the SerialQRDenseSolver class instead of calling LAPACK directly.
+      qrSolver_.formQ();
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> > qMatrix = qrSolver_.getQ();
+      for (LocalOrdinal j=0; j<NSDim_; j++) {
+        for (LocalOrdinal i=0; i<myAggSize; i++) {
+          localQR[ myAggSize*j + i ] = (*qMatrix)(i,j);
+        }
+      }
+      /*
       LapackQR( lapack_, myAggSize, Teuchos::as<int>(NSDim_), localQR, tau_, work_, workSize_, info_ );
       if (info_ != 0) {
         std::string msg = "QR_Interface: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
@@ -136,6 +152,7 @@ namespace MueLu {
         workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]));
         work_ = ArrayRCP<Scalar>(workSize_);
       }
+      */
     }
   } //ExtractQ()
 
