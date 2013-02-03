@@ -77,12 +77,23 @@ public:
   typedef SpMatOps mat_vec_type;
   typedef SpMatOps mat_solve_type;
 
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+
   //@}
   //! @name Constructor and destructor
   //@{ 
 
   //! Constructor that takes the matrix to transpose.
-  RowMatrixTransposer (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix);
+  RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix);
+
+  /// Constructor that takes the matrix to transpose.
+  ///
+  /// This method is DEPRECATED, because it is not memory safe.  (If
+  /// origMatrix falls out of scope, its reference will be
+  /// invalidated.)  Please call the version of the constructor that
+  /// takes an <tt>RCP<const crs_matrix_type></tt>.
+  TEUCHOS_DEPRECATED RowMatrixTransposer (const crs_matrix_type& origMatrix);
 
   //@}
   //! @name Forward transformation methods
@@ -101,13 +112,13 @@ public:
   ///   the transpose matrix will be distributed using this Map as the
   ///   row Map.  If null, this method will evenly distribute the rows
   ///   of the transpose matrix.
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+  Teuchos::RCP<crs_matrix_type>
   createTranspose (const OptimizeOption optimizeTranspose=DoOptimizeStorage,
-		   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap=Teuchos::null);
+		   Teuchos::RCP<const map_type> transposeRowMap=Teuchos::null);
         
 private: 
   //! The original matrix to be transposed.
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix_;
+  Teuchos::RCP<const crs_matrix_type> origMatrix_;
 };
 
 

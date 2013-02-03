@@ -56,9 +56,23 @@ template<class Scalar,
 	 class Node, 
 	 class SpMatOps>
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
-RowMatrixTransposer (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix)
+RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix)
   : origMatrix_ (origMatrix) {}
 
+template<class Scalar, 
+	 class LocalOrdinal, 
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+TEUCHOS_DEPRECATED
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+RowMatrixTransposer (const crs_matrix_type& origMatrix)
+  : origMatrix_ (Teuchos::rcpFromRef (origMatrix)) {}
+
+// mfh 03 Feb 2013: In a definition outside the class like this, the
+// return value is considered outside the class scope (for things like
+// resolving typedefs), but the arguments are considered inside the
+// class scope.
 template<class Scalar, 
 	 class LocalOrdinal,
 	 class GlobalOrdinal, 
@@ -67,7 +81,7 @@ template<class Scalar,
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
 createTranspose (const OptimizeOption optimizeTranspose,
-		 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap)
+		 Teuchos::RCP<const map_type> transposeRowMap)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -77,14 +91,12 @@ createTranspose (const OptimizeOption optimizeTranspose,
   using Teuchos::rcp;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef CrsMatrix<Scalar, LO, GO, Node, SpMatOps> crs_matrix_type;
-  typedef Map<LO, GO, Node> map_type;
 
   // mfh 03 Feb 2013: The domain Map of the input matrix will become
   // the range Map of the transpose, so it's a good default choice for
   // the row Map of the transpose.
   RCP<const map_type> newRowMap = transposeRowMap.is_null () ? 
-    origMatrix_.getDomainMap () : transposeRowMap;
+    origMatrix_->getDomainMap () : transposeRowMap;
   RCP<crs_matrix_type> transposeMatrix (new crs_matrix_type (newRowMap, 0));
 
   ArrayView<const LO> localIndices;
@@ -93,15 +105,15 @@ createTranspose (const OptimizeOption optimizeTranspose,
 
   // mfh 03 Feb 2013: Get references rather than RCPs, so that we
   // don't have to pay for the dereference on each iteration.
-  const map_type& origRowMap = * (origMatrix_.getRowMap ());
-  const map_type& origColMap = * (origMatrix_.getColMap ());
+  const map_type& origRowMap = * (origMatrix_->getRowMap ());
+  const map_type& origColMap = * (origMatrix_->getColMap ());
 
   // mfh 03 Feb 2013: It would be faster to implement this as a lcoal
   // kernel, rather than to call insertGlobalValues() for each entry.
-  for (size_t i = 0; i < origMatrix_.getNodeNumRows (); ++i) {
+  for (size_t i = 0; i < origMatrix_->getNodeNumRows (); ++i) {
     rowNum[0] = origRowMap.getGlobalElement (i);
-    const size_t numEntriesInRow = origMatrix_.getNumEntriesInLocalRow (i);
-    origMatrix_.getLocalRowView (i, localIndices, localValues);
+    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow (i);
+    origMatrix_->getLocalRowView (i, localIndices, localValues);
     for (size_t j = 0; j < numEntriesInRow; ++j) {
       const GO globalColIndex = origColMap.getGlobalElement (localIndices[j]);
       transposeMatrix->insertGlobalValues (globalColIndex,
@@ -113,8 +125,8 @@ createTranspose (const OptimizeOption optimizeTranspose,
   RCP<ParameterList> params = parameterList ();
   const bool optimizeStorage = (optimizeTranspose == DoOptimizeStorage);
   params->set ("Optimize Storage", optimizeStorage);
-  transposeMatrix->fillComplete (origMatrix_.getRangeMap (), 
-				 origMatrix_.getDomainMap (), params);
+  transposeMatrix->fillComplete (origMatrix_->getRangeMap (), 
+				 origMatrix_->getDomainMap (), params);
   return transposeMatrix;
 }
 
