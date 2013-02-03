@@ -50,56 +50,72 @@
 
 namespace Tpetra {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix)
-  : origMatrix_(origMatrix), comm_(origMatrix.getComm()), indexBase_(origMatrix_.getIndexBase()) {}
+template<class Scalar, 
+	 class LocalOrdinal, 
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+RowMatrixTransposer (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix)
+  : origMatrix_ (origMatrix) {}
 
 template<class Scalar, 
-  class LocalOrdinal, 
-  class GlobalOrdinal, 
-  class Node, 
-  class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~RowMatrixTransposer() {}
-
-template<class Scalar, 
-  class LocalOrdinal,
-  class GlobalOrdinal, 
-  class Node, 
-  class SpMatOps>
-RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (
-  const OptimizeOption optimizeTranspose,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap)
+	 class LocalOrdinal,
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+createTranspose (const OptimizeOption optimizeTranspose,
+		 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap)
 {
-  optimizeTranspose_ = optimizeTranspose;
-  transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(
-    transposeRowMap == null? origMatrix_.getDomainMap() : transposeRowMap, 0));
-  ArrayView<const LocalOrdinal> localIndicies;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef CrsMatrix<Scalar, LO, GO, Node, SpMatOps> crs_matrix_type;
+  typedef Map<LO, GO, Node> map_type;
+
+  // mfh 03 Feb 2013: The domain Map of the input matrix will become
+  // the range Map of the transpose, so it's a good default choice for
+  // the row Map of the transpose.
+  RCP<const map_type> newRowMap = transposeRowMap.is_null () ? 
+    origMatrix_.getDomainMap () : transposeRowMap;
+  RCP<crs_matrix_type> transposeMatrix (new crs_matrix_type (newRowMap, 0));
+
+  ArrayView<const LO> localIndices;
   ArrayView<const Scalar> localValues;
-  ArrayView<const GlobalOrdinal> myGlobalRows = origMatrix_.getRowMap()->getNodeElementList();
-  size_t numEntriesInRow;
-  Array<GlobalOrdinal> rowNum(1);
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origColMap = origMatrix_.getColMap();
-  for(
-    size_t i = Teuchos::OrdinalTraits<size_t>::zero();
-    i < origMatrix_.getNodeNumRows();
-    ++i
-  )
-  {
-    rowNum[0] = origMatrix_.getRowMap()->getGlobalElement(i);
-    numEntriesInRow = origMatrix_.getNumEntriesInLocalRow(i);
-    origMatrix_.getLocalRowView(i, localIndicies, localValues);
-    for(size_t j=0; j<numEntriesInRow; ++j){
-      transposeMatrix_->insertGlobalValues(origColMap->getGlobalElement(localIndicies[j]), rowNum(0,1), localValues(j,1));
+  Array<GO> rowNum (1);
+
+  // mfh 03 Feb 2013: Get references rather than RCPs, so that we
+  // don't have to pay for the dereference on each iteration.
+  const map_type& origRowMap = * (origMatrix_.getRowMap ());
+  const map_type& origColMap = * (origMatrix_.getColMap ());
+
+  // mfh 03 Feb 2013: It would be faster to implement this as a lcoal
+  // kernel, rather than to call insertGlobalValues() for each entry.
+  for (size_t i = 0; i < origMatrix_.getNodeNumRows (); ++i) {
+    rowNum[0] = origRowMap.getGlobalElement (i);
+    const size_t numEntriesInRow = origMatrix_.getNumEntriesInLocalRow (i);
+    origMatrix_.getLocalRowView (i, localIndices, localValues);
+    for (size_t j = 0; j < numEntriesInRow; ++j) {
+      const GO globalColIndex = origColMap.getGlobalElement (localIndices[j]);
+      transposeMatrix->insertGlobalValues (globalColIndex,
+					   rowNum (0,1), 
+					   localValues (j,1));
     }
   }
 
-  RCP<ParameterList> params = parameterList();
-  if (optimizeTranspose_ == DoOptimizeStorage) params->set("Optimize Storage",true);
-  else                                         params->set("Optimize Storage",false);
-  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap(), params);
-
-  return transposeMatrix_;
+  RCP<ParameterList> params = parameterList ();
+  const bool optimizeStorage = (optimizeTranspose == DoOptimizeStorage);
+  params->set ("Optimize Storage", optimizeStorage);
+  transposeMatrix->fillComplete (origMatrix_.getRangeMap (), 
+				 origMatrix_.getDomainMap (), params);
+  return transposeMatrix;
 }
 
 //
