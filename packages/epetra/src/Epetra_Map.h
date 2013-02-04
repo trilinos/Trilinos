@@ -230,6 +230,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
              long long IndexBase, const Epetra_Comm& Comm);
 #endif
   
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
+  Epetra_Map() {}
+#endif
+
   //! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
   

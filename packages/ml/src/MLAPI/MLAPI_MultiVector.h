@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include "ml_utils.h"
 
 namespace MLAPI {

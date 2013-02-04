@@ -102,7 +102,7 @@ void tDiagonalPreconditionerFactory::initializeTest()
    int ny = 53;
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d",comm, false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    epetraF = rcp(new Epetra_CrsMatrix(*FGallery.GetMatrix()));

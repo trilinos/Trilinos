@@ -41,6 +41,7 @@
 
 
 // Epetra_Map (and Epetra_LocalMap) Test routine
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -88,9 +89,9 @@ int main(int argc, char *argv[]) {
   bool verbose1 = verbose;
   if (verbose) verbose = (MyPID==0);
 
-  long long NumMyElements = 10000;
-  long long NumMyElements1 = NumMyElements; // Used for local map
-  long long NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
+  int NumMyElements = 10000;
+  int NumMyElements1 = NumMyElements; // Used for local map
+  long long NumGlobalElements = ((long long)NumMyElements)*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyElements++;
   long long IndexBase = 0;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);

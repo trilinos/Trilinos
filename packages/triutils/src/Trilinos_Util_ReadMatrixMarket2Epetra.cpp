@@ -42,13 +42,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include <limits>
 #include "Trilinos_Util_CountMatrixMarket.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
+template<typename int_type>
+int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 				      const Epetra_Comm  &comm, 
 				      Epetra_Map *& map, 
 				      Epetra_CrsMatrix *& A, 
@@ -56,7 +59,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact ) {
   FILE *in_file ;
-  int N_rows, nnz ; 
+  int_type N_rows, nnz ; 
 
   bool diag = true;   // If set to false, this prevents any entries on the diagonal 
                       
@@ -65,10 +68,10 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   std::vector<int> non_zeros;   // Number of non-zeros in each row
   Trilinos_Util_CountMatrixMarket( data_file, non_zeros, N_rows, nnz, comm ) ; 
 
-  std::vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
-  std::vector<int> inds(nnz);     //  Column Indices
+  std::vector<int_type> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
+  std::vector<int_type> inds(nnz);     //  Column Indices
   std::vector<double> vals(nnz);  //  Matrix values
-  std::vector<int> iptrs ;        //  Current pointers into inds and vals for each row
+  std::vector<int_type> iptrs ;        //  Current pointers into inds and vals for each row
 
   if(comm.MyPID() == 0)  { 
     //  ptrs, inds and vals together constitute a compressed row storage of the matrix.
@@ -78,7 +81,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
 
     ptrs[0] = 0 ; 
-    for( int i=0; i< N_rows; i++ ) { 
+    for( int_type i=0; i< N_rows; i++ ) { 
       ptrs[i+1] = ptrs[i] + non_zeros[i]; 
     }
 
@@ -91,14 +94,19 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     fgets( buffer, BUFSIZE, in_file ) ;
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
-      int i, j; 
+      int_type i, j; 
       double val ; 
       i = -13 ;   // Check for blank lines 
-      sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ; 
+      else
+        assert(false);
       assert( i != -13) ; 
       if ( diag || i != j ) { 
 	//	if ( i == j && i == 1 ) val *= 1.0001 ;
-	int iptr = iptrs[i-1] ; 
+	int_type iptr = iptrs[i-1] ; 
 	iptrs[i-1]++ ;
 	vals[iptr] = val ; 
 	inds[iptr] = j-1 ; 
@@ -118,20 +126,26 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 
 
     if ( diag ) { 
-      for (int i=0; i<N_rows; i++)
+      for (int_type i=0; i<N_rows; i++)
 	assert( iptrs[i] == ptrs[i+1] ) ; 
     }
   }
 
 
   int nlocal = 0;
-  if (comm.MyPID()==0) nlocal = N_rows;
-  map = new Epetra_Map(N_rows, nlocal, 0, comm); // Create map with all elements on PE 0
+  if (comm.MyPID()==0) {
+    if(N_rows > std::numeric_limits<int>::max())
+      throw "Triutils: Trilinos_Util_ReadMatrixMarket2Epetra_internal: N_rows > std::numeric_limits<int>::max()";
+    nlocal = static_cast<int>(N_rows);
+  }
+  map = new Epetra_Map(N_rows, nlocal, (int_type) 0, comm); // Create map with all elements on PE 0
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
   if (comm.MyPID()==0)
-    for (int i=0; i<N_rows; i++) {
-      A->InsertGlobalValues(i, iptrs[i]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    for (int_type i=0; i<N_rows; i++) {
+      if(iptrs[i]-ptrs[i] > std::numeric_limits<int>::max())
+        throw "Triutils: Trilinos_Util_ReadMatrixMarket2Epetra_internal: iptrs[i]-ptrs[i] > std::numeric_limits<int>::max()";
+      A->InsertGlobalValues(i, (int) (iptrs[i]-ptrs[i]), &vals[ptrs[i]], &inds[ptrs[i]]);
     }
   A->FillComplete();
 
@@ -155,3 +169,31 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
  
   return 0;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact ) {
+  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadMatrixMarket2Epetra64( char *data_file,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact ) {
+  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact);
+}
+
+#endif

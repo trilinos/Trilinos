@@ -40,7 +40,10 @@
 // @HEADER
 
 #include <vector>
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_CountTriples( const char *data_file, 
 				 bool symmetric, 
@@ -49,3 +52,17 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 const Epetra_Comm  &comm, 
 				 bool TimDavisHeader=false, 
 				 bool ZeroBased=false ) ;
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountTriples( const char *data_file, 
+				 bool symmetric, 
+				 std::vector<int> &non_zeros,
+				 long long &N_rows, long long &nnz, 
+				 const Epetra_Comm  &comm, 
+				 bool TimDavisHeader=false, 
+				 bool ZeroBased=false ) ;
+
+#endif

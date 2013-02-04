@@ -202,19 +202,18 @@ int PREFIX IZAMAX_F77(const int* n, const std::complex<double> *x, const int* in
 #endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Single precision BLAS 1 */
-#if defined(HAVE_TEUCHOS_BLASFLOAT)
-#if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
-// no declarations; they're in cblas.h
-#include <vecLib/cblas.h>
-#elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+#  ifdef HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX
+#    include <vecLib/cblas.h>
+#  elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
 double PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
 double PREFIX SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
 double PREFIX SNRM2_F77(const int* n, const float x[], const int* incx);
-#else
+#  else
 float PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
 float PREFIX SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
 float PREFIX SNRM2_F77(const int* n, const float x[], const int* incx);
-#endif // which blasfloat
+#  endif // which blasfloat
 #endif // ifdef blasfloat
 void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
 void PREFIX SROT_F77(const int* n, float* dx, const int* incx, float* dy, const int* incy, float* c, float* s);

@@ -167,7 +167,7 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    // note: this matrix is not really strided
    //       however, I just need a nontrivial
    //       matrix to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> A = rcp(FGallery.GetMatrix(),false);
@@ -278,7 +278,7 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    // note: this matrix is not really strided
    //       however, I just need a nontrivial
    //       matrix to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> A = rcp(FGallery.GetMatrix(),false);
@@ -394,7 +394,7 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    // note: this matrix is not really strided
    //       however, I just need a nontrivial
    //       matrix to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> A = rcp(FGallery.GetMatrix(),false);

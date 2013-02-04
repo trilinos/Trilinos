@@ -78,7 +78,7 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
 
   BlockMapData_->NumMyElements_ = (int) (BlockMapData_->NumGlobalElements_ / NumProc);
   int remainder = (int) (BlockMapData_->NumGlobalElements_ % NumProc); // remainder will fit int
-  long long start_index = (long long)(MyPID) * (BlockMapData_->NumMyElements_ + 1);
+  long long start_index = ((long long)(MyPID)) * (BlockMapData_->NumMyElements_ + 1);
 
   if (MyPID < remainder) 
     BlockMapData_->NumMyElements_++;
@@ -422,8 +422,8 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
   }
   else if (NumProc > 1) {
     // Sum up all local element and point counts to get global counts
-    long long *tmp_send = new long long[4];
-    long long *tmp_recv = new long long[4];
+    int_type *tmp_send = new int_type[4];
+    int_type *tmp_recv = new int_type[4];
     tmp_send[0] = BlockMapData_->NumMyElements_;
     tmp_send[1] = BlockMapData_->NumMyPoints_;
     BlockMapData_->Comm_->SumAll(tmp_send, tmp_recv, 2);
@@ -435,13 +435,13 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
     // Use the MaxAll function to find min/max GID 
     if (BlockMapData_->NumMyElements_ > 0 ||
         BlockMapData_->NumGlobalElements_ == 0) // This test restores behavior for empty map
-      tmp_send[0] = - BlockMapData_->MinMyGID_; // Negative sign lets us do one reduction
+      tmp_send[0] = - static_cast<int_type>(BlockMapData_->MinMyGID_); // Negative sign lets us do one reduction
     else
       tmp_send[0] = -(std::numeric_limits<int_type>::max())-1;
-    tmp_send[1] =   BlockMapData_->MaxMyGID_;
+    tmp_send[1] =   static_cast<int_type>(BlockMapData_->MaxMyGID_);
     tmp_send[2] = - BlockMapData_->MinMyElementSize_;
     if (BlockMapData_->NumMyElements_ == 0) 
-      tmp_send[2] = - BlockMapData_->NumGlobalPoints_; // This processor has no elements, so should not sizes.
+      tmp_send[2] = - static_cast<int_type>(BlockMapData_->NumGlobalPoints_); // This processor has no elements, so should not sizes.
     tmp_send[3] =   BlockMapData_->MaxMyElementSize_;
     
     BlockMapData_->Comm_->MaxAll(tmp_send, tmp_recv, 4);
@@ -952,7 +952,7 @@ void Epetra_BlockMap::GlobalToLocalSetup()
   }
   else
   {
-  throw ReportError("Epetra_BlockMap::GlobalToLocalSetup ERROR, GlobalIndices type unknown.",-1);
+    throw ReportError("Epetra_BlockMap::GlobalToLocalSetup ERROR, GlobalIndices type unknown.",-1);
   }
 }
 
