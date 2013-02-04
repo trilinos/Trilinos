@@ -64,12 +64,9 @@ namespace MueLu {
 
 
   /*!
-    @class MLParameterListInterpreter class.
+    @class AdaptiveSAMLParameterListInterpreter class.
     @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
     This interpreter uses the same default values as ML. This allows to compare ML/MueLu results
-
-    The parameter list is validated only if the package ML is available and parameter "ML validate parameter list" is true.
-    TODO: A warning is issued if ML is not available
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
