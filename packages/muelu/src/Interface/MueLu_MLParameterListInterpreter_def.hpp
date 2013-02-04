@@ -279,7 +279,7 @@ namespace MueLu {
     //
     // Coarse Smoother
     //
-    ParameterList& coarseList = paramList.sublist("coarse: list ");
+    ParameterList& coarseList = paramList.sublist("coarse: list");
     //    coarseList.get("smoother: type", "Amesos-KLU"); // set default
     RCP<SmootherFactory> coarseFact = GetSmootherFactory(coarseList);
 
