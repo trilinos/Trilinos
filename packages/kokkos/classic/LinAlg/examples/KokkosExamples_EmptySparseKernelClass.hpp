@@ -352,15 +352,23 @@ namespace KokkosExamples {
     ///   If you want a symmetric sweep, call this method twice, first
     ///   with direction = Forward then with direction = Backward.
     ///
-    /// \note We don't include a separate "Symmetric" direction mode
-    ///   in order to avoid confusion when using this method to
-    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
-    ///   for a matrix distributed over multiple processes.  ("Hybrid"
-    ///   means "Gauss-Seidel or SOR within the process, Jacobi
-    ///   outside.")  In that case, interprocess communication (a
-    ///   boundary exchange) must occur before both the forward sweep
-    ///   and the backward sweep, so we would need to invoke the
-    ///   kernel once per sweep direction anyway.
+    /// The Gauss-Seidel kernel asks the user to precompute the
+    /// inverse diagonal entries of the matrix (here, the vector D).
+    /// The L1 variant of Gauss-Seidel modifies D in order to improve
+    /// convergence when doing Gauss-Seidel within a process (or
+    /// thread) and Jacobi between processes (or threads).  Also,
+    /// precomputing the inverse diagonal entries avoids divisions and
+    /// branches in the inner loop of Gauss-Seidel.
+    ///
+    /// We don't include a separate "Symmetric" direction mode in
+    /// order to avoid confusion when using this method to implement
+    /// "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR) for a matrix
+    /// distributed over multiple processes.  ("Hybrid" means
+    /// "Gauss-Seidel or SOR within the process, Jacobi outside.")  In
+    /// that case, interprocess communication (a boundary exchange)
+    /// must occur before both the forward sweep and the backward
+    /// sweep, so we would need to invoke the kernel once per sweep
+    /// direction anyway.
     template <class DomainScalar, class RangeScalar>
     void
     gaussSeidel (const Kokkos::MultiVector<DomainScalar,Node> &B,
@@ -368,7 +376,13 @@ namespace KokkosExamples {
                  const Kokkos::MultiVector<Scalar,Node> &D,
                  const RangeScalar& dampingFactor,
                  const Kokkos::ESweepDirection direction) const
-    {}
+    {
+      (void) B; // Silence compiler warnings for unused variables.
+      (void) X;
+      (void) D;
+      (void) dampingFactor;
+      (void) direction;
+    }
 
     //@}
   protected:
