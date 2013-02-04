@@ -28,14 +28,17 @@ buildAndRegisterEvaluators(const std::string & responseName,
    using Teuchos::RCP;
    using Teuchos::rcp;
 
+
    // build integration evaluator (integrate over element)
    if(requiresCellIntegral_) {
+     std::string field = (quadPointField_=="" ? responseName : quadPointField_);
+
      // build integration rule to use in cell integral
      RCP<IntegrationRule> ir = rcp(new IntegrationRule(cubatureDegree_,physicsBlock.cellData()));
 
      Teuchos::ParameterList pl;
      pl.set("Integral Name",responseName);
-     pl.set("Integrand Name",responseName);
+     pl.set("Integrand Name",field);
      pl.set("IR",ir);
 
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
@@ -46,9 +49,11 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
    // build scatter evaluator
    {
+     std::string field = (quadPointField_=="" ? responseName : quadPointField_);
+
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(responseName,physicsBlock.cellData()));
+         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,physicsBlock.cellData()));
 
      fm.template registerEvaluator<EvalT>(eval);
 

@@ -70,6 +70,7 @@
 #include "user_app_NOXObserverFactory_Epetra.hpp"
 #include "user_app_RythmosObserverFactory_Epetra.hpp"
 #include "user_app_ResponseAggregatorFactory.hpp"
+#include "user_app_ResponseEvaluatorFactory_HOFlux.hpp"
 
 #include <Ioss_SerializeIO.h>
 
@@ -108,12 +109,14 @@ int main(int argc, char *argv[])
     std::string input_file_name = "user_app.xml";
     int exodus_io_num_procs = 0;
     bool pauseToAttachOn = false;
+    bool fluxCalculation = false;
     {
       Teuchos::CommandLineProcessor clp;
       
       clp.setOption("i", &input_file_name, "User_App input xml filename");
       clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
       clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
+      clp.setOption("flux-calc","disable-flux-calc", &fluxCalculation, "Enable the flux calculation.");
       
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
 	clp.parse(argc,argv,&std::cerr);
@@ -184,6 +187,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Thyra::ModelEvaluator<double> > solver;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       Teuchos::RCP<user_app::MyResponseAggregatorFactory<panzer::Traits> > ra_factory = 
@@ -195,6 +199,7 @@ int main(int argc, char *argv[])
       solver = me_factory.getResponseOnlyModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();
       physicsBlocks = me_factory.getPhysicsBlocks();
+      linObjFactory = me_factory.getLinearObjFactory();
     }
     
     // setup outputs to mesh on the stkIOResponseLibrary
@@ -215,6 +220,47 @@ int main(int argc, char *argv[])
                                         user_data);
     }
 
+    // setup outputs to mesh on the fluxResponseLibrary
+    ////////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > fluxResponseLibrary 
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
+
+    if(fluxCalculation) {
+      fluxResponseLibrary->initialize(*rLibrary);
+  
+      // build high-order flux response
+      {
+        user_app::HOFluxResponse_Builder builder;
+        builder.comm = MPI_COMM_WORLD;
+        builder.cubatureDegree = 2;
+  
+        std::vector<panzer::WorksetDescriptor> sidesets;
+        sidesets.push_back(panzer::sidesetVolumeDescriptor("eblock-0_0","left"));
+  
+        fluxResponseLibrary->addResponse("HO-Flux",sidesets,builder);
+      }
+  
+      {
+        Teuchos::ParameterList user_data(input_params->sublist("User Data"));
+        user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<unsigned long>("Workset Size"));
+      
+        fluxResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                          *eqset_factory,
+                                          cm_factory,
+                                          input_params->sublist("Closure Models"),
+                                          user_data);
+      }
+  
+      {
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(fluxResponseLibrary->getResponse<panzer::Traits::Residual>("HO-Flux"),true);
+  
+        // allocate a vector
+        Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp(new Epetra_Vector(*resp->getMap()));
+        resp->setVector(vec);
+      }
+    }
     
     ////////////////////////////////////////////////////////////////
     
@@ -273,6 +319,38 @@ int main(int argc, char *argv[])
 
             *out << "Response Value \"" << labels[i] << "\": " << *response << std::endl;
          }
+      }
+
+      if(fluxCalculation) {
+        // initialize the assembly container
+        panzer::AssemblyEngineInArgs ae_inargs;
+        ae_inargs.container_ = linObjFactory->buildLinearObjContainer();
+        ae_inargs.ghostedContainer_ = linObjFactory->buildGhostedLinearObjContainer();
+        ae_inargs.alpha = 0.0;
+        ae_inargs.beta = 1.0;
+        ae_inargs.evaluate_transient_terms = false;
+
+        // initialize the ghosted container
+        linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
+
+        const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
+           = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
+        epGlobalContainer->set_x_th(gx);
+
+        // evaluate current on contacts
+        fluxResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+        fluxResponseLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+        // output current values
+        *out << "\nFlux values: \n";
+        {
+          std::string currentRespName = "HO-Flux";
+
+          Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp
+              = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(fluxResponseLibrary->getResponse<panzer::Traits::Residual>(currentRespName),true);
+
+          *out << "   " << currentRespName << " = " << resp->value << std::endl;
+        }
       }
     }
   }
