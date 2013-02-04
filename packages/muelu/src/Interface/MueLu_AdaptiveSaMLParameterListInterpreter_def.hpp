@@ -247,7 +247,7 @@ namespace MueLu {
     //
     // Coarse Smoother
     //
-    ParameterList& coarseList = paramList.sublist("coarse: list ");
+    ParameterList& coarseList = paramList.sublist("coarse: list");
     //    coarseList.get("smoother: type", "Amesos-KLU"); // set default
     //RCP<SmootherFactory> coarseFact = this->GetSmootherFactory(coarseList);
     RCP<SmootherFactory> coarseFact = MLParameterListInterpreter::GetSmootherFactory(coarseList);
@@ -292,9 +292,9 @@ namespace MueLu {
 
         std::string ifpackType = "RELAXATION";
         Teuchos::ParameterList smootherParamList;
-        smootherParamList.set("relaxation: type", "Gauss-Seidel");
+        smootherParamList.set("relaxation: type", "symmetric Gauss-Seidel");
         smootherParamList.set("smoother: sweeps", 1);
-        smootherParamList.set("smoother: damping factor", 1.0); // not 1.0 since then dirichlet bcs are zeroed out...
+        smootherParamList.set("smoother: damping factor", 0.5); // not 1.0 since then dirichlet bcs are zeroed out...
         RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
 
         RCP<SmootherFactory> initSmootherFact = rcp( new SmootherFactory() );
@@ -409,8 +409,12 @@ namespace MueLu {
 
       MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("orig_nsp.vec", *nspVector2);
 
+      RCP<Matrix> Op = Finest->Get<RCP<Matrix> >("A");
+      MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("A.mat", *Op);
+
+
       Teuchos::RCP<MultiVector> homogRhsVec = MultiVectorFactory::Build(nspVector2->getMap(),nspVector2->getNumVectors(),true);
-      //homogRhsVec->putScalar(0.0);
+      homogRhsVec->putScalar(0.0);
 
       // do 1 multigrid cycle for improving the null space by "solving"
       //     A B_f = 0
@@ -422,6 +426,7 @@ namespace MueLu {
 
       MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("new_nsp.vec", *nspVector2);
 
+      H.Delete("CoarseSolver", init_levelManagers_[0]->GetFactory("CoarseSolver").get());
     }
 
     {
