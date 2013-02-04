@@ -44,6 +44,7 @@
 #include "MueLu_ParameterListUtils.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
 
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_DisableMultipleCallCheck.hpp"
 
@@ -406,6 +407,8 @@ namespace MueLu {
       Teuchos::RCP<MueLu::Level> Finest = H.GetLevel(0);  // get finest level,MueLu::NoFactory::get()
       Teuchos::RCP<MultiVector> nspVector2 = Finest->Get<Teuchos::RCP<MultiVector> >("Nullspace");
 
+      MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("orig_nsp.vec", *nspVector2);
+
       Teuchos::RCP<MultiVector> homogRhsVec = MultiVectorFactory::Build(nspVector2->getMap(),nspVector2->getNumVectors(),true);
       //homogRhsVec->putScalar(0.0);
 
@@ -416,6 +419,8 @@ namespace MueLu {
 
       // store improved fine level null space
       Finest->Set("Nullspace",nspVector2);
+
+      MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("new_nsp.vec", *nspVector2);
 
     }
 
