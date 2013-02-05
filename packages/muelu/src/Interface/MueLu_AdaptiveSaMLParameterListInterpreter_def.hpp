@@ -120,33 +120,6 @@ namespace MueLu {
     // std::cout << std::endl << "Parameter list after CreateSublists" << std::endl;
     // std::cout << paramListWithSubList << std::endl;
 
-    //
-    // Validate parameter list
-    //
-
-    {
-      bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
-      if (validate) {
-
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-        // Validate parameter list using ML validator
-        int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
-        TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
-                                   "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
-#else
-        // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
-        paramList.set("ML validate parameter list", false);
-
-#endif // HAVE_MUELU_ML
-      } // if(validate)
-    } // scope
-
-
-    //
-    //
-    //
-
     int maxNbrAlreadySelected = 0;
 
     // Matrix option
@@ -244,6 +217,23 @@ namespace MueLu {
     this->numDesiredLevel_ = maxLevels;
     this->maxCoarseSize_   = maxCoarseSize;
 
+    // init smoother
+    RCP<SmootherFactory> initSmootherFact = Teuchos::null;
+    if(paramList.isSublist("init smoother")) {
+      ParameterList& initList = paramList.sublist("init smoother"); // TODO move this before for loop
+      initSmootherFact = MLParameterListInterpreter::GetSmootherFactory(initList); // TODO: missing AFact input arg.
+    } else {
+      std::string ifpackType = "RELAXATION";
+      Teuchos::ParameterList smootherParamList;
+      smootherParamList.set("relaxation: type", "symmetric Gauss-Seidel");
+      smootherParamList.set("smoother: sweeps", 1);
+      smootherParamList.set("smoother: damping factor", 1.0);
+      RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+
+      initSmootherFact = rcp( new SmootherFactory() );
+      initSmootherFact->SetSmootherPrototypes(smooProto, smooProto);
+    }
+
     //
     // Coarse Smoother
     //
@@ -289,16 +279,6 @@ namespace MueLu {
         RCP<SmootherFactory> smootherFact = MLParameterListInterpreter::GetSmootherFactory(levelSmootherParam); // TODO: missing AFact input arg.
         manager->SetFactory("Smoother", smootherFact);
         smootherFact->DisableMultipleCallCheck();
-
-        std::string ifpackType = "RELAXATION";
-        Teuchos::ParameterList smootherParamList;
-        smootherParamList.set("relaxation: type", "symmetric Gauss-Seidel");
-        smootherParamList.set("smoother: sweeps", 1);
-        smootherParamList.set("smoother: damping factor", 0.5); // not 1.0 since then dirichlet bcs are zeroed out...
-        RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
-
-        RCP<SmootherFactory> initSmootherFact = rcp( new SmootherFactory() );
-        initSmootherFact->SetSmootherPrototypes(smooProto, smooProto);
 
         initmanager->SetFactory("Smoother", initSmootherFact);
         initmanager->SetFactory("CoarseSolver", initSmootherFact);
@@ -426,7 +406,7 @@ namespace MueLu {
 
       MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Write("new_nsp.vec", *nspVector2);
 
-      H.Delete("CoarseSolver", init_levelManagers_[0]->GetFactory("CoarseSolver").get());
+      //H.Delete("CoarseSolver", init_levelManagers_[0]->GetFactory("CoarseSolver").get());
     }
 
     {
