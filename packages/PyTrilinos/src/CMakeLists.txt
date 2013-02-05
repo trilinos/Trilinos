@@ -301,6 +301,66 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/${MODULE_NAME}.pyc")
   #
+  # PyTrilinos.LOCA.Hopf
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/Hopf")
+    SET(TRILINOS_LIBS ${LOCAEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/Hopf/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/Hopf/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Hopf/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Hopf/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Hopf)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Hopf)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/Hopf/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.LOCA.Pitchfork
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/Pitchfork")
+    SET(TRILINOS_LIBS ${LOCAEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/Pitchfork/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/Pitchfork/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Pitchfork/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Pitchfork/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Pitchfork)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Pitchfork)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/Pitchfork/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.LOCA.TurningPoint
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/TurningPoint")
+    SET(TRILINOS_LIBS ${LOCAEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/TurningPoint/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/TurningPoint/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/TurningPoint/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/TurningPoint/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/TurningPoint)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/TurningPoint)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/TurningPoint/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.LOCA.NestedEpetra
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/NestedEpetra")
+    SET(TRILINOS_LIBS ${LOCAEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/NestedEpetra/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/NestedEpetra)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/NestedEpetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.pyc")
+  #
   # PyTrilinos.LOCA
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA")
     SET(TRILINOS_LIBS ${LOCA_LIBRARIES})
@@ -345,8 +405,8 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR})
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE}.pyc")
-  #
   ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
+  #
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"
