@@ -1,0 +1,344 @@
+------------------------------------------------------
+How to Setup an Almost Continuous Integration Process
+------------------------------------------------------
+
+Last updated: 2012/02/04
+
+
+Table of Contents:
+------------------
+
+  A) Introduction
+  B) Multi-Git/TriBITS Repo Integration Example
+  C) Local Sync Git Repo Setup
+  D) Integration Build Directory Setup
+  E) Almost Continuous Integration Sync Driver Script
+  F) Cron Job Setup
+  G) Addressing Failures and Summary
+
+
+A) Introduction
+---------------
+
+The TriBITS system allows for setting up composite meta-builds of large
+collections of software pulled in from many different git/TriBITS code
+repositories.  The checkin-test.py script is a key tool to enable the testing
+of a set of packages in different git/TriBITS repos before pushing to a master
+'origin' set of git repos; all in one robust command invocation.
+
+While the checkin-test.py script was originally designed and its default
+behavior is to test a set of local commits created by a developer before
+pushing changes to one or more (public) git repos, it can also be used to set
+up an Almost Continuous Integration (ACI) process to keep these various
+git/TriBITS repos in sync thereby integrating the work of various
+disconnected development teams and projects.  To use the checkin-test.py for
+ACI requires some setup and changing what the script does a little by passing
+in additional options that a developer typically never uses.
+
+The basic concept of Almost Continuous Integration (ACI) is defined and
+described in the paper
+
+  Bartlett, Roscoe. Integration Strategies for Computational Science &
+  Engineering Software.  2009-0655, Second International Workshop on Software
+  Engineering for Computational Science and Engineering, 2009
+
+which can be found here:
+
+  https://cfwebprod.sandia.gov/cfdocs/CCIM/docs/CSE_SoftwareIntegration_Strategies%5B2%5D.pdf
+
+This HOWTO file describes how to use the checkin-test.py script to implement
+an ACI process for a given set of git/TriBITS repositories and also provides a
+little background and context behind ACI.
+
+
+B) Multi-Git/TriBITS Repo Integration Example
+---------------------------------------------
+
+In order to set up the context for the ACI process, let's take, for example, a
+simple TriBITS project with two extra repositories:
+
+  BaseProj/
+      ExtraRepo1
+      ExtraRepo2
+
+Here, BaseProj is the base TriBITS project/repository and ExtraRepo1 and
+ExtraRepo2 are extra repositories that supply additional TriBITS packages that
+are appended to the TriBITS packages defined in BaseProj.  Also, let's assume
+that BaseProj, ExtraRepo1, ExtraRepo2 are developed by three different
+development teams that all have different funding sources and priorities so
+they tend not to work together or consider the other efforts too much when
+developing the software.  However, in this example, there is great value in
+combining all of this software into a single integrated meta-project.  This
+combined meta-build is driven by a 4th integration/development team.  In this
+case, the core developers for each of these three different git/TriBITS repos
+do not test compatibility with the other git/TriBITS repos when pushing
+commits to their own git/TriBITS repos.  This gives three different git repos
+on three different machines:
+
+BaseProj main repo:  Pushed to by the core BaseProj team
+  url1.gov:/git/BaseProj
+
+ExtraRepo1 main repo:  Pushed to by the core ExtraRepo1 team
+  url2.gov:/git/ExtraRepo1
+
+ExtraRepo2 main repo:  Pushed to by the core ExtraRepo2 team
+  url3.gov:/git/ExtraRepo3
+
+Because of the independent development processes of these three teams, unless
+these development teams maintain 100% backward compatibility w.r.t. the
+interfaces and behavior of the combined software, one can not expect at any
+time to be able to pull the code from these three different git repos and be
+able to successfully build all of the code and have all of the tests pass.
+Therefore, how does the 4th integration team expect to be able to build, test,
+and possibly extend the combined software?  In this case, the integration
+team would set up their own clones of all three git/TriBITS repos on their own
+machine such as:
+
+Integration project mirrored git repos:
+  url4.gov:/git/BaseProj
+  url4.gov:/git/ExtraRepo1
+  url4.gov:/git/ExtraRepo2
+
+Once an initial collaboration effort between the integration team and the
+three other development teams is able to get a version of all three
+git/TriBITS repos to work correctly in the combined meta-project, these
+versions (assume the master branches) would be pushed to the git repos on the
+git integration server url4.gov.  The state where the TriBITS packages in the
+three different git/TriBITS repos in the master branch on url4.gov all work
+together correctly constitutes the initial condition for the ACI process
+described below.  From that initial condition, the ACI processes ensure that
+updates of the git/TriBITS repos on url4.gov do not break any builds or tests
+of the integrated software.
+
+We will use the update of the git/TriBITS ExtraRepo1 repo keeping the other
+two git/TriBITS repos BaseProj and ExtraRepo2 constant as the ACI use case in
+order to describe how to set up an ACI process using the checkin-test.py
+script.
+
+
+C) Local Sync Git Repo Setup
+----------------------------
+
+In order to set up an ACI process for the multi-git/TriBITS repo example
+outlined above, first local repos are created by cloning the repos on the
+integration server url4.gov as follows (all of which become 'origin'):
+
+$ cd $SYNC_BASE_DIR
+$ git clone url4.gov:/git/BaseProj
+$ cd BaseProj
+$ git clone url4.gov:/git/ExtraRepo1
+$ git clone url4.gov:/git/ExtraRepo2
+
+where, SYNC_BASE_DIR=~/sync_base_dir for example, which must already be
+created.
+
+Next, the remotes that define the integration pattern are created as follows:
+
+$ cd $SYNC_BASE_DIR/BaseProj
+$ git remote add integrate-from url4.gov:/git/BaseProj
+$ cd ExtraRep1
+$ git remote add integrate-from url2.gov:/git/ExtraRepo1
+$ cd ..
+$ cd ExtraRepo2
+$ git remote add integrate-from url4.gov:/git/ExtraRepo2
+$ cd ..
+
+Above, the remote 'integrate-from' is used by the checkin-test.py wrapper
+script (see below) to pull and merge in additional changes that will be tested
+and pushed to the 'origin' repos on url4.gov.  In this case, the BaseProj and
+ExtraRepo2 repos have the remote 'integrate-from' that points to same repos as
+'origin' (and will therefore not result in any merging) but the ExtraRepo1
+remote 'integrate-from' will result in updates being pulled from the main
+development repo on url2.gov, thereby facilitating the update of ExtraRepo1 in
+the integrated project.
+
+
+D) Integration Build Directory Setup
+-----------------------------------
+
+After the git repos are cloned and the remotes are set up, a builds base
+directory is set up as:
+
+$ cd $SYNC_BASE_DIR
+$ mkdir BUILDS
+$ mkdir BUILDS/CHECKIN
+
+An ACI wrapper script for checkin-test.py is created to drive the clones.  It
+is assumed that this script would be called only once a day and not
+continuously in a loop (but that is possible as well but is not documented
+here).
+
+NOTE: Other build directory structures are possible, it all depends how one
+writes the the checkin-test.py wrapper scripts but the above directory
+structure is fairly standard in the usage of the checkin-test.py script.
+
+
+E) Almost Continuous Integration Sync Driver Script
+---------------------------------------------------
+
+The sync driver script for this example should be called something like
+sync_ExtraRepo1.sh, placed under version control, and would look something
+like:
+
+  #!/bin/bash
+ 
+  EXTRA_ARGS=$@ 
+  
+  # Set up the environment (i.e. PATH; needed for cron jobs)
+  ...
+
+  SYNC_BASE_DIR=~/sync_base_dir
+  CHECKIN_TEST_WRAPPER=$SYNC_BASE_DIR/BaseProj/sampleScripts/checkin-test-foo.sh
+
+  cd $SYNC_BASE_DIR/BUILDS/CHECKIN
+
+  $CHECKIN_TEST_WRAPPER \
+    --extra-pull-from=integrate-from:master \
+    --send-email-to=base-proj-integrators@url4.gov \
+    --send-email-to-on-push=base-proj-integrators@url4.gov \
+    --no-append-test-results --no-rebase \
+    --do-all --push \
+    -j16 \
+    --wipe-clean \
+    $EXTRA_ARGS
+
+NOTE, in the above example sync_ExtraRepo1.sh script, the variable
+CHECKIN_TEST_WRAPPER is set to the a wrapper script
+
+   BaseProj/sampleScripts/checkin-test-foo.sh
+
+which is would be set up to call the checkin-test.py script with configure
+options for the specific machine.  Th location and the nature of the wrapper
+script will vary project to project.  In some simple cases,
+CHECKIN_TEST_WRAPPER might just be set to be the raw machine-independent
+checkin-test.py script for the project.
+
+A description of each option passed into this invocation of the checkin-test
+script is given below.
+
+--extra-pull-from=integrate-from:master
+
+  This option instructs the checkin-test.py script to pull and merge in
+  commits that define the integration.  This remote and remote branch has to
+  be the same in all git repos.  If it is not, then this option can't be used
+  and instead the wrapper script should do the pulls up front manually before
+  calling the checkin-test.py script.  The disadvantage of doing the pulls
+  manually is that if they fail for some reason, they will not be seen by the
+  checkin-test.py script and no notification email would go out.  However,
+  integrating 'master' branches in different git repos is a very common use
+  case when good Lean/Agile CI practices are used by all of the projects.
+
+--send-email-to=base-proj-integrators@url4.gov
+
+  The results of the builds will be sent this email address.  If you only want
+  an email sent when a push actually happens, you can set --send-email-to=''
+  and rely on --send-email-to-on-push.
+
+--send-email-to-on-push=base-proj-integrators@url4.gov
+
+  A confirmation and summary email will be sent to this address if the push
+  happens.  This can be a different email address than set by the
+  --send-email-to option.  It is highly recommended that a mail list be used
+  for this email address since this will be the only more permanent logging of
+  the ACI process.
+
+--no-append-test-results --no-rebase
+
+  These options are needed to stop the checkin-test.py script for modifying
+  the commits being tested and pushed from one public git repo to another.
+  The option --no-append-test-results is needed to instruct the
+  checkin-test.py script to *NOT* amend the last commit with the test results.
+  The option --no-rebase is needed to avoid rebasing the new commits pulled
+  from being rebased.  While the default behavior of the checkin-test.py
+  script is to amend the last commit message and rebase the local commits
+  (which is considered best practice when testing locally commits), this is a
+  very bad thing to do when a ACI sync server is only testing and moving
+  commits between public repos.  Amending the last commit would change the
+  SHA1 of the commit (just as a rebase would) and would fork the history and
+  mess up a number of workflows that otherwise should work smoothly.  Since an
+  email logging what was tested will go out if a push happens due to the
+  --send-email-to-on-push argument, there is no value in appending the test
+  results to the last commit pulled and merged (which will generally not be a
+  merge commit but just a fast-forward).  There are cases, however, where
+  appending the test results in an ACI process might be acceptable but they
+  are not discussed here.
+
+--do-all --push -j16
+
+  These are standard options that always get used when invoking the
+  checkin-test.py script and need no further explanation.
+
+Note that since the option --enable-packages is not set in the above
+invocation of the checkin-test.py script, therefore the checkin-test.py script
+will decide on its own what packages to test just based on what packages have
+changed files in the ExtraRepo1 git/TriBITS extra repository.  This is the
+preferred way to go since any affected packages will automatically be enabled
+as determined by the TriBITS package dependency structure and therefore this
+driver script will require no modifications if the the dependency structure
+changes over time.  However, there are cases for various reasons where the
+exact list of packages to be tested (or not tested) should be specified using
+the --enable-packages option (or the --disable-packages option, respectively).
+However, these should not be needed with well structured portable TriBITS
+repos and packages.
+
+The sync script can be created and tested locally to ensure that it works
+correctly first, before setting it as a cron job as described next.
+
+
+F) Cron Job Setup
+-----------------
+
+Once the sync script sync_ExtraRepo1.sh has been locally tested, then it
+should be committed to a version control git repo and then run automatically
+as a cron job.  For example, the cron script shown below would fire off the
+daily ACI process at 8pm every night:
+
+# ----------------- minute (0 - 59)
+# |  -------------- hour (0 - 23)
+# |  |  ----------- day of month (1 - 31)
+# |  |  |  -------- month (1 - 12)
+# |  |  |  |  ----- day of week (0 - 7) (Sunday=0 or 7)
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+ 00 20  *  *  *  ~/sync_base_dir/sync_ExtraRepo1.sh &> ~/sync_base_dir/sync_ExtraRepo1.out
+
+In the above crontab file (set with 'crontab -e' or 'crontab
+my-crontab-file.txt'), the script:
+
+  ~/sync_base_dir/sync_ExtraRepo1.sh
+ 
+would assumed to be a soft symbolic link to some version controlled copy of
+the ACI sync script.  For example, it might make sense for this script to be
+version controlled in the BaseProj repo and therefore the symbolic link would
+be created with with something like:
+
+$ cd ~/sync_base_dir/
+$ ln -s BaseProj/sampleScripts/sync_ExtraRepo1.sh .
+
+Such a setup would ensure that sync scripts would always up to date due to the
+git pulls part of the ACI process.
+
+
+G) Addressing Failures and Summary
+----------------------------------
+
+After the above cron job starts running, it will send out emails to the email
+addresses passed into the underlying checkin-test.py script.  If the emails
+report an update, configure, build, or test failure, then someone will need to
+log onto the machine where the ACI sync server is running and investigate what
+went wrong, just like they would if the were running the checkin-test.py
+script for testing locally modified changes before pushing.
+
+In the above example, only a single git/TriBITS repo is integrated in this ACI
+sync scripts.  For a complete system, other ACI sync scripts would be written
+to sync the two other git/TriBITS repos in order to maintain some
+independence.  Or, a single ACI sync script that tries to update all three
+git/TriBITS repos at once would be written and used.  The pattern of
+integrations chosen will depend many different factors.
+
+In summary, the checkin-test.py script can be used to set up robust and
+effective Almost Continuous Integration (ACI) sync servers that can be used to
+integrate large collections of software in logical pieces at any logical
+frequency.  Such an approach, together with the practice of Regulated Backward
+Compatibility can allow very large collections of software to be kept
+integrated in short time intervals using ACI.
