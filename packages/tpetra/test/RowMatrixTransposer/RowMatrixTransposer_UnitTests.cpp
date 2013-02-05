@@ -98,7 +98,7 @@ namespace {
     RCP<MAT> matrix = Reader<MAT>::readSparseFile("a.mtx", comm, node);
     RCP<MAT> matrixT = Reader<MAT>::readSparseFile("atrans.mtx", comm, node);
 
-    RowMatrixTransposer<Scalar, LO, GO, Node> at(*matrix);
+    RowMatrixTransposer<Scalar, LO, GO, Node> at (matrix);
     RCP<MAT> calculated = at.createTranspose();
 
     RCP<MAT> diffMatrix = rcp(new MAT(matrixT->getRowMap(), matrixT->getNodeMaxNumRowEntries()));
