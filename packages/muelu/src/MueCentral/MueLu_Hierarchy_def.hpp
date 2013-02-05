@@ -315,15 +315,15 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Summarize(MsgType verbLevel) {
      // TODO smoother information from each level
-  
+
     Teuchos::ParameterList status;
     status.set("number of levels", Teuchos::as<int>(Levels_.size()));
     totalNnz_ = 0;
     for (int i=0; i<Levels_.size(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
-      totalNnz_ += Levels_[i]->Get<RCP<Matrix> >("A")->getGlobalNumEntries();
+      totalNnz_ += Levels_[i]->template Get<RCP<Matrix> >("A")->getGlobalNumEntries();
     }
-    operatorComplexity_ = Teuchos::as<double>(totalNnz_) / Levels_[0]->Get< RCP<Matrix> >("A")->getGlobalNumEntries();
+    operatorComplexity_ = Teuchos::as<double>(totalNnz_) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
     status.set("complexity", operatorComplexity_);
 
     GetOStream(verbLevel, 0) << "Number of levels    = " << status.get<int>("number of levels") << std::endl;
