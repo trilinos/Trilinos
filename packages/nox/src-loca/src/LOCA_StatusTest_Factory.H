@@ -177,7 +177,7 @@ namespace StatusTest {
        NOX::StatusTest::buildStatusTests(stl, utils);
      \endcode
 
-    \author Nico Schlšmer
+    \author Nico Schloemer
 */
 class Factory {
 
