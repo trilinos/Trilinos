@@ -30,28 +30,4 @@
 
 %module(package="PyTrilinos.LOCA") Extended
 
-%{
-// Teuchos include
-#include "PyTrilinos_Teuchos_Util.h"
-
-#include "LOCA_Extended_MultiAbstractGroup.H"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-
-// Namespace flattening
-using Teuchos::RCP;
-%}
-
-// Standard exception handling
-%include "exception.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-%import "NOX.Abstract.i"
-
-%include "LOCA_Extended_MultiAbstractGroup.H"
+%include "LOCA.Extended_Content.i"

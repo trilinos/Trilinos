@@ -21,21 +21,23 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Homotopy
+%module(package="PyTrilinos.LOCA.Hopf") __init__
 
 %{
-// PyTrilinos includes
-#include "PyTrilinos_Teuchos_Util.h"
+// // Teuchos include
+// #include "PyTrilinos_Teuchos_Util.h"
 
 // LOCA includes
 #include "LOCA.H"
+#include "LOCA_Hopf_ComplexMultiVector.H"
+#include "LOCA_Hopf_ComplexVector.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -52,7 +54,7 @@
 %}
 #endif
 
-// Exception handling
+// Standard exception handling
 %include "exception.i"
 
 // Include LOCA documentation
@@ -62,23 +64,34 @@
 // Ignore/renames
 %ignore *::operator=;
 
+// Trilinos module imports
 %import "Teuchos.i"
+%pythoncode
+%{
+import os
+import sys
+parentDir = os.path.dirname(os.path.abspath(__file__))
+parentDir = os.path.normpath(os.path.join(parentDir,".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+%}
+%import "LOCA.Extended_RelPath.i"
 
-// The LOCA::Homotopy classes derive from base classes in other
-// modules, so we import them here.
-%import "LOCA.MultiContinuation.i"
-%import "LOCA.BorderedSystem.i"
+// Import the sub-modules
+%pythoncode
+%{
+__all__ = ['MooreSpence',
+           'MinimallyAugmented'
+           ]
+import MooreSpence
+import MinimallyAugmented
+%}
 
-// Teuchos::RCP handling
-%teuchos_rcp(LOCA::Homotopy::Group        )
-%teuchos_rcp(LOCA::Homotopy::AbstractGroup)
-%teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
+// Teuchos::RCP support
+// %teuchos_rcp(LOCA::Hopf::ComplexMultiVector)
+// %teuchos_rcp(LOCA::Hopf::ComplexVector)
 
-// LOCA::Homotopy Group class
-%include "LOCA_Homotopy_Group.H"
+// LOCA::Hopf ComplexMultiVector class
+%include "LOCA_Hopf_ComplexMultiVector.H"
 
-// LOCA::Homotopy AbstractGroup class
-%include "LOCA_Homotopy_AbstractGroup.H"
-
-// LOCA::Homotopy DeflatedGroup class
-%include "LOCA_Homotopy_DeflatedGroup.H"
+// LOCA::Hopf ComplexVector class
+%include "LOCA_Hopf_ComplexVector.H"

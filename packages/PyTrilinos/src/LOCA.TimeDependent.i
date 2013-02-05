@@ -30,34 +30,4 @@
 
 %module(package="PyTrilinos.LOCA") TimeDependent
 
-%{
-// Teuchos includes
-#include "PyTrilinos_Teuchos_Util.h"
-
-// LOCA includes
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-
-#include "LOCA_TimeDependent_AbstractGroup.H"
-
-// Extra includes due to importing Continuation.i below
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-%}
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Import base class declarations
-//%import "LOCA.Continuation.i"
-%import "LOCA.MultiContinuation.i"
-
-// LOCA interface includes
-%include "LOCA_TimeDependent_AbstractGroup.H"
-
+%include "LOCA.TimeDependent_Content.i"
