@@ -30,17 +30,17 @@
 
 %define %loca_epetra_docstring
 "
-PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra for
-the Trilinos package LOCA:
+PyTrilinos.LOCA.NestedEpetra is the python interface to namespace
+Epetra for the Trilinos package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra is to provide a concrete interface beteen
-LOCA and Epetra.
+The purpose of LOCA.NestedEpetra is to provide a concrete interface
+between LOCA and Epetra.
 
 "
 %enddef
-%module(package      = "PyTrilinos.LOCA.Epetra",
+%module(package      = "PyTrilinos.LOCA.NestedEpetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
@@ -50,25 +50,47 @@ LOCA and Epetra.
 // System includes
 #include <vector>
 
-// Teuchos includes
+// PyTrilinos includes
 #include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Epetra_Util.h"
 
-// Epetra includes
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Object.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-#include "Epetra_NumPyIntVector.h"
+// Local Epetra includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+
+// Epetra includes
+#include "Epetra_DLLExportMacro.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // NOX includes
 #include "NOX_StatusTest_Generic.H"
@@ -77,36 +99,16 @@ LOCA and Epetra.
 #include "NOX_Solver_TrustRegionBased.H"
 #include "NOX_Solver_InexactTrustRegionBased.H"
 #include "NOX_Solver_TensorBased.H"
-
-//#include "NOX_Abstract_Group.H"
 #include "NOX_Epetra_Group.H"
-//#include "NOX_Epetra_Interface_Preconditioner.H"
-//#include "NOX_Epetra_FiniteDifference.H"
-//#include "NOX_Epetra_FiniteDifferenceColoring.H"
-//#include "NOX_Epetra_LinearSystem_AztecOO.H"
-//#include "NOX_Epetra_MatrixFree.H"
-//#include "LOCA_MultiContinuation_AbstractGroup.H"
-//#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-#include "LOCA_Homotopy_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TimeDependent_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Abstract_TransposeSolveGroup.H"
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
 
+// LOCA includes
+#include "LOCA.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
+#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 #undef HAVE_STDINT_H
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H
@@ -123,46 +125,29 @@ using Teuchos::rcp;
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface support
-%import "Teuchos.i"
-
-%import "NOX.Abstract.i"
-%import "NOX.Epetra.__init__.i"
-
-%import "LOCA.__init__.i"
-%import "LOCA.MultiContinuation.i"
-
-//%import "LOCA_TimeDependent_AbstractGroup.H"
-//%import "LOCA_Homotopy_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-//%import "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-//%import "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-//%import "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-//%import "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-//%import "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-
-//%import "LOCA.Abstract.i"
-%import "LOCA.Hopf.i"
-%import "LOCA.Pitchfork.i"
-%import "LOCA.Homotopy.i"
-%import "LOCA.TurningPoint.i"
-// %pythoncode
-// %{
-// import PyTrilinos.LOCA.Homotopy
-// import PyTrilinos.LOCA.TurningPoint
-// import PyTrilinos.LOCA.Pitchfork
-// import PyTrilinos.LOCA.Hopf
-// %}
-
-%import "NOX.Epetra.Interface.i"
-%import "LOCA.Epetra.Interface.i"
-
 // Exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+%include "Epetra_DLLExportMacro.h"
+
+// Trilinos interface support
+%import "Teuchos.i"
+%include "Epetra_Base.i"
+%import "NOX.Abstract.i"
+%import "NOX.NestedEpetra.__init__.i"
+%import "NOX.NestedEpetra.Interface.i"
+%import "LOCA.__init__.i"
+%import "LOCA.MultiContinuation.i"
+%import "LOCA.Homotopy.i"
+%import "LOCA.Hopf.MinimallyAugmented.i"
+%import "LOCA.Pitchfork.MinimallyAugmented.i"
+%import "LOCA.TurningPoint.MinimallyAugmented.i"
+%import "LOCA.Abstract.i"
+%import "LOCA.NestedEpetra.Interface.i"
 
 // Director exception handling
 %feature("director:except")
@@ -201,33 +186,24 @@ using Teuchos::rcp;
   }
 }
 
-%rename(Abstract_Group) LOCA::Abstract::Group;
-%rename(Abstact_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
-%teuchos_rcp(Abstract_Group)
-%teuchos_rcp(Abstract_TransposeSolveGroup)
-%include "LOCA_Abstract_Group.H"
-%include "LOCA_Abstract_TransposeSolveGroup.H"
+/////////////////////////
+// LOCA Epetra support //
+/////////////////////////
 
 #undef HAVE_STDINT_H
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H
 %include "LOCA_Epetra.H"
 
-// %pythoncode
-// %{
-// from NOX.Epetra import Group
-// %}
-
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
 
-%rename(NOX_Epetra_Group) NOX::Epetra::Group;
-%include "NOX_Epetra_Group.H"
+// %rename(NOX_Epetra_Group) NOX::Epetra::Group;
+// %include "NOX_Epetra_Group.H"
 
 // temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 
-%include "LOCA_Epetra_Group.H"
-
 %teuchos_rcp(LOCA::Epetra::Group)
+%include "LOCA_Epetra_Group.H"

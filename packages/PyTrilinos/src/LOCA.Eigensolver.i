@@ -21,47 +21,45 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Continuation
+%module(package="PyTrilinos.LOCA") Eigensolver
 
 %{
-// LOCA includes
-//#include "LOCA_Continuation_AbstractGroup.H"
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+// Teuchos include
+#include "PyTrilinos_Teuchos_Util.h"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
+// LOCA includes
+#include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
 
 // Ignore/renames
 %ignore *::operator=;
-%rename(Print) *::print(ostream& stream, int indent = 0) const;
 
-// Import base class declarations
-%import "NOX.Abstract.i"
-%import "NOX.StatusTest.i"
+// Trilinos module imports
+%import "Teuchos.i"
 
-// LOCA interface includes
-//%include "LOCA_Continuation_AbstractGroup.H"
-//%include "LOCA_Continuation_FiniteDifferenceGroup.H"
-//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::Eigensolver::Factory)
+
+// LOCA::Eigensolver Factory class
+%include "LOCA_Eigensolver_Factory.H"

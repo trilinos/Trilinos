@@ -21,52 +21,53 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") TurningPoint
+%module(package="PyTrilinos.LOCA") StepSize
 
 %{
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
+// Teuchos include
+#include "PyTrilinos_Teuchos_Util.h"
 
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA includes
+#include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-
-// Namespace flattening
-using Teuchos::RCP;
 %}
+
+// // Configuration and optional includes
+// %include "PyTrilinos_config.h"
+// #ifdef HAVE_NOX_EPETRA
+// %{
+// #include "NOX_Epetra_Group.H"
+// #include "NOX_Epetra_Vector.H"
+// #include "Epetra_NumPyVector.h"
+// %}
+// #endif
 
 // Standard exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
 
 // Ignore/renames
 %ignore *::operator=;
 
 // Trilinos module imports
 %import "Teuchos.i"
+%import "LOCA.Parameter.i"
 
-%import "LOCA.MultiContinuation.i"
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::StepSize::Factory)
 
-%rename(MooreSpence_AbstractGroup) LOCA::TurningPoint::MooreSpence::AbstractGroup;
-%rename(MinimallyAugmented_AbstractGroup) LOCA::TurningPoint::MinimallyAugmented::AbstractGroup;
-%rename(MooreSpence_FiniteDifferenceGroup) LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
-%rename(MinimallyAugmented_FiniteDifferenceGroup) LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
-
-%include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-%include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-%include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-%include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA::StepSize Factory class
+%include "LOCA_StepSize_Factory.H"

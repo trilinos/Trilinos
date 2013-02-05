@@ -21,34 +21,45 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Epetra
+%module(package="PyTrilinos.LOCA") SaveEigenData
 
 %{
+// Teuchos include
+#include "PyTrilinos_Teuchos_Util.h"
+
 // LOCA includes
 #include "LOCA.H"
-#include "LOCA_Epetra.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
 // Ignore/renames
-%rename(Print) *::print() const;
 %ignore *::operator=;
-%ignore operator<<(ostream& stream, const NOX::Epetra::Vector& v);
 
-// Import LOCA interface
-%import "LOCA.__init.i"
-//%import "LOCA.Abstract.i"
+// Trilinos module imports
+%import "Teuchos.i"
 
-// Import NOX_Epetra headers
-%import "NOX.Epetra.__init__.i"
-%import "NOX.Epetra.Interface.i"
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::SaveEigenData::Factory)
 
-// LOCA interface includes
-%include "LOCA_Epetra_Interface_Required.H"
-%include "LOCA_Epetra_Group.H"
+// LOCA::SaveEigenData Factory class
+%include "LOCA_SaveEigenData_Factory.H"

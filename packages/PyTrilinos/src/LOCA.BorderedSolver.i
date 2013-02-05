@@ -21,32 +21,21 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Hopf
+%module(package="PyTrilinos.LOCA") BorderedSolver
 
 %{
 // Teuchos include
 #include "PyTrilinos_Teuchos_Util.h"
 
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-
-
-#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA includes
+#include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -59,21 +48,18 @@ using Teuchos::RCP;
 // Standard exception handling
 %include "exception.i"
 
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
 // Ignore/renames
 %ignore *::operator=;
 
 // Trilinos module imports
 %import "Teuchos.i"
 
-%import "LOCA.TimeDependent.i"
-%import "LOCA.TurningPoint.i"
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::BorderedSolver::Factory)
 
-%rename(MooreSpence_AbstractGroup) LOCA::Hopf::MooreSpence::AbstractGroup;
-%rename(MinimallyAugmented_AbstractGroup) LOCA::Hopf::MinimallyAugmented::AbstractGroup;
-%rename(MooreSpence_FiniteDifferenceGroup) LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
-%rename(MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
-
-%include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-%include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-%include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-%include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA::BorderedSolver Factory class
+%include "LOCA_BorderedSolver_Factory.H"
