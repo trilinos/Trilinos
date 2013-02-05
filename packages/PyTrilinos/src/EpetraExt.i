@@ -461,6 +461,7 @@ std::vector<Epetra_IntVector>;
 %template (Xform_CrsGraph_MapColoring)
 EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 
+<<<<<<< HEAD
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 %template (Xform_CrsGraph_vecIntVector)
@@ -483,6 +484,9 @@ Transform< Epetra_CrsGraph,
 
 #endif
 
+%template (Xform_CrsGraph_vecIntVector)
+EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+                                                  std::allocator<Epetra_IntVector> > >;
 %template (Xform_CrsMatrix_CrsMatrix)
 EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
 
@@ -509,6 +513,9 @@ StructuralTransform<Epetra_CrsGraph,
                     std::vector< Epetra_GIDTypeVector<long long>::impl > >;
 
 #endif
+
+%template (SXform_CrsGraph_vecIntVector)
+EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
 %template (SameXform_CrsMatrix)
 EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
