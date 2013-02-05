@@ -659,6 +659,22 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
     } // test only for Epetra
 }
 
+TEUCHOS_UNIT_TEST(Hierarchy, Write)
+{
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(30);
+
+  // Multigrid Hierarchy
+  Hierarchy H(A);
+  H.SetDefaultVerbLevel(MueLu::Low);
+  H.SetMaxCoarseSize(29);
+  H.Setup();
+
+  TEST_THROW( H.Write(1,0), MueLu::Exceptions::RuntimeError );    //start level is greater than end level
+  TEST_THROW( H.Write(0,1000), MueLu::Exceptions::RuntimeError ); //end level is too big
+  H.Write();
+}
+
 }//namespace MueLuTests
 
 //Note from JG:

@@ -256,6 +256,8 @@ namespace MueLu {
     if (!isLastLevel) {
       smootherFact.Build(level);
     } else {
+      RCP<Teuchos::FancyOStream> fos = Utils::MakeFancy(std::cout);
+      level.print(*fos);
       coarsestSolverFact.Build(level); //TODO: PRE?POST
     }
 
@@ -316,8 +318,8 @@ namespace MueLu {
   
     Teuchos::ParameterList status;
     status.set("number of levels", Teuchos::as<int>(Levels_.size()));
-    totalNnz_ = 0.;
-    for (size_t i=0; i<Levels_.size(); ++i) {
+    totalNnz_ = 0;
+    for (int i=0; i<Levels_.size(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
       totalNnz_ += Levels_[i]->Get<RCP<Matrix> >("A")->getGlobalNumEntries();
     }
@@ -458,6 +460,37 @@ namespace MueLu {
     } //for (LO i=0; i<nIts; i++)
 
   } //Iterate()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const LO &start, const LO &end)
+  {
+
+    LO startLevel = start;
+    LO endLevel = end;
+
+    if (startLevel==-1) startLevel = 0;
+    if (endLevel==-1)   endLevel = Levels_.size();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(startLevel > endLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Write : startLevel must be <= endLevel");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(startLevel < 0 || endLevel > Levels_.size(), Exceptions::RuntimeError, "MueLu::Hierarchy::Write bad start or end level");
+
+    for (LO i=startLevel; i<endLevel; ++i) {
+
+      std::ostringstream buf; buf << i;
+      std::string fileName = "A_" + buf.str() + ".m";
+      Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("A")) );
+      if (i>startLevel) {
+        fileName = "P_" + buf.str() + ".m";
+        Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("P")) );
+        if (!implicitTranspose_) {
+          fileName = "R_" + buf.str() + ".m";
+          Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("R")) );
+        }
+      }
+    }
+
+  } //Write()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Keep(const std::string & ename, const FactoryBase* factory) {
