@@ -49,8 +49,6 @@
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include "MueLu_ConfigDefs.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialQRDenseSolver.hpp"
 
 namespace MueLu {
 
@@ -93,8 +91,6 @@ namespace MueLu {
     private:
       //! Teuchos LAPACK wrapper.
       Teuchos::LAPACK<LocalOrdinal,Scalar> lapack_;
-      //! QR solver object.
-      Teuchos::SerialQRDenseSolver<LocalOrdinal,Scalar> qrSolver_;
       //! Length of work vectors. Must be at least dimension of nullspace.
       LocalOrdinal     workSize_;
       //! Dimension of nullspace
