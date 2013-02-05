@@ -3689,6 +3689,177 @@ Sets option to disable linear resid computation. If disabled, this
 saves on a MatVec per Newton but disallows inexact Newton methods. ";
 
 
+// File: classNOX_1_1Multiphysics_1_1Group.xml
+%feature("docstring") NOX::Multiphysics::Group "
+
+NOX pure abstract interface to a \"group\"; i.e., a solution vector
+and the corresponding F-vector, Jacobian matrix, gradient vector, and
+Newton vector.
+
+This class is a member of the namespace NOX::Abstract.
+
+The user should implement their own concrete implementation of this
+class or use one of the implementations provided by us. Typically the
+implementation is also tied to a particular NOX::Abstract::Vector
+implementation.
+
+The group may be implemented so that multiple groups can share
+underlying memory space. This is particularly important when it comes
+to the Jacobian, which is often to big to be replicated for every
+group. Thus, we have included instructions on how shared data should
+be treated for the operator=() and clone() functions.
+
+C++ includes: NOX_Multiphysics_Group.H ";
+
+%feature("docstring")  NOX::Multiphysics::Group::setX "void
+NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector &y)
+
+Set the solution vector x to y.
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Multiphysics::Group::computeX "void
+NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group &grp,
+const NOX::Abstract::Vector &d, double step)
+
+Compute x = grp.x + step * d.
+
+Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
+the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
+\\\\mbox{step} \\\\; d. \\\\]
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Multiphysics::Group::computeF "NOX::Abstract::Group::ReturnType NOX::Multiphysics::Group::computeF()
+
+Compute and store F(x).
+
+It's generally useful to also compute and store the 2-norm of F(x) at
+this point for later access by the getNormF() function.
+
+NOX::Abstract::Group::Failed - If the computation fails in any way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+/*  "Is" functions.  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last change to the solution vector.
+
+*/
+
+%feature("docstring")  NOX::Multiphysics::Group::isF "bool
+NOX::Multiphysics::Group::isF() const
+
+Return true if F is valid. ";
+
+/*  "Get" functions.  */
+
+/* Note that these function do not check whether or not the vectors
+are valid. Must use the \"Is\" functions for that purpose.
+
+*/
+
+%feature("docstring")  NOX::Multiphysics::Group::getX "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getX() const
+
+Return solution vector. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getF "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getF() const
+
+Return F(x) ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getNormF "double
+NOX::Multiphysics::Group::getNormF() const
+
+Return 2-norm of F(x).
+
+In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getGradient "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getGradient() const
+
+Return gradient. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getNewton "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getNewton() const
+
+Return Newton direction. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getXPtr "Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getXPtr() const
+
+Return RCP to solution vector. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getFPtr "Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getFPtr() const
+
+Return RCP to F(x) ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getGradientPtr "Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getGradientPtr() const
+
+Return RCP to gradient. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getNewtonPtr "Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getNewtonPtr() const
+
+Return RCP to Newton direction. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::clone "Teuchos::RCP<
+NOX::Abstract::Group > NOX::Multiphysics::Group::clone(NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a new Group of the same derived type as this one by cloning
+this one, and return a ref count pointer to the new group.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (only the memory is allocated, the values are
+not copied into the vectors and Jacobian). Returns NULL if clone is
+not supported.
+
+Any shared data should have its ownership transfered to this group
+from the source for a NOX::DeepCopy. ";
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
+%feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< std::vector<
+Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const Teuchos::RCP<
+NOX::StatusTest::Generic > &t, const Teuchos::RCP<
+Teuchos::ParameterList > &p)
+
+Constructor.
+
+Constructors for any derived object should always define a default
+x-value so that getX() is always defined. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Group &grp, NOX::CopyType typ)
+
+Constructor. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::~Group "NOX::Multiphysics::Group::~Group()
+
+Destructor. ";
+
+
 // File: classNOX_1_1Abstract_1_1Group.xml
 %feature("docstring") NOX::Abstract::Group "
 
@@ -6233,19 +6404,31 @@ search.
 Return value is true for a successful line search computation. ";
 
 
-// File: classNOX_1_1MultiVector.xml
-%feature("docstring") NOX::MultiVector "
+// File: classNOX_1_1Epetra_1_1MultiVector.xml
+%feature("docstring") NOX::Epetra::MultiVector "
 
-Default implementation for NOX::Abstract::MultiVector using an array
-of NOX::Abstract::MultiVector's.
+Implementation of NOX::Abstract::MultiVector for Epetra multi-vectors.
 
-C++ includes: NOX_MultiVector.H ";
+C++ includes: NOX_Epetra_MultiVector.H ";
 
-%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector()
+
+Get reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"const Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector() const
+
+Get const reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::init "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::init(double
+value)
 
 Initialize every element of this multi-vector with gamma. ";
 
-%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
+%feature("docstring")  NOX::Epetra::MultiVector::random "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::random(bool
 useSeed=false, int seed=1)
 
 Initialize each element of this multi-vector with a random value. ";
@@ -6260,40 +6443,42 @@ index.size() vectors in source are copied to a subset of vectors in
 %feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
 NOX::MultiVector &source, const std::vector< int > &index) ";
 
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
 NOX::Abstract::MultiVector &source)
 
 Append the vectors in source to *this. ";
 
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
-NOX::MultiVector &source) ";
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+NOX::Epetra::MultiVector &source) ";
 
-%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
+%feature("docstring")  NOX::Epetra::MultiVector::scale "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::scale(double
+gamma)
 
 Scale each element of this multivector by gamma. ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double gamma=0.0)
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)
 
 Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
 = *this. ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double gamma=0.0) ";
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double gamma=0.0) ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double beta, const
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
 NOX::Abstract::MultiVector &b, double gamma=0.0)
 
 Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
 multi-vectors and x = *this. ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
-double gamma=0.0) ";
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double beta, const
+NOX::Epetra::MultiVector &b, double gamma=0.0) ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::Abstract::MultiVector &a, const
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const
 NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
 
 Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
@@ -6301,13 +6486,14 @@ is a dense matrix, x = *this, and op(b) = b if transb =
 Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
 ";
 
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::MultiVector &a, const
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Epetra::MultiVector &a, const
 NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
 
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
-type=NOX::DeepCopy) const
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(CopyType
+type=DeepCopy) const
 
 Create a new Vector of the same underlying type by cloning \"this\",
 and return a pointer to the new vector.
@@ -6319,9 +6505,9 @@ created by ShapeCopy is initialized to zeros.
 
 Pointer to newly created vector or NULL if clone is not supported. ";
 
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
-const
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(int
+numvecs) const
 
 Creates a new multi-vector with numvecs columns. ";
 
@@ -6336,7 +6522,7 @@ copies of the columns of *this given by index. ";
 NOX::Abstract::MultiVector > NOX::MultiVector::subView(const
 std::vector< int > &index) const
 
-Creates a new multi-vector with index.size() columns that shares the
+Creates a new multi-vector with ndex.size() columns that shares the
 columns of *this given by index. ";
 
 %feature("docstring")  NOX::MultiVector::norm "void
@@ -6346,22 +6532,24 @@ const
 
 Norm. ";
 
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
 NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
 &b) const
 
 Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
 
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
-NOX::Abstract::MultiVector::DenseMatrix &b) const ";
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const ";
 
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
-numVecs=1, NOX::CopyType type=NOX::DeepCopy)
+%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
+Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
+NOX::Epetra::MultiVector::MemoryType
+memoryType=NOX::Epetra::MultiVector::CreateCopy)
 
-Create MultiVector with numVecs columns out of a single
-NOX::Abstract::Vector. ";
+Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
 
 %feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
 int numVecs, NOX::CopyType type=NOX::DeepCopy)
@@ -6531,31 +6719,19 @@ void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
 Print the vector. This is meant for debugging purposes only. ";
 
 
-// File: classNOX_1_1Epetra_1_1MultiVector.xml
-%feature("docstring") NOX::Epetra::MultiVector "
+// File: classNOX_1_1MultiVector.xml
+%feature("docstring") NOX::MultiVector "
 
-Implementation of NOX::Abstract::MultiVector for Epetra multi-vectors.
+Default implementation for NOX::Abstract::MultiVector using an array
+of NOX::Abstract::MultiVector's.
 
-C++ includes: NOX_Epetra_MultiVector.H ";
+C++ includes: NOX_MultiVector.H ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
-"Epetra_MultiVector &
-NOX::Epetra::MultiVector::getEpetraMultiVector()
-
-Get reference to underlying Epetra vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
-"const Epetra_MultiVector &
-NOX::Epetra::MultiVector::getEpetraMultiVector() const
-
-Get const reference to underlying Epetra vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::init "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::init(double
-value)
+%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
 
 Initialize every element of this multi-vector with gamma. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::random "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::random(bool
+%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
 useSeed=false, int seed=1)
 
 Initialize each element of this multi-vector with a random value. ";
@@ -6570,42 +6746,40 @@ index.size() vectors in source are copied to a subset of vectors in
 %feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
 NOX::Epetra::MultiVector &source, const std::vector< int > &index) ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
 NOX::Abstract::MultiVector &source)
 
 Append the vectors in source to *this. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
-NOX::Epetra::MultiVector &source) ";
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::MultiVector &source) ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::scale "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::scale(double
-gamma)
+%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
 
 Scale each element of this multivector by gamma. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double gamma=0.0)
 
 Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
 = *this. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Epetra::MultiVector &a, double gamma=0.0) ";
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double gamma=0.0) ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double beta, const
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double beta, const
 NOX::Abstract::MultiVector &b, double gamma=0.0)
 
 Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
 multi-vectors and x = *this. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Epetra::MultiVector &a, double beta, const
-NOX::Epetra::MultiVector &b, double gamma=0.0) ";
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
+double gamma=0.0) ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
-NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Abstract::MultiVector &a, const
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::Abstract::MultiVector &a, const
 NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
 
 Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
@@ -6613,14 +6787,13 @@ is a dense matrix, x = *this, and op(b) = b if transb =
 Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
 ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
-NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Epetra::MultiVector &a, const
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::MultiVector &a, const
 NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(CopyType
-type=DeepCopy) const
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
+type=NOX::DeepCopy) const
 
 Create a new Vector of the same underlying type by cloning \"this\",
 and return a pointer to the new vector.
@@ -6632,9 +6805,9 @@ created by ShapeCopy is initialized to zeros.
 
 Pointer to newly created vector or NULL if clone is not supported. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(int
-numvecs) const
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
+const
 
 Creates a new multi-vector with numvecs columns. ";
 
@@ -6649,7 +6822,7 @@ copies of the columns of *this given by index. ";
 NOX::Epetra::MultiVector::subView(const std::vector< int > &index)
 const
 
-Creates a new multi-vector with ndex.size() columns that shares the
+Creates a new multi-vector with index.size() columns that shares the
 columns of *this given by index. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::norm "void
@@ -6659,61 +6832,49 @@ const
 
 Norm. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
-NOX::Epetra::MultiVector::multiply(double alpha, const
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const
 NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
 &b) const
 
 Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
-NOX::Epetra::MultiVector::multiply(double alpha, const
-NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
-&b) const ";
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
+NOX::Abstract::MultiVector::DenseMatrix &b) const ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
-Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
-NOX::Epetra::MultiVector::MemoryType
-memoryType=NOX::Epetra::MultiVector::CreateCopy)
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
+numVecs=1, NOX::CopyType type=NOX::DeepCopy)
 
-Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
+Create MultiVector with numVecs columns out of a single
+NOX::Abstract::Vector. ";
 
-NOTE: This ctor should just always create a view. It should be
-implicit from the fact that a RCP object is being passed in that a
-persisting relationship is present. However, since this could cause
-confusion, the default is to make a copy and if a user wants a view,
-they must pass in an explicit flag.
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
+int numVecs, NOX::CopyType type=NOX::DeepCopy)
 
-A VIEW of a vector uses the same underlying memory. WARNING: A View
-can be dangerous since multiple objects can access the same memory
-locations. ";
+Create MultiVector out of array of NOX::Abstract::Vector's. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector
-&source, NOX::CopyType type=NOX::DeepCopy)
-
-Construct by copying map and/or elements of an Epetra_MultiVector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector
-&source, NOX::CopyType type=NOX::DeepCopy)
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const MultiVector &source, NOX::CopyType
+type=NOX::DeepCopy)
 
 Copy constructor. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::~MultiVector "NOX::Epetra::MultiVector::~MultiVector()
+%feature("docstring")  NOX::MultiVector::~MultiVector "NOX::MultiVector::~MultiVector()
 
-Destruct MultiVector. ";
+Destructor. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::length "int
-NOX::Epetra::MultiVector::length() const
+%feature("docstring")  NOX::MultiVector::length "int
+NOX::MultiVector::length() const
 
 Return the length of multi-vector. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::numVectors "int
-NOX::Epetra::MultiVector::numVectors() const
+%feature("docstring")  NOX::MultiVector::numVectors "int
+NOX::MultiVector::numVectors() const
 
 Return the number of vectors in the multi-vector. ";
 
-%feature("docstring")  NOX::Epetra::MultiVector::print "void
-NOX::Epetra::MultiVector::print(std::ostream &stream) const
+%feature("docstring")  NOX::MultiVector::print "void
+NOX::MultiVector::print(std::ostream &stream) const
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -9294,56 +9455,6 @@ deleted by the top level RCP.
 params:  Sublist with line search construction parameters. ";
 
 
-// File: classNOX_1_1LineSearch_1_1UserDefinedFactoryT.xml
-%feature("docstring") NOX::LineSearch::UserDefinedFactoryT "
-
-Concrete instantiation of a NOX::LineSearch::UserDefinedFactory object
-that uses the base objects only for constuction.
-
-If the user writes their own line search and that object has the same
-constructor arguments as the nox line searches (the gd and params as
-in the buildDirection method), then users can use this object instead
-of having to write their own factory.
-
-For example, if a user writes their own line search object:
-
-They can build that object using this factory and do not have to write
-their own factory
-
-It is critical that the user defined factory be set in the parameter
-list as a base class type object: NOX::LineSearch::UserDefinedFactory.
-
-C++ includes: NOX_LineSearch_UserDefinedFactoryT.H ";
-
-%feature("docstring")
-NOX::LineSearch::UserDefinedFactoryT::UserDefinedFactoryT "NOX::LineSearch::UserDefinedFactoryT< T >::UserDefinedFactoryT()
-
-Constructor. ";
-
-%feature("docstring")
-NOX::LineSearch::UserDefinedFactoryT::~UserDefinedFactoryT "NOX::LineSearch::UserDefinedFactoryT< T >::~UserDefinedFactoryT()
-
-Destructor. ";
-
-%feature("docstring")
-NOX::LineSearch::UserDefinedFactoryT::buildLineSearch "Teuchos::RCP<NOX::LineSearch::Generic>
-NOX::LineSearch::UserDefinedFactoryT< T >::buildLineSearch(const
-Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
-const
-
-Builds a user defined line search object.
-
-Parameters:
------------
-
-gd:  A global data pointer that contains the top level parameter list.
-Without storing this inside the line searchobject, there is no
-guarantee that the second parameter params will still exist. It can be
-deleted by the top level RCP.
-
-params:  Sublist with line search construction parameters. ";
-
-
 // File: classNOX_1_1Direction_1_1UserDefinedFactoryT.xml
 %feature("docstring") NOX::Direction::UserDefinedFactoryT "
 
@@ -9392,6 +9503,56 @@ guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
 params:  Sublist with direction construction parameters. ";
+
+
+// File: classNOX_1_1LineSearch_1_1UserDefinedFactoryT.xml
+%feature("docstring") NOX::LineSearch::UserDefinedFactoryT "
+
+Concrete instantiation of a NOX::LineSearch::UserDefinedFactory object
+that uses the base objects only for constuction.
+
+If the user writes their own line search and that object has the same
+constructor arguments as the nox line searches (the gd and params as
+in the buildDirection method), then users can use this object instead
+of having to write their own factory.
+
+For example, if a user writes their own line search object:
+
+They can build that object using this factory and do not have to write
+their own factory
+
+It is critical that the user defined factory be set in the parameter
+list as a base class type object: NOX::LineSearch::UserDefinedFactory.
+
+C++ includes: NOX_LineSearch_UserDefinedFactoryT.H ";
+
+%feature("docstring")
+NOX::LineSearch::UserDefinedFactoryT::UserDefinedFactoryT "NOX::LineSearch::UserDefinedFactoryT< T >::UserDefinedFactoryT()
+
+Constructor. ";
+
+%feature("docstring")
+NOX::LineSearch::UserDefinedFactoryT::~UserDefinedFactoryT "NOX::LineSearch::UserDefinedFactoryT< T >::~UserDefinedFactoryT()
+
+Destructor. ";
+
+%feature("docstring")
+NOX::LineSearch::UserDefinedFactoryT::buildLineSearch "Teuchos::RCP<NOX::LineSearch::Generic>
+NOX::LineSearch::UserDefinedFactoryT< T >::buildLineSearch(const
+Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
+const
+
+Builds a user defined line search object.
+
+Parameters:
+-----------
+
+gd:  A global data pointer that contains the top level parameter list.
+Without storing this inside the line searchobject, there is no
+guarantee that the second parameter params will still exist. It can be
+deleted by the top level RCP.
+
+params:  Sublist with line search construction parameters. ";
 
 
 // File: classNOX_1_1Utils.xml
@@ -9544,214 +9705,6 @@ For example,
 
 This is modeled after the Form and Bound_form objects in Stroustrup,
 C++ Programming Langauge, 3rd ed., Chapter 21.4. ";
-
-
-// File: classNOX_1_1Abstract_1_1Vector.xml
-%feature("docstring") NOX::Abstract::Vector "
-
-NOX's pure abstract vector interface for vectors that are used by the
-nonlinear solver.
-
-This class is a member of the namespace NOX::Abstract.
-
-The user should implement their own concrete implementation of this
-class or use one of the implementations provided by us.
-
-Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
-
-C++ includes: NOX_Abstract_Vector.H ";
-
-%feature("docstring")  NOX::Abstract::Vector::init "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::init(double gamma)=0
-
-Initialize every element of this vector with gamma.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
-this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::random "NOX::Abstract::Vector & NOX::Abstract::Vector::random(bool
-useSeed=false, int seed=1)
-
-Initialize each element of this vector with a random value.
-
-If useSeed is true, uses the value of seed to seed the random number
-generator before filling the entries of this vector. So, if two calls
-are made where useSeed is true and seed is the same, then the vectors
-returned should be the same.
-
-Default implementation throw an error. Only referenced by LOCA
-methods.
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::abs "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::abs(const
-NOX::Abstract::Vector &y)=0
-
-Put element-wise absolute values of source vector y into this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
-\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::reciprocal "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::reciprocal(const
-NOX::Abstract::Vector &y)=0
-
-Put element-wise reciprocal of source vector y into this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::scale "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::scale(double gamma)=0
-
-Scale each element of this vector by gamma.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::scale "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::scale(const
-NOX::Abstract::Vector &a)=0
-
-Scale this vector element-by-element by the vector a.
-
-Here x represents this vector, and we update it as \\\\[ x_i = x_i
-\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::update "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
-const NOX::Abstract::Vector &a, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (gamma * x) where x is this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
-i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::update "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
-const NOX::Abstract::Vector &a, double beta, const
-NOX::Abstract::Vector &b, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
-vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
-\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::clone "virtual
-Teuchos::RCP<NOX::Abstract::Vector>
-NOX::Abstract::Vector::clone(NOX::CopyType type=NOX::DeepCopy) const
-=0
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\" (the memory is allocated for the objects, but
-the current values are not copied into the vector). Note that there is
-no assumption that a vector created by ShapeCopy is initialized to
-zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Abstract::Vector::createMultiVector(const NOX::Abstract::Vector
-*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
-
-Create a MultiVector with numVecs+1 columns out of an array of
-Vectors. The vector stored under this will be the first column with
-the remaining numVecs columns given by vecs.
-
-The default implementation creates a generic NOX::MultiVector with
-either Shape or Deep copies of the supplied vectors. ";
-
-%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType
-type=NOX::DeepCopy) const
-
-Create a MultiVector with numVecs columns.
-
-The default implementation creates a generic NOX::MultiVector with
-either Shape or Deep copies of the supplied vector. ";
-
-%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
-NOX::Abstract::Vector::norm(NOX::Abstract::Vector::NormType
-type=NOX::Abstract::Vector::TwoNorm) const =0
-
-Norm.
-
-Here x represents this vector, and we compute its norm as follows: for
-each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
-\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
-
-NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
-|x_i| \\\\]
-
-NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
-\\\\]
-
-$\\\\|x\\\\|$ ";
-
-%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
-NOX::Abstract::Vector::norm(const NOX::Abstract::Vector &weights)
-const =0
-
-Weighted 2-Norm.
-
-Here x represents this vector, and we compute its weighted norm as
-follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
-x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
-
-%feature("docstring")  NOX::Abstract::Vector::innerProduct "virtual
-double NOX::Abstract::Vector::innerProduct(const NOX::Abstract::Vector
-&y) const =0
-
-Inner product with y.
-
-Here x represents this vector, and we compute its inner product with y
-as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
-\\\\]  $\\\\langle x,y \\\\rangle$ ";
-
-%feature("docstring")  NOX::Abstract::Vector::Vector "NOX::Abstract::Vector::Vector()
-
-Abstract Vector constructor (does nothing) ";
-
-%feature("docstring")  NOX::Abstract::Vector::~Vector "virtual
-NOX::Abstract::Vector::~Vector()
-
-Abstract Vector destructor (does nothing) ";
-
-%feature("docstring")  NOX::Abstract::Vector::length "virtual int
-NOX::Abstract::Vector::length() const =0
-
-Return the length of vector.
-
-The length of this vector
-
-Even if the vector is distributed across processors, this should
-return the  global length of the vector. ";
-
-%feature("docstring")  NOX::Abstract::Vector::print "void
-NOX::Abstract::Vector::print(std::ostream &stream) const
-
-Print the vector. To be used for debugging only. ";
 
 
 // File: classNOX_1_1Epetra_1_1Vector.xml
@@ -10006,6 +9959,214 @@ Print the vector. To be used for debugging only. ";
 NOX::Epetra::Vector::getVectorSpace() const
 
 Returns the NOX::Epetra::VectorSpace associated with this vector. ";
+
+
+// File: classNOX_1_1Abstract_1_1Vector.xml
+%feature("docstring") NOX::Abstract::Vector "
+
+NOX's pure abstract vector interface for vectors that are used by the
+nonlinear solver.
+
+This class is a member of the namespace NOX::Abstract.
+
+The user should implement their own concrete implementation of this
+class or use one of the implementations provided by us.
+
+Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+
+C++ includes: NOX_Abstract_Vector.H ";
+
+%feature("docstring")  NOX::Abstract::Vector::init "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::init(double gamma)=0
+
+Initialize every element of this vector with gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
+this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::random "NOX::Abstract::Vector & NOX::Abstract::Vector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this vector with a random value.
+
+If useSeed is true, uses the value of seed to seed the random number
+generator before filling the entries of this vector. So, if two calls
+are made where useSeed is true and seed is the same, then the vectors
+returned should be the same.
+
+Default implementation throw an error. Only referenced by LOCA
+methods.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::abs "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::abs(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise absolute values of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::reciprocal "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::reciprocal(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise reciprocal of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(double gamma)=0
+
+Scale each element of this vector by gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(const
+NOX::Abstract::Vector &a)=0
+
+Scale this vector element-by-element by the vector a.
+
+Here x represents this vector, and we update it as \\\\[ x_i = x_i
+\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where x is this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
+i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double beta, const
+NOX::Abstract::Vector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
+vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::clone "virtual
+Teuchos::RCP<NOX::Abstract::Vector>
+NOX::Abstract::Vector::clone(NOX::CopyType type=NOX::DeepCopy) const
+=0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (the memory is allocated for the objects, but
+the current values are not copied into the vector). Note that there is
+no assumption that a vector created by ShapeCopy is initialized to
+zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(const NOX::Abstract::Vector
+*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs+1 columns out of an array of
+Vectors. The vector stored under this will be the first column with
+the remaining numVecs columns given by vecs.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vectors. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs columns.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vector. ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(NOX::Abstract::Vector::NormType
+type=NOX::Abstract::Vector::TwoNorm) const =0
+
+Norm.
+
+Here x represents this vector, and we compute its norm as follows: for
+each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
+\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
+
+NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
+|x_i| \\\\]
+
+NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
+\\\\]
+
+$\\\\|x\\\\|$ ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(const NOX::Abstract::Vector &weights)
+const =0
+
+Weighted 2-Norm.
+
+Here x represents this vector, and we compute its weighted norm as
+follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
+x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
+
+%feature("docstring")  NOX::Abstract::Vector::innerProduct "virtual
+double NOX::Abstract::Vector::innerProduct(const NOX::Abstract::Vector
+&y) const =0
+
+Inner product with y.
+
+Here x represents this vector, and we compute its inner product with y
+as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
+\\\\]  $\\\\langle x,y \\\\rangle$ ";
+
+%feature("docstring")  NOX::Abstract::Vector::Vector "NOX::Abstract::Vector::Vector()
+
+Abstract Vector constructor (does nothing) ";
+
+%feature("docstring")  NOX::Abstract::Vector::~Vector "virtual
+NOX::Abstract::Vector::~Vector()
+
+Abstract Vector destructor (does nothing) ";
+
+%feature("docstring")  NOX::Abstract::Vector::length "virtual int
+NOX::Abstract::Vector::length() const =0
+
+Return the length of vector.
+
+The length of this vector
+
+Even if the vector is distributed across processors, this should
+return the  global length of the vector. ";
+
+%feature("docstring")  NOX::Abstract::Vector::print "void
+NOX::Abstract::Vector::print(std::ostream &stream) const
+
+Print the vector. To be used for debugging only. ";
 
 
 // File: classNOX_1_1Epetra_1_1VectorSpace.xml

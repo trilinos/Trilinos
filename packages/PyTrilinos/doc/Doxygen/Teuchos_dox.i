@@ -1564,8 +1564,9 @@ std::string & Teuchos::XMLObject::getAttribute(const std::string
 
 Return the value of the attribute with the specified name. ";
 
-%feature("docstring")  Teuchos::XMLObject::getRequired "TEUCHOS_LIB_DLL_EXPORT std::string Teuchos::XMLObject::getRequired<
-std::string >(const std::string &name) const
+%feature("docstring")  Teuchos::XMLObject::getRequired "TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT std::string
+Teuchos::XMLObject::getRequired< std::string >(const std::string
+&name) const
 
 Get an attribute, throwing an std::exception if it is not found. ";
 
@@ -1690,8 +1691,9 @@ Teuchos::XMLObject::addContent(const std::string &contentLine)
 
 Add a line of character content. ";
 
-%feature("docstring")  Teuchos::XMLObject::addAttribute "TEUCHOS_LIB_DLL_EXPORT void Teuchos::XMLObject::addAttribute(const
-std::string &name, const std::string &value) ";
+%feature("docstring")  Teuchos::XMLObject::addAttribute "TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void
+Teuchos::XMLObject::addAttribute(const std::string &name, const
+std::string &value) ";
 
 
 // File: classTeuchos_1_1XMLObjectImplem.xml
@@ -1890,24 +1892,26 @@ XMLParser::parse()
 Consume the XMLInputStream to build an XMLObject. ";
 
 
-// File: namespace@13.xml
+// File: namespace@0.xml
 
 
-// File: namespace@2.xml
+// File: namespace@9.xml
 
 
 // File: namespaceTeuchos.xml
-%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
-&paramListAccpetor, std::ostream &out, const bool showDoc=true)
-
-Pretty print the valid parameters from a ParameterListAccpetor object.
-";
-
 %feature("docstring")
 Teuchos::Exceptions::throwScalarTraitsNanInfError "void
 Teuchos::throwScalarTraitsNanInfError(const std::string &errMsg) ";
 
 %feature("docstring")  Teuchos::Exceptions::generic_real_isnaninf "bool Teuchos::generic_real_isnaninf(const Scalar &x) ";
+
+%feature("docstring")  Teuchos::Exceptions::Teuchos_Version "std::string Teuchos::Teuchos_Version() ";
+
+%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
+&paramListAccpetor, std::ostream &out, const bool showDoc=true)
+
+Pretty print the valid parameters from a ParameterListAccpetor object.
+";
 
 %feature("docstring")  Teuchos::Exceptions::XMLObject::getRequired<
 std::string > " std::string Teuchos::XMLObject::getRequired<
@@ -1978,6 +1982,9 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__Time_8hpp.xml
 
 
+// File: Teuchos__Version_8hpp.xml
+
+
 // File: Teuchos__XMLConditionExceptions_8hpp.xml
 
 
@@ -2011,6 +2018,12 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__XMLObjectImplem_8hpp.xml
 
 
+// File: Teuchos__XMLParameterListCoreHelpers_8cpp.xml
+
+
+// File: Teuchos__XMLParameterListCoreHelpers_8hpp.xml
+
+
 // File: Teuchos__XMLParameterListExceptions_8hpp.xml
 
 
@@ -2038,10 +2051,25 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_3e7ac0723db077e4460d28d277456290.xml
+// File: dir_648a1a5a598536809e4b3ef943bbfd46.xml
 
 
-// File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
+// File: dir_995200eaa4bbe06e0002f6fded5609b4.xml
+
+
+// File: dir_3079780fc1ede805e40ed0e949b822a0.xml
+
+
+// File: dir_cbdfdca63480c3c07a7e44281f46f14c.xml
+
+
+// File: dir_6dab12939c8b948af4eae41189e608e9.xml
+
+
+// File: dir_7d18d883eef71b43bb15b27eb1193ebb.xml
+
+
+// File: dir_395dcfac2061c15d56dd66df09a23c13.xml
 
 
 // File: ParameterList_2cxx_main_8cpp-example.xml

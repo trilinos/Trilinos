@@ -1822,8 +1822,10 @@ Anasazi::BlockKrylovSchurState::BlockKrylovSchurState "Anasazi::BlockKrylovSchur
 
 // File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
 
-
 // File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
+
+
+// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
 
 
 // File: structAnasazi_1_1BasicSort_1_1compAlg.xml
@@ -8804,10 +8806,17 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
+<<<<<<< HEAD
 // File: dir_cb6170a21a23f130acc107876b1eb76c.xml
 
 
 // File: dir_362dab574799082b864ce88437753581.xml
+=======
+// File: dir_94314cfe4b112043867060cbb772e3af.xml
+
+
+// File: dir_577080b0a80f510a35b476a0674752eb.xml
+>>>>>>> Updated PyTrilinos documentation SWIG interface files
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml

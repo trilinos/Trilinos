@@ -6369,6 +6369,27 @@ Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64() const
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
 
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64 "virtual long long
+Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalRows64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalCols64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64 "virtual long long
+Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
 %feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyNonzeros "virtual int Ifpack_OverlappingRowMatrix::NumMyNonzeros() const
 
 Returns the number of nonzero entries in the calling processor's
@@ -9358,8 +9379,7 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_5838d4552e1cf70d11903e52fb48b52a.xml
+// File: dir_19226bee259e6d11ed09571a00a25f44.xml
 
 
-// File: dir_3a401f9a0f481fd6e189eb671945d208.xml
-
+// File: dir_e40fdf7de3834bd6cd1f0cad8d669ebf.xml

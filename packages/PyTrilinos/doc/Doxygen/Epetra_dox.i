@@ -1158,7 +1158,7 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
+ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
@@ -1199,7 +1199,7 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+NumMyElements, int ElementSize, long long IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
@@ -1250,8 +1250,8 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-NumMyElements, const long long *MyGlobalElements, int ElementSize, int
-IndexBase, const Epetra_Comm &Comm) ";
+NumMyElements, const long long *MyGlobalElements, int ElementSize,
+long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, int ElementSize,
@@ -1303,7 +1303,7 @@ Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
-*ElementSizeList, int IndexBase, const Epetra_Comm &Comm) ";
+*ElementSizeList, long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
@@ -10575,7 +10575,7 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
 IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
@@ -11380,8 +11380,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
-const Epetra_Comm &Comm) ";
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
+IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
 IndexBase, const Epetra_Comm &Comm) ";
@@ -11416,7 +11416,7 @@ number of processors.
 Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
-int IndexBase, const Epetra_Comm &Comm) ";
+long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 long long IndexBase, const Epetra_Comm &Comm) ";
@@ -11459,8 +11459,8 @@ number of processors.
 Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
-const long long *MyGlobalElements, int IndexBase, const Epetra_Comm
-&Comm) ";
+const long long *MyGlobalElements, long long IndexBase, const
+Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 const long long *MyGlobalElements, long long IndexBase, const
@@ -23467,8 +23467,7 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 ";
 
 
-// File: dir_ff59eb91dbbb0e4b7350479658f542a7.xml
+// File: dir_35edaf4afc25b8f2703159971e29b24c.xml
 
 
-// File: dir_53f44f000d01eb8ad16139f194c8b7cf.xml
-
+// File: dir_e0a34e504c09dc2fed4350b3e1214795.xml
