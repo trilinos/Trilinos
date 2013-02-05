@@ -68,7 +68,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   size_t num_elmts = file1.Num_Elmts();
   int dim = file1.Dimension();
   
-//  ********************  elements  ********************  //
+  //  ********************  elements  ********************  //
 
   // Load global ids (0-offset) into id array.
   INT* id = new INT[num_elmts];
@@ -95,33 +95,33 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   file2.Load_Elmt_Block_Descriptions();
   
   {
-  // Compute midpoints of each element and place into x,y,z arrays.
-  size_t num_blocks = file2.Num_Elmt_Blocks(),
+    // Compute midpoints of each element and place into x,y,z arrays.
+    size_t num_blocks = file2.Num_Elmt_Blocks(),
       num_elmts_in_block,
       num_nodes_per_elmt,
       e = 0;
-  double sum_x, sum_y, sum_z;
-  for (size_t b = 0; b < num_blocks; ++b)
-  {
-    const Exo_Block<INT>* block = file2.Get_Elmt_Block_by_Index(b);
-    num_elmts_in_block = block->Size();
-    num_nodes_per_elmt = block->Num_Nodes_per_Elmt();
-    for (size_t i = 0; i < num_elmts_in_block; ++i)
-    {
-      const INT* conn = block->Connectivity(i);  // Connectivity for element i.
-      sum_x = 0.0; sum_y = 0.0; sum_z = 0.0;
-      for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        sum_x += x2_f[ conn[j] - 1 ];
-        if (dim > 1) sum_y += y2_f[ conn[j] - 1 ];
-        if (dim > 2) sum_z += z2_f[ conn[j] - 1 ];
-      }
-      x2[e] = sum_x / (double)num_nodes_per_elmt;
-      if (dim > 1) y2[e] = sum_y / (double)num_nodes_per_elmt;
-      if (dim > 2) z2[e] = sum_z / (double)num_nodes_per_elmt;
+    double sum_x, sum_y, sum_z;
+    for (size_t b = 0; b < num_blocks; ++b)
+      {
+	const Exo_Block<INT>* block = file2.Get_Elmt_Block_by_Index(b);
+	num_elmts_in_block = block->Size();
+	num_nodes_per_elmt = block->Num_Nodes_per_Elmt();
+	for (size_t i = 0; i < num_elmts_in_block; ++i)
+	  {
+	    const INT* conn = block->Connectivity(i);  // Connectivity for element i.
+	    sum_x = 0.0; sum_y = 0.0; sum_z = 0.0;
+	    for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
+	      sum_x += x2_f[ conn[j] - 1 ];
+	      if (dim > 1) sum_y += y2_f[ conn[j] - 1 ];
+	      if (dim > 2) sum_z += z2_f[ conn[j] - 1 ];
+	    }
+	    x2[e] = sum_x / (double)num_nodes_per_elmt;
+	    if (dim > 1) y2[e] = sum_y / (double)num_nodes_per_elmt;
+	    if (dim > 2) z2[e] = sum_z / (double)num_nodes_per_elmt;
       
-      ++e;
-    }
-  }
+	    ++e;
+	  }
+      }
   }
   
   // Sort by x value.
@@ -130,10 +130,10 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
 #if 0
   std::cout << "******************  elmts  ******************** " << std::endl;
   {for (size_t i = 0; i < num_elmts; ++i)
-    std::cout << i << ")\t"
-	      << x2[id[i]] << "\t"
-	      << y2[id[i]] << "\t"
-	      << z2[id[i]] << "\t" << id[i] << std::endl;}
+      std::cout << i << ")\t"
+		<< x2[id[i]] << "\t"
+		<< y2[id[i]] << "\t"
+		<< z2[id[i]] << "\t" << id[i] << std::endl;}
   std::cout << "******************  elmts  ******************** " << std::endl;
 #endif  
   //  Load and get nodal coordinates for first file.
@@ -158,161 +158,165 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   double mid_x, mid_y, mid_z;
 
   for (size_t b = 0; b < num_blocks; ++b)
-  {
-    const Exo_Block<INT>* block1 = file1.Get_Elmt_Block_by_Index(b);
-    file1.Load_Elmt_Block_Description(b);
-    num_elmts_in_block = block1->Size();
-    num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
-    for (size_t i = 0; i < num_elmts_in_block; ++i)
     {
-      // Connectivity for element i.
-      const INT* conn1 = block1->Connectivity(i);
+      const Exo_Block<INT>* block1 = file1.Get_Elmt_Block_by_Index(b);
+      file1.Load_Elmt_Block_Description(b);
+      num_elmts_in_block = block1->Size();
+      num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
+      for (size_t i = 0; i < num_elmts_in_block; ++i)
+	{
+	  // Connectivity for element i.
+	  const INT* conn1 = block1->Connectivity(i);
       
-      // Compute midpoint.
-      mid_x = 0.0; mid_y = 0.0; mid_z = 0.0;
+	  // Compute midpoint.
+	  mid_x = 0.0; mid_y = 0.0; mid_z = 0.0;
 
-      for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes);
-        mid_x += x1_f[conn1[j]-1];
-        if (dim > 1) mid_y += y1_f[conn1[j]-1];
-        if (dim > 2) mid_z += z1_f[conn1[j]-1];
-      }
-      mid_x /= (double)num_nodes_per_elmt;
-      if (dim > 1) mid_y /= (double)num_nodes_per_elmt;
-      if (dim > 2) mid_z /= (double)num_nodes_per_elmt;
+	  for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
+	    SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes);
+	    mid_x += x1_f[conn1[j]-1];
+	    if (dim > 1) mid_y += y1_f[conn1[j]-1];
+	    if (dim > 2) mid_z += z1_f[conn1[j]-1];
+	  }
+	  mid_x /= (double)num_nodes_per_elmt;
+	  if (dim > 1) mid_y /= (double)num_nodes_per_elmt;
+	  if (dim > 2) mid_z /= (double)num_nodes_per_elmt;
       
-      // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim,
-		      interface.ignore_dups);
+	  // Locate midpoint in sorted array.
+	  sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim,
+			  interface.ignore_dups);
 
-      if (sort_idx < 0) {
-        std::cout << "\nexodiff: ERROR: Files are different (couldn't match element "
-		  << (i+1) << " from block " << file1.Block_Id(b)
-		  << " from first file to second)" << std::endl;
-        exit(1);
-      }
-      e2 = id[sort_idx];
+	  if (sort_idx < 0) {
+	    std::cout << "\nexodiff: ERROR: Files are different (couldn't match element "
+		      << (i+1) << " from block " << file1.Block_Id(b)
+		      << " from first file to second)" << std::endl;
+	    exit(1);
+	  }
+	  e2 = id[sort_idx];
       
-      // Assign element map for this element.
-      elmt_map[e1] = e2;
+	  // Assign element map for this element.
+	  elmt_map[e1] = e2;
       
-      {
-        // Determine the block and elmt index of matched element.
-        int b2;
-	size_t l2;
-	file2.Global_to_Block_Local(e2+1, b2, l2);
+	  {
+	    // Determine the block and elmt index of matched element.
+	    int b2;
+	    size_t l2;
+	    file2.Global_to_Block_Local(e2+1, b2, l2);
         
-        const Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b2);
-        SMART_ASSERT(block2 != 0);
+	    const Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b2);
+	    SMART_ASSERT(block2 != 0);
         
-        // Check that the element types are the same.
-        if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
-        {
-          std::cout << "\nexodiff: ERROR: Files are different.\n"
-		    << " In File 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b)
-		    << " has " << num_nodes_per_elmt << " and\n"
-		    << " In File 2: Element " << (l2+1) << " in Block " << file2.Block_Id(b2)
-		    << " has " << block2->Num_Nodes_per_Elmt()
-		    << std::endl;
-          exit(1);
-        }
-        
-        // Get connectivity for file2 element.
-        const INT* conn2 = block2->Connectivity(l2);
-        
-        // Match each node in the first elmt with a node in the second
-        // and assign node_map.
-        for (size_t ln1 = 0; ln1 < num_nodes_per_elmt; ++ln1)
-        {
-          // Grab coordinate of node in first file.
-          double x1_val = x1_f[ conn1[ln1] - 1 ];
-          double y1_val = dim > 1 ? y1_f[ conn1[ln1] - 1 ] : 0.0;
-          double z1_val = dim > 2 ? z1_f[ conn1[ln1] - 1 ] : 0.0;
-          
-          size_t found = 0;
-          for (size_t ln2 = 0; ln2 < num_nodes_per_elmt; ++ln2)
-          {
-            // Grab coordinate of node in second file.
-            double x2_val = x2_f[ conn2[ln2] - 1 ];
-            double y2_val = dim > 1 ? y2_f[ conn2[ln2] - 1 ] : 0.0;
-            double z2_val = dim > 2 ? z2_f[ conn2[ln2] - 1 ] : 0.0;
-            
-            if (!interface.coord_tol.Diff(x1_val, x2_val) &&
-		!interface.coord_tol.Diff(y1_val, y2_val) &&
-		!interface.coord_tol.Diff(z1_val, z2_val) )
-            {
-              // assert that if this node has been given a map
-              // previously, that it agrees with the latest
-              // assignment.
-	      if (node_map[conn1[ln1]-1] >= 0 && node_map[conn1[ln1]-1] != conn2[ln2]-1) {
-
-		// Node in file 1.
-		INT node1 = conn1[ln1];
-		double x1a = x1_f[node1-1];
-		double y1a = dim >= 2 ? y1_f[node1-1] : 0.0;
-		double z1a = dim >= 3 ? z1_f[node1-1] : 0.0;
-		
-		// Node in file 2 that was already mapped to node 1 in file 1
-		INT n1 = node_map[conn1[ln1]-1]+1;
-		double x2a = x2_f[n1-1];
-		double y2a = dim >= 2 ? y2_f[n1-1] : 0.0;
-		double z2a = dim >= 3 ? z2_f[n1-1] : 0.0;
-
-		// Node in file 2 that is now being mapped to node 1 in file 1
-		INT n2 = conn2[ln2];
-		double x2b = x2_f[n2-1];
-		double y2b = dim >= 2 ? y2_f[n2-1] : 0.0;
-		double z2b = dim >= 3 ? z2_f[n2-1] : 0.0;
-
-		SMART_ASSERT(!interface.coord_tol.Diff(x2a, x2b) &&
-			     !interface.coord_tol.Diff(y2a, y2b) &&
-			     !interface.coord_tol.Diff(z2a, z2b));
-		std::cout << "\nexodiff: ERROR - No unique node mapping possible.\n"
-			  << "\tFile 1, Node " << node1
-			  << " at (" << x1a << ", " << y1a << ", " << z1a << ") maps to both:\n"
-			  << "\tFile 2, Node " << n1
-			  << " at (" << x2a << ", " << y2a << ", " << z2a << ") and\n"
-			  << "\tFile 2, Node " << n2
-			  << " at (" << x2b << ", " << y2b << ", " << z2b << ")\n\n";
+	    // Check that the element types are the same.
+	    if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
+	      {
+		std::cout << "\nexodiff: ERROR: Files are different.\n"
+			  << " In File 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b)
+			  << " has " << num_nodes_per_elmt << " and\n"
+			  << " In File 2: Element " << (l2+1) << " in Block " << file2.Block_Id(b2)
+			  << " has " << block2->Num_Nodes_per_Elmt()
+			  << std::endl;
 		exit(1);
 	      }
-              node_map[ conn1[ln1] - 1 ] = conn2[ln2] - 1;
-              found = 1;
-              break;
-            }
-          }
-          if (!found) {
-            std::cout << "\nexodiff: ERROR: Cannot find a match for node at position "
-		      << ln1+1 << " in first element.\n"
-		      << "\tFile 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b) << " nodes:\n";
-	    for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
-	      double x_val = x1_f[ conn1[l1] - 1 ];
-	      double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
-	      double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
-	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
-	    }
-	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
-	    for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
-	      double x_val = x2_f[ conn2[l3] - 1 ];
-	      double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
-	      double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
-	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
-	    }
-	    std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
-		      << " (" << interface.coord_tol.typestr() << "), floor: "
-		      <<  interface.coord_tol.floor << "\n";
-            exit(1);
-          }
-        }  // End of local node loop on file1's element.
-      }  // End of local node search block.
+        
+	    // Get connectivity for file2 element.
+	    const INT* conn2 = block2->Connectivity(l2);
+        
+	    // Match each node in the first elmt with a node in the second
+	    // and assign node_map.
+	    for (size_t ln1 = 0; ln1 < num_nodes_per_elmt; ++ln1)
+	      {
+		// Grab coordinate of node in first file.
+		double x1_val = x1_f[ conn1[ln1] - 1 ];
+		double y1_val = dim > 1 ? y1_f[ conn1[ln1] - 1 ] : 0.0;
+		double z1_val = dim > 2 ? z1_f[ conn1[ln1] - 1 ] : 0.0;
+          
+		size_t found = 0;
+		for (size_t ln2 = 0; ln2 < num_nodes_per_elmt; ++ln2)
+		  {
+		    // Grab coordinate of node in second file.
+		    double x2_val = x2_f[ conn2[ln2] - 1 ];
+		    double y2_val = dim > 1 ? y2_f[ conn2[ln2] - 1 ] : 0.0;
+		    double z2_val = dim > 2 ? z2_f[ conn2[ln2] - 1 ] : 0.0;
+            
+		    if (!interface.coord_tol.Diff(x1_val, x2_val) &&
+			!interface.coord_tol.Diff(y1_val, y2_val) &&
+			!interface.coord_tol.Diff(z1_val, z2_val) )
+		      {
+			// assert that if this node has been given a map
+			// previously, that it agrees with the latest
+			// assignment.
+			if (node_map[conn1[ln1]-1] >= 0 && node_map[conn1[ln1]-1] != conn2[ln2]-1) {
+
+			  if (!interface.ignore_dups) {
+			    // Node in file 1.
+			    INT node1 = conn1[ln1];
+			    double x1a = x1_f[node1-1];
+			    double y1a = dim >= 2 ? y1_f[node1-1] : 0.0;
+			    double z1a = dim >= 3 ? z1_f[node1-1] : 0.0;
+		
+			    // Node in file 2 that was already mapped to node 1 in file 1
+			    INT n1 = node_map[conn1[ln1]-1]+1;
+			    double x2a = x2_f[n1-1];
+			    double y2a = dim >= 2 ? y2_f[n1-1] : 0.0;
+			    double z2a = dim >= 3 ? z2_f[n1-1] : 0.0;
+
+			    // Node in file 2 that is now being mapped to node 1 in file 1
+			    INT n2 = conn2[ln2];
+			    double x2b = x2_f[n2-1];
+			    double y2b = dim >= 2 ? y2_f[n2-1] : 0.0;
+			    double z2b = dim >= 3 ? z2_f[n2-1] : 0.0;
+
+			    SMART_ASSERT(!interface.coord_tol.Diff(x2a, x2b) &&
+					 !interface.coord_tol.Diff(y2a, y2b) &&
+					 !interface.coord_tol.Diff(z2a, z2b));
+			    std::cout << "\nexodiff: ERROR - No unique node mapping possible.\n"
+				      << "\tFile 1, Node " << node1
+				      << " at (" << x1a << ", " << y1a << ", " << z1a << ") maps to both:\n"
+				      << "\tFile 2, Node " << n1
+				      << " at (" << x2a << ", " << y2a << ", " << z2a << ") and\n"
+				      << "\tFile 2, Node " << n2
+				      << " at (" << x2b << ", " << y2b << ", " << z2b << ")\n\n";
+			    exit(1);
+			  }
+			  found = 1;
+			  break;
+			}
+			node_map[ conn1[ln1] - 1 ] = conn2[ln2] - 1;
+			found = 1;
+			break;
+		      }
+		  }
+		if (!found) {
+		  std::cout << "\nexodiff: ERROR: Cannot find a match for node at position "
+			    << ln1+1 << " in first element.\n"
+			    << "\tFile 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b) << " nodes:\n";
+		  for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
+		    double x_val = x1_f[ conn1[l1] - 1 ];
+		    double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
+		    double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
+		    std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+		  }
+		  std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
+		  for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
+		    double x_val = x2_f[ conn2[l3] - 1 ];
+		    double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
+		    double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
+		    std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+		  }
+		  std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
+			    << " (" << interface.coord_tol.typestr() << "), floor: "
+			    <<  interface.coord_tol.floor << "\n";
+		  exit(1);
+		}
+	      }  // End of local node loop on file1's element.
+	  }  // End of local node search block.
       
-      ++e1;
+	  ++e1;
       
-    }  // End of loop on elements in file1 element block.
+	}  // End of loop on elements in file1 element block.
     
-    file1.Free_Elmt_Block(b);
+      file1.Free_Elmt_Block(b);
     
-  }  // End of loop on file1 blocks.
+    }  // End of loop on file1 blocks.
   
   // Check that all nodes in the file have been matched...  If any
   // unmatched nodes are found, then perform a node-based matching
