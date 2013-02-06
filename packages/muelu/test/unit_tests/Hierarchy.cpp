@@ -62,6 +62,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -672,7 +673,30 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
 
   TEST_THROW( H.Write(1,0), MueLu::Exceptions::RuntimeError );    //start level is greater than end level
   TEST_THROW( H.Write(0,1000), MueLu::Exceptions::RuntimeError ); //end level is too big
+
+  // Write matrices out, read fine A back in, and check that the read was ok
+  // by using a matvec with a random vector.
   H.Write();
+
+  std::string infile = "A_0.m";
+  Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+  RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
+  RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
+  randomVec->randomize();
+  RCP<Vector> A_v = VectorFactory::Build(A->getRangeMap(),false);
+  A->apply(*randomVec,*A_v,Teuchos::NO_TRANS,1,0);
+
+  RCP<Vector> Ain_v = VectorFactory::Build(Ain->getRangeMap(),false);
+  Ain->apply(*randomVec,*Ain_v,Teuchos::NO_TRANS,1,0);
+
+  RCP<MultiVector> diff = VectorFactory::Build(A->getRangeMap());
+  //diff = A_v + (-1.0)*(Ain_v) + 0*diff
+  diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
+
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  diff->norm2(norms);
+  out << "||diff|| = " << norms[0] << std::endl;
+  TEST_EQUALITY(norms[0]<1e-15, true);
 }
 
 }//namespace MueLuTests
