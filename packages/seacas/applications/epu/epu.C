@@ -838,7 +838,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   
   // Time steps for output file
   int time_step_out = 0;
-  double min_time_to_write = -1.0;
+  double min_time_to_write = -DBL_MAX;
 
   if (interface.append()) {
     // See how many steps already exist on the output database
@@ -868,7 +868,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   for (time_step = ts_min-1; time_step < ts_max; time_step+=ts_step) {
     time_step_out++;
 
-    T time_val     = 0.0;
+    T time_val     = -DBL_MAX;
     {
       // read in and write out the time step information
       ExodusFile id(0);
@@ -877,10 +877,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       if (time_val <= min_time_to_write)
 	continue;
       
-      if (min_time_to_write >= 0.0) {
+      if (min_time_to_write != -DBL_MAX) {
 	std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min-1)
 		  << " input steps to align times with already written steps on output file.\n\n";
-	min_time_to_write = -1.0;
+	min_time_to_write = -DBL_MAX;
       }
 
       error += ex_put_time(ExodusFile::output(), time_step_out, &time_val);
