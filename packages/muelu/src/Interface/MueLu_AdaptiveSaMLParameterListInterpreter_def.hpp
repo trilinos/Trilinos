@@ -66,9 +66,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AdaptiveSaMLParameterListInterpreter(Teuchos::ParameterList & paramList,Teuchos::RCP<MultiVector> nspVector, std::vector<RCP<FactoryBase> > factoryList) : TransferFacts_(factoryList), blksize_(1) {
+  AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AdaptiveSaMLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : TransferFacts_(factoryList), blksize_(1) {
     SetParameterList(paramList);
-    //nspVector_ = nspVector;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
