@@ -81,6 +81,15 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
     DEPLIBS muelu xpetra muelu-adapters
     )
 
+  #Simple-Rigid
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Simple-Rigid
+    SOURCES Simple-Rigid.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )  
+
   #Simple-Complex
   IF(HAVE_MUELU_COMPLEX)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -101,6 +110,10 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
       COMM serial mpi
       )
   ENDIF()
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Simple-Rigid_cp
+    SOURCE_FILES stiff.txt
+    )
 
 ENDIF()
 

@@ -256,8 +256,8 @@ namespace MueLu {
     if (!isLastLevel) {
       smootherFact.Build(level);
     } else {
-      RCP<Teuchos::FancyOStream> fos = Utils::MakeFancy(std::cout);
-      level.print(*fos);
+      //RCP<Teuchos::FancyOStream> fos = Utils::MakeFancy(std::cout);
+      //level.print(*fos);
       coarsestSolverFact.Build(level); //TODO: PRE?POST
     }
 

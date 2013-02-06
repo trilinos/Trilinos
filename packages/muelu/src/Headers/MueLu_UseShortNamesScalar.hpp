@@ -242,3 +242,7 @@ typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loca
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
 #endif
+
+#ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
+typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RigidBodyModeFactory;
+#endif

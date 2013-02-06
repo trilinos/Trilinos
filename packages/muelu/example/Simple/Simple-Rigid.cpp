@@ -44,14 +44,19 @@
 //
 // @HEADER
 #include <iostream>
-#include <complex>
 
+#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-// MueLu main header: include most common header files in one line
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
+
 #include "MueLu.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_DirectSolver.hpp"
@@ -62,6 +67,9 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_RigidBodyModeFactory.hpp"
+#include <MueLu_UseDefaultTypes.hpp>
+#include <MueLu_UseShortNames.hpp>
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -70,27 +78,18 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 // Define default template types
-typedef std::complex<double>                         SC;
-typedef int                                          LO;
-typedef int                                          GO;
-typedef Kokkos::DefaultNode::DefaultNodeType         NO;
-typedef Kokkos::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
-
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
 typedef MueLu::Level                                 Level;
 typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
 typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
 typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
 typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
-typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      RFactory;
+typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
 typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
+typedef MueLu::RigidBodyModeFactory<SC,LO,GO,NO,LMO> RBMFactory;
 typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
 typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
 typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
@@ -113,109 +112,73 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  // Parameters and constants
-  GO numGlobalElements = 10000;
-  SC h(1.0/((double) (numGlobalElements-1)),0.0);
-  SC kh(0.625,0.0);
-  SC kh2=kh*kh;
-  SC k=kh/h;
-  double alpha=1.0;
-  double beta=0.0;
-  SC shift(alpha,beta);
-  SC one(1.0,0.0);
-  SC two(2.0,0.0);
-  SC complexone(0.0,1.0);
+  // Parameters
+  LO numGlobalElements = 243;
+  int nnzeros=10085;
 
   // Construct a Map that puts approximately the same number of equations on each processor
   RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(numGlobalElements, comm);
 
   // Get update list and number of local equations from newly created map.
-  const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
-  // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<TCRS> L = rcp(new TCRS(map, 3));
-  RCP<TCRS> S = rcp(new TCRS(map, 3));
-  RCP<TCRS> A = rcp(new TCRS(map, 3));
+  // Create a CrsMatrix using the map
+  RCP<TCRS> A = rcp(new TCRS(map,50));
 
-  // Laplacian
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<SC> (two, -one));
-    }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<SC> (-one, two));
-    }
-    else {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<SC> (-one, two, -one));
-    }
-  }
-  L->fillComplete();
-
-  // Shifted Helmholtz Operator
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      S->insertGlobalValues(myGlobalElements[i],
-			    Teuchos::tuple<GO> (myGlobalElements[i]),
-			    Teuchos::tuple<SC> (one));
-    }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      S->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<SC> (-one, one-complexone*kh));
-    }
-    else {
-      S->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<SC> (-one, two-shift*kh2, -one));
-    }
-  }
-  S->fillComplete();
-
-  // Original Helmholtz Operator
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i],
-			    Teuchos::tuple<GO> (myGlobalElements[i]),
-			    Teuchos::tuple<SC> (one));
-
-    }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
-                            Teuchos::tuple<SC> (-one,one-complexone*kh) );
-    }
-    else {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
-                            Teuchos::tuple<SC> (-one, two-kh2, -one));
+  // Read sample matrix from .txt file and put values into A
+  std::ifstream matfile;
+  matfile.open("stiff.txt");
+  for (int i = 0; i < nnzeros; i++) {
+    int current_row, current_column;
+    SC current_value;
+    matfile >> current_row >> current_column >> current_value ;
+    if(map->isNodeLocalElement(current_row)==true) {
+      A->insertGlobalValues(current_row,
+			    Teuchos::tuple<GO> (current_column),
+			    Teuchos::tuple<SC> (current_value));
     }
   }
   A->fillComplete();
 
   // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<XCRS> mueluL_ = rcp(new XTCRS(L)); 
-  RCP<XMAT> mueluL  = rcp(new XWRAP(mueluL_));
-  RCP<XCRS> mueluS_ = rcp(new XTCRS(S)); 
-  RCP<XMAT> mueluS  = rcp(new XWRAP(mueluS_));
-  RCP<XCRS> mueluA_ = rcp(new XTCRS(A)); 
-  RCP<XMAT> mueluA  = rcp(new XWRAP(mueluA_));
+  RCP<CrsMatrix> mueluA_ = rcp(new TpetraCrsMatrix(A)); 
+  RCP<Matrix>    mueluA  = rcp(new CrsMatrixWrap(mueluA_));
+
+  // MultiVector of coordinates
+  // NOTE: must be of size equal to the number of DOFs!
+  RCP<MultiVector> coordinates;
+  coordinates = MultiVectorFactory::Build(mueluA->getDomainMap(), 3);  
+  Teuchos::ArrayRCP<SC> xcoord = coordinates->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> ycoord = coordinates->getDataNonConst(1);
+  Teuchos::ArrayRCP<SC> zcoord = coordinates->getDataNonConst(2);
+  SC h=0.5;
+  for(int k=0; k<9; k++) {
+    for(int j=0; j<3; j++) {
+      for(int i=0; i<3; i++) {
+	int curidx = i+3*j+9*k;
+	xcoord[curidx*3+0]=i*h;
+	xcoord[curidx*3+1]=i*h;
+	xcoord[curidx*3+2]=i*h;
+	ycoord[curidx*3+0]=j*h;
+	ycoord[curidx*3+1]=j*h;
+	ycoord[curidx*3+2]=j*h;
+	zcoord[curidx*3+0]=k*h;
+	zcoord[curidx*3+1]=k*h;
+	zcoord[curidx*3+2]=k*h;
+      }
+    }
+  }
 
   // Multigrid Hierarchy
-  RCP<Hierarchy> H = rcp(new Hierarchy(mueluL));
+  RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
   FactoryManager M;
 
   // Prolongation/Restriction
-  RCP<TPFactory>  TentPFact = rcp( new TPFactory  );
-  RCP<SaPFactory> Pfact     = rcp( new SaPFactory );
-  RCP<RFactory>   Rfact     = rcp( new RFactory   );
-  RCP<RAPFactory> Acfact    = rcp( new RAPFactory );
+  RCP<TPFactory>  TentPFact = rcp( new TPFactory     );
+  RCP<SaPFactory> Pfact     = rcp( new SaPFactory    );
+  RCP<GRFactory>  Rfact     = rcp( new GRFactory     );
+  RCP<RAPFactory> Acfact    = rcp( new RAPFactory    );
+  RCP<RBMFactory> RBMfact   = rcp( new RBMFactory(3) );
 
   // Smoothers
   RCP<SmootherPrototype> smooProto;
@@ -233,7 +196,6 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: absolute threshold", (double)0.0);
   //ifpack2List.set("fact: relative threshold", (double)1.0);
   //ifpack2List.set("fact: relax value", (double)0.0);
-  //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<SC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
   //ifpack2List.set("relaxation: sweeps", (LO) 1);
@@ -262,27 +224,18 @@ int main(int argc, char *argv[]) {
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
-  H->Keep("P", Pfact.get());
-  H->Keep("R", Rfact.get());
-  H->Keep("Ptent", TentPFact.get());
-  H->Setup(M, 0, maxLevels);
-  Teuchos::ParameterList status = H->Summarize(MueLu::None);
-  int numLevels = status.get("number of levels",-1);
-  H->print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
-
-  // Setup coarse grid operators and smoothers
-  RCP<Level> finestLevel = H->GetLevel();
-  finestLevel->Set("A", mueluS);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->Setup(M, 0, numLevels);
+  M.SetFactory("Nullspace", RBMfact );
+  H->GetLevel(0)->Set("Coordinates",coordinates);
+  H->Setup(M, 0, maxLevels);
 
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
   RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
-  B->replaceGlobalValue(0, 1.0);
+  B->replaceGlobalValue(numGlobalElements/2, 1.0);
 
   // Define Operator and Preconditioner
   RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
@@ -337,11 +290,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
-  // print solution entries
-  // using Teuchos::VERB_EXTREME;
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );
-  // X->describe(*out,VERB_EXTREME);  
 
   return EXIT_SUCCESS;
 }

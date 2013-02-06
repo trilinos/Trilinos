@@ -2808,11 +2808,12 @@ namespace Tpetra {
               << newMatrix->getDomainMap ()->getGlobalNumElements () << " "
               << newMatrix->getGlobalNumEntries () << endl;
 
+	  RCP<const map_type> gatherColMap = newMatrix->getColMap ();
 	  // The Matrix Market format expects one-based row and column
 	  // indices.  We'll convert the indices on output from
 	  // whatever index base they use to one-based indices.
           const GO rowIndexBase = gatherRowMap->getIndexBase ();
-          const GO colIndexBase = newMatrix->getColMap ()->getIndexBase ();
+          const GO colIndexBase = gatherColMap->getIndexBase ();
           //
           // Print the entries of the matrix.
           //
@@ -2821,14 +2822,15 @@ namespace Tpetra {
           // (globally or locally indexed) just in case that ever
           // changes.
           if (newMatrix->isGloballyIndexed()) {
+	    // We know that the "gather" row Map is contiguous, so we
+	    // don't need to get the list of GIDs.
 	    const GO minAllGlobalIndex = gatherRowMap->getMinAllGlobalIndex ();
 	    const GO maxAllGlobalIndex = gatherRowMap->getMaxAllGlobalIndex ();
             for (GO globalRowIndex = minAllGlobalIndex; 
-		 globalRowIndex <= maxAllGlobalIndex;
+		 globalRowIndex <= maxAllGlobalIndex; // inclusive range
 		 ++globalRowIndex) {
 	      ArrayView<const GO> ind;
 	      ArrayView<const ST> val;
-
 	      newMatrix->getGlobalRowView (globalRowIndex, ind, val);
 	      go_iter indIter = ind.begin ();
 	      st_iter valIter = val.begin ();
@@ -2845,12 +2847,10 @@ namespace Tpetra {
 		  out << *valIter;
 		}
 		out << endl;
-	      }
-	    }
+	      } // For each entry in the current row
+	    } // For each row of the "gather" matrix
           } else { // newMatrix is locally indexed
 	    typedef OrdinalTraits<GO> OTG;
-	    RCP<const map_type> colMap = newMatrix->getColMap ();
-
 	    for (LO localRowIndex = gatherRowMap->getMinLocalIndex();
 		 localRowIndex <= gatherRowMap->getMaxLocalIndex();
 		 ++localRowIndex) {
@@ -2864,14 +2864,14 @@ namespace Tpetra {
 		"Please report this bug to the Tpetra developers.");
 	      ArrayView<const LO> ind;
 	      ArrayView<const ST> val;
-
 	      newMatrix->getLocalRowView (localRowIndex, ind, val);
 	      lo_iter indIter = ind.begin ();
 	      st_iter valIter = val.begin ();
 	      for (; indIter != ind.end() && valIter != val.end();
 		   ++indIter, ++valIter) {
 		// Convert the column index from local to global.
-		const GO globalColIndex = colMap->getGlobalElement (*indIter);
+		const GO globalColIndex = 
+		  gatherColMap->getGlobalElement (*indIter);
 		TEUCHOS_TEST_FOR_EXCEPTION(
                   globalColIndex == OTG::invalid(), std::logic_error,
 		  "On local row " << localRowIndex << " of the sparse matrix: "
@@ -2888,10 +2888,10 @@ namespace Tpetra {
 		  out << *valIter;
 		}
 		out << endl;
-	      }
-	    }
-	  }
-        }
+	      } // For each entry in the current row
+	    } // For each row of the "gather" matrix
+	  } // Whether the "gather" matrix is locally or globally indexed
+        } // If my process' rank is 0
       }
 
       /// \brief Print the sparse matrix in Matrix Market format.
