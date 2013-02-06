@@ -87,14 +87,14 @@ namespace Galeri {
         GO numGlobalElements=-1;
         if (matrixType_ == "Laplace1D") {
           ny_ = nz_ = -1;
-          numGlobalElements = static_cast<GO>(nx_);
+          numGlobalElements = nx_;
 
         } else if (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D") {
           nz_ = -1;
-          numGlobalElements = static_cast<GO>(nx_*ny_);
+          numGlobalElements = nx_*ny_;
 
         } else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D") {
-          numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
+          numGlobalElements = nx_*ny_*nz_;
 
         } //TODO else throw
 
@@ -113,9 +113,9 @@ namespace Galeri {
 
         check();
 
-        paramList_.set("nx",        static_cast<GO>(nx_));
-        paramList_.set("ny",        static_cast<GO>(ny_));
-        paramList_.set("nz",        static_cast<GO>(nz_));
+        paramList_.set("nx",        nx_);
+        paramList_.set("ny",        ny_);
+        paramList_.set("nz",        nz_);
         paramList_.set("stretchx",  stretchx_);
         paramList_.set("stretchy",  stretchy_);
         paramList_.set("stretchz",  stretchz_);
@@ -161,13 +161,10 @@ namespace Galeri {
 
     private:
       // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
-      mutable double nx_;
-      mutable double ny_;
-      mutable double nz_;
+      mutable GO nx_;
+      mutable GO ny_;
+      mutable GO nz_;
       mutable double stretchx_, stretchy_, stretchz_;
-      // GO nx_;
-      // GO ny_;
-      // GO nz_;
 
       std::string matrixType_;
 

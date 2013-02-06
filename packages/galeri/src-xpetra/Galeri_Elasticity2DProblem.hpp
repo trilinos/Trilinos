@@ -69,8 +69,9 @@ namespace Galeri {
         ny_ = list.get("ny", -1);
 
         nDim = 2;
-        stretch.push_back(list.get("stretchx", 1.0));
-        stretch.push_back(list.get("stretchy", 1.0));
+        double one = 1.0;
+        stretch.push_back(list.get("stretchx", one));
+        stretch.push_back(list.get("stretchy", one));
 
         // NOTE: -1 is because galeri counts points, not elements
         dims.push_back(nx_-1);

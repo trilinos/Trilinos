@@ -70,9 +70,10 @@ namespace Galeri {
         nz_ = list.get("nz", -1);
 
         nDim = 3;
-        stretch.push_back(list.get("stretchx", 1.0));
-        stretch.push_back(list.get("stretchy", 1.0));
-        stretch.push_back(list.get("stretchz", 1.0));
+        double one = 1.0;
+        stretch.push_back(list.get("stretchx", one));
+        stretch.push_back(list.get("stretchy", one));
+        stretch.push_back(list.get("stretchz", one));
 
         // NOTE: -1 is because galeri counts points, not elements
         dims.push_back(nx_-1);

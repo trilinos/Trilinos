@@ -88,7 +88,7 @@ namespace Galeri {
     Teuchos::RCP<Matrix> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
-      Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      double one = 1.0;
       Scalar  stretchx = this->list_.get("stretchx", one);
       Scalar  stretchy = this->list_.get("stretchy", one);
 
@@ -124,7 +124,7 @@ namespace Galeri {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
-      Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      double one = 1.0;
       Scalar  stretchx = this->list_.get("stretchx", one);
       Scalar  stretchy = this->list_.get("stretchy", one);
       Scalar  stretchz = this->list_.get("stretchz", one);
