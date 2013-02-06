@@ -400,7 +400,7 @@ void Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int * xoff,
 				      Epetra_CrsMatrix *& A, 
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
-				      Epetra_Vector *&xexact, int indexBase = 0);
+				      Epetra_Vector *&xexact, long long indexBase = 0);
 
 void Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
 				      const Epetra_Comm  &comm, 
