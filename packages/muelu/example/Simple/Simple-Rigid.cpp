@@ -78,19 +78,9 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 // Define default template types
-//typedef double                                       SC;
-//typedef int                                          LO;
-//typedef int                                          GO;
-//typedef Kokkos::DefaultNode::DefaultNodeType         NO;
-//typedef Kokkos::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
-
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
 typedef MueLu::Level                                 Level;
 typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
@@ -130,7 +120,6 @@ int main(int argc, char *argv[]) {
   RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(numGlobalElements, comm);
 
   // Get update list and number of local equations from newly created map.
-  const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map
@@ -152,8 +141,8 @@ int main(int argc, char *argv[]) {
   A->fillComplete();
 
   // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<XCRS> mueluA_ = rcp(new XTCRS(A)); 
-  RCP<XMAT> mueluA  = rcp(new XWRAP(mueluA_));
+  RCP<CrsMatrix> mueluA_ = rcp(new TpetraCrsMatrix(A)); 
+  RCP<Matrix>    mueluA  = rcp(new CrsMatrixWrap(mueluA_));
 
   // MultiVector of coordinates
   // NOTE: must be of size equal to the number of DOFs!
@@ -163,9 +152,9 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayRCP<SC> ycoord = coordinates->getDataNonConst(1);
   Teuchos::ArrayRCP<SC> zcoord = coordinates->getDataNonConst(2);
   SC h=0.5;
-  for(int i=0; i<3; i++) {
+  for(int k=0; k<9; k++) {
     for(int j=0; j<3; j++) {
-      for(int k=0; k<9; k++) {
+      for(int i=0; i<3; i++) {
 	int curidx = i+3*j+9*k;
 	xcoord[curidx*3+0]=i*h;
 	xcoord[curidx*3+1]=i*h;

@@ -88,13 +88,31 @@ namespace MueLu {
 	RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel,"Coordinates");
 	ArrayRCP<Scalar> xnodes, ynodes, znodes;
 	Scalar cx, cy, cz;
+	ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
+	int nDOFs=A->getDomainMap()->getNodeNumElements();
 	if(numPDEs_==1) {
+	  nsValues0 = nullspace->getDataNonConst(0);
+	  for(int j=0; j<nDOFs; j++) {
+	    // constant null space for scalar PDE
+	    nsValues0[j]=1.0;
+	  }
 	}
 	else if(numPDEs_==2) {
 	  xnodes = Coords->getDataNonConst(0);
 	  ynodes = Coords->getDataNonConst(1);
 	  cx = Coords->getVector(0)->meanValue();
 	  cy = Coords->getVector(1)->meanValue();
+	  nsValues0 = nullspace->getDataNonConst(0);
+	  nsValues1 = nullspace->getDataNonConst(1);
+	  nsValues2 = nullspace->getDataNonConst(2);
+	  for (int j=0; j<nDOFs; j+=numPDEs_) {
+	    // translation
+	    nsValues0[j+0] = 1.0;
+	    nsValues1[j+1] = 1.0;
+	    // rotate around z-axis (x-y plane)
+	    nsValues2[j+0] = -(ynodes[j]-cy);
+	    nsValues2[j+1] =  (xnodes[j]-cx);
+	  }
 	}
 	else if(numPDEs_==3) {
 	  xnodes = Coords->getDataNonConst(0);
@@ -103,62 +121,32 @@ namespace MueLu {
 	  cx = Coords->getVector(0)->meanValue();
 	  cy = Coords->getVector(1)->meanValue();
 	  cz = Coords->getVector(2)->meanValue();
-	}
-	ArrayRCP<Scalar> nsValues0 = nullspace->getDataNonConst(0);
-	int numBlocks = nsValues0.size() / numPDEs_;
-	// for each case, translations are identity
-	for (int i=0; i<numPDEs_; ++i) {
-	  ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-	  int numBlocks = nsValues.size() / numPDEs_;
-	  for (int j=0; j< numBlocks; ++j) {
-	    nsValues[j*numPDEs_ + i] = 1.0;
-	  }
-	}
-	if(numPDEs_==1) {
-	  // scalar equation, do nothing
-	}
-	if(numPDEs_==2) {
-	  // rotate around z-axis (x-y plane)
-	  ArrayRCP<Scalar> nsValues2 = nullspace->getDataNonConst(2);
-	  for (int j=0; j< numBlocks; ++j) {
-	    nsValues2[j*numPDEs_+0] = -(ynodes[j*numPDEs_]-cy);
-	    nsValues2[j*numPDEs_+1] =  (xnodes[j*numPDEs_]-cx);
-	  }
-	}
-	else if(numPDEs_==3) {
-	  // rotate around x-axis (y-z plane)
-	  ArrayRCP<Scalar> nsValues3 = nullspace->getDataNonConst(3);
-	  for (int j=0; j< numBlocks; ++j) {
-	    nsValues3[j*numPDEs_+1] = -(znodes[j*numPDEs_]-cz);
-	    nsValues3[j*numPDEs_+2] =  (ynodes[j*numPDEs_]-cy);
-	  }
-	  // rotate around y-axis (x-z plane)
-	  ArrayRCP<Scalar> nsValues4 = nullspace->getDataNonConst(4);
-	  for (int j=0; j< numBlocks; ++j) {
-	    nsValues4[j*numPDEs_+0] =  (znodes[j*numPDEs_]-cz);
-	    nsValues4[j*numPDEs_+2] = -(xnodes[j*numPDEs_]-cx);	    
-	  }
-	  // rotate around z-axis (x-y plane)
-	  ArrayRCP<Scalar> nsValues5 = nullspace->getDataNonConst(5);
-	  for (int j=0; j< numBlocks; ++j) {
-	    nsValues5[j*numPDEs_+0] = -(ynodes[j*numPDEs_]-cy);
-	    nsValues5[j*numPDEs_+1] =  (xnodes[j*numPDEs_]-cx);
+	  nsValues0 = nullspace->getDataNonConst(0);
+	  nsValues1 = nullspace->getDataNonConst(1);
+	  nsValues2 = nullspace->getDataNonConst(2);
+	  nsValues3 = nullspace->getDataNonConst(3);
+	  nsValues4 = nullspace->getDataNonConst(4);
+	  nsValues5 = nullspace->getDataNonConst(5);
+	  for (int j=0; j<nDOFs; j+=numPDEs_) {
+	    // translation
+	    nsValues0[j+0] = 1.0;
+	    nsValues1[j+1] = 1.0;
+	    nsValues2[j+2] = 1.0;
+	    // rotate around z-axis (x-y plane)
+	    nsValues3[j+0] = -(ynodes[j]-cy);
+	    nsValues3[j+1] =  (xnodes[j]-cx);
+	    // rotate around x-axis (y-z plane)
+	    nsValues4[j+1] = -(znodes[j]-cz);
+	    nsValues4[j+2] =  (ynodes[j]-cy);
+	    // rotate around y-axis (x-z plane)
+	    nsValues5[j+0] =  (znodes[j]-cz);
+	    nsValues5[j+2] = -(xnodes[j]-cx);
 	  }
 	}
       } // end if "Nullspace" not available
     }
     else {
-      RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-      std::cout << "Generating standard nullspace for coarse grid: dimension = " << numPDEs_ << std::endl;
-      nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs_);
-      for (int i=0; i<numPDEs_; ++i) {
-	ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-	int numBlocks = nsValues.size() / numPDEs_;
-	for (int j=0; j< numBlocks; ++j) {
-	  nsValues[j*numPDEs_ + i] = 1.0;
-	}
-      }
-      //nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName_).get()); /* ! "Nullspace" and nspName_ mismatch possible here */
+      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName_).get());
     }
     Set(currentLevel, "Nullspace", nullspace);
   }
