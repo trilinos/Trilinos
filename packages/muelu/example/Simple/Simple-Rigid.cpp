@@ -44,7 +44,6 @@
 //
 // @HEADER
 #include <iostream>
-#include <complex>
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -165,17 +164,18 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayRCP<SC> zcoord = coordinates->getDataNonConst(2);
   SC h=0.5;
   for(int i=0; i<3; i++) {
-    xcoord[i*3+0]=i*h;
-    xcoord[i*3+1]=i*h;
-    xcoord[i*3+2]=i*h;
     for(int j=0; j<3; j++) {
-      ycoord[j*3+0]=j*h;
-      ycoord[j*3+1]=j*h;
-      ycoord[j*3+2]=j*h;
       for(int k=0; k<9; k++) {
-	zcoord[k*3+0]=k*h;
-	zcoord[k*3+1]=k*h;
-	zcoord[k*3+2]=k*h;
+	int curidx = i+3*j+9*k;
+	xcoord[curidx*3+0]=i*h;
+	xcoord[curidx*3+1]=i*h;
+	xcoord[curidx*3+2]=i*h;
+	ycoord[curidx*3+0]=j*h;
+	ycoord[curidx*3+1]=j*h;
+	ycoord[curidx*3+2]=j*h;
+	zcoord[curidx*3+0]=k*h;
+	zcoord[curidx*3+1]=k*h;
+	zcoord[curidx*3+2]=k*h;
       }
     }
   }
