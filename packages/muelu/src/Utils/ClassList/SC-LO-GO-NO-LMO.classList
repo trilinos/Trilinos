@@ -36,6 +36,7 @@ RAPFactory
 RebalanceAcFactory
 RebalanceTransferFactory
 RepartitionFactory - #ifdef HAVE_MPI
+RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory
 Smoother
