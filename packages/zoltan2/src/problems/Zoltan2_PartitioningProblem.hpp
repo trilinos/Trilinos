@@ -182,10 +182,10 @@ public:
       metrics_->printMetrics(os);
   };
 
-  /*! \brief Set or reset relative sizes for the partitions that Zoltan2 will create.
+  /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
    *  \param len  The size of the \c partIds and \c partSizes lists
-   *  \param partIds   A list of \c len partition identifiers.  Partition
+   *  \param partIds   A list of \c len part identifiers.  Part
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
    *  \param partSizes  A list of \c len relative sizes corresponding to
@@ -197,7 +197,7 @@ public:
    *      and memory use is an issue, then set makeCopy to false.  By default,
    *      Zoltan2 will copy the caller's list of ids and sizes.
    *
-   * A given partid should only be provided once across the application.
+   * A given partid should be provided only once across all ranks.
    * Duplicate partIds will generate a std::runtime_error exception when
    * the PartitioningSolution is created.  Part
    * ids that are omitted will be assigned the average of the sizes that
@@ -209,9 +209,9 @@ public:
    * If the application has set multiple weights per object, then the
    * part sizes supplied in this method are applied to the first weight.
    *
-   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * Zoltan2 assumes that uniform part sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
-   * setPartSizesForCritiera.
+   * setPartSizesForCriteria.
    *
    * \todo A user should be able to give us one set of part sizes
    *            that applies to all weight dimensions.  Right now
@@ -226,7 +226,7 @@ public:
     setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
   }
 
-  /*! \brief Set or reset the relative sizes (per weight) for the partitions 
+  /*! \brief Set or reset the relative sizes (per weight) for the parts
    *    that Zoltan2 will create.
    *
    *  \param criteria the criteria (weight dimension) for which these 
@@ -234,7 +234,7 @@ public:
    *     the number of weights per object specified in the 
    *     caller's InputAdapter.
    *  \param len  The size of the \c partIds and \c partSizes lists
-   *  \param partIds   A list of \c len partition identifiers.  Partition
+   *  \param partIds   A list of \c len part identifiers.  Part
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
    *  \param partSizes  A list of \c len relative sizes corresponding to
@@ -255,12 +255,12 @@ public:
    * Subsequent calls to setPartSizes for the same criteria will replace 
    * the list of part ids and part sizes provided for that criteria previously.
    *
-   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * Zoltan2 assumes that uniform part sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
-   * setPartSizesForCritiera.
+   * setPartSizesForCriteria.
    */
 
-  void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
+  void setPartSizesForCriteria(int criteria, int len, partId_t *partIds,
     scalar_t *partSizes, bool makeCopy=true) ;
 
   /*! \brief Reset the list of parameters
