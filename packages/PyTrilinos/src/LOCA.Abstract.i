@@ -133,12 +133,8 @@ Any other notes about the package as a whole. . . .
 
 // Import SWIG interface files to provide information about base
 // classes
-// %import "NOX.Abstract.i"
 %import "LOCA.Homotopy.i"
 %import "LOCA.PhaseTransition.i"
-// %import "LOCA.TurningPoint.MooreSpence.i"
-// %import "LOCA.Hopf.MooreSpence.i"
-// %import "LOCA.Pitchfork.MooreSpence.i"
 %import "LOCA.TurningPoint.MinimallyAugmented.i"
 %import "LOCA.Hopf.MinimallyAugmented.i"
 %import "LOCA.Pitchfork.MinimallyAugmented.i"

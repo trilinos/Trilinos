@@ -188,9 +188,6 @@ namespace Epetra::Interface for the Trilinos package LOCA:
 LOCA::Epetra::Interface::Required::computeF;
 
 %import "NOX.NestedEpetra.Interface.i"
-// %feature("director") NOX::Epetra::Interface::Required;
-// %rename(NOX_Epetra_Interface_Required) NOX::Epetra::Interface::Required;
-// %include "NOX_Epetra_Interface_Required.H"
 
 %feature("director") LOCA::Epetra::Interface::Required;
 %include "LOCA_Epetra_Interface_Required.H"

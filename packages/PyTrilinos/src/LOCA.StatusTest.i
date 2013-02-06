@@ -42,16 +42,6 @@
 #include "numpy_include.h"
 %}
 
-// // Configuration and optional includes
-// %include "PyTrilinos_config.h"
-// #ifdef HAVE_NOX_EPETRA
-// %{
-// #include "NOX_Epetra_Group.H"
-// #include "NOX_Epetra_Vector.H"
-// #include "Epetra_NumPyVector.h"
-// %}
-// #endif
-
 // Standard exception handling
 %include "exception.i"
 

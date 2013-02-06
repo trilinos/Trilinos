@@ -93,12 +93,7 @@ between LOCA and Epetra.
 #endif
 
 // NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
+#include "NOX.H"
 #include "NOX_Epetra_Group.H"
 
 // LOCA includes
@@ -198,9 +193,6 @@ using Teuchos::rcp;
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
-
-// %rename(NOX_Epetra_Group) NOX::Epetra::Group;
-// %include "NOX_Epetra_Group.H"
 
 // temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);

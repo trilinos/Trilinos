@@ -31,9 +31,6 @@
 %module(package="PyTrilinos.LOCA.Hopf") __init__
 
 %{
-// // Teuchos include
-// #include "PyTrilinos_Teuchos_Util.h"
-
 // LOCA includes
 #include "LOCA.H"
 #include "LOCA_Hopf_ComplexMultiVector.H"

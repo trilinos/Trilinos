@@ -64,7 +64,6 @@ parentDir = os.path.dirname(os.path.abspath(__file__))
 parentDir = os.path.normpath(os.path.join(parentDir,".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 %}
-// %import "NOX.Abstract.i"
 %import "LOCA.TurningPoint.MinimallyAugmented_RelPath.i"
 %import "LOCA.Pitchfork.MooreSpence.i"
 

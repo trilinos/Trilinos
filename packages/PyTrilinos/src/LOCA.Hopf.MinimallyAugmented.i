@@ -86,9 +86,6 @@ parentDir = os.path.dirname(os.path.abspath(__file__))
 parentDir = os.path.normpath(os.path.join(parentDir,".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 %}
-// %import "NOX.Abstract.i"
-// %import "LOCA.MultiContinuation_RelPath.i"
-// %import "LOCA.Extended.i"
 %import "LOCA.BorderedSystem_RelPath.i"
 %import "LOCA.Hopf.MooreSpence.i"
 
