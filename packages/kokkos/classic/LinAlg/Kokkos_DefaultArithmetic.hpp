@@ -211,61 +211,14 @@ namespace Kokkos {
 
 #endif
 
-  /// \class DefaultArithmetic
-  /// \brief Traits class providing a generic arithmetic interface for local multivectors.
+  /// \class DefaultArithmeticBase
+  /// \brief Base class for DefaultArithmetic; not for users of the latter.
   ///
   /// \tparam MV The local multivector type.  We provide a
   ///   specialization for MultiVector.
   template <class MV>
-  class DefaultArithmetic {
+  class DefaultArithmeticBase {
   public:
-    //! Initialize all entries of \c A to the given constant value \c alpha.
-    static void Init (MV& A, typename MV::ScalarType alpha);
-
-    //! Set A to the reciprocal of B: <tt>B(i,j) = 1/A(i,j)</tt>.
-    static void Recip (MV& A, const MV& B);
-
-    /// \brief A threshold, in-place variant of Recip().
-    ///
-    /// For each element A(i,j) of A, set A(i,j) = 1/A(i,j) if the
-    /// magnitude of A(i,j) is greater than or equal to the magnitude
-    /// of minDiagVal.  Otherwise, set A(i,j) to minDiagVal.
-    static void 
-    ReciprocalThreshold (MV& A, typename MV::ScalarType& minDiagVal);
-
-    /// \brief Set C to the scaled element-wise multiple of A and B.
-    ///
-    /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
-    /// where the input multivector A has only 1 column.
-    static void ElemMult (MV& C,
-                          typename MV::ScalarType scalarC,
-                          typename MV::ScalarType scalarAB,
-                          const MV& A,
-                          const MV& B);
-
-    /// \brief Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
-    ///
-    /// If A and B point to the same data, then this function skips
-    /// the assignment entirely.
-    static void Assign (MV& A, const MV& B);
-
-    /// \brief Assign the given columns of B to A.
-    ///
-    /// This assigns <tt>A(i, j) = B(i, whichVectors[j])</tt>
-    /// for i in <tt>[0, getNumRows(A)]</tt> and
-    /// j in <tt>[0, getNumCols(A)]</tt>.
-    ///
-    /// If for any j, <tt>A(0,j)</tt> and
-    /// <tt>B(0, whichVectors[j])</tt> point to the same data,
-    /// then this function skips the assignment for that column.
-    static void Assign (MV& A, const MV& B, const ArrayView<const size_t>& whichVectors);
-
-    //! Compute the inner products of corresponding columns of A and B.
-    static void Dot (const MV& A, const MV& B, const ArrayView<typename MV::ScalarType> &dots);
-
-    //! Compute the inner product of A and B (assuming each has only one column).
-    static typename MV::ScalarType Dot (const MV& A, const MV& B);
-
     /// \brief Compute the matrix-matrix product <tt>C = alpha*Op(A)*Op(B) + beta*C</tt>.
     ///
     /// \c Op(A) may be either \c A, its transpose, or its conjugate
@@ -277,59 +230,8 @@ namespace Kokkos {
           typename MV::ScalarType alpha, const MV &A,
           const MV &B, typename MV::ScalarType beta);
 
-    //! Compute <tt>B = alpha * A + beta * B</tt>.
-    static void
-    GESUM (MV& B, typename MV::ScalarType alpha, const MV& A, typename MV::ScalarType beta);
-
-    //! Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
-    static void
-    GESUM (MV &C, typename MV::ScalarType alpha, const MV &A,
-           typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
-
-    //! Compute the one-norm of each column of \c A.
-    static void Norm1 (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
-
-    //! Compute the one-norm of (the first column of) \c A.
-    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType Norm1 (const MV &A);
-
-    //! Compute the sum of each column of \c A.
-    static void Sum (const MV &A, const ArrayView<typename MV::ScalarType> &sums);
-
-    //! Compute the sum of (the first column of) \c A.
-    static typename MV::ScalarType Sum (const MV& A);
-
-    //! Compute the infinity norm (element of maximum magnitude) of each column of \c A.
-    static void NormInf (const MV& A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
-
-    //! Compute the infinity norm (element of maximum magnitude) of (the first column of) \c A.
-    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
-    NormInf (const MV& A);
-
-    //! Compute the square of the 2-norm of each column of \c A.
-    static void Norm2Squared (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
-
-    //! Compute the square of the 2-norm of (the first column of) \c A.
-    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
-    Norm2Squared (const MV& A);
-
-    //! Compute the norm of (the first column of) \c A, weighted by the given vector of weights.
-    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
-    WeightedNorm (const MV &A, const MV &weightVector);
-
-    //! Compute the norm of each column of \c A, weighted by the given vector of weights.
-    static void WeightedNorm (const MV &A, const MV &weightVector, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
-
     //! Fill \c A with uniform random numbers.
     static void Random (MV& A);
-
-    //! Compute <tt>A = abs(B)</tt>, elementwise.
-    static void Abs (MV &A, const MV &B);
-
-    //! Compute <tt>B = alpha * A</tt>.
-    static void Scale (MV &B, typename MV::ScalarType alpha, const MV &A);
-
-    //! Scale \c A in place by \c alpha: <tt>A = alpha * A</tt>.
-    static void Scale (MV &A, typename MV::ScalarType alpha);
 
     /// \brief Tell \c A about its dimensions, and give it a pointer to its data.
     ///
@@ -420,12 +322,224 @@ namespace Kokkos {
     static RCP<typename MV::NodeType> getNode (const MV &A);
   };
 
+
+  /// \class DefaultArithmetic
+  /// \brief Traits class providing a generic arithmetic interface for local multivectors.
+  ///
+  /// \tparam MV The local multivector type.  We provide a
+  ///   specialization for MultiVector.
+  template <class MV>
+  class DefaultArithmetic : public DefaultArithmeticBase<MV> {
+  public:
+    //! Initialize all entries of \c A to the given constant value \c alpha.
+    static void Init (MV& A, typename MV::ScalarType alpha);
+
+    //! Set A to the reciprocal of B: <tt>B(i,j) = 1/A(i,j)</tt>.
+    static void Recip (MV& A, const MV& B);
+
+    /// \brief A threshold, in-place variant of Recip().
+    ///
+    /// For each element A(i,j) of A, set A(i,j) = 1/A(i,j) if the
+    /// magnitude of A(i,j) is greater than or equal to the magnitude
+    /// of minDiagVal.  Otherwise, set A(i,j) to minDiagVal.
+    static void 
+    ReciprocalThreshold (MV& A, typename MV::ScalarType& minDiagVal);
+
+    /// \brief Set C to the scaled element-wise multiple of A and B.
+    ///
+    /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
+    /// where the input multivector A has only 1 column.
+    static void ElemMult (MV& C,
+                          typename MV::ScalarType scalarC,
+                          typename MV::ScalarType scalarAB,
+                          const MV& A,
+                          const MV& B);
+
+    /// \brief Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
+    ///
+    /// If A and B point to the same data, then this function skips
+    /// the assignment entirely.
+    static void Assign (MV& A, const MV& B);
+
+    /// \brief Assign the given columns of B to A.
+    ///
+    /// This assigns <tt>A(i, j) = B(i, whichVectors[j])</tt>
+    /// for i in <tt>[0, getNumRows(A)]</tt> and
+    /// j in <tt>[0, getNumCols(A)]</tt>.
+    ///
+    /// If for any j, <tt>A(0,j)</tt> and
+    /// <tt>B(0, whichVectors[j])</tt> point to the same data,
+    /// then this function skips the assignment for that column.
+    static void Assign (MV& A, const MV& B, const ArrayView<const size_t>& whichVectors);
+
+    //! Compute the inner products of corresponding columns of A and B.
+    static void Dot (const MV& A, const MV& B, const ArrayView<typename MV::ScalarType> &dots);
+
+    //! Compute the inner product of A and B (assuming each has only one column).
+    static typename MV::ScalarType Dot (const MV& A, const MV& B);
+
+    //! Compute <tt>B = alpha * A + beta * B</tt>.
+    static void
+    GESUM (MV& B, typename MV::ScalarType alpha, const MV& A, typename MV::ScalarType beta);
+
+    //! Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
+    static void
+    GESUM (MV &C, typename MV::ScalarType alpha, const MV &A,
+           typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
+
+    //! Compute the one-norm of each column of \c A.
+    static void Norm1 (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the one-norm of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType Norm1 (const MV &A);
+
+    //! Compute the sum of each column of \c A.
+    static void Sum (const MV &A, const ArrayView<typename MV::ScalarType> &sums);
+
+    //! Compute the sum of (the first column of) \c A.
+    static typename MV::ScalarType Sum (const MV& A);
+
+    //! Compute the infinity norm (element of maximum magnitude) of each column of \c A.
+    static void NormInf (const MV& A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the infinity norm (element of maximum magnitude) of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
+    NormInf (const MV& A);
+
+    //! Compute the square of the 2-norm of each column of \c A.
+    static void Norm2Squared (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the square of the 2-norm of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
+    Norm2Squared (const MV& A);
+
+    //! Compute the norm of (the first column of) \c A, weighted by the given vector of weights.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
+    WeightedNorm (const MV &A, const MV &weightVector);
+
+    //! Compute the norm of each column of \c A, weighted by the given vector of weights.
+    static void WeightedNorm (const MV &A, const MV &weightVector, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute <tt>A = abs(B)</tt>, elementwise.
+    static void Abs (MV &A, const MV &B);
+
+    //! Compute <tt>B = alpha * A</tt>.
+    static void Scale (MV &B, typename MV::ScalarType alpha, const MV &A);
+
+    //! Scale \c A in place by \c alpha: <tt>A = alpha * A</tt>.
+    static void Scale (MV &A, typename MV::ScalarType alpha);
+  };
+
+  /// \brief Partial specialization of DefaultArithmeticBase for MultiVector<Scalar,Node>.
+  ///
+  /// \tparam Scalar The type of entries of the multivector.
+  /// \tparam The Kokkos Node type.
+  template <class Scalar, class Node>
+  class DefaultArithmeticBase<MultiVector<Scalar,Node> > {
+  public:
+    static void
+    GEMM (MultiVector<Scalar,Node> &C,
+          Teuchos::ETransp transA,
+          Teuchos::ETransp transB,
+          Scalar alpha,
+          const MultiVector<Scalar,Node> &A,
+          const MultiVector<Scalar,Node> &B,
+          Scalar beta)
+    {
+      NodeGEMM<Scalar,Node>::GEMM(transA, transB, alpha, A, B, beta, C);
+    }
+
+    static void Random(MultiVector<Scalar,Node> &A) {
+      // TODO: consider adding rand() functionality to node
+      // in the meantime, just generate random numbers via Teuchos and then copy to node
+      typedef Teuchos::ScalarTraits<Scalar> SCT;
+      const size_t stride = A.getStride();
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      if (nR*nC == 0) return;
+      RCP<Node> node = A.getNode();
+      ArrayRCP<Scalar> Adata = A.getValuesNonConst();
+      // we'll overwrite all data covered by the multivector, but not off-stride data
+      // therefore, we are write-only only in the case that stride=nR
+      ReadWriteOption rw = (stride == nR ? WriteOnly : ReadWrite);
+      ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(rw,stride*(nC-1)+nR,Adata);
+      for (size_t j=0; j<nC; ++j) {
+        for (size_t i=0; i<nR; ++i) {
+          mvdata[j*stride + i] = SCT::random();
+        }
+      }
+      mvdata = null;
+    }
+
+    inline static void
+    initializeValues (MultiVector<Scalar,Node> &A,
+                      size_t numRows, size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride)
+    {
+      A.initializeValues(numRows,numCols,values,stride);
+    }
+
+    inline static void
+    initializeValues (MultiVector<Scalar,Node> &A,
+                      size_t numRows,
+                      size_t numCols,
+                      const ArrayRCP<Scalar> &values,
+                      size_t stride,
+                      size_t origNumRows,
+                      size_t origNumCols)
+    {
+      A.initializeValues(numRows,numCols,values,stride,origNumRows,origNumCols);
+    }
+
+    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
+      return A.getValues();
+    }
+
+    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A, size_t j) {
+      return A.getValues(j);
+    }
+
+    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A) {
+      return A.getValuesNonConst();
+    }
+
+    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A, size_t j) {
+      return A.getValuesNonConst(j);
+    }
+
+    inline static size_t getNumRows(const MultiVector<Scalar,Node> &A) {
+      return A.getNumRows();
+    }
+
+    inline static size_t getNumCols(const MultiVector<Scalar,Node> &A) {
+      return A.getNumCols();
+    }
+
+    inline static size_t getStride(const MultiVector<Scalar,Node> &A) {
+      return A.getStride();
+    }
+
+    inline static size_t getOrigNumRows (const MultiVector<Scalar,Node> &A) {
+      return A.getOrigNumRows ();
+    }
+
+    inline static size_t getOrigNumCols (const MultiVector<Scalar,Node> &A) {
+      return A.getOrigNumCols ();
+    }
+
+    inline static RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {
+      return A.getNode();
+    }
+  };
+
   /// \brief Partial specialization of DefaultArithmetic for MultiVector<Scalar,Node>.
   ///
   /// \tparam Scalar The type of entries of the multivector.
   /// \tparam The Kokkos Node type.
   template <class Scalar, class Node>
-  class DefaultArithmetic<MultiVector<Scalar,Node> > {
+  class DefaultArithmetic<MultiVector<Scalar, Node> > : 
+    public DefaultArithmeticBase<MultiVector<Scalar, Node> > {
   public:
     static void Init (MultiVector<Scalar,Node> &A, Scalar alpha) {
       const size_t nR = A.getNumRows();
@@ -741,18 +855,6 @@ namespace Kokkos {
       op.x = Adata(0,nR).getRawPtr();
       op.y = Bdata(0,nR).getRawPtr();
       return node->parallel_reduce(0,nR,op);
-    }
-
-    static void
-    GEMM (MultiVector<Scalar,Node> &C,
-          Teuchos::ETransp transA,
-          Teuchos::ETransp transB,
-          Scalar alpha,
-          const MultiVector<Scalar,Node> &A,
-          const MultiVector<Scalar,Node> &B,
-          Scalar beta)
-    {
-      NodeGEMM<Scalar,Node>::GEMM(transA, transB, alpha, A, B, beta, C);
     }
 
     static void
@@ -1111,28 +1213,6 @@ namespace Kokkos {
       }
     }
 
-    static void Random(MultiVector<Scalar,Node> &A) {
-      // TODO: consider adding rand() functionality to node
-      // in the meantime, just generate random numbers via Teuchos and then copy to node
-      typedef Teuchos::ScalarTraits<Scalar> SCT;
-      const size_t stride = A.getStride();
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      if (nR*nC == 0) return;
-      RCP<Node> node = A.getNode();
-      ArrayRCP<Scalar> Adata = A.getValuesNonConst();
-      // we'll overwrite all data covered by the multivector, but not off-stride data
-      // therefore, we are write-only only in the case that stride=nR
-      ReadWriteOption rw = (stride == nR ? WriteOnly : ReadWrite);
-      ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(rw,stride*(nC-1)+nR,Adata);
-      for (size_t j=0; j<nC; ++j) {
-        for (size_t i=0; i<nR; ++i) {
-          mvdata[j*stride + i] = SCT::random();
-        }
-      }
-      mvdata = null;
-    }
-
     static void Abs(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -1234,68 +1314,37 @@ namespace Kokkos {
         }
       }
     }
-
-    inline static void
-    initializeValues (MultiVector<Scalar,Node> &A,
-                      size_t numRows, size_t numCols,
-                      const ArrayRCP<Scalar> &values,
-                      size_t stride)
-    {
-      A.initializeValues(numRows,numCols,values,stride);
-    }
-
-    inline static void
-    initializeValues (MultiVector<Scalar,Node> &A,
-                      size_t numRows,
-                      size_t numCols,
-                      const ArrayRCP<Scalar> &values,
-                      size_t stride,
-                      size_t origNumRows,
-                      size_t origNumCols)
-    {
-      A.initializeValues(numRows,numCols,values,stride,origNumRows,origNumCols);
-    }
-
-    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
-      return A.getValues();
-    }
-
-    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A, size_t j) {
-      return A.getValues(j);
-    }
-
-    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A) {
-      return A.getValuesNonConst();
-    }
-
-    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A, size_t j) {
-      return A.getValuesNonConst(j);
-    }
-
-    inline static size_t getNumRows(const MultiVector<Scalar,Node> &A) {
-      return A.getNumRows();
-    }
-
-    inline static size_t getNumCols(const MultiVector<Scalar,Node> &A) {
-      return A.getNumCols();
-    }
-
-    inline static size_t getStride(const MultiVector<Scalar,Node> &A) {
-      return A.getStride();
-    }
-
-    inline static size_t getOrigNumRows (const MultiVector<Scalar,Node> &A) {
-      return A.getOrigNumRows ();
-    }
-
-    inline static size_t getOrigNumCols (const MultiVector<Scalar,Node> &A) {
-      return A.getOrigNumCols ();
-    }
-
-    inline static RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {
-      return A.getNode();
-    }
   };
+
+#if 0
+  // Partial specialization for Node=Kokkos::SerialNode.
+  template <class Scalar>
+  void
+  DefaultArithmetic<MultiVector<Scalar, SerialNode> >::
+  Init (MultiVector<Scalar, SerialNode> &A, Scalar alpha) 
+  {
+    const size_t numRows = A.getNumRows ();
+    const size_t numCols = A.getNumCols ();
+    ArrayRCP<Scalar> A_raw = A.getValuesNonConst ().getRawPtr ();
+    const size_t stride = A.getStride();
+
+    if (stride == numRows) {
+      const size_t numElts = numRows * numCols;
+      for (size_t i = 0; i < numElts; ++i) {
+	A_raw[i] = alpha;
+      }
+    }
+    else {
+      // one kernel invocation for each column
+      for (size_t j = 0; j < numCols; ++j) {
+	Scalar* const A_j = &A_raw[j*stride];
+	for (size_t i = 0; i < numRows; ++i) {
+	  A_j[i] = alpha;
+	}
+      }
+    }
+  }
+#endif // 0
 
 } // namespace Kokkos
 
