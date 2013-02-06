@@ -452,7 +452,7 @@ namespace Intrepid {
   ///
   template<typename T>
   Tensor<T>
-  symm(Tensor<T> const & A);
+  sym(Tensor<T> const & A);
 
   ///
   /// Skew symmetric part of 2nd-order tensor

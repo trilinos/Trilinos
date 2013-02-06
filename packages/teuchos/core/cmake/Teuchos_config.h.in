@@ -34,23 +34,24 @@
 
 #cmakedefine HAVE_TEUCHOS_MPI
 
-#cmakedefine HAVE_COMPLEX_BLAS_PROBLEM
-
-#cmakedefine HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+/* detected problems with the blas and solution methods */
+#cmakedefine HAVE_TEUCHOS_BLASFLOAT
+#cmakedefine HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX
+#cmakedefine HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN
 
 #cmakedefine HAVE_SLAPY2_PROBLEM
-
 #cmakedefine HAVE_SLAPY2_DOUBLE_RETURN
 
 #cmakedefine HAVE_COMPLEX_BLAS
+#cmakedefine HAVE_COMPLEX_BLAS_PROBLEM
+#cmakedefine HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+#cmakedefine HAVE_VECLIB_COMPLEX_BLAS
 
 /* define if the compiler supports access of protected templated nested
    classes in derived classes */
 #cmakedefine HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
 
 #cmakedefine HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-
-#cmakedefine HAVE_TEUCHOS_BLASFLOAT
 
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 

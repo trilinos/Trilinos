@@ -99,6 +99,17 @@ namespace MueLu {
     }
 
     //!
+    Teuchos::Ptr<FactoryManagerBase> GetFactoryManager(int levelID) const {
+      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
+      return levelManagers_[levelID](); // throw exception if out of bound.
+    }
+
+    //! returns number of factory managers stored in levelManagers_ vector.
+    size_t getNumFactoryManagers() const {
+      return levelManagers_.size();
+    }
+
+    //!
     void SetFactoryManagerCoarsestLevel(RCP<FactoryManagerBase>& manager) {
       coarsestLevelManager_ = manager;
     }
@@ -160,15 +171,7 @@ namespace MueLu {
     // TODO: merge with SetupMatrix ?
     virtual void SetupExtra(Hierarchy & H) const { }
 
-    // Hierarchy parameters
-    int                   numDesiredLevel_;
-    Xpetra::global_size_t maxCoarseSize_;
-
-  private:
-    // Levels
-    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
-    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
-
+    // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
     Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
@@ -187,6 +190,15 @@ namespace MueLu {
 
       return levelManagers_[levelID](); // throw exception if out of bound.
     }
+
+    // Hierarchy parameters
+    int                   numDesiredLevel_;
+    Xpetra::global_size_t maxCoarseSize_;
+
+  private:
+    // Levels
+    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
+    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
 
   }; // class HierarchyManager
 

@@ -39,6 +39,22 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Epetra_ConfigDefs.h"
+#include "Epetra_Comm.h"
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+
+template<typename int_type>
+int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact );
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 					   const Epetra_Comm  &comm, 
 					   Epetra_Map *& map, 
@@ -46,4 +62,16 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 					   Epetra_Vector *& x, 
 					   Epetra_Vector *& b,
 					   Epetra_Vector *&xexact ) ;
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadMatrixMarket2Epetra64( char *data_file,
+					   const Epetra_Comm  &comm, 
+					   Epetra_Map *& map, 
+					   Epetra_CrsMatrix *& A, 
+					   Epetra_Vector *& x, 
+					   Epetra_Vector *& b,
+					   Epetra_Vector *&xexact ) ;
+
+#endif

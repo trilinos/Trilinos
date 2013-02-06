@@ -404,7 +404,7 @@ namespace MueLu {
     dtemp.clear();  // free double array
 
     // we can now determine a matching column map for the result
-    Epetra_Map gcmap(-1,N_local+N_rcvd,&cmap[0],0,A.Comm());
+    Epetra_Map gcmap(-1,N_local+N_rcvd,&cmap[0],B.ColMap().IndexBase(),A.Comm());
 
     int allocated=0;
     int rowlength;

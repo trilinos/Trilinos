@@ -1066,7 +1066,13 @@ or if the number of entries in this row exceed the Length parameter.
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int LRID( long long GRID_in) const {return(Graph_.LRID(GRID_in));}
 #endif
-  
+
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
+  int LRID(long long GRID_in) const {return(Graph_.LRID(GRID_in));}
+#endif
+
   //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int  GRID(int LRID_in) const {

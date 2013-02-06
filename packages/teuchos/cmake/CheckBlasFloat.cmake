@@ -8,21 +8,48 @@ FUNCTION(CHECK_BLAS_FLOAT VARNAME)
   "
 #define F77_BLAS_MANGLE${F77_BLAS_MANGLE}
 
-#define SASUM_F77   F77_BLAS_MANGLE(sasum,SASUM)
+#include <complex>
 
-extern \"C\" { float SASUM_F77(const int* n, const float x[], const int* incx); }
+#define SDOT_F77    F77_BLAS_MANGLE(sdot,   SDOT)
+#define SASUM_F77   F77_BLAS_MANGLE(sasum,  SASUM)
+#define SCASUM_F77  F77_BLAS_MANGLE(scasum, SCASUM)
+#define SNRM2_F77   F77_BLAS_MANGLE(snrm2,  SNRM2)
+#define SCNRM2_F77  F77_BLAS_MANGLE(scnrm2, SCNRM2)
+
+extern \"C\" {
+  float SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
+  float SASUM_F77(const int* n, const float x[], const int* incx);
+  float SCASUM_F77(const int* n, const std::complex<float> x[], const int* incx);
+  float SNRM2_F77(const int* n, const float x[], const int* incx);
+  float SCNRM2_F77(const int* n, const std::complex<float> x[], const int* incx);
+}
 
 int main()
 {
-
-  const int n = 1;
-  const float x[n] = { -1.0 };
+  const int n = 3;
+  const float x[n] = { -1.0, -2.0, -2.0};
+  const std::complex<float> xc[n] = { std::complex<float>(3.0,-4.0),
+                                      std::complex<float>(0.0,0.0),
+                                      std::complex<float>(0.0,0.0) };
   const int incx = 1;
+  float val;
 
-  float val = SASUM_F77(&n, x, &incx);
+  val = SDOT_F77(&n, x, &incx, x, &incx);
+  if (val != 9.0) return 1;
 
-  return (val == 1.0 ? 0 : 1);
+  val = SASUM_F77(&n, x, &incx);
+  if (val != 5.0) return 1;
 
+  val = SNRM2_F77(&n, x, &incx);
+  if (val != 3.0) return 1;
+
+  val = SCASUM_F77(&n, xc, &incx);
+  if (val != 7.0) return 1;
+
+  val = SCNRM2_F77(&n, xc, &incx);
+  if (val != 5.0) return 1;
+
+  return 0;
 }
   "
   )

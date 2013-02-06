@@ -46,6 +46,7 @@ class Epetra_Comm;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Vector;
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 class Epetra_Export;
@@ -141,7 +142,14 @@ return 0 ;
   \param In
   comm - Epetra communicator
   */
-  CrsMatrixGallery( const string name, const Epetra_Comm & comm );
+  CrsMatrixGallery( const string name, const Epetra_Comm & comm, bool UseLongLong
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+	  = false
+#elif defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+	  = true
+#endif
+	  );
+
 
   //! Creates an Triutils_Gallery object using a given map.
   /*! Create a Triutils_Gallery object using an Epetra_Map.
@@ -275,88 +283,132 @@ protected:
     
   */
   void CreateMap();
+
+  template<typename int_type>
+  void TCreateMap();
   
   //! Creates the CrdMatrix.
   void CreateMatrix();
 
+  template<typename int_type>
+  void TCreateMatrix();
+
   //! Creates the exact solution.
+  template<typename int_type>
+  void TCreateExactSolution();
+
   void CreateExactSolution();
 
   //! Creates the starting solution.
   void CreateStartingSolution();
 
   //! Create the RHS corresponding to the desired exact solution.  
+  template<typename int_type>
+  void TCreateRHS();
+
   void CreateRHS();
   
   // Create an identity matrix.
+  template<typename int_type>
   void CreateEye();
 
   // Creates a diagonal matrix. Elements on the diagonal are called `a'.
+  template<typename int_type>
   void CreateMatrixDiag();
     
   // Creates a tridiagonal matrix. Elements on the diagonal are called `a',
   // elements on the sub-diagonal 'b', and on the super-diagonal 'c'.
+  template<typename int_type>
   void CreateMatrixTriDiag();
   
   // Create a matrix for a Laplacian in 1D
+  template<typename int_type>
   void CreateMatrixLaplace1d();
   
+  template<typename int_type>
   void CreateMatrixLaplace1dNeumann();
   
+  template<typename int_type>
   void CreateMatrixCrossStencil2d();
 
+  template<typename int_type>
   void CreateMatrixCrossStencil2dVector();
 
+  template<typename int_type>
   void CreateMatrixLaplace2d();
 
+  template<typename int_type>
   void CreateMatrixLaplace2d_BC();
 
+  template<typename int_type>
   void CreateMatrixLaplace2d_9pt();
 
+  template<typename int_type>
   void CreateMatrixStretched2d();
 
+  template<typename int_type>
   void CreateMatrixRecirc2d();
 
+  template<typename int_type>
   void CreateMatrixRecirc2dDivFree();
   
+  template<typename int_type>
   void CreateMatrixLaplace2dNeumann();
   
+  template<typename int_type>
   void CreateMatrixUniFlow2d();
   
+  template<typename int_type>
   void CreateMatrixLaplace3d();
 
+  template<typename int_type>
   void CreateMatrixCrossStencil3d();
 
+  template<typename int_type>
   void CreateMatrixCrossStencil3dVector();
 
+  template<typename int_type>
   void CreateMatrixLehmer();
 
+  template<typename int_type>
   void CreateMatrixMinij();
 
+  template<typename int_type>
   void CreateMatrixRis();
 
+  template<typename int_type>
   void CreateMatrixHilbert();
 
+  template<typename int_type>
   void CreateMatrixJordblock();
 
+  template<typename int_type>
   void CreateMatrixCauchy();
 
+  template<typename int_type>
   void CreateMatrixFiedler();
 
+  template<typename int_type>
   void CreateMatrixHanowa();
 
+  template<typename int_type>
   void CreateMatrixKMS();
   
+  template<typename int_type>
   void CreateMatrixParter();
 
+  template<typename int_type>
   void CreateMatrixPei();
 
+  template<typename int_type>
   void CreateMatrixOnes();
 
+  template<typename int_type>
   void CreateMatrixVander();
   
   // read an HB matrix. This function requires other Trilinos util files
-  void ReadMatrix();
+  template<typename int_type>
+  void TReadMatrix();
 
   // returns the neighbors of a given node. The node is supposed to be on
   // a 2D Cartesian grid 
@@ -368,6 +420,9 @@ protected:
   void  GetNeighboursCartesian3d( const int i, const int nx, const int ny, const int nz,
 				  int & left, int & right, int & lower, int & upper,
 				  int & below, int & above );
+
+  template<typename int_type>
+  void TGetCartesianCoordinates(double * & x, double * & y, double * & z);
 
   // put to NULL or default values all internal data
   void ZeroOutData();
@@ -403,12 +458,18 @@ protected:
 
   // information about the problem to generate
   string name_;
-  int NumGlobalElements_;
+  long long NumGlobalElements_;
   int NumMyElements_;
-  int * MyGlobalElements_;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int * MyGlobalElements_int_;
+  std::vector<int> MapMap_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long * MyGlobalElements_LL_;
+  std::vector<long long> MapMap_LL_;
+#endif
   string MapType_;
   bool ContiguousMap_;
-  std::vector<int> MapMap_;
   string ExactSolutionType_;
   string StartingSolutionType_;
   string ExpandType_;
@@ -436,12 +497,31 @@ protected:
   string ErrorMsg;
   string OutputMsg;
   bool verbose_;
-  
+
+  bool UseLongLong_;
+
+  template<typename int_type>
+  int_type*& MyGlobalElementsPtr();
+
+  template<typename int_type>
+  std::vector<int_type>& MapMapRef();
 };
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+template<> inline long long*& CrsMatrixGallery::MyGlobalElementsPtr<long long>() { return MyGlobalElements_LL_; }
+template<> inline std::vector<long long>& CrsMatrixGallery::MapMapRef<long long>() { return MapMap_LL_; }
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+template<> inline int*& CrsMatrixGallery::MyGlobalElementsPtr<int>() { return MyGlobalElements_int_; }
+template<> inline std::vector<int>& CrsMatrixGallery::MapMapRef<int>() { return MapMap_int_; }
+#endif
 
 // ========================= //
 // extension to VBR matrices //
 // ==========================//
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // CJ: TODO FIXME for long long
 
 class VbrMatrixGallery : public CrsMatrixGallery
 {
@@ -459,8 +539,14 @@ public:
     VbrLinearProblem_(0)
    {} ;
 
-  VbrMatrixGallery(const string name, const Epetra_Comm & Comm) :
-    CrsMatrixGallery(name,Comm),
+  VbrMatrixGallery(const string name, const Epetra_Comm & Comm, bool UseLongLong
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+	  = false
+#elif defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+	  = true
+#endif
+	  ) :
+    CrsMatrixGallery(name,Comm,UseLongLong),
     VbrMatrix_(0),
     VbrExactSolution_(0),
     VbrStartingSolution_(0),
@@ -510,6 +596,9 @@ public:
   // create the Vbr matrix. 
   void CreateVbrMatrix(void);  
 
+  template<typename int_type>
+  void TCreateVbrMatrix(void);
+
   //! Returns a pointer to Epetra_LinearProblem for VBR
   Epetra_LinearProblem * GetVbrLinearProblem();
 
@@ -529,6 +618,9 @@ protected:
   // Creates a block map, based on map, wich NumPDEEqns equations on each node.
   void CreateBlockMap(void);
   
+  template<typename int_type>
+  void TCreateBlockMap(void);
+
   //! Creates the exact solution for a Epetra_VbrMatrix.
   void CreateVbrExactSolution(void);
 
@@ -548,8 +640,9 @@ protected:
 
   // linear problem  
   Epetra_LinearProblem * VbrLinearProblem_;
-
 };
+
+#endif
 
 } // namespace Trilinos_Util
 #endif

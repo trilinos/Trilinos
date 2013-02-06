@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -56,10 +57,12 @@
 //==============================================================================
 Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & comm) 
   : Comm_(comm.Clone()),
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     OperatorDomainMap_(Epetra_Map(0,0,comm)),
     OperatorRangeMap_(Epetra_Map(0,0,comm)),
     RowMatrixRowMap_(Epetra_Map(0,0,comm)),
     RowMatrixColMap_(Epetra_Map(0,0,comm)),
+#endif
     NumMyNonzeros_(0),
     NumGlobalNonzeros_(0),
     MaxNumEntries_(0),

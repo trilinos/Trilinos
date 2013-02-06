@@ -9,17 +9,12 @@
 #include <Ioss_CodeTypes.h>
 #include <visualization/Iovs_DatabaseIO.h>
 #include <tokenize.h>
+#include <ParaViewCatalystSierraAdaptor.h>
 
-#include <string>
 #include <cstring>
 #include <cctype>
 #include <cstdlib>
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <set>
 #include <iterator>
-#include <time.h>
 
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
@@ -66,29 +61,20 @@ namespace Iovs {
 
   {
     dbState = Ioss::STATE_UNKNOWN; 
-    // assume true until proven false
 
-// with introduction of paraview sierra catalyst plugin, the Iovs stuff is
-// always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
-// plugin architecture, there is no overhead for sierra when the plugin is
-// not loaded.  The #define test is left here for now in case developers
-// need to use it.
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
-    int err; 
-    iMesh_newMesh (filename.c_str(), &mesh_instance, &err, 1);
-    iMesh_getRootSet (mesh_instance, &rootset, &err);
-#endif
+    this->pvcsa = 0;
+    this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
+    if(this->pvcsa)
+      this->pvcsa->InitializeParaViewCatalyst(filename.c_str());
   }
 
   DatabaseIO::~DatabaseIO() 
   {
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
     try {
-      int err;
-      iMesh_dtor (mesh_instance, &err);
+      if(this->pvcsa)
+        delete this->pvcsa;
     } catch (...) {
     }
-#endif
   }
 
   void DatabaseIO::release_memory()
@@ -132,11 +118,8 @@ namespace Iovs {
   bool DatabaseIO::begin_state(Ioss::Region* /* region */, int state, double time)
   {
     Ioss::SerializeIO   serializeIO__(this);
-
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
-    int err;
-    iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
-#endif
+    if(this->pvcsa)
+      this->pvcsa->SetTimeData(time, state - 1);
 
     // Zero global variable array...
     // std::fill(globalValues.begin(), globalValues.end(), 0.0);
@@ -147,11 +130,11 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
-    // TODO, most likely global fields can be immediate, not delayed like ex
-    int err;
-    iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
-#endif
+    if(this->pvcsa)
+      {
+      this->pvcsa->PerformCoProcessing();
+      this->pvcsa->ReleaseMemory();
+      }
 
     return true;
   }
@@ -163,8 +146,8 @@ namespace Iovs {
 
   //------------------------------------------------------------------------
   int64_t DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
-                                     const Ioss::Field& field,
-                                     void *data, size_t data_size) const
+                                         const Ioss::Field& field,
+                                         void *data, size_t data_size) const
   {
     // For now, assume that all TRANSIENT fields on a region
     // are REDUCTION fields (1 value).  We need to gather these
@@ -174,34 +157,36 @@ namespace Iovs {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Ioss::Field::RoleType role = field.get_role();
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
-        int ierr = 0;
         const Ioss::VariableType *var_type = field.transformed_storage();
         int components = var_type->component_count();
         Ioss::Field::BasicType ioss_type = field.get_type();
-        /*
-        if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
-          iMesh_putIntGlobalField (mesh_instance, 
-                field.get_name ().c_str (), components, 
-                static_cast<int*>(data), &ierr);
-        } else {
-          iMesh_putDblGlobalField (mesh_instance, 
-                field.get_name ().c_str (), components, 
-                static_cast<double*>(data), &ierr);
-        }
-        */
+
+        std::vector<std::string> component_names;
+        if (components > 1)
+          {
+          char field_suffix_separator = this->get_field_separator();
+          for (int i=0; i < components; i++)
+            {
+            component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
+            }
+          }
+        else
+          {
+          component_names.push_back(field.get_name());
+          }
+
           if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
-            iMesh_putDblGlobalField (mesh_instance, 
-                  field.get_name ().c_str (), components, 
-                  static_cast<double*>(data), &ierr);
+            if(this->pvcsa)
+              this->pvcsa->CreateGlobalVariable(component_names,
+                                                static_cast<double*>(data));
           }
           else if (ioss_type == Ioss::Field::INTEGER) {
-            iMesh_putIntGlobalField (mesh_instance, 
-                  field.get_name ().c_str (), components, 
-                  static_cast<int*>(data), &ierr);
+            if(this->pvcsa)
+              this->pvcsa->CreateGlobalVariable(component_names,
+                                                static_cast<int*>(data));
           }
           else if (ioss_type == Ioss::Field::INT64) {
             // FIX 64 UNSAFE
@@ -225,7 +210,6 @@ namespace Iovs {
                << "This is probably an internal error; please notify gdsjaar@sandia.gov";
         IOSS_ERROR(errmsg);
       }
-#endif
       return num_to_get;
     }
   }
@@ -238,43 +222,14 @@ namespace Iovs {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       if (num_to_get > 0) {
-        int ierr = 0;
-
         Ioss::Field::RoleType role = field.get_role();
 
         if (role == Ioss::Field::MESH) {
           if (field.get_name() == "mesh_model_coordinates") {
-            // Data required by upper classes store x0, y0, z0, ... xn, yn, zn
-            // Data stored in exodusII file is x0, ..., xn, y0, ..., yn, z0, ..., zn
-            // so we have to allocate some scratch memory to read in the data
-            // and then map into supplied 'data'
-
-            // Cast 'data' to correct size -- double
-            double *rdata = static_cast<double*>(data);
-
-            iBase_EntityHandle *handles = 0;  
-            int allocated = 0, size = 0;
-            std::vector<double> interleaved;
-            if (spatialDimension != 3) {
-              interleaved.resize (num_to_get * 3);
-              int leftIndex = 0, rightIndex = 0;
-              for (size_t i=0; i < num_to_get; i++) {
-                interleaved[leftIndex++] = rdata[rightIndex++];
-                interleaved[leftIndex++] = rdata[rightIndex++];
-                interleaved[leftIndex++] = 0.0L;
-              }
-              rdata = &interleaved[0];
-            }
-            iMesh_createVtxArr (mesh_instance, num_to_get, iBase_INTERLEAVED,
-                                rdata, num_to_get * 3, 
-                                &handles, &allocated, &size,
-                                &ierr);
-            iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
-                                  "original coordinates", 3, iBase_INTERLEAVED,
-                                  static_cast<double*>(rdata), num_to_get * 3, num_to_get,
-                                  &ierr);
+            if(this->pvcsa)
+              this->pvcsa->InitializeGlobalPoints(num_to_get,
+                                                  static_cast<double*>(data));
           } else if (field.get_name() == "ids") {
             // The ids coming in are the global ids; their position is the
             // local id -1 (That is, data[0] contains the global id of local
@@ -295,31 +250,28 @@ namespace Iovs {
           Ioss::Field::BasicType ioss_type = field.get_type ();
           const Ioss::VariableType *var_type = field.transformed_storage();
           int components = var_type->component_count();
-          int err;
-          /*
-          if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
-            iMesh_putIntEntityField (mesh_instance, iBase_VERTEX, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<int*>(data), num_to_get * components, num_to_get,
-                  &err);
-          } else {
-            iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<double*>(data), num_to_get * components, num_to_get,
-                  &err);
-          }
-          */
+          std::vector<std::string> component_names;
+          if (components > 1)
+            {
+            char field_suffix_separator = this->get_field_separator();
+            for (int i=0; i < components; i++)
+              {
+              component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
+              }
+            }
+          else
+            {
+            component_names.push_back(field.get_name());
+            }
           if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
-            iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<double*>(data), num_to_get * components, num_to_get,
-                  &err);
+            if(this->pvcsa)
+              this->pvcsa->CreateNodalVariable(component_names,
+                                               static_cast<double*>(data));
           }
           else if (ioss_type == Ioss::Field::INTEGER) {
-            iMesh_putIntEntityField (mesh_instance, iBase_VERTEX, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<int*>(data), num_to_get * components, num_to_get,
-                  &err);
+            if(this->pvcsa)
+              this->pvcsa->CreateNodalVariable(component_names,
+                                               static_cast<int*>(data));
           }
           else if (ioss_type == Ioss::Field::INT64) {
             // FIX 64 UNSAFE
@@ -329,43 +281,11 @@ namespace Iovs {
             IOSS_ERROR(errmsg);
             exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
           }
-
-          // add in the displacement so that it visualizes correctly.
-          if (field.get_name () == "displ") {
-            double *coords = 0;
-            int coords_allocated = 0, components = 0, size = 0;
-            iMesh_getDblEntityField (mesh_instance, iBase_VERTEX, 
-                                     "original coordinates", &components, iBase_INTERLEAVED,
-                                     &coords, &coords_allocated, &size, &err);
-            if (num_to_get == static_cast<size_t>(size)) {
-                double *new_coords = (double *) malloc (coords_allocated);
-
-                double *dbl_array = static_cast<double*>(data);
-                int leftIndex = 0, rightIndex = 0;
-                for (size_t i=0; i < num_to_get; i++) {
-                  new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
-                  leftIndex ++;
-                  new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
-                  leftIndex ++;
-                  if (components == 3) {
-                    new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
-                  } else {
-                    new_coords[leftIndex] = coords[leftIndex];
-                  }
-                  leftIndex ++;
-                }
-                iMesh_setVtxArrCoords (mesh_instance, 0, 0, iBase_INTERLEAVED,
-                      new_coords, size, &err);
-                free (new_coords);
-            }
-            free (coords);
-          }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
           // write_global_field(EX_NODAL, field, nb, data);
         }
       }
-#endif
       return num_to_get;
     }
   }
@@ -374,13 +294,10 @@ namespace Iovs {
                                      const Ioss::Field& field,
                                      void *data, size_t data_size) const
   {
-      //std::cout << "DatabaseIO::put_field_internal executing\n";
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       if (num_to_get > 0) {
-        int ierr = 0;
 
         // Get the element block id and element count
         
@@ -396,74 +313,18 @@ namespace Iovs {
             if (element_count > 0) {
               // Map element connectivity from global node id to local node id.
               // Do it in 'data' ...
-              int element_nodes =
-                eb->get_property("topology_node_count").get_int();
+              int element_nodes = eb->get_property("topology_node_count").get_int();
               assert(field.transformed_storage()->component_count() == element_nodes);
-              int imesh_topology;
-              // TODO this is imperfect for higher order elements
-              // need to correct for those
-              switch (element_nodes) {
-                case 1:
-                  imesh_topology = iMesh_POINT;
-                  break;
-                case 2:
-                  imesh_topology = iMesh_LINE_SEGMENT;
-                  break;
-                case 3:
-                  imesh_topology = iMesh_TRIANGLE;
-                  break;
-                case 4:
-                  // TODO pick
-                  imesh_topology = iMesh_QUADRILATERAL;
-                  imesh_topology = iMesh_TETRAHEDRON;
-                  break;
-                case 5:
-                  imesh_topology = iMesh_PYRAMID;
-                  break;
-                case 6:
-                  imesh_topology = iMesh_PRISM;
-                  break;
-                case 8:
-                  imesh_topology = iMesh_HEXAHEDRON;
-                  break;
-                default:
-                  imesh_topology = iMesh_ALL_TOPOLOGIES;
-              };
-
-              if (imesh_topology != iMesh_ALL_TOPOLOGIES) {
-		nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
-
-                iBase_EntityHandle *vertexHandles = 0;
-                int vertexAllocated = 0, vertexSize;
-                iMesh_getEntities (mesh_instance, rootset, 
-                                  iBase_VERTEX, iMesh_ALL_TOPOLOGIES,
-                                  &vertexHandles, &vertexAllocated, &vertexSize,
-                                  &ierr);
-                if (ierr == 0) {
-                  iBase_EntityHandle* connectHandles = new iBase_EntityHandle[num_to_get * element_nodes];
-                  iBase_EntityHandle *elementHandles = 0;
-                  int elementAllocated = 0, elementSize;
-                  int *status = 0;
-                  int statusAllocated = 0, statusSize;
-
-		  int* connectInt = static_cast<int*>(data);
-		  int64_t* connectInt64 = static_cast<int64_t*>(data);
-                  for (size_t i=0; i < num_to_get * element_nodes; i++) {
-                    if (field.get_type() == Ioss::Field::INTEGER) {
-                      connectHandles[i] = vertexHandles[connectInt[i] - 1];
-                    } else {
-                      connectHandles[i] = vertexHandles[connectInt64[i] - 1];
-                    }
-                  }
-                  iMesh_createEntArr (mesh_instance, imesh_topology,
-                    connectHandles, num_to_get * element_nodes,
-                    &elementHandles, &elementAllocated, &elementSize,
-                    &status, &statusAllocated, &statusSize,
-                    &ierr);
-              
-                delete [] connectHandles;
-                }
-              }
+              nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
+                  int bid = 0;
+                  if (eb->property_exists("id"))
+                     bid = eb->get_property("id").get_int();
+                  if(this->pvcsa)
+                    this->pvcsa->CreateElementBlock(eb->name().c_str(),
+                                                    bid,
+                                                    element_nodes,
+                                                    num_to_get,
+                                                    static_cast<int*>(data));
             }
           } else if (field.get_name() == "ids") {
             // Another 'const-cast' since we are modifying the database just
@@ -479,7 +340,6 @@ namespace Iovs {
             num_to_get = 0;
           }
         }
-
         else if (role == Ioss::Field::ATTRIBUTE) {
                 /* TODO do we care about attributes?
           std::string att_name = eb->name() + SEP() + field.get_name();
@@ -530,7 +390,6 @@ namespace Iovs {
           Ioss::Field::BasicType ioss_type = field.get_type ();
           const Ioss::VariableType *var_type = field.transformed_storage();
           int components = var_type->component_count();
-          int err;
           if (ioss_type == Ioss::Field::INT64) {
             // FIX 64 UNSAFE
             std::cerr << "pfi element 2 INT64 issue\n";
@@ -540,23 +399,38 @@ namespace Iovs {
             IOSS_ERROR(errmsg);
             exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
           }
+          int bid = 0;
+          if (eb->property_exists("id"))
+             bid = eb->get_property("id").get_int();
+          std::vector<std::string> component_names;
+          if (components > 1)
+            {
+            char field_suffix_separator = this->get_field_separator();
+            for (int i=0; i < components; i++)
+              {
+              component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
+              }
+            }
+          else
+            {
+            component_names.push_back(field.get_name());
+            }
           if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
-            iMesh_putIntEntityField (mesh_instance, iBase_REGION, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<int*>(data), num_to_get * components, num_to_get,
-                  &err);
+            if(this->pvcsa)
+              this->pvcsa->CreateElementVariable(component_names,
+                                                 bid,
+                                                 static_cast<int*>(data));
           } else {
-            iMesh_putDblEntityField (mesh_instance, iBase_REGION, 
-                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<double*>(data), num_to_get * components, num_to_get,
-                  &err);
+            if(this->pvcsa)
+              this->pvcsa->CreateElementVariable(component_names,
+                                                 bid,
+                                                 static_cast<double*>(data));
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
         }
       }
-#endif
       return num_to_get;
   }
 

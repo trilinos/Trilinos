@@ -208,6 +208,16 @@ namespace MueLu {
     void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
                  const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
 
+    /*!
+      @brief Print matrices in the multigrid hierarchy.
+
+      @param[in] start start level
+      @param[in] end   end level
+
+      Default behavior is to print the "A" matrices from the entire hierarchy.
+    */
+    void Write(const LO &start=-1, const LO &end=-1);
+
     //@}
 
     //! @name Permanent storage

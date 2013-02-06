@@ -579,7 +579,11 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_.SetIndicesAreLocal(true);
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
+#else
+  throw ReportError("Epetra_CrsMatrix::InsertMyValues: Failure because neither 32 bit nor 64 bit indices insertable.", -1);
+#endif
 
   return(0);
 
@@ -596,7 +600,11 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_.SetIndicesAreLocal(true);
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
+#else
+    throw ReportError("Epetra_CrsMatrix::InsertMyValues: Failure because neither 32 bit nor 64 bit indices insertable.", -1);
+#endif
 
   return(0);
 
@@ -863,7 +871,12 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(long long Row, int NumEntries,
   int j;
   int ierr = 0;
 
-  int locRow = Graph_.LRID(Row); // Normalize row range
+  // Normalize row range
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int locRow = LRID((int) Row);
+#else
+  int locRow = LRID(Row);
+#endif
     
   if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -1044,7 +1057,12 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(long long Row, int NumEntries, const d
   int j;
   int ierr = 0;
 
-  int locRow = Graph_.LRID(Row); // Normalize row range
+  // Normalize row range
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int locRow = LRID((int) Row);
+#else
+  int locRow = LRID(Row);
+#endif
     
   if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -2395,7 +2413,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
           int AlocalRow = rowMap.LID(Row);
           EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, int_Indices));
           for(j=0; j<NumEntries; ++j) {
-            int_Indices[j] = LCID(colMap.GID64(int_Indices[j]));
+            int_Indices[j] = LCID((int_type) colMap.GID64(int_Indices[j]));
           }
     ierr = ReplaceMyValues(i, NumEntries, values, int_Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
@@ -2446,7 +2464,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
           EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, int_Indices));
           ToRow = (int_type) GRID64(PermuteToLIDs[i]);
           for(j=0; j<NumEntries; ++j) {
-            int_Indices[j] = LCID(colMap.GID64(int_Indices[j]));
+            int_Indices[j] = LCID((int_type) colMap.GID64(int_Indices[j]));
           }
     ierr = ReplaceMyValues((int) ToRow, NumEntries, values, int_Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
@@ -2845,8 +2863,11 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
          throw ReportError("Epetra_CrsGraph::Print: Unable to determine source global index type",-1);
 
       double * values  = new double[MaxNumIndices];
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
       int NumIndices;
-      int i, j;
+      int j;
+#endif
+      int i;
       
       if (MyPID==0) {
   os.width(8);

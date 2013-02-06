@@ -56,7 +56,7 @@ namespace Piro {
   int PerformAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& analysisParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
+     Teuchos::RCP< Thyra::VectorBase<double> >& result
      );
 
   //! Function that calls MOOCHO for analysis

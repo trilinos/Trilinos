@@ -2,6 +2,14 @@
 
 ########################################################################
 function usage {
+  if [ $OLDGETOPT -eq 1 ] ; then
+    usage_old
+  else
+    usage_new
+  fi
+}
+  
+function usage_new {
 cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
                [--root <root directory>] [--subdir <sub directory]
@@ -10,6 +18,7 @@ Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
                [...others...] meshfile.ext
 
 Decomposition methods: [0..3] = speed ranking 0=fastest
+              (See chaco and/or zoltan documentation for more details)
  --multikl:   [3] Multilevel KL. Gives high quality partitions.
                   Slow, high memory use.
  --spectral:  [2] use eigenvectors of a matrix constructed from the 
@@ -27,22 +36,85 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
                   going to whichever set is smallest.
  --brick      [-] special decomposition method; not useful for general use.
  --zpinch     [-] special decomposition method; not useful for general use.
-      (See jal.sandia.gov/SEACAS/Documentation/chaco.pdf and 
-           www.cs.sandia.gov/Zoltan/ug_html/ug.html for details)
+
+ NOTE: The decomposition options can also be specified as "-l type"
+       For example "--multikl" is the same as "-l multikl"
 
 Other options:
 --help             Print this message (-h)
 --input            Optional nem_slice input file (-i)
---spheres_linear   Decompose sphere elements using linear method (matches old behavior)
+--spheres_linear   Decompose sphere elements using linear method (matches old behavior) (-s)
 --processors #p    Specify number of processors (-p, -j)
 --root root_dir    Root directory to begin the path to on the separate disks (-R)
 --subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
 
-   help-email: seacas-users@software.sandia.gov (code, script)
-  Information: www.jal.sandia.gov/SEACAS/SEACAS.html (IRN)
+   help-email: sierra-help@sandia.gov 
 
 DECOMP_USAGE_EOF
 exit 1
+}
+
+function usage_old {
+cat <<DECOMP_USAGE_EOF
+Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
+               [-R <root directory>] [-S <sub directory]
+               [-l multikl] [-l spectral] [-l inertial] [-l linear]
+               [-l rcb] [-l rib] [-l hsfc] [-l random] [-l scattered]
+               [...others...] meshfile.ext
+
+Decomposition methods: [0..3] = speed ranking 0=fastest
+              (See chaco and/or zoltan documentation for more details)
+ -l multikl:   [3] Multilevel KL. Gives high quality partitions.
+                  Slow, high memory use.
+ -l spectral:  [2] use eigenvectors of a matrix constructed from the 
+                  graph to partition the graph.
+ -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
+ -l rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ -l rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ -l inertial:  [1] (default) vertices divided into sets of equal mass by planes
+                  orthogonal to the principle axis. Good, fast, medium memory
+ -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+                  (fast and sometimes good).
+ -l random:    [0] vertices are assigned randomly to sets in a way that 
+                  preserves balance.
+ -l scattered: [0] vertices are handed out in order with the next vertex 
+                  going to whichever set is smallest.
+ -l brick      [-] special decomposition method; not useful for general use.
+ -l zpinch     [-] special decomposition method; not useful for general use.
+
+Other options:
+-h          Print this message
+-i          Optional nem_slice input file
+-s          Decompose sphere elements using linear method (matches old behavior)
+-p #p       Specify number of processors (or -j)
+-R root_dir Root directory to begin the path to on the separate disks 
+-S sub_dir  Continuation of the path on the separate disks to the files
+
+   help-email: sierra-help@sandia.gov 
+
+DECOMP_USAGE_EOF
+exit 1
+}
+
+function old_getopt {
+echo ${txtred}
+cat <<DECOMP_EOF
+########################################################################
+The "getopt" executable that is available on this system is an older
+version that is not compatible with the needs of the "decomp" tool.
+If possible, you should update your getopt to a newer version and make
+sure that the new getopt is in your path.
+
+Below are some options for getting the current getopt version:
+* If on a Mac: "sudo port install getopt"
+* Search the internet for "getopt-1.1.5" or "getopt-1.1.4"; download and build
+
+Enter "-h" for the modified options that this version supports.
+Enter "-H" for the options that the standard version supports.
+########################################################################
+
+DECOMP_EOF
+echo ${txtrst}
 }
 
 ########################################################################
@@ -80,9 +152,6 @@ function execute_loadbalance {
     then
 	rm -f $output
     fi
-    echo "===========================================================" >  $output
-    echo "| Sandia Engineering Analysis Access procedure for: decomp " >> $output
-    echo "===========================================================" >> $output
     
     if [ -n "$input" -a -e "$input" ]
     then
@@ -182,10 +251,6 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
-echo "==========================================================="
-echo "| Sandia Engineering Analysis Access procedure for: decomp "
-echo "==========================================================="
-
 
 basename=''
 processors=''
@@ -201,16 +266,30 @@ ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
 
+########################################################################
+# Test that the getopt being used will handle the long options...
+TEST=`getopt -T`
+if [ $? != 4 ] ; then
+  old_getopt
+  OLDGETOPT=1
+else
+  OLDGETOPT=0
+fi
+
 if [ $# -eq 0 ] ; then
-  usage
+    usage
 fi
 
 ########################################################################
 # decomp options:
-TEMP=`getopt -o hni:o:p:j:r:R:S: -a \
-    --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear \
-    --long multikl,rcb,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
-    -n 'decomp' -- "$@"`
+if [ $OLDGETOPT -eq 1 ] ; then
+   TEMP=`getopt Hhni:o:p:j:r:R:S:sl: $*`
+else
+   TEMP=`getopt -o Hhni:o:p:j:r:R:S:sl: -a \
+       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear \
+       --long multikl,rcb,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
+       -n 'decomp' -- "$@"`
+fi
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
 
@@ -220,6 +299,8 @@ while true ; do
 	case "$1" in
 	    -h|--help)
 	      usage ; shift ;;
+	    -H|--help)
+	      usage_new ; shift ;;
 	    -n|--nem_slice_flag)
 	      nem_slice_flag="$2" ; shift 2 ;;
 	    -i|--input)
@@ -230,8 +311,10 @@ while true ; do
 	      rootdir=$2 ; shift 2 ;;
 	    -S|--subdir)
 	      subdir=$2 ; shift 2 ;;
+	    -s|--spheres_linear) spheres="" ; shift ;;
 
-	    --spheres_linear) spheres="" ; shift ;;
+	    -l)
+	      decomp_method="-l $2" ; shift 2 ;;
 
 # Decomposition Method options...
 	    --multikl)   decomp_method="-l multikl" ; shift ;;

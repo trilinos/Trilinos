@@ -292,7 +292,7 @@ C   --Open database file
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
-     *    ' filename"')
+     *    ' [-nomap node|element|all] filename"')
         GOTO 170
       END IF
       EXODUS = .FALSE.

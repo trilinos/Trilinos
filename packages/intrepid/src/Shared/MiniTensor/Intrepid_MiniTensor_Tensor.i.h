@@ -1698,7 +1698,7 @@ namespace Intrepid {
   template<typename T>
   inline
   Tensor<T>
-  symm(Tensor<T> const & A)
+  sym(Tensor<T> const & A)
   {
     Index const
     N = A.get_dimension();

@@ -90,7 +90,7 @@ namespace Intrepid {
 
           Index const row = *rows_iter;
           Index const col = *cols_iter;
-          const T s = fabs(S(row, col));
+          T const s = abs(S(row, col));
 
           if (s > pivot) {
 
@@ -109,7 +109,7 @@ namespace Intrepid {
       Index const pivot_col = *pivot_col_iter;
 
       // Gauss-Jordan elimination
-      const T t = S(pivot_row, pivot_col);
+      T const t = S(pivot_row, pivot_col);
 
       if (t == 0.0) {
         std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -127,7 +127,7 @@ namespace Intrepid {
       for (Index i = 0; i < N; ++i) {
         if (i == pivot_row) continue;
 
-        const T c = S(i, pivot_col);
+        T const c = S(i, pivot_col);
 
         for (Index j = 0; j < N; ++j) {
           S(i, j) -= c * S(pivot_row, j);
@@ -203,7 +203,7 @@ namespace Intrepid {
     Index const
     max_iter = 128;
 
-    const T
+    T const
     tol = machine_epsilon<T>();
 
     Index const
@@ -223,7 +223,7 @@ namespace Intrepid {
     k = 0;
 
     while (relative_error > tol && k < max_iter) {
-      term = T(1.0 / (k + 1.0)) * term * A;
+      term = static_cast<T>(1.0 / (k + 1.0)) * term * A;
       B = B + term;
       relative_error = norm_1(term);
       ++k;
@@ -555,39 +555,35 @@ namespace Intrepid {
   }
 
   //
-  // R^N logarithmic map by Taylor series, converges for \f$ |A-I| < 1 \f$
-  // \param A tensor
-  // \return \f$ \log A \f$
+  // Logarithmic map by Taylor series.
   //
   template<typename T>
   Tensor<T>
-  log(Tensor<T> const & A)
+  log_taylor(Tensor<T> const & A)
   {
-    // Check whether skew-symmetric holds
-
     Index const
     max_iter = 128;
 
-    const T
+    T const
     tol = machine_epsilon<T>();
 
-    const T
-    norm_arg = norm_1(A);
+    T const
+    norm_tensor = norm_1(A);
 
     Index const
     N = A.get_dimension();
 
-    const Tensor<T>
-    Am1 = A - identity<T>(N);
+    Tensor<T> const
+    A_minus_I = A - identity<T>(N);
 
     Tensor<T>
-    term = Am1;
+    term = A_minus_I;
 
     T
     norm_term = norm_1(term);
 
     T
-    relative_error = norm_term / norm_arg;
+    relative_error = norm_term / norm_tensor;
 
     Tensor<T>
     B = term;
@@ -596,12 +592,116 @@ namespace Intrepid {
     k = 1;
 
     while (relative_error > tol && k <= max_iter) {
-      term = T(- (k / (k + 1.0))) * term * Am1;
+      term = static_cast<T>(- (k / (k + 1.0))) * term * A_minus_I;
       B = B + term;
       norm_term = norm_1(term);
-      relative_error = norm_term / norm_arg;
+      relative_error = norm_term / norm_tensor;
       ++k;
     }
+
+    return B;
+  }
+
+  //
+  // Logarithmic map.
+  //
+  template<typename T>
+  Tensor<T>
+  log(Tensor<T> const & A)
+  {
+    return log_gregory(A);
+  }
+
+  //
+  // Logarithmic map by Gregory series.
+  //
+  template<typename T>
+  Tensor<T>
+  log_gregory(Tensor<T> const & A)
+  {
+    Index const
+    max_iter = 128;
+
+    T const
+    tol = machine_epsilon<T>();
+
+    T const
+    norm_tensor = norm_1(A);
+
+    Index const
+    N = A.get_dimension();
+
+    Tensor<T> const
+    I_minus_A = identity<T>(N) - A;
+
+    Tensor<T> const
+    I_plus_A = identity<T>(N) + A;
+
+    Tensor<T>
+    term = I_minus_A * inverse(I_plus_A);
+
+    T
+    norm_term = norm_1(term);
+
+    T
+    relative_error = norm_term / norm_tensor;
+
+    Tensor<T> const
+    C = term * term;
+
+    Tensor<T>
+    B = term;
+
+    Index
+    k = 1;
+
+    while (relative_error > tol && k <= max_iter) {
+      term = static_cast<T>((2 * k - 1.0) / (2 * k + 1.0)) * term * C;
+      B = B + term;
+      norm_term = norm_1(term);
+      relative_error = norm_term / norm_tensor;
+      ++k;
+    }
+
+    B = - 2.0 * B;
+
+    return B;
+  }
+
+  //
+  // Logarithmic map for symmetric tensor.
+  //
+  template<typename T>
+  Tensor<T>
+  log_sym(Tensor<T> const & A)
+  {
+    return log_eig_sym(A);
+  }
+
+  //
+  // Logarithmic map for symmetric tensor using eigenvalue decomposition.
+  //
+  template<typename T>
+  Tensor<T>
+  log_eig_sym(Tensor<T> const & A)
+  {
+    Index const
+    N = A.get_dimension();
+
+    Tensor<T>
+    V(N);
+
+    Tensor<T>
+    D(N);
+
+    boost::tie(V, D) = eig_sym(A);
+
+    for (Index i = 0; i < N; ++i) {
+      D(i, i) = log(D(i, i));
+    }
+
+    Tensor<T> const
+    B = dot_t(dot(V, D), V);
 
     return B;
   }
@@ -705,7 +805,7 @@ namespace Intrepid {
         r = gaussian_elimination((R - identity<T>(3)));
 
         // backward substitution (for rotation exp(R) only)
-        const T tol = 10.0 * machine_epsilon<T>();
+        T const tol = 10.0 * machine_epsilon<T>();
 
         Vector<T> normal(3);
 
@@ -737,7 +837,7 @@ namespace Intrepid {
         r(2,0) = -normal(1);
         r(2,1) =  normal(0);
 
-        const T pi = acos(-1.0);
+        T const pi = acos(-1.0);
 
         r = pi * r;
       }
@@ -777,7 +877,7 @@ namespace Intrepid {
     Tensor<T>
     U = A;
 
-    const T
+    T const
     tol = 10.0 * machine_epsilon<T>();
 
     Index i = 0;
@@ -1175,7 +1275,7 @@ namespace Intrepid {
       T
       off = norm_off_diagonal(S);
 
-      const T
+      T const
       tol = machine_epsilon<T>() * norm(A);
 
       Index const
@@ -1309,10 +1409,10 @@ namespace Intrepid {
     bool
     scale = true;
 
-    const T
+    T const
     tol_scale = 0.01;
 
-    const T
+    T const
     tol_conv = sqrt(N) * machine_epsilon<T>();
 
     Tensor<T>
@@ -1389,7 +1489,7 @@ namespace Intrepid {
     R = polar_rotation(A);
 
     Tensor<T>
-    V = symm(A * transpose(R));
+    V = sym(A * transpose(R));
 
     return std::make_pair(V, R);
   }
@@ -1407,7 +1507,7 @@ namespace Intrepid {
     R = polar_rotation(A);
 
     Tensor<T>
-    U = symm(transpose(R) * A);
+    U = sym(transpose(R) * A);
 
     return std::make_pair(R, U);
   }
@@ -1642,7 +1742,7 @@ namespace Intrepid {
   //
   template<typename T>
   std::pair<T, T>
-  schur_sym(const T f, const T g, const T h)
+  schur_sym(T const f, T const g, T const h)
   {
     T c = 1.0;
     T s = 0.0;
@@ -1676,11 +1776,11 @@ namespace Intrepid {
 
     if (b != 0.0) {
       if (fabs(b) > fabs(a)) {
-        const T t = - a / b;
+        T const t = - a / b;
         s = 1.0 / sqrt(1.0 + t * t);
         c = t * s;
       } else {
-        const T t = - b / a;
+        T const t = - b / a;
         c = 1.0 / sqrt(1.0 + t * t);
         s = t * c;
       }
@@ -1701,7 +1801,7 @@ namespace Intrepid {
     eig_sym_NxN(Tensor<T> const & A)
     {
       Tensor<T>
-      D = symm(A);
+      D = sym(A);
 
       Index const
       N = A.get_dimension();
@@ -1712,7 +1812,7 @@ namespace Intrepid {
       T
       off = norm_off_diagonal(D);
 
-      const T
+      T const
       tol = machine_epsilon<T>() * norm(A);
 
       Index const
@@ -1786,16 +1886,16 @@ namespace Intrepid {
     {
       assert(A.get_dimension() == 2);
 
-      const T f = A(0,0);
-      const T g = 0.5 * (A(0,1) + A(1,0));
-      const T h = A(1,1);
+      T const f = A(0,0);
+      T const g = 0.5 * (A(0,1) + A(1,0));
+      T const h = A(1,1);
 
       //
       // Eigenvalues, based on LAPACK's dlae2
       //
-      const T sum = f + h;
-      const T dif = fabs(f - h);
-      const T g2 = fabs(g + g);
+      T const sum = f + h;
+      T const dif = fabs(f - h);
+      T const g2 = fabs(g + g);
 
       T fhmax = f;
       T fhmin = h;
@@ -1808,10 +1908,10 @@ namespace Intrepid {
 
       T r = 0.0;
       if (dif > g2) {
-        const T t = g2 / dif;
+        T const t = g2 / dif;
         r = dif * sqrt(1.0 + t * t);
       } else if (dif < g2) {
-        const T t = dif / g2;
+        T const t = dif / g2;
         r = g2 * sqrt(1.0 + t * t);
       } else {
         // dif == g2, including zero
@@ -1927,7 +2027,7 @@ namespace Intrepid {
     pi = acos(-1);
 
     // convenience operators
-    const Tensor<T>
+    Tensor<T> const
     I = identity<T>(3);
 
     int
@@ -2163,7 +2263,7 @@ namespace Intrepid {
   cholesky(Tensor<T> const & A)
   {
     Tensor<T>
-    G = symm(A);
+    G = sym(A);
 
     Index const
     N = A.get_dimension();

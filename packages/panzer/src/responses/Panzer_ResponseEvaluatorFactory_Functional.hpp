@@ -19,8 +19,8 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_Functional : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true) 
-     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral) {}
+   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="") 
+     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral), quadPointField_(quadPointField) {}
 
    virtual ~ResponseEvaluatorFactory_Functional() {}
  
@@ -63,7 +63,20 @@ private:
    MPI_Comm comm_;
    int cubatureDegree_;
    bool requiresCellIntegral_;
+   std::string quadPointField_;
 };
+
+struct FunctionalResponse_Builder {
+  MPI_Comm comm;
+  int cubatureDegree;
+  bool requiresCellIntegral;
+  std::string quadPointField_;
+
+  template <typename T>
+  Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,cubatureDegree,requiresCellIntegral,quadPointField_)); }
+};
+
 
 }
 

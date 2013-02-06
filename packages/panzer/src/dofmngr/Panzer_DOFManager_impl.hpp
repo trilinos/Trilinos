@@ -259,15 +259,13 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                       "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
                       "after buildGlobalUnknowns has been called"); 
   //Some stuff for the Map.
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Kokkos::DefaultNode::DefaultNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   typedef Tpetra::Vector<LO,GO> Vector;
   typedef Tpetra::Export<LO,GO,Node> Export;
 
-  //For now the GIDs are of type GO. I'm not sure if this is a good idea, but that's
-  //the way it is
+  //the GIDs are of type GO.
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
 
   // this is a safety check to make sure that nodes are included
@@ -280,9 +278,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                                  "the nodes when orientations are needed!");
   }
   
-  Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = communicator_;
-  RCP<Node> node = platform.getNode();
 
   /* STEPS.
    * 1.  Build all block's FA_FP's and place into respective data structures.
@@ -344,7 +340,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   /* 3.  Construct an overlap map from this structure.
    */
-  RCP<const Map> overlapmap = Tpetra::createNonContigMapWithNode<LO,GO>(overlapVector,comm,node);
+  RCP<const Map> overlapmap = Tpetra::createNonContigMap<LO,GO>(overlapVector,comm);
 
  /* 4.  Create an overlapped multivector from the overlap map.
    */
@@ -409,7 +405,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 11. Create a map using local sums to generate final GIDs.
    */
-  RCP<const Map> gid_map = Tpetra::createContigMapWithNode<LO,GO>(-1,localsum, comm, node);
+  RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
 
  /* 12. Iterate through the non-overlapping MV and assign GIDs to 
    *     the necessary points. (Assign a -1 elsewhere.)
@@ -475,12 +471,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // build owned vector
   {
     typedef boost::unordered_set<GO> HashTable;
-    HashTable isOwned; // use to detect if global ID has been added to owned_and_ghosted_
+    HashTable isOwned, remainingOwned; 
     //owned_ is made up of owned_ids.
     Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
     for (int j = 0; j < nvals.size(); ++j) {
-      if(nvals[j]!=-1)
+      if(nvals[j]!=-1) {
         isOwned.insert(nvals[j]);
+        remainingOwned.insert(nvals[j]);
+      }
     }
 
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
@@ -498,13 +496,26 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
           // only add a global ID if it has not been added
           std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
-          if(insertResult.second)
+          if(insertResult.second) {
             owned_.push_back(localOrdering[i]);
+            remainingOwned.erase(localOrdering[i]);
+          }
         }
       }
     }
-  }
 
+    // add any other owned GIDs that were not already included.
+    // these are ones that are owned locally but not required by any
+    // element owned by this processor (uggh!)
+    for(typename HashTable::const_iterator itr=remainingOwned.begin();itr!=remainingOwned.end();itr++)
+      owned_.push_back(*itr);       
+
+    if(owned_.size()!=isOwned.size()) {
+      out << "I'm qbout to hang because of unknown numbering failure ... sorry! (line = " << __LINE__ << ")" << std::endl; 
+      TEUCHOS_TEST_FOR_EXCEPTION(owned_.size()!=isOwned.size(),std::logic_error,
+                                 "DOFManager::buildGlobalUnkonwns: Failure because not all owned unknowns have been accounted for.");
+    }
+  }
 
   // build owned and ghosted array: The old simple way led to slow
   // Jacobian assembly, the new way speeds up Jacobian assembly

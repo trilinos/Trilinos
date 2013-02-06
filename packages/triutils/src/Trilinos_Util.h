@@ -173,6 +173,9 @@ using std::sqrt;
 
 #endif /*ndef TRILINOS_NO_CONFIG_H*/
 
+#include "Epetra_ConfigDefs.h"
+#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
+
 void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	      int *N_global, int *n_nonzeros, 
 	      double **val, int **bindx,
@@ -187,6 +190,8 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact);
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 const Epetra_Comm  &comm, 
 				 Epetra_Map *& map, 
@@ -194,6 +199,22 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHb2Epetra64(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact);
+
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 				 const Epetra_Comm  &comm, 
@@ -203,6 +224,23 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
 
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHpc2Epetra64(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact);
+
+#endif
+
+// CJ TODO FIXME: Trilinos_Util_ReadHb2EpetraVbr available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 				 const Epetra_Comm  &comm, 
 				 Epetra_BlockMap *& map, 
@@ -210,6 +248,11 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
+
+#endif
+
+// CJ TODO FIXME: Trilinos_Util_distrib_msr_matrix available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *n_nonzeros, 
@@ -222,6 +265,11 @@ void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm,
               int *N_update, int **update, 
               double **val, int **bindx);
 
+#endif
+
+// CJ TODO FIXME: Trilinos_Util_distrib_vbr_matrix available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global, 
            int *n_nonzeros,  int *n_blk_nonzeros,
@@ -229,6 +277,8 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      double **val, int **indx, int **rpntr, int **cpntr,
            int **bpntr, int **bindx,
 	      double **x, double **b, double **xexact);
+
+#endif
 
 void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *part_file,
                 int *N_global, int *N_blk_global, 
@@ -322,6 +372,8 @@ void Trilinos_Util_dusmm(int m, int nrhs, int k, double alpha, SPBLASMAT *A,
 		 double *x, int xstride, double beta, double *b, int bstride);
 void  Trilinos_Util_dusds_vbr( SPBLASMAT *A);
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 				      const Epetra_Comm  &comm, 
 				      Epetra_Map *& map, 
@@ -337,6 +389,31 @@ void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, i
 				      Epetra_MultiVector *& x, 
 				      Epetra_MultiVector *& b,
 				      Epetra_MultiVector *&xexact, int indexBase = 0);
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int * xoff, int * yoff,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact, int indexBase = 0);
+
+void Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_MultiVector *& x, 
+				      Epetra_MultiVector *& b,
+				      Epetra_MultiVector *&xexact, long long indexBase = 0);
+
+#endif
+
+// CJ TODO FIXME: Trilinos_Util_GenerateVbrProblem available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 				      int nsizes, int * sizes,
@@ -356,6 +433,10 @@ void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, i
 				      Epetra_MultiVector *& b,
 				      Epetra_MultiVector *&xexact);
 
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      bool symmetric, 
 				      const Epetra_Comm  &comm, 
@@ -367,14 +448,24 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      bool NonUniformMap=false,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) ;
-				      
-int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+int Trilinos_Util_ReadTriples2Epetra64( char *data_file,
+				      bool symmetric, 
 				      const Epetra_Comm  &comm, 
 				      Epetra_Map *& map, 
 				      Epetra_CrsMatrix *& A, 
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
-				      Epetra_Vector *&xexact );
+				      Epetra_Vector *&xexact,
+				      bool NonUniformMap=false,
+				      bool TimDavisHeader=false,
+				      bool ZeroBased=false );
+
+#endif
 
 void Trilinos_Util_write_vec(const char *filename, int n_equations, double *x);
 

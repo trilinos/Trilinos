@@ -252,7 +252,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   int MyLength() const {return(Map().NumMyPoints());};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  long long GlobalLength() const {return(Map().NumGlobalPoints64());};
+  long long GlobalLength64() const {return(Map().NumGlobalPoints64());};
   //@}
 
   //! @name I/O methods

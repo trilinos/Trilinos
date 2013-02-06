@@ -190,6 +190,7 @@ namespace Tpetra {
       computeGatherMap (Teuchos::RCP<const MapType> map)
       {
         using Tpetra::createOneToOne;
+	using Tpetra::global_size_t;
         using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
@@ -203,8 +204,10 @@ namespace Tpetra {
         RCP<const MapType> oneToOneMap;
         if (map->isContiguous ()) {
           oneToOneMap = map;
-        }
-        else {
+        } else {
+	  // It could be that Map is one-to-one, but the class doesn't
+	  // give us a way to test this, other than to create the
+	  // one-to-one Map.
           oneToOneMap = createOneToOne<LO, GO, NT> (map);
         }
 
@@ -213,9 +216,9 @@ namespace Tpetra {
         const int numProcs = comm->getSize ();
         const int myRank = comm->getRank ();
 
-        if (numProcs > 1) {
-          const int rootProc = 0;
-
+        if (numProcs == 1) {
+          gatherMap = oneToOneMap;
+        } else {
           // Gather each process' count of Map elements to Proc 0,
           // into the recvCounts array.  This will tell Proc 0 how
           // many GIDs to expect from each process when calling
@@ -235,6 +238,7 @@ namespace Tpetra {
           // sending) the next chunk.
           const int myEltCount = as<int> (oneToOneMap->getGlobalNumElements ());
           Array<int> recvCounts (numProcs);
+          const int rootProc = 0;
           gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
 
           ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
@@ -264,12 +268,10 @@ namespace Tpetra {
           if (myRank == 0) {
             allElts = allGlobalElts ();
           }
-          gatherMap = createNonContigMapWithNode<LO,GO,NT> (allElts, comm, map->getNode ());
+          gatherMap = rcp (new MapType (as<global_size_t> (allElts.size ()), 
+					allElts, oneToOneMap->getIndexBase (),
+					comm, map->getNode ()));
         }
-        else {
-          gatherMap = oneToOneMap;
-        }
-
         return gatherMap;
       }
 
@@ -2664,30 +2666,35 @@ namespace Tpetra {
       {
         using std::cerr;
         using std::endl;
-        typedef typename Teuchos::ScalarTraits<scalar_type> STS;
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
-        typedef typename ArrayView<scalar_type>::size_type size_type;
-
-        // Convenient abbreviations.
+	typedef scalar_type ST;
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
+        typedef typename Teuchos::ScalarTraits<ST> STS;
+        typedef typename STS::magnitudeType MT;
+        typedef typename Teuchos::ScalarTraits<MT> STM;
+        typedef typename ArrayView<ST>::size_type size_type;
+	typedef typename ArrayView<const LO>::const_iterator lo_iter;
+	typedef typename ArrayView<const GO>::const_iterator go_iter;
+	typedef typename ArrayView<const ST>::const_iterator st_iter;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
         // stream back to its state on input, when this scope
         // terminates.
-        Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (out);
+        Teuchos::MatrixMarket::details::SetScientific<ST> sci (out);
 
-        RCP<const Comm<int> > pComm = pMatrix->getComm();
-        const int myRank = Teuchos::rank (*pComm);
+        RCP<const Comm<int> > comm = pMatrix->getComm();
+        const int myRank = comm->getRank ();
         // Whether to print debugging output to stderr.
         const bool debugPrint = debug && myRank == 0;
 
-        const global_size_t numRows =
-          pMatrix->getRangeMap()->getGlobalNumElements();
-        const global_size_t numCols =
-          pMatrix->getDomainMap()->getGlobalNumElements();
+	RCP<const map_type> rowMap = pMatrix->getRowMap ();
+	RCP<const map_type> colMap = pMatrix->getColMap ();
+	RCP<const map_type> domainMap = pMatrix->getDomainMap ();
+	RCP<const map_type> rangeMap = pMatrix->getRangeMap ();
+
+        const global_size_t numRows = rangeMap->getGlobalNumElements ();
+        const global_size_t numCols = domainMap->getGlobalNumElements ();
         if (debugPrint) {
           cerr << "writeSparse:" << endl
                << "-- Input sparse matrix is:"
@@ -2695,76 +2702,77 @@ namespace Tpetra {
                << pMatrix->getGlobalNumEntries() << " entries;" << endl
                << "---- "
                << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
-               << " indexed." << endl;
-        }
-        RCP<const map_type> pRowMap = pMatrix->getRowMap();
-        if (debugPrint) {
-          RCP<const map_type> pColMap = pMatrix->getColMap();
-          cerr << "---- Its row map has " << pRowMap->getGlobalNumElements()
+               << " indexed." << endl
+	       << "---- Its row map has " << rowMap->getGlobalNumElements ()
                << " elements." << endl
-               << "---- Its col map has " << pColMap->getGlobalNumElements()
+               << "---- Its col map has " << colMap->getGlobalNumElements ()
                << " elements." << endl;
         }
         // Make the "gather" row map, where Proc 0 owns all rows and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
-        RCP<node_type> pNode = pRowMap->getNode();
-        RCP<const map_type> pGatherRowMap =
-          createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows,
-                                                      pComm, pNode);
+        RCP<node_type> node = rowMap->getNode();
+        RCP<const map_type> gatherRowMap = 
+	  rcp (new map_type (numRows, localNumRows, 
+			     rowMap->getIndexBase (), 
+			     comm, node));
         // Since the matrix may in general be non-square, we need to
         // make a column map as well.  In this case, the column map
         // contains all the columns of the original matrix, because we
         // are gathering the whole matrix onto Proc 0.
         const size_t localNumCols = (myRank == 0) ? numCols : 0;
-        RCP<const map_type> pGatherColMap =
-          createContigMapWithNode<LO, GO, node_type> (numCols, localNumCols,
-                                                      pComm, pNode);
-
+        RCP<const map_type> gatherColMap =
+	  rcp (new map_type (numCols, localNumCols, 
+			     colMap->getIndexBase (), 
+			     comm, node));
         // Current map is the source map, gather map is the target map.
         typedef Import<LO, GO, node_type> import_type;
-        import_type importer (pRowMap, pGatherRowMap);
+        import_type importer (rowMap, gatherRowMap);
 
         // Create a new CrsMatrix to hold the result of the import.
         // The constructor needs a column map as well as a row map,
         // for the case that the matrix is not square.
         RCP<sparse_matrix_type> newMatrix =
-          rcp (new sparse_matrix_type (pGatherRowMap,
-                                       pGatherColMap,
-                                       size_t(0)));
+          rcp (new sparse_matrix_type (gatherRowMap, gatherColMap,
+                                       static_cast<size_t> (0)));
         // Import the sparse matrix onto Proc 0.
         newMatrix->doImport (*pMatrix, importer, INSERT);
 
         // fillComplete() needs the domain and range maps for the case
         // that the matrix is not square.
         {
-          RCP<const map_type> pGatherDomainMap =
-            createContigMapWithNode<LO, GO, node_type> (numCols, localNumCols,
-                                                        pComm, pNode);
-          RCP<const map_type> pGatherRangeMap =
-            createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows,
-                                                        pComm, pNode);
-          newMatrix->fillComplete (pGatherDomainMap, pGatherRangeMap);
+          RCP<const map_type> gatherDomainMap =
+	    rcp (new map_type (numCols, localNumCols, 
+			       domainMap->getIndexBase (),
+			       comm, node));
+          RCP<const map_type> gatherRangeMap =
+	    rcp (new map_type (numRows, localNumRows, 
+			       rangeMap->getIndexBase (),
+			       comm, node));
+          newMatrix->fillComplete (gatherDomainMap, gatherRangeMap);
         }
 
         if (debugPrint) {
           cerr << "-- Output sparse matrix is:"
-               << "---- " << newMatrix->getRangeMap()->getGlobalNumElements()
-               << " x "
-               << newMatrix->getDomainMap()->getGlobalNumElements()
+               << "---- " << newMatrix->getRangeMap ()->getGlobalNumElements ()
+               << " x " 
+	       << newMatrix->getDomainMap ()->getGlobalNumElements ()
                << " with "
-               << newMatrix->getGlobalNumEntries() << " entries;" << endl
+               << newMatrix->getGlobalNumEntries () << " entries;" << endl
                << "---- "
-               << (newMatrix->isGloballyIndexed() ? "Globally" : "Locally")
+               << (newMatrix->isGloballyIndexed () ? "Globally" : "Locally")
                << " indexed." << endl
                << "---- Its row map has "
-               << newMatrix->getRowMap()->getGlobalNumElements()
-               << " elements." << endl
+               << newMatrix->getRowMap ()->getGlobalNumElements ()
+               << " elements, with index base " 
+	       << newMatrix->getRowMap ()->getIndexBase () << "." << endl
                << "---- Its col map has "
-               << newMatrix->getColMap()->getGlobalNumElements()
-               << " elements (may be different than the input matrix's column"
-               << " map, if some columns of the matrix contain no entries)."
-               << endl;
+               << newMatrix->getColMap ()->getGlobalNumElements ()
+               << " elements, with index base "
+	       << newMatrix->getColMap ()->getIndexBase () << "." << endl
+	       << "---- Element count of output matrix's column Map may differ "
+	       << "from that of the input matrix's column Map, if some columns "
+	       << "of the matrix contain no entries." << endl;
         }
 
         //
@@ -2782,117 +2790,108 @@ namespace Tpetra {
               << " general" << endl;
 
           // Print comments (the matrix name and / or description).
-          if (matrixName != "")
+          if (matrixName != "") {
             printAsComment (out, matrixName);
-          if (matrixDescription != "")
+	  }
+          if (matrixDescription != "") {
             printAsComment (out, matrixDescription);
+	  }
 
           // Print the Matrix Market header (# rows, # columns, #
-          // nonzeros).  Use the range resp. domain map for the
-          // number of rows resp. columns, since Tpetra::CrsMatrix
-          // uses the column map for the number of columns.  That
-          // only corresponds to the "linear-algebraic" number of
-          // columns when the column map is 1-1, which only happens
-          // if the matrix is (block) diagonal.
-          out << newMatrix->getRangeMap()->getGlobalNumElements()
-              << " "
-              << newMatrix->getDomainMap()->getGlobalNumElements()
-              << " "
-              << newMatrix->getGlobalNumEntries()
-              << endl;
+          // nonzeros).  Use the range resp. domain map for the number
+          // of rows resp. columns, since Tpetra::CrsMatrix uses the
+          // column map for the number of columns.  That only
+          // corresponds to the "linear-algebraic" number of columns
+          // when the column map is uniquely owned (a.k.a. one-to-one),
+          // which only happens if the matrix is (block) diagonal.
+          out << newMatrix->getRangeMap ()->getGlobalNumElements () << " "
+              << newMatrix->getDomainMap ()->getGlobalNumElements () << " "
+              << newMatrix->getGlobalNumEntries () << endl;
 
-          // Index base (0-based or 1-based) for the row map.
-          const GO rowIndexBase = pGatherRowMap->getIndexBase();
-          // Index base (0-based or 1-based) for the column map.
-          const GO colIndexBase = newMatrix->getColMap()->getIndexBase();
-
+	  RCP<const map_type> gatherColMap = newMatrix->getColMap ();
+	  // The Matrix Market format expects one-based row and column
+	  // indices.  We'll convert the indices on output from
+	  // whatever index base they use to one-based indices.
+          const GO rowIndexBase = gatherRowMap->getIndexBase ();
+          const GO colIndexBase = gatherColMap->getIndexBase ();
           //
           // Print the entries of the matrix.
           //
-          // newMatrix can never be globally indexed, since we
-          // called fillComplete() on it.  We include code for both
-          // cases (globally or locally indexed) just in case that
-          // ever changes.
+          // newMatrix can never be globally indexed, since we called
+          // fillComplete() on it.  We include code for both cases
+          // (globally or locally indexed) just in case that ever
+          // changes.
           if (newMatrix->isGloballyIndexed()) {
-            for (GO globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
-                 globalRowIndex <= pGatherRowMap->getMaxAllGlobalIndex();
-                 ++globalRowIndex)
-              {
-                ArrayView<const GO> ind;
-                ArrayView<const scalar_type> val;
-
-                newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-                typename ArrayView<const GO>::const_iterator indIter =
-                  ind.begin();
-                typename ArrayView<const scalar_type>::const_iterator valIter =
-                  val.begin();
-                for (; indIter != ind.end() && valIter != val.end();
-                     ++indIter, ++valIter)
-                  {
-                    const GO globalColIndex = *indIter;
-
-                    // Matrix Market files use 1-based indices.
-                    out << (globalRowIndex + 1 - rowIndexBase) << " "
-                        << (globalColIndex + 1 - colIndexBase) << " ";
-                    if (STS::isComplex)
-                      out << STS::real(*valIter) << " " << STS::imag(*valIter);
-                    else
-                      out << *valIter;
-                    out << endl;
-                  }
-              }
-          }
-          else // newMatrix is locally indexed
-            {
-              typedef OrdinalTraits<GO> OTG;
-              RCP<const map_type> pColMap = newMatrix->getColMap ();
-
-              for (LO localRowIndex = pGatherRowMap->getMinLocalIndex();
-                   localRowIndex <= pGatherRowMap->getMaxLocalIndex();
-                   ++localRowIndex)
-                {
-                  // Convert from local to global row index.
-                  const GO globalRowIndex =
-                    pGatherRowMap->getGlobalElement (localRowIndex);
-                  TEUCHOS_TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(),
-                                     std::logic_error,
-                                     "Failed to convert \"local\" row index "
-                                     << localRowIndex << " into a global row "
-                                     "index.  Please report this bug to the "
-                                     "Tpetra developers.");
-                  ArrayView<const LO> ind;
-                  ArrayView<const scalar_type> val;
-
-                  newMatrix->getLocalRowView (localRowIndex, ind, val);
-                  typename ArrayView<const LO>::const_iterator indIter =
-                    ind.begin();
-                  typename ArrayView<const scalar_type>::const_iterator
-                    valIter = val.begin();
-                  for (; indIter != ind.end() && valIter != val.end();
-                       ++indIter, ++valIter)
-                    {
-                      // Convert from local to global index.
-                      const GO globalColIndex =
-                        pColMap->getGlobalElement (*indIter);
-                      TEUCHOS_TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(),
-                                         std::logic_error,
-                                         "Failed to convert \"local\" column "
-                                         "index " << *indIter << " into a "
-                                         "global column index.  Please report "
-                                         "this bug to the Tpetra developers.");
-                      // Matrix Market files use 1-based indices.
-                      out << (globalRowIndex + 1 - rowIndexBase) << " "
-                          << (globalColIndex + 1 - colIndexBase) << " ";
-                      if (STS::isComplex)
-                        out << STS::real(*valIter) << " "
-                            << STS::imag(*valIter);
-                      else
-                        out << *valIter;
-                      out << endl;
-                    }
-                }
-            }
-        }
+	    // We know that the "gather" row Map is contiguous, so we
+	    // don't need to get the list of GIDs.
+	    const GO minAllGlobalIndex = gatherRowMap->getMinAllGlobalIndex ();
+	    const GO maxAllGlobalIndex = gatherRowMap->getMaxAllGlobalIndex ();
+            for (GO globalRowIndex = minAllGlobalIndex; 
+		 globalRowIndex <= maxAllGlobalIndex; // inclusive range
+		 ++globalRowIndex) {
+	      ArrayView<const GO> ind;
+	      ArrayView<const ST> val;
+	      newMatrix->getGlobalRowView (globalRowIndex, ind, val);
+	      go_iter indIter = ind.begin ();
+	      st_iter valIter = val.begin ();
+	      for (; indIter != ind.end() && valIter != val.end();
+		   ++indIter, ++valIter) {
+		const GO globalColIndex = *indIter;
+		// Convert row and column indices to 1-based.
+		// This works because the global index type is signed.
+		out << (globalRowIndex + 1 - rowIndexBase) << " "
+		    << (globalColIndex + 1 - colIndexBase) << " ";
+		if (STS::isComplex) {
+		  out << STS::real (*valIter) << " " << STS::imag (*valIter);
+		} else {
+		  out << *valIter;
+		}
+		out << endl;
+	      } // For each entry in the current row
+	    } // For each row of the "gather" matrix
+          } else { // newMatrix is locally indexed
+	    typedef OrdinalTraits<GO> OTG;
+	    for (LO localRowIndex = gatherRowMap->getMinLocalIndex();
+		 localRowIndex <= gatherRowMap->getMaxLocalIndex();
+		 ++localRowIndex) {
+	      // Convert from local to global row index.
+	      const GO globalRowIndex =
+		gatherRowMap->getGlobalElement (localRowIndex);
+	      TEUCHOS_TEST_FOR_EXCEPTION(
+	        globalRowIndex == OTG::invalid(), std::logic_error,
+		"Failed to convert the supposed local row index " 
+		<< localRowIndex << " into a global row index.  "
+		"Please report this bug to the Tpetra developers.");
+	      ArrayView<const LO> ind;
+	      ArrayView<const ST> val;
+	      newMatrix->getLocalRowView (localRowIndex, ind, val);
+	      lo_iter indIter = ind.begin ();
+	      st_iter valIter = val.begin ();
+	      for (; indIter != ind.end() && valIter != val.end();
+		   ++indIter, ++valIter) {
+		// Convert the column index from local to global.
+		const GO globalColIndex = 
+		  gatherColMap->getGlobalElement (*indIter);
+		TEUCHOS_TEST_FOR_EXCEPTION(
+                  globalColIndex == OTG::invalid(), std::logic_error,
+		  "On local row " << localRowIndex << " of the sparse matrix: "
+		  "Failed to convert the supposed local column index " 
+		  << *indIter << " into a global column index.  Please report "
+		  "this bug to the Tpetra developers.");
+		// Convert row and column indices to 1-based.
+		// This works because the global index type is signed.
+		out << (globalRowIndex + 1 - rowIndexBase) << " "
+		    << (globalColIndex + 1 - colIndexBase) << " ";
+		if (STS::isComplex) {
+		  out << STS::real (*valIter) << " " << STS::imag (*valIter);
+		} else {
+		  out << *valIter;
+		}
+		out << endl;
+	      } // For each entry in the current row
+	    } // For each row of the "gather" matrix
+	  } // Whether the "gather" matrix is locally or globally indexed
+        } // If my process' rank is 0
       }
 
       /// \brief Print the sparse matrix in Matrix Market format.

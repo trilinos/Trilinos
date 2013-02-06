@@ -63,9 +63,10 @@ namespace KokkosExamples {
   using Teuchos::ArrayView;
   using Teuchos::ParameterList;
 
-  //! \class EmptyCrsGraph
-  /** This is based off Kokkos::CrsGraphBase to ease our obligations.
-   */
+  /// \class EmptyCrsGraph
+  /// \brief An empty graph fulfilling the CrsGraph interface.
+  ///
+  /// This is based off Kokkos::CrsGraphBase to ease our obligations.
   template <class Node>
   class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
@@ -74,9 +75,10 @@ namespace KokkosExamples {
     void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
   };
 
-  //! \class EmptyCrsMatrix
-  /** This is based off Kokkos::CrsMatrixBase to ease our obligations.
-   */
+  /// \class EmptyCrsMatrix
+  /// \brief An empty matrix fulfilling the CrsMatrix interface.
+  ///
+  /// This is based off Kokkos::CrsMatrixBase to ease our obligations.
   template <class Scalar, class Node>
   class EmptyCrsMatrix : public Kokkos::CrsMatrixBase<Scalar,int,Node> {
   public:
@@ -92,11 +94,12 @@ namespace KokkosExamples {
   ///
   /// This class implements the Kokkos Compressed-Row Sparse API,
   /// which in turn is the interface required by the \c LocalMatOps
-  /// template parameter of \c Tpetra::CrsMatrix.  The implementation
-  /// is trivial (it does nothing), but the interface is right, so you
+  /// template parameter of Tpetra::CrsMatrix.  The implementation is
+  /// trivial (it does nothing), but the interface is right, so you
   /// can use it as an example for writing your own implementation of
   /// local sparse kernels.
   ///
+  /// \tparam Scalar The type of entries in the sparse matrix.
   /// \tparam Node A Kokkos Node type (that implements the Kokkos Node API).
   template <class Scalar, class Node>
   class EmptySparseKernel {
@@ -104,12 +107,10 @@ namespace KokkosExamples {
     //@{
     //! @name Typedefs and structs
 
-    /// \brief The type of entries of the sparse matrix.
+    /// \brief The type of entries in the sparse matrix.
     ///
-    /// This is \c void only because this is a stub implementation.
-    /// In a real implementation, scalar_type would normally either be
-    /// a fixed type (like \c double) or a template parameter of your
-    /// class.
+    /// In your implementation, this may either be a fixed type (like
+    /// <tt>double</tt>) or a template parameter of your class.
     typedef Scalar  scalar_type;
     /// \brief The type of (local) indices of the sparse matrix.
     ///
@@ -120,16 +121,16 @@ namespace KokkosExamples {
     typedef void ordinal_type;
     //! The Kokos Node type.
     typedef Node    node_type;
-    //! The type of this object: \c typeof(*this)
+    //! The type of this object: <tt>typeof(*this)</tt>
     typedef EmptySparseKernel<Scalar,Node> sparse_ops_type;
 
-    /** \brief Typedef for local graph class */
+    //! Typedef for local graph class
     template <class O, class N>
     struct graph {
       typedef EmptyCrsGraph<N> graph_type;
     };
 
-    /** \brief Typedef for local matrix class */
+    //! Typedef for local matrix class
     template <class S, class O, class N>
     struct matrix {
       typedef EmptyCrsMatrix<S,N> matrix_type;
@@ -141,14 +142,22 @@ namespace KokkosExamples {
     /// sparse matrices with entries of scalar type T.  T may be
     /// different than scalar_type.
     ///
-    /// One point of this typedef is that sometimes you may have
-    /// noptimized kernels for some scalar types T (such as float or
-    /// double), but not for other types (such as extended-precision
-    /// types).  Some scalar types T (especially those requiring
-    /// dynamic memory allocation) might not work correctly or
-    /// efficiently on certain Kokkos Node types (especially GPU Node
-    /// types).  This typedef lets you provide a "fall-back"
-    /// implementation of sparse kernels.
+    /// The point of this typedef is to provide a "fall-back"
+    /// implementation as a function of the scalar type T.  This is
+    /// because you might have specific kernels for some scalar types
+    /// T (such as <tt>float</tt> or <tt>double</tt>), but not for
+    /// other types (such as extended-precision types).  For example,
+    /// you might want to use a third-party library's kernels, but the
+    /// library only implements the required kernels for scalar types
+    /// <tt>float</tt> and <tt>double</tt>.  Thus, you can provide a
+    /// "fall-back" implementation for scalar types not supported by
+    /// the third-party library.  We do this for Kokkos::MklSparseOps,
+    /// for example.  Alternately, some scalar types T (especially
+    /// those requiring dynamic memory allocation) might not work
+    /// correctly or efficiently on certain Kokkos Node types
+    /// (especially GPU Node types).  In that case, you could use the
+    /// fall-back implementation to generate either a compile-time or
+    /// a run-time error for unsupported scalar types.
     template <class T>
     struct bind_scalar {
       typedef EmptySparseKernel<T,Node> other_type;
@@ -343,15 +352,23 @@ namespace KokkosExamples {
     ///   If you want a symmetric sweep, call this method twice, first
     ///   with direction = Forward then with direction = Backward.
     ///
-    /// \note We don't include a separate "Symmetric" direction mode
-    ///   in order to avoid confusion when using this method to
-    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
-    ///   for a matrix distributed over multiple processes.  ("Hybrid"
-    ///   means "Gauss-Seidel or SOR within the process, Jacobi
-    ///   outside.")  In that case, interprocess communication (a
-    ///   boundary exchange) must occur before both the forward sweep
-    ///   and the backward sweep, so we would need to invoke the
-    ///   kernel once per sweep direction anyway.
+    /// The Gauss-Seidel kernel asks the user to precompute the
+    /// inverse diagonal entries of the matrix (here, the vector D).
+    /// The L1 variant of Gauss-Seidel modifies D in order to improve
+    /// convergence when doing Gauss-Seidel within a process (or
+    /// thread) and Jacobi between processes (or threads).  Also,
+    /// precomputing the inverse diagonal entries avoids divisions and
+    /// branches in the inner loop of Gauss-Seidel.
+    ///
+    /// We don't include a separate "Symmetric" direction mode in
+    /// order to avoid confusion when using this method to implement
+    /// "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR) for a matrix
+    /// distributed over multiple processes.  ("Hybrid" means
+    /// "Gauss-Seidel or SOR within the process, Jacobi outside.")  In
+    /// that case, interprocess communication (a boundary exchange)
+    /// must occur before both the forward sweep and the backward
+    /// sweep, so we would need to invoke the kernel once per sweep
+    /// direction anyway.
     template <class DomainScalar, class RangeScalar>
     void
     gaussSeidel (const Kokkos::MultiVector<DomainScalar,Node> &B,
@@ -359,7 +376,13 @@ namespace KokkosExamples {
                  const Kokkos::MultiVector<Scalar,Node> &D,
                  const RangeScalar& dampingFactor,
                  const Kokkos::ESweepDirection direction) const
-    {}
+    {
+      (void) B; // Silence compiler warnings for unused variables.
+      (void) X;
+      (void) D;
+      (void) dampingFactor;
+      (void) direction;
+    }
 
     //@}
   protected:

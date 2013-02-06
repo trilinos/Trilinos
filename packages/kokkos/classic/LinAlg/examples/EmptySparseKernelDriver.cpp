@@ -83,6 +83,16 @@ int main() {
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, dy);
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, 1.0, dy);
   doubleKernel.solve( Teuchos::NO_TRANS, dy, dx);
+  // The Gauss-Seidel kernel asks the user to precompute the inverse
+  // diagonal entries of the matrix (here, the vector D).  We
+  // demonstrate both sweep directions here.  The local kernels don't
+  // implement a "Symmetric" direction; Tpetra handles that.  (This is
+  // because for a matrix distributed over multiple processes,
+  // symmetric Gauss-Seidel requires interprocess communication
+  // between the forward and backward sweeps.)
+  DoubleVec dd (node); 
+  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, Kokkos::Forward);
+  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, Kokkos::Backward);
 
   // create a float-valued matrix fM using the graph G
   Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,Teuchos::null));
@@ -97,6 +107,10 @@ int main() {
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, fy);
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, 1.0f, fy);
   floatKernel.solve( Teuchos::NO_TRANS, fy, fx);
+  // Precomputed inverse diagonal entries of the sparse matrix.
+  FloatVec fd (node); 
+  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, Kokkos::Forward);
+  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, Kokkos::Backward);
 
   std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;

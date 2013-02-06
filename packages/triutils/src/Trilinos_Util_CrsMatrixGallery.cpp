@@ -69,9 +69,19 @@ const bool Scaling = false;
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name, 
-                                                  const Epetra_Comm & comm ) :
-comm_(&comm), name_(name)
+                                                  const Epetra_Comm & comm,
+                                                  bool UseLongLong) :
+comm_(&comm), name_(name), UseLongLong_(UseLongLong)
 {
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(!UseLongLong)
+    throw "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery: UseLongLong = false but no 32 bit global indices";
+#endif
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(UseLongLong)
+    throw "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery: UseLongLong = true but no 64 bit global indices";
+#endif
+
   ZeroOutData();
   // verbosity level (now always false)
   // if( comm_->MyPID()==0 ) verbose_ = true;
@@ -96,10 +106,24 @@ Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
   OutputMsg = "Trilinos_Util::CrsMatrixGallery: ";
   
   map_ = new Epetra_Map(map);
-  NumGlobalElements_ = map_->NumGlobalElements();
+  UseLongLong_ = map.GlobalIndicesLongLong();
+  NumGlobalElements_ = map_->NumGlobalElements64();
   NumMyElements_ = map_->NumMyElements();
-  MyGlobalElements_ = map_->MyGlobalElements( );
-    
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(map_->GlobalIndicesInt()) {
+    MyGlobalElements_int_ = map_->MyGlobalElements();
+    UseLongLong_ = false;
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(map_->GlobalIndicesLongLong()) {
+    MyGlobalElements_LL_ = map_->MyGlobalElements64();
+    UseLongLong_ = true;
+  }
+  else
+#endif
+    throw "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery: Global Indices unknown";
 }
   
 // ================================================ ====== ==== ==== == =
@@ -561,7 +585,9 @@ void Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolution
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
+
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
 {
 
   Epetra_Time Time(*comm_);
@@ -653,16 +679,18 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 
   }
 
+  std::vector<int_type>& MapMap = MapMapRef<int_type>();
+
   if (! ContiguousMap_ ) { 
     //
-    //  Populate MapMap_[] with NumGlobalElements_ numbers randomly 
+    //  Populate MapMap[] with NumGlobalElements_ numbers randomly 
     //  chosen from the set of integers ranging from 0 to 2*NumGlobalElements-1
     //
-    MapMap_.resize( NumGlobalElements_ ) ; 
+    MapMap.resize( NumGlobalElements_ ) ; 
     Epetra_IntSerialDenseVector sortable_values(2*NumGlobalElements_) ;
     sortable_values.Random();
     Epetra_IntSerialDenseVector sortable_positions(2*NumGlobalElements_) ;
-    for( int i =0 ; i < 2*NumGlobalElements_; i++ ) { 
+    for( int_type i =0 ; i < 2*NumGlobalElements_; i++ ) { 
       sortable_positions[i] = i;
     }
     Epetra_Util Utils;
@@ -673,13 +701,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
     Utils.Sort( true, NumGlobalElements_*2, &sortable_values[0], 
 		0, (double**)0, 1, &ArrayOfIntPointers[0] );
 
-    for( int i =0 ; i < NumGlobalElements_; i++ ) { 
-      MapMap_[i] = sortable_positions[i];
+    for( int_type i =0 ; i < NumGlobalElements_; i++ ) { 
+      MapMap[i] = sortable_positions[i];
     }
     //
-    //  Make sure that all processes have the same indices in MapMap_
+    //  Make sure that all processes have the same indices in MapMap
     //
-      comm_->Broadcast( &MapMap_[0], NumGlobalElements_, 0 ) ; 
+      comm_->Broadcast( &MapMap[0], NumGlobalElements_, 0 ) ; 
   }
   // check out whether one is using only one proc or not.
   // If yes, creation of map is straightforward. Then return.
@@ -687,9 +715,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   if( comm_->NumProc() == 1 ) {
 
     if (ContiguousMap_ ) 
-      map_ = new Epetra_Map(NumGlobalElements_,0,*comm_);
+      map_ = new Epetra_Map((int_type) NumGlobalElements_,(int_type) 0,*comm_);
     else
-      map_ = new Epetra_Map(NumGlobalElements_,NumMyElements_,&MapMap_[0], 0,*comm_);
+      map_ = new Epetra_Map((int_type) NumGlobalElements_,NumMyElements_,&MapMap[0], (int_type) 0,*comm_);
 
   } else {
 
@@ -697,16 +725,16 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   
     if( MapType_ == "linear" ) {
       
-      map_ = new Epetra_Map (NumGlobalElements_,0,*comm_);
+      map_ = new Epetra_Map ((int_type) NumGlobalElements_,(int_type) 0,*comm_);
       if ( ! ContiguousMap_ ) { 
 	//
 	//  map_ gives us NumMyElements and MyFirstElement;
 	//
 	int NumMyElements = map_->NumMyElements();
-	int MyFirstElement = map_->MinMyGID();
-	assert( MyFirstElement+NumMyElements ==  map_->MaxMyGID());
+	int_type MyFirstElement = map_->MinMyGID64();
+	assert( MyFirstElement+NumMyElements ==  (int_type) map_->MaxMyGID64());
 	delete map_;
-	map_ = new Epetra_Map( NumGlobalElements_, NumMyElements, &MapMap_[MyFirstElement], 0, *comm_);
+	map_ = new Epetra_Map( NumGlobalElements_, NumMyElements, &MapMap[MyFirstElement], 0, *comm_);
       }
       
     } else if( MapType_ == "box" ) {
@@ -751,12 +779,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       else endy = ny_;
       
       int NumMyElements = (endx-startx)*(endy-starty);
-      int * MyGlobalElements = new int[NumMyElements];
+      int_type * MyGlobalElements = new int_type[NumMyElements];
       int count = 0;
       
       for( int i=startx ; i<endx ; ++i ) {
 	for( int j=starty ; j<endy ; ++j ) {
-	  MyGlobalElements[count++] = i+j*nx_;
+	  MyGlobalElements[count++] = i+((int_type)j)*nx_;
 	}
       }
       
@@ -818,13 +846,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       else endz = nz_;
       
       int NumMyElements = (endx-startx)*(endy-starty)*(endz-startz);
-      int * MyGlobalElements = new int[NumMyElements];
+      int_type * MyGlobalElements = new int_type[NumMyElements];
       int count = 0;
       
       for( int i=startx ; i<endx ; ++i ) {
 	for( int j=starty ; j<endy ; ++j ) {
 	  for( int k=startz ; k<endz ; ++k ) {
-	    MyGlobalElements[count++] = i+j*nx_+k*(nx_*ny_);
+	    MyGlobalElements[count++] = i+((int_type)j)*nx_+((int_type)k)*(((int_type)nx_)*ny_);
 	  }
 	}
       }
@@ -851,9 +879,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       if( MyPID < NumGlobalElements_%NumProcs ) NumMyElements++;
       
       int count = 0;
-      int * MyGlobalElements = new int[NumMyElements];
+      int_type * MyGlobalElements = new int_type[NumMyElements];
       
-      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
 	if( i%NumProcs == MyPID ) 
 	  MyGlobalElements[count++] = i;
       }
@@ -881,7 +909,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       if( comm_->MyPID() == 0 ) {
 	Epetra_Util Util;
 	
-	for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
 	  unsigned int r = Util.RandomInt();	
 	  part[i] = r%(comm_->NumProc());
 	}
@@ -891,14 +919,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       
       // count the elements assigned to this proc
       int NumMyElements = 0;
-      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
 	if( part[i] == comm_->MyPID() ) NumMyElements++;
       }
       
       // get the loc2global list
-      int * MyGlobalElements = new int[NumMyElements];
+      int_type * MyGlobalElements = new int_type[NumMyElements];
       int count = 0;
-      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
 	if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
       }
       
@@ -918,7 +946,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   // local number of rows
   NumMyElements_ = map_->NumMyElements();
   // get update list
-  MyGlobalElements_ = map_->MyGlobalElements( );
+  map_->MyGlobalElementsPtr(MyGlobalElementsPtr<int_type>());
 
   if( verbose_ == true ) {
     cout << OutputMsg << "Time to create Map: "
@@ -927,9 +955,25 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 
   return;
 }
-  
+
+void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateMap<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateMap<int>();
+	else
+#endif
+	throw "Trilinos_Util::CrsMatrixGallery::CreateMap: failed";
+}
+
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TCreateMatrix(void)
 {
 
   if( verbose_ == true ) {
@@ -944,7 +988,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
       name_ == "triples_sym" || name_ == "triples_nonsym" ) {
 
     Epetra_Time Time(*comm_);
-    ReadMatrix();
+    TReadMatrix<int_type>();
     if( verbose_ == true ) {
       cout << OutputMsg << "Time to create matrix: "
 	   << Time.ElapsedTime() << " (s)\n";
@@ -956,63 +1000,63 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
 
     Epetra_Time Time(*comm_);
     
-    if( name_ == "diag" ) CreateMatrixDiag();
+    if( name_ == "diag" ) CreateMatrixDiag<int_type>();
 
-    else if( name_ == "eye" ) CreateEye();
+    else if( name_ == "eye" ) CreateEye<int_type>();
       
-    else if( name_ == "tridiag" ) CreateMatrixTriDiag();
+    else if( name_ == "tridiag" ) CreateMatrixTriDiag<int_type>();
       
-    else if( name_ == "laplace_1d" ) CreateMatrixLaplace1d();
+    else if( name_ == "laplace_1d" ) CreateMatrixLaplace1d<int_type>();
 
-    else if( name_ == "laplace_1d_n" ) CreateMatrixLaplace1dNeumann();
+    else if( name_ == "laplace_1d_n" ) CreateMatrixLaplace1dNeumann<int_type>();
       
-    else if( name_ == "laplace_2d" ) CreateMatrixLaplace2d();
+    else if( name_ == "laplace_2d" ) CreateMatrixLaplace2d<int_type>();
 
-    else if( name_ == "laplace_2d_bc" ) CreateMatrixLaplace2d_BC();
+    else if( name_ == "laplace_2d_bc" ) CreateMatrixLaplace2d_BC<int_type>();
 
-    else if( name_ == "laplace_2d_n" ) CreateMatrixLaplace2dNeumann();
+    else if( name_ == "laplace_2d_n" ) CreateMatrixLaplace2dNeumann<int_type>();
 
-    else if( name_ == "laplace_2d_9pt" ) CreateMatrixLaplace2d_9pt();
+    else if( name_ == "laplace_2d_9pt" ) CreateMatrixLaplace2d_9pt<int_type>();
 
-    else if( name_ == "stretched_2d" ) CreateMatrixStretched2d();
+    else if( name_ == "stretched_2d" ) CreateMatrixStretched2d<int_type>();
 
-    else if( name_ == "recirc_2d" ) CreateMatrixRecirc2d();
+    else if( name_ == "recirc_2d" ) CreateMatrixRecirc2d<int_type>();
 
-    else if( name_ == "recirc_2d_divfree" ) CreateMatrixRecirc2dDivFree();
+    else if( name_ == "recirc_2d_divfree" ) CreateMatrixRecirc2dDivFree<int_type>();
 
-    else if( name_ == "uni_flow_2d" ) CreateMatrixUniFlow2d();
+    else if( name_ == "uni_flow_2d" ) CreateMatrixUniFlow2d<int_type>();
       
-    else if( name_ == "laplace_3d" ) CreateMatrixLaplace3d();
+    else if( name_ == "laplace_3d" ) CreateMatrixLaplace3d<int_type>();
       
-    else if( name_ == "cross_stencil_2d" ) CreateMatrixCrossStencil2d();
+    else if( name_ == "cross_stencil_2d" ) CreateMatrixCrossStencil2d<int_type>();
       
-    else if( name_ == "cross_stencil_3d" ) CreateMatrixCrossStencil3d();
+    else if( name_ == "cross_stencil_3d" ) CreateMatrixCrossStencil3d<int_type>();
 
-    else if( name_ == "lehmer" ) CreateMatrixLehmer();
+    else if( name_ == "lehmer" ) CreateMatrixLehmer<int_type>();
 
-    else if( name_ == "minij" ) CreateMatrixMinij();
+    else if( name_ == "minij" ) CreateMatrixMinij<int_type>();
 
-    else if( name_ == "ris" ) CreateMatrixRis();
+    else if( name_ == "ris" ) CreateMatrixRis<int_type>();
 
-    else if( name_ == "hilbert" ) CreateMatrixHilbert();
+    else if( name_ == "hilbert" ) CreateMatrixHilbert<int_type>();
 
-    else if( name_ == "jordblock" ) CreateMatrixJordblock();
+    else if( name_ == "jordblock" ) CreateMatrixJordblock<int_type>();
 
-    else if( name_ == "cauchy" ) CreateMatrixCauchy();
+    else if( name_ == "cauchy" ) CreateMatrixCauchy<int_type>();
 
-    else if( name_ == "fiedler" ) CreateMatrixFiedler();
+    else if( name_ == "fiedler" ) CreateMatrixFiedler<int_type>();
 
-    else if( name_ == "hanowa" ) CreateMatrixHanowa();
+    else if( name_ == "hanowa" ) CreateMatrixHanowa<int_type>();
 
-    else if( name_ == "kms" ) CreateMatrixKMS();
+    else if( name_ == "kms" ) CreateMatrixKMS<int_type>();
 
-    else if( name_ == "parter" ) CreateMatrixParter();
+    else if( name_ == "parter" ) CreateMatrixParter<int_type>();
 
-    else if( name_ == "pei" ) CreateMatrixPei();
+    else if( name_ == "pei" ) CreateMatrixPei<int_type>();
 
-    else if( name_ == "ones" ) CreateMatrixOnes();
+    else if( name_ == "ones" ) CreateMatrixOnes<int_type>();
 
-    else if( name_ == "vander" ) CreateMatrixVander();
+    else if( name_ == "vander" ) CreateMatrixVander<int_type>();
     
     else {
       cerr << ErrorMsg << "matrix name is incorrect or not set ("
@@ -1031,8 +1075,24 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
   return;    
 }
 
+void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateMatrix<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateMatrix<int>();
+	else
+#endif
+	throw "Trilinos_Util::CrsMatrixGallery::CreateMatrix: failed";
+}
+
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TCreateExactSolution(void)
 {
 
   if( verbose_ == true ) {
@@ -1041,6 +1101,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
   }
   
   if( map_ == NULL ) CreateMap();
+
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
 
   if( ExactSolution_ == NULL ) {
 
@@ -1056,12 +1118,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
 
     } else if( ExactSolutionType_ == "quad_x" ) {
 
+      int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
       // always suppose to have Dirichlet boundary
       // conditions, and those points have already been eliminated
       // from the matrix
       double hx = lx_/(NumGlobalElements_+1);
       for( int i=0 ; i<NumMyElements_ ; i++ ) {
-	double x = (MyGlobalElements_[i]+1)*hx;
+	double x = (MyGlobalElements[i]+1)*hx;
 	for (int j = 0 ; j < NumVectors_ ; ++j)
 	  (*ExactSolution_)[j][i] = x*(1.-x);
       }
@@ -1075,8 +1139,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
       
       for( int i=0 ; i<NumMyElements_ ; ++i ) {
 	int ix, iy;
-	ix = (MyGlobalElements_[i])%nx_;
-	iy = (MyGlobalElements_[i] - ix)/nx_;
+	ix = (MyGlobalElements[i])%nx_;
+	iy = (MyGlobalElements[i] - ix)/nx_;
 	double x = hx*(ix+1);
 	double y = hy*(iy+1);
 	double u;
@@ -1101,6 +1165,21 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
 
   return;
   
+}
+
+void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateExactSolution<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateExactSolution<int>();
+	else
+#endif
+	throw "Trilinos_Util::CrsMatrixGallery::CreateExactSolution: failed";
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1132,7 +1211,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateStartingSolution(void)
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
 {
 
   if( map_ == NULL ) CreateMap();
@@ -1148,6 +1228,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
   }
   
   rhs_ = new Epetra_MultiVector(*map_,NumVectors_);
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
 
   if( RhsType_ == "from_exact_solution" ) {
 
@@ -1167,8 +1248,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
-      ix = (MyGlobalElements_[i])%nx_;
-      iy = (MyGlobalElements_[i] - ix)/nx_;
+      ix = (MyGlobalElements[i])%nx_;
+      iy = (MyGlobalElements[i] - ix)/nx_;
       double x = hx*(ix+1);
       double y = hy*(iy+1);
       double u, ux, uy, uxx, uyy;
@@ -1194,8 +1275,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
-      ix = (MyGlobalElements_[i])%nx_;
-      iy = (MyGlobalElements_[i] - ix)/nx_;
+      ix = (MyGlobalElements[i])%nx_;
+      iy = (MyGlobalElements[i] - ix)/nx_;
       double x = hx*(ix+1);
       double y = hy*(iy+1);
       double u, ux, uy, uxx, uyy;
@@ -1217,8 +1298,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
-      ix = (MyGlobalElements_[i])%nx_;
-      iy = (MyGlobalElements_[i] - ix)/nx_;
+      ix = (MyGlobalElements[i])%nx_;
+      iy = (MyGlobalElements[i] - ix)/nx_;
       double x = hx*(ix+1);
       double y = hy*(iy+1);
       double u, ux, uy, uxx, uyy;
@@ -1247,7 +1328,23 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
   
 }
 
+void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateRHS<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateRHS<int>();
+	else
+#endif
+	throw "Trilinos_Util::CrsMatrixGallery::CreateRHS: failed";
+}
+
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateEye(void) 
 {
 
@@ -1256,11 +1353,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateEye(void)
   }
   
   a_ = 1.0;
-  CreateMatrixDiag();
+  CreateMatrixDiag<int_type>();
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void) 
 {
 
@@ -1274,13 +1372,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,1);
   double Value;
-    
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_; ++i ) {
 
-    int Indices = MyGlobalElements_[i];
+    int_type Indices = MyGlobalElements[i];
     Value = a_;
       
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &Value, &Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, &Value, &Indices);
       
   }
     
@@ -1291,6 +1390,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void)
 }
   
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void) 
 {
 
@@ -1307,32 +1407,34 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,3);
 
   double * Values = new double[2];
-  int * Indices = new int[2];
+  int_type * Indices = new int_type[2];
   int NumEntries;
 
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_; ++i ) {
-    if (MyGlobalElements_[i]==0) {
+    if (MyGlobalElements[i]==0) {
       // off-diagonal for first row
       Indices[0] = 1;
       NumEntries = 1;
       Values[0] = c_;
-    } else if (MyGlobalElements_[i] == NumGlobalElements_-1) {
+    } else if (MyGlobalElements[i] == NumGlobalElements_-1) {
       // off-diagonal for last row
       Indices[0] = NumGlobalElements_-2;
       NumEntries = 1;
       Values[0] = b_;
     } else {
       // off-diagonal for internal row
-      Indices[0] = MyGlobalElements_[i]-1;
+      Indices[0] = MyGlobalElements[i]-1;
       Values[0] = b_;
-      Indices[1] = MyGlobalElements_[i]+1;
+      Indices[1] = MyGlobalElements[i]+1;
       Values[1] = c_;
       NumEntries = 2;
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     Values[0] = a_;
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, Values, MyGlobalElements+i);
   }
   
   // Finish up, trasforming the matrix entries into local numbering,
@@ -1347,6 +1449,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1d(void)
 {
 
@@ -1358,12 +1461,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1d(void)
   b_ = -1.0;
   c_ = -1.0;
 
-  CreateMatrixTriDiag();
+  CreateMatrixTriDiag<int_type>();
   
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
 {
 
@@ -1374,33 +1478,35 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,3);
 
   double *Values = new double[2];
-  int *Indices = new int[2];
+  int_type *Indices = new int_type[2];
   int NumEntries;
 
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_; ++i ) {
-    if (MyGlobalElements_[i]==0) {
+    if (MyGlobalElements[i]==0) {
       Indices[0] = 1;
       NumEntries = 1;
       Values[0] = -1.0;
-    } else if (MyGlobalElements_[i] == NumGlobalElements_-1) {
+    } else if (MyGlobalElements[i] == NumGlobalElements_-1) {
       Indices[0] = NumGlobalElements_-2;
       NumEntries = 1;
       Values[0] = -1.0;
     } else {
-      Indices[0] = MyGlobalElements_[i]-1;
+      Indices[0] = MyGlobalElements[i]-1;
       Values[1] = -1.0;
-      Indices[1] = MyGlobalElements_[i]+1;
+      Indices[1] = MyGlobalElements[i]+1;
       Values[0] = -1.0;
       NumEntries = 2;
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
-    if (MyGlobalElements_[i]==0 || (MyGlobalElements_[i] == NumGlobalElements_-1) )
+    if (MyGlobalElements[i]==0 || (MyGlobalElements[i] == NumGlobalElements_-1) )
       Values[0] = 1.0;
     else
       Values[0] = 2.0;
     
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, Values, MyGlobalElements+i);
   }
   
   // Finish up, trasforming the matrix entries into local numbering,
@@ -1414,6 +1520,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
 {
 
@@ -1441,14 +1548,16 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
   // Add  rows one-at-a-time
     
   double Values[4], diag;
-  int Indices[4];
+  int_type Indices[4];
 
   //    e
   //  b a c
   //    d
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -1471,13 +1580,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 	
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1486,6 +1595,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
 {
 
@@ -1502,15 +1612,16 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
   // Add  rows one-at-a-time
     
   double Values[4], diag;
-  int Indices[4];
+  int_type Indices[4];
 
   //    e
   //  b a c
   //    d
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
 
     int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -1533,13 +1644,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 	
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1548,6 +1659,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
 {
 
@@ -1564,17 +1676,18 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
   // Add  rows one-at-a-time
     
   double Values[4], diag;
-  int Indices[4];
+  int_type Indices[4];
   
   //    e
   //  b a c
   //    d
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
 
     //bool isBorder = false;
 
     //int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
 
     // any border node gets only diagonal entry
@@ -1596,13 +1709,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
       Values[3] = -1.0;
     
       // put the off-diagonal entries
-      matrix_->InsertGlobalValues(MyGlobalElements_[i], 4, Values, Indices);
+      matrix_->InsertGlobalValues(MyGlobalElements[i], 4, Values, Indices);
 
       diag = 4.0;
     }
 	
     // new diagonal guy
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1611,6 +1724,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
 {
 
@@ -1627,17 +1741,18 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
   // Add  rows one-at-a-time
     
   double Values[4], diag;
-  int Indices[4];
+  int_type Indices[4];
   
   //    e
   //  b a c
   //    d
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
 
     bool isBorder = false;
 
     int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -1664,12 +1779,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
     } else isBorder = true;
     
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     if( isBorder ) diag = 2;
     else           diag = 4;
 	
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1678,6 +1793,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
 {
 
@@ -1695,16 +1811,17 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
     
   double Values[8], diag;
   for( int i=0 ; i<8 ; ++i ) Values[i] = -1.0;
-  int Indices[8];
+  int_type Indices[8];
 
   diag = 8.0;
   
   //  z3  e  z4
   //   b  a  c
   //  z1  d  z2
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -1740,11 +1857,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
     }
     
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1752,6 +1869,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
       
 }
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
 {
 
@@ -1781,12 +1899,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
     e_ = -1;
   }
   
-  CreateMatrixCrossStencil2d();
+  CreateMatrixCrossStencil2d<int_type>();
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
 {
 
@@ -1829,10 +1948,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
   double hx = lx_/(nx_+1);
   double hy = ly_/(ny_+1);
 
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
-    ix = (MyGlobalElements_[i])%nx_;
-    iy = (MyGlobalElements_[i] - ix)/nx_;
+    ix = (MyGlobalElements[i])%nx_;
+    iy = (MyGlobalElements[i] - ix)/nx_;
     double x = hx*(ix+1);
     double y = hy*(iy+1);
     double ConvX = conv_*4*x*(x-1.)*(1.-2*y)/hx;
@@ -1866,12 +1987,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
     
   }
 
-  CreateMatrixCrossStencil2dVector();
+  CreateMatrixCrossStencil2dVector<int_type>();
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
 {
 
@@ -1909,10 +2031,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
   double hx = lx_/(nx_+1);
   double hy = ly_/(ny_+1);
 
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
-    ix = (MyGlobalElements_[i])%nx_;
-    iy = (MyGlobalElements_[i] - ix)/nx_;
+    ix = (MyGlobalElements[i])%nx_;
+    iy = (MyGlobalElements[i] - ix)/nx_;
     double x = hx*(ix+1);
     double y = hy*(iy+1);
     double ConvX = conv_*2*y*(1.-x*x)/hx;
@@ -1946,13 +2070,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
     
   }
 
-  CreateMatrixCrossStencil2d();
+  CreateMatrixCrossStencil2d<int_type>();
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
 {
 
@@ -1998,10 +2123,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
   double hx = lx_/(nx_+1);
   double hy = ly_/(ny_+1);
 
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
-    ix = (MyGlobalElements_[i])%nx_;
-    iy = (MyGlobalElements_[i] - ix)/nx_;
+    ix = (MyGlobalElements[i])%nx_;
+    iy = (MyGlobalElements[i] - ix)/nx_;
 
     double ConvX = conv_ * cos(alpha_) / hx;
     double ConvY = conv_ * sin(alpha_) / hy;
@@ -2034,12 +2161,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
     
   }
 
-  CreateMatrixCrossStencil2dVector();
+  CreateMatrixCrossStencil2dVector<int_type>();
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
 {
 
@@ -2055,12 +2183,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
   f_ = -1.0;
   g_ = -1.0;
 
-  CreateMatrixCrossStencil3d();
+  CreateMatrixCrossStencil3d<int_type>();
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
 {
 
@@ -2080,12 +2209,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
   // Add  rows one-at-a-time
     
   double Values[8];
-  int Indices[8];
+  int_type Indices[8];
 
   //  z1  d  z2
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+    GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_, 
 			       left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -2129,11 +2260,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
     }
     
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -2141,6 +2272,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
       
 }
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
 {
 
@@ -2172,16 +2304,17 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
   // Add  rows one-at-a-time
     
   double Values[6], diag;
-  int Indices[6];
+  int_type Indices[6];
 
   //    e 
   //  b a c
   //    d
   // + f below and g above
     
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian3d(MyGlobalElements_[i], nx_, ny_, nz_,
+    GetNeighboursCartesian3d(MyGlobalElements[i], nx_, ny_, nz_,
 			     left, right, lower, upper, below, above);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -2214,13 +2347,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 	
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
 
   matrix_->FillComplete();
@@ -2229,6 +2362,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
 {
 
@@ -2257,16 +2391,17 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
   // Add  rows one-at-a-time
     
   double Values[6], diag;
-  int Indices[6];
+  int_type Indices[6];
 
   //    e 
   //  b a c
   //    d
   // + f below and g above
     
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian3d(MyGlobalElements_[i], nx_, ny_, nz_,
+    GetNeighboursCartesian3d(MyGlobalElements[i], nx_, ny_, nz_,
 			     left, right, lower, upper, below, above);
     if( left != -1 ) {
       Indices[NumEntries] = left;
@@ -2299,13 +2434,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
 				       Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 	
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], 1, 
+				       &diag, MyGlobalElements+i);
   }
 
   matrix_->FillComplete();
@@ -2313,6 +2448,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
       
 }
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
 {
 
@@ -2323,18 +2459,20 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
 
-  for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
+  for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-    int iGlobal = MyGlobalElements_[i];
-    for( int jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
       if( iGlobal>=jGlobal) Values[jGlobal] = 1.0*(jGlobal+1)/(iGlobal+1);
       else                  Values[jGlobal] = 1.0*(iGlobal+1)/(jGlobal+1);
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumGlobalElements_, Values, Indices);
       
   }
     
@@ -2347,6 +2485,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
 {
 
@@ -2357,18 +2496,20 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
 
-  for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
+  for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-    int iGlobal = MyGlobalElements_[i];
-    for( int jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
       if( iGlobal>=jGlobal ) Values[jGlobal] = 1.0*(jGlobal+1);
       else                   Values[jGlobal] = 1.0*(iGlobal+1);
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumGlobalElements_, Values, Indices);
       
   }
     
@@ -2381,6 +2522,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
 {
   
@@ -2391,18 +2533,20 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
 
-  for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
+  for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-    int iGlobal = MyGlobalElements_[i];
-    for( int jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
       Values[jGlobal] = 0.5/(NumGlobalElements_ -(iGlobal+1)-(jGlobal+1)+1.5);
       
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumGlobalElements_, Values, Indices);
       
   }
     
@@ -2415,6 +2559,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
 }
 
 // ================================================ ====== ==== ==== == =
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void) 
 {
 
@@ -2425,17 +2570,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void)
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
 
-  for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
+  for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-    int iGlobal = MyGlobalElements_[i];
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Values[j] = 1.0/((iGlobal+1)+(j+1)-1);
     }
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumGlobalElements_, Values, Indices);
       
   }
     
@@ -2449,6 +2596,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void) 
 {
 
@@ -2463,23 +2611,25 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void)
   
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,2);
 
-  int Indices[2];
+  int_type Indices[2];
   double Values[2];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = 0;
-    if( MyGlobalElements_[i] != NumGlobalElements_-1 ) {
-      Indices[NumEntries] = MyGlobalElements_[i]+1;
+    if( MyGlobalElements[i] != NumGlobalElements_-1 ) {
+      Indices[NumEntries] = MyGlobalElements[i]+1;
       Values[NumEntries] = 1.0;
       NumEntries++;
     }
     // diagonal contribution
-    Indices[NumEntries] = MyGlobalElements_[i];
+    Indices[NumEntries] = MyGlobalElements[i];
     if( VectorA_ != NULL ) Values[NumEntries] = (*VectorA_)[i];
     else                   Values[NumEntries] = a_;
     NumEntries++;
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
       
   }
     
@@ -2490,6 +2640,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void) 
 {
 
@@ -2499,19 +2650,21 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = NumGlobalElements_;
-    int iGlobal = MyGlobalElements_[i];
+    int_type iGlobal = MyGlobalElements[i];
 
-    for( int jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
+    for( int_type jGlobal=0 ; jGlobal<NumGlobalElements_ ; ++jGlobal ) {
       Indices[jGlobal] = jGlobal;
       Values[jGlobal] = 1.0/(iGlobal+1+jGlobal+1);
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
       
   }
     
@@ -2525,6 +2678,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void) 
 {
 
@@ -2534,18 +2688,20 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = NumGlobalElements_;
-    int iGlobal = MyGlobalElements_[i];
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       Values[j] = (double)abs(iGlobal-j);
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
       
   }
     
@@ -2559,6 +2715,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
 
 // ================================================ ====== ==== ==== == =
 
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void) 
 {
 
@@ -2577,16 +2734,18 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
     exit( EXIT_FAILURE );
   }
 
-  int half = NumGlobalElements_/2;
+  int_type half = NumGlobalElements_/2;
   
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,2);
 
-  int Indices[2];
+  int_type Indices[2];
   double Values[2];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = 2;
-    int Global = MyGlobalElements_[i];
+    int_type Global = MyGlobalElements[i];
     Indices[0] = Global;
     if( Global < half ) Indices[1] = Global + half;
     else                Indices[1] = Global - half;
@@ -2595,7 +2754,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
     if( Global < half ) Values[1] = (double) -Global - 1;
     else                Values[1] = (double)  (Global - half) + 1;
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
     
@@ -2606,6 +2765,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void) 
 {
   
@@ -2618,19 +2778,22 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
   if( a_ == UNDEF ) a_ = 0.5;
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
     int NumEntries = NumGlobalElements_;
-    int iGlobal = MyGlobalElements_[i];
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    int_type iGlobal = MyGlobalElements[i];
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
-      Values[j] = pow(a_,abs(iGlobal-j));
+      // cast to avoid error: call of overloaded pow(double&, long long int) is ambiguous
+      Values[j] = pow(a_,(double) abs(iGlobal-j));
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
 
@@ -2644,6 +2807,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
 
 // ================================================ ====== ==== ==== == =
 
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void) 
 {
 
@@ -2653,19 +2817,21 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
     int NumEntries = NumGlobalElements_;
-    int iGlobal = MyGlobalElements_[i];
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    int iGlobal = MyGlobalElements[i];
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       Values[j] = 1.0/(iGlobal-j+0.5);
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
 
@@ -2680,6 +2846,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void) 
 {
 
@@ -2693,20 +2860,22 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
     int NumEntries = NumGlobalElements_;
 
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       Values[j] = 1.0;
-      if( MyGlobalElements_[i] == j ) Values[j] += a_;
+      if( MyGlobalElements[i] == j ) Values[j] += a_;
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
 
@@ -2720,6 +2889,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void) 
 {
 
@@ -2733,19 +2903,21 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
     int NumEntries = NumGlobalElements_;
 
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       Values[j] = a_;
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
 
@@ -2759,6 +2931,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void)
 
 // ================================================ ====== ==== ==== == =
 
+template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void) 
 {
 
@@ -2770,19 +2943,22 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void)
   
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int * Indices = new int[NumGlobalElements_];
+  int_type * Indices = new int_type[NumGlobalElements_];
   double * Values = new double[NumGlobalElements_];
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
     int NumEntries = NumGlobalElements_;
 
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
-      Values[j] = pow((*VectorA_)[i],NumGlobalElements_-j-1);
+      // cast to avoid error: call of overloaded pow(double&, long long int) is ambiguous
+      Values[j] = pow((*VectorA_)[i],(double)(NumGlobalElements_-j-1));
     }
 
-    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
+    matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
     
   }
 
@@ -2795,7 +2971,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void)
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
+
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
 {
 
   if( verbose_ == true ) {
@@ -2811,28 +2989,59 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
     
   // Call routine to read in problem from file
 
-  if( name_ == "hb" ) 
-    Trilinos_Util_ReadHb2Epetra((char*)FileName_.c_str(), *comm_, readMap,
-				readA, readx, 
-				readb, readxexact);
-  else if( name_ == "matrix_market" )
-    Trilinos_Util_ReadMatrixMarket2Epetra((char*)FileName_.c_str(), *comm_,
-					  readMap, readA, readx, 
-					  readb, readxexact );
-  else if( name_ == "triples_sym" )
-    Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), false, *comm_,
-				     readMap, readA, readx, 
-				     readb, readxexact );
-  else if( name_ == "triples_nonsym" )
-    Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), true, *comm_,
-				     readMap, readA, readx, 
-				     readb, readxexact );
-  else {
-    cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
-    exit( EXIT_FAILURE );
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(UseLongLong_ && sizeof(int_type) == sizeof(long long)) {
+    if( name_ == "hb" ) 
+      Trilinos_Util_ReadHb2Epetra64((char*)FileName_.c_str(), *comm_, readMap,
+					readA, readx, 
+					readb, readxexact);
+    else if( name_ == "matrix_market" )
+      Trilinos_Util_ReadMatrixMarket2Epetra64((char*)FileName_.c_str(), *comm_,
+						  readMap, readA, readx, 
+						  readb, readxexact );
+    else if( name_ == "triples_sym" )
+      Trilinos_Util_ReadTriples2Epetra64((char*)FileName_.c_str(), false, *comm_,
+					     readMap, readA, readx, 
+					     readb, readxexact );
+    else if( name_ == "triples_nonsym" )
+      Trilinos_Util_ReadTriples2Epetra64((char*)FileName_.c_str(), true, *comm_,
+					     readMap, readA, readx, 
+					     readb, readxexact );
+    else {
+      cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
+      exit( EXIT_FAILURE );
+    }
   }
-    
-  NumGlobalElements_ = readMap->NumGlobalElements();
+  else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(!UseLongLong_ && sizeof(int_type) == sizeof(int)) {
+    if( name_ == "hb" ) 
+      Trilinos_Util_ReadHb2Epetra((char*)FileName_.c_str(), *comm_, readMap,
+					readA, readx, 
+					readb, readxexact);
+    else if( name_ == "matrix_market" )
+      Trilinos_Util_ReadMatrixMarket2Epetra((char*)FileName_.c_str(), *comm_,
+						  readMap, readA, readx, 
+						  readb, readxexact );
+    else if( name_ == "triples_sym" )
+      Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), false, *comm_,
+					     readMap, readA, readx, 
+					     readb, readxexact );
+    else if( name_ == "triples_nonsym" )
+      Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), true, *comm_,
+					     readMap, readA, readx, 
+					     readb, readxexact );
+    else {
+      cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
+      exit( EXIT_FAILURE );
+    }
+  }
+  else
+#endif
+    throw "Trilinos_Util::CrsMatrixGallery::TReadMatrix: Global indices int vs. long long internal error";
+
+  NumGlobalElements_ = readMap->NumGlobalElements64();
 
   if( map_ != NULL ) delete map_;
   
@@ -2864,7 +3073,7 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
 	if( i<mod ) ElementsPerDomain[i]++;
       }
       
-      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
 	part[i] = -1;
       }
       
@@ -2911,7 +3120,7 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
 
 	// check if some -1 nodes are still available
 	if( ok == false ) {
-	  for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+	  for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
 	    if( part[j] == -1 ) {
 	      RootNode = j;
 	      ok = true;
@@ -2930,7 +3139,7 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
     // now broadcast on all procs. This might be pretty expensive...
     comm_->Broadcast(part,NumGlobalElements_,0);
 
-    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       if( part[j] == -1 ) {
 	cerr << ErrorMsg << "part[" << j << "] = -1 \n";
       }
@@ -2938,14 +3147,14 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
 
     // count the elements assigned to this proc
     int NumMyElements = 0;
-    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+    for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
       if( part[i] == comm_->MyPID() ) NumMyElements++;
     }
 
     // get the loc2global list
-    int * MyGlobalElements = new int[NumMyElements];
+    int_type * MyGlobalElements = new int_type[NumMyElements];
     int count = 0;
-    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+    for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
       if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
     }
 
@@ -2981,7 +3190,7 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
   // local number of rows
   NumMyElements_ = map_->NumMyElements();
   // get update list
-  MyGlobalElements_ = map_->MyGlobalElements( );
+  map_->MyGlobalElementsPtr(MyGlobalElementsPtr<int_type>());
   
   return;
 
@@ -3142,7 +3351,7 @@ ostream & operator << (ostream& os,
     if( G.matrix_ != NULL ) {
       os << " * the matrix has been created " << endl;
       os << " * Matrix->OperatorDomainMap().NumGlobalElements() = "
-	 << G.matrix_->OperatorDomainMap().NumGlobalElements() << endl;
+	 << G.matrix_->OperatorDomainMap().NumGlobalElements64() << endl;
     }
     if( G.ExactSolution_ != NULL ) 
       os << " * an exact solution (" << G.ExactSolutionType_
@@ -3159,7 +3368,8 @@ ostream & operator << (ostream& os,
 }
 } //namespace Trilinos_Util
 
-void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
+template<typename int_type>
+void Trilinos_Util::CrsMatrixGallery::TGetCartesianCoordinates(double * & x,
 							 double * & y,
 							 double * & z)
 {
@@ -3169,12 +3379,14 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
   double length = 1.0;
   double delta_x, delta_y, delta_z;
 
-  int ix, iy, iz;
+  int_type ix;
+  int iy, iz;
   
   // need coordinates for all elements in ColMap(). This is because often the
   // coordiantes of the so-called external nodes (in the old Aztec notation) are required 
   int NumMyElements = matrix_->RowMatrixColMap().NumMyElements();
-  int * MyGlobalElements = matrix_->RowMatrixColMap().MyGlobalElements();
+  int_type * MyGlobalElements;
+  matrix_->RowMatrixColMap().MyGlobalElementsPtr(MyGlobalElements);
   
   if( name_ == "diag" || name_ == "tridiag"  ||
       name_ == "laplace_1d" || name_ == "eye" ) {
@@ -3186,7 +3398,7 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
     
     for( int i=0 ; i<NumMyElements ; ++i ) {
 
-      ix = MyGlobalElements_[i];
+      ix = MyGlobalElements[i];
       x[i] = delta_x * ix;
 
     }
@@ -3256,6 +3468,24 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
   
 }
 
+void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
+							 double * & y,
+							 double * & z)
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TGetCartesianCoordinates<long long>(x,y,z);
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TGetCartesianCoordinates<int>(x,y,z);
+	else
+#endif
+	throw "Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates: failed";
+}
+
+
 #include <iostream>
 #include <fstream>
 
@@ -3271,16 +3501,16 @@ int Trilinos_Util::CrsMatrixGallery::WriteMatrix( const string & FileName, const
   int NumMyRows = matrix_->NumMyRows(); // number of rows on this process
   int NumNzRow;   // number of nonzero elements for each row
   int NumEntries; // number of extracted elements for each row
-  int NumGlobalRows; // global dimensio of the problem
-  int GlobalRow;  // row in global ordering
-  int NumGlobalNonzeros; // global number of nonzero elements
+  long long NumGlobalRows; // global dimension of the problem
+  long long GlobalRow;  // row in global ordering
+  long long NumGlobalNonzeros; // global number of nonzero elements
 
-  NumGlobalRows = matrix_->NumGlobalRows();
-  NumGlobalNonzeros = matrix_->NumGlobalNonzeros();
+  NumGlobalRows = matrix_->NumGlobalRows64();
+  NumGlobalNonzeros = matrix_->NumGlobalNonzeros64();
 
   // print out on cout if no filename is provided
 
-  int IndexBase = matrix_->IndexBase(); // MATLAB start from 0
+  long long IndexBase = matrix_->IndexBase64(); // MATLAB start from 0
   if( IndexBase == 0 ) IndexBase = 1; 
 
   // write on file the dimension of the matrix
@@ -3315,7 +3545,7 @@ int Trilinos_Util::CrsMatrixGallery::WriteMatrix( const string & FileName, const
       // cycle over all local rows to find out nonzero elements
       for( int MyRow=0 ; MyRow<NumMyRows ; ++MyRow ) {
 	
-	GlobalRow = matrix_->GRID(MyRow);
+	GlobalRow = matrix_->GRID64(MyRow);
 	
 	NumNzRow = matrix_->NumMyEntries(MyRow);
 	double *Values = new double[NumNzRow];
@@ -3326,7 +3556,7 @@ int Trilinos_Util::CrsMatrixGallery::WriteMatrix( const string & FileName, const
 	// print out the elements with MATLAB syntax
 	for( int j=0 ; j<NumEntries ; ++j ) {
 	  fout << "A(" << GlobalRow  + IndexBase 
-	       << "," << matrix_->GCID(Indices[j]) + IndexBase
+	       << "," << matrix_->GCID64(Indices[j]) + IndexBase
 	       << ") = " << Values[j] << ";\n";
 	}
 	
@@ -3413,6 +3643,8 @@ void Trilinos_Util::CrsMatrixGallery::ExactSolQuadXY(double x, double y,
   return;
 
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // CJ: TODO FIXME for long long
 
 Trilinos_Util::VbrMatrixGallery::~VbrMatrixGallery()
 {
@@ -3591,8 +3823,8 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrRHS(void)
 }
 
 // ================================================ ====== ==== ==== == =
-
-void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void) 
+template<typename int_type>
+void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void) 
 {
 
   if( verbose_ == true ) {
@@ -3619,17 +3851,19 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
   int * CrsIndices;
   double * CrsValues;
     
-  int * VbrIndices = new int[MaxNnzPerRow];
+  int_type * VbrIndices = new int_type[MaxNnzPerRow];
   double * VbrValues = new double[MaxBlockSize];
   int BlockRows = NumPDEEqns_;
   int ierr;
     
   // cycle over all the local rows. 
   
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     
     // get GID of local row
-    int GlobalNode = MyGlobalElements_[i];
+    int_type GlobalNode = MyGlobalElements[i];
     // extract Crs row
 
     ierr = matrix_->ExtractMyRowView(i,CrsNumEntries,
@@ -3637,14 +3871,19 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
 
     // matrix_ is in local form. Need global indices
     for( int kk=0 ; kk<CrsNumEntries ; ++kk) 
-      VbrIndices[kk] = matrix_->GCID(CrsIndices[kk]);
+      VbrIndices[kk] = matrix_->GCID64(CrsIndices[kk]);
     
     // with VBR matrices, we have to insert one block at time.
     // This required two more instructions, one to start this
     // process (BeginInsertGlobalValues), and another one to
     // commit the end of submissions (EndSubmitEntries).
     
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
     VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
+#else
+	// CJ TODO FIXME: Vbr matrices cannot be 64 bit GID based yet.
+	throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: No support for BeginInsertGlobalValues";
+#endif
 
     int ExpandTypeInt;
     
@@ -3693,6 +3932,21 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
   VbrMatrix_->FillComplete();
 
   return;
+}
+
+void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void) 
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateVbrMatrix<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateVbrMatrix<int>();
+	else
+#endif
+	throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: failed";
 }
 
 // ================================================ ====== ==== ==== == =
@@ -3775,7 +4029,8 @@ const Epetra_BlockMap & Trilinos_Util::VbrMatrixGallery::GetBlockMapRef(void)
 
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void) 
+template<typename int_type>
+void Trilinos_Util::VbrMatrixGallery::TCreateBlockMap(void) 
 {
         
   if( verbose_ == true ) {
@@ -3794,9 +4049,11 @@ void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void)
 
   MaxBlkSize_ = NumPDEEqns_;
   
-  BlockMap_ = new Epetra_BlockMap(NumGlobalElements_,NumMyElements_,
-				  MyGlobalElements_, 
-				  NumPDEEqns_,0,*comm_);
+  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+
+  BlockMap_ = new Epetra_BlockMap((int_type) NumGlobalElements_,NumMyElements_,
+				  MyGlobalElements, 
+				  NumPDEEqns_,(int_type) 0,*comm_);
 
   if( verbose_ == true ) {
     cout << OutputMsg << "Time to create BlockMap: "
@@ -3807,3 +4064,19 @@ void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void)
   
 }
 
+void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void) 
+{
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	if(UseLongLong_)
+		TCreateBlockMap<long long>();
+	else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(!UseLongLong_)
+		TCreateBlockMap<int>();
+	else
+#endif
+	throw "Trilinos_Util::VbrMatrixGallery::CreateBlockMap: failed";
+}
+
+#endif

@@ -62,6 +62,12 @@ void PerformSolve(
     Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities);
 
+void PerformSolve(
+    const EpetraExt::ModelEvaluator &piroSolver,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<Epetra_MultiVector> > > &sensitivities);
+
 } // namespace Epetra
 
 } // namespace Piro

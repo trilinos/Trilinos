@@ -2215,13 +2215,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE )
 
-#define NC_TESTS(N2) \
+#define NC_TESTS(D,LO,GO,N2) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NodeConversion, double, int, int, N2 )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
-  TPETRA_INSTANTIATE_N(NC_TESTS)
+  TPETRA_INSTANTIATE_DOUBLE_INT_INT_N(NC_TESTS)
 
 }
