@@ -533,7 +533,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
   }
   aMat->fillComplete(aDomainMap, aRangeMap); 
 
-  RowMatrixTransposer<double,int,int,SerialNode> transposer(*aMat);
+  RowMatrixTransposer<double,int,int,SerialNode> transposer (aMat);
   RCP<CrsMatrix<double, int, int, SerialNode> > knownAMat = 
     transposer.createTranspose();
     

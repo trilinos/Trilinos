@@ -186,7 +186,7 @@ int main(int argc, char* argv[]){
 	AT.fillComplete();
 
 	
-	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer(A);
+	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer (Teuchos::rcpFromRef (A));
 	TestMatrix = transposer.createTranspose(Tpetra::DoOptimizeStorage); //, TestMatrix/*, tMap*/);
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, Ordinal> > diffMatrix = Tpetra::createCrsMatrix<Scalar, Ordinal>(TestMatrix->getRowMap());
