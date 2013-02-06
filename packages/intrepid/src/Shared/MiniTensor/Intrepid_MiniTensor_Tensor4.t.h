@@ -387,7 +387,8 @@ namespace Intrepid {
     Index const
     N = A.get_dimension();
 
-    Tensor4<T> B(N);
+    Tensor4<T>
+    B(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
@@ -413,6 +414,35 @@ namespace Intrepid {
   operator*(Tensor4<T> const & A, S const & s)
   {
     return s * A;
+  }
+
+  //
+  // 4th-order tensor scalar division
+  // \param A 4th-order tensor
+  // \param s scalar
+  // \return \f$ s A \f$
+  //
+  template<typename T, typename S>
+  Tensor4<T>
+  operator/(Tensor4<T> const & A, S const & s)
+  {
+    Index const
+    N = A.get_dimension();
+
+    Tensor4<T>
+    B(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            B(i,j,k,l) = A(i,j,k,l) / s;
+          }
+        }
+      }
+    }
+
+    return B;
   }
 
   //
@@ -619,10 +649,7 @@ namespace Intrepid {
   }
 
   //
-  // 4th-order tensor 2nd-order tensor double dot product
-  // \param A 4th-order tensor
-  // \param B 2nd-order tensor
-  // \return 2nd-order tensor \f$ A:B \f$ as \f$ C_{ij}=A_{ijkl}B_{kl} \f$
+  // \return 2nd-order tensor \f$ C = A : B := C_{ij}=A_{ijkl}B_{kl} \f$
   //
   template<typename T>
   Tensor<T>
@@ -651,10 +678,7 @@ namespace Intrepid {
   }
 
   //
-  // 2nd-order tensor 4th-order tensor double dot product
-  // \param B 2nd-order tensor
-  // \param A 4th-order tensor
-  // \return 2nd-order tensor \f$ B:A \f$ as \f$ C_{kl}=A_{ijkl}B_{ij} \f$
+  // \return 2nd-order tensor \f$ C = B : A := C_{kl} = A_{ijkl} B_{ij} \f$
   //
   template<typename T>
   Tensor<T>
@@ -682,10 +706,9 @@ namespace Intrepid {
     return C;
   }
 
-  // Tensor4 Tensor4 double dot product
-  // \param A Tensor4
-  // \param B Tensor4
-  // \return a Tensor4 \f$ C_{ijkl} = A_{ijmn} : B){mnkl} \f$
+  //
+  // \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
+  //
   template<typename T>
   Tensor4<T>
   dotdot(Tensor4<T> const & A, Tensor4<T> const & B)
@@ -695,7 +718,8 @@ namespace Intrepid {
 
     assert(B.get_dimension() == N);
 
-    Tensor4<T> C(N);
+    Tensor4<T>
+    C(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
@@ -717,10 +741,7 @@ namespace Intrepid {
   }
 
   //
-  // 2nd-order tensor 2nd-order tensor tensor product
-  // \param A 2nd-order tensor
-  // \param B 2nd-order tensor
-  // \return \f$ A \otimes B \f$
+  // \return \f$ C = A \otimes B := C_{ijkl} = A_{ij} B_{kl} \f$
   //
   template<typename T>
   Tensor4<T>
@@ -731,13 +752,270 @@ namespace Intrepid {
 
     assert(B.get_dimension() == N);
 
-    Tensor4<T> C(N);
+    Tensor4<T>
+    C(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
         for (Index k = 0; k < N; ++k) {
           for (Index l = 0; l < N; ++l) {
             C(i,j,k,l) = A(i,j) * B(k,l);
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot(Tensor4<T> const & A, Tensor<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,j,k,p) * B(p,l);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijkp} B_{lp} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot_t(Tensor4<T> const & A, Tensor<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,j,k,p) * B(l,p);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot(Tensor<T> const & A, Tensor4<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,p) * B(p,j,k,l);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{pjkl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  t_dot(Tensor<T> const & A, Tensor4<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(p,i) * B(p,j,k,l);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpk} B_{pl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot2(Tensor4<T> const & A, Tensor<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,j,p,k) * B(p,l);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpk} B_{lp} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot2_t(Tensor4<T> const & A, Tensor<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,j,p,k) * B(l,p);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{jpkl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  dot2(Tensor<T> const & A, Tensor4<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(i,p) * B(j,p,k,l);
+            }
+            C(i,j,k,l) = s;
+          }
+        }
+      }
+    }
+
+    return C;
+  }
+
+  //
+  // \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{jpkl} \f$
+  //
+  template<typename T>
+  Tensor4<T>
+  t_dot2(Tensor<T> const & A, Tensor4<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor4<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          for (Index l = 0; l < N; ++l) {
+            T s = 0.0;
+            for (Index p = 0; p < N; ++p) {
+              s += A(p,i) * B(j,p,k,l);
+            }
+            C(i,j,k,l) = s;
           }
         }
       }

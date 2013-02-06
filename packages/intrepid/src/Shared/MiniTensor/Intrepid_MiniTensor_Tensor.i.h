@@ -244,7 +244,7 @@ namespace Intrepid {
   }
 
   //
-  // R^N create tensor from a scalar
+  // Create tensor from a scalar
   // \param s all components are set equal to this value
   //
   template<typename T>

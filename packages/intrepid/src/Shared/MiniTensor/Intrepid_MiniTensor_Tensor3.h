@@ -220,10 +220,20 @@ namespace Intrepid {
   operator*(Tensor3<T> const & A, S const & s);
 
   ///
+  /// 3rd-order tensor scalar division
+  /// \param A 3rd-order tensor
+  /// \param s scalar
+  /// \return \f$ A / s \f$
+  ///
+  template<typename T, typename S>
+  Tensor3<T>
+  operator/(Tensor3<T> const & A, S const & s);
+
+  ///
   /// 3rd-order tensor vector product
   /// \param A 3rd-order tensor
   /// \param u vector
-  /// \return \f$ A u \f$
+  /// \return \f$ C = A \cdot u := C_{ij} = A_{ijp} u_p \f$
   ///
   template<typename T>
   Tensor<T>
@@ -233,31 +243,71 @@ namespace Intrepid {
   /// vector 3rd-order tensor product
   /// \param A 3rd-order tensor
   /// \param u vector
-  /// \return \f$ u A \f$
+  /// \return \f$ C = u \cdot A := C_{ij} = u_p A{pij} \f$
   ///
   template<typename T>
   Tensor<T>
   dot(Vector<T> const & u, Tensor3<T> const & A);
 
   ///
-  /// 3rd-order tensor vector product2 (contract 2nd index)
+  /// 3rd-order tensor vector product
   /// \param A 3rd-order tensor
   /// \param u vector
-  /// \return \f$ A u \f$
+  /// \return \f$ C = A \cdot u := C_{ij} = A_{ipj} u_p \f$
   ///
   template<typename T>
   Tensor<T>
   dot2(Tensor3<T> const & A, Vector<T> const & u);
 
   ///
-  /// vector 3rd-order tensor product2 (contract 2nd index)
-  /// \param A 3rd-order tensor
+  /// vector 3rd-order tensor product
   /// \param u vector
-  /// \return \f$ u A \f$
+  /// \param A 3rd-order tensor
+  /// \return \f$ C = u \cdot A := C_{ij} = u_p A_{ipj} \f$
   ///
   template<typename T>
   Tensor<T>
   dot2(Vector<T> const & u, Tensor3<T> const & A);
+
+  ///
+  /// 3rd-order tensor 2nd-order tensor product
+  /// \param A 3rd-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot(Tensor3<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 2nd-order tensor 3rd-order tensor product
+  /// \param A 2nd-order tensor
+  /// \param B 3rd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot(Tensor<T> const & A, Tensor3<T> const & B);
+
+  ///
+  /// 3rd-order tensor 2nd-order tensor product
+  /// \param A 3rd-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot2(Tensor3<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 2nd-order tensor 3rd-order tensor product
+  /// \param A 2nd-order tensor
+  /// \param B 3rd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot2(Tensor<T> const & A, Tensor3<T> const & B);
 
   ///
   /// 3rd-order tensor input
