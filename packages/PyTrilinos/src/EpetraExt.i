@@ -449,19 +449,32 @@ namespace EpetraExt
 // EpetraExt_Transform support //
 /////////////////////////////////
 %include "EpetraExt_Transform.h"
-%template () std::vector<Epetra_IntVector>;
 
-%template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::Transform<Epetra_CrsGraph,
-				  std::vector<Epetra_IntVector,
-					      std::allocator<Epetra_IntVector> > >;
-%template () EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
+%template ()
+std::vector<Epetra_IntVector>;
 
-%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::StructuralTransform<Epetra_CrsGraph,
-					    std::vector<Epetra_IntVector> >;
+%include "Epetra_IntVector.h"
+%include "Epetra_CrsGraph.h"
+%include "Epetra_MapColoring.h"
 
-%template () EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
+%template (Xform_CrsGraph_MapColoring)
+EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
+
+%template (Xform_CrsGraph_vecIntVector)
+EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+                                                  std::allocator<Epetra_IntVector> > >;
+
+%template (Xform_CrsMatrix_CrsMatrix)
+EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
+
+%template (SXform_CrsGraph_MapColoring)
+EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
+
+%template (SXform_CrsGraph_vecIntVector)
+EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
+
+%template (SameXform_CrsMatrix)
+EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
 
 ///////////////////////////////////
 // EpetraExt_MapColoring support //
