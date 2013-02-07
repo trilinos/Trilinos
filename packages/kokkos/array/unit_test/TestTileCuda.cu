@@ -46,7 +46,10 @@
 
 #include <KokkosArray_Cuda.hpp>
 
-TEST( host_tile, tile_1x1)
+namespace Test {
+
+void test_device_cuda_tile()
+{
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<1,1> tile_layout;
@@ -57,7 +60,6 @@ TEST( host_tile, tile_1x1)
   EXPECT_EQ( errors, 0u);
 }
 
-TEST( host_tile, tile_2x2)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<2,2> tile_layout;
@@ -68,7 +70,6 @@ TEST( host_tile, tile_2x2)
   EXPECT_EQ( errors, 0u);
 }
 
-TEST( host_tile, tile_4x4)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<4,4> tile_layout;
@@ -79,7 +80,6 @@ TEST( host_tile, tile_4x4)
   EXPECT_EQ( errors, 0u);
 }
 
-TEST( host_tile, tile_8x8)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<8,8> tile_layout;
@@ -90,7 +90,6 @@ TEST( host_tile, tile_8x8)
   EXPECT_EQ( errors, 0u);
 }
 
-TEST( host_tile, tile_16x16)
 {
   static const size_t dim = 9;
   typedef KokkosArray::LayoutTileLeft<16,16> tile_layout;
@@ -100,3 +99,7 @@ TEST( host_tile, tile_16x16)
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
   EXPECT_EQ( errors, 0u);
 }
+}
+
+}
+

@@ -63,6 +63,7 @@ protected:
   }
 };
 
+extern void test_device_cuda_tile();
 extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
 extern void test_device_cuda_crsarray();
@@ -104,6 +105,11 @@ TEST_F( cuda, reduce_dynamic_view )
 TEST_F( cuda, multi_reduce )
 {
   test_device_cuda_multi_reduce();
+}
+
+TEST_F( cuda, tile )
+{
+  test_device_cuda_tile();
 }
 
 }

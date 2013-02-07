@@ -32,7 +32,7 @@ CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp TestTileHost.cpp"
 
 if [ -n "${NVCC}" ] ;
 then
-  NVCC_SOURCES="${NVCC_SOURCES} TestCudaFunctions.cu"
+  NVCC_SOURCES="${NVCC_SOURCES} TestCudaFunctions.cu TestTileCuda.cu"
   CXX_SOURCES="${CXX_SOURCES} TestCuda.cpp"
 
   echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
