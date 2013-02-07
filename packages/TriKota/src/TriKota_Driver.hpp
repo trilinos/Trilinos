@@ -36,13 +36,13 @@
 
 // Dakota includes
 
-#include "system_defs.h"
-#include "ParallelLibrary.H"
-#include "ProblemDescDB.H"
-#include "DakotaStrategy.H"
-#include "DakotaModel.H"
-#include "DakotaInterface.H"
-#include "DirectApplicInterface.H"
+#include "dakota_system_defs.hpp"
+#include "ParallelLibrary.hpp"
+#include "ProblemDescDB.hpp"
+#include "DakotaStrategy.hpp"
+#include "DakotaModel.hpp"
+#include "DakotaInterface.hpp"
+#include "DirectApplicInterface.hpp"
 
 
 //Trilinos includes

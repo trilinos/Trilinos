@@ -43,7 +43,7 @@
 
 // Dakota fakes MPI when doing serial builds :-)
 #include "TriKota_ConfigDefs.hpp"
-#include "ParallelLibrary.H"
+#include "ParallelLibrary.hpp"
 
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *
