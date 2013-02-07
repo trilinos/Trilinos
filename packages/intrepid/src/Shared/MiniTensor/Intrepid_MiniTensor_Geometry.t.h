@@ -100,7 +100,7 @@ namespace Intrepid {
     Vector<T> n = cross(u, v);
     n = n / norm(n);
     Vector<T> w = p3 - p0;
-    T h = fabs(dot(w, n));
+    T h = std::abs(dot(w, n));
 
     // Volume
     T V = A * h / 3.0;
@@ -128,7 +128,7 @@ namespace Intrepid {
     Vector<T> n = cross(u, v);
     n = n / norm(n);
     Vector<T> w = p4 - p0;
-    T h = fabs(dot(w, n));
+    T h = std::abs(dot(w, n));
 
     // Volume
     T V = A * h / 3.0;

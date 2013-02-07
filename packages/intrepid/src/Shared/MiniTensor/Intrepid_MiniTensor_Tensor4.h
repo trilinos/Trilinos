@@ -230,10 +230,23 @@ namespace Intrepid {
   operator*(Tensor4<T> const & A, S const & s);
 
 
-  /// Tensor4 Tensor4 double dot product
-  /// \param A Tensor4
-  /// \param B Tensor4
-  /// \return a Tensor4 \f$ C_{ijkl} = A_{ijmn} : B){mnkl} \f$
+  ///
+  /// 4th-order tensor scalar division
+  /// \param A 4th-order tensor
+  /// \param s scalar
+  /// \return \f$ A / s \f$
+  ///
+  template<typename T, typename S>
+  Tensor4<T>
+  operator/(Tensor4<T> const & A, S const & s);
+
+
+  ///
+  /// 4th-order tensor 4th-order tensor double dot product
+  /// \param A 4th-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
+  ///
   template<typename T>
   Tensor4<T>
   dotdot(Tensor4<T> const & A, Tensor4<T> const & B);
@@ -273,7 +286,7 @@ namespace Intrepid {
   /// 4th-order tensor vector dot product
   /// \param A 4th-order tensor
   /// \param u vector
-  /// \return 3rd-order tensor \f$ A dot u \f$ as \f$ B_{ijk}=A_{ijkl}u_{l} \f$
+  /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkl}u_{l} \f$
   ///
   template<typename T>
   Tensor3<T>
@@ -283,7 +296,7 @@ namespace Intrepid {
   /// vector 4th-order tensor dot product
   /// \param A 4th-order tensor
   /// \param u vector
-  /// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{jkl}=u_{i} A_{ijkl} \f$
+  /// \return 3rd-order tensor \f$ B = u \cdot A := B_{jkl}=u_{i} A_{ijkl} \f$
   ///
   template<typename T>
   Tensor3<T>
@@ -293,7 +306,7 @@ namespace Intrepid {
   /// 4th-order tensor vector dot2 product
   /// \param A 4th-order tensor
   /// \param u vector
-  /// \return 3rd-order tensor \f$ A dot2 u \f$ as \f$ B_{ijl}=A_{ijkl}u_{k} \f$
+  /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijl}=A_{ijkl}u_{k} \f$
   ///
   template<typename T>
   Tensor3<T>
@@ -303,7 +316,7 @@ namespace Intrepid {
   /// vector 4th-order tensor dot2 product
   /// \param A 4th-order tensor
   /// \param u vector
-  /// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ikl}=u_{j}A_{ijkl} \f$
+  /// \return 3rd-order tensor \f$ B = u \cdot A := B_{ikl}=u_{j}A_{ijkl} \f$
   ///
   template<typename T>
   Tensor3<T>
@@ -313,7 +326,7 @@ namespace Intrepid {
   /// 4th-order tensor 2nd-order tensor double dot product
   /// \param A 4th-order tensor
   /// \param B 2nd-order tensor
-  /// \return 2nd-order tensor \f$ A:B \f$ as \f$ C_{ij}=A_{ijkl}B_{kl} \f$
+  /// \return 2nd-order tensor \f$ C = A : B := C_{ij}=A_{ijkl}B_{kl} \f$
   ///
   template<typename T>
   Tensor<T>
@@ -323,7 +336,7 @@ namespace Intrepid {
   /// 2nd-order tensor 4th-order tensor double dot product
   /// \param B 2nd-order tensor
   /// \param A 4th-order tensor
-  /// \return 2nd-order tensor \f$ B:A \f$ as \f$ C_{kl}=A_{ijkl}B_{ij} \f$
+  /// \return 2nd-order tensor \f$ C = B : A := C_{kl}=A_{ijkl}B_{ij} \f$
   ///
   template<typename T>
   Tensor<T>
@@ -333,11 +346,91 @@ namespace Intrepid {
   /// 2nd-order tensor 2nd-order tensor tensor product
   /// \param A 2nd-order tensor
   /// \param B 2nd-order tensor
-  /// \return \f$ A \otimes B \f$
+  /// \return \f$ C = A \otimes B := C_{ijkl} = A_{ij} B_{kl} \f$
   ///
   template<typename T>
   Tensor4<T>
   tensor(Tensor<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 4th-order tensor 2nd-order tensor dot product
+  /// \param A 4th-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot(Tensor4<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 4th-order tensor 2nd-order tensor transpose dot product
+  /// \param A 4th-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijkp} B_{lp} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot_t(Tensor4<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 2nd-order tensor 4th-order tensor dot product
+  /// \param A 2nd-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot(Tensor<T> const & A, Tensor4<T> const & B);
+
+  ///
+  /// 2nd-order tensor transpose 4th-order tensor dot product
+  /// \param A 2nd-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{pjkl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  t_dot(Tensor<T> const & A, Tensor4<T> const & B);
+
+  ///
+  /// 4th-order tensor 2nd-order tensor dot product
+  /// \param A 4th-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpk} B_{pl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot2(Tensor4<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 4th-order tensor 2nd-order tensor transpose dot product
+  /// \param A 4th-order tensor
+  /// \param B 2nd-order tensor
+  /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpk} B_{lp} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot2_t(Tensor4<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// 2nd-order tensor 4th-order tensor dot product
+  /// \param A 2nd-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{jpkl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  dot2(Tensor<T> const & A, Tensor4<T> const & B);
+
+  ///
+  /// 2nd-order tensor transpose 4th-order tensor dot product
+  /// \param A 2nd-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{jpkl} \f$
+  ///
+  template<typename T>
+  Tensor4<T>
+  t_dot2(Tensor<T> const & A, Tensor4<T> const & B);
 
   ///
   /// odot operator useful for \f$ \frac{\partial A^{-1}}{\partial A} \f$

@@ -163,6 +163,42 @@ namespace Intrepid
   }
 
   //
+  // Create vector from a scalar
+  // \param s all components are set equal to this value
+  //
+  template<typename T>
+  inline
+  Vector<T>::Vector(Index const N, T const & s) :
+    dimension(0),
+    e(NULL)
+  {
+    set_dimension(N);
+
+    switch (N) {
+
+    default:
+      for (Index i = 0; i < N; ++i) {
+        e[i] = s;
+      }
+      break;
+
+    case 3:
+      e[0] = s;
+      e[1] = s;
+      e[2] = s;
+      break;
+
+    case 2:
+      e[0] = s;
+      e[1] = s;
+      break;
+
+    }
+
+    return;
+  }
+
+  //
   // Create vector specifying components
   // \param N dimension
   // \param s0, s1 are the vector components in the R^2 canonical basis
@@ -836,15 +872,15 @@ namespace Intrepid
     switch (N) {
 
       default:
-        s = sqrt(dot(u, u));
+        s = std::sqrt(dot(u, u));
         break;
 
       case 3:
-        s = sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
+        s = std::sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
         break;
 
       case 2:
-        s = sqrt(u(0) * u(0) + u(1) * u(1));
+        s = std::sqrt(u(0) * u(0) + u(1) * u(1));
         break;
 
     }

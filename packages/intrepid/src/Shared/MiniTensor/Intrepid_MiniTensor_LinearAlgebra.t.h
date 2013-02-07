@@ -90,7 +90,7 @@ namespace Intrepid {
 
           Index const row = *rows_iter;
           Index const col = *cols_iter;
-          T const s = abs(S(row, col));
+          T const s = std::abs(S(row, col));
 
           if (s > pivot) {
 
@@ -697,7 +697,7 @@ namespace Intrepid {
     boost::tie(V, D) = eig_sym(A);
 
     for (Index i = 0; i < N; ++i) {
-      D(i, i) = log(D(i, i));
+      D(i, i) = std::log(D(i, i));
     }
 
     Tensor<T> const
@@ -720,11 +720,11 @@ namespace Intrepid {
 
     //firewalls, make sure R \in SO(N)
     assert(norm(dot_t(R,R) - eye<T>(N)) < 100.0 * machine_epsilon<T>());
-    assert(abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
+    assert(std::abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
 
     // acos requires input between -1 and +1
     T
-    cosine = 0.5*(trace(R) - 1.0);
+    cosine = 0.5 * (trace(R) - 1.0);
 
     if (cosine < -1.0) {
       cosine = -1.0;
@@ -733,7 +733,7 @@ namespace Intrepid {
     }
 
     T
-    theta = acos(cosine);
+    theta = std::acos(cosine);
 
     Tensor<T>
     r(N);
@@ -750,13 +750,13 @@ namespace Intrepid {
 
         r = zero<T>(3);
 
-      } else if (fabs(cosine + 1.0) < 10.0*machine_epsilon<T>())  {
+      } else if (std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>())  {
 
         r = log_rotation_pi(R);
 
       } else {
 
-        r = static_cast<T>(theta / (2.0 * sin(theta))) * (R - transpose(R));
+        r = theta / std::sin(theta) * skew(R);
 
       }
       break;
@@ -787,7 +787,7 @@ namespace Intrepid {
     T
     cosine = 0.5*(trace(R) - 1.0);
     // set firewall to make sure the rotation is indeed 180 degrees
-    assert(fabs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
+    assert(std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
 
     Tensor<T>
     r(N);
@@ -809,19 +809,19 @@ namespace Intrepid {
 
         Vector<T> normal(3);
 
-        if (fabs(r(2,2)) < tol){
+        if (std::abs(r(2,2)) < tol){
           normal(2) = 1.0;
         } else {
           normal(2) = 0.0;
         }
 
-        if (fabs(r(1,1)) < tol){
+        if (std::abs(r(1,1)) < tol){
           normal(1) = 1.0;
         } else {
           normal(1) = -normal(2)*r(1,2)/r(1,1);
         }
 
-        if (fabs(r(0,0)) < tol){
+        if (std::abs(r(0,0)) < tol){
           normal(0) = 1.0;
         } else {
           normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
@@ -837,7 +837,7 @@ namespace Intrepid {
         r(2,0) = -normal(1);
         r(2,1) =  normal(0);
 
-        T const pi = acos(-1.0);
+        T const pi = std::acos(-1.0);
 
         r = pi * r;
       }
@@ -845,7 +845,7 @@ namespace Intrepid {
 
     case 2:
       {
-        T theta = acos(-1.0);
+        T theta = std::acos(-1.0);
 
         if (R(0,0) > 0.0) {
           theta = - theta;
@@ -888,13 +888,13 @@ namespace Intrepid {
       // find pivot in column j, starting in row i
       i_max = i;
       for (Index k = i + 1; k < N; ++k) {
-        if (fabs(U(k,j) > fabs(U(i_max,j)))) {
+        if (std::abs(U(k,j) > std::abs(U(i_max,j)))) {
           i_max = k;
         }
       }
 
       // Check if A(i_max,j) equal to or very close to 0
-      if (fabs(U(i_max,j)) > tol){
+      if (std::abs(U(i_max,j)) > tol){
         // swap rows i and i_max and divide each entry in row i
         // by U(i,j)
         for (Index k = 0; k < N; ++k) {
@@ -968,7 +968,7 @@ namespace Intrepid {
   exp_skew_symmetric(Tensor<T> const & r)
   {
     // Check whether skew-symmetry holds
-    assert(norm(r+transpose(r)) < machine_epsilon<T>());
+    assert(norm(sym(r)) < machine_epsilon<T>());
 
     Index const
     N = r.get_dimension();
@@ -987,11 +987,12 @@ namespace Intrepid {
       break;
 
     case 3:
-      theta = sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
+      theta = std::sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
 
       //Check whether norm == 0. If so, return identity.
       if (theta >= machine_epsilon<T>()) {
-        R += sin(theta)/theta*r + (1.0-cos(theta))/(theta*theta)*r*r;
+        R += std::sin(theta) / theta * r +
+            (1.0 - std::cos(theta)) / (theta * theta) * r * r;
       }
       break;
 
@@ -999,10 +1000,10 @@ namespace Intrepid {
       theta = r(1,0);
 
       T
-      c = cos(theta);
+      c = std::cos(theta);
 
       T
-      s = sin(theta);
+      s = std::sin(theta);
 
       R(0,0) = c;
       R(0,1) = -s;
@@ -1052,7 +1053,7 @@ namespace Intrepid {
 
     }
 
-    return sqrt(s);
+    return std::sqrt(s);
   }
 
   //
@@ -1068,17 +1069,17 @@ namespace Intrepid {
     Index p = 0;
     Index q = 0;
 
-    T s = fabs(A(p,q));
+    T s = std::abs(A(p,q));
 
     Index const
     N = A.get_dimension();
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
-        if (fabs(A(i,j)) > s) {
+        if (std::abs(A(i,j)) > s) {
           p = i;
           q = j;
-          s = fabs(A(i,j));
+          s = std::abs(A(i,j));
         }
       }
     }
@@ -1099,17 +1100,17 @@ namespace Intrepid {
     Index p = 0;
     Index q = 1;
 
-    T s = fabs(A(p,q));
+    T s = std::abs(A(p,q));
 
     Index const
     N = A.get_dimension();
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
-        if (i != j && fabs(A(i,j)) > s) {
+        if (i != j && std::abs(A(i,j)) > s) {
           p = i;
           q = j;
-          s = fabs(A(i,j));
+          s = std::abs(A(i,j));
         }
       }
     }
@@ -1173,10 +1174,10 @@ namespace Intrepid {
         T t = 2.0 - l; // t \in [1,2]
         T mm = m * m;
         T tt = t * t;
-        T s = sqrt(tt + mm); // s \in [1,1 + 1/macheps]
+        T s = std::sqrt(tt + mm); // s \in [1,1 + 1/macheps]
         T r = l != 0.0 ?
-            T(sqrt(l * l + mm)) :
-            T(fabs(m)); // r \in [0,1 + 1/macheps]
+            T(std::sqrt(l * l + mm)) :
+            T(std::abs(m)); // r \in [0,1 + 1/macheps]
         T a = 0.5 * (s + r); // a \in [1,1 + |m|]
         s1 = ha / a;
         s0 = fa * a;
@@ -1191,7 +1192,7 @@ namespace Intrepid {
               T(copysign(T(2.0), f) * copysign(T(1.0), g)) :
               T(g / copysign(d, f) + m / t);
         }
-        T lv = sqrt(tau * tau + 4.0); // second assignment to L in DLASV2
+        T lv = std::sqrt(tau * tau + 4.0); // second assignment to L in DLASV2
         cv = 2.0 / lv;
         sv = tau / lv;
         cu = (cv + sv * m) / a;
@@ -1413,7 +1414,7 @@ namespace Intrepid {
     tol_scale = 0.01;
 
     T const
-    tol_conv = sqrt(N) * machine_epsilon<T>();
+    tol_conv = std::sqrt(N) * machine_epsilon<T>();
 
     Tensor<T>
     X = A;
@@ -1437,7 +1438,7 @@ namespace Intrepid {
 
       if (scale == true) {
         mu = (norm_1(Y) * norm_infinity(Y)) / (norm_1(X) * norm_infinity(X));
-        mu = sqrt(sqrt(mu));
+        mu = std::sqrt(std::sqrt(mu));
       }
 
       Tensor<T>
@@ -1455,7 +1456,7 @@ namespace Intrepid {
 
       bool
       end_iter =
-          norm(D) <= sqrt(tol_conv) ||
+          norm(D) <= std::sqrt(tol_conv) ||
           (delta > 0.5 * gamma && scale == false);
 
       X = Z;
@@ -1551,9 +1552,9 @@ namespace Intrepid {
     Tensor<T>
     x = zero<T>(3);
 
-    x(0,0) = sqrt(eVal(0,0));
-    x(1,1) = sqrt(eVal(1,1));
-    x(2,2) = sqrt(eVal(2,2));
+    x(0,0) = std::sqrt(eVal(0,0));
+    x(1,1) = std::sqrt(eVal(1,1));
+    x(2,2) = std::sqrt(eVal(2,2));
 
     Tensor<T>
     xi = zero<T>(3);
@@ -1608,9 +1609,9 @@ namespace Intrepid {
     Tensor<T>
     x = zero<T>(3);
 
-    x(0,0) = sqrt(eVal(0,0));
-    x(1,1) = sqrt(eVal(1,1));
-    x(2,2) = sqrt(eVal(2,2));
+    x(0,0) = std::sqrt(eVal(0,0));
+    x(1,1) = std::sqrt(eVal(1,1));
+    x(2,2) = std::sqrt(eVal(2,2));
 
     Tensor<T>
     xi = zero<T>(3);
@@ -1688,9 +1689,9 @@ namespace Intrepid {
 
     // compute sqrt() and inv(sqrt()) of eigenvalues
     Tensor<T> x = zero<T>(3);
-    x(0,0) = sqrt(eVal(0,0));
-    x(1,1) = sqrt(eVal(1,1));
-    x(2,2) = sqrt(eVal(2,2));
+    x(0,0) = std::sqrt(eVal(0,0));
+    x(1,1) = std::sqrt(eVal(1,1));
+    x(2,2) = std::sqrt(eVal(2,2));
     Tensor<T> xi = zero<T>(3);
     xi(0,0) = 1.0/x(0,0);
     xi(1,1) = 1.0/x(1,1);
@@ -1751,11 +1752,11 @@ namespace Intrepid {
       T t = (h - f) / (2.0 * g);
 
       if (t >= 0.0) {
-        t = 1.0 / (sqrt(1.0 + t * t) + t);
+        t = 1.0 / (std::sqrt(1.0 + t * t) + t);
       } else {
-        t = -1.0 / (sqrt(1.0 + t * t) - t);
+        t = -1.0 / (std::sqrt(1.0 + t * t) - t);
       }
-      c = 1.0 / sqrt(1.0 + t * t);
+      c = 1.0 / std::sqrt(1.0 + t * t);
       s = t * c;
     }
 
@@ -1775,13 +1776,13 @@ namespace Intrepid {
     T s = 0.0;
 
     if (b != 0.0) {
-      if (fabs(b) > fabs(a)) {
+      if (std::abs(b) > std::abs(a)) {
         T const t = - a / b;
-        s = 1.0 / sqrt(1.0 + t * t);
+        s = 1.0 / std::sqrt(1.0 + t * t);
         c = t * s;
       } else {
         T const t = - b / a;
-        c = 1.0 / sqrt(1.0 + t * t);
+        c = 1.0 / std::sqrt(1.0 + t * t);
         s = t * c;
       }
     }
@@ -1894,13 +1895,13 @@ namespace Intrepid {
       // Eigenvalues, based on LAPACK's dlae2
       //
       T const sum = f + h;
-      T const dif = fabs(f - h);
-      T const g2 = fabs(g + g);
+      T const dif = std::abs(f - h);
+      T const g2 = std::abs(g + g);
 
       T fhmax = f;
       T fhmin = h;
 
-      const bool swap_diag = fabs(h) > fabs(f);
+      const bool swap_diag = std::abs(h) > std::abs(f);
 
       if (swap_diag == true) {
         std::swap(fhmax, fhmin);
@@ -1909,13 +1910,13 @@ namespace Intrepid {
       T r = 0.0;
       if (dif > g2) {
         T const t = g2 / dif;
-        r = dif * sqrt(1.0 + t * t);
+        r = dif * std::sqrt(1.0 + t * t);
       } else if (dif < g2) {
         T const t = dif / g2;
-        r = g2 * sqrt(1.0 + t * t);
+        r = g2 * std::sqrt(1.0 + t * t);
       } else {
         // dif == g2, including zero
-        r = g2 * sqrt(2.0);
+        r = g2 * std::sqrt(2.0);
       }
 
       T s0 = 0.0;
@@ -2024,7 +2025,7 @@ namespace Intrepid {
 
     // not sure if this is necessary...
     T
-    pi = acos(-1);
+    pi = std::acos(-1);
 
     // convenience operators
     Tensor<T> const
@@ -2077,12 +2078,12 @@ namespace Intrepid {
       t1 = 3.0 / -J2;
 
       T
-      rhs = (J3 / 2.0) * T(sqrt(t1 * t1 * t1));
+      rhs = (J3 / 2.0) * T(std::sqrt(t1 * t1 * t1));
 
       T
       theta = pi / 2.0 * (1.0 - (rhs < 0 ? -1.0 : 1.0));
 
-      if (fabs(rhs) <= 1.0) theta = acos(rhs);
+      if (std::abs(rhs) <= 1.0) theta = std::acos(rhs);
 
       T
       thetad3 = theta / 3.0;
@@ -2090,7 +2091,7 @@ namespace Intrepid {
       if (thetad3 > pi / 6.0) thetad3 += 2.0 * pi / 3.0;
 
       // most dominant e-value
-      D(2,2) = 2.0 * cos(thetad3) * sqrt(-J2 / 3.0);
+      D(2,2) = 2.0 * std::cos(thetad3) * std::sqrt(-J2 / 3.0);
 
       // now reduce the system
       Tensor<T>
@@ -2116,7 +2117,7 @@ namespace Intrepid {
       }
 
       // normalize the most dominant column to get s1
-      a(k) = sqrt(a(k));
+      a(k) = std::sqrt(a(k));
       for (int i(0); i < 3; ++i)
         R(i,k) /= a(k);
 
@@ -2145,10 +2146,10 @@ namespace Intrepid {
       }
 
       int p = 0;
-      if (fabs(a(1)) > fabs(a(0))) p = 1;
+      if (std::abs(a(1)) > std::abs(a(0))) p = 1;
 
       // normalize next most dominant column to get s2
-      a(p) = sqrt(a(p));
+      a(p) = std::sqrt(a(p));
       int k2 = ii[k][p];
 
       for (int i(0); i < 3; ++i)
@@ -2161,7 +2162,7 @@ namespace Intrepid {
 
       // normalize
       T
-      mag = sqrt(V(0,2) * V(0,2) + V(1,2) * V(1,2) + V(2,2) * V(2,2));
+      mag = std::sqrt(V(0,2) * V(0,2) + V(1,2) * V(1,2) + V(2,2) * V(2,2));
 
       V(0,2) /= mag;
       V(1,2) /= mag;
@@ -2199,7 +2200,7 @@ namespace Intrepid {
       if (arg == 0)
         D(0,0) = rm(1,1) + b;
       else
-        D(0,0) = rm(1,1) + b - fac * sqrt(b * b + rm(0,1) * rm(0,1));
+        D(0,0) = rm(1,1) + b - fac * std::sqrt(b * b + rm(0,1) * rm(0,1));
 
       D(1,1) = rm(0,0) + rm(1,1) - D(0,0);
 
@@ -2227,7 +2228,7 @@ namespace Intrepid {
       V(2,0) = rm(0,k3) * rk2(2) - rm(1,k3) * rk(2);
 
       // normalize
-      mag = sqrt(V(0,0) * V(0,0) + V(1,0) * V(1,0) + V(2,0) * V(2,0));
+      mag = std::sqrt(V(0,0) * V(0,0) + V(1,0) * V(1,0) + V(2,0) * V(2,0));
       V(0,0) /= mag;
       V(1,0) /= mag;
       V(2,0) /= mag;
@@ -2238,7 +2239,7 @@ namespace Intrepid {
       V(2,1) = V(0,0) * V(1,2) - V(1,0) * V(0,2);
 
       // normalize
-      mag = sqrt(V(0,1) * V(0,1) + V(1,1) * V(1,1) + V(2,1) * V(2,1));
+      mag = std::sqrt(V(0,1) * V(0,1) + V(1,1) * V(1,1) + V(2,1) * V(2,1));
       V(0,1) /= mag;
       V(1,1) /= mag;
       V(2,1) /= mag;
@@ -2282,7 +2283,7 @@ namespace Intrepid {
         return std::make_pair(G, false);
       }
 
-      s = sqrt(s);
+      s = std::sqrt(s);
 
       for (Index j = k + 1; j < N; ++j) {
         G(j,k) /= s;

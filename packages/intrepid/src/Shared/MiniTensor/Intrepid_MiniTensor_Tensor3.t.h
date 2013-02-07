@@ -408,6 +408,33 @@ namespace Intrepid {
   }
 
   //
+  // 3rd-order tensor scalar division
+  // \param A 3rd-order tensor
+  // \param s scalar
+  // \return \f$ s A \f$
+  //
+  template<typename T, typename S>
+  Tensor3<T>
+  operator/(Tensor3<T> const & A, S const & s)
+  {
+    Index const
+    N = A.get_dimension();
+
+    Tensor3<T>
+    B(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index j = 0; j < N; ++j) {
+        for (Index k = 0; k < N; ++k) {
+          B(i,j,k) = A(i,j,k) / s;
+        }
+      }
+    }
+
+    return B;
+  }
+
+  //
   // 3rd-order tensor vector product
   // \param A 3rd-order tensor
   // \param u vector
@@ -513,6 +540,57 @@ namespace Intrepid {
   {
     return dot2(A, u);
   }
+
+  ///
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot(Tensor3<T> const & A, Tensor<T> const & B)
+  {
+    Index const
+    N = A.get_dimension();
+
+    assert(B.get_dimension() == N);
+
+    Tensor3<T>
+    C(N);
+
+    for (Index i = 0; i < N; ++i) {
+      for (Index k = 0; k < N; ++k) {
+        for (Index j = 0; j < N; ++j) {
+          T s = 0.0;
+          for (Index p = 0; p < N; ++p) {
+            s += A(i,j,p) * B(p,k);
+          }
+          C(i,j,k) = s;
+        }
+      }
+    }
+
+    return C;
+  }
+
+  ///
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot(Tensor<T> const & A, Tensor3<T> const & B);
+
+  ///
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot2(Tensor3<T> const & A, Tensor<T> const & B);
+
+  ///
+  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
+  ///
+  template<typename T>
+  Tensor3<T>
+  dot2(Tensor<T> const & A, Tensor3<T> const & B);
 
   //
   // 3rd-order tensor input

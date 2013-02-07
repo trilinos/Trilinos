@@ -77,7 +77,7 @@ namespace Intrepid {
 
     }
 
-    return sqrt(s);
+    return std::sqrt(s);
   }
 
   //

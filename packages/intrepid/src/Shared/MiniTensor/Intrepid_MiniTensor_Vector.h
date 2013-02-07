@@ -73,6 +73,14 @@ namespace Intrepid {
     Vector(Index const N);
 
     ///
+    /// Create vector from a scalar
+    /// \param N dimension
+    /// \param s all components are set equal to this value
+    ///
+    explicit
+    Vector(Index const N, T const & s);
+
+    ///
     /// Create vector specifying components
     /// \param s0, s1 are the vector components in the R^2 canonical basis
     ///
