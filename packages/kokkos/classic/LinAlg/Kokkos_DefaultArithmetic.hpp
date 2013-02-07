@@ -1689,39 +1689,35 @@ namespace Kokkos {
            const MultiVector<Scalar,SerialNode> &A,
            Scalar beta)
     {
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      const size_t Astride = A.getStride();
-      const size_t Bstride = B.getStride();
-      TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): A and B must have the same dimensions.");
-      RCP<SerialNode> node = B.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
-      ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.template addNonConstBuffer<Scalar>(Bdata);
-      rbh.end();
-      GESUMOp<Scalar> wdp;
-      wdp.alpha = alpha;
-      wdp.beta  = beta;
-      if (Astride == nR && Bstride == nR) {
-        // one kernel invocation for whole multivector
-        wdp.y = Bdata(0,nR*nC).getRawPtr();
-        wdp.x = Adata(0,nR*nC).getRawPtr();
-        node->template parallel_for<GESUMOp<Scalar> >(0,nR*nC,wdp);
-      }
-      else {
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC; ++j) {
-          wdp.y = Bdata(0,nR).getRawPtr();
-          wdp.x = Adata(0,nR).getRawPtr();
-          node->template parallel_for<GESUMOp<Scalar> >(0,nR,wdp);
-          Adata += Astride;
-          Bdata += Bstride;
-        }
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(), 
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName (A) 
+	<< ">::GESUM(B,alpha,A,beta): "
+	"A and B must have the same dimensions.");
+#ifdef __GNUC__
+      const Scalar* const __restrict A_raw = A.getValues ().getRawPtr ();
+      Scalar* const __restrict B_raw = B.getValuesNonConst ().getRawPtr ();
+#else
+      const Scalar* const A_raw = A.getValues ().getRawPtr ();
+      Scalar* const B_raw = B.getValuesNonConst ().getRawPtr ();
+#endif // __GNUC__
+
+      for (size_t j = 0; j < nC; ++j) {
+#ifdef __GNUC__
+	const Scalar* const __restrict A_j = &A_raw[j * A_stride];
+	Scalar* const __restrict B_j = &B_raw[j * B_stride];
+#else
+	const Scalar* const A_j = &A_raw[j * A_stride];
+	Scalar* const B_j = &B_raw[j * B_stride];
+#endif // __GNUC__
+	for (size_t i = 0; i < nR; ++i) {
+	  B_j[i] = alpha * A_j[i] + beta * B_j[i];
+	}	
       }
     }
 
