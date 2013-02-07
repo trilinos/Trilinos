@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraMultiVectorInput.hpp
-    \brief Defines the XpetraMultiVectorInput adapter.
+/*! \file Zoltan2_XpetraMultiVectorAdapter.hpp
+    \brief Defines the XpetraMultiVectorAdapter 
 */
 
-#ifndef _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
-#define _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
+#define _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
 
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_VectorInput.hpp>
@@ -60,7 +60,7 @@
 
 namespace Zoltan2 {
 
-/*!  \brief An input adapter for Xpetra::MultiVector.
+/*!  \brief An adapter for Xpetra::MultiVector.
 
     The template parameter is the user's input object: 
     \li \c Epetra_MultiVector
@@ -78,7 +78,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraMultiVectorInput : public VectorInput<User> {
+  class XpetraMultiVectorAdapter : public VectorAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -87,7 +87,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User>       base_adapter_t;
+  typedef VectorAdapter<User>       base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
@@ -98,7 +98,7 @@ public:
 
   /*! \brief Destructor
    */
-  ~XpetraMultiVectorInput() { }
+  ~XpetraMultiVectorAdapter() { }
 
   /*! \brief Constructor   
    *
@@ -112,10 +112,10 @@ public:
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  XpetraMultiVectorInput(const RCP<const User> &invector,
+  XpetraMultiVectorAdapter(const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! \brief Constructor for case when weights are not being used.
@@ -123,7 +123,7 @@ public:
    *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
    */
 
-  XpetraMultiVectorInput(const RCP<const User> &invector);
+  XpetraMultiVectorAdapter(const RCP<const User> &invector);
 
   /*! \brief Access to xpetra wrapper multivector
    */
@@ -134,10 +134,8 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
-
-  string inputAdapterName()const {return string("XpetraMultiVector");}
 
   size_t getLocalNumberOfObjects() const { return getLocalLength();}
 
@@ -149,7 +147,7 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The VectorInput interface.
+  // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
   int getNumberOfVectors() const {return vector_->getNumVectors();}
@@ -202,7 +200,7 @@ private:
 //////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
+  XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
@@ -230,7 +228,7 @@ template <typename User>
 
 
 template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
+  XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
@@ -244,7 +242,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraMultiVectorInput<User>::getVector(
+  size_t XpetraMultiVectorAdapter<User>::getVector(
     int i, const gid_t *&Ids, const scalar_t *&elements, int &stride) const
 {
   stride = 1;
@@ -281,7 +279,7 @@ template <typename User>
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraMultiVectorInput<User>::applyPartitioningSolution(
+    size_t XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {

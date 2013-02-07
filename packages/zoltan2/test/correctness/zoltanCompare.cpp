@@ -111,7 +111,7 @@ static string testArgs[NUMTESTS*3] = {
 
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::XpetraCrsMatrixInput<tMatrix_t> inputAdapter_t;
+typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t> inputAdapter_t;
 
 int runRCB(const RCP<const Comm<int> > &comm,
   string fname, bool average_cuts, bool rectilinear_blocks,

@@ -106,7 +106,7 @@ typedef long default_gno_t;
  *  is a great deal of trouble if you are not.  In this case you can
  *  construct your InputAdapter as follows.
  *
- *  Suppose you want to construct a Zoltan2::BasicVectorInput object and
+ *  Suppose you want to construct a Zoltan2::BasicVectorAdapter object and
  *  you use \c float for vector values in your application, \c long for 
  *  global identifiers, and \c int for local indices. 
  *
@@ -120,7 +120,7 @@ typedef long default_gno_t;
  *
 \code
    typedef BasicUserTypes<float, long, int, unsigned long> myTypes;
-   Zoltan2::BasicVectorInput<myTypes> myInput({constructor arguments})
+   Zoltan2::BasicVectorAdapter<myTypes> myInput({constructor arguments})
 \endcode
  *
  * In particular, the BasicUserTypes template parameters are:

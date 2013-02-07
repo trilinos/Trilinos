@@ -43,13 +43,13 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_IdentifierInput.hpp
-    \brief Defines the IdentifierInput interface.
+/*! \file Zoltan2_IdentifierAdapter.hpp
+    \brief Defines the IdentifierAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_IDENTIFIERINPUT_HPP_
-#define _ZOLTAN2_IDENTIFIERINPUT_HPP_
+#ifndef _ZOLTAN2_IDENTIFIERADAPTER_HPP_
+#define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -58,13 +58,13 @@
 
 namespace Zoltan2 {
 
-/*!  \brief IdentifierInput defines the interface for identifiers.
+/*!  \brief IdentifierAdapter defines the interface for identifiers.
 
     Zoltan2 can partition a simple list of weighted identifiers 
-    with no geometry or topology provided.  IdentifierInput defines
-    the interface for input adapters of this type.
+    with no geometry or topology provided.  IdentifierAdapter defines
+    the interface for adapters of this type.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -99,7 +99,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class IdentifierInput : public InputAdapter<User> {
+  class IdentifierAdapter : public BaseAdapter<User> {
 
 public:
 
@@ -114,13 +114,13 @@ public:
 
   /*! \brief Destructor 
    */
-  virtual ~IdentifierInput() {};
+  virtual ~IdentifierAdapter() {};
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return IdentifierAdapterType;}
+  enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
@@ -174,13 +174,13 @@ public:
 
  /*! \brief Apply a PartitioningSolution to an input.
    *
-   *  This is not a required part of the IdentifierInput interface. However
+   *  This is not a required part of the IdentifierAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should

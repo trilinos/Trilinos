@@ -45,7 +45,7 @@
 //
 
 /*! \file XpetraVectorInput.cpp
- *  \brief Test of Zoltan2::XpetraVectorInput class.
+ *  \brief Test of Zoltan2::XpetraVectorAdapter class.
  *  \todo add test with weights
  */
 
@@ -94,7 +94,7 @@ void printVector(RCP<const Comm<int> > &comm, lno_t vlen,
 
 template <typename User>
 int verifyInputAdapter(
-  Zoltan2::XpetraVectorInput<User> &ia, tvector_t &vector, int wdim, 
+  Zoltan2::XpetraVectorAdapter<User> &ia, tvector_t &vector, int wdim, 
     scalar_t **weights, int *strides)
 {
   RCP<const Comm<int> > comm = vector.getMap()->getComm();
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
 
-  typedef Zoltan2::XpetraVectorInput<tvector_t> adapter_t;
+  typedef Zoltan2::XpetraVectorAdapter<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
     env, comm, idMap, weightDim);
   solution.setParts(gidArray, solnParts, true);
@@ -213,16 +213,16 @@ int main(int argc, char *argv[])
   
     try {
       tVInput = 
-        rcp(new Zoltan2::XpetraVectorInput<tvector_t>(ctV, 
+        rcp(new Zoltan2::XpetraVectorAdapter<tvector_t>(ctV, 
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraVectorInput ")+e.what(), 1);
+        string("XpetraVectorAdapter ")+e.what(), 1);
     }
   
     if (rank==0){
-      std::cout << tVInput->inputAdapterName() << ", constructed with ";
+      std::cout << "Constructed with ";
       std::cout  << "Tpetra::Vector" << std::endl;
     }
     
@@ -244,18 +244,18 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const tvector_t> cnewV = rcp_const_cast<const tvector_t>(newV);
-        RCP<Zoltan2::XpetraVectorInput<tvector_t> > newInput;
+        RCP<Zoltan2::XpetraVectorAdapter<tvector_t> > newInput;
         try{
-          newInput = rcp(new Zoltan2::XpetraVectorInput<tvector_t>(cnewV,
+          newInput = rcp(new Zoltan2::XpetraVectorAdapter<tvector_t>(cnewV,
             emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraVectorInput 2 ")+e.what(), 1);
+            string("XpetraVectorAdapter 2 ")+e.what(), 1);
         }
   
         if (rank==0){
-          std::cout << tVInput->inputAdapterName() << ", constructed with ";
+          std::cout << "Constructed with ";
           std::cout << "Tpetra::Vector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<tvector_t>(*newInput, *newV, 0, NULL, NULL);
@@ -273,20 +273,20 @@ int main(int argc, char *argv[])
   if (!gfail){ 
     RCP<xvector_t> xV = uinput->getXpetraVector();
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
-    RCP<Zoltan2::XpetraVectorInput<xvector_t> > xVInput;
+    RCP<Zoltan2::XpetraVectorAdapter<xvector_t> > xVInput;
   
     try {
       xVInput = 
-        rcp(new Zoltan2::XpetraVectorInput<xvector_t>(cxV,
+        rcp(new Zoltan2::XpetraVectorAdapter<xvector_t>(cxV,
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraVectorInput 3 ")+e.what(), 1);
+        string("XpetraVectorAdapter 3 ")+e.what(), 1);
     }
   
     if (rank==0){
-      std::cout << xVInput->inputAdapterName() << ", constructed with ";
+      std::cout << "Constructed with ";
       std::cout << "Xpetra::Vector" << std::endl;
     }
     fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, 0, NULL, NULL);
@@ -306,19 +306,19 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const xvector_t> cnewV(vMigrate);
-        RCP<Zoltan2::XpetraVectorInput<xvector_t> > newInput;
+        RCP<Zoltan2::XpetraVectorAdapter<xvector_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraVectorInput<xvector_t>(cnewV, 
+            rcp(new Zoltan2::XpetraVectorAdapter<xvector_t>(cnewV, 
               emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraVectorInput 4 ")+e.what(), 1);
+            string("XpetraVectorAdapter 4 ")+e.what(), 1);
         }
   
         if (rank==0){
-          std::cout << xVInput->inputAdapterName() << ", constructed with ";
+          std::cout << "Constructed with ";
           std::cout << "Xpetra::Vector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<xvector_t>(*newInput, *newV, 0, NULL, NULL);
@@ -337,20 +337,20 @@ int main(int argc, char *argv[])
   if (!gfail){ 
     RCP<evector_t> eV = uinput->getEpetraVector();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
-    RCP<Zoltan2::XpetraVectorInput<evector_t> > eVInput;
+    RCP<Zoltan2::XpetraVectorAdapter<evector_t> > eVInput;
   
     try {
       eVInput = 
-        rcp(new Zoltan2::XpetraVectorInput<evector_t>(ceV,
+        rcp(new Zoltan2::XpetraVectorAdapter<evector_t>(ceV,
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraVectorInput 5 ")+e.what(), 1);
+        string("XpetraVectorAdapter 5 ")+e.what(), 1);
     }
   
     if (rank==0){
-      std::cout << eVInput->inputAdapterName() << ", constructed with ";
+      std::cout << "Constructed with ";
       std::cout << "Epetra_Vector" << std::endl;
     }
     fail = verifyInputAdapter<evector_t>(*eVInput, *tV, 0, NULL, NULL);
@@ -370,19 +370,19 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const evector_t> cnewV(vMigrate, true);
-        RCP<Zoltan2::XpetraVectorInput<evector_t> > newInput;
+        RCP<Zoltan2::XpetraVectorAdapter<evector_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraVectorInput<evector_t>(cnewV, 
+            rcp(new Zoltan2::XpetraVectorAdapter<evector_t>(cnewV, 
               emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraVectorInput 6 ")+e.what(), 1);
+            string("XpetraVectorAdapter 6 ")+e.what(), 1);
         }
   
         if (rank==0){
-           std::cout << eVInput->inputAdapterName() << ", constructed with ";
+           std::cout << "Constructed with ";
            std::cout << "Epetra_Vector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<evector_t>(*newInput, *newV, 0, NULL, NULL);

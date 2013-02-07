@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::BasicIdentifierInput 
+// Basic testing of Zoltan2::BasicIdentifierAdapter 
 
 #include <Zoltan2_BasicIdentifierInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     weights[i*weightDim + 1] = (nprocs-rank) / (i+1);
   }
 
-  // Create a Zoltan2::BasicIdentifierInput object
+  // Create a Zoltan2::BasicIdentifierAdapter object
   // and verify that it is correct
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
@@ -92,11 +92,8 @@ int main(int argc, char *argv[])
   strides.push_back(2);
   strides.push_back(2);
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, myIds,
+  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia( numLocalIds, myIds,
     weightValues, strides);
-
-  if (rank == 0)
-    std::cout << "Testing " << ia.inputAdapterName() << std::endl;
 
   if (!fail && ia.getLocalNumberOfIdentifiers() != size_t(numLocalIds)){
     fail = 4;

@@ -1580,7 +1580,7 @@ public:
 
 
     /*
-		Zoltan2::XpetraMultiVectorInput < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > (tmVector));
+		Zoltan2::XpetraMultiVectorAdapter < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > (tmVector));
 
 		RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector2;
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;

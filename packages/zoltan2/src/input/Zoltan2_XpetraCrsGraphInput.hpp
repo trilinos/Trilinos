@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraCrsGraphInput.hpp
-    \brief Defines XpetraCrsGraphInput class.
+/*! \file Zoltan2_XpetraCrsGraphAdapter.hpp
+    \brief Defines XpetraCrsGraphAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
-#define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
+#define _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
 
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -81,7 +81,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraCrsGraphInput : public GraphInput<User> {
+  class XpetraCrsGraphAdapter : public GraphAdapter<User> {
 
 public:
 
@@ -92,22 +92,22 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphInput<User>       base_adapter_t;
+  typedef GraphAdapter<User> base_adapter_t;
   typedef User user_t;
 #endif
 
   /*! \brief Destructor
    */
-  ~XpetraCrsGraphInput() { }
+  ~XpetraCrsGraphAdapter() { }
 
   /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph);
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph);
 
   /*! \brief Constructor for graph with weights but no coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
@@ -145,11 +145,11 @@ public:
    *       TheGraph->getLocalRowView(vertexNum, neighborList);
    *     \endcode
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides);
 
@@ -195,11 +195,11 @@ public:
    *       TheGraph->getLocalRowView(vertexNum, neighborList);
    *     \endcode
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides);
@@ -277,10 +277,8 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
-
-  string inputAdapterName()const { return string("XpetraCrsGraph");}
 
   size_t getLocalNumberOfObjects() const { return getLocalNumberOfVertices();}
 
@@ -292,7 +290,7 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The GraphInput interface.
+  // The GraphAdapter interface.
   ////////////////////////////////////////////////////
 
   size_t getLocalNumberOfVertices() const { 
@@ -406,7 +404,7 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(0), vertexWeights_(),
@@ -422,7 +420,7 @@ template <typename User>
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
   const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
@@ -440,7 +438,7 @@ template <typename User>
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
@@ -456,7 +454,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsGraphInput<User>::initializeData(
+  void XpetraCrsGraphAdapter<User>::initializeData(
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides)
@@ -537,13 +535,12 @@ template <typename User>
 
 template <typename User>
   template<typename Adapter>
-    size_t XpetraCrsGraphInput<User>::applyPartitioningSolution(
+    size_t XpetraCrsGraphAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
   // Get an import list
 
-  Zoltan2::Environment env;
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
   const partId_t *parts = solution.getPartList();

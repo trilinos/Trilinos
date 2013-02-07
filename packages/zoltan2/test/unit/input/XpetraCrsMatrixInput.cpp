@@ -43,10 +43,10 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::XpetraCrsMatrixInput 
+// Basic testing of Zoltan2::XpetraCrsMatrixAdapter 
 
 /*! \file XpetraCrsMatrixInput.cpp
- *  \brief Test of Zoltan2::XpetraCrsMatrixInput class.
+ *  \brief Test of Zoltan2::XpetraCrsMatrixAdapter class.
  *  \todo test with geometric row coordinates.
  */
 
@@ -99,7 +99,7 @@ void printMatrix(RCP<const Comm<int> > &comm, lno_t nrows,
 
 template <typename User>
 int verifyInputAdapter(
-  Zoltan2::XpetraCrsMatrixInput<User> &ia, tmatrix_t &M)
+  Zoltan2::XpetraCrsMatrixAdapter<User> &ia, tmatrix_t &M)
 {
   RCP<const Comm<int> > comm = M.getComm();
   int fail = 0, gfail=0;
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(zoltan2_partId_t) * nrows);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nrows, true);
 
-  typedef Zoltan2::XpetraCrsMatrixInput<tmatrix_t> adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
   solution.setParts(gidArray, solnParts, false);//could use true, but test false
@@ -192,15 +192,15 @@ int main(int argc, char *argv[])
   // User object is Tpetra::CrsMatrix
   if (!gfail){ 
     RCP<const tmatrix_t> ctM = rcp_const_cast<const tmatrix_t>(tM);
-    RCP<Zoltan2::XpetraCrsMatrixInput<tmatrix_t> > tMInput;
+    RCP<Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> > tMInput;
   
     try {
       tMInput = 
-        rcp(new Zoltan2::XpetraCrsMatrixInput<tmatrix_t>(ctM));
+        rcp(new Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t>(ctM));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixInput ")+e.what(), 1);
+        string("XpetraCrsMatrixAdapter ")+e.what(), 1);
     }
   
     if (rank==0)
@@ -225,13 +225,13 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const tmatrix_t> cnewM = rcp_const_cast<const tmatrix_t>(newM);
-        RCP<Zoltan2::XpetraCrsMatrixInput<tmatrix_t> > newInput;
+        RCP<Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> > newInput;
         try{
-          newInput = rcp(new Zoltan2::XpetraCrsMatrixInput<tmatrix_t>(cnewM));
+          newInput = rcp(new Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t>(cnewM));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixInput 2 ")+e.what(), 1);
+            string("XpetraCrsMatrixAdapter 2 ")+e.what(), 1);
         }
   
         if (rank==0){
@@ -254,15 +254,15 @@ int main(int argc, char *argv[])
   if (!gfail){ 
     RCP<xmatrix_t> xM = uinput->getXpetraCrsMatrix();
     RCP<const xmatrix_t> cxM = rcp_const_cast<const xmatrix_t>(xM);
-    RCP<Zoltan2::XpetraCrsMatrixInput<xmatrix_t> > xMInput;
+    RCP<Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t> > xMInput;
   
     try {
       xMInput = 
-        rcp(new Zoltan2::XpetraCrsMatrixInput<xmatrix_t>(cxM));
+        rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cxM));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixInput 3 ")+e.what(), 1);
+        string("XpetraCrsMatrixAdapter 3 ")+e.what(), 1);
     }
   
     if (rank==0){
@@ -286,14 +286,14 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const xmatrix_t> cnewM(mMigrate);
-        RCP<Zoltan2::XpetraCrsMatrixInput<xmatrix_t> > newInput;
+        RCP<Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraCrsMatrixInput<xmatrix_t>(cnewM));
+            rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cnewM));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixInput 4 ")+e.what(), 1);
+            string("XpetraCrsMatrixAdapter 4 ")+e.what(), 1);
         }
   
         if (rank==0){
@@ -317,15 +317,15 @@ int main(int argc, char *argv[])
   if (!gfail){ 
     RCP<ematrix_t> eM = uinput->getEpetraCrsMatrix();
     RCP<const ematrix_t> ceM = rcp_const_cast<const ematrix_t>(eM);
-    RCP<Zoltan2::XpetraCrsMatrixInput<ematrix_t> > eMInput;
+    RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > eMInput;
   
     try {
       eMInput = 
-        rcp(new Zoltan2::XpetraCrsMatrixInput<ematrix_t>(ceM));
+        rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(ceM));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixInput 5 ")+e.what(), 1);
+        string("XpetraCrsMatrixAdapter 5 ")+e.what(), 1);
     }
   
     if (rank==0){
@@ -349,14 +349,14 @@ int main(int argc, char *argv[])
   
       if (!gfail){
         RCP<const ematrix_t> cnewM(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsMatrixInput<ematrix_t> > newInput;
+        RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraCrsMatrixInput<ematrix_t>(cnewM));
+            rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(cnewM));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixInput 6 ")+e.what(), 1);
+            string("XpetraCrsMatrixAdapter 6 ")+e.what(), 1);
         }
   
         if (rank==0){

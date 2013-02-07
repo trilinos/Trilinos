@@ -41,13 +41,13 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_MeshInput.hpp
-    \brief Defines the MeshInput interface.
+/*! \file Zoltan2_MeshAdapter.hpp
+    \brief Defines the MeshAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_MESHINPUT_HPP_
-#define _ZOLTAN2_MESHINPUT_HPP_
+#ifndef _ZOLTAN2_MESHADAPTER_HPP_
+#define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -56,9 +56,9 @@
 
 namespace Zoltan2 {
 
-/*!  \brief MeshInput defines the interface for mesh input adapters.
+/*!  \brief MeshAdapter defines the interface for mesh input.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -93,7 +93,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class MeshInput : public InputAdapter {
+  class MeshAdapter : public BaseAdapter {
 private:
 
 public:
@@ -107,11 +107,11 @@ public:
   typedef User user_t;
 #endif
 
-  enum InputAdapterType inputAdapterType() const {return MeshAdapterType;}
+  enum BaseAdapterType adapterType() const {return MeshAdapterType;}
 
   /*! \brief Destructor
    */
-  virtual ~MeshInput() {};
+  virtual ~MeshAdapter() {};
 
   enum entityType = {REGION, FACE, EDGE, VERTEX};
 
@@ -165,7 +165,7 @@ public:
 	  than one.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
   */
   virtual size_t getLocalEntityIDsWeightsView(entityType etype,
      const scalar_t *&weights, int &stride, int number) const = 0;
@@ -209,7 +209,7 @@ public:
               may be more than one.
 
       Zoltan2 does not copy your data.  The data pointed to coords
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
   */
   virtual size_t getLocalEntityCoordinatesView(entityType etype,
     const scalar_t *&coords, int &stride, int coordDim) const = 0;
@@ -258,7 +258,7 @@ public:
 
       Zoltan2 does not copy your data.  The data pointed to by
       offsets and adjacencyIds
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
   virtual size_t getLocalAdjsView(entityType source, entityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
@@ -321,7 +321,7 @@ public:
 
       Zoltan2 does not copy your data.  The data pointed to by
       offsets and adjacencyIds
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
@@ -358,7 +358,7 @@ public:
                as the number of adjacencies in getLocal2ndAdjsView().
 
       Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
   virtual size_t getLocal2ndAdjWeightsView(entityType sourcetarget,
      entityType through, const scalar_t *&weights, int &stride,
@@ -378,13 +378,13 @@ public:
 
   /*! \brief Apply a partitioning problem solution to an input.  
    *
-   *  This is not a required part of the MeshInput interface. However
+   *  This is not a required part of the MeshAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should

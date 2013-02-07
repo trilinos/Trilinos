@@ -70,12 +70,12 @@ namespace Zoltan2 {
     provides a uniform interface for models to the user's input data.
 
     Explicit instantiations exist for:
-      \li MatrixInput
-      \li IdentifierInput
-      \li VectorInput
-      \li CoordinateInput
+      \li MatrixAdapter
+      \li IdentifierAdapter
+      \li VectorAdapter
+      \li CoordinateAdapter
 
-    \todo Add instantiations for GraphInput, MeshInput
+    \todo Add instantiations for GraphAdapter, MeshInput
 */
 
 template <typename Adapter>
@@ -146,18 +146,18 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 ////////////////////////////////////////////////////////////////
-// Identifier model derived from IdentifierInput.
+// Identifier model derived from IdentifierAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class IdentifierModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+class IdentifierModel<IdentifierAdapter<User> > : public Model<IdentifierAdapter<User> >
 {
 public:
 
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
-  typedef typename IdentifierInput<User>::gid_t     gid_t;
+  typedef typename IdentifierAdapter<User>::scalar_t  scalar_t;
+  typedef typename IdentifierAdapter<User>::gno_t     gno_t;
+  typedef typename IdentifierAdapter<User>::lno_t     lno_t;
+  typedef typename IdentifierAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -169,7 +169,7 @@ public:
        \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
   
-  IdentifierModel( const IdentifierInput<User> *ia, 
+  IdentifierModel( const IdentifierAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags);
 
@@ -246,8 +246,8 @@ private:
 };
 
 template <typename User>
-  IdentifierModel<IdentifierInput<User> >::IdentifierModel( 
-    const IdentifierInput<User> *ia,
+  IdentifierModel<IdentifierAdapter<User> >::IdentifierModel( 
+    const IdentifierAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
@@ -256,7 +256,7 @@ template <typename User>
   userWeightDim_ = ia->getNumberOfWeights();
   size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
 
-  Model<IdentifierInput<User> >::maxCount(*comm, userWeightDim_);
+  Model<IdentifierAdapter<User> >::maxCount(*comm, userWeightDim_);
 
   Array<const scalar_t *> wgts(userWeightDim_, (const scalar_t *)NULL);
   Array<int> wgtStrides(userWeightDim_, 0);
@@ -330,23 +330,23 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Identifier model derived from CoordinateInput.
+// Identifier model derived from CoordinateAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  class IdentifierModel<CoordinateInput<User> > : 
-    public Model<CoordinateInput<User> >
+  class IdentifierModel<CoordinateAdapter<User> > : 
+    public Model<CoordinateAdapter<User> >
 {
 public:
 
-  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
-  typedef typename CoordinateInput<User>::gno_t     gno_t;
-  typedef typename CoordinateInput<User>::lno_t     lno_t;
-  typedef typename CoordinateInput<User>::gid_t     gid_t;
+  typedef typename CoordinateAdapter<User>::scalar_t  scalar_t;
+  typedef typename CoordinateAdapter<User>::gno_t     gno_t;
+  typedef typename CoordinateAdapter<User>::lno_t     lno_t;
+  typedef typename CoordinateAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   
-  IdentifierModel( const CoordinateInput<User> *ia, 
+  IdentifierModel( const CoordinateAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags);
 
@@ -423,8 +423,8 @@ private:
 };
 
 template <typename User>
-  IdentifierModel<CoordinateInput<User> >::IdentifierModel( 
-    const CoordinateInput<User> *ia, 
+  IdentifierModel<CoordinateAdapter<User> >::IdentifierModel( 
+    const CoordinateAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
@@ -468,7 +468,7 @@ template <typename User>
   userWeightDim_ = ia->getNumberOfWeights();
   Array<lno_t> weightListSizes(userWeightDim_, 0);
 
-  Model<CoordinateInput<User> >::maxCount(*comm, userWeightDim_);
+  Model<CoordinateAdapter<User> >::maxCount(*comm, userWeightDim_);
 
   if (userWeightDim_ > 0){
     input_t *weightObj = new input_t [userWeightDim_];
@@ -515,22 +515,22 @@ template <typename User>
 
 
 ////////////////////////////////////////////////////////////////
-// Identifier model derived from MatrixInput.
+// Identifier model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class IdentifierModel<MatrixInput<User> > : public Model<MatrixInput<User> >
+class IdentifierModel<MatrixAdapter<User> > : public Model<MatrixAdapter<User> >
 {
 public:
 
-  typedef typename MatrixInput<User>::scalar_t  scalar_t;
-  typedef typename MatrixInput<User>::gno_t     gno_t;
-  typedef typename MatrixInput<User>::lno_t     lno_t;
-  typedef typename MatrixInput<User>::gid_t     gid_t;
+  typedef typename MatrixAdapter<User>::scalar_t  scalar_t;
+  typedef typename MatrixAdapter<User>::gno_t     gno_t;
+  typedef typename MatrixAdapter<User>::lno_t     lno_t;
+  typedef typename MatrixAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   
-  IdentifierModel( const MatrixInput<User> *ia, 
+  IdentifierModel( const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags);
 
@@ -543,7 +543,7 @@ public:
   global_size_t getGlobalNumIdentifiers() const {return numGlobalIdentifiers_;}
 
   /*! Returns the dimension (0 or greater) of identifier weights.
-   *    Weights are not yet implemented in MatrixInput.
+   *    Weights are not yet implemented in MatrixAdapter.
    */
   int getIdentifierWeightDim() const { return 0; }
 
@@ -609,8 +609,8 @@ private:
 
   
 template <typename User>
-  IdentifierModel<MatrixInput<User> >::IdentifierModel( 
-    const MatrixInput<User> *ia, 
+  IdentifierModel<MatrixAdapter<User> >::IdentifierModel( 
+    const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
@@ -665,22 +665,22 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Identifier model derived from VectorInput.
+// Identifier model derived from VectorAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class IdentifierModel<VectorInput<User> > : public Model<VectorInput<User> >
+class IdentifierModel<VectorAdapter<User> > : public Model<VectorAdapter<User> >
 {
 public:
 
-  typedef typename VectorInput<User>::scalar_t  scalar_t;
-  typedef typename VectorInput<User>::gno_t     gno_t;
-  typedef typename VectorInput<User>::lno_t     lno_t;
-  typedef typename VectorInput<User>::gid_t     gid_t;
+  typedef typename VectorAdapter<User>::scalar_t  scalar_t;
+  typedef typename VectorAdapter<User>::gno_t     gno_t;
+  typedef typename VectorAdapter<User>::lno_t     lno_t;
+  typedef typename VectorAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   
-  IdentifierModel( const VectorInput<User> *ia, 
+  IdentifierModel( const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags);
 
@@ -693,7 +693,7 @@ public:
   global_size_t getGlobalNumIdentifiers() const {return numGlobalIdentifiers_;}
 
   /*! Returns the dimension (0 or greater) of identifier weights.
-   *    Weights are not yet implemented in VectorInput.
+   *    Weights are not yet implemented in VectorAdapter.
    */
   int getIdentifierWeightDim() const { return 0; }
 
@@ -759,8 +759,8 @@ private:
 
   
 template <typename User>
-  IdentifierModel<VectorInput<User> >::IdentifierModel( 
-    const VectorInput<User> *ia, 
+  IdentifierModel<VectorAdapter<User> >::IdentifierModel( 
+    const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
@@ -815,18 +815,18 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Identifier model derived from GraphInput.
+// Identifier model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class IdentifierModel<GraphInput<User> > : public Model<GraphInput<User> >
+class IdentifierModel<GraphAdapter<User> > : public Model<GraphAdapter<User> >
 {
 public:
 
-  typedef typename GraphInput<User>::scalar_t  scalar_t;
-  typedef typename GraphInput<User>::gno_t     gno_t;
-  typedef typename GraphInput<User>::lno_t     lno_t;
-  typedef typename GraphInput<User>::gid_t     gid_t;
+  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User>::gno_t     gno_t;
+  typedef typename GraphAdapter<User>::lno_t     lno_t;
+  typedef typename GraphAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -838,7 +838,7 @@ public:
        \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
   
-  IdentifierModel( const GraphInput<User> *ia, 
+  IdentifierModel( const GraphAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags);
 
@@ -915,8 +915,8 @@ private:
 };
 
 template <typename User>
-  IdentifierModel<GraphInput<User> >::IdentifierModel( 
-    const GraphInput<User> *ia,
+  IdentifierModel<GraphAdapter<User> >::IdentifierModel( 
+    const GraphAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
@@ -925,7 +925,7 @@ template <typename User>
   userWeightDim_ = ia->getVertexWeightDimension();
   size_t nLocalIds = ia->getLocalNumberOfVertices();
 
-  Model<GraphInput<User> >::maxCount(*comm, userWeightDim_);
+  Model<GraphAdapter<User> >::maxCount(*comm, userWeightDim_);
 
   Array<const scalar_t *> wgts(userWeightDim_, NULL);
   Array<int> wgtStrides(userWeightDim_, 0);

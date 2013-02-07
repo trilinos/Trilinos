@@ -45,7 +45,7 @@
 //
 // Testing of IdentifierModel
 //
-//   TODO  test with BasicIdentifierInput with weights
+//   TODO  test with BasicIdentifierAdapter with weights
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
@@ -102,8 +102,8 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   // Create an IdentifierModel with this input
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
-  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
+  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
   typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
@@ -133,7 +133,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   if (!fail && model->getGlobalNumIdentifiers() != size_t(nGlobalIds))
     fail = 3;
 
-  // For now, MatrixInput does not implement weights
+  // For now, MatrixAdapter does not implement weights
   if (!fail && model->getIdentifierWeightDim() !=  0)
     fail = 4;
 

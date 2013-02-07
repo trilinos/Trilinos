@@ -90,10 +90,10 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
   }
 
 #if 0
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
-  typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(coordsConst);
 #endif
    
@@ -131,7 +131,7 @@ void serialTest()
   UserInputForTests::getRandomData(555, numCoords, 0, 10, 
     randomCoords.view(0,3));
 
-  typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateAdapter<myTypes_t> inputAdapter_t;
 
   inputAdapter_t ia(numCoords, ids, 
     randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
@@ -173,7 +173,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   z = coords->getDataNonConst(2).getRawPtr();
 
   const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 

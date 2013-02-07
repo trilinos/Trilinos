@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_BasicIdentifierInput.hpp
-    \brief Defines the BasicIdentifierInput class.
+/*! \file Zoltan2_BasicIdentifierAdapter.hpp
+    \brief Defines the BasicIdentifierAdapter class.
 */
 
-#ifndef _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
-#define _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
+#ifndef _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
+#define _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
 
 #include <Zoltan2_IdentifierInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -80,7 +80,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-  class BasicIdentifierInput: public IdentifierInput<User> {
+  class BasicIdentifierAdapter: public IdentifierAdapter<User> {
 
 public:
 
@@ -89,7 +89,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef IdentifierInput<User>       base_adapter_t;
+  typedef IdentifierAdapter<User> base_adapter_t;
   typedef User user_t;
 
   /*! \brief Constructor
@@ -99,34 +99,32 @@ public:
    *      The number of weights per identifier is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     The weight for weight index \c n for \c ids[k] should be
    *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicIdentifierInput( lno_t numIds, const gid_t *idPtr, 
+  BasicIdentifierAdapter( lno_t numIds, const gid_t *idPtr, 
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////////////////
-
-  string inputAdapterName() const {return string("BasicIdentifier");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
   int getNumberOfWeightsPerObject() const { return weights_.size();}
 
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  size_t getObjectWeights(int idx, const scalar_t *&wgt, int &stride) const
   {
-    return getIdentifierWeights(dim, wgt, stride);
+    return getIdentifierWeights(idx, wgt, stride);
   }
 
   ////////////////////////////////////////////////////////////////
-  // The IdentifierInput interface.
+  // The IdentifierAdapter interface.
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
@@ -140,20 +138,23 @@ public:
     return numIds_;
   }
 
-  size_t getIdentifierWeights(int dimension,
+  size_t getIdentifierWeights(int idx,
      const scalar_t *&weights, int &stride) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
+    if (idx < 0 || idx >= weights_.size()) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
 
     size_t length;
-    weights_[dimension].getStridedList(length, weights, stride);
+    weights_[idx].getStridedList(length, weights, stride);
     return length;
   }
 
 private:
 
-  RCP<const Environment> env_;
   lno_t numIds_;
   const gid_t *idList_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
@@ -164,13 +165,12 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicIdentifierInput<User>::BasicIdentifierInput(
+  BasicIdentifierAdapter<User>::BasicIdentifierAdapter(
     lno_t numIds, const gid_t *idPtr,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_()
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_ = rcp(new Environment);    // for error messages
   size_t numWeights = weights.size();
 
   if (numWeights > 0){

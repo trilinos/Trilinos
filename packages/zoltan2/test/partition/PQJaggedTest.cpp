@@ -258,10 +258,10 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
   vector <int> stride;
 
 #if 0
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
-  typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
   //inputAdapter_t ia(coordsConst);
   inputAdapter_t ia(coordsConst,weights, stride);
 #endif
@@ -351,12 +351,12 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
 
   const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
 
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 #else
   RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
-  typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(coordsConst);
 #endif
 

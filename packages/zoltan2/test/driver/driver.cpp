@@ -107,13 +107,13 @@ typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
 
-typedef Zoltan2::BasicCoordinateInput<tcrsMatrix_t> bci_t;
-typedef Zoltan2::BasicIdentifierInput<tcrsMatrix_t> bii_t;
-typedef Zoltan2::BasicVectorInput<tcrsMatrix_t>     bvi_t; 
-typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t>  xgi_t;
-typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> xmi_t;
-typedef Zoltan2::XpetraMultiVectorInput<tMVector_t>  xmvi_t;
-typedef Zoltan2::XpetraVectorInput<tVector_t>    xvi_t;
+typedef Zoltan2::BasicCoordinateAdapter<tcrsMatrix_t> bci_t;
+typedef Zoltan2::BasicIdentifierAdapter<tcrsMatrix_t> bii_t;
+typedef Zoltan2::BasicVectorAdapter<tcrsMatrix_t>     bvi_t; 
+typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t>  xgi_t;
+typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> xmi_t;
+typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>  xmvi_t;
+typedef Zoltan2::XpetraVectorAdapter<tVector_t>    xvi_t;
 
 #define ERRMSG(msg) if (rank == 0){ cerr << "FAIL: " << msg << endl; }
 #define EXC_ERRMSG(msg, e) \

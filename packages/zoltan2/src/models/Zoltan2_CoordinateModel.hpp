@@ -149,20 +149,20 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from CoordinateInput.
+// Coordinate model derived from CoordinateAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<CoordinateInput<User> > : 
-  public Model<CoordinateInput<User> >
+class CoordinateModel<CoordinateAdapter<User> > : 
+  public Model<CoordinateAdapter<User> >
 {
 
 public:
 
-  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
-  typedef typename CoordinateInput<User>::gno_t     gno_t;
-  typedef typename CoordinateInput<User>::lno_t     lno_t;
-  typedef typename CoordinateInput<User>::gid_t     gid_t;
+  typedef typename CoordinateAdapter<User>::scalar_t  scalar_t;
+  typedef typename CoordinateAdapter<User>::gno_t     gno_t;
+  typedef typename CoordinateAdapter<User>::lno_t     lno_t;
+  typedef typename CoordinateAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -174,7 +174,7 @@ public:
        \param  modelFlags    a bit map of ModelFlags
    */
   
-  CoordinateModel( const CoordinateInput<User> *ia, 
+  CoordinateModel( const CoordinateAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -245,8 +245,8 @@ private:
 };
 
 template <typename User>
-  CoordinateModel<CoordinateInput<User> >::CoordinateModel( 
-    const CoordinateInput<User> *ia, 
+  CoordinateModel<CoordinateAdapter<User> >::CoordinateModel( 
+    const CoordinateAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -262,7 +262,7 @@ template <typename User>
   coordinateDim_ = ia->getCoordinateDimension();
   userNumWeights_ = ia->getNumberOfWeights();
 
-  Model<CoordinateInput<User> >::maxCount(*comm, coordinateDim_, 
+  Model<CoordinateAdapter<User> >::maxCount(*comm, coordinateDim_, 
     userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
@@ -352,19 +352,19 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from MatrixInput.
+// Coordinate model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<MatrixInput<User> > : 
-  public Model<MatrixInput<User> >
+class CoordinateModel<MatrixAdapter<User> > : 
+  public Model<MatrixAdapter<User> >
 {
 public:
 
-  typedef typename MatrixInput<User>::scalar_t  scalar_t;
-  typedef typename MatrixInput<User>::gno_t     gno_t;
-  typedef typename MatrixInput<User>::lno_t     lno_t;
-  typedef typename MatrixInput<User>::gid_t     gid_t;
+  typedef typename MatrixAdapter<User>::scalar_t  scalar_t;
+  typedef typename MatrixAdapter<User>::gno_t     gno_t;
+  typedef typename MatrixAdapter<User>::lno_t     lno_t;
+  typedef typename MatrixAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -376,7 +376,7 @@ public:
        \param  modelFlags    a bit map of ModelFlags
    */
   
-  CoordinateModel( const MatrixInput<User> *ia, 
+  CoordinateModel( const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -386,7 +386,7 @@ public:
 
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  /* \brief Weights are not implemented in MatrixInput.
+  /* \brief Weights are not implemented in MatrixAdapter.
    *
    *   Whereas a computational model may create weights to use with
    *   a matrix problem, they are not inherent in the input.
@@ -451,8 +451,8 @@ private:
 };
 
 template <typename User>
-  CoordinateModel<MatrixInput<User> >::CoordinateModel( 
-    const MatrixInput<User> *ia, 
+  CoordinateModel<MatrixAdapter<User> >::CoordinateModel( 
+    const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -465,7 +465,7 @@ template <typename User>
 
   coordinateDim_ = ia->getCoordinateDimension();
 
-  Model<MatrixInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<MatrixAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
@@ -534,24 +534,24 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from VectorInput.
+// Coordinate model derived from VectorAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<VectorInput<User> > : 
-  public Model<VectorInput<User> >
+class CoordinateModel<VectorAdapter<User> > : 
+  public Model<VectorAdapter<User> >
 {
 
 public:
 
-  typedef typename VectorInput<User>::scalar_t  scalar_t;
-  typedef typename VectorInput<User>::gno_t     gno_t;
-  typedef typename VectorInput<User>::gid_t     gid_t;
-  typedef typename VectorInput<User>::lno_t     lno_t;
+  typedef typename VectorAdapter<User>::scalar_t  scalar_t;
+  typedef typename VectorAdapter<User>::gno_t     gno_t;
+  typedef typename VectorAdapter<User>::gid_t     gid_t;
+  typedef typename VectorAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<User> idmap_t;
 
-  CoordinateModel( const VectorInput<User> *ia, 
+  CoordinateModel( const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -614,8 +614,8 @@ private:
 };
 
 template <typename User>
-CoordinateModel<VectorInput<User> >::CoordinateModel( 
-    const VectorInput<User> *ia, 
+CoordinateModel<VectorAdapter<User> >::CoordinateModel( 
+    const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -631,7 +631,7 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
   coordinateDim_ = ia->getNumberOfVectors();
   userNumWeights_ = ia->getNumberOfWeights();
 
-  Model<VectorInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<VectorAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
@@ -720,23 +720,23 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
 }
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from IdentifierInput.
-// A coordinate model can not be built from IdentifierInput.
+// Coordinate model derived from IdentifierAdapter.
+// A coordinate model can not be built from IdentifierAdapter.
 // This specialization exists so that other code can compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<IdentifierInput<User> > : 
-  public Model<IdentifierInput<User> >
+class CoordinateModel<IdentifierAdapter<User> > : 
+  public Model<IdentifierAdapter<User> >
 {
 public:
 
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
+  typedef typename IdentifierAdapter<User>::scalar_t  scalar_t;
+  typedef typename IdentifierAdapter<User>::gno_t     gno_t;
+  typedef typename IdentifierAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   
-  CoordinateModel( const IdentifierInput<User> *ia, 
+  CoordinateModel( const IdentifierAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags)
   {
@@ -763,24 +763,24 @@ public:
 
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from GraphInput.
+// Coordinate model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<GraphInput<User> > : 
-  public Model<GraphInput<User> >
+class CoordinateModel<GraphAdapter<User> > : 
+  public Model<GraphAdapter<User> >
 {
 
 public:
 
-  typedef typename GraphInput<User>::scalar_t  scalar_t;
-  typedef typename GraphInput<User>::gno_t     gno_t;
-  typedef typename GraphInput<User>::gid_t     gid_t;
-  typedef typename GraphInput<User>::lno_t     lno_t;
+  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User>::gno_t     gno_t;
+  typedef typename GraphAdapter<User>::gid_t     gid_t;
+  typedef typename GraphAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<User> idmap_t;
 
-  CoordinateModel( const GraphInput<User> *ia, 
+  CoordinateModel( const GraphAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -843,8 +843,8 @@ private:
 };
 
 template <typename User>
-CoordinateModel<GraphInput<User> >::CoordinateModel( 
-    const GraphInput<User> *ia, 
+CoordinateModel<GraphAdapter<User> >::CoordinateModel( 
+    const GraphAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -861,7 +861,7 @@ CoordinateModel<GraphInput<User> >::CoordinateModel(
 
   userNumWeights_ = ia->getVertexWeightDimension();
 
-  Model<GraphInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<GraphAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   input_t *coordArray = new input_t [coordinateDim_];
   input_t *weightArray = NULL;

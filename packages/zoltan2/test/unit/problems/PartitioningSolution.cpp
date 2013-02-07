@@ -55,7 +55,7 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
-typedef Zoltan2::BasicIdentifierInput<user_t> idInput_t;
+typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;

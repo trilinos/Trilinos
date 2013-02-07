@@ -43,22 +43,22 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_GraphInput.hpp
-    \brief Defines the GraphInput interface.
+/*! \file Zoltan2_GraphAdapter.hpp
+    \brief Defines the GraphAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_GRAPHINPUT_HPP_
-#define _ZOLTAN2_GRAPHINPUT_HPP_
+#ifndef _ZOLTAN2_GRAPHADAPTER_HPP_
+#define _ZOLTAN2_GRAPHADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 
-/*!  \brief GraphInput defines the interface for graph input adapters.
+/*!  \brief GraphAdapter defines the interface for graph-based user data.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -90,11 +90,10 @@ namespace Zoltan2 {
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
 
-   \todo Create BasicCrsGraphInput subclass.
 */
 
 template <typename User>
-  class GraphInput : public InputAdapter<User> {
+  class GraphAdapter : public BaseAdapter<User> {
 private:
 
 public:
@@ -108,11 +107,11 @@ public:
   typedef User user_t;
 #endif
 
-  enum InputAdapterType inputAdapterType() const {return GraphAdapterType;}
+  enum BaseAdapterType adapterType() const {return GraphAdapterType;}
 
   /*! \brief Destructor
    */
-  virtual ~GraphInput() {};
+  virtual ~GraphAdapter() {};
 
   /*! \brief Returns the number vertices on this process.
    */
@@ -149,7 +148,7 @@ public:
 
       Zoltan2 does not copy your data.  The data pointed to by 
       vertexIds, offsets and edgeIds
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getVertexListView(const gid_t *&vertexIds, 
@@ -169,7 +168,7 @@ public:
                   non-uniform weights, zero otherwise.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getVertexWeights(int weightDim,
@@ -186,7 +185,7 @@ public:
                as the number of edges in getVertexListView().
 
       Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getEdgeWeights(int weightDim,
@@ -207,7 +206,7 @@ public:
               may be more than one.
 
       Zoltan2 does not copy your data.  The data pointed to by coords
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getVertexCoordinates(int coordDim, 
@@ -216,13 +215,13 @@ public:
 
   /*! \brief Apply a partitioning problem solution to an input.  
    *
-   *  This is not a required part of the GraphInput interface. However
+   *  This is not a required part of the GraphAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should

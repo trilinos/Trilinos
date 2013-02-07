@@ -536,7 +536,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
     Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
     XpetraTpetraMatrixType XpetraMatrix(ActiveMatrix);
-    Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix(Teuchos::rcp<XpetraMatrixType>(&XpetraMatrix,false));
+    Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> Zoltan2Matrix(Teuchos::rcp<XpetraMatrixType>(&XpetraMatrix,false));
 
 #ifdef HAVE_MPI
     // Grab the MPI Communicator and build the ordering problem with that
@@ -545,9 +545,9 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ActiveMatrix->getComm());
     if(mpicomm == Teuchos::null) mycomm = MPI_COMM_SELF;
     else mycomm = *(mpicomm->getRawMpiComm());
-    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist,mycomm);    
+    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist,mycomm);    
 #else
-    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist);    
+    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist);    
 #endif
     MyOrderingProblem.solve();
 

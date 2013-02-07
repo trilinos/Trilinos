@@ -72,7 +72,7 @@ using Teuchos::CommandLineProcessor;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
-typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
 
 enum weightTypes{
   upDown,

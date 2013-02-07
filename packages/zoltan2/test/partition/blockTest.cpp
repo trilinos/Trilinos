@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   weightValues.push_back(const_cast<const scalar_t *>(myWeights));
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> mydata_t;
-  typedef Zoltan2::BasicIdentifierInput<mydata_t> adapter_t;
+  typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
 
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 

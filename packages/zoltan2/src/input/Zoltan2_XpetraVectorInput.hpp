@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraVectorInput.hpp
-    \brief Defines the XpetraVectorInput adapter class.
+/*! \file Zoltan2_XpetraVectorAdapter.hpp
+    \brief Defines the XpetraVectorAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRAVECTORINPUT_HPP_
-#define _ZOLTAN2_XPETRAVECTORINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRAVECTORADAPTER_HPP_
+#define _ZOLTAN2_XPETRAVECTORADAPTER_HPP_
 
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
@@ -81,7 +81,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraVectorInput : public VectorInput<User> {
+  class XpetraVectorAdapter : public VectorAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -90,7 +90,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User>       base_adapter_t;
+  typedef VectorAdapter<User> base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::Vector<
@@ -102,7 +102,7 @@ public:
 
   /*! \brief Destructor
    */
-  ~XpetraVectorInput() { }
+  ~XpetraVectorAdapter() { }
 
   /*! \brief Constructor   
    *
@@ -116,9 +116,9 @@ public:
    *     If \c weightStrides.size() is zero, it is assumed all strides are one
    *
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
-  XpetraVectorInput( const RCP<const User> &invector,
+  XpetraVectorAdapter( const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! \brief Access to the xpetra-wrapped vector
@@ -130,10 +130,8 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
-
-  string inputAdapterName()const { return string("XpetraVector");}
 
   size_t getLocalNumberOfObjects() const { return getLocalLength();}
 
@@ -145,7 +143,7 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The VectorInput interface.
+  // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
   int getNumberOfVectors() const { return 1; }
@@ -201,7 +199,7 @@ private:
 ////////////////////////////////////////////////////////////////
   
 template <typename User>
-  XpetraVectorInput<User>::XpetraVectorInput(
+  XpetraVectorAdapter<User>::XpetraVectorAdapter(
     const RCP<const User> &invector, 
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
@@ -231,7 +229,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraVectorInput<User>::getVector(const gid_t *&Ids, 
+  size_t XpetraVectorAdapter<User>::getVector(const gid_t *&Ids, 
     const scalar_t *&elements, int &stride) const
 {
   stride = 1;
@@ -271,7 +269,7 @@ template <typename User>
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraVectorInput<User>::applyPartitioningSolution(
+    size_t XpetraVectorAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 

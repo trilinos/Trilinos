@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraCrsMatrixInput.hpp
-    \brief Defines the XpetraCrsMatrixInput adapter class.
+/*! \file Zoltan2_XpetraCrsMatrixAdapter.hpp
+    \brief Defines the XpetraCrsMatrixAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
-#define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRACRSMATRIXADAPTER_HPP_
+#define _ZOLTAN2_XPETRACRSMATRIXADAPTER_HPP_
 
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -83,7 +83,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraCrsMatrixInput : public MatrixInput<User> {
+  class XpetraCrsMatrixAdapter : public MatrixAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -93,13 +93,13 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixInput<User>       base_adapter_t;
+  typedef MatrixAdapter<User> base_adapter_t;
   typedef User user_t;
 #endif
 
   /*! \brief Destructor
    */
-  ~XpetraCrsMatrixInput() { }
+  ~XpetraCrsMatrixAdapter() { }
 
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
@@ -110,7 +110,7 @@ public:
    *    \param weightDim If row weights will be provided in setRowWeights(),
    *        the set \c weightDim to the number of weights per row.
    */
-  XpetraCrsMatrixInput(const RCP<const User> &inmatrix, int coordDim=0, 
+  XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix, int coordDim=0, 
     int weightDim=0);
 
   /*! \brief Specify geometric coordinates for matrix rows.
@@ -162,10 +162,8 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
-
-  string inputAdapterName()const { return string("XpetraCrsMatrix");}
 
   size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
 
@@ -177,7 +175,7 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The MatrixInput interface.
+  // The MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
   size_t getLocalNumRows() const { 
@@ -242,7 +240,7 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // End of MatrixInput interface.
+  // End of MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
   template <typename Adapter>
@@ -276,7 +274,7 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraCrsMatrixInput<User>::XpetraCrsMatrixInput(
+  XpetraCrsMatrixAdapter<User>::XpetraCrsMatrixAdapter(
     const RCP<const User> &inmatrix, int coordDim, int weightDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
@@ -324,7 +322,7 @@ template <typename User>
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
 template <typename User>
-  void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
+  void XpetraCrsMatrixAdapter<User>::setRowCoordinates(int dim,
     const scalar_t *coordVal, int stride)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -340,7 +338,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsMatrixInput<User>::setRowWeights(int dim,
+  void XpetraCrsMatrixAdapter<User>::setRowWeights(int dim,
     const scalar_t *weightVal, int stride)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -356,7 +354,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsMatrixInput<User>::setRowWeightIsNumberOfNonZeros(int dim)
+  void XpetraCrsMatrixAdapter<User>::setRowWeightIsNumberOfNonZeros(int dim)
 {
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight dimension",
@@ -367,7 +365,7 @@ template <typename User>
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraCrsMatrixInput<User>::applyPartitioningSolution(
+    size_t XpetraCrsMatrixAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 

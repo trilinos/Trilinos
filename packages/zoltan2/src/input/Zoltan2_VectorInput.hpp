@@ -43,22 +43,22 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_VectorInput.hpp
-    \brief Defines the VectorInput adapter interface.
+/*! \file Zoltan2_VectorAdapter.hpp
+    \brief Defines the VectorAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_VECTORINPUT_HPP_
-#define _ZOLTAN2_VECTORINPUT_HPP_
+#ifndef _ZOLTAN2_VECTORADAPTER_HPP_
+#define _ZOLTAN2_VECTORADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 
-  /*!  \brief VectorInput defines the interface for vector input adapters.
+  /*!  \brief VectorAdapter defines the interface for vector input.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures, 
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -91,7 +91,7 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 
 
-    VectorInput may be a single vector or a set of corresponding vectors
+    VectorAdapter may be a single vector or a set of corresponding vectors
     which have with the same global identifiers and the same distribution 
     across processes.
 
@@ -100,7 +100,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class VectorInput : public InputAdapter<User> {
+  class VectorAdapter : public BaseAdapter<User> {
 private:
 
 public:
@@ -116,13 +116,13 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~VectorInput() {};
+  virtual ~VectorAdapter() {};
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
+  enum BaseAdapterType adapterType() const {return VectorAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
@@ -142,7 +142,7 @@ public:
    */
   virtual size_t getLocalLength() const = 0;
 
-  /*! \brief Provide a pointer to the vertex elements.  If the VectorInput
+  /*! \brief Provide a pointer to the vertex elements.  If the VectorAdapter
        represents more than one vector, vector zero is implied.
 
       \param ids will on return point to the list of global Ids for 
@@ -189,13 +189,13 @@ public:
 
   /*! \brief Apply a PartitioningSolution to an input.
    *
-   *  This is not a required part of the VectorInput interface. However
+   *  This is not a required part of the VectorAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should

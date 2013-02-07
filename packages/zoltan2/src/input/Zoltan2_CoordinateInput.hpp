@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_CoordinateInput.hpp
-    \brief Defines the CoordinateInput interface.     
+/*! \file Zoltan2_CoordinateAdapter.hpp
+    \brief Defines the CoordinateAdapter interface.     
 */
 
-#ifndef _ZOLTAN2_COORDINATEINPUT_HPP_
-#define _ZOLTAN2_COORDINATEINPUT_HPP_
+#ifndef _ZOLTAN2_COORDINATEADAPTER_HPP_
+#define _ZOLTAN2_COORDINATEADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -57,10 +57,10 @@
 
 namespace Zoltan2 {
 
-/*!  \brief CoordinateInput defines the interface for input geometric
+/*!  \brief CoordinateAdapter defines the interface for input geometric
                 coordinates.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapters provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -92,18 +92,12 @@ namespace Zoltan2 {
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
 
-
-    Input adapters provide access for Zoltan2 to the user's data.  The
-    methods in the interface must be defined by users.  Many built-in
-    adapters are already defined for common data structures, such as
-    Tpetra and Epetra objects and C-language pointers to arrays.
-
     \todo We don't really need global Ids.  They should be optional
     \todo Migration doesn't move weights.  Should it?
 */
 
 template <typename User>
-  class CoordinateInput : public InputAdapter<User> {
+  class CoordinateAdapter : public BaseAdapter<User> {
 
 public:
 
@@ -118,13 +112,13 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~CoordinateInput() {};
+  virtual ~CoordinateAdapter() {};
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return CoordinateAdapterType;}
+  enum BaseAdapterType adapterType() const {return CoordinateAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
@@ -159,7 +153,7 @@ public:
               may be more than one.
 
       Zoltan2 does not copy your data.  The data pointed to coords
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getCoordinates(int coordDim, const gid_t *&gids, 
@@ -184,13 +178,13 @@ public:
 
   /*! \brief Apply a PartitioningSolution to an input.
    *
-   *  This is not a required part of the CoordinateInput interface. However
+   *  This is not a required part of the CoordinateAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should

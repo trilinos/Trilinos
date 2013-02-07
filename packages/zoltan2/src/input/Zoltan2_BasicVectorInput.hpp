@@ -43,22 +43,22 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_BasicVectorInput.hpp
-    \brief Defines the BasicVectorInput class. 
+/*! \file Zoltan2_BasicVectorAdapter.hpp
+    \brief Defines the BasicVectorAdapter class. 
 */
 
-#ifndef _ZOLTAN2_BASICVECTORINPUT_HPP_
-#define _ZOLTAN2_BASICVECTORINPUT_HPP_
+#ifndef _ZOLTAN2_BASICVECTORADAPTER_HPP_
+#define _ZOLTAN2_BASICVECTORADAPTER_HPP_
 
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
 
-  /*!  \brief BasicVectorInput represents a vector (plus optional weights)
+  /*!  \brief BasicVectorAdapter represents a vector (plus optional weights)
                 supplied by the user as pointers to strided arrays.
 
-    Input adapters provide access for Zoltan2 to the user's data.  The
+    Adapters provide access for Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
@@ -88,19 +88,19 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 
 
-    BasicVectorInput may be a single vector or a set of corresponding vectors
+    BasicVectorAdapter may be a single vector or a set of corresponding vectors
     which have with the
     same global identifiers and the same distribution across processes.
 
 
  \todo Global identifiers should be optional.  If the user gives us
-    gids in the input adapter, we will include them in the solution.
+    gids in the adapter, we will include them in the solution.
   \todo Is there any reason to specify coordinates for vector elements?
 
 */
 
 template <typename User>
-  class BasicVectorInput : public VectorInput<User> {
+  class BasicVectorAdapter : public VectorAdapter<User> {
 
 public:
 
@@ -111,7 +111,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User>   base_adapter_t;
+  typedef VectorAdapter<User> base_adapter_t;
   typedef User user_t;
 
 #endif
@@ -125,10 +125,10 @@ public:
    *         and elements is of lenth at least <tt>numIds * elementStride</tt>.
    *  
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicVectorInput(lno_t numIds, const gid_t *ids, const scalar_t *elements, 
+  BasicVectorAdapter(lno_t numIds, const gid_t *ids, const scalar_t *elements, 
     int elementStride=1):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
@@ -156,15 +156,15 @@ public:
    *      The number of weights per element is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     The weight for weight index \c n for \c ids[k] should be
    *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one
    *  
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicVectorInput(lno_t numIds, const gid_t *ids, 
+  BasicVectorAdapter(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
@@ -197,15 +197,15 @@ public:
    *      The number of weights per vector element is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     The weight for weight index \c n for \c ids[k] should be
    *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *  
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicVectorInput(lno_t numIds, const gid_t *ids, 
+  BasicVectorAdapter(lno_t numIds, const gid_t *ids, 
     vector<const scalar_t *> &elements,  vector<int> &elementStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
@@ -218,25 +218,23 @@ public:
 
   /*! Destructor
    */
-  ~BasicVectorInput() {};
+  ~BasicVectorAdapter() {};
 
   ////////////////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////////////////
-
-  string inputAdapterName() const {return string("BasicVector");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
   int getNumberOfWeightsPerObject() const { return numWeights_;}
 
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  size_t getObjectWeights(int idx, const scalar_t *&wgt, int &stride) const
   {
-    return getVectorWeights(dim, wgt, stride);
+    return getVectorWeights(idx, wgt, stride);
   }
 
   ////////////////////////////////////////////////////
-  // The VectorInput interface.
+  // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
   int getNumberOfVectors() const { return numVectors_;}
@@ -256,13 +254,13 @@ public:
   size_t getVector(int i, const gid_t *&ids, 
      const scalar_t *&element, int &stride) const;
 
-  size_t getVectorWeights(int dimension, 
+  size_t getVectorWeights(int idx, 
      const scalar_t *&weights, int &stride) const;
 
 private:
 
   // A default environment.  An Environment is an internal Zoltan2
-  // class, so input adapters don't usually have one.  But we create
+  // class, so adapters don't usually have one.  But we create
   // one here so we can use it for error handling.
 
   RCP<const Environment> env_;
@@ -289,37 +287,45 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  size_t BasicVectorInput<User>::getVector(int i, const gid_t *&ids, 
+  size_t BasicVectorAdapter<User>::getVector(int idx, const gid_t *&ids, 
     const scalar_t *&element, int &stride) const
 {
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid vector number",
-    i >= 0 && i < numVectors_, BASIC_ASSERTION);
+  if (idx < 0 || idx >= numVectors_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__
+         << "  Invalid vector index " << idx << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
   
   ids = idList_;
 
   size_t length;
 
-  elements_[i].getStridedList(length, element, stride);
+  elements_[idx].getStridedList(length, element, stride);
 
   return length;
 }
 
 template <typename User>
-  size_t BasicVectorInput<User>::getVectorWeights(int dimension, 
+  size_t BasicVectorAdapter<User>::getVectorWeights(int idx, 
     const scalar_t *&weights, int &stride) const
 {
-  env_->localInputAssertion(__FILE__, __LINE__,  "invalid weight dimension",
-    dimension >= 0 && dimension < numWeights_, BASIC_ASSERTION);
+  if (idx < 0 || idx >= numWeights_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__
+         << "  Invalid vector index " << idx << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
 
   size_t length;
 
-  weights_[dimension].getStridedList(length, weights, stride);
+  weights_[idx].getStridedList(length, weights, stride);
 
   return length;
 }
 
 template <typename User>
-  void BasicVectorInput<User>::createBasicVector(
+  void BasicVectorAdapter<User>::createBasicVector(
    vector<const scalar_t *> &elements,  vector<int> &elementStrides,
    vector<const scalar_t *> &weights, vector<int> &weightStrides)
 {

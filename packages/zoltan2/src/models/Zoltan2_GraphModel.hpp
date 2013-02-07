@@ -98,7 +98,7 @@ namespace Zoltan2 {
  *        for the start of the neighbors for each vertex
  *  \return the number of edges left after removal of undesired edges
  *
- *  The template parameter is an InputAdapter type.
+ *  The template parameter is an Adapter type.
  */
 
 template <typename User> size_t removeUndesiredEdges(
@@ -540,11 +540,11 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from MatrixInput.
+// Graph model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<MatrixInput<User> > : public Model<MatrixInput<User> >
+class GraphModel<MatrixAdapter<User> > : public Model<MatrixAdapter<User> >
 {
 public:
 
@@ -564,7 +564,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const MatrixInput<User> *ia,
+  GraphModel(const MatrixAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -682,7 +682,7 @@ private:
 };
 
 template <typename User>
-  GraphModel<MatrixInput<User> >::GraphModel(const MatrixInput<User> *ia,
+  GraphModel<MatrixAdapter<User> >::GraphModel(const MatrixAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -971,7 +971,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t GraphModel<MatrixInput<User> >::getVertexList(
+  size_t GraphModel<MatrixAdapter<User> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -989,7 +989,7 @@ template <typename User>
   }
 
 template <typename User>
-  size_t GraphModel<MatrixInput<User> >::getEdgeList(
+  size_t GraphModel<MatrixAdapter<User> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
@@ -1006,19 +1006,19 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from GraphInput.
+// Graph model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<GraphInput<User> > : public Model<GraphInput<User> >
+class GraphModel<GraphAdapter<User> > : public Model<GraphAdapter<User> >
 {
 public:
 
-  typedef typename GraphInput<User>::scalar_t  scalar_t;
-  typedef typename GraphInput<User>::gno_t     gno_t;
-  typedef typename GraphInput<User>::lno_t     lno_t;
-  typedef typename GraphInput<User>::gid_t     gid_t;
-  typedef typename GraphInput<User>::node_t    node_t;
+  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User>::gno_t     gno_t;
+  typedef typename GraphAdapter<User>::lno_t     lno_t;
+  typedef typename GraphAdapter<User>::gid_t     gid_t;
+  typedef typename GraphAdapter<User>::node_t    node_t;
   typedef IdentifierMap<User>     idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -1031,7 +1031,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const GraphInput<User> *ia,
+  GraphModel(const GraphAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -1149,7 +1149,7 @@ private:
 };
 
 template <typename User>
-  GraphModel<GraphInput<User> >::GraphModel(const GraphInput<User> *ia,
+  GraphModel<GraphAdapter<User> >::GraphModel(const GraphAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -1435,7 +1435,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t GraphModel<GraphInput<User> >::getVertexList(
+  size_t GraphModel<GraphAdapter<User> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -1453,7 +1453,7 @@ template <typename User>
   }
 
 template <typename User>
-  size_t GraphModel<GraphInput<User> >::getEdgeList(
+  size_t GraphModel<GraphAdapter<User> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
@@ -1470,23 +1470,23 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from CoordinateInput.
+// Graph model derived from CoordinateAdapter.
 //
 //  We do not build a graph model from coordinates.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<CoordinateInput<User> > : public Model<CoordinateInput<User> >
+class GraphModel<CoordinateAdapter<User> > : public Model<CoordinateAdapter<User> >
 {
 public:
 
-  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
-  typedef typename CoordinateInput<User>::gno_t     gno_t;
-  typedef typename CoordinateInput<User>::lno_t     lno_t;
+  typedef typename CoordinateAdapter<User>::scalar_t  scalar_t;
+  typedef typename CoordinateAdapter<User>::gno_t     gno_t;
+  typedef typename CoordinateAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  GraphModel(const CoordinateInput<User> *ia,
+  GraphModel(const CoordinateAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -1522,23 +1522,23 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from VectorInput.
+// Graph model derived from VectorAdapter.
 //
 //  We do not build a graph model from a vector.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<VectorInput<User> > : public Model<VectorInput<User> >
+class GraphModel<VectorAdapter<User> > : public Model<VectorAdapter<User> >
 {
 public:
 
-  typedef typename VectorInput<User>::scalar_t  scalar_t;
-  typedef typename VectorInput<User>::gno_t     gno_t;
-  typedef typename VectorInput<User>::lno_t     lno_t;
+  typedef typename VectorAdapter<User>::scalar_t  scalar_t;
+  typedef typename VectorAdapter<User>::gno_t     gno_t;
+  typedef typename VectorAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  GraphModel(const VectorInput<User> *ia,
+  GraphModel(const VectorAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -1574,23 +1574,23 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from IdentifierInput.
+// Graph model derived from IdentifierAdapter.
 //
 //  We do not build a graph model from identifiers.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+class GraphModel<IdentifierAdapter<User> > : public Model<IdentifierAdapter<User> >
 {
 public:
 
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
+  typedef typename IdentifierAdapter<User>::scalar_t  scalar_t;
+  typedef typename IdentifierAdapter<User>::gno_t     gno_t;
+  typedef typename IdentifierAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  GraphModel(const IdentifierInput<User> *ia,
+  GraphModel(const IdentifierAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {

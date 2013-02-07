@@ -223,7 +223,7 @@ public:
   void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
-    setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
+    setPartSizesForCriteria(0, len, partIds, partSizes, makeCopy);
   }
 
   /*! \brief Set or reset the relative sizes (per weight) for the parts
@@ -295,7 +295,7 @@ private:
   MPI_Comm mpiComm_;
 #endif
 
-  InputAdapterType inputType_;
+  BaseAdapterType inputType_;
   ModelType modelType_;
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
@@ -401,7 +401,7 @@ template <typename Adapter>
 
   numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
 
-  inputType_ = this->inputAdapter_->inputAdapterType();
+  inputType_ = this->inputAdapter_->adapterType();
 
   // The Caller can specify part sizes in setPartSizes().  If he/she
   // does not, the part size arrays are empty.
@@ -415,9 +415,7 @@ template <typename Adapter>
   if (this->env_->getDebugLevel() >= DETAILED_STATUS){
     ostringstream msg;
     msg << problemComm_->getSize() << " procs,"
-      << numberOfWeights_ << " user-defined weights, "
-      << this->inputAdapter_->inputAdapterName() 
-      << " input adapter type.\n";
+      << numberOfWeights_ << " user-defined weights\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
   }
 
@@ -425,7 +423,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningProblem<Adapter>::setPartSizesForCritiera(
+  void PartitioningProblem<Adapter>::setPartSizesForCriteria(
     int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 

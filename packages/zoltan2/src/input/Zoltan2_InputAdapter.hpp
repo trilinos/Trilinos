@@ -43,45 +43,44 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_InputAdapter.hpp
-    \brief Defines the InputAdapter interface.
+/*! \file Zoltan2_BaseAdapter.hpp
+    \brief Defines the Adapter interface for accessing user data.
 */
 
-#ifndef _ZOLTAN2_INPUTADAPTER_HPP_
-#define _ZOLTAN2_INPUTADAPTER_HPP_
+#ifndef _ZOLTAN2_ADAPTER_HPP_
+#define _ZOLTAN2_ADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
 
 namespace Zoltan2 {
 
-/*! \brief An enum to identify general types of input adapters.
+/*! \brief An enum to identify general types of adapters.
  *
- *  If you change this, update inputAdapterTypeName().
  */
-enum InputAdapterType {
-  InvalidAdapterType = 0,    /*!< \brief unused value */
-  IdentifierAdapterType,    /*!< \brief plain identifier input, just a list of Ids*/
-  VectorAdapterType,    /*!< \brief vector input*/
-  CoordinateAdapterType,    /*!< \brief coordinate input */
-  GraphAdapterType,    /*!< \brief graph input */
-  MeshAdapterType,    /*!< \brief mesh input */
-  MatrixAdapterType    /*!< \brief matrix input */
+enum BaseAdapterType {
+  InvalidAdapterType = 0, /*!< \brief unused value */
+  IdentifierAdapterType,  /*!< \brief identifier data, just a list of IDs*/
+  CoordinateAdapterType,  /*!< \brief coordinate data */
+  VectorAdapterType,      /*!< \brief vector data */
+  MatrixAdapterType,      /*!< \brief matrix data */
+  GraphAdapterType,       /*!< \brief graph data */
+  MeshAdapterType         /*!< \brief mesh data */
 };
 
 
-/*! \brief InputAdapter defines methods required by all InputAdapters
+/*! \brief BaseAdapter defines methods required by all Adapters
 
-    Input adapters provide access for Zoltan2 to the user's data.  The
+    Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
-    \todo Add add a MeshInput adapter
+    \todo Add add a MeshAdapter
  */
 
 template <typename User>
-  class InputAdapter {
+  class BaseAdapter {
 
 private:
 
@@ -91,17 +90,13 @@ public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum InputAdapterType inputAdapterType()const = 0;
+  virtual enum BaseAdapterType adapterType()const = 0;
 
   /*! \brief Desstructor
    */
-  virtual ~InputAdapter() {};
+  virtual ~BaseAdapter() {};
 
-  /*! \brief Returns a descriptive name that identifies the concrete adapter.
-   */
-  virtual string inputAdapterName() const = 0;
-
-  /*! \brief Returns the number of objects in the input.
+  /*! \brief Returns the number of objects on this process
    *
    *  Objects may be coordinates, graph vertices, matrix rows, etc.
    *  They are the objects to be partitioned, ordered, or colored.
@@ -124,46 +119,7 @@ public:
    */ 
   virtual size_t getObjectWeights(int dim, const scalar_t *&wgt, 
     int &stride) const = 0;
-
-  /*! \brief Returns the name of the input adapter
-   */
-  static string inputAdapterTypeName(InputAdapterType iaType);
 };
-
-template <typename User>
-  string InputAdapter<User>::inputAdapterTypeName(InputAdapterType iaType)
-{
-  string typeName;
-  switch (iaType){
-    case InvalidAdapterType:
-      typeName = string("invalid");
-      break;
-    case IdentifierAdapterType:
-      typeName = string("identifier");
-      break;
-    case VectorAdapterType:
-      typeName = string("vector");
-      break;
-    case CoordinateAdapterType:
-      typeName = string("coordinate");
-      break;
-    case GraphAdapterType:
-      typeName = string("graph");
-      break;
-    case MeshAdapterType:
-      typeName = string("mesh");
-      break;
-    case MatrixAdapterType:
-      typeName = string("matrix");
-      break;
-    default:
-      typeName = string("unknown");
-      break;
-  }
-
-  return typeName;
-}
-  
   
 }  //namespace Zoltan2
   

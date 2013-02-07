@@ -43,9 +43,9 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::XpetraCrsGraphInput
+// Basic testing of Zoltan2::XpetraCrsGraphAdapter
 /*!  \file XpetraCrsGraphInput.cpp
- *   \brief Test of Zoltan2::XpetraCrsGraphInput class.
+ *   \brief Test of Zoltan2::XpetraCrsGraphAdapter class.
  *  \todo add weights and coordinates
  */
 
@@ -100,7 +100,7 @@ void printGraph(RCP<const Comm<int> > &comm, lno_t nvtx,
 
 template <typename User>
 int verifyInputAdapter(
-  Zoltan2::XpetraCrsGraphInput<User> &ia, tgraph_t &graph)
+  Zoltan2::XpetraCrsGraphAdapter<User> &ia, tgraph_t &graph)
 {
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
 
-  typedef Zoltan2::XpetraCrsGraphInput<tgraph_t>  adapter_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<tgraph_t>  adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
   solution.setParts(gidArray, solnParts, true);
@@ -189,15 +189,15 @@ int main(int argc, char *argv[])
   // User object is Tpetra::CrsGraph
   if (!gfail){
     RCP<const tgraph_t> ctG = rcp_const_cast<const tgraph_t>(tG);
-    RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > tGInput;
+    RCP<Zoltan2::XpetraCrsGraphAdapter<tgraph_t> > tGInput;
 
     try {
       tGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(ctG));
+        rcp(new Zoltan2::XpetraCrsGraphAdapter<tgraph_t>(ctG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
-        string("XpetraCrsGraphInput ")+e.what(), 1);
+        string("XpetraCrsGraphAdapter ")+e.what(), 1);
     }
 
     if (rank==0)
@@ -221,13 +221,13 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const tgraph_t> cnewG = rcp_const_cast<const tgraph_t>(newG);
-        RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphAdapter<tgraph_t> > newInput;
         try{
-          newInput = rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(cnewG));
+          newInput = rcp(new Zoltan2::XpetraCrsGraphAdapter<tgraph_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
-            string("XpetraCrsGraphInput 2 ")+e.what(), 1);
+            string("XpetraCrsGraphAdapter 2 ")+e.what(), 1);
         }
 
         if (rank==0){
@@ -250,15 +250,15 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<xgraph_t> xG = uinput->getXpetraCrsGraph();
     RCP<const xgraph_t> cxG = rcp_const_cast<const xgraph_t>(xG);
-    RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > xGInput;
+    RCP<Zoltan2::XpetraCrsGraphAdapter<xgraph_t> > xGInput;
 
     try {
       xGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cxG));
+        rcp(new Zoltan2::XpetraCrsGraphAdapter<xgraph_t>(cxG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
-        string("XpetraCrsGraphInput 3 ")+e.what(), 1);
+        string("XpetraCrsGraphAdapter 3 ")+e.what(), 1);
     }
 
     if (rank==0){
@@ -281,14 +281,14 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const xgraph_t> cnewG(mMigrate);
-        RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphAdapter<xgraph_t> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphAdapter<xgraph_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
-            string("XpetraCrsGraphInput 4 ")+e.what(), 1);
+            string("XpetraCrsGraphAdapter 4 ")+e.what(), 1);
         }
 
         if (rank==0){
@@ -312,15 +312,15 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
-    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > eGInput;
+    RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > eGInput;
 
     try {
       eGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(ceG));
+        rcp(new Zoltan2::XpetraCrsGraphAdapter<egraph_t>(ceG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
-        string("XpetraCrsGraphInput 5 ")+e.what(), 1);
+        string("XpetraCrsGraphAdapter 5 ")+e.what(), 1);
     }
 
     if (rank==0){
@@ -343,14 +343,14 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const egraph_t> cnewG(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphAdapter<egraph_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
-            string("XpetraCrsGraphInput 6 ")+e.what(), 1);
+            string("XpetraCrsGraphAdapter 6 ")+e.what(), 1);
         }
 
         if (rank==0){

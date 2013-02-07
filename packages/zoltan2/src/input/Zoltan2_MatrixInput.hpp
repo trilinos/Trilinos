@@ -43,21 +43,21 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_MatrixInput.hpp
-    \brief Defines the MatrixInput adapter interface.
+/*! \file Zoltan2_MatrixAdapter.hpp
+    \brief Defines the MatrixAdapter interface.
 */
 
-#ifndef _ZOLTAN2_MATRIXINPUT_HPP_
-#define _ZOLTAN2_MATRIXINPUT_HPP_
+#ifndef _ZOLTAN2_MATRIXADAPTER_HPP_
+#define _ZOLTAN2_MATRIXADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 
-/*!  \brief MatrixInput defines the interface for input adapters for matrices.
+/*!  \brief MatrixAdapter defines the adapter interface for matrices.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -89,8 +89,8 @@ namespace Zoltan2 {
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
 
-     \todo Create BasicCrsMatrixInput subclass
-     \todo Do we want to require input adapters to give us the global
+     \todo Create BasicCrsMatrixAdapter subclass
+     \todo Do we want to require adapters to give us the global
                number of rows, columns etc?  We can figure that out.
       \todo  This is a row-oriented matrix.  Do we need a column-oriented
               matrix?  In particular - we assumed coordinates are for rows.
@@ -101,7 +101,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class MatrixInput : public InputAdapter<User> {
+  class MatrixAdapter : public BaseAdapter<User> {
 private:
 
 public:
@@ -115,11 +115,11 @@ public:
   typedef User user_t;
 #endif
 
-  enum InputAdapterType inputAdapterType() const {return MatrixAdapterType;}
+  enum BaseAdapterType adapterType() const {return MatrixAdapterType;}
 
   /*! \brief Destructor
    */
-  virtual ~MatrixInput(){};
+  virtual ~MatrixAdapter(){};
 
   /*! \brief Returns the number rows on this process.
    */
@@ -166,7 +166,7 @@ public:
                   non-uniform weights, zero otherwise.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getRowWeights(int weightDim,
@@ -213,7 +213,7 @@ public:
               coordinates but not row coordinates are supplied.
 
       Zoltan2 does not copy your data.  The data pointed to by coords
-      must remain valid for the lifetime of this InputAdapter.
+      must remain valid for the lifetime of this Adapter.
    */
 
   virtual size_t getRowCoordinates(int coordDim,
@@ -221,11 +221,11 @@ public:
 
   /*! \brief Apply the solution to a partitioning problem to an input.  
    *
-   *  This is not a required part of the MatrixInput interface.  
+   *  This is not a required part of the MatrixAdapter interface.  
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
+   *           data that instantiated this Adapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
    *  \param solution  The Solution object created by a Problem should
