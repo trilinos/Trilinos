@@ -651,13 +651,15 @@ ENDMACRO()
 MACRO(SELECT_DEFAULT_GENERATOR)
   # When the build tree is known and exists, use
   # its generator.
-  SET(DEFAULT_GENERATOR "Unix Makefiles")
+  SET(DEFAULT_GENERATOR "DID NOT SET!")
   IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
     FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt"
       line REGEX "^CMAKE_GENERATOR:" LIMIT_COUNT 1)
     IF("${line}" MATCHES "=(.+)$")
       SET(DEFAULT_GENERATOR "${CMAKE_MATCH_1}")
     ENDIF()
+  ELSE()
+    SET(DEFAULT_GENERATOR "Unix Makefiles")
   ENDIF()
 ENDMACRO()
 
