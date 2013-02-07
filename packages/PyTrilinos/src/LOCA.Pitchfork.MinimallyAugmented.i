@@ -58,11 +58,10 @@
 // Base class support
 %pythoncode
 %{
-import os
-import sys
-parentDir = os.path.dirname(os.path.abspath(__file__))
-parentDir = os.path.normpath(os.path.join(parentDir,".."))
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
 %}
 %import "LOCA.TurningPoint.MinimallyAugmented_RelPath.i"
 %import "LOCA.Pitchfork.MooreSpence.i"
