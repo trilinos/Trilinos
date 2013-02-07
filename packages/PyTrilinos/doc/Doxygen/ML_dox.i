@@ -213,6 +213,17 @@ double MLAPI::DistributedMatrix::NormOne() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::NumGlobalDiagonals "virtual int MLAPI::DistributedMatrix::NumGlobalDiagonals() const ";
 
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalNonzeros64 "virtual long long MLAPI::DistributedMatrix::NumGlobalNonzeros64()
+const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalRows64 "virtual long long MLAPI::DistributedMatrix::NumGlobalRows64() const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalCols64 "virtual long long MLAPI::DistributedMatrix::NumGlobalCols64() const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalDiagonals64
+"virtual long long MLAPI::DistributedMatrix::NumGlobalDiagonals64()
+const ";
+
 %feature("docstring")  MLAPI::DistributedMatrix::NumMyNonzeros "virtual int MLAPI::DistributedMatrix::NumMyNonzeros() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::NumMyRows "virtual
@@ -371,6 +382,20 @@ double MLAPI::Epetra_SerialMatrix::NormOne() const ";
 %feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals
 "virtual int MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals() const
 ";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalNonzeros64
+"virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalNonzeros64()
+const ";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalRows64 "virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalRows64() const
+";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalCols64 "virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalCols64() const
+";
+
+%feature("docstring")
+MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals64 "virtual long long
+MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  MLAPI::Epetra_SerialMatrix::NumMyNonzeros "virtual int MLAPI::Epetra_SerialMatrix::NumMyNonzeros() const ";
 
@@ -2456,14 +2481,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_155fcb0d4cda658caac02c78710535e4.xml
+// File: dir_d64ec5ad3304e7b24a38af39b4720141.xml
 
 
-// File: dir_cc1e09988ecec1a328546f0af31f254d.xml
+// File: dir_e0dd82b2fc370919081746f2752e00cc.xml
 
 
-// File: dir_b81d57d7b52d20c51be34aee0631351e.xml
+// File: dir_edd0f048554c13e161b46f688c002554.xml
 
 
-// File: dir_3e2c3fa1e52511a70276f9374dc35ced.xml
+// File: dir_98c03ad453ff2e798eb149e235ac3cf0.xml
 

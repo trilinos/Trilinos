@@ -526,19 +526,31 @@ See Epetra_RowMatrix documentation. ";
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")
+NOX::Epetra::BroydenOperator::NumGlobalNonzeros64 "long long
+BroydenOperator::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalRows "int BroydenOperator::NumGlobalRows() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalRows64 "long long BroydenOperator::NumGlobalRows64() const ";
+
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalCols "int BroydenOperator::NumGlobalCols() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalCols64 "long long BroydenOperator::NumGlobalCols64() const ";
 
 %feature("docstring")
 NOX::Epetra::BroydenOperator::NumGlobalDiagonals "int
 BroydenOperator::NumGlobalDiagonals() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")
+NOX::Epetra::BroydenOperator::NumGlobalDiagonals64 "long long
+BroydenOperator::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumMyNonzeros "int BroydenOperator::NumMyNonzeros() const
 
@@ -1110,6 +1122,9 @@ the NOX::Solver::InexactTrustRegionBased solver.
 \"Tensor Based\" <Teuchos::ParameterList> Sublist for the
 NOX::Solver::TensorBased solver.
 
+\"Pseudo-Transient\" <Teuchos::ParameterList> Sublist for the
+NOX::Solver::PseudoTransient solver. (Requires Thyra support enabled)
+
 \"Tensor-Krylov Based\" <Teuchos::ParameterList> Sublist for the
 NOX::Solver::TensorBasedTest solver. (Prerelease only)
 
@@ -1548,19 +1563,33 @@ FiniteDifference::NumGlobalNonzeros() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")
+NOX::Epetra::FiniteDifference::NumGlobalNonzeros64 "long long
+FiniteDifference::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalRows "int FiniteDifference::NumGlobalRows() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalRows64
+"long long FiniteDifference::NumGlobalRows64() const ";
+
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalCols "int FiniteDifference::NumGlobalCols() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalCols64
+"long long FiniteDifference::NumGlobalCols64() const ";
 
 %feature("docstring")
 NOX::Epetra::FiniteDifference::NumGlobalDiagonals "int
 FiniteDifference::NumGlobalDiagonals() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifference::NumGlobalDiagonals64 "long long
+FiniteDifference::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumMyNonzeros "int FiniteDifference::NumMyNonzeros() const
 
@@ -10345,13 +10374,13 @@ follow the link for this object for more information. ";
 // File: deprecated.xml
 
 
-// File: dir_b106184bd0dc0f033e01febdd5b0cca3.xml
+// File: dir_bc1b3429d01ccc798de4f96897d24894.xml
 
 
-// File: dir_a16aea2d80b93cbd11c299610ea92ab6.xml
+// File: dir_e802c2b101c3b28fa6221196a71608dd.xml
 
 
-// File: dir_b88ee91968898ee9cab38dd71e2f2d37.xml
+// File: dir_08810945b0c8628df3a5fed0748c6cf7.xml
 
 
 // File: indexpage.xml

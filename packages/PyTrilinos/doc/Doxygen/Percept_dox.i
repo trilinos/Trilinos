@@ -9083,6 +9083,19 @@ stk::adapt::adapt_main_full_options(int argc, char **argv) ";
 %feature("docstring")  stk::adapt::Elem::dump_args "static void
 stk::adapt::dump_args(int argc, char **argv) ";
 
+%feature("docstring")  stk::adapt::Elem::spacing_edge "static double
+stk::adapt::spacing_edge(unsigned iv0, unsigned iv1, unsigned nsz,
+unsigned nsp, double lspc[8][3], double den_xyz[3], double *coord[8])
+";
+
+%feature("docstring")  stk::adapt::Elem::normalize_spacing_0 "static
+void stk::adapt::normalize_spacing_0(unsigned nsz, unsigned nsp,
+double spc[8][3], double den_xyz[3]) ";
+
+%feature("docstring")  stk::adapt::Elem::normalize_spacing "static
+void stk::adapt::normalize_spacing(unsigned nsz, unsigned nsp, double
+spc[8][3], double den_xyz[3], double *coord[8]) ";
+
 %feature("docstring")  stk::adapt::Elem::doPrintSizes "static void
 stk::adapt::doPrintSizes() ";
 
@@ -12314,88 +12327,88 @@ char **argv) ";
 // File: deprecated.xml
 
 
-// File: dir_11f034dd7735221cdf627bf79f3072dc.xml
+// File: dir_5e9b3c47f964ce5034ede0f2f76bfcaf.xml
 
 
-// File: dir_3650b8648b98b754fdec60c37bf0dc95.xml
+// File: dir_26a1bb62d421389d7b1ecd6cc1f0d352.xml
 
 
-// File: dir_972ece956570245404e1b799a1859c28.xml
+// File: dir_545d02dba4e17070b0cc798d9eb7ebbd.xml
 
 
-// File: dir_88a03661e184aeb19be31dcbf2058403.xml
+// File: dir_85da8a7f63fd881c551fc769467af24a.xml
 
 
-// File: dir_86d9755b1d9028ac71e5cc1c36f168f1.xml
+// File: dir_ba1dfc3829078183a1603447af963a38.xml
 
 
-// File: dir_954e47fdee18c4918c689d29195f8395.xml
+// File: dir_6c9cf3721364b9b8251e9c15afaa141e.xml
 
 
-// File: dir_0941ebabbc452a1d3783e7c2234b0985.xml
+// File: dir_5f8f23fc5f1d56ea5db538f5f1dc702b.xml
 
 
-// File: dir_a25ddaaa64c8aa19203fd4d33d0c2425.xml
+// File: dir_7e2a32e9402cd7ee0128a69811fe6d4f.xml
 
 
-// File: dir_afc3b0b0577b2468d37f97703cc327d8.xml
+// File: dir_067e7afb6cc06c42013f069a9b5219fe.xml
 
 
-// File: dir_0e473d907fbca9a6ade6d6c3de8bdff8.xml
+// File: dir_150142cd5585f483f5aa456d26396800.xml
 
 
-// File: dir_19d3ce17e8f9e372363f2114f3dbcd20.xml
+// File: dir_777238bd7d1e5135b72e15d59c7fd4a6.xml
 
 
-// File: dir_cdeef988af37fd61781324a92413ec46.xml
+// File: dir_5fb56a477db6adab35961e8fe4719bd5.xml
 
 
-// File: dir_ce4d385d7da70846972fe7d1116aeaa9.xml
+// File: dir_330ca7f8e5c084bd824afaa41ecc6acf.xml
 
 
-// File: dir_0831f8d588f2754b86cefbbc7533e6cb.xml
+// File: dir_2c3bdba6a4dea9b78641d2f2ff837380.xml
 
 
-// File: dir_2721ee84a542daf599cbb9e5a489547b.xml
+// File: dir_d7d5703250114ebb40115f93d0ab225c.xml
 
 
-// File: dir_d3157ce94e39b061aa74600e8e4e431d.xml
+// File: dir_bc4160e07a5afbf6fadc381f9f41ffb2.xml
 
 
-// File: dir_0defabeaccbd07bbd140d268e2f41fd9.xml
+// File: dir_ff0da8e2762f8a2ec6766650dc543533.xml
 
 
-// File: dir_939612a4f550c6384b6f75b967919c63.xml
+// File: dir_697284207d72a56f70dd81d17be90437.xml
 
 
-// File: dir_32031a3b22d1ae4e8f376ff6a496f3d0.xml
+// File: dir_bae614a6c2f54ee16d944c93d617c04e.xml
 
 
-// File: dir_dc90e54d5d10f796f8c92cc919e361bc.xml
+// File: dir_a8dd35e5486fc96592cd9d934d9cfbc8.xml
 
 
-// File: dir_4467ffbefb08b7ba3cf95a1b2f780234.xml
+// File: dir_a12a61dc14506b00af5fc9244f183f5b.xml
 
 
-// File: dir_6f07f491ab744074018df0847278a6ff.xml
+// File: dir_01ebfc99c4738cd9d0343aadf7a741f2.xml
 
 
-// File: dir_634d56cc0e1f94b03ae0bd7693bf304d.xml
+// File: dir_5e31590d08fd40a4cc77316ad84d2630.xml
 
 
-// File: dir_aa698353c03beac8eec839f77dbd7cfc.xml
+// File: dir_591cc9f979c772d1a3dfa15c247ddddd.xml
 
 
-// File: dir_c2e4336b4d72311dc5d317b35195bcbf.xml
+// File: dir_169469d1cb00450eed8e2b558367f838.xml
 
 
-// File: dir_88e797595a8ec3f773d78a2377cad2f2.xml
+// File: dir_d82d5981791e0ad58940a66ad8b37a57.xml
 
 
-// File: dir_abab4e79a7a8ddb45125c4bf4e64cebe.xml
+// File: dir_8f6b2c55c9ed893bca1c19f2b20a9b04.xml
 
 
-// File: dir_19fbb4666aa3fd0c5547b10975f59150.xml
+// File: dir_4cf08ab319debc11cde66e3d52c580f8.xml
 
 
 // File: indexpage.xml

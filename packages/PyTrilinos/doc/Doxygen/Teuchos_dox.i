@@ -1917,20 +1917,6 @@ std::string >(const std::string &name) const ";
 const std::string & > " void Teuchos::XMLObject::addAttribute< const
 std::string & >(const std::string &name, const std::string &value) ";
 
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFile "TEUCHOS_DEPRECATED
-void Teuchos::updateParametersFromXmlFile(const std::string
-&xmlFileName, ParameterList *paramList) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "TEUCHOS_DEPRECATED void
-Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
-&xmlFileName, ParameterList *paramList, const Comm< int > &comm) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlString "TEUCHOS_DEPRECATED void Teuchos::updateParametersFromXmlString(const
-std::string &xmlStr, ParameterList *paramList) ";
-
 
 // File: namespaceTeuchos_1_1Exceptions.xml
 
@@ -2052,10 +2038,10 @@ std::string &xmlStr, ParameterList *paramList) ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_3e7ac0723db077e4460d28d277456290.xml
+// File: dir_5d16dc934b9bc0065df8fcb0fc908597.xml
 
 
-// File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
+// File: dir_179e656075e4755fc4b0ab52962dd88b.xml
 
 
 // File: ParameterList_2cxx_main_8cpp-example.xml
