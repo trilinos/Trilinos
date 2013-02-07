@@ -1548,60 +1548,92 @@ namespace Kokkos {
          const MultiVector<Scalar,SerialNode> &B,
          const ArrayView<Scalar> &dots)
     {
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      const size_t Astride = A.getStride();
-      const size_t Bstride = B.getStride();
-      TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same dimensions.");
-      TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(dots.size()), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): dots must have length as large as number of columns of A and B.");
-      if (nR*nC == 0) {
-        std::fill( dots.begin(), dots.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(), 
+	std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+	"A and B must have the same dimensions.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t> (dots.size ()), 
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+	"dots must have length as large as number of columns of A and B.");
+      if (nR == 0) { 
+	// "Trivial" (no rows) dot product is zero, since trivial sum
+	// (sum of no terms) is zero.
+	for (size_t j = 0; j < nC; ++j) {
+	  dots[j] = STS::zero ();
+	}
         return;
       }
-      RCP<SerialNode> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues(),
-        Adata = A.getValues();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addConstBuffer<Scalar>(Bdata);
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      DotOp2<Scalar> op;
-      for (size_t j=0; j<nC; ++j) {
-        op.x = Adata(0,nR).getRawPtr();
-        op.y = Bdata(0,nR).getRawPtr();
-        dots[j] = node->parallel_reduce(0,nR,op);
-        Adata += Astride;
-        Bdata += Bstride;
+      const Scalar* const A_raw = A.getValues ().getRawPtr ();
+      const Scalar* const B_raw = B.getValues ().getRawPtr ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+
+      // BLAS' ZDOTC(x,y) is x^* y, so we have to conjugate x if complex.
+      if (STS::isComplex) {
+	for (size_t j = 0; j < nC; ++j) {
+	  const Scalar* const A_j = &A_raw[j * A_stride];
+	  const Scalar* const B_j = &B_raw[j * B_stride];
+	  Scalar dot_j = STS::zero ();
+	  for (size_t i = 0; i < nR; ++i) {
+	    dot_j += STS::conjugate (A_j[i]) * B_j[i];
+	  }
+	  dots[j] = dot_j;
+	}
+      } else { // not complex
+	for (size_t j = 0; j < nC; ++j) {
+	  const Scalar* const A_j = &A_raw[j * A_stride];
+	  const Scalar* const B_j = &B_raw[j * B_stride];
+	  Scalar dot_j = STS::zero ();
+	  for (size_t i = 0; i < nR; ++i) {
+	    dot_j += A_j[i] * B_j[i];
+	  }
+	  dots[j] = dot_j;
+	}
       }
     }
 
-    static Scalar Dot (const MultiVector<Scalar,SerialNode> &A,
-                       const MultiVector<Scalar,SerialNode> &B)
+    static Scalar 
+    Dot (const MultiVector<Scalar,SerialNode> &A,
+	 const MultiVector<Scalar,SerialNode> &B)
     {
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      TEUCHOS_TEST_FOR_EXCEPTION(nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same number of rows.");
-      if (nR*nC == 0) {
-        return Teuchos::ScalarTraits<Scalar>::zero();
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != 1,
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+	"A must have exactly one column.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        B.getNumCols () != 1, 
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+	"B must have exactly one column.");
+      // "Trivial" (no rows) dot product result is zero, 
+      // since trivial sum (sum of no terms) is zero.
+      Scalar result = STS::zero ();
+      if (nR > 0) {
+	const Scalar* const A_raw = A.getValues ().getRawPtr ();
+	const Scalar* const B_raw = B.getValues ().getRawPtr ();
+	if (STS::isComplex) {
+	  for (size_t i = 0; i < nR; ++i) {
+	    result += STS::conjugate (A_raw[i]) * B_raw[i];
+	  }
+	} else { // not complex
+	  for (size_t i = 0; i < nR; ++i) {
+	    result += A_raw[i] * B_raw[i];
+	  }
+	}
       }
-      RCP<SerialNode> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues(0),
-        Adata = A.getValues(0);
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addConstBuffer<Scalar>(Bdata);
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      DotOp2<Scalar> op;
-      op.x = Adata(0,nR).getRawPtr();
-      op.y = Bdata(0,nR).getRawPtr();
-      return node->parallel_reduce(0,nR,op);
+      return result;
     }
 
     static void
@@ -1854,47 +1886,87 @@ namespace Kokkos {
       }
     }
 
-    static void Norm2Squared(const MultiVector<Scalar,SerialNode> &A, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      const size_t Astride = A.getStride();
-      TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm2Squared(A,norms): norms must have length as large as number of columns of A.");
-      if (nR*nC == 0) {
-        std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
+    static void 
+    Norm2Squared (const MultiVector<Scalar,SerialNode> &A, 
+		  const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) 
+    {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t> (norms.size ()), 
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A, "
+	"norms): norms must be at least as long as number of columns of A.");
+      if (nR == 0) { 
+	// "Trivial" (no rows) norm is zero, since trivial sum (sum of
+	// no terms) is zero.
+	for (size_t j = 0; j < nC; ++j) {
+	  norms[j] = STM::zero ();
+	}
         return;
       }
-      RCP<SerialNode> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      DotOp1<Scalar> op;
-      for (size_t j=0; j<nC; ++j) {
-        op.x = Adata(0,nR).getRawPtr();
-        norms[j] = node->parallel_reduce(0,nR,op);
-        Adata += Astride;
+      const Scalar* const A_raw = A.getValues ().getRawPtr ();
+      const size_t A_stride = A.getStride ();
+
+      if (STS::isComplex) {
+	for (size_t j = 0; j < nC; ++j) {
+	  const Scalar* const A_j = &A_raw[j * A_stride];
+	  magnitude_type norm_j = STS::zero ();
+	  for (size_t i = 0; i < nR; ++i) {
+	    const Scalar A_ij = A_j[i];
+	    norm_j += STS::real (A_ij) * STS::real (A_ij) + 
+	      STS::imag (A_ij) * STS::imag (A_ij);
+	  }
+	  norms[j] = norm_j;
+	}
+      } else { // not complex
+	for (size_t j = 0; j < nC; ++j) {
+	  const Scalar* const A_j = &A_raw[j * A_stride];
+	  magnitude_type norm_j = STS::zero ();
+	  for (size_t i = 0; i < nR; ++i) {
+	    norm_j += A_j[i] * A_j[i];
+	  }
+	  norms[j] = norm_j;
+	}
       }
     }
 
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    Norm2Squared(const MultiVector<Scalar,SerialNode> &A) {
-      const size_t nR = A.getNumRows();
-      if (nR == 0) {
-        return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
+    Norm2Squared (const MultiVector<Scalar,SerialNode> &A) {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != 1,
+	std::runtime_error,
+	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A): "
+	"A must have exactly one column.");
+
+      // "Trivial" (no rows) norm is zero, since trivial sum (sum of
+      // no terms) is zero.
+      magnitude_type result = STM::zero ();
+      if (nR > 0) {
+	const Scalar* const A_raw = A.getValues ().getRawPtr ();
+	if (STS::isComplex) {
+	  for (size_t i = 0; i < nR; ++i) {
+	    const Scalar A_i = A_raw[i];
+	    result += STS::real (A_i) * STS::real (A_i) + 
+	      STS::imag (A_i) * STS::imag (A_i);
+	  }
+	} else { // not complex
+	  for (size_t i = 0; i < nR; ++i) {
+	    result += A_raw[i] * A_raw[i];
+	  }
+	}
       }
-      RCP<SerialNode> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      DotOp1<Scalar> op;
-      op.x = Adata(0,nR).getRawPtr();
-      return node->parallel_reduce(0,nR,op);
+      return result;
     }
 
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
