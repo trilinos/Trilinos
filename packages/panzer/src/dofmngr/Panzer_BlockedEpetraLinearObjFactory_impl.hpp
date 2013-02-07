@@ -881,7 +881,7 @@ buildEpetraGhostedGraph(int i,int j) const
    // build the map and allocate the space for the graph
    Teuchos::RCP<Epetra_Map> rowMap = getGhostedMap(i);
    Teuchos::RCP<Epetra_Map> colMap = getGhostedMap(j);
-   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,0));
+   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,*colMap,0));
 
    std::vector<std::string> elementBlockIds;
    
@@ -891,7 +891,7 @@ buildEpetraGhostedGraph(int i,int j) const
    colProvider = getGlobalIndexer(j);
 
    blockProvider_->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
-                                                      // same element blocks
+                                                        // same element blocks
 
    // graph information about the mesh
    std::vector<std::string>::const_iterator blockItr;

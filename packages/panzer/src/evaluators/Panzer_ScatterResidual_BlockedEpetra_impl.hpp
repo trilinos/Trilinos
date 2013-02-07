@@ -440,7 +440,25 @@ evaluateFields(typename Traits::EvalData workset)
 
                // Sum Jacobian
                int err = subJac->SumIntoMyValues(r_lid, end-start, &jacRow[start],&LIDs[start]);
-               TEUCHOS_ASSERT_EQUALITY(err,0);
+               if(err!=0) {
+                 RCP<const Epetra_Map> rr = blockedContainer->getMapForBlock(GIDs[start].first);
+                 bool sameColMap = subJac->ColMap().SameAs(*rr);
+
+                 std::stringstream ss;
+                 ss << "Failed inserting row: " << GIDs[rowOffset].second << " (" << r_lid << "): ";
+                 for(int i=start;i<end;i++)
+                   ss << GIDs[i].second << " (" << LIDs[i] << ") ";
+                 ss << std::endl;
+                 ss << "Into block " << blockRowIndex << ", " << blockColIndex << std::endl;
+
+                 ss << "scatter field = ";
+                 scatterFields_[fieldIndex].print(ss);
+                 ss << std::endl;
+
+                 ss << "Same map = " << (sameColMap ? "true" : "false") << std::endl; 
+                 
+                 TEUCHOS_TEST_FOR_EXCEPTION(err!=0,std::runtime_error,ss.str());
+               }
             }
          } // end rowBasisNum
       } // end fieldIndex

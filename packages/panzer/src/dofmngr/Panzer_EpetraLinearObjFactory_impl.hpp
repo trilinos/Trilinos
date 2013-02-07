@@ -512,7 +512,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    // build the map and allocate the space for the graph
    Teuchos::RCP<Epetra_Map> rMap = getGhostedMap();
    Teuchos::RCP<Epetra_Map> cMap = getGhostedColMap();
-   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rMap,0));
+   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rMap,*cMap,0));
 
    std::vector<std::string> elementBlockIds;
    
