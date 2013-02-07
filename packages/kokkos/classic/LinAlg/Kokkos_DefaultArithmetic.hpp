@@ -1324,7 +1324,11 @@ namespace Kokkos {
     static void Init (MultiVector<Scalar, SerialNode> &A, Scalar alpha) {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
+#ifdef __GNUC__
+      Scalar* const __restrict A_raw = A.getValuesNonConst ().getRawPtr ();
+#else
       Scalar* const A_raw = A.getValuesNonConst ().getRawPtr ();
+#endif // __GNUC__
       const size_t stride = A.getStride ();
       if (stride == numRows) {
 	const size_t numElts = numRows * numCols;
@@ -1335,7 +1339,11 @@ namespace Kokkos {
       else {
 	// one kernel invocation for each column
 	for (size_t j = 0; j < numCols; ++j) {
+#ifdef __GNUC__
+	  Scalar* const __restrict A_j = &A_raw[j*stride];
+#else
 	  Scalar* const A_j = &A_raw[j*stride];
+#endif // __GNUC__
 	  for (size_t i = 0; i < numRows; ++i) {
 	    A_j[i] = alpha;
 	  }
@@ -1482,9 +1490,13 @@ namespace Kokkos {
         "The MultiVectors A and B do not have the same dimensions.  "
         "A is " << numRows << " x " << numCols << ", but B is "
         << B.getNumRows () << " x " << B.getNumCols () << ".");
-
+#ifdef __GNUC__
+      Scalar* const __restrict A_raw = A.getValuesNonConst ().getRawPtr ();
+      const Scalar* const __restrict B_raw = B.getValues ().getRawPtr ();
+#else
       Scalar* const A_raw = A.getValuesNonConst ().getRawPtr ();
       const Scalar* const B_raw = B.getValues ().getRawPtr ();
+#endif // __GNUC__
 
       // If A and B are the same pointer, just return without doing
       // anything.  This can make the implementation of
@@ -1501,8 +1513,13 @@ namespace Kokkos {
 	}
       } else {
         for (size_t j = 0; j < numCols; ++j) {
+#ifdef __GNUC__
+	  Scalar* const __restrict A_j = &A_raw[j*A_stride];
+	  const Scalar* const __restrict B_j = &B_raw[j*B_stride];
+#else
 	  Scalar* const A_j = &A_raw[j*A_stride];
 	  const Scalar* const B_j = &B_raw[j*B_stride];
+#endif // __GNUC__
 	  for (size_t i = 0; i < numRows; ++i) {
 	    A_j[i] = B_j[i];
 	  }
@@ -1528,12 +1545,22 @@ namespace Kokkos {
         "compatible dimensions.  A is " << numRows << " x " << numCols 
 	<< ", but B has " << B.getNumRows() << ", and there are " 
 	<< numColsToCopy << " columns of B to copy into A.");
+#ifdef __GNUC__
+      Scalar* const __restrict A_raw = A.getValuesNonConst ().getRawPtr ();
+      const Scalar* const __restrict B_raw = B.getValues ().getRawPtr ();
+#else
       Scalar* const A_raw = A.getValuesNonConst ().getRawPtr ();
       const Scalar* const B_raw = B.getValues ().getRawPtr ();
+#endif // __GNUC__
 
       for (size_t j = 0; j < numColsToCopy; ++j) {
+#ifdef __GNUC__
+	Scalar* const __restrict A_j = &A_raw[j * A_stride];
+	const Scalar* const __restrict B_j = &B_raw[whichVectors[j] * B_stride];
+#else
 	Scalar* const A_j = &A_raw[j * A_stride];
 	const Scalar* const B_j = &B_raw[whichVectors[j] * B_stride];
+#endif // __GNUC__
         // Skip columns that alias one another.
 	if (A_j != B_j) {
 	  for (size_t i = 0; i < numRows; ++i) {
@@ -1570,16 +1597,26 @@ namespace Kokkos {
 	}
         return;
       }
+#ifdef __GNUC__
+      const Scalar* const __restrict A_raw = A.getValues ().getRawPtr ();
+      const Scalar* const __restrict B_raw = B.getValues ().getRawPtr ();
+#else
       const Scalar* const A_raw = A.getValues ().getRawPtr ();
       const Scalar* const B_raw = B.getValues ().getRawPtr ();
+#endif // __GNUC__
       const size_t A_stride = A.getStride ();
       const size_t B_stride = B.getStride ();
 
       // BLAS' ZDOTC(x,y) is x^* y, so we have to conjugate x if complex.
       if (STS::isComplex) {
 	for (size_t j = 0; j < nC; ++j) {
+#ifdef __GNUC__
+	  const Scalar* const __restrict A_j = &A_raw[j * A_stride];
+	  const Scalar* const __restrict B_j = &B_raw[j * B_stride];
+#else
 	  const Scalar* const A_j = &A_raw[j * A_stride];
 	  const Scalar* const B_j = &B_raw[j * B_stride];
+#endif // __GNUC__
 	  Scalar dot_j = STS::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
 	    dot_j += STS::conjugate (A_j[i]) * B_j[i];
@@ -1588,8 +1625,13 @@ namespace Kokkos {
 	}
       } else { // not complex
 	for (size_t j = 0; j < nC; ++j) {
+#ifdef __GNUC__
+	  const Scalar* const __restrict A_j = &A_raw[j * A_stride];
+	  const Scalar* const __restrict B_j = &B_raw[j * B_stride];
+#else
 	  const Scalar* const A_j = &A_raw[j * A_stride];
 	  const Scalar* const B_j = &B_raw[j * B_stride];
+#endif // __GNUC__
 	  Scalar dot_j = STS::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
 	    dot_j += A_j[i] * B_j[i];
@@ -1621,8 +1663,13 @@ namespace Kokkos {
       // since trivial sum (sum of no terms) is zero.
       Scalar result = STS::zero ();
       if (nR > 0) {
+#ifdef __GNUC__
+	const Scalar* const __restrict A_raw = A.getValues ().getRawPtr ();
+	const Scalar* const __restrict B_raw = B.getValues ().getRawPtr ();
+#else
 	const Scalar* const A_raw = A.getValues ().getRawPtr ();
 	const Scalar* const B_raw = B.getValues ().getRawPtr ();
+#endif // __GNUC__
 	if (STS::isComplex) {
 	  for (size_t i = 0; i < nR; ++i) {
 	    result += STS::conjugate (A_raw[i]) * B_raw[i];
@@ -1909,7 +1956,11 @@ namespace Kokkos {
 	}
         return;
       }
+#ifdef __GNUC__
+      const Scalar* const __restrict A_raw = A.getValues ().getRawPtr ();
+#else
       const Scalar* const A_raw = A.getValues ().getRawPtr ();
+#endif // __GNUC__
       const size_t A_stride = A.getStride ();
 
       if (STS::isComplex) {
@@ -1925,7 +1976,11 @@ namespace Kokkos {
 	}
       } else { // not complex
 	for (size_t j = 0; j < nC; ++j) {
+#ifdef __GNUC__
+	  const Scalar* const __restrict A_j = &A_raw[j * A_stride];
+#else
 	  const Scalar* const A_j = &A_raw[j * A_stride];
+#endif // __GNUC__
 	  magnitude_type norm_j = STS::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
 	    norm_j += A_j[i] * A_j[i];
@@ -1953,7 +2008,11 @@ namespace Kokkos {
       // no terms) is zero.
       magnitude_type result = STM::zero ();
       if (nR > 0) {
+#ifdef __GNUC__
+	const Scalar* const __restrict A_raw = A.getValues ().getRawPtr ();
+#else
 	const Scalar* const A_raw = A.getValues ().getRawPtr ();
+#endif // __GNUC__
 	if (STS::isComplex) {
 	  for (size_t i = 0; i < nR; ++i) {
 	    const Scalar A_i = A_raw[i];
@@ -2105,32 +2164,25 @@ namespace Kokkos {
       }
     }
 
-    static void Scale(MultiVector<Scalar,SerialNode> &A, Scalar alpha) {
-      const size_t nR = A.getNumRows();
-      const size_t nC = A.getNumCols();
-      const size_t stride = A.getStride();
-      RCP<SerialNode> node = A.getNode();
-      ArrayRCP<Scalar> data = A.getValuesNonConst();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addNonConstBuffer<Scalar>(data);
-      rbh.end();
-      // prepare op
-      SingleScaleOp<Scalar> wdp;
-      wdp.alpha = alpha;
-      if (stride == nR) {
-        // one kernel invocation for whole multivector
-        wdp.x = data(0,nR*nC).getRawPtr();
-        node->template parallel_for<SingleScaleOp<Scalar> >(0,nR*nC,wdp);
-      }
-      else {
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC; ++j) {
-          wdp.x = data(0,nR).getRawPtr();
-          node->template parallel_for<SingleScaleOp<Scalar> >(0,nR,wdp);
-          data += stride;
-        }
+    static void Scale (MultiVector<Scalar,SerialNode> &A, Scalar alpha) {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+
+#ifdef __GNUC__
+      Scalar* const __restrict A_raw = A.getValuesNonConst ().getRawPtr ();
+#else
+      Scalar* const A_raw = A.getValuesNonConst ().getRawPtr ();
+#endif // __GNUC__
+      for (size_t j = 0; j < nC; ++j) {
+#ifdef __GNUC__
+	Scalar* const __restrict A_j = &A_raw[j * A_stride];
+#else
+	Scalar* const A_j = &A_raw[j * A_stride];
+#endif // __GNUC__
+	for (size_t i = 0; i < nR; ++i) {
+	  A_j[i] *= alpha;
+	}
       }
     }
   };
