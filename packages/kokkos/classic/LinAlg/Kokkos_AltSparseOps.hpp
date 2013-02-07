@@ -1430,6 +1430,15 @@ namespace Kokkos {
       FOR_IF
     };
 
+    //! Implementation of gaussSeidel(); no error checking.
+    template <class DomainScalar, class RangeScalar>
+    void 
+    gaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
+			const MultiVector<DomainScalar,Node> &B,
+			const MultiVector<Scalar,Node> &D,
+			const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+			const ESweepDirection direction = Forward) const;
+
     //! Fill the given ParameterList with defaults and validators.
     static void
     setDefaultParameters (Teuchos::ParameterList& plist);
@@ -1782,9 +1791,160 @@ namespace Kokkos {
 	       const RangeScalar& dampingFactor,
 	       const ESweepDirection direction) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-      "AltSparseOps: gaussSeidel not implemented");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isInitialized_ == false,
+      std::runtime_error,
+      "Kokkos::AltSparseOps::gaussSeidel: "
+      "The solve was not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
+      std::runtime_error,
+      "Kokkos::AltSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "sparse matrix with no entries, but a nonzero number of rows, is only "
+      "valid if the matrix has an implicit unit diagonal.  This matrix does "
+      "not.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumCols() != (size_t) B.getNumCols(),
+      std::runtime_error,
+      "Kokkos::AltSparseOps::gaussSeidel: "
+      "The multivectors B and X have different numbers of vectors.  "
+      "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::AltSparseOps::gaussSeidel: "
+      "The input/output multivector X does not have enough rows for the "
+      "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.  One possible cause is that the column map "
+      "was not provided to the Tpetra::CrsMatrix in the case of a matrix with "
+      "an implicitly stored unit diagonal.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) B.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::AltSparseOps::gaussSeidel: "
+      "The input multivector B does not have enough rows for the "
+      "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.");
+
+    gaussSeidelPrivate<DomainScalar, RangeScalar> (X, B, D, dampingFactor, 
+						   direction);
   }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void AltSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+                      const MultiVector<DomainScalar,Node> &B,
+                      const MultiVector<Scalar,Node> &D,
+                      const RangeScalar& omega,
+                      const ESweepDirection direction) const
+  {
+    typedef size_t OffsetType;
+    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+
+    if (numRows_ == 0) {
+      return; // Nothing to do.
+    }
+    const size_t numCols = B.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
+    if (isEmpty_) {
+      // All the off-diagonal entries of A are zero, and all the
+      // diagonal entries are (implicitly) 1.  Therefore compute:
+      //
+      // X := (1 - omega) X + omega B.
+      //
+      // FIXME (mfh 24 Dec 2012) This only works if RangeScalar ==
+      // DomainScalar.  This is because DefaultArithmetic only has one
+      // template parameter, namely one multivector type.
+      typedef DefaultArithmetic<MultiVector<RangeScalar,Node> > MVT;
+      MVT::GESUM (X, omega, B, (STS::one() - omega));
+      return;
+    }
+
+    // Get the raw pointers to all the arrays.
+    const OffsetType* const ptr = ptr_.getRawPtr ();
+    const Ordinal* const ind = ind_.getRawPtr ();
+    const Scalar* const val = val_.getRawPtr ();
+    const DomainScalar* const b = B.getValues ().getRawPtr ();
+    const size_t b_stride = B.getStride ();
+    RangeScalar* const x = X.getValuesNonConst ().getRawPtr ();
+    const size_t x_stride = X.getStride ();
+    const Scalar* const d = D.getValues ().getRawPtr ();
+    const Ordinal numRows = numRows_;
+
+    if (numCols == 1) {
+      RangeScalar x_temp;
+
+      if (direction == Forward) {
+        for (Ordinal i = 0; i < numRows; ++i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      } else if (direction == Backward) {
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      }
+    }
+    else { // numCols > 1
+      // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
+      // multiple columns becomes important, we can add unrolled
+      // implementations.  The implementation below is not unrolled.
+      // It may also be reasonable to parallelize over right-hand
+      // sides, if there are enough of them, especially if the matrix
+      // fits in cache.
+      Teuchos::Array<RangeScalar> temp (numCols);
+      RangeScalar* const x_temp = temp.getRawPtr ();
+
+      if (direction == Forward) {
+        for (Ordinal i = 0; i < numRows; ++i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      } else if (direction == Backward) { // backward mode
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      }
+    }
+  }
+
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
