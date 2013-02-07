@@ -112,18 +112,29 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  // Parameters
-  LO numGlobalElements = 243;
-  int nnzeros=10085;
+  // Figuring out the parallel distribution
+  int nProcs = comm->getSize();
+  LO  nTotalDOFs   = 243;
+  int nDOFsPerNode = 3;
+  int nTotalNodes  = nTotalDOFs/nDOFsPerNode;
+  int nLocalNodes  = nTotalNodes/nProcs;
+  int leftover     = nTotalNodes - (nLocalNodes*(nProcs-1));
+  if(comm->getRank() == nProcs-1) {
+    nLocalNodes = leftover;
+  }
+  int nLocalDOFs = nLocalNodes*nDOFsPerNode;
+  int nnzeros = 10085;
 
-  // Construct a Map that puts approximately the same number of equations on each processor
-  RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(numGlobalElements, comm);
-
-  // Get update list and number of local equations from newly created map.
-  Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  // Construct a Map that puts approximately the same number of mesh nodes per processor
+  RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(nTotalNodes, comm);
+  // Tpetra map into Xpetra map
+  RCP<const Map> xmap = Xpetra::toXpetra(map);
+  // Map takes constant number of DOFs per node
+  xmap = MapFactory::Build(xmap,nDOFsPerNode);
+  map = Xpetra::toTpetra(xmap);
 
   // Create a CrsMatrix using the map
-  RCP<TCRS> A = rcp(new TCRS(map,50));
+  RCP<CrsMatrix> A = CrsMatrixFactory::Build(xmap,50);
 
   // Read sample matrix from .txt file and put values into A
   std::ifstream matfile;
@@ -132,39 +143,40 @@ int main(int argc, char *argv[]) {
     int current_row, current_column;
     SC current_value;
     matfile >> current_row >> current_column >> current_value ;
-    if(map->isNodeLocalElement(current_row)==true) {
+    //if(map->isNodeLocalElement(current_row)==true) {
       A->insertGlobalValues(current_row,
 			    Teuchos::tuple<GO> (current_column),
 			    Teuchos::tuple<SC> (current_value));
-    }
+      //}
   }
   A->fillComplete();
 
-  // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<CrsMatrix> mueluA_ = rcp(new TpetraCrsMatrix(A)); 
-  RCP<Matrix>    mueluA  = rcp(new CrsMatrixWrap(mueluA_));
+  // Turn Xpetra::CrsMatrix into Xpetra::Matrix
+  RCP<Matrix> mueluA  = rcp(new CrsMatrixWrap(A));
 
   // MultiVector of coordinates
   // NOTE: must be of size equal to the number of DOFs!
   RCP<MultiVector> coordinates;
-  coordinates = MultiVectorFactory::Build(mueluA->getDomainMap(), 3);  
-  Teuchos::ArrayRCP<SC> xcoord = coordinates->getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> ycoord = coordinates->getDataNonConst(1);
-  Teuchos::ArrayRCP<SC> zcoord = coordinates->getDataNonConst(2);
+  coordinates = MultiVectorFactory::Build(xmap, 3);
   SC h=0.5;
   for(int k=0; k<9; k++) {
     for(int j=0; j<3; j++) {
       for(int i=0; i<3; i++) {
 	int curidx = i+3*j+9*k;
-	xcoord[curidx*3+0]=i*h;
-	xcoord[curidx*3+1]=i*h;
-	xcoord[curidx*3+2]=i*h;
-	ycoord[curidx*3+0]=j*h;
-	ycoord[curidx*3+1]=j*h;
-	ycoord[curidx*3+2]=j*h;
-	zcoord[curidx*3+0]=k*h;
-	zcoord[curidx*3+1]=k*h;
-	zcoord[curidx*3+2]=k*h;
+        int curidx0 = curidx*3+0;
+        int curidx1 = curidx*3+1;
+        int curidx2 = curidx*3+2;
+	if(xmap->isNodeGlobalElement(curidx0)==true) {
+	  coordinates->replaceGlobalValue(curidx0,0,i*h);
+	  coordinates->replaceGlobalValue(curidx1,0,i*h);
+	  coordinates->replaceGlobalValue(curidx2,0,i*h);
+	  coordinates->replaceGlobalValue(curidx0,1,j*h);
+	  coordinates->replaceGlobalValue(curidx1,1,j*h);
+	  coordinates->replaceGlobalValue(curidx2,1,j*h);
+	  coordinates->replaceGlobalValue(curidx0,2,k*h);
+	  coordinates->replaceGlobalValue(curidx1,2,k*h);
+	  coordinates->replaceGlobalValue(curidx2,2,k*h);
+	}
       }
     }
   }
@@ -234,8 +246,8 @@ int main(int argc, char *argv[]) {
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
   RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
   X->putScalar((SC) 0.0);
-  B->putScalar((SC) 0.0);
-  B->replaceGlobalValue(numGlobalElements/2, 1.0);
+  B->randomize();
+  //B->replaceGlobalValue(nTotalDOFs/2, 1.0);
 
   // Define Operator and Preconditioner
   RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
@@ -246,7 +258,9 @@ int main(int argc, char *argv[]) {
   belosProblem->setRightPrec(belosPrec);    
   bool set = belosProblem->setProblem();
   if (set == false) {
-    std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    if(comm->getRank()==0) {
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    }
     return EXIT_FAILURE;
   }
     
@@ -265,8 +279,9 @@ int main(int argc, char *argv[]) {
   Belos::ReturnType ret = solver->solve();
   
   // Get the number of iterations for this solve.
-  std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  
+  if(comm->getRank()==0) {
+    std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+  }  
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
@@ -277,19 +292,27 @@ int main(int argc, char *argv[]) {
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);
   MVT::MvNorm(*B, rhs_norm);
-  std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  if(comm->getRank()==0) {
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  }
   for (int i = 0; i < numrhs; i++) {
     double actRes = abs(actual_resids[i])/rhs_norm[i];
-    std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
+    if(comm->getRank()==0) {
+      std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
+    }
     if (actRes > tol) { badRes = true; }
   }
 
   // Check convergence
   if (ret != Belos::Converged || badRes) {
-    std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    if(comm->getRank()==0) {
+      std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    }
     return EXIT_FAILURE;
   }
-  std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  if(comm->getRank()==0) {
+    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  }
 
   return EXIT_SUCCESS;
 }

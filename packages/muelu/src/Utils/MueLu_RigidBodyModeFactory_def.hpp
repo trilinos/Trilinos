@@ -81,7 +81,7 @@ namespace MueLu {
       }
       else {
         RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-	std::cout << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
+        GetOStream(Runtime1, 0) << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
 	if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1); }
 	else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 3); }
 	else if(numPDEs_==3) { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 6); }
