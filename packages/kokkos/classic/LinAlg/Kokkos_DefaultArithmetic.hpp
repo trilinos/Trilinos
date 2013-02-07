@@ -71,14 +71,6 @@
 #include "Kokkos_SerialNode.hpp"
 #include <Teuchos_BLAS.hpp>
 
-// TODO (mfh 07 Feb 2013) We want to move this into CMake.
-#if defined(__GNUC__)
-#  define KOKKOSCLASSIC_RESTRICT __restrict
-#elif defined(__INTEL_COMPILER)
-#  define KOKKOSCLASSIC_RESTRICT restrict
-#else
-#  define KOKKOSCLASSIC_RESTRICT 
-#endif // __GNUC__
 
 namespace Kokkos {
 
@@ -542,6 +534,10 @@ namespace Kokkos {
   };
 
   /// \brief Partial specialization of DefaultArithmetic for MultiVector<Scalar,Node>.
+  ///
+  /// Tpetra::MultiVector uses this as a traits class for
+  /// Kokkos::MultiVector, to implement all of its computational
+  /// kernels.
   ///
   /// \tparam Scalar The type of entries of the multivector.
   /// \tparam The Kokkos Node type.
