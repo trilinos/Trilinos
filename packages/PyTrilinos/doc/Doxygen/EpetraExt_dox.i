@@ -917,6 +917,37 @@ EpetraExt::LinearProblem_Reindex::LinearProblem_Reindex "EpetraExt::LinearProble
 Constructor ";
 
 
+// File: classEpetraExt_1_1LinearProblem__Reindex2.xml
+%feature("docstring") EpetraExt::LinearProblem_Reindex2 "
+
+Given and input Epetra_LinearProblem, a \"reindexed\" version will be
+returned using the given NewRowMap. If a null map is given, a
+lexigraphically indexed LP will be returned. The data in the new E_LP
+is a \"reindexed\" view of the original.
+
+C++ includes: EpetraExt_Reindex_LinearProblem2.h ";
+
+%feature("docstring")
+EpetraExt::LinearProblem_Reindex2::~LinearProblem_Reindex2 "EpetraExt::LinearProblem_Reindex2::~LinearProblem_Reindex2()
+
+Destructor ";
+
+%feature("docstring")
+EpetraExt::LinearProblem_Reindex2::LinearProblem_Reindex2 "EpetraExt::LinearProblem_Reindex2::LinearProblem_Reindex2(Epetra_Map
+*NewRowMap)
+
+Constructor ";
+
+%feature("docstring")  EpetraExt::LinearProblem_Reindex2::fwd "bool
+EpetraExt::LinearProblem_Reindex2::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
+
+
 // File: classEpetraExt_1_1LinearProblem__Scale.xml
 %feature("docstring") EpetraExt::LinearProblem_Scale "
 
@@ -3205,6 +3236,12 @@ EpetraExt::ceil31log2(int n) ";
 // File: EpetraExt__Reindex__LinearProblem_8h.xml
 
 
+// File: EpetraExt__Reindex__LinearProblem2_8cpp.xml
+
+
+// File: EpetraExt__Reindex__LinearProblem2_8h.xml
+
+
 // File: EpetraExt__Reindex__MultiVector_8cpp.xml
 
 
@@ -3325,17 +3362,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_11c281d317fac26a80734cfdf01c3276.xml
+// File: dir_558ddd7490a09864eed2962840b38fce.xml
 
 
-// File: dir_390ceb73d984add9550a91a5a05c10bc.xml
+// File: dir_d38d1a3b8af3db6225fef412df37e982.xml
 
 
-// File: dir_df40b4453a44ce93def4751f410362de.xml
+// File: dir_e30190b8802f469cb0811cc2d10b1846.xml
 
 
-// File: dir_1446c85883e8456091748f28f5dc619d.xml
+// File: dir_eb92dee1dbdc2c8d8c77b06841547dc1.xml
 
 
-// File: dir_7af1f200b770e582760f7ec5a7e1d7c3.xml
+// File: dir_c821901ca64219e57f5fd687fce2667d.xml
 

@@ -184,7 +184,18 @@ C++ includes: Epetra_BasicRowMatrix.h ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm &Comm)
 
-Epetra_BasicRowMatrix constuctor. ";
+Epetra_BasicRowMatrix constructor.
+
+This constructor requires a valid Epetra_Comm object as its only
+argument. The constructor will use Comm to build Epetra_Maps objects:
+RowMap, ColMap, DomainMap and RangeMap. However, these will be zero-
+length (trivial) maps that must be reset by calling one of the two
+SetMap() methods listed below.
+
+Parameters:
+-----------
+
+Comm:  An Epetra_Comm containing a valid Comm object. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix()
 
@@ -196,7 +207,28 @@ Epetra_BasicRowMatrix Destructor. ";
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
 Epetra_Map &ColMap)
 
-Set maps (Version 1); call this function or the next, but not both. ";
+Set maps (Version 1); call this function or the next, but not both.
+
+This method takes a row and column map. On each processor these maps
+describe the global rows and columns, resp, that the processor will
+care about. Note that the ColMap does not have to be one-to-one. In
+other words, a column ID can appear on more than one processor. The
+RowMap must be 1-to-1.
+
+Parameters:
+-----------
+
+RowMap:  An Epetra_Map containing on each processor a list of GIDs of
+rows that the processor cares about.
+
+ColMap:  An Epetra_Map containing on each processor a list of GIDs of
+columns that the processor cares about.
+
+In this method, the domain and range maps are assumed to be the same
+as the row map. Note that this requires that the global matrix be
+square. If the matrix is not square, or the domain vectors or range
+vectors do not have the same layout as the rows, then the second
+constructor should be called. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
@@ -204,7 +236,29 @@ Epetra_Map &ColMap, const Epetra_Map &DomainMap, const Epetra_Map
 &RangeMap)
 
 Set maps (Version 2); call this function or the previous, but not
-both. ";
+both.
+
+This constructor takes a row, column, domain and range map. On each
+processor these maps describe the global rows, columns, domain and
+range, resp, that the processor will care about. The domain and range
+maps must be one-to-one, but note that the row and column maps do not
+have to be one-to-one. In other words, a row ID can appear on more
+than one processor, as can a column ID.
+
+Parameters:
+-----------
+
+RowMap:  An Epetra_Map containing on each processor a list of GIDs of
+rows that the processor cares about.
+
+ColMap:  An Epetra_Map containing on each processor a list of GIDs of
+columns that the processor cares about.
+
+DomainMap:  An Epetra_Map describing the distribution of domain
+vectors and multivectors.
+
+RangeMap:  An Epetra_Map describing the distribution of range vectors
+and multivectors. ";
 
 /*  User-required implementation methods  */
 
@@ -455,16 +509,33 @@ returns false. ";
 %feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
 Epetra_BasicRowMatrix::NormInf() const
 
-Returns the infinity norm of the global matrix. ";
+Returns the infinity norm of the global matrix.
+
+Returns the quantity $ \\\\| A \\\\|_\\\\infty$ such that \\\\[\\\\| A
+\\\\|_\\\\infty = \\\\max_{1\\\\lei\\\\lem} \\\\sum_{j=1}^n |a_{ij}|
+\\\\].
+
+WARNING:  This method is supported if and only if the Epetra_RowMatrix
+Object that was used to create this supports this method. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NormOne "virtual double
 Epetra_BasicRowMatrix::NormOne() const
 
-Returns the one norm of the global matrix. ";
+Returns the one norm of the global matrix.
+
+Returns the quantity $ \\\\| A \\\\|_1$ such that \\\\[\\\\| A
+\\\\|_1= \\\\max_{1\\\\lej\\\\len} \\\\sum_{i=1}^m |a_{ij}| \\\\].
+
+WARNING:  This method is supported if and only if the Epetra_RowMatrix
+Object that was used to create this supports this method. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros "virtual int Epetra_BasicRowMatrix::NumGlobalNonzeros() const
 
-Returns the number of nonzero entries in the global matrix. ";
+Returns the number of nonzero entries in the global matrix.
+
+Note that if the data decomposition is defined such that some nonzeros
+appear on multiple processors, then those nonzeros will be counted
+multiple times. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros64 "virtual long long Epetra_BasicRowMatrix::NumGlobalNonzeros64() const
 ";
@@ -1082,14 +1153,8 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
-ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
-int ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
@@ -1126,16 +1191,8 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
-NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
-&Comm) ";
-
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
-&Comm) ";
-
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
-int NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
@@ -1288,13 +1345,7 @@ Returns local ID of global ID, return -1 if not found on this
 processor. ";
 
 %feature("docstring")  Epetra_BlockMap::LID "int
-Epetra_BlockMap::LID(unsigned int GID) const ";
-
-%feature("docstring")  Epetra_BlockMap::LID "int
 Epetra_BlockMap::LID(long long GID) const ";
-
-%feature("docstring")  Epetra_BlockMap::LID "int
-Epetra_BlockMap::LID(unsigned long long GID) const ";
 
 %feature("docstring")  Epetra_BlockMap::GID "int
 Epetra_BlockMap::GID(int LID) const
@@ -1317,9 +1368,6 @@ Epetra_BlockMap::MyGID(int GID_in) const
 
 Returns true if the GID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
-
-%feature("docstring")  Epetra_BlockMap::MyGID "bool
-Epetra_BlockMap::MyGID(unsigned int GID_in) const ";
 
 %feature("docstring")  Epetra_BlockMap::MyGID "bool
 Epetra_BlockMap::MyGID(long long GID_in) const ";
@@ -1491,7 +1539,7 @@ Epetra_BlockMap::GlobalIndicesLongLong() const
 Returns true if map create with long long NumGlobalElements. ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
-Epetra_BlockMap::GlobalIndicesIsType< long long >() const ";
+Epetra_BlockMap::GlobalIndicesIsType< int >() const ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesTypeValid "bool
 Epetra_BlockMap::GlobalIndicesTypeValid() const ";
@@ -10062,9 +10110,6 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(unsigned int NumMyElements, int
-IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
 IndexBase, const Epetra_Comm &Comm) ";
 
@@ -10867,14 +10912,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int IndexBase,
-const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
 const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
-IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int
 IndexBase, const Epetra_Comm &Comm)
@@ -10905,14 +10944,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int
-NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 int IndexBase, const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
-NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, const
 int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
@@ -22580,8 +22613,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_233cfbe96499141f251547db95e4fda3.xml
+// File: dir_530131be5af3f8c3300794ef5a438a97.xml
 
 
-// File: dir_29eb5d4e506afeb59b852f05b8c1a238.xml
+// File: dir_11b05e773205d8d193bedab078b42f75.xml
 
