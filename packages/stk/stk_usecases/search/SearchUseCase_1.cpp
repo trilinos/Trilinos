@@ -59,14 +59,16 @@ use_case_1_driver(
   dw().m(LOG_SEARCH) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
   dw().m(LOG_SEARCH) << "Domain Entity Type = " << domain_entity << stk::diag::dendl;
 
-  stk::io::MeshData range_mesh_data;
+  stk::io::MeshData range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
-  range_mesh_data.create_input_mesh(range_mesh_type, filename, comm);
+  range_mesh_data.open_mesh_database(filename, range_mesh_type);
+  range_mesh_data.create_input_mesh();
   range_mesh_data.populate_bulk_data();
 
-  stk::io::MeshData domain_mesh_data;
+  stk::io::MeshData domain_mesh_data(comm);
   filename = working_directory + domain_mesh_filename;
-  domain_mesh_data.create_input_mesh(domain_mesh_type, domain_mesh_filename, comm);
+  domain_mesh_data.open_mesh_database(domain_mesh_filename, domain_mesh_type);
+  domain_mesh_data.create_input_mesh();
   domain_mesh_data.populate_bulk_data();
 
   // For this use case, the domain consists of an axis-aligned

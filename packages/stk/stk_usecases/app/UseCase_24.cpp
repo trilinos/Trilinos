@@ -100,8 +100,9 @@ bool use_case_24_driver(
   //found in the input mesh file.
   const std::string dbtype("exodusii");
   std::string filename = working_directory + meshName;
-  stk::io::MeshData mesh_data;
-  mesh_data.create_input_mesh(dbtype, filename, comm);
+  stk::io::MeshData mesh_data(comm);
+  mesh_data.open_mesh_database(filename, dbtype);
+  mesh_data.create_input_mesh();
 
   //------------------------------------------------------------------
   // Declare the mesh meta data: element blocks and associated fields

@@ -62,13 +62,12 @@ void example_io_1( stk::ParallelMachine comm,
  << " Use Case 1: Simple mesh I/O                                            \n"
  << "========================================================================\n";
 
-  const std::string dbtype("exodusii");
-
   // Open, read, filter meta data from the input mesh file:
   // The coordinates field will be set to the correct dimension.
 
-  stk::io::MeshData mesh_data;
-  mesh_data.create_input_mesh(dbtype, in_filename, comm);
+  stk::io::MeshData mesh_data(comm);
+  mesh_data.open_mesh_database(in_filename);
+  mesh_data.create_input_mesh();
   stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
   //----------------------------------

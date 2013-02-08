@@ -1835,23 +1835,16 @@ namespace stk {
       //const stk::ParallelMachine& comm = m_bulkData->parallel();
       const stk::ParallelMachine& comm = m_comm;
 
-      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
+      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData(comm) );
       m_iossMeshData_created = true;
       stk::io::MeshData& mesh_data = *m_iossMeshData;
 
-      std::string dbtype("exodusII");
-      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL, comm,
-        mesh_data.m_property_manager);
-      if (dbi == NULL || !dbi->ok()) {
-        std::cerr  << "ERROR: Could not open database '" << in_filename
-                   << "' of type '" << dbtype << "'\n";
+      if (!m_iossMeshData->open_mesh_database(in_filename)) {
         std::exit(EXIT_FAILURE);
       }
 
-      // NOTE: 'in_region' owns 'dbi' pointer at this time...
-      m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
+      m_iossRegion = m_iossMeshData->input_io_region();
       Ioss::Region& in_region = *m_iossRegion;
-
       checkForPartsToAvoidReading(in_region, s_omit_part);
 
       //----------------------------------
@@ -1878,7 +1871,6 @@ namespace stk {
 
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
-      mesh_data.set_input_io_region(m_iossRegion);
       mesh_data.set_meta_data(meta_data);
       mesh_data.create_input_mesh();
       mesh_data.define_input_fields();

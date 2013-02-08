@@ -37,13 +37,13 @@ namespace {
   void mesh_read_write(const std::string &type,
 		       const std::string &working_directory,
 		       const std::string &filename,
-		       stk::io::MeshData &mesh_data,
-		       stk::ParallelMachine comm)
+		       stk::io::MeshData &mesh_data)
   {
     std::string file = working_directory;
     file += filename;
     
-    mesh_data.create_input_mesh(type, file, comm);
+    mesh_data.open_mesh_database(file, type);
+    mesh_data.create_input_mesh();
     mesh_data.define_input_fields();
     mesh_data.populate_bulk_data();
 
@@ -73,7 +73,7 @@ namespace {
 	      bool compression_shuffle,
 	      int  db_integer_size)
   {
-    stk::io::MeshData mesh_data;
+    stk::io::MeshData mesh_data(comm);
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
@@ -102,7 +102,7 @@ namespace {
       mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data, comm);
+    mesh_read_write(type, working_directory, filename, mesh_data);
   }
 }
 

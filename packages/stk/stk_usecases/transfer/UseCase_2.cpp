@@ -48,8 +48,6 @@ using namespace stk::diag;
 using namespace stk::search;
 using namespace use_case;
 
-static const size_t spatial_dimension = 3;
-
 struct EntityKeyDecomp {
   unsigned operator()( const unsigned p_size ,
                        const stk::mesh::EntityKey & key ) const
@@ -196,9 +194,10 @@ use_case_2_driver(stk::ParallelMachine  comm,
   stk::mesh::Part *domain_skin_part = NULL;
   stk::mesh::CellTopology skin_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-  stk::io::MeshData range_mesh_data;
+  stk::io::MeshData range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
-  range_mesh_data.create_input_mesh(range_mesh_type,filename, comm);
+  range_mesh_data.open_mesh_database(filename, range_mesh_type);
+  range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
 
   range_skin_part = &range_meta_data.declare_part("skin", skin_top);
@@ -208,10 +207,11 @@ use_case_2_driver(stk::ParallelMachine  comm,
   stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
   stk::mesh::skin_mesh(range_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, range_skin_part);
 
-  stk::io::MeshData domain_mesh_data;
+  stk::io::MeshData domain_mesh_data(comm);
 
   filename = working_directory + domain_mesh_filename;
-  domain_mesh_data.create_input_mesh(domain_mesh_type, filename, comm);
+  domain_mesh_data.open_mesh_database(filename, domain_mesh_type);
+  domain_mesh_data.create_input_mesh();
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   domain_skin_part = &domain_meta_data.declare_part("skin", skin_top);
   domain_meta_data.commit();

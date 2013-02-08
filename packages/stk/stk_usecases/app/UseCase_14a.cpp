@@ -838,9 +838,10 @@ bool use_case_14a_driver(MPI_Comm comm,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::io::MeshData mesh_data;
+    stk::io::MeshData mesh_data(comm);
     std::string filename = working_directory + mesh_filename;
-    mesh_data.create_input_mesh(mesh_type, filename, comm);
+    mesh_data.open_mesh_database(filename, mesh_type);
+    mesh_data.create_input_mesh();
     mesh_data.define_input_fields();
 
     stk::mesh::MetaData &meta_data = mesh_data.meta_data();

@@ -114,8 +114,9 @@ performance_driver(stk::ParallelMachine  comm,
 
   dw() << "Build range metadata...\n";
   std::string filename = working_directory + range.mesh_filename;
-  stk::io::MeshData range_mesh_data;
-  range_mesh_data.create_input_mesh(range.mesh_type, filename, comm);
+  stk::io::MeshData range_mesh_data(comm);
+  range_mesh_data.open_mesh_database(filename, range.mesh_type);
+  range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
 
   stk::mesh::Part *range_skin_part = NULL;
@@ -141,11 +142,12 @@ performance_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData *domain_meta_data = NULL;
   stk::mesh::BulkData *domain_bulk_data = NULL;
 
-  stk::io::MeshData domain_mesh_data;
+  stk::io::MeshData domain_mesh_data(comm);
   if (!same_mesh) {
     dw() << "Build domain metadata...\n";
     filename = working_directory + domain.mesh_filename;
-    domain_mesh_data.create_input_mesh(domain.mesh_type, filename, comm);
+    domain_mesh_data.open_mesh_database(filename, domain.mesh_type);
+    domain_mesh_data.create_input_mesh();
     domain_meta_data = &domain_mesh_data.meta_data();
     
     if (domain.entity == "face" && domain_use_universal_set) {

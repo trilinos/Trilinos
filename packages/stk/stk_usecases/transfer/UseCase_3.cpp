@@ -47,8 +47,6 @@ using namespace stk::diag;
 using namespace stk::search;
 using namespace use_case;
 
-static const size_t spatial_dimension = 3;
-
 typedef stk::mesh::Field<double>                        ScalarField ;
 
 void
@@ -81,17 +79,19 @@ use_case_3_driver(stk::ParallelMachine  comm,
   dw().m(LOG_TRANSFER) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
   dw().m(LOG_TRANSFER) << "Domain Entity Type = " << domain_entity << stk::diag::dendl;
 
-  stk::io::MeshData range_mesh_data;
+  stk::io::MeshData range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
-  range_mesh_data.create_input_mesh(range_mesh_type, filename, comm);
+  range_mesh_data.open_mesh_database(filename, range_mesh_type);
+  range_mesh_data.create_input_mesh();
   range_mesh_data.populate_bulk_data();
 
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
   stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
 
-  stk::io::MeshData domain_mesh_data;
+  stk::io::MeshData domain_mesh_data(comm);
   filename = working_directory + domain_mesh_filename;
-  domain_mesh_data.create_input_mesh(domain_mesh_type, filename, comm);
+  domain_mesh_data.open_mesh_database(filename, domain_mesh_type);
+  domain_mesh_data.create_input_mesh();
 
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;

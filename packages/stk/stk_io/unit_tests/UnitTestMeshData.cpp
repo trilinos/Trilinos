@@ -51,12 +51,13 @@ STKUNIT_UNIT_TEST( MeshData, iofixture )
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  stk::io::MeshData fixture;
+  stk::io::MeshData fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.create_input_mesh( "exodus", input_base_filename, pm );
+  fixture.open_mesh_database(input_base_filename);
+  fixture.create_input_mesh();
 
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
@@ -83,12 +84,13 @@ STKUNIT_UNIT_TEST( MeshData, active_only )
   // A simple test for reading and writing an exodus file using the MeshData.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture;
+  stk::io::MeshData fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.create_input_mesh("exodus", input_base_filename, pm);
+  fixture.open_mesh_database(input_base_filename);
+  fixture.create_input_mesh();
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
@@ -123,12 +125,13 @@ STKUNIT_UNIT_TEST( MeshData, active_and_all )
 {
   // A simple test for reading and writing two exodus files using the MeshData.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture;
+  stk::io::MeshData fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.create_input_mesh("exodus", input_base_filename, pm );
+  fixture.open_mesh_database(input_base_filename);
+  fixture.create_input_mesh();
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
@@ -195,12 +198,13 @@ STKUNIT_UNIT_TEST( MeshData, large_mesh_test )
 {
   // A simple test for reading and writing two exodus files using the MeshData.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture;
+  stk::io::MeshData fixture(pm);
 
   std::string input_base_filename = "1mCube_20x20x20.g";
 
   // Initialize meta data from exodus file
-  fixture.create_input_mesh("exodus", input_base_filename, pm );
+  fixture.open_mesh_database(input_base_filename);
+  fixture.create_input_mesh();
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Commit

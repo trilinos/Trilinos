@@ -532,7 +532,13 @@ namespace stk {
     }
 
     MeshData::MeshData()
-      : m_anded_selector(NULL)
+    : communicator_(MPI_COMM_NULL), m_anded_selector(NULL)
+    {
+      Ioss::Init::Initializer::initialize_ioss();
+    }
+
+    MeshData::MeshData(MPI_Comm comm)
+    : communicator_(comm), m_anded_selector(NULL)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -571,38 +577,57 @@ namespace stk {
       }
     }
 
-    void MeshData::create_input_mesh(const std::string &mesh_type,
-                                     const std::string &mesh_filename,
-                                     stk::ParallelMachine comm)
+    bool MeshData::open_mesh_database(const std::string &mesh_filename)
     {
-      if (Teuchos::is_null(m_input_region)) {
-        // If in_region is NULL, then open the file;
-        // If in_region is non-NULL, then user has given us a valid Ioss::Region that
-        // should be used.
-        Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-                                                        Ioss::READ_MODEL, comm,
-                                                        m_property_manager);
-        if (dbi == NULL || !dbi->ok()) {
-          std::cerr  << "ERROR: Could not open database '" << mesh_filename
-                     << "' of type '" << mesh_type << "'\n";
-          Ioss::NameList db_types;
-          Ioss::IOFactory::describe(&db_types);
-          std::cerr << "\nSupported database types:\n\t";
-          for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-            std::cerr << *IF << "  ";
-          }
-          std::cerr << "\n\n";
-        }
-        m_input_region = Teuchos::rcp(new Ioss::Region(dbi, "input_model"));
+      std::string type = "exodus";
+      std::string filename = mesh_filename;
+
+      // See if filename contains a ":" at the beginning of the filename
+      // and if the text preceding that filename specifies a valid
+      // database type.  If so, set that as the file type and extract
+      // the portion following the colon as the filename.
+      // If no colon in name, use default type.
+
+      size_t colon = mesh_filename.find(':');
+      if (colon != std::string::npos && colon > 0) {
+        type = mesh_filename.substr(0, colon-1);
+        filename = mesh_filename.substr(colon+1);
       }
-      create_input_mesh();
+      return open_mesh_database(filename, type);
+    }
+
+
+    bool MeshData::open_mesh_database(const std::string &mesh_filename,
+                                      const std::string &mesh_type)
+    {
+      ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
+      "This MeshData already has an Ioss::DatabaseIO associated with it.");
+      ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
+      "This MeshData already has an Ioss::Region associated with it.");
+
+      m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
+                                                              Ioss::READ_MODEL, communicator_,
+                                                              m_property_manager));
+      if (Teuchos::is_null(m_input_database) || !m_input_database->ok(true)) {
+        std::cerr  << "ERROR: Could not open database '" << mesh_filename
+            << "' of type '" << mesh_type << "'\n";
+        return false;
+      }
+      return true;
     }
 
 
     void MeshData::create_input_mesh()
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-                       "There is no Input mesh associated with this Mesh Data.");
+      // If the m_input_region is null, try to create it from
+      // the m_input_database. If that is null, throw an error.
+      if (Teuchos::is_null(m_input_region)) {
+        ThrowErrorMsgIf(Teuchos::is_null(m_input_database),
+            "There is no input mesh database associated with this MeshData. Please call open_mesh_database() first.");
+        // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
+        // RCP doesn't retain ownership...
+        m_input_region = Teuchos::rcp(new Ioss::Region(m_input_database.release().get(), "input_model"));
+      }
 
       // See if meta data is null, if so, create a new one...
       if (Teuchos::is_null(m_meta_data)) {

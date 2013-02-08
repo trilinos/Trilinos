@@ -35,7 +35,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
 
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
-  stk::io::MeshData fixture;
+  stk::io::MeshData fixture(pm);
 
   // Test constants:
 
@@ -81,7 +81,8 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time meta_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.create_input_mesh( "exodus", input_base_filename, pm );
+    fixture.open_mesh_database(input_base_filename);
+    fixture.create_input_mesh();
     timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 

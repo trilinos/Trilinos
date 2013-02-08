@@ -19,14 +19,15 @@
 
 using namespace stk::io::util;
 
-static const size_t spatial_dimension = 3;
-
 ///////////////////////////////////////////////////////////////////////////////
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
                                              const std::string& gmesh_spec)
+  : m_mesh_data(comm)
+
 ///////////////////////////////////////////////////////////////////////////////
 {
-  m_mesh_data.create_input_mesh("generated", gmesh_spec, comm);
+  m_mesh_data.open_mesh_database(gmesh_spec, "generated");
+  m_mesh_data.create_input_mesh();
 
   const Iogn::DatabaseIO* database =
     dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.input_io_region()->get_database());

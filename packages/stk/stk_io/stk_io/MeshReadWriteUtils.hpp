@@ -20,6 +20,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 
 namespace Ioss {
+  class DatabaseIO;
   class Region;
 }
 
@@ -37,6 +38,11 @@ namespace stk {
         // Used to maintain state between the meta data and bulk data
         // portions of the mesh generation process for use cases.
       public:
+        /**
+         * \param[in] comm  MPI Communicator to be used for all parallel
+         * communication needed to generate the mesh.
+         */
+        MeshData(MPI_Comm comm);
         MeshData();
 
         ~MeshData();
@@ -58,7 +64,15 @@ namespace stk {
          */
         void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
-        Teuchos::RCP<Ioss::Region> input_io_region()  { return m_input_region;   }
+        Teuchos::RCP<Ioss::DatabaseIO> input_io_database()  { return m_input_database;   }
+        Teuchos::RCP<Ioss::Region> input_io_region()
+        {
+          if (Teuchos::is_null(m_input_region) && !Teuchos::is_null(m_input_database)) {
+            create_input_mesh();
+          }
+          return m_input_region;
+        }
+
         Teuchos::RCP<Ioss::Region> output_io_region() { return m_output_region;  }
 
         Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
@@ -87,13 +101,54 @@ namespace stk {
         { set_meta_data(Teuchos::rcpFromRef(arg_meta_data));}
 
         /**
-         * Set bulk data directly with your own meta data. If this is
+         * Set bulk data directly with your own bulk data. If this is
          * not called prior to the populate_bulk_data() call, it will be
          * created automatically using the communicator of the m_input_region.
+         * If meta data is not already set, then set the meta data from the
+         * bulk data's metadata
          */
         void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
         void set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
         { set_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+
+        /**
+         * Create the Ioss::DatabaseIO associated with the specified filename
+         * and type (exodus by default). The routine checks that the
+         * file exists and is readable and will return false if not.
+         * No meta_data or bulk_data is created at this time, but the
+         * input_io_database() will be valid.
+         *
+         * The Ioss::DatabaseIO can be accessed vi the input_io_database()
+         * method if you need to set some options on the database prior
+         * to it being read.
+         *
+         * \param[in] filename If the mesh type is file based ("exodus"),
+         * then this contains the full pathname to the file containing the
+         * mesh information.  If the mesh type is a generated type, then
+         * this parameter contains data used by the generation routines.
+         * See the output from the show_mesh_help() function for details.
+         *
+         *          * \param[in] type   The format of the mesh that will be
+         * "read".  Valid types are "exodus", "generated", "pamgen".
+         *
+         */
+        bool open_mesh_database(const std::string &filename,
+                                const std::string &type);
+
+        /**
+         * Create Ioss::DatabaseIO associated with the specified filename using
+         * the default filetype (typically "exodus"). If the filename is
+         * prepended with a type followed by a colon (e.g., "generated:10x10x10"),
+         * then use that type.  Valid input types are:
+         *   exodus, dof, pamgen, and possibly others.
+         *
+         * @param filename If the mesh type is file based ("exodus"),
+         * then this contains the full pathname to the file containing the
+         * mesh information.  If the mesh type is a generated type, then
+         * this parameter contains data used by the generation routines.
+         * Optionally prepended by a filetype and a colon.
+         */
+        bool open_mesh_database(const std::string &filename);
 
         /**
          * Read/Generate the metadata for mesh of the specified type. By
@@ -119,24 +174,7 @@ namespace stk {
          * The meta_data will not be committed by this function, so the
          * caller will need to call meta_data.commit() after the
          * function returns.
-         *
-         * \param[in] type   The format of the mesh that will be
-         * "read".  Valid types are "exodus", "generated", "pamgen".
-         *
-         * \param[in] filename If the mesh type is file based ("exodus"),
-         * then this contains the full pathname to the file containing the
-         * mesh information.  If the mesh type is a generated type, then
-         * this parameter contains data used by the generation routines.
-         * See the output from the show_mesh_help() function for details.
-         *
-         * \param[in] comm  MPI Communicator to be used for all parallel
-         * communication needed to generate the mesh.
-         *
          */
-        void create_input_mesh(const std::string &type,
-            const std::string &filename,
-            MPI_Comm comm);
-
         void create_input_mesh();
 
         /**
@@ -284,6 +322,9 @@ namespace stk {
       private:
         void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
 
+        MPI_Comm communicator_;
+
+        Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
         Teuchos::RCP<Ioss::Region> m_input_region;
         Teuchos::RCP<Ioss::Region> m_output_region;
 
