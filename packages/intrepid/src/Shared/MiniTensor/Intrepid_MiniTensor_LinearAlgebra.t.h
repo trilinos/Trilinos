@@ -496,7 +496,7 @@ namespace Intrepid {
         Real
         scale = 1.0;
 
-        for (Index i = 0; i < power_two; ++i) {
+        for (Index j = 0; j < power_two; ++j) {
           scale /= 2.0;
         }
 
