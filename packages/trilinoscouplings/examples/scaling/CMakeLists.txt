@@ -19,6 +19,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson_BlockMaterials
+    SOURCES example_Poisson_BlockMaterials.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
