@@ -453,6 +453,9 @@ namespace stk {
 
     void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
+      ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
+          "This MeshData has an Ioss::DatabaseIO associated with it from a call"
+          " to open_mesh_database(). You cannot reset the input_io_region.");
       m_input_region = ioss_input_region;
     }
 
@@ -514,7 +517,7 @@ namespace stk {
     }
 
 
-    void MeshData::create_input_mesh()
+    void MeshData::create_ioss_region()
     {
       // If the m_input_region is null, try to create it from
       // the m_input_database. If that is null, throw an error.
@@ -524,6 +527,12 @@ namespace stk {
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
         m_input_region = Teuchos::rcp(new Ioss::Region(m_input_database.release().get(), "input_model"));
+      }
+    }
+    void MeshData::create_input_mesh()
+    {
+      if (Teuchos::is_null(m_input_region)) {
+        create_ioss_region();
       }
 
       // See if meta data is null, if so, create a new one...

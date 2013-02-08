@@ -68,7 +68,7 @@ namespace stk {
         Teuchos::RCP<Ioss::Region> input_io_region()
         {
           if (Teuchos::is_null(m_input_region) && !Teuchos::is_null(m_input_database)) {
-            create_input_mesh();
+            create_ioss_region();
           }
           return m_input_region;
         }
@@ -330,6 +330,7 @@ namespace stk {
 
       private:
         void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
+        void create_ioss_region();
 
         MPI_Comm communicator_;
 
