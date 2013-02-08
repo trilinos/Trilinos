@@ -477,6 +477,10 @@ namespace SEAMS {
 	aprepro.ap_file_list.pop();
 	/* Turn echoing back on at end of included files. */
 	echo = true;
+	/* Set immutable mode back to global immutable 
+	 * state at end of included file
+	 */
+	aprepro.stateImmutable = aprepro.ap_options.immutable;	
       }
       return (0);
     }

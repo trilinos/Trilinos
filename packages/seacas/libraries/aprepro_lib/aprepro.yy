@@ -9,10 +9,9 @@
 #include <cstdio>
 
 namespace SEAMS {
-  int   echo = true;
-}
-
-%}
+   extern int echo;
+ }
+ %}
 
 /* Require bison 2.4 or later */
 %require "2.4"

@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Locations for Bison parsers in C++
    
-      Copyright (C) 2002-2007, 2009-2012 Free Software Foundation, Inc.
+      Copyright (C) 2002-2007, 2009-2010 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,51 +35,35 @@
  ** Define the SEAMS::location class.
  */
 
-#ifndef YY_SEAMS_LOCATION_HH_INCLUDED
-# define YY_SEAMS_LOCATION_HH_INCLUDED
+#ifndef BISON_LOCATION_HH
+# define BISON_LOCATION_HH
 
+# include <iostream>
+# include <string>
 # include "position.hh"
 
 
 namespace SEAMS {
-/* Line 166 of location.cc  */
-#line 47 "location.hh"
+
+/* Line 162 of location.cc  */
+#line 50 "location.hh"
 
   /// Abstract a location.
   class location
   {
   public:
 
-    /// Construct a location from \a b to \a e.
-    location (const position& b, const position& e)
-      : begin (b)
-      , end (e)
-    {
-    }
-
-    /// Construct a 0-width location in \a p.
-    explicit location (const position& p = position ())
-      : begin (p)
-      , end (p)
-    {
-    }
-
-    /// Construct a 0-width location in \a f, \a l, \a c.
-    explicit location (std::string* f,
-                       unsigned int l = 1u,
-                       unsigned int c = 1u)
-      : begin (f, l, c)
-      , end (f, l, c)
+    /// Construct a location.
+    location ()
+      : begin (), end ()
     {
     }
 
 
     /// Initialization.
-    void initialize (std::string* f = YY_NULL,
-                     unsigned int l = 1u,
-                     unsigned int c = 1u)
+    inline void initialize (std::string* fn)
     {
-      begin.initialize (f, l, c);
+      begin.initialize (fn);
       end = begin;
     }
 
@@ -87,19 +71,19 @@ namespace SEAMS {
      ** \{ */
   public:
     /// Reset initial location to final location.
-    void step ()
+    inline void step ()
     {
       begin = end;
     }
 
     /// Extend the current location to the COUNT next columns.
-    void columns (unsigned int count = 1)
+    inline void columns (unsigned int count = 1)
     {
       end += count;
     }
 
     /// Extend the current location to the COUNT next lines.
-    void lines (unsigned int count = 1)
+    inline void lines (unsigned int count = 1)
     {
       end.lines (count);
     }
@@ -156,9 +140,7 @@ namespace SEAMS {
    **
    ** Avoid duplicate information.
    */
-  template <typename YYChar>
-  inline std::basic_ostream<YYChar>&
-  operator<< (std::basic_ostream<YYChar>& ostr, const location& loc)
+  inline std::ostream& operator<< (std::ostream& ostr, const location& loc)
   {
     position last = loc.end - 1;
     ostr << loc.begin;
@@ -175,7 +157,8 @@ namespace SEAMS {
 
 
 } // SEAMS
-/* Line 296 of location.cc  */
-#line 180 "location.hh"
 
-#endif /* !YY_SEAMS_LOCATION_HH_INCLUDED  */
+/* Line 271 of location.cc  */
+#line 163 "location.hh"
+
+#endif // not BISON_LOCATION_HH
