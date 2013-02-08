@@ -225,6 +225,9 @@ public:
   /** \brief  End entries with a coordinate 'i' */
   size_type entry_end( size_type i ) const ;
 
+  /** \brief  Number of entries with a coordinate 'i' */
+  size_type num_entry( size_type i ) const ;
+
   /** \brief  Coordinates of an entry */
   size_type coord( size_type entry , size_type c ) const ;
 
@@ -247,8 +250,11 @@ private:
 
   typedef KokkosArray::View< value_type[] , device_type >  vec_type ;
 
-  KokkosArray::CrsArray< size_type[2] , device_type >  m_coord ;
+  //KokkosArray::CrsArray< size_type[2] , device_type >  m_coord ;
+  KokkosArray::View< size_type[][2] , device_type >  m_coord ;
   KokkosArray::View< value_type[] , device_type >      m_value ;
+  KokkosArray::View< size_type[] , device_type >       m_num_entry ;
+  KokkosArray::View< size_type[] , device_type >       m_row_map ;
   size_type                                            m_entry_max ;
   size_type                                            m_nnz ;
 
@@ -261,28 +267,32 @@ public:
   ~CrsProductTensor() {}
 
   inline
-  CrsProductTensor() : m_coord() , m_value() , m_entry_max(0) , m_nnz(0) {}
+  CrsProductTensor() : m_coord() , m_value() , m_num_entry() , m_row_map() , 
+		       m_entry_max(0) , m_nnz(0) {}
 
   inline
   CrsProductTensor( const CrsProductTensor & rhs )
-    : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_entry_max( rhs.m_entry_max ), m_nnz( rhs.m_nnz ) {}
+    : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_num_entry( rhs.m_num_entry ) , m_row_map( rhs.m_row_map ) , 
+      m_entry_max( rhs.m_entry_max ), m_nnz( rhs.m_nnz ) {}
 
   inline
   CrsProductTensor & operator = ( const CrsProductTensor & rhs )
   {
     m_coord = rhs.m_coord ;
     m_value = rhs.m_value ;
+    m_num_entry = rhs.m_num_entry ;
+    m_row_map = rhs.m_row_map ;
     m_entry_max = rhs.m_entry_max ;
     m_nnz = rhs.m_nnz;
     return *this ;
   }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type dimension() const { return m_coord.row_map.dimension(0) - 1 ; }
+  size_type dimension() const { return m_row_map.dimension(0) - 1 ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_coord.entries.dimension(0); }
+  { return m_coord.dimension(0); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_maximum() const
@@ -290,15 +300,19 @@ public:
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_begin( size_type i ) const
-  { return m_coord.row_map[i]; }
+  { return m_row_map[i]; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_end( size_type i ) const
-  { return m_coord.row_map[i+1]; }
+  { return m_row_map[i] + m_num_entry(i); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type coord( const size_type entry , const size_type c ) const
-  { return m_coord.entries( entry , c ); }
+  size_type num_entry( size_type i ) const
+  { return m_num_entry(i); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  const size_type& coord( const size_type entry , const size_type c ) const
+  { return m_coord( entry , c ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const

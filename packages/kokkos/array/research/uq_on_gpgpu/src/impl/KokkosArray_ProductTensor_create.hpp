@@ -167,8 +167,10 @@ public:
     typedef Device                      device_type ;
     typedef typename Device::size_type  size_type ;
 
-    typedef CrsArray< size_type[2] , device_type > coord_array_type ;
+    //typedef CrsArray< size_type[2] , device_type > coord_array_type ;
+    typedef View< size_type[][2] , device_type > coord_array_type ;
     typedef View< value_type[], device_type > value_array_type ;
+    typedef View< size_type[], device_type > entry_array_type ;
 
     const size_type dimension =
       input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
@@ -191,7 +193,7 @@ public:
     }
 
     // Pad each row to have size divisble by 32
-    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
+    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 2 };
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
@@ -217,13 +219,12 @@ public:
 
     type tensor ;
 
-    tensor.m_coord = create_crsarray< coord_array_type >( "tensor_coord" , coord_work );
+    //tensor.m_coord = create_crsarray< coord_array_type >( "tensor_coord" , coord_work );
+    tensor.m_coord = coord_array_type( "tensor_coord" , entry_count );
     tensor.m_value = value_array_type( "tensor_value" , entry_count );
+    tensor.m_num_entry = entry_array_type( "tensor_num_entry" , dimension );
+    tensor.m_row_map = entry_array_type( "tensor_row_map" , dimension+1 );
     tensor.m_entry_max = 0 ;
-
-    for ( size_type i = 0 ; i < dimension ; ++i ) {
-      tensor.m_entry_max = std::max( tensor.m_entry_max , (size_type) coord_work[i] );
-    }
 
 /*
 std::cout << std::endl << "CrsProductTensor" << std::endl
@@ -241,10 +242,23 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     typename value_array_type::HostMirror
       host_value = create_mirror_view( tensor.m_value );
 
+    typename entry_array_type::HostMirror
+      host_num_entry = create_mirror_view( tensor.m_num_entry );
+
+    typename entry_array_type::HostMirror
+      host_row_map = create_mirror_view( tensor.m_row_map );
+
     // Fill arrays in coordinate order...
 
+    size_type sum = 0;
+    host_row_map(0) = 0;
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      sum += coord_work[i];
+      host_row_map(i+1) = sum;
+    }
+
     for ( size_type iCoord = 0 ; iCoord < dimension ; ++iCoord ) {
-      coord_work[iCoord] = host_coord.row_map[iCoord];
+      coord_work[iCoord] = host_row_map[iCoord];
     }
 
     for ( typename input_type::const_iterator
@@ -259,8 +273,9 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
         const size_type n = coord_work[row]; ++coord_work[row];
         host_value(n) = (*iter).second ;
 	if (j == k) host_value(n) *= 0.5;
-        host_coord.entries(n,0) = j ;
-        host_coord.entries(n,1) = k ;
+        host_coord(n,0) = j ;
+        host_coord(n,1) = k ;
+	++host_num_entry(row);
 	++tensor.m_nnz;
       }
       if ( i != j ) {
@@ -268,8 +283,9 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
         const size_type n = coord_work[row]; ++coord_work[row];
         host_value(n) = (*iter).second ;
 	if (i == k) host_value(n) *= 0.5;
-        host_coord.entries(n,0) = i ;
-        host_coord.entries(n,1) = k ;
+        host_coord(n,0) = i ;
+        host_coord(n,1) = k ;
+	++host_num_entry(row);
 	++tensor.m_nnz;
       }
       if ( i != k && j != k ) {
@@ -277,8 +293,9 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
         const size_type n = coord_work[row]; ++coord_work[row];
         host_value(n) = (*iter).second ;
 	if (i == j) host_value(n) *= 0.5;
-        host_coord.entries(n,0) = i ;
-        host_coord.entries(n,1) = j ;
+        host_coord(n,0) = i ;
+        host_coord(n,1) = j ;
+	++host_num_entry(row);
 	++tensor.m_nnz;
       }
     }
@@ -289,8 +306,14 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     //   std::cout << "Row " << i << " has size " << iEnd-iBeg << std::endl;
     // }
 
-    KokkosArray::deep_copy( tensor.m_coord.entries , host_coord.entries );
+    KokkosArray::deep_copy( tensor.m_coord , host_coord );
     KokkosArray::deep_copy( tensor.m_value , host_value );
+    KokkosArray::deep_copy( tensor.m_num_entry , host_num_entry );
+    KokkosArray::deep_copy( tensor.m_row_map , host_row_map );
+
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      tensor.m_entry_max = std::max( tensor.m_entry_max , host_num_entry(i) );
+    }
 
     return tensor ;
   }
