@@ -35,6 +35,8 @@
 /// It declares a new implementation of Chebyshev iteration.
 
 #include <Ifpack2_ConfigDefs.hpp>
+#include <Teuchos_VerbosityLevel.hpp>
+#include <Teuchos_Describable.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 namespace Ifpack2 {
@@ -80,7 +82,7 @@ namespace Details {
 /// packages/ml/src/Smoother/ml_smoother.c).  I couldn't get it to
 /// converge in time to be useful for testing, so it is disabled.
 template<class ScalarType, class MV, class MAT>
-class Chebyshev {
+class Chebyshev : public Teuchos::Describable {
 public:
   typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
@@ -205,24 +207,30 @@ public:
   /// from Ifpack.
   void setParameters (Teuchos::ParameterList& plist);
 
-  /// \brief (Re)compute the left scaling, and (if applicable)
-  ///   estimate max and min eigenvalues of D_inv * A.
+  /// \brief Establishes which parameters (user-supplied or estimates)
+  /// will be used by apply method. Optionally (re)compute the left
+  /// scaling, and (if applicable)
+  /// estimate max and min eigenvalues of D_inv * A.
+  /// 
+  /// \param [in] assumeMatrixUnchanged If false, scaling and eigenvalue
+  ///             estimation is performed. If true, these calculations
+  ///             are skipped.
   ///
   /// You must call this method before calling apply(),
   /// - if you have not yet called this method,
   /// - if the matrix (either its values or its structure) has changed, or
   /// - any time after you call setParameters().
   ///
-  /// Advanced users may omit calling compute() after calling
+  /// Advanced users may call compute(\c true) after calling
   /// setParameters(), as long as none of the changed parameters
   /// affect either computation of the inverse diagonal, or estimation
   /// of the max or min eigenvalues.
   ///
   /// If estimation of the eigenvalues is required, this method may
   /// take as long as several Chebyshev iterations.
-  void compute ();
+  void compute (const bool assumeMatrixUnchanged=false);
 
-  /// Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
+  /// \brief Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
   ///
   /// \param B [in] Right-hand side(s) in the linear system to solve.
   /// \param X [in] Initial guess(es) for the linear system to solve.
@@ -248,6 +256,14 @@ public:
 
   //! Print instance data to the given output stream.
   void print (std::ostream& out);
+
+  //! Return single line description of the Chebyshev solver.
+    std::string description() const;
+
+  //! Return more verbose description of the Chebyshev solver.
+  //!
+  //! @todo Currently returns just the single line description.
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
 private:
   //! \name The sparse matrix, and other related data.
@@ -300,7 +316,7 @@ private:
   /// User-provided estimate for minimum eigenvalue of A.
   /// This is set to NaN if the user did not provide this.
   ST lambdaMin_; 
-  /// Estimate for ratio of max to max eigenvalue of A.
+  /// Estimate for ratio of max to min eigenvalue of A.
   /// Not necessarily equal to lambdaMax_/lambdaMin_.
   ST eigRatio_;  
   /// Minimum allowed value on the diagonal of the matrix.  
@@ -317,6 +333,17 @@ private:
   bool textbookAlgorithm_;
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
+
+  //@}
+  //! \name Parameters to be used by the apply.
+  //@{
+
+  /// Estimate for ratio of max to min eigenvalue of A.
+  ST eigRatioForApply_;
+  /// Estimate for maximum eigenvalue of A.
+  ST lambdaMaxForApply_; 
+  /// Estimate for minimum eigenvalue of A.
+  ST lambdaMinForApply_; 
 
   //@}
   //! \name Computational helper methods

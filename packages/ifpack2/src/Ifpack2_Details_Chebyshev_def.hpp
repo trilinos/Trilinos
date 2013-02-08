@@ -347,7 +347,7 @@ setParameters (Teuchos::ParameterList& plist) {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-compute () {
+compute (const bool assumeMatrixUnchanged) {
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
   {
@@ -372,13 +372,14 @@ compute () {
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
-  if (userInvDiag_.is_null ()) {
-    // The matrix may have changed, and the parameters also affect
-    // this process, so recompute the inverse diagonal.
-    D_ = makeInverseDiagonal (*A_);
-  } else {
-    D_ = userInvDiag_;
-  }
+  if (!assumeMatrixUnchanged) {
+    if (userInvDiag_.is_null ()) {
+      // The matrix may have changed, and the parameters also affect
+      // this process, so recompute the inverse diagonal.
+      D_ = makeInverseDiagonal (*A_);
+    } else {
+      D_ = userInvDiag_;
+    }
 
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
@@ -395,36 +396,32 @@ compute () {
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
-  // The matrix may have changed, so we always compute the
-  // eigenvalue estimates, even if we computed them before.
-  // However, if the user gave us lambdaMax already (if it's not
-  // NaN), then don't (re)compute it.
-  if (STS::isnaninf (lambdaMax_)) {
-    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
-    const ST computedLambdaMin = computedLambdaMax / eigRatio_;
+    // The matrix may have changed, so we always compute the
+    // eigenvalue estimates, even if we computed them before.
+    // However, if the user gave us lambdaMax already (if it's not
+    // NaN), then don't (re)compute it.
+    if (STS::isnaninf (lambdaMax_)) {
+      const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+      const ST computedLambdaMin = computedLambdaMax / eigRatio_;
 
-    // Defer "committing" results until all computations succeeded.
-    computedLambdaMax_ = computedLambdaMax;
-    computedLambdaMin_ = computedLambdaMin;
+      // Defer "committing" results until all computations succeeded.
+      computedLambdaMax_ = computedLambdaMax;
+      computedLambdaMin_ = computedLambdaMin;
+    }
   }
-}
 
-template<class ScalarType, class MV, class MAT>
-typename Chebyshev<ScalarType, MV, MAT>::MT
-Chebyshev<ScalarType, MV, MAT>::
-apply (const MV& B, MV& X) {
-  ST eigRatio = eigRatio_;
-  ST lambdaMax = lambdaMax_;
-  ST lambdaMin = lambdaMax / eigRatio_; // lambdaMin_; (???)
+  eigRatioForApply_ = eigRatio_;
+  lambdaMaxForApply_ = lambdaMax_;
+  lambdaMinForApply_ = lambdaMaxForApply_ / eigRatio_; // lambdaMin_; (???)
 
   // FIXME (mfh 22 Jan 2013) We really only want to check if it's
   // NaN.  Inf means something different.  However,
   // Teuchos::ScalarTraits doesn't distinguish the two cases.
-  if (STS::isnaninf (lambdaMax)) {
-    lambdaMax = computedLambdaMax_;
+  if (STS::isnaninf (lambdaMaxForApply_)) {
+    lambdaMaxForApply_ = computedLambdaMax_;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMax), 
+    STS::isnaninf (lambdaMaxForApply_), 
     std::runtime_error, 
     "Chebyshev::apply: Both lambdaMax_ and computedLambdaMax_ are NaN or Inf.  "
     "This means one of the following: (a) you didn't call compute() before "
@@ -432,11 +429,11 @@ apply (const MV& B, MV& X) {
     "(b) you didn't call compute() after calling setParameters(), or "
     "(c) there is a bug in this class (compute() has not done the "
     "eigenanalysis that it should have done).");
-  if (STS::isnaninf (lambdaMin)) {
-    lambdaMin = computedLambdaMin_;
+  if (STS::isnaninf (lambdaMinForApply_)) {
+    lambdaMinForApply_ = computedLambdaMin_;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMin), 
+    STS::isnaninf (lambdaMinForApply_), 
     std::runtime_error, 
     "Chebyshev::apply: Both lambdaMin_ and computedLambdaMin_ are NaN or Inf.  "
     "This means one of the following: (a) you didn't call compute() before "
@@ -445,7 +442,7 @@ apply (const MV& B, MV& X) {
     "(c) there is a bug in this class (compute() has not done the "
     "eigenanalysis that it should have done).");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (eigRatio), 
+    STS::isnaninf (eigRatioForApply_), 
     std::logic_error, 
     "Chebyshev::apply: eigRatio is NaN or Inf.");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -471,14 +468,23 @@ apply (const MV& B, MV& X) {
 
   if (! textbookAlgorithm_) {
     const ST one = Teuchos::as<ST> (1);
-    if (STS::magnitude (lambdaMax - one) < Teuchos::as<MT> (1.0e-6)) {
-      lambdaMin = one;
-      lambdaMax = lambdaMin;
-      eigRatio = one; // Ifpack doesn't include this line.
+    if (STS::magnitude (lambdaMaxForApply_ - one) < Teuchos::as<MT> (1.0e-6)) {
+      lambdaMinForApply_ = one;
+      lambdaMaxForApply_ = lambdaMinForApply_;
+      eigRatioForApply_ = one; // Ifpack doesn't include this line.
     }
-    ifpackApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
+  }
+} //compute()
+
+template<class ScalarType, class MV, class MAT>
+typename Chebyshev<ScalarType, MV, MAT>::MT
+Chebyshev<ScalarType, MV, MAT>::
+apply (const MV& B, MV& X) {
+
+  if (textbookAlgorithm_) {
+    textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, lambdaMinForApply_, eigRatioForApply_, *D_);
   } else {
-    textbookApplyImpl (*A_, B, X, numIters_, lambdaMax, lambdaMin, eigRatio, *D_);
+    ifpackApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, lambdaMinForApply_, eigRatioForApply_, *D_);
   }
 
   if (computeMaxResNorm_) {
@@ -490,7 +496,7 @@ apply (const MV& B, MV& X) {
   } else {
     return Teuchos::as<MT> (0);
   }
-}
+} //apply()
 
 template<class ScalarType, class MV, class MAT>
 void
@@ -907,6 +913,28 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V1,
   }
   V1 = V_;
   W = W_;
+}
+
+template<class ScalarType, class MV, class MAT>
+std::string
+Chebyshev<ScalarType, MV, MAT>::
+description() const {
+  std::ostringstream oss;
+  oss << "degree = " << numIters_;
+  oss << ", lambdaMax = " << lambdaMaxForApply_;
+  oss << ", alpha = " << eigRatio_;
+  oss << ", lambdaMin = " << lambdaMinForApply_;
+
+  return oss.str();
+}
+
+template<class ScalarType, class MV, class MAT>
+void
+Chebyshev<ScalarType, MV, MAT>::
+describe(Teuchos::FancyOStream &out_arg, const Teuchos::EVerbosityLevel verbLevel) const {
+   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
+   Teuchos::OSTab tab(out);
+   *out << this->description() << std::endl;
 }
 
 } // namespace Details

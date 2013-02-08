@@ -49,7 +49,7 @@ Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
     ApplyTime_ (0.0),
     ComputeFlops_ (0.0),
     ApplyFlops_ (0.0)
-{}
+{this->setObjectLabel("Ifpack2::Chebyshev");}
 
 //==========================================================================
 template<class MatrixType>
@@ -325,19 +325,21 @@ CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,nod
 template <class MatrixType>
 std::string Chebyshev<MatrixType>::description() const {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << Teuchos::LabeledObject::getObjectLabel();
   if (isInitialized()) {
     if (isComputed()) {
-      oss << "{status = initialized, computed";
+      oss << "{status = initialized, computed, ";
     }
     else {
-      oss << "{status = initialized, not computed";
+      oss << "{status = initialized, not computed, ";
     }
   }
   else {
-    oss << "{status = not initialized, not computed";
+    oss << "{status = not initialized, not computed, ";
   }
-  //
+
+  oss << impl_.description();
+
   oss << ", global rows = " << impl_.getMatrix ()->getGlobalNumRows()
       << ", global cols = " << impl_.getMatrix ()->getGlobalNumCols()
       << "}";
