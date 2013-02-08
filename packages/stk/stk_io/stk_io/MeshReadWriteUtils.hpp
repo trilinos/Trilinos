@@ -126,7 +126,7 @@ namespace stk {
          * then this contains the full pathname to the file containing the
          * mesh information.  If the mesh type is a generated type, then
          * this parameter contains data used by the generation routines.
-         * See the output from the show_mesh_help() function for details.
+         * See the GeneratedMesh documentation.
          *
          *          * \param[in] type   The format of the mesh that will be
          * "read".  Valid types are "exodus", "generated", "pamgen".
@@ -351,11 +351,6 @@ namespace stk {
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement
     };
-
-    /** Output a help message showing the valid options for the mesh
-	read and options for generated mesh.
-     */
-    void show_mesh_help();
   }
 }
 #endif

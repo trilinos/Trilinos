@@ -50,7 +50,7 @@ int main(int argc, char** argv)
      "  overlap:      \tdomain consists of an axis-aligned bounding box for each 'domain_entity' in the mesh,"
      "range is also an axis-aligned bounding box of each 'range_entity'.")
     ("range_mesh",    bopt::value<std::string>(&range.mesh_filename),
-     "range mesh file.\n  \tUse name of form 'gen:NxMxL' to generate a hex mesh of size N by M by L intervals.\n\tUse --helpmesh for more detailed help on the mesh options.")
+     "range mesh file.\n  \tUse name of form 'gen:NxMxL' to generate a hex mesh of size N by M by L intervals.")
     ("range_entity",  bopt::value<std::string>(&range.entity)->default_value("element"),
      "Entity type to use for range:\n"
      "   node:    \tAll nodes in the model,\n"
@@ -67,8 +67,7 @@ int main(int argc, char** argv)
      "scale factor to be applied to domain axis-aligned bounding boxes. The bounding box extent will be increased by max_d*scale+offset where max_d is max of max_i-min_i for i=x,y,z)" )
     ("domain_mesh",   bopt::value<std::string>(&domain.mesh_filename),
      "domain mesh file."
-     "\n  \tUse name of form 'gen:NxMxL' to generate a hex mesh of size N by M by L intervals."
-     "\n  \tUse --helpmesh for more detailed help on the mesh options." )
+     "\n  \tUse name of form 'gen:NxMxL' to generate a hex mesh of size N by M by L intervals." )
     ("domain_entity", bopt::value<std::string>(&domain.entity)->default_value("element"),
      "Entity type to use for domain:\n"
      "   node:    \tAll nodes in the model,\n"
@@ -83,8 +82,7 @@ int main(int argc, char** argv)
     ("domain_scale",
      bopt::value<double>(&domain.scale)->default_value(0.0),
      "scale factor to be applied to domain axis-aligned bounding boxes. The bounding box extent will be increased by max_d*scale+offset where max_d is max of max_i-min_i for i=x,y,z)" )
-    ("performance",  "Run to measure performance; disable output that may affect runtime.")
-    ("helpmesh", "Print detailed description of mesh options and then exit.");
+    ("performance",  "Run to measure performance; disable output that may affect runtime.");
   stk::get_options_description().add(desc);
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
@@ -93,11 +91,6 @@ int main(int argc, char** argv)
 
   //----------------------------------
 
-  if (vm.count("helpmesh")) {
-    stk::io::show_mesh_help();
-    std::exit(EXIT_SUCCESS);
-  }
-  
   if (vm.count("performance"))
     performance = true;
   
