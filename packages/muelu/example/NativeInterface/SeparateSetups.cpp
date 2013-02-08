@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
   // Note that we pass the number of levels back in.
-  H.Setup(M,startLevel, numLevels);
+  H.Setup(M,startLevel, H.GetNumLevels());
 
   std::cout << "=============== Solve ====================" << std::endl;
 
