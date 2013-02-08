@@ -120,9 +120,11 @@ TRIBITS_ETI_GENERATE_MACROS(
     "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=Kokkos::ThrustGPUNode"
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
+
+TRIBITS_ETI_TYPE_EXPANSION(Tpetra_DII   "S=double" "N=${Tpetra_ETI_NODES}" "LO=int" "GO=int")
 TRIBITS_ETI_GENERATE_MACROS(
-    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
-    "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=float LO=.* GO=.* N=.*;S=std::complex<float> LO=.* GO=.* N=.*;S=std::complex<double> LO=.* GO=.* N=.*;S=.* LO=long GO=.* N=.*;S=.* LO=.* GO=long N=.*"
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_DII}" 
+    "${Tpetra_ETI_EXCLUDE_SET}"
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_DOUBLE_INT_INT_N(S,LO,GO,N)"      TPETRA_ETIMACRO_DII_NODE)
 
