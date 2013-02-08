@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
-  H->SetDefaultVerbLevel(MueLu::Low);
+  H->SetDefaultVerbLevel(MueLu::High);
 
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
@@ -266,6 +266,9 @@ int main(int argc, char *argv[]) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
     H->IsPreconditioner(false);
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    fos->setOutputToRootOnly(-1);
+    H->print(*fos);
     H->Iterate(*B,25,*X);
 
     tm = Teuchos::null;

@@ -187,12 +187,6 @@ namespace MueLu {
     //!
     void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
-    /*! @brief Report number of levels and complexity.
-
-        @param[in] verbLevel Print std::out if enough verbose enough.
-    */
-    Teuchos::ParameterList Summarize(MsgType verbLevel = Statistics0);
-
     /*!
       @brief Apply the multigrid preconditioner.
 
@@ -209,12 +203,13 @@ namespace MueLu {
                  const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
 
     /*!
-      @brief Print matrices in the multigrid hierarchy.
+      @brief Print matrices in the multigrid hierarchy to file.
 
       @param[in] start start level
       @param[in] end   end level
 
-      Default behavior is to print the "A" matrices from the entire hierarchy.
+      Default behavior is to print system and transfer matrices from the entire hierarchy.
+      Files are named "A_0.m", "P_1.m", "R_1.m", etc, and are in matrix market coordinate format.
     */
     void Write(const LO &start=-1, const LO &end=-1);
 
@@ -243,10 +238,14 @@ namespace MueLu {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    /*! @brief Print the Hierarchy with some verbosity level to an FancyOStream object.
+    
+        @param[in] out The Teuchos::FancyOstream.
+        @param[in] verbLevel Controls amount of output.
+    */
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    Teuchos::ParameterList print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 
@@ -281,10 +280,6 @@ namespace MueLu {
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
-
-    //! statistics
-    Xpetra::global_size_t totalNnz_;
-    double operatorComplexity_;
 
   }; //class Hierarchy
 
