@@ -14,7 +14,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include <mpi.h>
+#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 namespace panzer_stk {
 
@@ -66,6 +67,17 @@ public:
    static void bucketByBasisType(const std::vector<panzer::StrPureBasisPair> & providedDofs,
                                  std::map<std::string,std::vector<std::string> > & basisBucket);
 
+   /** Scale a field before writing out to STK by a prescribed value (the implicit default is 1.0). 
+     * A warning will be printed if no field is found of that name when <code>buildAndRegisterEvaluators</code>
+     * is called.
+     *
+     * \note Currently only works for HGRAD fields.
+     *
+     * \param[in] fieldName HGRAD field to scale.
+     * \param[in] fieldScalar Value to scale the field by.
+     */
+   void scaleField(const std::string & fieldName,double fieldScalar);
+
 
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
@@ -73,17 +85,36 @@ private:
                                  Intrepid::FieldContainer<double> & centroid) const;
 
    Teuchos::RCP<STK_Interface> mesh_;
+
+   boost::unordered_map<std::string,double> fieldToScalar_;
+   boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
 };
 
-/** A simple builder for this the SolutionWriter response factory, simply set the mesh and MPI_Comm
+/** A simple builder for this the SolutionWriter response factory, simply set the mesh 
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
   Teuchos::RCP<panzer_stk::STK_Interface> mesh;
 
+  void scaleField(const std::string & fieldName,double fieldScalar)
+  { fieldToScalar_[fieldName] = fieldScalar; }
+
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); }
+  { 
+    Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
+        Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+
+    // set all scaled field values
+    for(boost::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
+        itr!=fieldToScalar_.end();++itr) 
+      ref->scaleField(itr->first,itr->second);
+
+    return ref;
+  }
+
+private:
+  boost::unordered_map<std::string,double> fieldToScalar_;
 };
 
 }

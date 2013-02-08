@@ -417,7 +417,7 @@ public:
      */
    template <typename ArrayT>
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
-                             const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+                             const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Reads a particular field into an array. Notice this is setup to work with
      * the worksets associated with Panzer.
@@ -453,7 +453,7 @@ public:
      */
    template <typename ArrayT>
    void setCellFieldData(const std::string & fieldName,const std::string & blockId,
-                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -643,7 +643,7 @@ protected:
 
 template <typename ArrayT>
 void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
-                                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+                                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
@@ -660,7 +660,7 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-         solnData[0] = solutionValues(cell,i);
+         solnData[0] = scaleValue*solutionValues(cell,i);
       }
    }
 }
@@ -693,7 +693,7 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 
 template <typename ArrayT>
 void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
-                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
@@ -705,7 +705,7 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
       double * solnData = stk::mesh::field_data(*field,*element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = solutionValues[cell];
+      solnData[0] = scaleValue*solutionValues[cell];
    }
 }
 

@@ -44,8 +44,10 @@
 #define __PANZER_STK_ScatterFields_decl_HPP__
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_FieldManager.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -57,15 +59,14 @@ namespace panzer_stk {
 
 /** This class is a scatter operation to the mesh. It
   * takes a set of field names and basis objects and
-  * then writes them to the mesh object.
-  *
-  * The constructor takes a STK_Interface RCP and parameter list
-  * that is required to contain the following two fields
-  * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>,
-  * "Basis" of type <code>Teuchos::RCP<panzer::BasisIRLayout></code> and
-  * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
+  * then writes them to the mesh object. Note that <code>scaling</code> vector
+  * must be the same length as the <code>names</code> vector. The scaling
+  * is applied to each field.
   */
-PHX_EVALUATOR_CLASS(ScatterFields)
+template <typename EvalT,typename TraitsT>
+class ScatterFields : public PHX::EvaluatorWithBaseImpl<TraitsT>,
+                      public PHX::EvaluatorDerived<EvalT, TraitsT>  { 
+  typedef typename EvalT::ScalarT ScalarT;
   typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
 
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > scatterFields_;
@@ -73,14 +74,32 @@ PHX_EVALUATOR_CLASS(ScatterFields)
 
   std::vector<VariableField*> stkFields_;
 
+  std::vector<double> scaling_;
+
+  void initialize(const std::string & scatterName,
+                  const Teuchos::RCP<STK_Interface> mesh,
+                  const Teuchos::RCP<const panzer::PureBasis> & basis,
+                  const std::vector<std::string> & names,
+                  const std::vector<double> & scaling);
+
 public:
   
   ScatterFields(const std::string & scatterName,
                 const Teuchos::RCP<STK_Interface> mesh,
                 const Teuchos::RCP<const panzer::PureBasis> & basis,
                 const std::vector<std::string> & names);
- 
-PHX_EVALUATOR_CLASS_END
+
+  ScatterFields(const std::string & scatterName,
+                const Teuchos::RCP<STK_Interface> mesh,
+                const Teuchos::RCP<const panzer::PureBasis> & basis,
+                const std::vector<std::string> & names,
+                const std::vector<double> & scaling);
+
+  void postRegistrationSetup(typename TraitsT::SetupData d, 
+                             PHX::FieldManager<TraitsT>& fm);
+
+  void evaluateFields(typename TraitsT::EvalData d);
+}; 
 
 }
 

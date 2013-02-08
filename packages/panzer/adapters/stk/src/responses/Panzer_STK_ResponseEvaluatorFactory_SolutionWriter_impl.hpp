@@ -8,6 +8,8 @@
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_DOF.hpp"
 
+#include <boost/unordered_set.hpp>
+
 namespace panzer_stk {
 
 namespace {
@@ -40,6 +42,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  // this will help so we can print out any unused scaled fields as a warning
+  boost::unordered_set<std::string> scaledFieldsHash = scaledFieldsHash_;
 
   const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = physicsBlock.getBases();
   std::map<std::string,std::vector<std::string> > basisBucket;
@@ -82,10 +87,23 @@ buildAndRegisterEvaluators(const std::string & responseName,
     
     // write out nodal fields
     if(basis->getElementSpace()==panzer::PureBasis::HGRAD) {
+      
+      // determine if user has modified field scalar for each field to be written to STK
+      std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 
+      for(std::size_t f=0;f<fields.size();f++) { 
+        boost::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
+
+        // if scalar is found, include it in the vector and remove the field from the
+        // hash table so it won't be included in the warning message.
+        if(f2s_itr!=fieldToScalar_.end()) { 
+          scalars[f] = f2s_itr->second;
+          scaledFieldsHash.erase(fields[f]);
+        }
+      }
 
       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval = 
         Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name(),
-                                                      mesh_, basis, fields));
+                                                      mesh_, basis, fields,scalars));
 
       // register and require evaluator fields
       fm.template registerEvaluator<EvalT>(eval);
@@ -126,6 +144,16 @@ buildAndRegisterEvaluators(const std::string & responseName,
         fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
       }
     }
+  }
+
+  // print warning message for any unused scaled fields
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(0);
+
+  for(boost::unordered_set<std::string>::const_iterator itr=scaledFieldsHash.begin();
+      itr!=scaledFieldsHash.end();itr++) { 
+    out << "WARNING: STK Solution Writer did not scale the field \"" << *itr << "\" "
+        << "because it was not written." << std::endl;
   }
 }
 
@@ -186,6 +214,13 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBas
 
    // no centroid was found...die
    TEUCHOS_ASSERT(false);
+}
+
+template <typename EvalT>
+void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+scaleField(const std::string & fieldName,double fieldScalar)
+{
+  fieldToScalar_[fieldName] = fieldScalar;
 }
 
 }

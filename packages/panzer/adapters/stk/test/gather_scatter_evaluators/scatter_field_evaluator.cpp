@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_PureBasis.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -85,7 +85,7 @@ using Teuchos::rcp;
 #include <string>
 
 namespace panzer {
-  Teuchos::RCP<panzer::BasisIRLayout> linBasis;
+  Teuchos::RCP<panzer::PureBasis> linBasis;
 
   //! Interpolates basis DOF values to IP DOF values
   PHX_EVALUATOR_CLASS(XCoordinate)
@@ -112,7 +112,7 @@ namespace panzer {
      }
   }
 
-  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize);
+  Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize);
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -140,12 +140,9 @@ namespace panzer {
           = Teuchos::rcp(new std::vector<std::string>);
     fieldNames->push_back("x-coord");
 
-    pl.set("Mesh",mesh);
-    pl.set("Basis",linBasis);
-    pl.set("Field Names",fieldNames);
-    pl.set("Scatter Name", "xcoord-scatter-residual");
+    std::string scatterName = "xcoord-scatter-residual";
     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-          = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(pl));
+          = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
     fm->registerEvaluator<panzer::Traits::Residual>(eval);
     fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
 
@@ -251,13 +248,9 @@ namespace panzer {
              = Teuchos::rcp(new std::vector<std::string>);
        fieldNames->push_back("x-coord");
 
-       Teuchos::ParameterList pl;
-       pl.set("Mesh",mesh);
-       pl.set("Basis",linBasis);
-       pl.set("Field Names",fieldNames);
-       pl.set("Scatter Name", "xcoord-scatter-residual");
+       std::string scatterName = "xcoord-scatter-residual";
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(pl));
+             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
        fm->registerEvaluator<panzer::Traits::Residual>(eval);
        fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
     }
@@ -312,15 +305,14 @@ namespace panzer {
        mesh->writeToExodus("x-coord-cell.exo");
   }
 
-  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize)
+  Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize)
   {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
-     panzer::IntegrationRule intRule(1,cellData);
 
-     return Teuchos::rcp(new panzer::BasisIRLayout("Q1",1,intRule)); 
+     return Teuchos::rcp(new panzer::PureBasis("HGrad",1,cellData)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
