@@ -122,7 +122,6 @@ int main(int argc, char *argv[]) {
   if(comm->getRank() == nProcs-1) {
     nLocalNodes = leftover;
   }
-  int nLocalDOFs = nLocalNodes*nDOFsPerNode;
   int nnzeros = 10085;
 
   // Construct a Map that puts approximately the same number of mesh nodes per processor
