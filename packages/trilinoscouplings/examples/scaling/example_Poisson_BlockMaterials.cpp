@@ -409,7 +409,12 @@ int main(int argc, char *argv[]) {
 
    // Generate mesh with Pamgen
     long long maxInt = 9223372036854775807LL;
-    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+    long long rv=Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+    if(rv != 0){
+      if(!MyPID ) cout<<"ERROR: Create_Pamgen_Mesh code: "<<rv<<endl;
+      return -1;
+    }
+      
 
     string msg("Poisson: ");
     if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
