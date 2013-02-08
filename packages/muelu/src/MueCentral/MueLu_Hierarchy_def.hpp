@@ -332,9 +332,9 @@ namespace MueLu {
     for (int i=0; i<Levels_.size(); ++i) {
       RCP<SmootherBase> preSmoo, postSmoo;
       if (Levels_[i]->IsAvailable("PreSmoother"))
-        preSmoo = Levels_[i]->Get< RCP<SmootherBase> >("PreSmoother");
+        preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
       if (Levels_[i]->IsAvailable("PostSmoother"))
-        postSmoo = Levels_[i]->Get< RCP<SmootherBase> >("PostSmoother");
+        postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
       if (preSmoo != null && preSmoo == postSmoo)
         GetOStream(verbLevel, 0) << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
       else {
