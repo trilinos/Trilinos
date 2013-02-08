@@ -47,8 +47,6 @@
 using namespace stk::diag;
 using namespace use_case;
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>       VectorField ;
-
 namespace {
   void get_domain_range_used(const IdentProcRelation &relation,
 			     std::vector<stk::mesh::EntityKey> &domain_used,
@@ -178,8 +176,12 @@ performance_driver(stk::ParallelMachine  comm,
   stk::search::FactoryOrder order;
   order.m_communicator = comm;
 
-  VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
-  VectorField *domain_coord_field = domain_meta_data->get_field<VectorField>("coordinates");
+  stk::io::CoordinateFieldType *range_coord_field  = &range_mesh_data.get_coordinate_field();
+  stk::io::CoordinateFieldType *domain_coord_field = NULL;
+  if (same_mesh)
+    domain_coord_field = range_coord_field;
+  else
+    domain_coord_field = &domain_mesh_data.get_coordinate_field();
 
   IdentProcRelation relation;
   size_t domain_vector_size = 0;

@@ -13,7 +13,6 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 void fill_utest_mesh_meta_data(stk::mesh::MetaData& fem_meta, bool use_temperature=true);
 void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data);

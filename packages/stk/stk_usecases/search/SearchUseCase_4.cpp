@@ -39,7 +39,6 @@ using namespace use_case;
 using namespace stk::diag;
 
 typedef stk::mesh::Field<double>                        ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField ;
 
 void
 use_case_4_driver(stk::ParallelMachine  comm,
@@ -79,13 +78,13 @@ use_case_4_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
 
-  VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
+  stk::io::CoordinateFieldType *range_coord_field = &range_mesh_data.get_coordinate_field();
   std::vector<AxisAlignedBoundingBox3D> range_vector;
   stk::search_util::build_axis_aligned_bbox(range_bulk_data,
                                             range_meta_data.entity_rank(range_entity),
                                             range_coord_field, range_vector);
 
-  VectorField *domain_coord_field = domain_meta_data.get_field<VectorField>("coordinates");
+  stk::io::CoordinateFieldType *domain_coord_field = &domain_mesh_data.get_coordinate_field();
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
   stk::search_util::build_axis_aligned_bbox(domain_bulk_data,
 					domain_meta_data.entity_rank(domain_entity),

@@ -50,33 +50,33 @@ namespace {
     for (size_t i=0; i < block_count; i++) {
       Ioss::SideBlock *sb = sset->get_block(i);
       if (stk::io::include_entity(sb)) {
-	stk::mesh::Part * const sb_part = meta.get_part(sb->name());
-	assert(sb_part != NULL);
-	meta.declare_part_subset(*ss_part, *sb_part);
+        stk::mesh::Part * const sb_part = meta.get_part(sb->name());
+        assert(sb_part != NULL);
+        meta.declare_part_subset(*ss_part, *sb_part);
 
-	if (sb->field_exists("distribution_factors")) {
-	  if (!surface_df_defined) {
-	    std::string field_name = sset->name() + "_df";
-	    distribution_factors_field =
-	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
-	    stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
-	    stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
-	    surface_df_defined = true;
-	  }
-	  stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
-	  int side_node_count = sb->topology()->number_nodes();
-	  stk::mesh::put_field(*distribution_factors_field,
-			       stk::io::part_primary_entity_rank(*sb_part),
-			       *sb_part, side_node_count);
-	}
+        if (sb->field_exists("distribution_factors")) {
+          if (!surface_df_defined) {
+            std::string field_name = sset->name() + "_df";
+            distribution_factors_field =
+              &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
+            stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
+            stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
+            surface_df_defined = true;
+          }
+          stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
+          int side_node_count = sb->topology()->number_nodes();
+          stk::mesh::put_field(*distribution_factors_field,
+                               stk::io::part_primary_entity_rank(*sb_part),
+                               *sb_part, side_node_count);
+        }
       }
     }
   }
 
   size_t get_entities(stk::mesh::Part &part,
-		      const stk::mesh::BulkData &bulk,
-		      std::vector<stk::mesh::Entity> &entities,
-		      const stk::mesh::Selector *anded_selector)
+                      const stk::mesh::BulkData &bulk,
+                      std::vector<stk::mesh::Entity> &entities,
+                      const stk::mesh::Selector *anded_selector)
   {
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     stk::mesh::EntityRank type = stk::io::part_primary_entity_rank(part);
@@ -117,29 +117,29 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       size_t side_count = side_ids.size();
       std::vector<stk::mesh::Entity> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
-	stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
+        stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
-	// If NULL, then the element was probably assigned to an
-	// element block that appears in the database, but was
-	// subsetted out of the analysis mesh. Only process if
-	// non-null.
-	if (elem.is_valid()) {
-	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-	  int side_ordinal = elem_side[is*2+1] - 1;
+        // If NULL, then the element was probably assigned to an
+        // element block that appears in the database, but was
+        // subsetted out of the analysis mesh. Only process if
+        // non-null.
+        if (elem.is_valid()) {
+          // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+          int side_ordinal = elem_side[is*2+1] - 1;
 
-	  stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+          stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 
-	  bulk.change_entity_parts( side, add_parts );
-	  sides[is] = side;
-	} else {
-	  sides[is] = stk::mesh::Entity();
-	}
+          bulk.change_entity_parts( side, add_parts );
+          sides[is] = side;
+        } else {
+          sides[is] = stk::mesh::Entity();
+        }
       }
 
       const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-	stk::io::get_distribution_factor_field(*sb_part);
+          stk::io::get_distribution_factor_field(*sb_part);
       if (df_field != NULL) {
-	stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+        stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
       }
 
       // Add all attributes as fields.
@@ -148,11 +148,11 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       Ioss::NameList names;
       block->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	if(*I == "attribute" && names.size() > 1)
-	  continue;
-	stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
-	if (field)
-	  stk::io::field_data_from_ioss(field, sides, block, *I);
+        if(*I == "attribute" && names.size() > 1)
+          continue;
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        if (field)
+          stk::io::field_data_from_ioss(field, sides, block, *I);
       }
     }
   }
@@ -171,39 +171,30 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
+  stk::io::CoordinateFieldType& coord_field =
+      meta.declare_field<stk::io::CoordinateFieldType>(stk::io::CoordinateFieldName);
+
   Ioss::NodeBlock *nb = node_blocks[0];
-
-  assert(nb->field_exists("mesh_model_coordinates"));
-  Ioss::Field coordinates = nb->get_field("mesh_model_coordinates");
-  int spatial_dim = coordinates.transformed_storage()->component_count();
-
-  stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-    meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
-
-  stk::mesh::put_field( coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(), spatial_dim);
+  stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
+      meta.spatial_dimension());
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), 0);
 }
 
-void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void process_nodeblocks(stk::io::MeshData &mesh)
 {
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
   // not part of the analysis mesh due to subsetting of the element
   // blocks.
-
-  const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-
-  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
+  const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
   std::vector<stk::mesh::Entity> nodes;
-  stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
+  stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, mesh.bulk_data(), nodes);
 
-  stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
-    meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
-
+  stk::io::CoordinateFieldType *coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
 
   // Add all attributes as fields.
@@ -214,7 +205,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
     if(*I == "attribute" && names.size() > 1)
       continue;
-    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+    stk::mesh::FieldBase *field = mesh.meta_data().get_field<stk::mesh::FieldBase> (*I);
     if (field)
       stk::io::field_data_from_ioss(field, nodes, nb, *I);
   }
@@ -244,9 +235,9 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
 
       const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
       if (cell_topo == NULL) {
-	std::ostringstream msg ;
-	msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
-	throw std::runtime_error( msg.str() );
+        std::ostringstream msg ;
+        msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+        throw std::runtime_error( msg.str() );
       }
 
       std::vector<INT> elem_ids ;
@@ -262,9 +253,9 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       std::vector<stk::mesh::Entity> elements(element_count);
 
       for(size_t i=0; i<element_count; ++i) {
-	INT *conn = &connectivity[i*nodes_per_elem];
-	std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-	elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        INT *conn = &connectivity[i*nodes_per_elem];
+        std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
+        elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
       }
 
       // Add all element attributes as fields.
@@ -273,11 +264,11 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	if(*I == "attribute" && names.size() > 1)
-	  continue;
-	stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
-	if (field)
-	  stk::io::field_data_from_ioss(field, elements, entity, *I);
+        if(*I == "attribute" && names.size() > 1)
+          continue;
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        if (field)
+          stk::io::field_data_from_ioss(field, elements, entity, *I);
       }
     }
   }
@@ -291,7 +282,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::default_part_processing(node_sets, meta);
 
   stk::mesh::Field<double> & distribution_factors_field =
-    meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
+      meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
   stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
 
   /** \todo REFACTOR How to associate distribution_factors field
@@ -355,16 +346,16 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       std::vector<stk::mesh::Entity> nodes(node_count);
       stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
-	nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
-	if (nodes[i].is_valid())
-	  bulk.declare_entity(n_rank, node_ids[i], add_parts );
+        nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
+        if (nodes[i].is_valid())
+          bulk.declare_entity(n_rank, node_ids[i], add_parts );
       }
 
       stk::mesh::Field<double> *df_field =
-	meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+          meta.get_field<stk::mesh::Field<double> >("distribution_factors");
 
       if (df_field != NULL) {
-	stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+        stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
       }
 
       // Add all attributes as fields.
@@ -373,11 +364,11 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	if(*I == "attribute" && names.size() > 1)
-	  continue;
-	stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
-	if (field)
-	  stk::io::field_data_from_ioss(field, nodes, entity, *I);
+        if(*I == "attribute" && names.size() > 1)
+          continue;
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        if (field)
+          stk::io::field_data_from_ioss(field, nodes, entity, *I);
       }
     }
   }
@@ -400,10 +391,10 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
 // ========================================================================
 void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
-		    stk::mesh::EntityRank part_type,
-		    Ioss::GroupingEntity *io_entity,
-		    Ioss::Field::RoleType filter_role,
-		    const stk::mesh::Selector *anded_selector=NULL)
+    stk::mesh::EntityRank part_type,
+    Ioss::GroupingEntity *io_entity,
+    Ioss::Field::RoleType filter_role,
+    const stk::mesh::Selector *anded_selector=NULL)
 {
   std::vector<stk::mesh::Entity> entities;
   if (io_entity->type() == Ioss::SIDEBLOCK) {
@@ -415,10 +406,10 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     if (num_sides != (size_t)io_entity->get_property("entity_count").get_int()) {
       std::ostringstream msg ;
       msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
-	  << ") does not match number of sides in the associated Ioss SideBlock named "
-	  << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
-	  << ").";
-	throw std::runtime_error( msg.str() );
+          << ") does not match number of sides in the associated Ioss SideBlock named "
+          << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
+          << ").";
+      throw std::runtime_error( msg.str() );
     }
   } else {
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
@@ -440,104 +431,104 @@ namespace stk {
     void show_mesh_help()
     {
       std::cerr << "Options are:\n"
-		<< "\n"
-		<< "filename -- specify the name of the file from which to read the\n"
-		<< "            mesh file. If the --directory option is specified, it will be\n"
-		<< "            prepended to the filename unless the filename specifies an absolute path.\n"
-		<< "\n"
-		<< "gen:NxMxL -- internally generate a hex mesh of size N by M by L\n"
-		<< "             intervals. See 'Generated Options' below for more options.\n"
-		<< "\n"
-		<< "Generated Options:\n"
-		<< "shell:xXyYzZ\n"
-		<< "The argument specifies whether there is a shell block\n"
-		<< "at the location. 'x' is minX, 'X' is maxX, etc.\n"
-		<< "\n"
-		<< "help -- no argument, shows valid options\n"
-		<< "\n"
-		<< "show -- no argument, prints out a summary of the settings used to\n"
-		<< "generate the mesh. The output will look similar to:\n"
-		<< "    \"10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|show\"\n"
-		<< "\n"
-		<< "    Mesh Parameters:\n"
-		<< "\tIntervals: 10 by 12 by 8\n"
-		<< "\tX = 2       * (0..10) + -10     Range: -10 <= X <= 10\n"
-		<< "\tY = 1.66667 * (0..12) + -10     Range: -10 <= Y <= 10\n"
-		<< "\tZ = 2.5     * (0..8)  + -10     Range: -10 <= Z <= 10\n"
-		<< "\tNode Count (total)    = 1287\n"
-		<< "\tElement Count (total) = 1152\n"
-		<< "\tBlock Count           = 3\n"
-		<< "\n"
-		<< "shell:xXyYzZ \n"
-		<< "which specifies whether there is a shell block at that\n"
-		<< "location. 'x' is minimum x face, 'X' is maximum x face,\n"
-		<< "similarly for y and z.  Note that the argument string is a\n"
-		<< "single multicharacter string.  You can add multiple shell blocks\n"
-		<< "to a face, for example, shell:xxx would add three layered shell\n"
-		<< "blocks on the minimum x face.  An error is output if a non\n"
-		<< "xXyYzZ character is found, but execution continues.\n"
-		<< "\n"
-		<< "zdecomp:n0 n1,n2,...,n#proc-1\n"
-		<< "which are the number of intervals in the z direction for each\n"
-		<< "processor in a pallel run.  If this option is specified, then\n"
-		<< "the total number of intervals in the z direction is the sum of\n"
-		<< "the n0, n1, ... An interval count must be specified for each\n"
-		<< "processor.  If this option is not specified, then the number of\n"
-		<< "intervals on each processor in the z direction is numZ/numProc\n"
-		<< "with the extras added to the lower numbered processors.\n"
-		<< "\n"
-		<< "scale:xs,ys,zs\n"
-		<< "which are the scale factors in the x, y, and z directions. All\n"
-		<< "three must be specified if this option is present.\n"
-		<< "\n"
-		<< "- offset -- argument = xoff, yoff, zoff which are the offsets in the\n"
-		<< "x, y, and z directions.  All three must be specified if this option\n"
-		<< "is present.\n"
-		<< "\n"
-		<< "- bbox -- argument = xmin, ymin, zmin, xmax, ymax, zmax\n"
-		<< "which specify the lower left and upper right corners of\n"
-		<< "the bounding box for the generated mesh.  This will\n"
-		<< "calculate the scale and offset which will fit the mesh in\n"
-		<< "the specified box.  All calculations are based on the currently\n"
-		<< "active interval settings. If scale or offset or zdecomp\n"
-		<< "specified later in the option list, you may not get the\n"
-		<< "desired bounding box.\n"
-		<< "\n"
-		<< "- rotate -- argument = axis,angle,axis,angle,...\n"
-		<< "where axis is 'x', 'y', or 'z' and angle is the rotation angle in\n"
-		<< "degrees. Multiple rotations are cumulative. The composite rotation\n"
-		<< "matrix is applied at the time the coordinates are retrieved after\n"
-		<< "scaling and offset are applied.\n"
-		<< "\n"
-		<< "The unrotated coordinate of a node at grid location i,j,k is:\n"
-		<< "\n"
-		<< "\tx = x_scale * i + x_off,\n"
-		<< "\ty = z_scale * j + y_off,\n"
-		<< "\tz = z_scale * k + z_off,\n"
-		<< "\n"
-		<< "The extent of the unrotated mesh will be:\n"
-		<< "\n"
-		<< "\tx_off <= x <= x_scale * numX + x_off\n"
-		<< "\ty_off <= y <= y_scale * numY + y_off\n"
-		<< "\tz_off <= z <= z_scale * numZ + z_off\n"
-		<< "\n"
-		<< "If an unrecognized option is specified, an error message will be\n"
-		<< "output and execution will continue.\n"
-		<< "\n"
-		<< "An example of valid input is:\n"
-		<< "\n"
-		<< "\t\"10x20x40|scale:1,0.5,0.25|offset:-5,-5,-5|shell:xX\"\n"
-		<< "\n"
-		<< "\n"
-		<< "This would create a mesh with 10 intervals in x, 20 in y, 40 in z\n"
-		<< "The mesh would be centered on 0,0,0 with a range of 10 in each\n"
-		<< "direction. There would be a shell layer on the min and max\n"
-		<< "x faces.\n"
-		<< "\n"
-		<< "NOTE: All options are processed in the order they appear in\n"
-		<< "the parameters string (except rotate which is applied at the\n"
-		<< "time the coordinates are generated/retrieved)\n"
-		<< "\n";
+                << "\n"
+                << "filename -- specify the name of the file from which to read the\n"
+                << "            mesh file. If the --directory option is specified, it will be\n"
+                << "            prepended to the filename unless the filename specifies an absolute path.\n"
+                << "\n"
+                << "gen:NxMxL -- internally generate a hex mesh of size N by M by L\n"
+                << "             intervals. See 'Generated Options' below for more options.\n"
+                << "\n"
+                << "Generated Options:\n"
+                << "shell:xXyYzZ\n"
+                << "The argument specifies whether there is a shell block\n"
+                << "at the location. 'x' is minX, 'X' is maxX, etc.\n"
+                << "\n"
+                << "help -- no argument, shows valid options\n"
+                << "\n"
+                << "show -- no argument, prints out a summary of the settings used to\n"
+                << "generate the mesh. The output will look similar to:\n"
+                << "    \"10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|show\"\n"
+                << "\n"
+                << "    Mesh Parameters:\n"
+                << "\tIntervals: 10 by 12 by 8\n"
+                << "\tX = 2       * (0..10) + -10     Range: -10 <= X <= 10\n"
+                << "\tY = 1.66667 * (0..12) + -10     Range: -10 <= Y <= 10\n"
+                << "\tZ = 2.5     * (0..8)  + -10     Range: -10 <= Z <= 10\n"
+                << "\tNode Count (total)    = 1287\n"
+                << "\tElement Count (total) = 1152\n"
+                << "\tBlock Count           = 3\n"
+                << "\n"
+                << "shell:xXyYzZ \n"
+                << "which specifies whether there is a shell block at that\n"
+                << "location. 'x' is minimum x face, 'X' is maximum x face,\n"
+                << "similarly for y and z.  Note that the argument string is a\n"
+                << "single multicharacter string.  You can add multiple shell blocks\n"
+                << "to a face, for example, shell:xxx would add three layered shell\n"
+                << "blocks on the minimum x face.  An error is output if a non\n"
+                << "xXyYzZ character is found, but execution continues.\n"
+                << "\n"
+                << "zdecomp:n0 n1,n2,...,n#proc-1\n"
+                << "which are the number of intervals in the z direction for each\n"
+                << "processor in a pallel run.  If this option is specified, then\n"
+                << "the total number of intervals in the z direction is the sum of\n"
+                << "the n0, n1, ... An interval count must be specified for each\n"
+                << "processor.  If this option is not specified, then the number of\n"
+                << "intervals on each processor in the z direction is numZ/numProc\n"
+                << "with the extras added to the lower numbered processors.\n"
+                << "\n"
+                << "scale:xs,ys,zs\n"
+                << "which are the scale factors in the x, y, and z directions. All\n"
+                << "three must be specified if this option is present.\n"
+                << "\n"
+                << "- offset -- argument = xoff, yoff, zoff which are the offsets in the\n"
+                << "x, y, and z directions.  All three must be specified if this option\n"
+                << "is present.\n"
+                << "\n"
+                << "- bbox -- argument = xmin, ymin, zmin, xmax, ymax, zmax\n"
+                << "which specify the lower left and upper right corners of\n"
+                << "the bounding box for the generated mesh.  This will\n"
+                << "calculate the scale and offset which will fit the mesh in\n"
+                << "the specified box.  All calculations are based on the currently\n"
+                << "active interval settings. If scale or offset or zdecomp\n"
+                << "specified later in the option list, you may not get the\n"
+                << "desired bounding box.\n"
+                << "\n"
+                << "- rotate -- argument = axis,angle,axis,angle,...\n"
+                << "where axis is 'x', 'y', or 'z' and angle is the rotation angle in\n"
+                << "degrees. Multiple rotations are cumulative. The composite rotation\n"
+                << "matrix is applied at the time the coordinates are retrieved after\n"
+                << "scaling and offset are applied.\n"
+                << "\n"
+                << "The unrotated coordinate of a node at grid location i,j,k is:\n"
+                << "\n"
+                << "\tx = x_scale * i + x_off,\n"
+                << "\ty = z_scale * j + y_off,\n"
+                << "\tz = z_scale * k + z_off,\n"
+                << "\n"
+                << "The extent of the unrotated mesh will be:\n"
+                << "\n"
+                << "\tx_off <= x <= x_scale * numX + x_off\n"
+                << "\ty_off <= y <= y_scale * numY + y_off\n"
+                << "\tz_off <= z <= z_scale * numZ + z_off\n"
+                << "\n"
+                << "If an unrecognized option is specified, an error message will be\n"
+                << "output and execution will continue.\n"
+                << "\n"
+                << "An example of valid input is:\n"
+                << "\n"
+                << "\t\"10x20x40|scale:1,0.5,0.25|offset:-5,-5,-5|shell:xX\"\n"
+                << "\n"
+                << "\n"
+                << "This would create a mesh with 10 intervals in x, 20 in y, 40 in z\n"
+                << "The mesh would be centered on 0,0,0 with a range of 10 in each\n"
+                << "direction. There would be a shell layer on the min and max\n"
+                << "x faces.\n"
+                << "\n"
+                << "NOTE: All options are processed in the order they appear in\n"
+                << "the parameters string (except rotate which is applied at the\n"
+                << "time the coordinates are generated/retrieved)\n"
+                << "\n";
     }
 
     MeshData::MeshData()
@@ -549,7 +540,7 @@ namespace stk {
     MeshData::~MeshData()
     {
       if (!Teuchos::is_null(m_output_region))
-	stk::io::delete_selector_property(*m_output_region);
+        stk::io::delete_selector_property(*m_output_region);
     }
 
     void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
@@ -565,44 +556,44 @@ namespace stk {
     void MeshData::set_meta_data( Teuchos::RCP<stk::mesh::MetaData> arg_meta_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_meta_data),
-		       "Meta data already initialized" );
+                       "Meta data already initialized" );
       m_meta_data = arg_meta_data;
     }
 
     void MeshData::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_bulk_data),
-		       "Bulk data already initialized" );
+                       "Bulk data already initialized" );
       m_bulk_data = arg_bulk_data;
 
       if (Teuchos::is_null(m_meta_data)) {
-	set_meta_data(const_cast<stk::mesh::MetaData&>(bulk_data().mesh_meta_data()));
+        set_meta_data(const_cast<stk::mesh::MetaData&>(bulk_data().mesh_meta_data()));
       }
     }
 
     void MeshData::create_input_mesh(const std::string &mesh_type,
-				     const std::string &mesh_filename,
-				     stk::ParallelMachine comm)
+                                     const std::string &mesh_filename,
+                                     stk::ParallelMachine comm)
     {
       if (Teuchos::is_null(m_input_region)) {
-	// If in_region is NULL, then open the file;
-	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
-	// should be used.
-	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-							Ioss::READ_MODEL, comm,
-							m_property_manager);
-	if (dbi == NULL || !dbi->ok()) {
-	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
-		     << "' of type '" << mesh_type << "'\n";
-	  Ioss::NameList db_types;
-	  Ioss::IOFactory::describe(&db_types);
-	  std::cerr << "\nSupported database types:\n\t";
-	  for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-	    std::cerr << *IF << "  ";
-	  }
-	  std::cerr << "\n\n";
-	}
-	m_input_region = Teuchos::rcp(new Ioss::Region(dbi, "input_model"));
+        // If in_region is NULL, then open the file;
+        // If in_region is non-NULL, then user has given us a valid Ioss::Region that
+        // should be used.
+        Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
+                                                        Ioss::READ_MODEL, comm,
+                                                        m_property_manager);
+        if (dbi == NULL || !dbi->ok()) {
+          std::cerr  << "ERROR: Could not open database '" << mesh_filename
+                     << "' of type '" << mesh_type << "'\n";
+          Ioss::NameList db_types;
+          Ioss::IOFactory::describe(&db_types);
+          std::cerr << "\nSupported database types:\n\t";
+          for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+            std::cerr << *IF << "  ";
+          }
+          std::cerr << "\n\n";
+        }
+        m_input_region = Teuchos::rcp(new Ioss::Region(dbi, "input_model"));
       }
       create_input_mesh();
     }
@@ -611,11 +602,11 @@ namespace stk {
     void MeshData::create_input_mesh()
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-		       "There is no Input mesh associated with this Mesh Data.");
+                       "There is no Input mesh associated with this Mesh Data.");
 
       // See if meta data is null, if so, create a new one...
       if (Teuchos::is_null(m_meta_data)) {
-	set_meta_data(Teuchos::rcp( new stk::mesh::MetaData()));
+        set_meta_data(Teuchos::rcp( new stk::mesh::MetaData()));
       }
 
       size_t spatial_dimension = m_input_region->get_property("spatial_dimension").get_int();
@@ -632,29 +623,29 @@ namespace stk {
     {
       std::string out_filename = filename;
       if (filename.empty()) {
-	out_filename = "default_output_mesh";
+        out_filename = "default_output_mesh";
       } else {
-	// These filenames may be coming from the generated options which
-	// may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
-	// Strip the name at the first "+:|," character:
-	std::vector<std::string> tokens;
-	stk::util::tokenize(out_filename, "+|:,", tokens);
-	out_filename = tokens[0];
+        // These filenames may be coming from the generated options which
+        // may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
+        // Strip the name at the first "+:|," character:
+        std::vector<std::string> tokens;
+        stk::util::tokenize(out_filename, "+|:,", tokens);
+        out_filename = tokens[0];
       }
 
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
-						      Ioss::WRITE_RESULTS,
-						      bulk_data().parallel(),
-						      m_property_manager);
+                                                      Ioss::WRITE_RESULTS,
+                                                      bulk_data().parallel(),
+                                                      m_property_manager);
       if (dbo == NULL || !dbo->ok()) {
-	std::cerr << "ERROR: Could not open results database '" << out_filename
-		  << "' of type 'exodusII'\n";
-	std::exit(EXIT_FAILURE);
+        std::cerr << "ERROR: Could not open results database '" << out_filename
+                  << "' of type 'exodusII'\n";
+        std::exit(EXIT_FAILURE);
       }
 
       // NOTE: 'out_region' owns 'dbo' pointer at this time...
       if (!Teuchos::is_null(m_output_region))
-	m_output_region = Teuchos::null;
+        m_output_region = Teuchos::null;
       m_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
 
       create_output_mesh();
@@ -663,15 +654,17 @@ namespace stk {
     void MeshData::create_output_mesh()
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-		       "There is no Output database associated with this Mesh Data.");
+                       "There is no Output database associated with this Mesh Data.");
       stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get());
       stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
     }
 
     // ========================================================================
     int MeshData::process_output_request(double time,
-					 const std::set<const stk::mesh::Part*> &exclude)
+                                         const std::set<const stk::mesh::Part*> &exclude)
     {
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
@@ -685,6 +678,8 @@ namespace stk {
     // ========================================================================
     int MeshData::process_output_request(double time)
     {
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
@@ -699,80 +694,85 @@ namespace stk {
     void MeshData::populate_bulk_data()
     {
       if (!meta_data().is_commit())
-	meta_data().commit();
-      
+        meta_data().commit();
+
+      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                       "There is no Input mesh region associated with this Mesh Data.");
+
       Ioss::Region *region = m_input_region.get();
-      if (region) {
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_bulk_data.");
 
-	// Check if bulk_data is null; if so, create a new one...
-	if (Teuchos::is_null(m_bulk_data)) {
-	  set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(meta_data(),
-							      region->get_database()->util().communicator())));
-	}
-
-	bulk_data().modification_begin();
-
-	bool ints64bit = db_api_int_size(region) == 8;
-	if (ints64bit) {
-	  int64_t zero = 0;
-	  process_elementblocks(*region, bulk_data(), zero);
-	  process_nodeblocks(*region,    bulk_data());
-	  process_nodesets(*region,      bulk_data(), zero);
-	  process_sidesets(*region,      bulk_data());
-	} else {
-	  int zero = 0;
-	  process_elementblocks(*region, bulk_data(), zero);
-	  process_nodeblocks(*region,    bulk_data());
-	  process_nodesets(*region,      bulk_data(), zero);
-	  process_sidesets(*region,      bulk_data());
-	}
-
-	bulk_data().modification_end();
-      } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_bulk_data.\n";
-	std::exit(EXIT_FAILURE);
+      // Check if bulk_data is null; if so, create a new one...
+      if (Teuchos::is_null(m_bulk_data)) {
+        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(meta_data(),
+                                                            region->get_database()->util().communicator())));
       }
+
+      bulk_data().modification_begin();
+
+      bool ints64bit = db_api_int_size(region) == 8;
+      if (ints64bit) {
+        int64_t zero = 0;
+        process_elementblocks(*region, bulk_data(), zero);
+        process_nodeblocks(*this);
+        process_nodesets(*region,      bulk_data(), zero);
+        process_sidesets(*region,      bulk_data());
+      } else {
+        int zero = 0;
+        process_elementblocks(*region, bulk_data(), zero);
+        process_nodeblocks(*this);
+        process_nodesets(*region,      bulk_data(), zero);
+        process_sidesets(*region,      bulk_data());
+      }
+
+      bulk_data().modification_end();
     }
 
     void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
     {
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
+
       Ioss::Region *region = m_output_region.get();
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Output Region pointer is NULL in internal_process_output_request.");
       region->begin_state(step);
 
       // Special processing for nodeblock (all nodes in model)...
       put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
-		     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
-		     m_anded_selector.get());
+                     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
+                     m_anded_selector.get());
 
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
       for ( stk::mesh::PartVector::const_iterator
-	      ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+              ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
-	stk::mesh::Part * const part = *ip;
+        stk::mesh::Part * const part = *ip;
 
-	// Check whether this part should be output to results database.
-	if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
-	  stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	  // Get Ioss::GroupingEntity corresponding to this part...
-	  Ioss::GroupingEntity *entity = region->get_entity(part->name());
-	  if (entity != NULL && entity->type() != Ioss::SIDESET) {
-	    put_field_data(bulk_data(), *part, rank, entity,
-			   Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-	  }
+        // Check whether this part should be output to results database.
+        if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
+          stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+          // Get Ioss::GroupingEntity corresponding to this part...
+          Ioss::GroupingEntity *entity = region->get_entity(part->name());
+          if (entity != NULL && entity->type() != Ioss::SIDESET) {
+            put_field_data(bulk_data(), *part, rank, entity,
+                           Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+          }
 
-	  // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-	  // (should probably do edges and faces also...)
-	  // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-	  if (rank != stk::mesh::MetaData::NODE_RANK) {
-	    std::string nodes_name = part->name() + "_nodes";
-	    Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-	    if (node_entity != NULL) {
-	      put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
-			     Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-	    }
-	  }
-	}
+          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+          // (should probably do edges and faces also...)
+          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+          if (rank != stk::mesh::MetaData::NODE_RANK) {
+            std::string nodes_name = part->name() + "_nodes";
+            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+            if (node_entity != NULL) {
+              put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
+                             Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+            }
+          }
+        }
       }
       region->end_state(step);
     }
@@ -784,132 +784,132 @@ namespace stk {
       // field with the same name as the database field.
       // Assumes that mesh is positioned at the correct state for reading.
       void internal_process_input_request(Ioss::GroupingEntity *io_entity,
-					  stk::mesh::EntityRank entity_rank,
-					  stk::mesh::BulkData &bulk)
+                                          stk::mesh::EntityRank entity_rank,
+                                          stk::mesh::BulkData &bulk)
       {
-	assert(io_entity != NULL);
-	std::vector<stk::mesh::Entity> entity_list;
-	stk::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
+        assert(io_entity != NULL);
+        std::vector<stk::mesh::Entity> entity_list;
+        stk::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
 
-	const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
 
-	Ioss::NameList names;
-	io_entity->field_describe(Ioss::Field::TRANSIENT, &names);
-	for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-	  if (field) {
-	    stk::io::field_data_from_ioss(field, entity_list, io_entity, *I);
-	  }
-	}
+        Ioss::NameList names;
+        io_entity->field_describe(Ioss::Field::TRANSIENT, &names);
+        for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
+          if (field) {
+            stk::io::field_data_from_ioss(field, entity_list, io_entity, *I);
+          }
+        }
       }
 
       void input_nodeblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
-	const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-	assert(node_blocks.size() == 1);
+        const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
+        assert(node_blocks.size() == 1);
 
-	Ioss::NodeBlock *nb = node_blocks[0];
-	internal_process_input_request(nb, stk::mesh::MetaData::NODE_RANK, bulk);
+        Ioss::NodeBlock *nb = node_blocks[0];
+        internal_process_input_request(nb, stk::mesh::MetaData::NODE_RANK, bulk);
       }
 
       void input_elementblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
-	const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-	for(size_t i=0; i < elem_blocks.size(); i++) {
-	  if (stk::io::include_entity(elem_blocks[i])) {
-	    internal_process_input_request(elem_blocks[i], stk::mesh::MetaData::ELEMENT_RANK, bulk);
-	  }
-	}
+        const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+        for(size_t i=0; i < elem_blocks.size(); i++) {
+          if (stk::io::include_entity(elem_blocks[i])) {
+            internal_process_input_request(elem_blocks[i], stk::mesh::MetaData::ELEMENT_RANK, bulk);
+          }
+        }
       }
 
       void input_nodeset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
-	const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
-	for(size_t i=0; i < nodesets.size(); i++) {
-	  if (stk::io::include_entity(nodesets[i])) {
-	    internal_process_input_request(nodesets[i], stk::mesh::MetaData::NODE_RANK, bulk);
-	  }
-	}
+        const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
+        for(size_t i=0; i < nodesets.size(); i++) {
+          if (stk::io::include_entity(nodesets[i])) {
+            internal_process_input_request(nodesets[i], stk::mesh::MetaData::NODE_RANK, bulk);
+          }
+        }
       }
 
       void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
-	const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-	if (meta.spatial_dimension() <= meta.side_rank())
-	  return;
+        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+        if (meta.spatial_dimension() <= meta.side_rank())
+          return;
 
-	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
-	    it != side_sets.end(); ++it) {
-	  Ioss::SideSet *entity = *it;
-	  if (stk::io::include_entity(entity)) {
-	    const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-	    for(size_t i=0; i < blocks.size(); i++) {
-	      if (stk::io::include_entity(blocks[i])) {
-		internal_process_input_request(blocks[i], meta.side_rank(), bulk);
-	      }
-	    }
-	  }
-	}
+        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+            it != side_sets.end(); ++it) {
+          Ioss::SideSet *entity = *it;
+          if (stk::io::include_entity(entity)) {
+            const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
+            for(size_t i=0; i < blocks.size(); i++) {
+              if (stk::io::include_entity(blocks[i])) {
+                internal_process_input_request(blocks[i], meta.side_rank(), bulk);
+              }
+            }
+          }
+        }
       }
 
       void define_input_nodeblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-	const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-	assert(node_blocks.size() == 1);
+        const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
+        assert(node_blocks.size() == 1);
 
-	Ioss::NodeBlock *nb = node_blocks[0];
-	stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
-				  meta.universal_part(), stk::mesh::MetaData::NODE_RANK);
+        Ioss::NodeBlock *nb = node_blocks[0];
+        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
+                                  meta.universal_part(), stk::mesh::MetaData::NODE_RANK);
       }
 
       void define_input_elementblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-	const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-	for(size_t i=0; i < elem_blocks.size(); i++) {
-	  if (stk::io::include_entity(elem_blocks[i])) {
-	    stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
-	    assert(part != NULL);
-	    stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
-				      *part, part_primary_entity_rank(*part));
-	  }
-	}
+        const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+        for(size_t i=0; i < elem_blocks.size(); i++) {
+          if (stk::io::include_entity(elem_blocks[i])) {
+            stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
+            assert(part != NULL);
+            stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
+                                      *part, part_primary_entity_rank(*part));
+          }
+        }
       }
 
       void define_input_nodeset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-	const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
-	for(size_t i=0; i < nodesets.size(); i++) {
-	  if (stk::io::include_entity(nodesets[i])) {
-	    stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
-	    assert(part != NULL);
-	    stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
-				      *part, part_primary_entity_rank(*part));
-	  }
-	}
+        const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
+        for(size_t i=0; i < nodesets.size(); i++) {
+          if (stk::io::include_entity(nodesets[i])) {
+            stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
+            assert(part != NULL);
+            stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
+                                      *part, part_primary_entity_rank(*part));
+          }
+        }
       }
 
       void define_input_sideset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-	if (meta.spatial_dimension() <= meta.side_rank())
-	  return;
+        if (meta.spatial_dimension() <= meta.side_rank())
+          return;
 
-	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
-	    it != side_sets.end(); ++it) {
-	  Ioss::SideSet *entity = *it;
-	  if (stk::io::include_entity(entity)) {
-	    const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-	    for(size_t i=0; i < blocks.size(); i++) {
-	      if (stk::io::include_entity(blocks[i])) {
-		stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
-		assert(part != NULL);
-		stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
-					  *part, part_primary_entity_rank(*part));
-	      }
-	    }
-	  }
-	}
+        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+            it != side_sets.end(); ++it) {
+          Ioss::SideSet *entity = *it;
+          if (stk::io::include_entity(entity)) {
+            const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
+            for(size_t i=0; i < blocks.size(); i++) {
+              if (stk::io::include_entity(blocks[i])) {
+                stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
+                assert(part != NULL);
+                stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
+                                          *part, part_primary_entity_rank(*part));
+              }
+            }
+          }
+        }
       }
 
     }
@@ -930,13 +930,13 @@ namespace stk {
     {
       Ioss::Region *region = m_input_region.get();
       if (region) {
-	define_input_nodeblock_fields(*region, meta_data());
-	define_input_elementblock_fields(*region, meta_data());
-	define_input_nodeset_fields(*region, meta_data());
-	define_input_sideset_fields(*region, meta_data());
+        define_input_nodeblock_fields(*region, meta_data());
+        define_input_elementblock_fields(*region, meta_data());
+        define_input_nodeset_fields(*region, meta_data());
+        define_input_sideset_fields(*region, meta_data());
       } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
-	std::exit(EXIT_FAILURE);
+        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
+        std::exit(EXIT_FAILURE);
       }
     }
 
@@ -953,45 +953,45 @@ namespace stk {
     {
       Ioss::Region *region = m_output_region.get();
       if (region) {
-	region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
-	// Special processing for nodeblock (all nodes in model)...
-	stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
-				 region->get_node_blocks()[0],
-				 Ioss::Field::TRANSIENT, add_all_fields);
+        // Special processing for nodeblock (all nodes in model)...
+        stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
+                                 region->get_node_blocks()[0],
+                                 Ioss::Field::TRANSIENT, add_all_fields);
 
-	const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
-	for ( stk::mesh::PartVector::const_iterator
-		ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+        const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
+        for ( stk::mesh::PartVector::const_iterator
+                ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
-	  stk::mesh::Part * const part = *ip;
+          stk::mesh::Part * const part = *ip;
 
-	  // Check whether this part should be output to results database.
-	  if (stk::io::is_part_io_part(*part)) {
-	    stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	    // Get Ioss::GroupingEntity corresponding to this part...
-	    Ioss::GroupingEntity *entity = region->get_entity(part->name());
-	    if (entity != NULL) {
-	      stk::io::ioss_add_fields(*part, rank, entity, Ioss::Field::TRANSIENT, add_all_fields);
-	    }
+          // Check whether this part should be output to results database.
+          if (stk::io::is_part_io_part(*part)) {
+            stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+            // Get Ioss::GroupingEntity corresponding to this part...
+            Ioss::GroupingEntity *entity = region->get_entity(part->name());
+            if (entity != NULL) {
+              stk::io::ioss_add_fields(*part, rank, entity, Ioss::Field::TRANSIENT, add_all_fields);
+            }
 
-	    // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-	    // (should probably do edges and faces also...)
-	    // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-	    if (rank != stk::mesh::MetaData::NODE_RANK) {
-	      std::string nodes_name = part->name() + "_nodes";
-	      Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-	      if (node_entity != NULL) {
-		stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK,
-					 node_entity, Ioss::Field::TRANSIENT, add_all_fields);
-	      }
-	    }
-	  }
-	}
-	region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+            // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+            // (should probably do edges and faces also...)
+            // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+            if (rank != stk::mesh::MetaData::NODE_RANK) {
+              std::string nodes_name = part->name() + "_nodes";
+              Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+              if (node_entity != NULL) {
+                stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK,
+                                         node_entity, Ioss::Field::TRANSIENT, add_all_fields);
+              }
+            }
+          }
+        }
+        region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
       } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
-	std::exit(EXIT_FAILURE);
+        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
+        std::exit(EXIT_FAILURE);
       }
     }
     // ========================================================================
@@ -1003,14 +1003,14 @@ namespace stk {
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
-	double state_time = region->get_state_time(istep+1);
-	double delta = state_time - time;
-	if (delta < 0.0) delta = -delta;
-	if (delta < delta_min) {
-	  delta_min = delta;
-	  step_min  = istep;
-	  if (delta == 0.0) break;
-	}
+        double state_time = region->get_state_time(istep+1);
+        double delta = state_time - time;
+        if (delta < 0.0) delta = -delta;
+        if (delta < delta_min) {
+          delta_min = delta;
+          step_min  = istep;
+          if (delta == 0.0) break;
+        }
       }
       // Exodus steps are 1-based;
       process_input_request(step_min+1);
@@ -1019,45 +1019,28 @@ namespace stk {
     void MeshData::process_input_request(int step)
     {
       if (step <= 0)
-	return;
+        return;
 
       Ioss::Region *region = m_input_region.get();
       if (region) {
-	bulk_data().modification_begin();
+        bulk_data().modification_begin();
 
-	// Pick which time index to read into solution field.
-	region->begin_state(step);
+        // Pick which time index to read into solution field.
+        region->begin_state(step);
 
-	input_nodeblock_fields(*region, bulk_data());
-	input_elementblock_fields(*region, bulk_data());
-	input_nodeset_fields(*region, bulk_data());
-	input_sideset_fields(*region, bulk_data());
+        input_nodeblock_fields(*region, bulk_data());
+        input_elementblock_fields(*region, bulk_data());
+        input_nodeset_fields(*region, bulk_data());
+        input_sideset_fields(*region, bulk_data());
 
-	region->end_state(step);
+        region->end_state(step);
 
-	bulk_data().modification_end();
+        bulk_data().modification_end();
 
       } else {
-	std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
-	std::exit(EXIT_FAILURE);
+        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
+        std::exit(EXIT_FAILURE);
       }
     }
-
-    // ========================================================================
-    template <typename INT>
-    void get_element_block_sizes(MeshData &mesh_data,
-				 std::vector<INT>& el_blocks)
-    {
-      Ioss::Region *io = mesh_data.input_io_region().get();
-      const Ioss::ElementBlockContainer& elem_blocks = io->get_element_blocks();
-      for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin(); it != elem_blocks.end(); ++it) {
-	Ioss::ElementBlock *entity = *it;
-	if (stk::io::include_entity(entity)) {
-	  el_blocks.push_back(entity->get_property("entity_count").get_int());
-	}
-      }
-    }
-    template void get_element_block_sizes(MeshData &mesh_data, std::vector<int>& el_blocks);
-    template void get_element_block_sizes(MeshData &mesh_data, std::vector<int64_t>& el_blocks);
   } // namespace io
 } // namespace stk

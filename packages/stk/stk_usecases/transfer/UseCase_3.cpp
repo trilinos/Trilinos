@@ -50,7 +50,6 @@ using namespace use_case;
 static const size_t spatial_dimension = 3;
 
 typedef stk::mesh::Field<double>                        ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField ;
 
 void
 use_case_3_driver(stk::ParallelMachine  comm,
@@ -119,7 +118,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
 
-  VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
+  stk::io::CoordinateFieldType *range_coord_field = &range_mesh_data.get_coordinate_field();
   std::vector<PointBoundingBox3D> range_vector;
 
   {
@@ -134,7 +133,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
                                           use_universal_set);
   }
 
-  VectorField *domain_coord_field = domain_meta_data.get_field<VectorField>("coordinates");
+  stk::io::CoordinateFieldType *domain_coord_field = &domain_mesh_data.get_coordinate_field();
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
 
   {
