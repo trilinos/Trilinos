@@ -1069,6 +1069,12 @@ int main(int argc, char *argv[]) {
  // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
+  
+  MLList.set("x-coordinates",nodeCoordx);
+  MLList.set("y-coordinates",nodeCoordy);
+  MLList.set("z-coordinates",nodeCoordz);
+
+
   Epetra_FEVector exactNodalVals(globalMapG);
   Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
