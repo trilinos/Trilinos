@@ -31,4 +31,14 @@ IF (Stokhos_ENABLE_KokkosArray)
     COMM serial mpi
     DEPLIBS ${DEPLIBS}
     )
+
+  TRIBITS_ADD_EXECUTABLE(
+    SPMVHostScaling
+    SOURCES TestStochastic.hpp
+            HostScaling.cpp
+            ${KOKKOS_ARRAY_UQ}/impl/KokkosArray_LegendrePolynomial.cpp
+            ${KOKKOS_ARRAY_UQ}/impl/KokkosArray_ProductTensorLegendre.cpp
+    COMM serial mpi
+    DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost
+    )
 ENDIF()
