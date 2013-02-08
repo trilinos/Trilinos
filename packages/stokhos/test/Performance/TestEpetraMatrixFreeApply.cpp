@@ -37,6 +37,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 template< typename IntType >
 inline
@@ -285,31 +286,38 @@ void performance_test_driver_epetra( const int pdeg ,
 
 int main(int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  Teuchos::RCP< Teuchos::FancyOStream > out = 
-    Teuchos::VerboseObjectBase::getDefaultOStream();
+  bool success = true;
 
-  // Setup command line options
-  Teuchos::CommandLineProcessor CLP;
-  int p = 3;
-  CLP.setOption("p", &p, "Polynomial order");
-  int d_min = 1;
-  CLP.setOption("dmin", &d_min, "Starting stochastic dimension");
-  int d_max = 12;
-  CLP.setOption("dmax", &d_max, "Ending stochastic dimension");
-  int nGrid = 64;
-  CLP.setOption("n", &nGrid, "Number of spatial grid points in each dimension");
-  int nIter = 1;
-  CLP.setOption("niter", &nIter, "Number of iterations");
-  bool test_block = true;
-  CLP.setOption("block", "no-block", &test_block, "Use block algorithm");
-  CLP.parse( argc, argv );
-
-  bool print = false ;
-  bool check = false;
-  performance_test_driver_epetra( 
-    p , d_min , d_max , nGrid , nIter , print , test_block , check , *out );
-  
-  return 0 ;
+  try {
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+    Teuchos::RCP< Teuchos::FancyOStream > out = 
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+    
+    // Setup command line options
+    Teuchos::CommandLineProcessor CLP;
+    int p = 3;
+    CLP.setOption("p", &p, "Polynomial order");
+    int d_min = 1;
+    CLP.setOption("dmin", &d_min, "Starting stochastic dimension");
+    int d_max = 12;
+    CLP.setOption("dmax", &d_max, "Ending stochastic dimension");
+    int nGrid = 64;
+    CLP.setOption("n", &nGrid, "Number of spatial grid points in each dimension");
+    int nIter = 1;
+    CLP.setOption("niter", &nIter, "Number of iterations");
+    bool test_block = true;
+    CLP.setOption("block", "no-block", &test_block, "Use block algorithm");
+    CLP.parse( argc, argv );
+    
+    bool print = false ;
+    bool check = false;
+    performance_test_driver_epetra( 
+      p , d_min , d_max , nGrid , nIter , print , test_block , check , *out );
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+    
+  if (!success)
+    return -1;
+  return 0;
 }
 
