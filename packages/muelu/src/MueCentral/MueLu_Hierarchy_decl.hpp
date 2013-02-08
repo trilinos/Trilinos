@@ -238,14 +238,15 @@ namespace MueLu {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    /*! @brief Print the Hierarchy with some verbosity level to an FancyOStream object.
+    /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
     
         @param[in] out The Teuchos::FancyOstream.
         @param[in] verbLevel Controls amount of output.
     */
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    Teuchos::ParameterList print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
+    Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
+                                 const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 

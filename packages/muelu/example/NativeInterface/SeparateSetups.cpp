@@ -169,16 +169,12 @@ int main(int argc, char *argv[]) {
   H.Keep("Ptent", TentativePFact.get());  //SaPFact is the generating factory for P.
 
   H.Setup(M,startLevel,maxLevels);
-  Teuchos::ParameterList status = H.Summarize(MueLu::None);
-  int numLevels = status.get("number of levels",-1);
 
   std::cout << std::endl << std::endl;
-
   std::cout << "=========================================\n"
             << "Status of the preconditioner between runs\n"
             << "=========================================" << std::endl;
-  std::cout << "# levels = " << numLevels << std::endl;
-  H.print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
+  H.print();
 
   std::cout << "=============== Setup smoothers only ====================" << std::endl;
 
@@ -212,7 +208,7 @@ int main(int argc, char *argv[]) {
   LO nIts = 9;
   H.Iterate(*B, nIts, *X);
 
-  status = H.Summarize(MueLu::High);
+  H.print();
 
 
   //
