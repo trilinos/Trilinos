@@ -2383,8 +2383,8 @@ namespace Tpetra {
       vl = VERB_LOW;
     }
     RCP<const Comm<int> > comm = this->getComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
+    const int myRank = comm->getRank();
+    const int numProcs = comm->getSize();
     size_t width = 1;
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
@@ -2393,74 +2393,96 @@ namespace Tpetra {
     Teuchos::OSTab tab(out);
     //    none: print nothing
     //     low: print O(1) info from node 0
-    //  medium: print O(P) info, num entries per node
+    //  medium: print O(P) info, num entries per process
     //    high: print O(N) info, num entries per row
     // extreme: print O(NNZ) info: print indices and values
     //
     // for medium and higher, print constituent objects at specified verbLevel
     if (vl != VERB_NONE) {
-      if (myImageID == 0) out << this->description() << std::endl;
+      if (myRank == 0) {
+	out << this->description() << std::endl;
+      }
       // O(1) globals, minus what was already printed by description()
-      if (isFillComplete() && myImageID == 0) {
-        out << "Global number of diagonals = " << getGlobalNumDiags() << std::endl;
-        out << "Global max number of row entries = " << getGlobalMaxNumRowEntries() << std::endl;
+      if (isFillComplete() && myRank == 0) {
+        out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
+        out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
       }
       // constituent objects
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        if (myImageID == 0) out << "\nRow map: " << std::endl;
+        if (myRank == 0) {
+	  out << endl << "Row map:" << endl;
+	}
         getRowMap()->describe(out,vl);
         //
         if (getColMap() != null) {
           if (getColMap() == getRowMap()) {
-            if (myImageID == 0) out << "\nColumn map is row map.";
+            if (myRank == 0) {
+	      out << endl << "Column map is row map.";
+	    }
           }
           else {
-            if (myImageID == 0) out << "\nColumn map: " << std::endl;
+            if (myRank == 0) {
+	      out << endl << "Column map:" << endl;
+	    }
             getColMap()->describe(out,vl);
           }
         }
         if (getDomainMap() != null) {
           if (getDomainMap() == getRowMap()) {
-            if (myImageID == 0) out << "\nDomain map is row map.";
+            if (myRank == 0) {
+	      out << endl << "Domain map is row map.";
+	    }
           }
           else if (getDomainMap() == getColMap()) {
-            if (myImageID == 0) out << "\nDomain map is col map.";
+            if (myRank == 0) {
+	      out << endl << "Domain map is column map.";
+	    }
           }
           else {
-            if (myImageID == 0) out << "\nDomain map: " << std::endl;
+            if (myRank == 0) {
+	      out << endl << "Domain map:" << endl;
+	    }
             getDomainMap()->describe(out,vl);
           }
         }
         if (getRangeMap() != null) {
           if (getRangeMap() == getDomainMap()) {
-            if (myImageID == 0) out << "\nRange map is domain map." << std::endl;
+            if (myRank == 0) {
+	      out << endl << "Range map is domain map." << endl;
+	    }
           }
           else if (getRangeMap() == getRowMap()) {
-            if (myImageID == 0) out << "\nRange map is row map." << std::endl;
+            if (myRank == 0) {
+	      out << endl << "Range map is row map." << endl;
+	    }
           }
           else {
-            if (myImageID == 0) out << "\nRange map: " << std::endl;
+            if (myRank == 0) {
+	      out << endl << "Range map: " << endl;
+	    }
             getRangeMap()->describe(out,vl);
           }
         }
-        if (myImageID == 0) out << std::endl;
+        if (myRank == 0) {
+	  out << endl;
+	}
       }
       // O(P) data
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-          if (myImageID == imageCtr) {
-            out << "Node ID = " << imageCtr << std::endl;
+        for (int curRank = 0; curRank < numProcs; ++curRank) {
+          if (myRank == curRank) {
+            out << "Process rank: " << curRank << std::endl;
             if (staticGraph_->indicesAreAllocated() == false) {
-              out << "Node not allocated" << std::endl;
+              out << "  Graph indices not allocated" << std::endl;
             }
             else {
-              out << "Node number of allocated entries = " << staticGraph_->getNodeAllocationSize() << std::endl;
+              out << "  Number of allocated entries: " << staticGraph_->getNodeAllocationSize() << std::endl;
             }
-            out << "Node number of entries = " << getNodeNumEntries() << std::endl;
+            out << "  Number of entries: " << getNodeNumEntries() << std::endl;
             if (isFillComplete()) {
-              out << "Node number of diagonals = " << getNodeNumDiags() << std::endl;
+              out << "  Number of diagonal entries: " << getNodeNumDiags() << std::endl;
             }
-            out << "Node max number of entries = " << getNodeMaxNumRowEntries() << std::endl;
+            out << "  Max number of entries per row: " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();
           comm->barrier();
@@ -2469,27 +2491,27 @@ namespace Tpetra {
       }
       // O(N) and O(NNZ) data
       if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-          if (myImageID == imageCtr) {
-            out << std::setw(width) << "Node ID"
+        for (int curRank = 0; curRank < numProcs; ++curRank) {
+          if (myRank == curRank) {
+            out << std::setw(width) << "Proc Rank"
                 << std::setw(width) << "Global Row"
                 << std::setw(width) << "Num Entries";
             if (vl == VERB_EXTREME) {
               out << std::setw(width) << "(Index,Value)";
             }
-            out << std::endl;
-            for (size_t r=0; r < getNodeNumRows(); ++r) {
+            out << endl;
+            for (size_t r = 0; r < getNodeNumRows (); ++r) {
               const size_t nE = getNumEntriesInLocalRow(r);
               GlobalOrdinal gid = getRowMap()->getGlobalElement(r);
-              out << std::setw(width) << myImageID
+              out << std::setw(width) << myRank
                   << std::setw(width) << gid
                   << std::setw(width) << nE;
               if (vl == VERB_EXTREME) {
                 if (isGloballyIndexed()) {
                   ArrayView<const GlobalOrdinal> rowinds;
                   ArrayView<const Scalar> rowvals;
-                  getGlobalRowView(gid,rowinds,rowvals);
-                  for (size_t j=0; j < nE; ++j) {
+                  getGlobalRowView (gid, rowinds, rowvals);
+                  for (size_t j = 0; j < nE; ++j) {
                     out << " (" << rowinds[j]
                         << ", " << rowvals[j]
                         << ") ";
@@ -2498,17 +2520,23 @@ namespace Tpetra {
                 else if (isLocallyIndexed()) {
                   ArrayView<const LocalOrdinal> rowinds;
                   ArrayView<const Scalar> rowvals;
-                  getLocalRowView(r,rowinds,rowvals);
+                  getLocalRowView (r, rowinds, rowvals);
                   for (size_t j=0; j < nE; ++j) {
                     out << " (" << getColMap()->getGlobalElement(rowinds[j])
                         << ", " << rowvals[j]
                         << ") ";
                   }
-                }
-              }
-              out << std::endl;
-            }
-          }
+                } // globally or locally indexed
+              } // vl == VERB_EXTREME
+              out << endl;
+            } // for each row r on this process
+
+	    // Print the optimized sparse kernels object, if applicable.
+	    // That has O(NNZ) data.
+	    if (vl == VERB_EXTREME && ! lclMatOps_.is_null ()) {
+	      lclMatOps_->describe (out, vl);
+	    }
+          } // if (myRank == curRank)
           comm->barrier();
           comm->barrier();
           comm->barrier();

@@ -50,60 +50,108 @@
 
 /*! \file Tpetra_CrsMatrixSolveOp_decl.hpp 
 
-    The declarations for the class Tpetra::CrsMatrixSolveOp and related non-member constructors.
+    Declaration of the class Tpetra::CrsMatrixSolveOp and related non-member constructors.
  */
 
 namespace Tpetra {
 
-  //! \brief A class for wrapping a Tpetra::CrsMatrix solve in a Tpetra::Operator.
-  template <class Scalar, class MatScalar = Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps >
+  /// \class CrsMatrixSolveOp
+  /// \brief Wrap a CrsMatrix instance's triangular solve in an Operator.
+  ///
+  /// \tparam Scalar Same as the first template parameter of Operator.
+  ///   The type of the entries of the MultiVector input and output of
+  ///   apply().  Not necessarily the same as the first template
+  ///   parameter of the CrsMatrix used to create this object.
+  /// \tparam MatScalar Same as the first template parameter of
+  ///   CrsMatrix.  The type of the entries of the sparse matrix.  Not
+  ///   necessarily the same as the type of the entries of the
+  ///   MultiVector input and output of apply().
+  /// \tparam LocalOrdinal Same as the second template parameter of
+  ///   CrsMatrix and Operator.
+  /// \tparam GlobalOrdinal Same as the third template parameter of
+  ///   CrsMatrix and Operator.
+  /// \tparam Node Same as the fourth template parameter of CrsMatrix
+  ///   and Operator.
+  /// \tparam LocalMatOps Same as the fifth template parameter of
+  ///   CrsMatrix.
+  ///
+  /// This class' apply() method does a "local" triangular solve.
+  /// "Local" is in quotes because apply() does the same communication
+  /// (Import and Export) operations that CrsMatrix's apply() method
+  /// would do for a sparse matrix-vector multiply, but the triangular
+  /// solve is restricted to each process' part of the data.  Thus, it
+  /// is not a triangular solve of a fully distributed triangular
+  /// matrix.
+  ///
+  /// Here are some situations where this operation is useful:
+  /// - Your sparse matrix A only lives in one MPI process, and you
+  ///   have a factorization of it (either complete or incomplete).
+  /// - Domain decomposition, where each MPI process owns one subdomain
+  /// - Coarse-grid solves in algebraic multigrid
+  /// - Mixed-precision operations, where the type <tt>MatScalar</tt>
+  ///   of entries in the matrix differs from the type <tt>Scalar</tt>
+  ///   of entries in the MultiVector input and output of apply().
+  template <class Scalar, 
+	    class MatScalar = Scalar, 
+	    class LocalOrdinal = int, 
+	    class GlobalOrdinal = LocalOrdinal, 
+	    class Node = Kokkos::DefaultNode::DefaultNodeType, 
+	    class LocalMatOps = typename Kokkos::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps>
   class CrsMatrixSolveOp : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-    public:
-      //! @name Constructor/Destructor Methods
-      //@{ 
+  public:
+    //! @name Constructor and destructor
+    //@{ 
 
-      //! Constructor
-      CrsMatrixSolveOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
+    //! Constructor; takes a CrsMatrix to use for local triangular solves.
+    CrsMatrixSolveOp (const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
 
-      //! Destructor
-      virtual ~CrsMatrixSolveOp();
+    //! Destructor
+    virtual ~CrsMatrixSolveOp();
 
-      //@}
+    //@}
+    //! @name Implementation of Operator
+    //@{ 
 
-      //! @name Methods implementing Operator
-      //@{ 
+    /// \brief Compute \f$Y = \beta Y + \alpha B X\f$, where \f$B X\f$
+    ///   represents the result of the local triangular solve.
+    void
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, 
+	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+	   Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+	   Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), 
+	   Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
-      //! Computes this matrix-vector multilication y = A x.
-      //! This calls solve() on the underlying CrsMatrix object.
-      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+    //! Whether apply() can solve with the (conjugate) transpose of the matrix.
+    bool hasTransposeApply() const;
 
-      //! Indicates whether this operator supports inverting the adjoint operator.
-      //! This is true.
-      bool hasTransposeApply() const;
+    /// The domain Map of this operator.
+    /// This is the range map of the underlying CrsMatrix.
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-      //! \brief Returns the Map associated with the domain of this operator.
-      //! This is the range map of the underlying CrsMatrix.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    /// The range Map of this operator.
+    /// This is the domain Map of the underlying CrsMatrix.
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
-      //! Returns the Map associated with the domain of this operator.
-      //! This is the domain map of the underlying CrsMatrix.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    //@}
+  protected:
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-      //@}
-    
-    protected:
-      typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    //! The underlying CrsMatrix.
+    const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > matrix_;
 
-      // underlying CrsMatrix
-      const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > matrix_;
+    //! Cached temporary destination of Import operation in apply().
+    mutable Teuchos::RCP<MV> importMV_;
+    //! Cached temporary source of Export operation in apply().
+    mutable Teuchos::RCP<MV> exportMV_;
 
-      // multivectors used for import/export dest/source in apply()
-      mutable Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importMV_, exportMV_;
-
-      // private methods for transpose or non-transpose
-      void applyNonTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y) const;
-      void applyTranspose(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y) const;
+    //! Do the non-transpose solve.
+    void 
+    applyNonTranspose (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, 
+		       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y) const;
+    //! Do the transpose solve.
+    void 
+    applyTranspose (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, 
+		    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y) const;
   };
 
   /*! \brief Non-member function to create CrsMatrixSolveOp

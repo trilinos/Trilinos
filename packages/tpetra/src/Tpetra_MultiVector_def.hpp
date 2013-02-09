@@ -2336,12 +2336,17 @@ namespace Tpetra {
   std::string
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
   {
+    using std::endl;
     std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    oss << "{length = "<<getGlobalLength()
-        << ", getNumVectors = "<<getNumVectors()
-        << ", isConstantStride() = "<<isConstantStride()
-        << "}";
+    oss << Teuchos::typeName (*this) << " {" << endl
+	<< "  label: \"" << this->getObjectLabel () << "\"" << endl
+	<< "  numRows: " << getGlobalLength () << endl
+	<< "  numCols: " << getNumVectors () << endl
+        << "  isConstantStride: " << isConstantStride () << endl;
+    if (isConstantStride ()) {
+      oss << "  columnStride: " << getStride () << endl;
+    }
+    oss << "}" << endl;
     return oss.str();
   }
 

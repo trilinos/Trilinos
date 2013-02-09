@@ -869,23 +869,27 @@ namespace Kokkos {
   AltCrsMatrix<Scalar,Ordinal,Node>::
   setValues (const Teuchos::ArrayRCP<const Scalar> &val)
   {
-    std::string tfecfFuncName("setValues(val)");
+    const std::string tfecfFuncName("setValues(val)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isInitialized_, std::runtime_error, ": The matrix is already initialized."
-    );
+      isInitialized_, 
+      std::runtime_error, 
+      ": The matrix is already initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! graph_.is_null() && ! graph_->isInitialized (),
+      std::runtime_error,
+      ": The matrix has a non-null graph which is not initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       graph_.is_null() && ! val.is_null(),
       std::runtime_error,
       ": The matrix has a null graph, but you're trying to give it a nonnull "
-      "array of values."
-    );
+      "array of values.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! graph_.is_null () && graph_->getIndices ().size () > 0 && val.is_null (),
+      std::runtime_error,
+      ": The matrix has a non-null graph with at least one column index, "
+      "but the input array of values is null.");
     val_ = val;
-    if (val_.is_null ()) {
-      isInitialized_ = false;
-    }
-    else {
-      isInitialized_ = true;
-    }
+    isInitialized_ = true;
   }
 
   /// \class AltSparseOps
@@ -1552,6 +1556,7 @@ namespace Kokkos {
                           AltCrsMatrix<Scalar,Ordinal,Node>& matrix,
                           const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    graph.setMatDesc (uplo, diag);
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
       "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
@@ -1562,7 +1567,7 @@ namespace Kokkos {
       "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
-    graph.setMatDesc (uplo, diag);
+
   }
 
 
@@ -1722,6 +1727,11 @@ namespace Kokkos {
 
     // Verify the input data before setting internal state.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ptr.is_null (),
+      std::invalid_argument,
+      ": The graph's ptr array is null.  "
+      "A graph with no rows or entries must have a length-1 ptr array.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       (size_t) ptr.size() != (size_t) numRows + 1,
       std::invalid_argument,
       ": ptr.size() = " << ptr.size() << " != numRows+1 = " << (numRows + 1) << ".");
@@ -1741,16 +1751,34 @@ namespace Kokkos {
     numCols_ = numCols;
     hasEmptyRows_ = opgraph->hasEmptyRows ();
 
-    if (opgraph->isEmpty () || numRows_ == 0) {
+    if (opgraph->isEmpty ()) {
       isEmpty_ = true;
-      // We have to go through a little trouble because ptr_ is an
-      // array of const size_t, but we need to set its first entry
-      // here.
-      ArrayRCP<size_t> myPtr = arcp<size_t> (1);
-      myPtr[0] = 0;
-      ptr_ = arcp_const_cast<const size_t> (myPtr);
-      myPtr = null;
 
+      if (numRows_ == 0) {
+	// We have to go through a little trouble because ptr_ is an
+	// array of const size_t, but we need to set its first entry
+	// here.
+	ArrayRCP<size_t> myPtr = arcp<size_t> (1);
+	myPtr[0] = 0;
+	ptr_ = arcp_const_cast<const size_t> (myPtr);
+      }
+      else { // Verify that ptr_ contains only zeros.
+	bool allZeros = true;
+	size_t firstBadIndex = 0;
+	for (size_t i = 0; i < numRows_+1; ++i) {
+	  if (ptr[i] != 0) {
+	    allZeros = false;
+	    firstBadIndex = i;
+	    break;
+	  }
+	}
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          ! allZeros,
+	  std::runtime_error,
+	  ": The matrix supposedly contains no entries, "
+	  "but ptr[" << firstBadIndex << "] is nonzero, perhaps among other entries.");
+	ptr_ = ptr;
+      }
       // The matrix is empty, so ind_ and val_ have zero entries.
       ind_ = null;
       val_ = null;
@@ -1954,6 +1982,7 @@ namespace Kokkos {
          const MultiVector<DomainScalar, Node>& Y,
          MultiVector<RangeScalar, Node>& X) const
   {
+    using Teuchos::as;
     std::string tfecfFuncName("solve(trans,Y,X)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isInitialized_,
@@ -1966,20 +1995,33 @@ namespace Kokkos {
       ": Input and output multivectors have different numbers of vectors (columns)."
     );
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (X.getNumRows()) != static_cast<size_t> (numRows_),
+      trans == Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
       ": Dimensions of the matrix and the output multivector X do not match.  "
       "X.getNumRows() == " << X.getNumRows() << ", but the matrix has "
       << numRows_ << " rows."
     );
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (Y.getNumRows()) != static_cast<size_t> (numCols_),
+      trans != Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numCols_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "X.getNumRows() == " << X.getNumRows() << ", but the transposed matrix has "
+      << numCols_ << " rows."
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      trans == Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
       ": Dimensions of the matrix and the input multivector Y do not match.  "
       "Y.getNumRows() == " << Y.getNumRows() << ", but the matrix has "
       << numCols_ << " columns."
     );
-
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      trans != Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numRows_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Y.getNumRows() == " << Y.getNumRows() << ", but the transposed matrix has "
+      << numRows_ << " columns."
+    );
     if (numRows_ == Teuchos::OrdinalTraits<Ordinal>::zero () ||
         numCols_ == Teuchos::OrdinalTraits<Ordinal>::zero ()) {
       return; // Nothing to do
@@ -2050,29 +2092,12 @@ namespace Kokkos {
       }
       else if (trans == Teuchos::TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
+	  // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiag;
+            using Kokkos::Raw::upperTriSolveCscColMajorUnitDiag;
             // numRows resp. numCols come from the number of rows in Y
             // resp. X, so they still appear in the same order as
             // in the not transposed cases above.
-            lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
-                                                                 numVecs,
-                                                                 X_raw, X_stride,
-                                                                 ptr, ind, val,
-                                                                 Y_raw, Y_stride);
-          }
-          else {
-            using Kokkos::Raw::lowerTriSolveCscColMajor;
-            lowerTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
-                                                         numVecs,
-                                                         X_raw, X_stride,
-                                                         ptr, ind, val,
-                                                         Y_raw, Y_stride);
-          }
-        }
-        else { // upper triangular
-          if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::upperTriSolveCscColMajorUnitDiag;
             upperTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
@@ -2088,27 +2113,29 @@ namespace Kokkos {
                                                          Y_raw, Y_stride);
           }
         }
+        else { // upper triangular
+	  // Transposed upper triangular solves are lower triangular solves.
+          if (unit_diag_ == Teuchos::UNIT_DIAG) {
+            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiag;
+            lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
+                                                                 numVecs,
+                                                                 X_raw, X_stride,
+                                                                 ptr, ind, val,
+                                                                 Y_raw, Y_stride);
+          }
+          else {
+            using Kokkos::Raw::lowerTriSolveCscColMajor;
+            lowerTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
+                                                         numVecs,
+                                                         X_raw, X_stride,
+                                                         ptr, ind, val,
+                                                         Y_raw, Y_stride);
+          }
+        }
       }
       else if (trans == Teuchos::CONJ_TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
-          if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiagConj;
-            lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
-                                                                     numVecs,
-                                                                     X_raw, X_stride,
-                                                                     ptr, ind, val,
-                                                                     Y_raw, Y_stride);
-          }
-          else {
-            using Kokkos::Raw::lowerTriSolveCscColMajorConj;
-            lowerTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
-                                                             numVecs,
-                                                             X_raw, X_stride,
-                                                             ptr, ind, val,
-                                                             Y_raw, Y_stride);
-          }
-        }
-        else { // upper triangular
+	  // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCscColMajorUnitDiagConj;
             upperTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
@@ -2120,6 +2147,25 @@ namespace Kokkos {
           else {
             using Kokkos::Raw::upperTriSolveCscColMajorConj;
             upperTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
+                                                             numVecs,
+                                                             X_raw, X_stride,
+                                                             ptr, ind, val,
+                                                             Y_raw, Y_stride);
+          }
+        }
+        else { // upper triangular
+	  // Transposed upper triangular solves are lower triangular solves.
+          if (unit_diag_ == Teuchos::UNIT_DIAG) {
+            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiagConj;
+            lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
+                                                                     numVecs,
+                                                                     X_raw, X_stride,
+                                                                     ptr, ind, val,
+                                                                     Y_raw, Y_stride);
+          }
+          else {
+            using Kokkos::Raw::lowerTriSolveCscColMajorConj;
+            lowerTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
                                                              numVecs,
                                                              X_raw, X_stride,
                                                              ptr, ind, val,
@@ -2168,17 +2214,29 @@ namespace Kokkos {
       std::runtime_error,
       ": X and Y do not have the same number of columns.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      X.getNumRows() != Teuchos::as<size_t> (numCols_),
+      trans == Teuchos::NO_TRANS && X.getNumRows() != Teuchos::as<size_t> (numCols_),
       std::runtime_error,
       ": Dimensions of the matrix and the input multivector X do not match.  "
       "X has " << X.getNumRows () << " rows, but the matrix has " << numCols_
       << " columns.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      Y.getNumRows() != Teuchos::as<size_t> (numRows_),
+      trans != Teuchos::NO_TRANS && X.getNumRows() != Teuchos::as<size_t> (numRows_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the input multivector X do not match.  "
+      "X has " << X.getNumRows () << " rows, but the transposed matrix has " 
+      << numRows_ << " columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      trans == Teuchos::NO_TRANS && Y.getNumRows() != Teuchos::as<size_t> (numRows_),
       std::runtime_error,
       ": Dimensions of the matrix and the output multivector Y do not match.  "
       "Y has " << Y.getNumRows () << " rows, but the matrix has " << numRows_
       << " rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      trans != Teuchos::NO_TRANS && Y.getNumRows() != Teuchos::as<size_t> (numCols_),
+      std::runtime_error,
+      ": Dimensions of the matrix and the output multivector Y do not match.  "
+      "Y has " << Y.getNumRows () << " rows, but the transposed matrix has " 
+      << numCols_ << " rows.");
 
     typedef ordinal_type OT;
     typedef scalar_type MST; // matrix scalar type
@@ -2614,6 +2672,7 @@ namespace Kokkos {
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
     using std::endl;
+    typedef Teuchos::ArrayRCP<const size_t>::size_type size_type;
 
     // Interpret the default verbosity level as VERB_MEDIUM.
     const EVerbosityLevel vl =
@@ -2626,12 +2685,12 @@ namespace Kokkos {
       out << this->description();
 
       if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-        out << ":" << endl;
+        out << " {" << endl;
         OSTab tab1 (rcpFromRef (out));
 
-        out << "matVecVariant_ = " << matVecVariant_ << endl
-            << "unroll_ = " << unroll_ << endl
-            << "isInitialized_ = " << isInitialized_ << endl;
+        out << "matVecVariant_: " << matVecVariant_ << endl
+            << "unroll_: " << unroll_ << endl
+            << "isInitialized_: " << isInitialized_ << endl;
         if (isInitialized_) {
           std::string triUplo ("INVALID");
           if (tri_uplo_ == Teuchos::UNDEF_TRI) {
@@ -2651,31 +2710,43 @@ namespace Kokkos {
             unitDiag = "UNIT_DIAG";
           }
 
-          out << "numRows_ = " << numRows_ << endl
-              << "numCols_ = " << numCols_ << endl
-              << "isEmpty_ = " << isEmpty_ << endl
-              << "hasEmptyRows_ = " << hasEmptyRows_ << endl
-              << "tri_uplo_ = " << triUplo << endl
-              << "unit_diag_ = " << unitDiag << endl;
+          out << "numRows_: " << numRows_ << endl
+              << "numCols_: " << numCols_ << endl
+              << "isEmpty_: " << isEmpty_ << endl
+              << "hasEmptyRows_: " << hasEmptyRows_ << endl
+              << "tri_uplo_: " << triUplo << endl
+              << "unit_diag_: " << unitDiag << endl;
           if (ptr_.size() > 0) {
-            out << "numEntries = " << ptr_[ptr_.size()-1] << endl;
+            out << "numEntries: " << ptr_[ptr_.size()-1] << endl;
           }
           else {
-            out << "numEntries = 0" << endl;
+            out << "numEntries: " << endl;
           }
 
           if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
             // Only print out all the sparse matrix's data in
             // extreme verbosity mode.
-            out << "ptr_ = [";
-            std::copy (ptr_.begin(), ptr_.end(),
-                       std::ostream_iterator<Ordinal> (out, " "));
-            out << "]" << endl << "ind_ = [";
-            std::copy (ind_.begin(), ind_.end(),
-                       std::ostream_iterator<Ordinal> (out, " "));
-            out << "]" << endl << "val_ = [";
-            std::copy (val_.begin(), val_.end(),
-                       std::ostream_iterator<Scalar> (out, " "));
+            out << "ptr_: [";
+	    for (size_type i = 0; i < ptr_.size (); ++i) {
+	      out << ptr_[i];
+	      if (i + 1 < ptr_.size ()) {
+		out << ", ";
+	      }
+	    }
+            out << "]" << endl << "ind_ : [";
+	    for (size_type i = 0; i < ind_.size (); ++i) {
+	      out << ind_[i];
+	      if (i + 1 < ind_.size ()) {
+		out << ", ";
+	      }
+	    }
+            out << "]" << endl << "val_: [";
+	    for (size_type i = 0; i < val_.size (); ++i) {
+	      out << val_[i];
+	      if (i + 1 < val_.size ()) {
+		out << ", ";
+	      }
+	    }
             out << "]" << endl;
           } // vl >= VERB_EXTREME
         } // if is initialized

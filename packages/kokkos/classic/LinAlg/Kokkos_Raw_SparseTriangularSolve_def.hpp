@@ -88,11 +88,11 @@ lowerTriSolveCscColMajor (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,
@@ -112,23 +112,23 @@ lowerTriSolveCsrColMajor (
   const DomainScalar* const Y,
   const Ordinal colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
-
   for (Ordinal r = 0; r < numRows; ++r) {
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    // We assume the diagonal entry is first in the row.
-    const MatrixScalar A_rr = val[ptr[r]];
-    for (size_t k = ptr[r]+1; k < ptr[r+1]; ++k) {
+    // This assumes that the diagonal entry is last in the row.  
+    // This will break if the row is empty, but that's bad for
+    // non-unit-diagonal triangular solve anyway.
+    const MatrixScalar A_rr = val[ptr[r+1]-1];
+    for (size_t k = ptr[r]; k < ptr[r+1] - 1; ++k) {
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+	X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
       }
     }
     for (Ordinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] = X[r + j*colStrideX] / A_rr;
+      X[r + j*colStrideX] /= A_rr;
     }
   }
 }
@@ -390,11 +390,11 @@ upperTriSolveCscColMajor (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,
@@ -683,11 +683,11 @@ lowerTriSolveCscColMajorInPlace (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] /= X[c + j*colStrideX];
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,
@@ -940,11 +940,11 @@ lowerTriSolveCscColMajorConj (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,
@@ -1062,7 +1062,7 @@ lowerTriSolveCsrRowMajorConj (
       }
     }
     for (Ordinal j = 0; j < numVecs; ++j) {
-      X[r*rowStrideX + j] = X[r*rowStrideX + j] / A_rr;
+      X[r*rowStrideX + j] /= X[r*rowStrideX + j];
     }
   }
 }
@@ -1242,11 +1242,11 @@ upperTriSolveCscColMajorConj (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] /= X[c + j*colStrideX];
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,
@@ -1535,11 +1535,11 @@ lowerTriSolveCscColMajorInPlaceConj (
           X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
         }
       }
-      for (Ordinal j = 0; j < numVecs; ++j) {
-        X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
-      }
+    } // for each entry A_rc in the current column c
+    for (Ordinal j = 0; j < numVecs; ++j) {
+      X[c + j*colStrideX] = X[c + j*colStrideX] / A_cc;
     }
-  }
+  } // for each column c
 }
 
 template<class Ordinal,

@@ -90,6 +90,7 @@ namespace {
   using std::string;
 
   using Teuchos::TypeTraits::is_same;
+  using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
@@ -1467,8 +1468,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TriSolve, LO, GO, Scalar, Node )
   {
+    using std::endl;
+
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
+      out << "Skipping testing for the integral type Scalar=" 
+	  << Teuchos::TypeNameTraits<Scalar>::name () << "." << endl;
       return;
     }
     RCP<Node> node = getNode<Node>();
@@ -1479,12 +1483,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const size_t numLocal = 13, numVecs = 7;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    Scalar SONE = static_cast<Scalar>(1.0);
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm (); 
+    // Create a row Map for the matrix.
+    // This will be the same as the domain and range Maps.
+    RCP<const Map<LO,GO,Node> > map = 
+      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
+    Scalar SONE = ST::one ();
 
     /* Create one of the following locally triangular matries:
 
@@ -1500,31 +1505,57 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
    n-2 [     n-1 1  ]
    n-1 [         n 1]
 
-      Global matrices are diag(U,U,...,U) and diag(L,L,...,L)
+    The resulting global matrices are diag(U,U,...,U) resp. diag(L,L,...,L).
 
-      For each of these, we test with explicit and implicit unit diagonal, Transpose and Non-Transpose application, 1D or 2D storage
-      Ultimately, that is 16 combinations:
-      (Upper vs. Lower)  x  (Explicit vs. Implicit diagonal)  x  (Transpose vs. Non-Transpose)  x  (Optimized vs. Non-Optimzied storage)
+    For each of these (upper or lower triangular), we test all
+    16 combinations of the following options:
+    - Explicit or implicit unit diagonal
+    - With and without the (conjugate) transpose 
+    - Optimized or nonoptimized storage
     */
 
-    MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+    MV X (map, numVecs), B (map, numVecs), Xhat (map, numVecs);
     X.setObjectLabel("X");
     B.setObjectLabel("B");
     Xhat.setObjectLabel("Xhat");
     X.randomize();
+
+    // Sanity check for X.
+    Array<Mag> normsX (numVecs);
+    {
+      X.norm1 (normsX ());
+      Array<size_t> badColumns;
+      for (size_t j = 0; j < numVecs; ++j) {
+	if (ST::isnaninf (normsX[j])) {
+	  badColumns.push_back (j);
+	}
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        badColumns.size () > 0,
+        std::runtime_error,
+	"Columns " << Teuchos::toString (badColumns) << " of the input X "
+	"have a 1-norm either Inf or NaN.  That suggests that randomize() "
+	"is broken.  Here are the 1-norms of each column: " 
+	<< Teuchos::toString (normsX));
+    }
+
     RCP<ParameterList> params = parameterList();
-    for (size_t tnum=0; tnum < 16; ++tnum) {
-      EUplo   uplo      = ((tnum & 1) == 1 ? UPPER_TRI         : LOWER_TRI);
-      EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
-      params->set("Optimize Storage",((tnum & 4) == 4));
-      RCP<ParameterList> fillparams = sublist(params,"Local Sparse Ops");
-      fillparams->set("Prepare Solve", true);
-      fillparams->set("Prepare Transpose Solve", true);
-      fillparams->set("Prepare Conjugate Transpose Solve", true);
-      ETransp trans     = ((tnum & 8) == 8 ? CONJ_TRANS        : NO_TRANS);
+    // Test all 16 combinations of options.
+    for (size_t tnum = 0; tnum < 16; ++tnum) {
+      const EUplo   uplo  = ((tnum & 1) == 1 ? UPPER_TRI  : LOWER_TRI);
+      const EDiag   diag  = ((tnum & 2) == 2 ? UNIT_DIAG  : NON_UNIT_DIAG);
+      const ETransp trans = ((tnum & 8) == 8 ? CONJ_TRANS : NO_TRANS);
+      const bool optimizeStorage = (tnum & 4) == 4;
+
+      params->set ("Optimize Storage", optimizeStorage);
+      RCP<ParameterList> fillparams = sublist (params, "Local Sparse Ops");
+      fillparams->set ("Prepare Solve", true);
+      fillparams->set ("Prepare Transpose Solve", true);
+      fillparams->set ("Prepare Conjugate Transpose Solve", true);
+
       RCP<OP> AIOp;
+      RCP<MAT> AMat;
       {
-        RCP<MAT> AMat;
         if (diag == UNIT_DIAG) {
           // must explicitly specify the column map
           AMat = rcp(new MAT(map,map,2));
@@ -1541,17 +1572,17 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
                 // do nothing
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(static_cast<GO>(gid+2)) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid+1), tuple<Scalar> (as<Scalar> (gid+2)));
               }
             }
           }
           else {
             for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
               if (gid == map->getMaxGlobalIndex()) {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,static_cast<GO>(gid+2)) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid,gid+1), tuple<Scalar> (SONE, as<Scalar>(gid+2)));
               }
             }
           }
@@ -1563,17 +1594,17 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
                 // do nothing
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid-1), tuple<Scalar>(static_cast<GO>(gid+1)) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid-1), tuple<Scalar> (as<Scalar> (gid+1)));
               }
             }
           }
           else {
             for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
               if (gid == map->getMinGlobalIndex()) {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid-1,gid), tuple<Scalar>(static_cast<GO>(gid+1),SONE) );
+                AMat->insertGlobalValues (gid, tuple<GO> (gid-1, gid), tuple<Scalar> (as<Scalar> (gid+1), SONE));
               }
             }
           }
@@ -1582,20 +1613,97 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
         TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
         TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
-        AIOp = createCrsMatrixSolveOp<Scalar>(AMat.getConst());
+	// AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
+	// using a triangular solve.  op(A) is just A if
+	// trans==NO_TRANS, else A^H (Hermitian transpose) if
+	// trans==CONJ_TRANS.
+        AIOp = createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
       }
-      B.randomize();
+      B.randomize ();
+      if (diag != UNIT_DIAG && uplo == LOWER_TRI && 
+	  trans == CONJ_TRANS && ! optimizeStorage) {
+	const std::string diagStr = (diag == UNIT_DIAG) ? 
+	  "UNIT_DIAG" : "NON_UNIT_DIAG";
+	std::string uploStr;
+	if (uplo == LOWER_TRI) {
+	  uploStr = "LOWER_TRI";
+	} else if (uplo == UPPER_TRI) {
+	  uploStr = "UPPER_TRI";
+	} else {
+	  uploStr = "NEITHER";
+	}
+	std::string transStr;
+	if (trans == CONJ_TRANS) {
+	  transStr = "CONJ_TRANS";
+	} else if (trans == TRANS) {
+	  transStr = "TRANS";
+	} else {
+	  transStr = "NO_TRANS";
+	}
+	out << endl
+	    << "================================" << endl
+	    << "HERE IS THE INTERESTING USE CASE" << endl
+	    << "================================" << endl
+	    << "  uplo: " << uploStr << endl
+	    << "  diag: " << diagStr << endl
+	    << "  trans: " << transStr << endl
+	    << "  optimizeStorage: " << optimizeStorage << endl
+	    << endl;
+	out << "Before the solve:" << endl
+	    << "  Input MV X:" << endl;
+	X.describe (out, Teuchos::VERB_EXTREME);
+	out << "  Output MV B:" << endl;
+	B.describe (out, Teuchos::VERB_EXTREME);
+	out << "  Sparse matrix A:" << endl;
+	AMat->describe (out, Teuchos::VERB_EXTREME);
+	out << "Time for the solve!" << endl;
+      }
       AIOp->apply(X,B,trans);
       if (diag == UNIT_DIAG) {
         // we want (I+A)*X -> B
         // A*X -> B needs to be augmented with X
         B.update(ST::one(),X,ST::one());
       }
+      Array<Mag> normsB (numVecs);
+      B.norm1 (normsB ());
+      {
+	Array<size_t> badColumns;
+        for (size_t j = 0; j < numVecs; ++j) {
+	  if (ST::isnaninf (normsB[j])) {
+	    badColumns.push_back (j);
+	  }
+	}
+	if (badColumns.size () > 0) {
+	  out << endl << "*** TRIANGULAR SOLVE FAILED ***" << endl << endl;
+	  B.normInf (normsB ());
+	  out << "Here are the inf-norms of each column of B = A \\ X: " 
+	       << Teuchos::toString (normsB) << endl;
+	  B.norm2 (normsB ());
+	  out << "Here are the 2-norms of each column of B = A \\ X: " 
+	       << Teuchos::toString (normsB) << endl;
+	  B.norm1 (normsB ());
+	  out << "Here are the 1-norms of each column of B = A \\ X: " 
+	       << Teuchos::toString (normsB) << endl;
+	  out << "Here is the input MV X:" << endl;
+	  X.describe (out, Teuchos::VERB_EXTREME);
+	  out << "Here is the output MV B, on output:" << endl;
+	  B.describe (out, Teuchos::VERB_EXTREME);
+	}
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          badColumns.size () > 0,
+          std::runtime_error,
+   	  "Columns " << Teuchos::toString (badColumns) << " of B = A \\ X "
+	  "have a 1-norm either Inf or NaN." << std::endl 
+	  << "That suggests the triangular solve is broken." << endl
+	  << "Here are the 1-norms of each column: " 
+	  << Teuchos::toString (normsB));
+      }
+
       Xhat.randomize();
       AIOp->apply(B,Xhat,trans);
       //
       Xhat.update(-ST::one(),X,ST::one());
-      Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
+      Array<Mag> errnrms(numVecs), zeros(numVecs, MT::zero());
       Xhat.norm1(errnrms());
       B.norm1(normsB());
       Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );

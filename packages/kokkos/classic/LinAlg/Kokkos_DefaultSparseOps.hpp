@@ -495,6 +495,7 @@ namespace Kokkos {
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
       using std::endl;
+      typedef Teuchos::ArrayRCP<const size_t>::size_type size_type;
 
       // Interpret the default verbosity level as VERB_MEDIUM.
       const EVerbosityLevel vl =
@@ -507,10 +508,10 @@ namespace Kokkos {
         out << this->description();
 
         if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-          out << ":" << endl;
+          out << " {" << endl;
           OSTab tab1 (rcpFromRef (out));
 
-          out << "isInitialized_ = " << isInitialized_ << endl;
+          out << "isInitialized_: " << isInitialized_ << endl;
           if (isInitialized_) {
             std::string triUplo ("INVALID");
             if (tri_uplo_ == Teuchos::UNDEF_TRI) {
@@ -530,39 +531,55 @@ namespace Kokkos {
               unitDiag = "UNIT_DIAG";
             }
 
-            out << "numRows_ = " << numRows_ << endl
-                << "numCols_ = " << numCols_ << endl
-                << "isEmpty_ = " << isEmpty_ << endl
-                << "tri_uplo_ = " << triUplo << endl
-                << "unit_diag_ = " << unitDiag << endl;
+            out << "numRows_: " << numRows_ << endl
+                << "numCols_: " << numCols_ << endl
+                << "isEmpty_: " << isEmpty_ << endl
+                << "tri_uplo_: " << triUplo << endl
+                << "unit_diag_: " << unitDiag << endl;
             if (big_ptrs_.size() > 0) {
-              out << "numEntries = " << big_ptrs_[big_ptrs_.size()-1] << endl;
+              out << "numEntries: " << big_ptrs_[big_ptrs_.size()-1] << endl;
             }
             else if (sml_ptrs_.size() > 0) {
-              out << "numEntries = " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
+              out << "numEntries: " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
             }
             else {
-              out << "numEntries = 0" << endl;
+              out << "numEntries: 0" << endl;
             }
 
             if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
               // Only print out all the sparse matrix's data in
               // extreme verbosity mode.
-              out << "ptrs = [";
+              out << "ptrs: [";
               if (big_ptrs_.size() > 0) {
-                std::copy (big_ptrs_.begin(), big_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+		for (size_type i = 0; i < big_ptrs_.size (); ++i) {
+		  out << big_ptrs_[i];
+		  if (i + 1 < big_ptrs_.size ()) {
+		    out << ", ";
+		  }
+		}
               }
               else {
-                std::copy (sml_ptrs_.begin(), sml_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+		for (size_type i = 0; i < sml_ptrs_.size (); ++i) {
+		  out << sml_ptrs_[i];
+		  if (i + 1 < sml_ptrs_.size ()) {
+		    out << ", ";
+		  }
+		}
               }
-              out << "]" << endl << "inds_ = [";
-              std::copy (inds_.begin(), inds_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
-              out << "]" << endl << "vals_ = [";
-              std::copy (vals_.begin(), vals_.end(),
-                         std::ostream_iterator<Scalar> (out, " "));
+              out << "]" << endl << "inds_: [";
+	      for (size_type i = 0; i < inds_.size (); ++i) {
+		out << inds_[i];
+		if (i + 1 < inds_.size ()) {
+		  out << ", ";
+		}
+	      }
+              out << "]" << endl << "vals_: [";
+	      for (size_type i = 0; i < vals_.size (); ++i) {
+		out << vals_[i];
+		if (i + 1 < vals_.size ()) {
+		  out << ", ";
+		}
+	      }
               out << "]" << endl;
             } // vl >= VERB_EXTREME
           } // if is initialized
