@@ -1,5 +1,18 @@
 
-FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
+#FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
+
+EXECUTE_PROCESS(COMMAND
+  ${PYTHON_EXECUTABLE} -c "import mpi4py; print mpi4py.get_include()"
+  OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
+  ERROR_VARIABLE  MPI4PY_INCLUDE_ERROR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+IF(MPI4PY_INCLUDE_ERROR)
+  MESSAGE(SEND_ERROR
+    "Unable to find mpi4py include directory"
+    )
+ENDIF(MPI4PY_INCLUDE_ERROR)
 
 #include STK related directories'
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
