@@ -114,7 +114,9 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   ////////// EXPERIMENTAL
   // copy the value of G so we can do the left scale.
   RCP<Matrix> FhatinvG = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
-  Utils2::TwoMatrixAdd(G, false, 1.0, FhatinvG, 0.0);
+  RCP<Matrix> emptyMat = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
+  emptyMat->fillComplete(G->getDomainMap(),G->getRowMap());
+  Utils2::TwoMatrixAdd(G,false,1.0,emptyMat,false,-1.0/omega_,FhatinvG);
   FhatinvG->fillComplete(G->getDomainMap(),G->getRowMap()); // complete the matrix. left scaling does not change the pattern of the operator.
   Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
 
