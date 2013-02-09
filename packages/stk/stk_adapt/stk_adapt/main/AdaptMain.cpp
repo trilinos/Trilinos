@@ -25,6 +25,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
 #include <stk_percept/ProgressMeter.hpp>
+#include <stk_percept/Histogram.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
@@ -454,7 +455,6 @@ namespace stk {
         {
           argv_new_cstr[i] = (char *)argv_new[i].c_str();
         }
-      //check_args(argc_new, argv_new_cstr);
       int ret_val = adapt_main_full_options(argc_new, argv_new_cstr);
       delete[] argv_new_cstr;
       return ret_val;
@@ -501,14 +501,12 @@ namespace stk {
     {
       if (debug)
         dump_args(argc, argv);
+      check_args(argc, argv);
       // allow positional arguments, etc.
       if (check_for_simple_options(argc, argv))
         return adapt_main_simple_options(argc, argv);
       else
-        {
-          check_args(argc, argv);
-          return adapt_main_full_options(argc, argv);
-        }
+        return adapt_main_full_options(argc, argv);
     }
 
     int adapt_main_full_options(int argc, char **argv)
@@ -1014,17 +1012,26 @@ namespace stk {
                         if (compute_hmesh.size() != 0)
                           {
                             double hmesh=0.0;
+                            Histogram<double> histogram, quality_histogram;
                             if (compute_hmesh == "eigens")
                               {
-                                hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor);
+                                hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor, &histogram, &quality_histogram);
                               }
                             else if (compute_hmesh == "edges")
                               {
-                                hmesh = eMesh.hmesh_edge_lengths(hmesh_min_max_ave_factor);
+                                hmesh = eMesh.hmesh_edge_lengths(hmesh_min_max_ave_factor, &histogram, &quality_histogram);
                               }
                             else
                               {
                                 throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
+                              }
+                            if (histogram.size())
+                              {
+                                histogram.compute_uniform_bins(10);
+                              }
+                            if (quality_histogram.size())
+                              {
+                                quality_histogram.compute_uniform_bins(10);
                               }
                             if (!p_rank) {
                               std::cout << "Before refine, Mesh size (h-parameter) = " << hmesh
@@ -1038,6 +1045,20 @@ namespace stk {
                                                    << " max = " << hmesh_min_max_ave_factor[1]
                                                    << " ave = " << hmesh_min_max_ave_factor[2]
                                                    << ")\n " ;
+                              if (histogram.size())
+                                {
+                                  histogram.print_simple_table(std::cout, "Edge Length Histogram");
+                                  histogram.print_simple_table(stk::percept::pout(), "Edge Length Histogram");
+                                  histogram.print_table(std::cout, true, "Edge Length Histogram");
+                                  histogram.print_table(stk::percept::pout(), true, "Edge Length Histogram");
+                                }
+                              if (quality_histogram.size())
+                                {
+                                  quality_histogram.print_simple_table(std::cout, "Edge max/min Quality Histogram");
+                                  quality_histogram.print_simple_table(stk::percept::pout(), "Edge max/min Quality Histogram");
+                                  quality_histogram.print_table(std::cout, true, "Edge max/min Quality Histogram");
+                                  quality_histogram.print_table(stk::percept::pout(), true, "Edge max/min Quality Histogram");
+                                }
                             }
                             hmesh_factor = hmesh;
                           }
@@ -1238,18 +1259,28 @@ namespace stk {
                               {
                                 double hmesh=0.0;
                                 double min_max_ave[3];
+                                Histogram<double> histogram, quality_histogram;
                                 if (compute_hmesh == "eigens")
                                   {
-                                    hmesh = eMesh.hmesh_stretch_eigens(min_max_ave);
+                                    hmesh = eMesh.hmesh_stretch_eigens(min_max_ave, &histogram, &quality_histogram);
                                   }
                                 else if (compute_hmesh == "edges")
                                   {
-                                    hmesh = eMesh.hmesh_edge_lengths(min_max_ave);
+                                    hmesh = eMesh.hmesh_edge_lengths(min_max_ave, &histogram, &quality_histogram);
                                   }
                                 else
                                   {
                                     throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
                                   }
+                                if (histogram.size())
+                                  {
+                                    histogram.compute_uniform_bins(10);
+                                  }
+                                if (quality_histogram.size())
+                                  {
+                                    quality_histogram.compute_uniform_bins(10);
+                                  }
+
                                 hmesh_factor /= hmesh;
                                 hmesh_min_max_ave_factor[0] /= min_max_ave[0];
                                 hmesh_min_max_ave_factor[1] /= min_max_ave[1];
@@ -1265,6 +1296,29 @@ namespace stk {
                                             << " ave = " << hmesh_min_max_ave_factor[2]
                                             << ") "
                                             << std::endl;
+                                  stk::percept::pout() << "After refine, Mesh size (h-parameter) = " << hmesh << " oldH/newH factor= " << hmesh_factor
+                                            << "\n (new min = " << min_max_ave[0]
+                                            << " max = " << min_max_ave[1]
+                                            << " ave = " << min_max_ave[2]
+                                            << ") "
+                                            << "\n (old/new min = " << hmesh_min_max_ave_factor[0]
+                                            << " max = " << hmesh_min_max_ave_factor[1]
+                                            << " ave = " << hmesh_min_max_ave_factor[2]
+                                                       << ")\n";
+                                  if (histogram.size())
+                                    {
+                                      histogram.print_simple_table(std::cout, "Edge Length Histogram");
+                                      histogram.print_simple_table(stk::percept::pout(), "Edge Length Histogram");
+                                      histogram.print_table(std::cout, true, "Edge Length Histogram");
+                                      histogram.print_table(stk::percept::pout(), true, "Edge Length Histogram");
+                                    }
+                                  if (quality_histogram.size())
+                                    {
+                                      quality_histogram.print_simple_table(std::cout, "Edge max/min Quality Histogram");
+                                      quality_histogram.print_simple_table(stk::percept::pout(), "Edge max/min Quality Histogram");
+                                      quality_histogram.print_table(std::cout, true, "Edge max/min Quality Histogram");
+                                      quality_histogram.print_table(stk::percept::pout(), true, "Edge max/min Quality Histogram");
+                                    }
                                 }
                               }
                             if (print_hmesh_surface_normal)

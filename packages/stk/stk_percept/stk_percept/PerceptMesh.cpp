@@ -10,6 +10,8 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <stk_percept/GeometryVerifier.hpp>
+#include <stk_percept/Histogram.hpp>
+
 
 #include <Ioss_NullEntity.h>
 #include <Ioss_SubSystem.h>
@@ -4516,7 +4518,7 @@ namespace stk {
       if (cr) out << std::endl;
     }
 
-    double PerceptMesh::hmesh_stretch_eigens(double min_max_ave[3])
+    double PerceptMesh::hmesh_stretch_eigens(double min_max_ave[3], Histogram<double> *histogram, Histogram<double> *quality_histogram)
     {
       JacobianUtil jac;
       min_max_ave[0] = std::numeric_limits<double>::max();
@@ -4546,6 +4548,8 @@ namespace stk {
                   min_max_ave[0] = std::min(min_max_ave[0], max_eigen);
                   min_max_ave[1] = std::max(min_max_ave[1], max_eigen);
                   min_max_ave[2] += max_eigen;
+                  if (histogram) histogram->push_back(max_eigen);
+                  if (quality_histogram) quality_histogram->push_back(max_eigen/std::max(eigens[2],1.e-10));
                   nele += 1.0;
                 }
             }
@@ -4559,7 +4563,7 @@ namespace stk {
       return min_max_ave[1];
     }
 
-    double PerceptMesh::hmesh_edge_lengths(double min_max_ave[3])
+    double PerceptMesh::hmesh_edge_lengths(double min_max_ave[3], Histogram<double> *histogram, Histogram<double> *quality_histogram)
     {
       min_max_ave[0] = std::numeric_limits<double>::max();
       min_max_ave[1] = -1;
@@ -4586,6 +4590,8 @@ namespace stk {
                   min_max_ave[0] = std::min(min_max_ave[0], ele_hmesh);
                   min_max_ave[1] = std::max(min_max_ave[1], ele_hmesh);
                   min_max_ave[2] += ele_hmesh;
+                  if (histogram) histogram->push_back(ele_hmesh);
+                  if (quality_histogram) quality_histogram->push_back(max_edge_length/min_edge_length);
                   nele += 1.0;
                 }
             }

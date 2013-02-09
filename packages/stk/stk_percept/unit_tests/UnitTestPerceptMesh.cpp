@@ -508,16 +508,16 @@ namespace stk
         Histogram<T> h;
         T data[] = {T(1.1),T(2.1),T(3.1),T(5.1),T(8.1),T(13.1)};
         h.assign(data,data+6);
-        h.compute_uniform_buckets(2);
-        str << "example_histogram uniform buckets= " << std::endl;
+        h.compute_uniform_bins(2);
+        str << "example_histogram uniform bins= " << std::endl;
         if (print_table)
           h.print_table(str,use_percentage);
         else if (print_simple_table)
           h.print_simple_table(str);
         else
           h.print(str);
-        str << "example_histogram log buckets= " << std::endl;
-        h.compute_uniform_buckets(2, true); // use log scale
+        str << "example_histogram log bins= " << std::endl;
+        h.compute_uniform_bins(2, true); // use log scale
         if (print_table)
           h.print_table(str,use_percentage);
         else if (print_simple_table)
@@ -528,7 +528,7 @@ namespace stk
         std::vector<T> vranges(ranges,ranges+4);
         //std::cout << "vranges= " << vranges << std::endl;
         h.set_ranges(vranges);
-        str << "example_histogram specified buckets= " << std::endl;
+        str << "example_histogram specified bins= " << std::endl;
         if (print_table)
           h.print_table(str,use_percentage);
         else if (print_simple_table)
@@ -546,21 +546,21 @@ namespace stk
         std::string result_int = example_histogram<int>();
         std::cout << "test_histogram, result_int= \n"  << result_int;
         std::string expected_double =
-          "example_histogram uniform buckets= \n"
+          "example_histogram uniform bins= \n"
           "Histogram::print:: data= \n"
           " 1.1 2.1 3.1 5.1 8.1 13.1\n"
           "Histogram::print:: ranges= \n"
           " 1.1 7.1 13.1\n"
           "Histogram::print:: counts= \n"
           " 4 2\n"
-          "example_histogram log buckets= \n"
+          "example_histogram log bins= \n"
           "Histogram::print:: data= \n"
           " 1.1 2.1 3.1 5.1 8.1 13.1\n"
           "Histogram::print:: ranges= \n"
           " 1.1 3.79605 13.1\n"
           "Histogram::print:: counts= \n"
           " 3 3\n"
-          "example_histogram specified buckets= \n"
+          "example_histogram specified bins= \n"
           "Histogram::print:: data= \n"
           " 1.1 2.1 3.1 5.1 8.1 13.1\n"
           "Histogram::print:: ranges= \n"
@@ -569,21 +569,21 @@ namespace stk
           " 3 2 1\n";
 
         std::string expected_int =
-          "example_histogram uniform buckets= \n"
+          "example_histogram uniform bins= \n"
           "Histogram::print:: data= \n"
           " 1 2 3 5 8 13\n"
           "Histogram::print:: ranges= \n"
           " 1 7 13\n"
           "Histogram::print:: counts= \n"
           " 4 2\n"
-          "example_histogram log buckets= \n"
+          "example_histogram log bins= \n"
           "Histogram::print:: data= \n"
           " 1 2 3 5 8 13\n"
           "Histogram::print:: ranges= \n"
           " 1 2 13\n"
           "Histogram::print:: counts= \n"
           " 1 5\n"
-          "example_histogram specified buckets= \n"
+          "example_histogram specified bins= \n"
           "Histogram::print:: data= \n"
           " 1 2 3 5 8 13\n"
           "Histogram::print:: ranges= \n"

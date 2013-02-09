@@ -9,10 +9,9 @@ namespace stk {
        Histogram<T> h;
        T data[] = {1,2,3,5,8,13};
        h.assign(data,data+6);
-       h.compute_ranges();
-       h.compute_uniform_buckets(2);
+       h.compute_uniform_bins(2);
        h.print(std::cout);
-       h.compute_uniform_buckets(2, true); // use log scale
+       h.compute_uniform_bins(2, true); // use log scale
        h.print(std::cout);
        T ranges[] = {1,4,9,13};
        std::vector<T> vranges(ranges,ranges+4);

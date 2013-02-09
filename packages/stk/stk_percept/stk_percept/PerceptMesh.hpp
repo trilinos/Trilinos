@@ -10,6 +10,7 @@
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/Name.hpp>
+#include <stk_percept/Histogram.hpp>
 
 #include "ShardsInterfaceTable.hpp"
 
@@ -417,13 +418,13 @@ namespace stk {
                                        double min_max_ave[3]);
 
       /// compute edge length min, max and average between pairs of vertices that form element edges
-      double hmesh_edge_lengths(double min_max_ave[3]);
+      double hmesh_edge_lengths(double min_max_ave[3], Histogram<double> *histogram=0, Histogram<double> *quality_histogram=0);
 
       /// return sorted (largest first) eigenvalues of U (stretch matrix) of the polar decomposition
       ///   of Jacobian, J = R U, where R is a rotation.  These represent stretch w.r.t. principal
       ///   axes of the element, and are thus somewhat representative of mesh parameter.  Here, J is
       ///   the average J from the vertex-based (corner-based) Jacobians.
-      double hmesh_stretch_eigens(double min_max_ave[3]);
+      double hmesh_stretch_eigens(double min_max_ave[3], Histogram<double> *histogram=0, Histogram<double> *quality_histogram=0);
 
       /// print mesh spacing normal to each surface part - see below (hmesh_surface_normal)
       void print_hmesh_surface_normal(std::string msg="", std::ostream& out = std::cout);
