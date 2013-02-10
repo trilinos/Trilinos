@@ -1904,7 +1904,7 @@ namespace Kokkos {
       if (STS::isComplex) {
 	for (size_t j = 0; j < nC; ++j) {
 	  const Scalar* const A_j = &A_raw[j * A_stride];
-	  magnitude_type norm_j = STS::zero ();
+	  magnitude_type norm_j = STM::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
 	    const Scalar A_ij = A_j[i];
 	    norm_j += STS::real (A_ij) * STS::real (A_ij) + 
@@ -1915,7 +1915,7 @@ namespace Kokkos {
       } else { // not complex
 	for (size_t j = 0; j < nC; ++j) {
 	  const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	  magnitude_type norm_j = STS::zero ();
+	  magnitude_type norm_j = STM::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
 	    norm_j += A_j[i] * A_j[i];
 	  }
@@ -1951,7 +1951,7 @@ namespace Kokkos {
 	  }
 	} else { // not complex
 	  for (size_t i = 0; i < nR; ++i) {
-	    result += A_raw[i] * A_raw[i];
+	    result += STS::real (A_raw[i]) * STS::real (A_raw[i]);
 	  }
 	}
       }
