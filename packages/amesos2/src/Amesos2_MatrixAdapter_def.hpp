@@ -314,8 +314,7 @@ namespace Amesos2 {
 
     Array<scalar_t> nzval_tmp(nzval.size(), 0);
     Array<global_ordinal_t> rowind(colind.size(), 0);
-    // TODO: Nasty fix of +1 for now
-    Array<global_size_t> colptr(this->getGlobalNumCols() + 1+1);
+    Array<global_size_t> colptr(this->getGlobalNumCols() + 1);
     this->getCcs(nzval_tmp(), rowind(), colptr(), nnz, rowmap, ordering);
     
     if( !nzval.is_null() && !colind.is_null() && !rowptr.is_null() )
@@ -366,8 +365,7 @@ namespace Amesos2 {
 
     Array<scalar_t> nzval_tmp(nzval.size(), 0);
     Array<global_ordinal_t> colind(rowind.size(), 0);
-    // TODO Nasty fix of +1 for now
-    Array<global_size_t> rowptr(this->getGlobalNumRows() + 1 +1);
+    Array<global_size_t> rowptr(this->getGlobalNumRows() + 1);
     this->getCrs(nzval_tmp(), colind(), rowptr(), nnz, colmap, ordering);
 
     if( !nzval.is_null() && !rowind.is_null() && !colptr.is_null() )
