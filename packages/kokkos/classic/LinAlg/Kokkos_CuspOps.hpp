@@ -46,6 +46,7 @@
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_Describable.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_CUDANodeUtils.hpp>
@@ -263,7 +264,7 @@ namespace Kokkos {
   /// \tparam Ordinal The type of (local) column indices in the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
-  class CuspOps {
+  class CuspOps : public Teuchos::Describable.hpp {
   public:
     //@{
     //! @name Typedefs and structs
@@ -325,7 +326,22 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
 
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os << "Kokkos::CuspOps<"
+         << "Scalar=" << TypeNameTraits<Scalar>::name()
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //@}
     //! @name Initialization of graph and matrix
     //@{
 

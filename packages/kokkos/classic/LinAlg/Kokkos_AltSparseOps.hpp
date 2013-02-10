@@ -1124,6 +1124,9 @@ namespace Kokkos {
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
               Teuchos::Describable::verbLevel_default) const;
+    //@}
+    //! \name Conversion routines
+    //@{
 
     /// \brief Convert to dense matrix and return.
     ///
@@ -1765,7 +1768,7 @@ namespace Kokkos {
       else { // Verify that ptr_ contains only zeros.
 	bool allZeros = true;
 	size_t firstBadIndex = 0;
-	for (size_t i = 0; i < numRows_+1; ++i) {
+	for (size_t i = 0; i < Teuchos::as<size_t> (numRows_) + 1; ++i) {
 	  if (ptr[i] != 0) {
 	    allZeros = false;
 	    firstBadIndex = i;

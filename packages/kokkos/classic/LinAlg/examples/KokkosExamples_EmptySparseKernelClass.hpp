@@ -50,6 +50,7 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Kokkos_DefaultSparseOps.hpp>
+#include <Teuchos_Describable.hpp>
 
 /// \file KokkosExamples_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -102,7 +103,7 @@ namespace KokkosExamples {
   /// \tparam Scalar The type of entries in the sparse matrix.
   /// \tparam Node A Kokkos Node type (that implements the Kokkos Node API).
   template <class Scalar, class Node>
-  class EmptySparseKernel {
+  class EmptySparseKernel : public Teuchos::Describable {
   public:
     //@{
     //! @name Typedefs and structs
@@ -172,6 +173,19 @@ namespace KokkosExamples {
 
     //! Destructor.
     ~EmptySparseKernel() {}
+
+    //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      std::ostringstream os;
+      os << "Kokkos::EmptySparseKernel<Scalar=" 
+	 << Teuchos::TypeNameTraits<Scalar>::name () << ", Node=" 
+	 << Teuchos::TypeNameTraits<Node>::name () << ">";
+      return os.str ();
+    }
 
     //@}
     //! @name Accessor routines.

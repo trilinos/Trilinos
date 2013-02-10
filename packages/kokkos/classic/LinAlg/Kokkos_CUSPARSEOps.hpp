@@ -46,6 +46,7 @@
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_Describable.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_CUDANodeUtils.hpp>
@@ -609,7 +610,7 @@ namespace Kokkos {
   /// because cuSPARSE currently only supports column indices of type
   /// int.
   template <class Scalar, class Node>
-  class CUSPARSEOps {
+  class CUSPARSEOps : public Teuchos::Describable {
   public:
     //@{
     //! @name Typedefs and structs
@@ -686,6 +687,21 @@ namespace Kokkos {
 
     //! Destructor
     ~CUSPARSEOps();
+
+    //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os << "Kokkos::CUSPARSEOps<"
+         << "Scalar=" << TypeNameTraits<Scalar>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
 
     //@}
     //! @name Accessor routines.
