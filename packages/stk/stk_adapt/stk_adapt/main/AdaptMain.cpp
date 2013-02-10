@@ -472,20 +472,18 @@ namespace stk {
     static void check_args(int argc, char **argv)
     {
       std::string errors="";
-      for (int i = 0; i < argc; i++)
+      for (int i = 1; i < argc; i++)
         {
-          if (i > 0)
+          std::string av(argv[i]);
+          if (av == "--help") continue;
+          size_t equal_pos = av.find("=",0);
+          if (equal_pos == std::string::npos)
             {
-              std::string av(argv[i]);
-              size_t equal_pos = av.find("=",0);
-              if (equal_pos == std::string::npos)
-                {
-                  errors += "ERROR in options: no '=' found in option: "+av+"\n";
-                }
-              if (av.length() < equal_pos+2)
-                {
-                  errors += "ERROR in options: no value given after '=', found in option: "+av+"\n";
-                }
+              errors += "ERROR in options: no '=' found in option: "+av+"\n";
+            }
+          if (av.length() < equal_pos+2)
+            {
+              errors += "ERROR in options: no value given after '=', found in option: "+av+"\n";
             }
         }
       if (errors.length())
@@ -501,12 +499,14 @@ namespace stk {
     {
       if (debug)
         dump_args(argc, argv);
-      check_args(argc, argv);
       // allow positional arguments, etc.
       if (check_for_simple_options(argc, argv))
         return adapt_main_simple_options(argc, argv);
       else
-        return adapt_main_full_options(argc, argv);
+        {
+          check_args(argc, argv);
+          return adapt_main_full_options(argc, argv);
+        }
     }
 
     int adapt_main_full_options(int argc, char **argv)

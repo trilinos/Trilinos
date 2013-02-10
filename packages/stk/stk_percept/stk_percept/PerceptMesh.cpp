@@ -1845,7 +1845,12 @@ namespace stk {
         std::exit(EXIT_FAILURE);
       }
 
-      m_iossRegion = m_iossMeshData->input_io_region();
+      m_iossRegion = Teuchos::rcp(new Ioss::Region(m_iossMeshData->input_io_database().release().get(), "input_model"));
+
+      //Teuchos::RCP<stk::mesh::MetaData> arg_meta_data = Teuchos::rcp(m_metaData);
+      mesh_data.set_meta_data(*m_metaData);
+      //m_iossRegion = m_iossMeshData->input_io_region();
+      mesh_data.set_input_io_region(m_iossRegion);
       Ioss::Region& in_region = *m_iossRegion;
       checkForPartsToAvoidReading(in_region, s_omit_part);
 
@@ -1871,9 +1876,11 @@ namespace stk {
           std::cout << "tmp SRK m_spatialDim= " << m_spatialDim << " ntype= " << ntype << " ntype1= " << ntype1 << std::endl;
         }
 
+      //Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data = Teuchos::rcp(m_bulkData);
+      if (m_bulkData) mesh_data.set_bulk_data(*m_bulkData);
+
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
-      mesh_data.set_meta_data(meta_data);
       mesh_data.create_input_mesh();
       mesh_data.define_input_fields();
     }
@@ -1904,7 +1911,6 @@ namespace stk {
 
     void PerceptMesh::readBulkData()
     {
-#if 1
       //std::cout << "PerceptMesh::readBulkData() " << std::endl;
       if (m_fixture || m_isAdopted)
         {
@@ -1918,36 +1924,6 @@ namespace stk {
         step = 0;
 
       read_database_at_step(step);
-#else
-      //std::cout << "PerceptMesh::readBulkData() " << std::endl;
-      if (m_fixture || m_isAdopted)
-        {
-          //std::cout << "PerceptMesh::readBulkData() m_fixture " << std::endl;
-          return;
-        }
-
-      Ioss::Region& in_region = *m_iossRegion;
-      //----------------------------------
-      // Process Bulkdata for all Entity Types. Subsetting is possible.
-      //stk::mesh::BulkData bulk_data(meta_data, comm);
-      stk::mesh::BulkData& bulk_data = *m_bulkData;
-
-      // Read the model (topology, coordinates, attributes, etc)
-      // from the mesh-file into the mesh bulk data.
-      m_iossMeshData->set_bulk_data(bulk_data);
-      m_iossMeshData->populate_bulk_data(bulk_data, mesh_data);
-
-      int timestep_count = in_region.get_property("state_count").get_int();
-      ///std::cout << "tmp timestep_count= " << timestep_count << std::endl;
-      //Util::pause(true, "tmp timestep_count");
-
-      // FIXME
-      if (timestep_count == 0)
-        m_iossMeshData->process_input_request(0);
-      else
-        m_iossMeshData->process_input_request(1);
-
-#endif
     }
 
     int PerceptMesh::get_current_database_step()
@@ -2017,7 +1993,8 @@ namespace stk {
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
       mesh_data.set_input_io_region(m_iossRegion);
-      mesh_data.set_bulk_data(*m_bulkData);
+      if (!mesh_data.bulk_data_is_set()) 
+        mesh_data.set_bulk_data(*m_bulkData);
       mesh_data.populate_bulk_data();
 
       int timestep_count = in_region.get_property("state_count").get_int();
@@ -2382,7 +2359,8 @@ namespace stk {
       stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
 
       if (!(m_iossMeshData_created && m_sync_io_regions)) {
-	mesh_data.set_bulk_data(bulk_data);
+        if (!mesh_data.bulk_data_is_set())
+          mesh_data.set_bulk_data(bulk_data);
       }
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
@@ -2402,9 +2380,9 @@ namespace stk {
       mesh_data.process_output_request(time);
 
       if (!Teuchos::is_null(mesh_data.input_io_region()))
-	mesh_data.input_io_region()->get_database()->closeDatabase();
+        mesh_data.input_io_region()->get_database()->closeDatabase();
       if (!Teuchos::is_null(mesh_data.output_io_region()))
-	mesh_data.output_io_region()->get_database()->closeDatabase();
+        mesh_data.output_io_region()->get_database()->closeDatabase();
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }
 

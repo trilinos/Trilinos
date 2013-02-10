@@ -541,6 +541,15 @@ namespace stk
 
       STKUNIT_UNIT_TEST(perceptMesh, test_histogram)
       {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size > 1) return;
+
         std::string result_double = example_histogram<double>();
         std::cout << "test_histogram, result_double= \n"  << result_double;
         std::string result_int = example_histogram<int>();

@@ -265,6 +265,15 @@ namespace stk {
         int process_output_request(double time);
         int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
 
+        bool meta_data_is_set() const
+        {
+          return !Teuchos::is_null(m_meta_data);
+        }
+        bool bulk_data_is_set() const
+        {
+          return !Teuchos::is_null(m_bulk_data);
+        }
+
         stk::mesh::MetaData &meta_data()
         {
           ThrowRequire( !Teuchos::is_null(m_meta_data)) ;
