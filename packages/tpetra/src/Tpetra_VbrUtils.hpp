@@ -85,8 +85,8 @@ inline
 void zeroEntries(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata)
 {
   typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-
   typedef typename Teuchos::Array<RowGlobalCols>::size_type Tsize_t;
+  typedef typename Teuchos::ScalarTraits<Scalar> STS;
 
   for(Tsize_t i=0; i<vbrdata.data->size(); ++i) {
     RowGlobalCols& rgc = (*vbrdata.data)[i];
@@ -94,7 +94,7 @@ void zeroEntries(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata)
       rgc_it = rgc.begin(), rgc_end = rgc.end();
     for(; rgc_it != rgc_end; ++rgc_it) {
       BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-      std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), 0.0);
+      std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
     }    
   }
 }
