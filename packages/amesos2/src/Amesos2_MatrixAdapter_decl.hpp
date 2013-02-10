@@ -201,6 +201,12 @@ namespace Amesos2 {
     /// Get the number of columns in this matrix
     global_size_t getGlobalNumCols() const;
 
+    /// Get the indexbase for the row map
+    global_size_t getRowIndexBase() const;
+
+    /// Get the indexbase for the column map
+    global_size_t getColumnIndexBase() const;
+
     /// Get the global number of non-zeros in this sparse matrix
     global_size_t getGlobalNNZ() const;
 

@@ -130,6 +130,10 @@ namespace Amesos2 {
 
     size_t getLocalNNZ_impl() const;
 
+    global_size_t getGlobalNumRows_impl() const;
+
+    global_size_t getGlobalNumCols_impl() const;
+
     size_t getMaxRowNNZ_impl() const;
 
     size_t getMaxColNNZ_impl() const;

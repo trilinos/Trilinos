@@ -142,6 +142,28 @@ namespace Amesos2 {
   }
 
   template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
+    DerivedMat>::global_size_t
+  AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
+    DerivedMat>::getGlobalNumRows_impl() const
+  {
+    return Teuchos::as<global_size_t>(this->mat_->NumGlobalRows());
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
+    DerivedMat>::global_size_t
+  AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
+    DerivedMat>::getGlobalNumCols_impl() const
+  {
+    return Teuchos::as<global_size_t>(this->mat_->NumGlobalCols());
+  }
+
+  template <class DerivedMat>
   size_t
   AbstractConcreteMatrixAdapter<
     Epetra_RowMatrix,

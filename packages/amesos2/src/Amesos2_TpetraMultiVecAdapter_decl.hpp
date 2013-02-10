@@ -160,8 +160,8 @@ namespace Amesos2 {
     /// Get the length of vectors in the global space
     global_size_t getGlobalLength() const
     {
-      // return mv_->getGlobalLength();
-      return getMap()->getMaxAllGlobalIndex() + 1;
+      return mv_->getGlobalLength();
+      //return getMap()->getMaxAllGlobalIndex() + 1;
     }
 
 

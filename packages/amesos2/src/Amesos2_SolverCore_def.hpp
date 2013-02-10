@@ -73,6 +73,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
   , globalNumRows_(matrixA_->getGlobalNumRows())
   , globalNumCols_(matrixA_->getGlobalNumCols())
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
+  , rowIndexBase_(matrixA_->getRowIndexBase())
+  , columnIndexBase_(matrixA_->getColumnIndexBase())
   , rank_(Teuchos::rank(*this->getComm()))
   , root_(rank_ == 0)
   , nprocs_(Teuchos::size(*this->getComm()))
