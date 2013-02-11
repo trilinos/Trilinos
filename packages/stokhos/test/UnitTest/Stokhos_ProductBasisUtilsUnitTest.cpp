@@ -479,7 +479,7 @@ namespace ProductBasisUtilsUnitTest {
     // Build Cijk tensor using original approach
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
     Teuchos::RCP<Cijk_type> Cijk2 =
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor();
     
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
@@ -554,7 +554,7 @@ namespace ProductBasisUtilsUnitTest {
     // Build Cijk tensor using original approach
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
     Teuchos::RCP<Cijk_type> Cijk2 =
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor();
     
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
@@ -615,7 +615,7 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build Cijk tensor using original approach
     Teuchos::RCP<Cijk_type> Cijk2 =
-      basis.computeTripleProductTensor(order);
+      basis.computeTripleProductTensor();
     
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);

@@ -191,18 +191,10 @@ int main(int argc, char **argv)
     // Triple product tensor
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
     RCP<Cijk_type> Cijk;
-    if (prod_basis_type == COMPLETE) {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(basis->size());
-      else
-	Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
-    }
-    else {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(p);
-      else
-	Cijk = basis->computeTripleProductTensor(1);
-    }
+    if (full)
+      Cijk = basis->computeTripleProductTensor();
+    else
+      Cijk = basis->computeLinearTripleProductTensor();
 
     int sz = basis->size();
     std::cout << "basis size = " << sz

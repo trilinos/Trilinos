@@ -72,21 +72,12 @@ create(Teuchos::ParameterList& sgParams)
       Teuchos::Exceptions::InvalidParameter,
       std::endl <<  "Invalid triple product expansion type  " << tp_type <<
       std::endl);
-    ordinal_type tp_sz;
-    Teuchos::RCP< const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > cp_basis = Teuchos::rcp_dynamic_cast<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> >(basis);
-    if (cp_basis != Teuchos::null) {
-      if (tp_type == "Full")
-	tp_sz = basis->size();
-      else if (tp_type == "Linear")
-	tp_sz = basis->dimension()+1;
-    }
-    else {
-      if (tp_type == "Full")
-	tp_sz = basis->order();
-      else if (tp_type == "Linear")
-	tp_sz = 1;
-    } 
-    Cijk = basis->computeTripleProductTensor(tp_sz);
+
+    if (tp_type == "Full")
+      Cijk = basis->computeTripleProductTensor();
+    else
+      Cijk = basis->computeLinearTripleProductTensor();
+    
     sgParams.set("Triple Product Tensor", Cijk);
   }
 

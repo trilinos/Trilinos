@@ -174,7 +174,16 @@ norm_squared(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::GSReducedPCEBasisBase<ordinal_type, value_type>::
-computeTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor() const
+
+{
+  return Teuchos::null;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::GSReducedPCEBasisBase<ordinal_type, value_type>::
+computeLinearTripleProductTensor() const
 
 {
   return Teuchos::null;

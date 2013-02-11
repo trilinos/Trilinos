@@ -273,11 +273,23 @@ norm_squared(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
-computeTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor() const
 
 {
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk =
-    tensor_lanczos_basis->computeTripleProductTensor(order);
+    tensor_lanczos_basis->computeTripleProductTensor();
+  //std::cout << *Cijk << std::endl;
+  return Cijk;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
+computeLinearTripleProductTensor() const
+
+{
+  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk =
+    tensor_lanczos_basis->computeLinearTripleProductTensor();
   //std::cout << *Cijk << std::endl;
   return Cijk;
 }

@@ -120,7 +120,7 @@ test_original_matrix_free_epetra(
   RCP<const product_basis_type> basis = 
     rcp(new product_basis_type(bases, 1e-12));
   const size_t stoch_length = basis->size();
-  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(stoch_length);
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
 
   // Create stochastic parallel distribution
   ParameterList parallelParams;

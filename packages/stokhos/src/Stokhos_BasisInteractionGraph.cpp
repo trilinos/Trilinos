@@ -42,9 +42,11 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::OrthogPolyB
 { 
    using Teuchos::RCP;
 
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
    if(porder<0)
-      porder = max_basis.size();
-   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = max_basis.computeTripleProductTensor(porder);
+     Cijk = max_basis.computeTripleProductTensor();
+   else
+     Cijk = max_basis.computeLinearTripleProductTensor();
    initialize(max_basis,*Cijk,porder); 
 }
 
@@ -55,9 +57,11 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::ProductBasi
 {
    using Teuchos::RCP;
 
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
    if(porder<0)
-      porder = masterBasis.size();
-   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = masterBasis.computeTripleProductTensor(porder);
+     Cijk = masterBasis.computeTripleProductTensor();
+   else
+     Cijk = masterBasis.computeLinearTripleProductTensor();
    initialize(masterBasis,*Cijk,rowBasis,colBasis,porder);
 }
 

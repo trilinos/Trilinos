@@ -147,6 +147,34 @@ namespace Stokhos {
       return os;
     }
 
+    //! Replace multiindex with min of this and other multiindex
+    MultiIndex& termWiseMin(const MultiIndex& idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] <= idx[i] ? index[i] : idx[i];
+      return *this;
+    }
+
+    //! Replace multiindex with min of this and given value
+    MultiIndex& termWiseMin(const ordinal_type idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] <= idx ? index[i] : idx;
+      return *this;
+    }
+
+    //! Replace multiindex with max of this and other multiindex
+    MultiIndex& termWiseMax(const MultiIndex& idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] >= idx[i] ? index[i] : idx[i];
+      return *this;
+    }
+
+    //! Replace multiindex with max of this and given value
+    MultiIndex& termWiseMax(const ordinal_type idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] >= idx ? index[i] : idx;
+      return *this;
+    }
+
   protected:
 
     //! index terms

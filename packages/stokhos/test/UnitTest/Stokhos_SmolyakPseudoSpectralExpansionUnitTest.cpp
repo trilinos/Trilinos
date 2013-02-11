@@ -83,8 +83,8 @@ namespace PseudoSpectralExpansionUnitTest {
 	Teuchos::rcp(new Stokhos::SmolyakPseudoSpectralOperator<OrdinalType,ValueType>(*basis, true, true));
 
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(basis->order());
-      Cijk_linear = basis->computeTripleProductTensor(1);
+      Cijk = basis->computeTripleProductTensor();
+      Cijk_linear = basis->computeLinearTripleProductTensor();
       
       // Quadrature expansion
       exp = 

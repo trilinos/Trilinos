@@ -67,7 +67,7 @@ namespace Sparse3TensorUnitTest {
       
       
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(sz);
+      Cijk = basis->computeTripleProductTensor();
     }
     
   };

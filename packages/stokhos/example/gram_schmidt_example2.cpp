@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor();
     
     // Quadrature expansion
     Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, quad);

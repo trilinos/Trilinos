@@ -174,10 +174,16 @@ int main(int argc, char **argv)
       basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
 		       bases, drop, use_old));
-    else if (prod_basis_type == TENSOR)
-      basis = 
-	Teuchos::rcp(new Stokhos::TensorProductBasis<int,double>(
-		       bases, drop));
+    else if (prod_basis_type == TENSOR) {
+      if (ordering_type == TOTAL_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,total_less>(
+			 bases, drop));
+      else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,lexo_less>(
+			 bases, drop));
+    }
     else if (prod_basis_type == TOTAL) {
       if (ordering_type == TOTAL_ORDERING)
 	basis = 
@@ -190,26 +196,23 @@ int main(int argc, char **argv)
     }
     else if (prod_basis_type == SMOLYAK) {
       Stokhos::TotalOrderIndexSet<int> index_set(d, p);
-      basis = 
-	Teuchos::rcp(new Stokhos::SmolyakBasis<int,double>(
-		       bases, index_set, drop));
+       if (ordering_type == TOTAL_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,total_less>(
+			  bases, index_set, drop));
+       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,lexo_less>(
+			  bases, index_set, drop));
     }
 
     // Triple product tensor
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
     Teuchos::RCP<Cijk_type> Cijk;
-    if (prod_basis_type == COMPLETE) {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(basis->size());
-      else
-	Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
-    }
-    else {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(p);
-      else
-	Cijk = basis->computeTripleProductTensor(1);
-    }
+    if (full)
+      Cijk = basis->computeTripleProductTensor();
+    else
+      Cijk = basis->computeLinearTripleProductTensor();
 
     std::cout << "basis size = " << basis->size() 
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 

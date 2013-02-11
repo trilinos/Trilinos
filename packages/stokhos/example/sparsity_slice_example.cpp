@@ -113,11 +113,14 @@ int main(int argc, char **argv)
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (full)
+    if (full) {
       num_k = basis->size();
-    else
+      Cijk = basis->computeTripleProductTensor();
+    }
+    else {
       num_k = basis->dimension()+1;
-    Cijk = basis->computeTripleProductTensor(num_k);
+      Cijk = basis->computeLinearTripleProductTensor();
+    }
 
     std::cout << "basis size = " << basis->size() 
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
