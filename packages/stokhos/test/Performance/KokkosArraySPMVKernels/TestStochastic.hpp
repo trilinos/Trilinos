@@ -112,29 +112,18 @@ test_product_tensor_matrix(
   matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
-  const size_t inner_matrix_size = matrix.block.dimension();
 
-  matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
+  matrix.values = block_vector_type( "matrix" , inner_length , graph_length );
 
   block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
-  typename block_vector_type::HostMirror hM = KokkosArray::create_mirror( matrix.values );
+  typename block_vector_type::HostMirror hM = 
+    KokkosArray::create_mirror( matrix.values );
 
-  // Loop over spatial rows
-  size_t outer_nz = 0;
-  for ( size_t iOuterRow = 0 ; iOuterRow < outer_length ; ++iOuterRow ) {
-
-    //Loop over non-zeros in a row
-    const size_t iOuterNZ = graph[iOuterRow].size();
-    for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterNZ ; ++iOuterEntry ) {
-      //const size_t iOuterCol = graph[iOuterRow][iOuterEntry];
-  
-      // Build PC expansion for this nonzero
-      for ( size_t j = 0 ; j < inner_length ; ++j ) {
-	hM(j,outer_nz) = 1.0 ;
-      }
-      outer_nz++;
+  for ( size_t i=0 ; i < graph_length ; ++i ) {
+    for ( size_t j = 0 ; j < inner_length ; ++j ) {
+      hM(j,i) = 1.0;
     }
   }
   

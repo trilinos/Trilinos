@@ -266,8 +266,6 @@ int main(int argc, char *argv[]) {
   H->Keep("R", Rfact.get());
   H->Keep("Ptent", TentPFact.get());
   H->Setup(M, 0, maxLevels);
-  Teuchos::ParameterList status = H->Summarize(MueLu::None);
-  int numLevels = status.get("number of levels",-1);
   H->print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
 
   // Setup coarse grid operators and smoothers
@@ -275,7 +273,7 @@ int main(int argc, char *argv[]) {
   finestLevel->Set("A", mueluS);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->Setup(M, 0, numLevels);
+  H->Setup(M, 0, H->GetNumLevels());
 
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);

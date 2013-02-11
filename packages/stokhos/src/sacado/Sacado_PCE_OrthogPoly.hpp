@@ -548,6 +548,9 @@ namespace Sacado {
     template <typename T, typename Storage> std::ostream& 
     operator << (std::ostream& os, const OrthogPoly<T,Storage>& a);
 
+    template <typename T, typename Storage> std::istream& 
+    operator >> (std::istream& os, OrthogPoly<T,Storage>& a);
+
   } // namespace PCE
 
 } // namespace Sacado
