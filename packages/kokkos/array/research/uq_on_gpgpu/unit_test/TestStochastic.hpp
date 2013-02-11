@@ -710,7 +710,7 @@ test_original_matrix_free_block(
   RCP<const product_basis_type> basis = 
     rcp(new product_basis_type(bases, 1e-12));
   const size_t outer_length = basis->size();
-  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(outer_length);
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
 
   //------------------------------
 
@@ -856,7 +856,7 @@ test_original_matrix_free_vec(
     rcp(new product_basis_type(
 	  bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
   const size_t outer_length = basis->size();
-  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(outer_length);
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
 
   //------------------------------
 
