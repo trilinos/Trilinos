@@ -47,6 +47,8 @@
 #define MUELU_TENTATIVEPFACTORY_DECL_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_SerialQRDenseSolver.hpp>
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>

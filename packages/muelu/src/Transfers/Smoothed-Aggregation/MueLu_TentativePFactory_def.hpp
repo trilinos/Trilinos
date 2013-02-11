@@ -122,6 +122,9 @@ namespace MueLu {
                      const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap,
                      RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
   {
+    typedef typename Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType Magnitude;
+
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
     // number of aggregates
@@ -216,12 +219,8 @@ namespace MueLu {
     //importer to handle moving Q
     importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
 
-    QR_Interface<SC,LO> qrWidget(NSDim);
-
-    // reserve enough memory for QR decomposition
-    size_t localQRsize = maxAggSize*NSDim;
-    if(Teuchos::as<size_t>(maxAggSize) < NSDim) localQRsize = NSDim * NSDim; // make sure, that we always can store the coarse nsp matrix (R in QR decomp.) even if we have only too small aggregates for GEQRF routine.
-    ArrayRCP<SC> localQR(localQRsize); // The submatrix of the nullspace to be orthogonalized.
+    // Dense QR solver
+    Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
     //Allocate temporary storage for the tentative prolongator.
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
@@ -240,6 +239,7 @@ namespace MueLu {
       LO myAggSize = aggSizes[agg];
       // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
       // "localQR" (in column major format) for the QR routine.
+      Teuchos::SerialDenseMatrix<LO,SC> localQR(myAggSize, NSDim);
       for (size_t j=0; j<NSDim; ++j) {
         bool bIsZeroNSColumn = true;
         for (LO k=0; k<myAggSize; ++k) {
@@ -248,7 +248,7 @@ namespace MueLu {
           try{
             //SC nsVal = fineNS[j][ colMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS
             SC nsVal = fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS
-            localQR[j* myAggSize + k] = nsVal;
+            localQR(k,j) = nsVal;
             if (nsVal != 0.0) bIsZeroNSColumn = false;
           }
           catch(...) {
@@ -276,7 +276,7 @@ namespace MueLu {
       for (size_t i=0; i<myAggSize; i++) {
         // loop over cols
         for (size_t j=0; j<NSDim; j++) {
-          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
+          std::cout << localQR(i,j); std::cout << "\t";
         }
         std::cout << std::endl;
       }
@@ -286,8 +286,24 @@ namespace MueLu {
 
       if(myAggSize >= Teuchos::as<LocalOrdinal>(NSDim)) {
         // calculate QR decomposition (standard)
-         // R is stored in localQR (size: myAggSize x NSDim)
-         qrWidget.Compute(myAggSize, localQR);
+        // R is stored in localQR (size: myAggSize x NSDim)
+
+        // Householder multiplier
+        SC tau;
+
+        if (NSDim == 1) {
+          // Only one nullspace vector, so normalize by hand
+          Magnitude dtemp=0;
+          for (size_t k=0; k<myAggSize; ++k) {
+            dtemp += STS::magnitude(localQR(k,0))*STS::magnitude(localQR(k,0));
+          }
+          dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
+          tau = localQR(0,0);
+          localQR(0,0) = dtemp;
+        } else {
+          qrSolver.setMatrix( Teuchos::rcp(&localQR, false) );
+          qrSolver.factor();
+        }
 
          // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
          // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
@@ -296,7 +312,7 @@ namespace MueLu {
            for (size_t k=0; k<=j; ++k) {
              try {
                if (coarseMap->isNodeLocalElement(offset+k)) {
-                   coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
+                 coarseNS[j][offset+k] = localQR(k, j); //TODO is offset+k the correct local ID?!
                }
              }
              catch(...) {
@@ -307,32 +323,33 @@ namespace MueLu {
 
          // Calculate Q, the tentative prolongator.
          // The Lapack GEQRF call only works for myAggsize >= NSDim
-         qrWidget.ExtractQ(myAggSize, localQR);
+
+         if (NSDim == 1) {
+           // Only one nullspace vector, so calculate Q by hand
+           Magnitude dtemp = STS::magnitude(localQR(0,0));
+           localQR(0,0) = tau;
+           dtemp = 1 / dtemp;
+           for (LocalOrdinal i=0; i<myAggSize; ++i) {
+             localQR(i,0) *= dtemp ;
+           }
+         } else {
+           qrSolver.formQ();
+           Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
+           for (size_t j=0; j<NSDim; j++) {
+             for (size_t i=0; i<myAggSize; i++) {
+               localQR(i,j) = (*qFactor)(i,j);
+             }
+           }
+         }
 
          // end default case (myAggSize >= NSDim)
       } else {  // sepcial handling for myAggSize < NSDim (i.e. 1pt nodes)
         // construct R by hand, i.e. keep first myAggSize rows untouched
         //GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
 
-        // copy initial localQR values in temporary variable
-        ArrayRCP<SC> tmplocalQR(localQRsize);
-        for (LO/*size_t*/ i=0; i<myAggSize; i++) {
-          // loop over cols
-          for (size_t j=0; j<NSDim; j++) {
-            tmplocalQR[ myAggSize*j + i] = localQR[myAggSize*j + i];
-          }
-        }
-
-        // copy temporary variables back to correct positions (column size is now NSDim instead of myAggSize
-        for (size_t j=0; j<NSDim; j++) {  // loop over cols
-          for (LO /*size_t*/ i=0; i<myAggSize; i++) {  // loop over rows
-            localQR[ NSDim*j + i] = tmplocalQR[myAggSize*j + i];
-          }
-          // fill NSDim-myAggSize rows with default null space
-          for(size_t i=myAggSize; i<NSDim; i++) { // loop over rows
-             if(i==j) localQR[NSDim*j+i] = 1.0;
-             else localQR[NSDim*j+i] = 0.0;
-          }
+        localQR.reshape(NSDim,NSDim);
+        for (size_t i=myAggSize; i<NSDim; i++) {
+          localQR(i,i) = Teuchos::ScalarTraits<SC>::one();
         }
 
         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
@@ -343,7 +360,7 @@ namespace MueLu {
           for (size_t k=0; k<=j; ++k) {
             try {
               if (coarseMap->isNodeLocalElement(offset+k)) {
-                  coarseNS[j][offset+k] = localQR[ NSDim*j + k ]; // agg has only one node
+                coarseNS[j][offset+k] = localQR(k,j); // agg has only one node
               }
             }
             catch(...) {
@@ -360,8 +377,8 @@ namespace MueLu {
         for (size_t i=0; i<Teuchos::as<size_t>(myAggSize); i++) {
           // loop over cols
           for (size_t j=0; j<NSDim; j++) {
-            if (j==i) localQR[ myAggSize*j + i] = 1.0;
-            else localQR[ myAggSize*j + i] = 0.0;
+            if (j==i) localQR(i,j) = Teuchos::ScalarTraits<SC>::one();
+            else localQR(i,j) = Teuchos::ScalarTraits<SC>::zero();
           }
         }
       } // end else (special handling for 1pt aggregates)
@@ -381,16 +398,16 @@ namespace MueLu {
           ghostQrows[qctr] = globalRow;
           for (size_t k=0; k<NSDim; ++k) {
             ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
-            ghostQvals[k][qctr] = localQR[k*myAggSize+j];
+            ghostQvals[k][qctr] = localQR(j,k);
           }
           ++qctr;
         } else {
           LO nnz=0;
           for (size_t k=0; k<NSDim; ++k) {
             try{
-              if (localQR[k*myAggSize+j] != 0.) {
+              if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
                 colPtr[nnz] = coarseMap->getGlobalElement(agg * NSDim + k);
-                valPtr[nnz] = localQR[k*myAggSize+j];
+                valPtr[nnz] = localQR(j,k);
                 ++nnz;
               }
             }
