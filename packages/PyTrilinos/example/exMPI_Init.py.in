@@ -83,7 +83,7 @@ def main():
     # finalization functions
     import atexit
     fails = 0
-    if "${TPL_ENABLE_MPI}":
+    if ${TPL_ENABLE_MPI}:
         for handler in atexit._exithandlers:
             if handler[0] is Epetra.Epetra_MPI_Finalize:   fails += 1
             if handler[0] is Teuchos.Teuchos_MPI_Finalize: fails += 1
