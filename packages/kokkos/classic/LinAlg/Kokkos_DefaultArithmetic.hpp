@@ -1917,7 +1917,7 @@ namespace Kokkos {
 	  const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
 	  magnitude_type norm_j = STM::zero ();
 	  for (size_t i = 0; i < nR; ++i) {
-	    norm_j += A_j[i] * A_j[i];
+	    norm_j += STS::real (A_j[i]) * STS::real (A_j[i]);
 	  }
 	  norms[j] = norm_j;
 	}
