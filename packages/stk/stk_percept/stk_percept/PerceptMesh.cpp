@@ -1984,7 +1984,6 @@ namespace stk {
           return;
         }
 
-      Ioss::Region& in_region = *m_iossRegion;
       //----------------------------------
       // Process Bulkdata for all Entity Types. Subsetting is possible.
       //stk::mesh::BulkData bulk_data(meta_data, comm);
@@ -1992,12 +1991,11 @@ namespace stk {
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      mesh_data.set_input_io_region(m_iossRegion);
       if (!mesh_data.bulk_data_is_set()) 
         mesh_data.set_bulk_data(*m_bulkData);
       mesh_data.populate_bulk_data();
 
-      int timestep_count = in_region.get_property("state_count").get_int();
+      int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 

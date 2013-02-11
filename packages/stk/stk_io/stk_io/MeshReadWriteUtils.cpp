@@ -453,9 +453,8 @@ namespace stk {
 
     void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
-          "This MeshData has an Ioss::DatabaseIO associated with it from a call"
-          " to open_mesh_database(). You cannot reset the input_io_region.");
+      ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
+      "This MeshData already has an Ioss::Region associated with it.");
       m_input_region = ioss_input_region;
     }
 
@@ -586,6 +585,8 @@ namespace stk {
 
     void MeshData::create_output_mesh()
     {
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                       "There is no Output database associated with this Mesh Data.");
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
                        "There is no Output database associated with this Mesh Data.");
       stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get());

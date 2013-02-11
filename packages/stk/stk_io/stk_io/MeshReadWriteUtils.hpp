@@ -335,8 +335,8 @@ namespace stk {
         MPI_Comm m_communicator_;
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
-        Teuchos::RCP<Ioss::Region> m_input_region;
-        Teuchos::RCP<Ioss::Region> m_output_region;
+        Teuchos::RCP<Ioss::Region>     m_input_region;
+        Teuchos::RCP<Ioss::Region>     m_output_region;
 
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
