@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") SaveEigenData
+%define %loca_saveeigendata_docstring
+"
+PyTrilinos.LOCA.SaveEigenData is the python interface to namespace
+SaveEigenData of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.SaveEigenData is to provide ***.  The python
+version of LOCA.SaveEigenData supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_saveeigendata_docstring) SaveEigenData
 
 %{
 // Teuchos include

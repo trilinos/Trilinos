@@ -36,16 +36,15 @@ algorithm package LOCA:
     http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA is to provide a library of continuation
-algorithms.  This module is not currently supported, but the plan is
-to reactivate it soon.
+algorithms.
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA",
-        directors = "1",
+%module(package      = "PyTrilinos.LOCA",
+        directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring = %loca_docstring) __init__
+	docstring    = %loca_docstring) __init__
 
 %{
 // System includes

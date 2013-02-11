@@ -28,6 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Extended
+%define %loca_extended_docstring
+"
+PyTrilinos.LOCA.Extended is the python interface to namespace Extended
+of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Extended is to provide ***.  The python version of
+LOCA.Extended supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_extended_docstring) Extended
 
 %include "LOCA.Extended_Content.i"

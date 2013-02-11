@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.TurningPoint") __init__
+%define %loca_turningpoint_docstring
+"
+PyTrilinos.LOCA.TurningPoint is the python interface to namespace
+TurningPoint of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.TurningPoint is to provide ***.  The python
+version of LOCA.TurningPoint supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.TurningPoint",
+        docstring = %loca_turningpoint_docstring) __init__
 
 %pythoncode
 %{

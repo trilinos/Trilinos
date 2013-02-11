@@ -28,7 +28,26 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.Pitchfork") MinimallyAugmented
+%define %loca_pitchfork_minimallyaugmented_docstring
+"
+PyTrilinos.LOCA.Pitchfork.MinimallyAugmented is the python interface
+to namespace Pitchfork::MinimallyAugmented of the Trilinos
+continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Pitchfork.MinimallyAugmented is to provide ***.
+The python version of LOCA.Pitchfork.MinimallyAugmented supports the
+following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.Pitchfork",
+        docstring = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
 // LOCA includes

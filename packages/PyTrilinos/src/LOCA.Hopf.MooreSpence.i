@@ -28,6 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.Hopf") MooreSpence
+%define %loca_hopf_moorespence_docstring
+"
+PyTrilinos.LOCA.Hopf.MooreSpence is the python interface to namespace
+Hopf::MooreSpence of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Hopf.MooreSpence is to provide ***.  The python
+version of LOCA.Hopf.MooreSpence supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package="PyTrilinos.LOCA.Hopf",
+        docstring = %loca_hopf_moorespence_docstring) MooreSpence
 
 %include "LOCA.Hopf.MooreSpence_Content.i"

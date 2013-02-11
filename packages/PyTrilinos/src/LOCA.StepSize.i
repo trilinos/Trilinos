@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") StepSize
+%define %loca_stepsize_docstring
+"
+PyTrilinos.LOCA.StepSize is the python interface to namespace StepSize
+of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.StepSize is to provide ***.  The python version of
+LOCA.StepSize supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_stepsize_docstring) StepSize
 
 %{
 // Teuchos include

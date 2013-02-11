@@ -28,6 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") MultiContinuation
+%define %loca_multicontinuation_docstring
+"
+PyTrilinos.LOCA.MultiContinuation is the python interface to namespace
+MultiContinuation of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.MultiContinuation is to provide ***.  The python
+version of LOCA.MultiContinuation supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_multicontinuation_docstring) MultiContinuation
 
 %include "LOCA.MultiContinuation_Content.i"

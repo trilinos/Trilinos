@@ -28,7 +28,26 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.Hopf") MinimallyAugmented
+%define %loca_hopf_minimallyaugmented_docstring
+"
+PyTrilinos.LOCA.Hopf.MinimallyAugmented is the python interface to
+namespace Hopf::MinimallyAugmented of the Trilinos continuation
+algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Hopf.MinimallyAugmented is to provide ***.  The
+python version of LOCA.Hopf.MinimallyAugmented supports the following
+classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.Hopf",
+        docstring = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
 // Teuchos include

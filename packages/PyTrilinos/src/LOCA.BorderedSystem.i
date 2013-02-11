@@ -28,6 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") BorderedSystem
+%define %loca_borderedsystem_docstring
+"
+PyTrilinos.LOCA.BorderedSystem is the python interface to namespace
+BorderedSystem of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.BorderedSystem is to provide ***.  The python
+version of LOCA.BorderedSystem supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_borderedsystem_docstring) BorderedSystem
 
 %include "LOCA.BorderedSystem_Content.i"

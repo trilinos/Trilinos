@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.Pitchfork") __init__
+%define %loca_pitchfork_docstring
+"
+PyTrilinos.LOCA.Pitchfork is the python interface to namespace
+Pitchfork of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Pitchfork is to provide ***.  The python version
+of LOCA.Pitchfork supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.Pitchfork",
+        docstring = %loca_pitchfork_docstring) __init__
 
 %pythoncode
 %{

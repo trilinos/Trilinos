@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Homotopy
+%define %loca_homotopy_docstring
+"
+PyTrilinos.LOCA.Homotopy is the python interface to namespace Homotopy
+of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Homotopy is to provide ***.  The python version of
+LOCA.Homotopy supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_homotopy_docstring) Homotopy
 
 %{
 // PyTrilinos includes

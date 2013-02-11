@@ -28,6 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") TimeDependent
+%define %loca_timedependent_docstring
+"
+PyTrilinos.LOCA.TimeDependent is the python interface to namespace
+TimeDependent of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.TimeDependent is to provide ***.  The python
+version of LOCA.TimeDependent supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_timedependent_docstring) TimeDependent
 
 %include "LOCA.TimeDependent_Content.i"

@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Eigensolver
+%define %loca_eigensolver_docstring
+"
+PyTrilinos.LOCA.Eigensolver is the python interface to namespace
+Eigensolver of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Eigensolver is to provide ***.  The python version
+of LOCA.Eigensolver supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_eigensolver_docstring) Eigensolver
 
 %{
 // Teuchos include

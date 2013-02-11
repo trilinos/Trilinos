@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Bifurcation
+%define %loca_bifurcation_docstring
+"
+PyTrilinos.LOCA.Bifurcation is the python interface to namespace Bifurcation
+of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Bifurcation is to provide ***.  The python version
+of LOCA.Bifurcation supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_bifurcation_docstring) Bifurcation
 
 %{
 // PyTrilinos includes

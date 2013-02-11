@@ -28,6 +28,25 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.TurningPoint") MinimallyAugmented
+%define %loca_turningpoint_minimallyaugmented_docstring
+"
+PyTrilinos.LOCA.TurningPoint.MinimallyAugmented is the python
+interface to namespace TurningPoint::MinimallyAugmented of the
+Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.TurningPoint.MinimallyAugmented is to provide ***.
+The python version of LOCA.TurningPoint.MinimallyAugmented supports
+the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.TurningPoint",
+        docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %include "LOCA.TurningPoint.MinimallyAugmented_Content.i"

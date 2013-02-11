@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") AnasaziOperator
+%define %loca_anasazioperator_docstring
+"
+PyTrilinos.LOCA.AnasaziOperator is the python interface to namespace
+AnasaziOperator of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.AnasaziOperator is to provide ***.  The python
+version of LOCA.AnasaziOperator supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_anasazioperator_docstring) AnasaziOperator
 
 %{
 // Teuchos include

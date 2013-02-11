@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") StatusTest
+%define %loca_statustest_docstring
+"
+PyTrilinos.LOCA.StatusTest is the python interface to namespace *** of
+the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.StatusTest is to provide ***.  The python version
+of LOCA.StatusTest supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_statustest_docstring) StatusTest
 
 %{
 // PyTrilinos include

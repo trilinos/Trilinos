@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") LAPACK
+%define %loca_lapack_docstring
+"
+PyTrilinos.LOCA.LAPACK is the python interface to namespace LAPACK of
+the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.LAPACK is to provide ***.  The python version of
+LOCA.LAPACK supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_lapack_docstring) LAPACK
 
 %{
 // LOCA includes

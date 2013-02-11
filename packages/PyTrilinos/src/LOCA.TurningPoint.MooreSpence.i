@@ -28,6 +28,25 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.TurningPoint") MooreSpence
+%define %loca_turningpoint_moorespence_docstring
+"
+PyTrilinos.LOCA.TurningPoint.MooreSpence is the python interface to
+namespace TurningPoint::MooreSpence of the Trilinos continuation
+algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.TurningPoint.MooreSpence is to provide ***.  The
+python version of LOCA.TurningPoint.MooreSpence supports the following
+classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.TurningPoint",
+        docstring = %loca_turningpoint_moorespence_docstring) MooreSpence
 
 %include "LOCA.TurningPoint.MooreSpence_Content.i"

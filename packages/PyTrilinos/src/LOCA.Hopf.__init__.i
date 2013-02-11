@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA.Hopf") __init__
+%define %loca_hopf_docstring
+"
+PyTrilinos.LOCA.Hopf is the python interface to namespace Hopf of the
+Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Hopf is to provide ***.  The python version of
+LOCA.Hopf supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA.Hopf",
+        docstring = %loca_hopf_docstring) __init__
 
 %{
 // LOCA includes

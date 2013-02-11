@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") MultiPredictor
+%define %loca_multipredictor_docstring
+"
+PyTrilinos.LOCA.MultiPredictor is the python interface to namespace
+MultiPredictor of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.MultiPredictor is to provide ***.  The python
+version of LOCA.MultiPredictor supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_multipredictor_docstring) MultiPredictor
 
 %{
 // Teuchos include

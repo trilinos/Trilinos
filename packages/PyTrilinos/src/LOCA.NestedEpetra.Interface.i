@@ -30,13 +30,20 @@
 
 %define %loca_epetra_interface_docstring
 "
-PyTrilinos.LOCA.NestedEpetra.Interface is the python interface to
-namespace Epetra::Interface for the Trilinos package LOCA:
+PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace
+Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
+The purpose of LOCA.Epetra.Interface is to provide ***.  The python
+version of LOCA.Epetra.Interface supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
 "
 %enddef
+
 %module(package      = "PyTrilinos.LOCA.NestedEpetra",
 	directors    = "1",
 	autodoc      = "1",

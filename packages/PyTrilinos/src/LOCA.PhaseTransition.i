@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") PhaseTransition
+%define %loca_phasetransition_docstring
+"
+PyTrilinos.LOCA.PhaseTransition is the python interface to namespace
+PhaseTransition of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.PhaseTransition is to provide ***.  The python
+version of LOCA.PhaseTransition supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_phasetransition_docstring) PhaseTransition
 
 %{
 // Teuchos includes

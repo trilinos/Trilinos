@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") BorderedSolver
+%define %loca_borderedsolver_docstring
+"
+PyTrilinos.LOCA.BorderedSolver is the python interface to namespace
+BorderedSolver of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.BorderedSolver is to provide ***.  The python
+version of LOCA.BorderedSolver supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_borderedsolver_docstring) BorderedSolver
 
 %{
 // Teuchos include

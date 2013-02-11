@@ -28,7 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Parameter
+%define %loca_parameter_docstring
+"
+PyTrilinos.LOCA.Parameter is the python interface to namespace
+Parameter of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Parameter is to provide ***.  The python version
+of LOCA.Parameter supports the following classes:
+
+    * *****                - 
+
+Any other notes about the package as a whole. . . .
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_parameter_docstring) Parameter
 
 %{
 // Teuchos includes
