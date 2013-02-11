@@ -332,7 +332,7 @@ namespace stk {
         void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
         void create_ioss_region();
 
-        MPI_Comm communicator_;
+        MPI_Comm m_communicator_;
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
         Teuchos::RCP<Ioss::Region> m_input_region;
