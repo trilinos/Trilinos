@@ -31,7 +31,7 @@
 /* #undef HAVE_STOKHOS_ML */
 
 /* Define if MueLu is enabled */
-/* #undef HAVE_STOKHOS_MUELU */
+#define HAVE_STOKHOS_MUELU
 
 /* Define if Anasazi is enabled */
 /* #undef HAVE_STOKHOS_ANASAZI */
@@ -67,7 +67,7 @@
 /* #undef HAVE_STOKHOS_KOKKOSARRAY */
 
 /* Define if MueLu is enabled */
-/* #undef HAVE_STOKHOS_MUELU */
+#define HAVE_STOKHOS_MUELU
 
 /* Define if MATLAB is enabled */
 /* #undef HAVE_STOKHOS_MATLABLIB */

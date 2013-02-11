@@ -37,7 +37,7 @@
 /* #undef HAVE_TESTS */
 
 /* Optional Deps */
-/* #undef HAVE_GALERI_XPETRA */
+#define HAVE_GALERI_XPETRA
 #define HAVE_GALERI_TPETRA
 
 

@@ -13,7 +13,7 @@
 /* #undef HAVE_IFPACK2_ZOLTAN2 */
 
 /* Define if we have Xpetra */
-/* #undef HAVE_IFPACK2_XPETRA */
+#define HAVE_IFPACK2_XPETRA
 
 /* Define if explicit instantiation is enabled. */
 /* #undef HAVE_IFPACK2_EXPLICIT_INSTANTIATION */

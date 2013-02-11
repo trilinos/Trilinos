@@ -52,10 +52,10 @@
 /* #undef HAVE_AMESOS_SCALAPACK */
 
 /* Define if want to build amesos-superlu */
-/* #undef HAVE_AMESOS_SUPERLU */
+#define HAVE_AMESOS_SUPERLU
 
 /* Define if want to build amesos-superludist */
-#define HAVE_AMESOS_SUPERLUDIST
+/* #undef HAVE_AMESOS_SUPERLUDIST */
 
 /* Define if want to build amesos-taucs */
 /* #undef HAVE_AMESOS_TAUCS */
