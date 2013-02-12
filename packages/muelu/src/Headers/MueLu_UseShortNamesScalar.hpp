@@ -158,6 +158,10 @@ typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionFactory;
 #endif
 
+#ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
+typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RigidBodyModeFactory;
+#endif
+
 #ifdef MUELU_SAPFACTORY_SHORT
 typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SaPFactory;
 #endif
@@ -241,8 +245,4 @@ typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loca
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
-#endif
-
-#ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
-typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RigidBodyModeFactory;
 #endif
