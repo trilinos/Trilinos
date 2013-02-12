@@ -905,7 +905,7 @@ lowerTriSolveCscColMajorConj (
     MatrixScalar A_cc = STS::zero ();
     for (size_t k = ptr[c]; k < ptr[c+1]; ++k) {
       const Ordinal r = ind[k];
-      MatrixScalar A_rc = STS::conjugate (val[k]);
+      const MatrixScalar A_rc = STS::conjugate (val[k]);
       if (r == c) {
         A_cc += A_rc;
       } else {
