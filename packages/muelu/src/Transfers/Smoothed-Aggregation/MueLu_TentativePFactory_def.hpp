@@ -293,7 +293,7 @@ namespace MueLu {
         if (NSDim == 1) {
           // Only one nullspace vector, so normalize by hand
           Magnitude dtemp=0;
-          for (size_t k=0; k<myAggSize; ++k) {
+          for (size_t k=0; k<static_cast<size_t>(myAggSize); ++k) {
             dtemp += STS::magnitude(localQR(k,0))*STS::magnitude(localQR(k,0));
           }
           dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
@@ -335,7 +335,7 @@ namespace MueLu {
            qrSolver.formQ();
            Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
            for (size_t j=0; j<NSDim; j++) {
-             for (size_t i=0; i<myAggSize; i++) {
+             for (size_t i=0; i<static_cast<size_t>(myAggSize); i++) {
                localQR(i,j) = (*qFactor)(i,j);
              }
            }
