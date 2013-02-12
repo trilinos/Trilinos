@@ -288,7 +288,7 @@ namespace MueLu {
         // R is stored in localQR (size: myAggSize x NSDim)
 
         // Householder multiplier
-        SC tau;
+        SC tau = localQR(0,0);
 
         if (NSDim == 1) {
           // Only one nullspace vector, so normalize by hand
