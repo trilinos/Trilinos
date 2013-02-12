@@ -58,9 +58,27 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
+#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
 namespace Kokkos {
+
+namespace Details {
+  /// \fn getNode
+  /// \brief Create a Kokkos Node instance with default parameters.
+  /// \tparam NodeType The Kokkos Node type.
+  ///
+  /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
+  /// We presume that for every Kokkos Node, if that list of
+  /// parameters is empty, then the Node will use default parameters.
+  /// This is true for all the Node types implemented in Kokkos.
+  template<class NodeType>
+  Teuchos::RCP<NodeType>
+  getNode() {
+    Teuchos::ParameterList defaultParams;
+    return Teuchos::rcp (new NodeType (defaultParams));
+  }
+} // namespace Details
 
   /** \brief Class to specify %Kokkos default node type and instantiate the default node.
       \ingroup kokkos_node_api
