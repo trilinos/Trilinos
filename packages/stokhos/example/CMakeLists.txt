@@ -105,6 +105,12 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
+  cijk_nonzeros
+  SOURCES cijk_nonzeros.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
   sparsity_slice_example
   SOURCES sparsity_slice_example.cpp
   DEPLIBS stokhos
@@ -432,6 +438,16 @@ IF (Stokhos_ENABLE_Thrust)
     )
 
   ENDIF() 
+
+ENDIF()
+
+IF(Stokhos_ENABLE_Isorropia)
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition
+    SOURCES cijk_partition.cpp
+    DEPLIBS stokhos
+    )
 
 ENDIF()
 

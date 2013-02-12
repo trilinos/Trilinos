@@ -134,15 +134,29 @@ norm_squared(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-computeTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor() const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
   if (use_old_cijk_alg)
-    return computeTripleProductTensorOld(order);
+    return computeTripleProductTensorOld(sz);
   else
-    return computeTripleProductTensorNew(order);
+    return computeTripleProductTensorNew(sz);
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+computeLinearTripleProductTensor() const
+{
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
+#endif
+  if (use_old_cijk_alg)
+    return computeTripleProductTensorOld(d+1);
+  else
+    return computeTripleProductTensorNew(d+1);
 }
 
 template <typename ordinal_type, typename value_type>

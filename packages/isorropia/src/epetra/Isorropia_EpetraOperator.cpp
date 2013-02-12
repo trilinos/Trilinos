@@ -527,7 +527,7 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool r
         plist.set(paramNames[i], newlist);
       }
     }
-    else if (plist.isParameter(origName)){
+    else if (plist.isType<std::string>(origName)){
 
       std::string paramVal(plist.get<std::string>(origName));
 

@@ -75,7 +75,7 @@ namespace MatrixFreeOperatorUnitTest {
   
       // Triple product tensor
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-	basis->computeTripleProductTensor(basis->size());
+	basis->computeTripleProductTensor();
 
       // Create a communicator for Epetra objects
       Teuchos::RCP<const Epetra_Comm> globalComm;

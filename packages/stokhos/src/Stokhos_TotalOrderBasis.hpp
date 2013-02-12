@@ -97,13 +97,17 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
-     * is the supplied \c order.
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1.
      */
     virtual 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensor(ordinal_type order) const;
+    computeTripleProductTensor() const;
+
+    //! Compute linear triple product tensor where k = 0,1,..,d
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeLinearTripleProductTensor() const;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const;
@@ -204,6 +208,211 @@ namespace Stokhos {
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
 
   }; // class TotalOrderBasis
+
+  // An approach for building a sparse 3-tensor only for lexicographically
+  // ordered total order basis
+  // To-do:
+  //   * Remove the n_choose_k() calls
+  //   * Remove the loops in the Cijk_1D_Iterator::increment() functions
+  //   * Store the 1-D Cijk tensors in a compressed format and eliminate
+  //     the implicit searches with getValue()
+  //     * Instead of looping over (i,j,k) multi-indices we could just store
+  //       the 1-D Cijk tensors as an array of (i,j,k,c) tuples.
+  template <typename ordinal_type, 
+	    typename value_type>
+  Teuchos::RCP< Sparse3Tensor<ordinal_type, value_type> >
+  computeTripleProductTensorLTO(
+    const TotalOrderBasis<ordinal_type, value_type,LexographicLess<MultiIndex<ordinal_type> > >& product_basis,
+    bool symmetric = false) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+    TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Time");
+#endif
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::Array;
+
+    typedef MultiIndex<ordinal_type> coeff_type;
+    const Array< RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases = product_basis.getCoordinateBases();
+    ordinal_type d = bases.size();
+    //ordinal_type p = product_basis.order();
+    Array<ordinal_type> basis_orders(d);
+    for (int i=0; i<d; ++i)
+      basis_orders[i] = bases[i]->order();
+
+    // Create 1-D triple products
+    Array< RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
+    for (ordinal_type i=0; i<d; i++) {
+      Cijk_1d[i] = 
+	bases[i]->computeSparseTripleProductTensor(bases[i]->order()+1);
+    }
+
+    RCP< Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+      rcp(new Sparse3Tensor<ordinal_type, value_type>);
+      
+    // Create i, j, k iterators for each dimension
+    typedef ProductBasisUtils::Cijk_1D_Iterator<ordinal_type> Cijk_Iterator;
+    Array<Cijk_Iterator> Cijk_1d_iterators(d);
+    coeff_type terms_i(d,0), terms_j(d,0), terms_k(d,0);
+    Array<ordinal_type> sum_i(d,0), sum_j(d,0), sum_k(d,0);
+    for (ordinal_type dim=0; dim<d; dim++) {
+      Cijk_1d_iterators[dim] = Cijk_Iterator(bases[dim]->order(), symmetric);
+    }
+
+    ordinal_type I = 0;
+    ordinal_type J = 0;
+    ordinal_type K = 0;
+    ordinal_type cnt = 0;
+    bool stop = false;
+    while (!stop) {
+
+      // Fill out terms from 1-D iterators
+      for (ordinal_type dim=0; dim<d; ++dim) {
+	terms_i[dim] = Cijk_1d_iterators[dim].i;
+	terms_j[dim] = Cijk_1d_iterators[dim].j;
+	terms_k[dim] = Cijk_1d_iterators[dim].k;
+      }
+
+      // Compute global I,J,K
+      /*
+      ordinal_type II = lexicographicMapping(terms_i, p);
+      ordinal_type JJ = lexicographicMapping(terms_j, p);
+      ordinal_type KK = lexicographicMapping(terms_k, p);
+      if (I != II || J != JJ || K != KK) {
+	std::cout << "DIFF!!!" << std::endl;
+	std::cout << terms_i << ":  I = " << I << ", II = " << II << std::endl;
+	std::cout << terms_j << ":  J = " << J << ", JJ = " << JJ << std::endl;
+	std::cout << terms_k << ":  K = " << K << ", KK = " << KK << std::endl;
+      }
+      */
+
+      // Compute triple-product value
+      value_type c = value_type(1.0);
+      for (ordinal_type dim=0; dim<d; dim++) {
+	c *= Cijk_1d[dim]->getValue(Cijk_1d_iterators[dim].i, 
+				    Cijk_1d_iterators[dim].j, 
+				    Cijk_1d_iterators[dim].k);
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+	std::abs(c) <= 1.0e-12,
+	std::logic_error,
+	"Got 0 triple product value " << c 
+	<< ", I = " << I << " = " << terms_i
+	<< ", J = " << J << " = " << terms_j
+	<< ", K = " << K << " = " << terms_k
+	<< std::endl);
+      
+      // Add term to global Cijk
+      Cijk->add_term(I,J,K,c);
+      // Cijk->add_term(I,K,J,c);
+      // Cijk->add_term(J,I,K,c);
+      // Cijk->add_term(J,K,I,c);
+      // Cijk->add_term(K,I,J,c);
+      // Cijk->add_term(K,J,I,c);
+      
+      // Increment iterators to the next valid term
+      ordinal_type cdim = d-1;
+      bool inc = true;
+      while (inc && cdim >= 0) {
+	ordinal_type delta_i, delta_j, delta_k;
+	bool more = 
+	  Cijk_1d_iterators[cdim].increment(delta_i, delta_j, delta_k);
+
+	// Update number of terms used for computing global index
+	if (cdim == d-1) {
+	  I += delta_i;
+	  J += delta_j;
+	  K += delta_k;
+	}
+	else {
+	  if (delta_i > 0) {
+	    for (ordinal_type ii=0; ii<delta_i; ++ii)
+	      I += 
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_i[cdim] -
+		  (Cijk_1d_iterators[cdim].i-ii)+d-cdim,
+		  d-cdim-1);
+	  }
+	  else {
+	    for (ordinal_type ii=0; ii<-delta_i; ++ii)
+	      I -= 
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_i[cdim] -
+		  (Cijk_1d_iterators[cdim].i+ii)+d-cdim-1,
+		  d-cdim-1);
+	  }
+
+	  if (delta_j > 0) {
+	    for (ordinal_type jj=0; jj<delta_j; ++jj)
+	      J +=  
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_j[cdim] -
+		  (Cijk_1d_iterators[cdim].j-jj)+d-cdim,
+		  d-cdim-1);
+	  }
+	  else {
+	    for (ordinal_type jj=0; jj<-delta_j; ++jj)
+	      J -=  
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_j[cdim] -
+		  (Cijk_1d_iterators[cdim].j+jj)+d-cdim-1,
+		  d-cdim-1);
+	  }
+	  
+	  if (delta_k > 0) {
+	    for (ordinal_type kk=0; kk<delta_k; ++kk)
+	      K +=  
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_k[cdim] -
+		  (Cijk_1d_iterators[cdim].k-kk)+d-cdim,
+		  d-cdim-1);
+	  }
+	  else {
+	    for (ordinal_type kk=0; kk<-delta_k; ++kk)
+	      K -=  
+		Stokhos::n_choose_k(
+		  basis_orders[cdim+1]-sum_k[cdim] -
+		  (Cijk_1d_iterators[cdim].k+kk)+d-cdim-1,
+		  d-cdim-1);
+	  }
+	}
+	
+	if (!more) {
+	  // If no more terms in this dimension, go to previous one
+	  --cdim;
+	}
+	else {
+	  // cdim has more terms, so reset iterators for all dimensions > cdim
+	  // adjusting max order based on sum of i,j,k for previous dims
+	  inc = false;
+
+	  for (ordinal_type dim=cdim+1; dim<d; ++dim) {
+
+	    // Update sums of orders for previous dimension
+	    sum_i[dim] = sum_i[dim-1] + Cijk_1d_iterators[dim-1].i;
+	    sum_j[dim] = sum_j[dim-1] + Cijk_1d_iterators[dim-1].j;
+	    sum_k[dim] = sum_k[dim-1] + Cijk_1d_iterators[dim-1].k;
+
+	    // Reset iterator for this dimension
+	    Cijk_1d_iterators[dim] = 
+	      Cijk_Iterator(basis_orders[dim]-sum_i[dim],
+			    basis_orders[dim]-sum_j[dim],
+			    basis_orders[dim]-sum_k[dim],
+			    symmetric);
+	  }
+	}
+      }
+      
+      if (cdim < 0)
+	stop = true;
+      
+      cnt++;
+    }
+    
+    Cijk->fillComplete();
+    
+    return Cijk;
+  }
 
 } // Namespace Stokhos
 

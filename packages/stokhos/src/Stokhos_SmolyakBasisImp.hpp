@@ -244,23 +244,31 @@ norm_squared(ordinal_type i) const
 template <typename ordinal_type, typename value_type, typename ordering_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
-computeTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor() const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
 
-  // Check order is valid
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    order > p, std::logic_error, 
-    "Invalid order of " << order << " for Cijk.  Max order is " << p << ".");
+  return ProductBasisUtils::computeTripleProductTensor(
+    bases, basis_set, basis_map, sm_pred, sm_pred, sparse_tol);
+}
+
+template <typename ordinal_type, typename value_type, typename ordering_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
+computeLinearTripleProductTensor() const
+{
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
+#endif
 
   SmolyakPredicate< TotalOrderPredicate<ordinal_type> > k_pred;
   for (ordinal_type i=0; i<sm_pred.tp_preds.size(); ++i) {
-    k_pred.tp_preds.push_back(
-      TotalOrderPredicate<ordinal_type>(order, sm_pred.tp_preds[i].orders) );
+    k_pred.tp_preds.push_back( 
+      TotalOrderPredicate<ordinal_type>(1, sm_pred.tp_preds[i].orders) );
   }
-  
+
   return ProductBasisUtils::computeTripleProductTensor(
     bases, basis_set, basis_map, sm_pred, k_pred, sparse_tol);
 }

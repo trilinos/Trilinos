@@ -266,11 +266,7 @@ namespace Stokhos {
     bool linear = false)
   {
     ordinal_type d = basis.dimension();
-    ordinal_type p = basis.order();
     ordinal_type sz = basis.size();
-    ordinal_type k_ord = p;
-    if (linear)
-      k_ord = 1;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,scalar_type> > > bases = basis.getCoordinateBases();
     Stokhos::Sparse3Tensor<ordinal_type,scalar_type> Cijk2;
     Teuchos::Array< Teuchos::RCP<Stokhos::Dense3Tensor<ordinal_type,scalar_type> > > Cijk_1d(d);
@@ -282,7 +278,7 @@ namespace Stokhos {
 	Stokhos::MultiIndex<ordinal_type> terms_i = basis.term(i);
 	for (ordinal_type k=0; k<sz; k++) {
 	  Stokhos::MultiIndex<ordinal_type> terms_k = basis.term(k);
-	  if (terms_k.order() <= k_ord) {
+	  if (!linear || terms_k.order() <= 1) {
 	    scalar_type c = 1.0;
 	    for (ordinal_type l=0; l<d; l++)
 	      c *= (*Cijk_1d[l])(terms_i[l],terms_j[l],terms_k[l]);

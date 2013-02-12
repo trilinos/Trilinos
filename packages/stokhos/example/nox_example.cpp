@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Cijk = basis->computeTripleProductTensor(sz);
+    Cijk = basis->computeTripleProductTensor();
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));

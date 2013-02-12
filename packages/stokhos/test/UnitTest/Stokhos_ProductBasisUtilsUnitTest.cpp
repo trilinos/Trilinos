@@ -479,7 +479,7 @@ namespace ProductBasisUtilsUnitTest {
     // Build Cijk tensor using original approach
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
     Teuchos::RCP<Cijk_type> Cijk2 =
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor();
     
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
@@ -513,7 +513,142 @@ namespace ProductBasisUtilsUnitTest {
 	}
       }
     }
+  }
 
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderSparse3TensorNew ) {
+    success = true;
+    // ordinal_type dim = setup.d;
+    // ordinal_type order = setup.p;
+    ordinal_type dim = 2;
+    ordinal_type order = 3;
+
+    // Build index set of dimension d and order p
+    typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
+    index_set_type indexSet(dim, 0, order);
+
+    // Build total-order basis from index set
+    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
+    typedef Stokhos::TotalOrderLess<coeff_type> less_type;
+    typedef std::map<coeff_type, ordinal_type, less_type> basis_set_type;
+    typedef basis_set_type::iterator basis_set_iterator;
+    typedef Teuchos::Array<coeff_type> basis_map_type;
+    basis_set_type basis_set;
+    basis_map_type basis_map;
+    Stokhos::ProductBasisUtils::buildProductBasis(
+      indexSet, basis_set, basis_map);
+
+    // 1-D bases
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(dim);
+    for (ordinal_type i=0; i<dim; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, true));
+
+    // Build Cijk tensor
+    typedef Stokhos::Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+    total_order_predicate<ordinal_type> pred(dim, order);
+    //general_predicate<basis_set_type> pred(basis_set);
+    Teuchos::RCP<Cijk_type> Cijk =
+      Stokhos::ProductBasisUtils::computeTripleProductTensorNew<ordinal_type,value_type>(bases, basis_set, basis_map, pred, pred, false);
+
+    // Build Cijk tensor using original approach
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
+    Teuchos::RCP<Cijk_type> Cijk2 =
+      basis->computeTripleProductTensor();
+    
+    // Check sizes
+    TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
+    TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
+    
+    // Check tensors match
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
+	 k_it!=Cijk2->k_end(); ++k_it) {
+      int k = Stokhos::index(k_it);
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
+	   j_it != Cijk2->j_end(k_it); ++j_it) {
+	int j = Stokhos::index(j_it);
+	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+	     i_it != Cijk2->i_end(j_it); ++i_it) {
+	  int i = Stokhos::index(i_it);
+	  double c = Cijk->getValue(i,j,k);
+	  double c2 = Stokhos::value(i_it);
+	  double tol = setup.atol + c2*setup.rtol;
+	  double err = std::abs(c-c2);
+	  bool s = err < tol;
+	  if (!s) {
+	    out << std::endl
+		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
+		<< " <= " << tol << " : ";
+	    if (s) out << "Passed.";
+	    else out << "Failed!";
+	    out << std::endl;
+	  }
+	  success = success && s;
+	}
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderSparse3LTO ) {
+    success = true;
+    ordinal_type dim = setup.d;
+    ordinal_type order = setup.p;
+    // ordinal_type dim = 2;
+    // ordinal_type order = 3;
+
+    // 1-D bases
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(dim);
+    for (ordinal_type i=0; i<dim; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, true));
+
+    // Product basis
+    typedef Stokhos::MultiIndex<ordinal_type> coeff_type;
+    typedef Stokhos::LexographicLess<coeff_type> less_type;
+    Stokhos::TotalOrderBasis<ordinal_type,value_type,less_type> basis(
+      bases);
+
+    // Build Cijk tensor
+    typedef Stokhos::Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+    Teuchos::RCP<Cijk_type> Cijk =
+      Stokhos::computeTripleProductTensorLTO(basis, true);
+
+    // Build Cijk tensor using original approach
+    Teuchos::RCP<Cijk_type> Cijk2 =
+      basis.computeTripleProductTensor();
+    
+    // Check sizes
+    TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
+    TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
+    
+    // Check tensors match
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
+	 k_it!=Cijk2->k_end(); ++k_it) {
+      int k = Stokhos::index(k_it);
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
+	   j_it != Cijk2->j_end(k_it); ++j_it) {
+	int j = Stokhos::index(j_it);
+	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+	     i_it != Cijk2->i_end(j_it); ++i_it) {
+	  int i = Stokhos::index(i_it);
+	  double c = Cijk->getValue(i,j,k);
+	  double c2 = Stokhos::value(i_it);
+	  double tol = setup.atol + c2*setup.rtol;
+	  double err = std::abs(c-c2);
+	  bool s = err < tol;
+	  if (!s) {
+	    out << std::endl
+		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
+		<< " <= " << tol << " : ";
+	    if (s) out << "Passed.";
+	    else out << "Failed!";
+	    out << std::endl;
+	  }
+	  success = success && s;
+	}
+      }
+    }
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderMapping ) {
@@ -576,6 +711,68 @@ namespace ProductBasisUtilsUnitTest {
       }
       out << std::endl;
       ++i;
+      ++idx;
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, LexographicMapping2 ) {
+    success = true;
+
+    // Build sorted index set of dimension d and order p
+    ordinal_type d = setup.d;
+    ordinal_type p = setup.p;
+    typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef Stokhos::LexographicLess<multiindex_type> less_type;
+    typedef std::set<multiindex_type, less_type> multiindex_set;
+    typedef multiindex_set::iterator iterator;
+    index_set_type indexSet(d, 0, p);
+    multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
+
+    // Loop over lexicographically sorted multi-indices, compute global index
+    // using combinatorial number system, and test if it is correct
+    multiindex_type index(d), num_terms(d), orders(d,p);
+    bool stop = false;
+    ordinal_type idx = 0;
+    index[d-1] = -1;
+    num_terms[d-1] = -1;
+    while (!stop) {
+      // Increment index to next lexicographic term
+      ordinal_type dim = d-1;
+      ++index[dim];
+      while (dim > 0 && index[dim] > orders[dim]) {
+	index[dim] = 0;
+	--dim;
+	++index[dim];
+      }
+      for (ordinal_type i=dim+1; i<d; ++i)
+	orders[i] = orders[i-1] - index[i-1];
+
+      if (index[dim] > orders[dim]) 
+	stop = true;
+      else {
+	// Update num_terms:  num_terms[dim] = number of terms with 
+	// order < index[dim] and dimension d-dim-1
+	num_terms[dim] += Stokhos::n_choose_k(orders[dim]-index[dim]+d-dim,
+					      d-dim-1);
+	for (ordinal_type i=dim+1; i<d; ++i)
+	  num_terms[i] = 0;
+
+	// Compute global index
+	ordinal_type I = num_terms.order();
+	//ordinal_type I = lexicographicMapping(index, p);
+
+	out << index << ":  index = " << idx << " mapped index = " << I
+	    << ":  ";
+	if (idx == I)
+	  out << "passed";
+	else {
+	  out << "failed";
+	  success = false;
+	}
+	out << std::endl;
+      }
+
       ++idx;
     }
   }

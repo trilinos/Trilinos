@@ -30,6 +30,8 @@
 
 #include "Stokhos_Epetra.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Isorropia_EpetraPartitioner.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -81,6 +83,11 @@ const OrderingType ordering_type_values[] = {
 const char *ordering_type_names[] = { 
   "total", "lexicographic" };
 
+using Teuchos::rcp;
+using Teuchos::RCP;
+using Teuchos::ParameterList;
+using Teuchos::Array;
+
 int main(int argc, char **argv)
 {
   try {
@@ -126,101 +133,88 @@ int main(int argc, char **argv)
     CLP.setOption("beta", &beta, "Jacobi beta index");
     bool full = true;
     CLP.setOption("full", "linear", &full, "Use full or linear expansion");
-    bool use_old = false;
-    CLP.setOption("old", "new", &use_old, "Use old or new Cijk algorithm");
-    bool print = false;
-    CLP.setOption("print", "no-print", &print, "Print Cijk to screen");
-    bool save_3tensor = false;
-    CLP.setOption("save_3tensor", "no-save_3tensor", &save_3tensor, 
-		  "Save full 3tensor to file");
-    std::string file_3tensor = "Cijk.dat";
-    CLP.setOption("filename_3tensor", &file_3tensor, 
-		  "Filename to store full 3-tensor");
-    bool unique = false;
-    CLP.setOption("unique", "no-unique", &unique, 
-		  "Only save the unique non-zeros");
-
+    int tile_size = 128;
+    CLP.setOption("tile_size", &tile_size, "Tile size");
+    
     // Parse arguments
     CLP.parse( argc, argv );
 
     // Basis
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Array< RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
       if (basis_type == HERMITE)
-	bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
+	bases[i] = rcp(new Stokhos::HermiteBasis<int,double>(
 				  p, true, growth_type));
       else if (basis_type == LEGENDRE)
-	bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
+	bases[i] = rcp(new Stokhos::LegendreBasis<int,double>(
 				  p, true, growth_type));
       else if (basis_type == CC_LEGENDRE)
 	bases[i] = 
-	  Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
+	  rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
 			 p, true));
       else if (basis_type == GP_LEGENDRE)
 	bases[i] = 
-	  Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<int,double>(
+	  rcp(new Stokhos::GaussPattersonLegendreBasis<int,double>(
 			 p, true));
       else if (basis_type == RYS)
-	bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
+	bases[i] = rcp(new Stokhos::RysBasis<int,double>(
 				  p, 1.0, true, growth_type));
       else if (basis_type == JACOBI)
-	bases[i] = Teuchos::rcp(new Stokhos::JacobiBasis<int,double>(
+	bases[i] = rcp(new Stokhos::JacobiBasis<int,double>(
 				  p, alpha, beta, true, growth_type));
     }
-    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
+    RCP<const Stokhos::ProductBasis<int,double> > basis;
     typedef Stokhos::TotalOrderLess< Stokhos::MultiIndex<int> > total_less;
     typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > lexo_less;
     if (prod_basis_type == COMPLETE)
       basis = 
-	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
-		       bases, drop, use_old));
+	rcp(new Stokhos::CompletePolynomialBasis<int,double>(
+		       bases, drop));
     else if (prod_basis_type == TENSOR) {
       if (ordering_type == TOTAL_ORDERING)
 	basis = 
-	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,total_less>(
+	  rcp(new Stokhos::TensorProductBasis<int,double,total_less>(
 			 bases, drop));
       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
 	basis = 
-	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,lexo_less>(
+	  rcp(new Stokhos::TensorProductBasis<int,double,lexo_less>(
 			 bases, drop));
     }
+	
     else if (prod_basis_type == TOTAL) {
       if (ordering_type == TOTAL_ORDERING)
 	basis = 
-	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,total_less>(
+	  rcp(new Stokhos::TotalOrderBasis<int,double,total_less>(
 			 bases, drop));
       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
 	basis = 
-	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,lexo_less>(
+	  rcp(new Stokhos::TotalOrderBasis<int,double,lexo_less>(
 			 bases, drop));
     }
     else if (prod_basis_type == SMOLYAK) {
       Stokhos::TotalOrderIndexSet<int> index_set(d, p);
-       if (ordering_type == TOTAL_ORDERING)
-	 basis = 
-	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,total_less>(
-			  bases, index_set, drop));
-       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
-	 basis = 
-	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,lexo_less>(
-			  bases, index_set, drop));
+      if (ordering_type == TOTAL_ORDERING)
+	basis = 
+	  rcp(new Stokhos::SmolyakBasis<int,double,total_less>(
+			 bases, index_set, drop));
+      else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	basis = 
+	  rcp(new Stokhos::SmolyakBasis<int,double,lexo_less>(
+			 bases, index_set, drop));
     }
 
     // Triple product tensor
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
-    Teuchos::RCP<Cijk_type> Cijk;
+    RCP<Cijk_type> Cijk;
     if (full)
       Cijk = basis->computeTripleProductTensor();
     else
       Cijk = basis->computeLinearTripleProductTensor();
 
-    std::cout << "basis size = " << basis->size() 
+    int basis_size = basis->size();
+    std::cout << "basis size = " << basis_size
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
 	      << std::endl;
-
-    if (print) {
-      std::cout << *Cijk << std::endl;
-    }
 
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -228,39 +222,41 @@ int main(int argc, char **argv)
     Epetra_SerialComm comm;
 #endif
     
-    // Print triple product sparsity to matrix market file
-    Stokhos::sparse3Tensor2MatrixMarket(*basis, *Cijk, comm, file);
-
-    // Print full 3-tensor to file
-    if (save_3tensor) {
-      std::ofstream cijk_file(file_3tensor.c_str());
-      cijk_file.precision(14);
-      cijk_file.setf(std::ios::scientific);
-      int sz = basis->size();
-      cijk_file << "i, j, k, cijk" << std::endl;
-      Cijk_type::k_iterator k_begin = Cijk->k_begin();
-      Cijk_type::k_iterator k_end = Cijk->k_end();
-      for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
-	int k = index(k_it);
-	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
-	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
-	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-	  int j = index(j_it);
-	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
-	  Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
-	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
-	    int i = index(i_it);
-	    double cijk = value(i_it);
-	    if (!unique || ( i >= j && j >= k ))
-	      cijk_file << i << ", " 
-			<< j << ", " 
-			<< k << ", "
-			<< cijk << std::endl;
-	  }
+    // Store Cijk (i,j,k) triples in Epetra_MultiVector
+    int num_cijk_entries = Cijk->num_entries();
+    Epetra_LocalMap cijk_map(num_cijk_entries, 0, comm);
+    Epetra_MultiVector ijk_triples(cijk_map, 3);
+    int idx = 0;
+    Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      int k = index(k_it);
+      Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+      Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+      for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	int j = index(j_it);
+	Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
+	for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	  int i = index(i_it);
+	  ijk_triples[0][idx] = i;
+	  ijk_triples[1][idx] = j;
+	  ijk_triples[2][idx] = k;
+	  ++idx;
 	}
       }
-      cijk_file.close();
     }
+
+    // Partition ijk_triples using isorropia
+    ParameterList params;
+    params.set("partitioning method", "rcb");
+    int num_parts = num_cijk_entries / tile_size;
+    if (num_cijk_entries % tile_size > 0)
+      ++num_parts;
+    params.set<int>("num parts", num_parts);
+    RCP<const Epetra_MultiVector> ijk_triples_rcp =
+      rcp(&ijk_triples,false);
+    Isorropia::Epetra::Partitioner partitioner(ijk_triples_rcp, params); 
 
     Teuchos::TimeMonitor::summarize(std::cout);
     

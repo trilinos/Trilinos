@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( Stokhos_LogNormal_TP, UnitTest ) {
   
   // Triple product tensor
   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-    basis->computeTripleProductTensor(basis->size());
+    basis->computeTripleProductTensor();
 
   // Expansion method
   Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, Cijk, quad);
@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST( Stokhos_LogNormal_SG, UnitTest ) {
   
   // Triple product tensor
   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-    basis->computeTripleProductTensor(basis->size());
+    basis->computeTripleProductTensor();
 
   // Expansion method
   Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, Cijk, quad);

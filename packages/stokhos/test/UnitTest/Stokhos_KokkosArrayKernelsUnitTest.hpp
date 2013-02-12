@@ -179,7 +179,7 @@ namespace KokkosArrayKernelsUnitTest {
 	bases[i] = rcp(new basis_type(p,true));
       basis = rcp(new product_basis_type(bases, 1e-12));
       stoch_length = basis->size();
-      Cijk = basis->computeTripleProductTensor(stoch_length);
+      Cijk = basis->computeTripleProductTensor();
       
       // Create stochastic parallel distribution
       ParameterList parallelParams;
