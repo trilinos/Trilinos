@@ -120,6 +120,7 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
+  assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false)
 {
@@ -142,6 +143,7 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
+  assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false)
 {
@@ -181,6 +183,7 @@ setParameters (Teuchos::ParameterList& plist) {
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
+  const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
 
@@ -196,6 +199,7 @@ setParameters (Teuchos::ParameterList& plist) {
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
   bool zeroStartingSolution = defaultZeroStartingSolution;
+  bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
 
@@ -338,6 +342,8 @@ setParameters (Teuchos::ParameterList& plist) {
 
   zeroStartingSolution = plist.get ("chebyshev: zero starting solution", 
 				    zeroStartingSolution);
+  assumeMatrixUnchanged = plist.get ("chebyshev: assume matrix does not change", 
+				     assumeMatrixUnchanged);
 
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
@@ -396,6 +402,7 @@ setParameters (Teuchos::ParameterList& plist) {
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
   zeroStartingSolution_ = zeroStartingSolution;
+  assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
 }
@@ -403,7 +410,7 @@ setParameters (Teuchos::ParameterList& plist) {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-compute (const bool assumeMatrixUnchanged) {
+compute () {
   using std::endl;
   // FIXME (mfh 22 Jan 2013, 10 Feb 2013) In all cases when we use
   // isnaninf() in this method, we really only want to check if the
@@ -411,7 +418,7 @@ compute (const bool assumeMatrixUnchanged) {
   // Teuchos::ScalarTraits doesn't distinguish the two cases.
 
   if (userInvDiag_.is_null ()) {
-    if (! assumeMatrixUnchanged || D_.is_null ()) {
+    if (! assumeMatrixUnchanged_ || D_.is_null ()) {
       // If we haven't computed the inverse diagonal D_ before,
       // or if the the user says that the matrix may have changed,
       // then (re)compute the inverse diagonal.
@@ -438,7 +445,7 @@ compute (const bool assumeMatrixUnchanged) {
   //
   // We at least need an estimate of the max eigenvalue.  This is the
   // most important one if using Chebyshev as a smoother.
-  if (! assumeMatrixUnchanged || 
+  if (! assumeMatrixUnchanged_ || 
       (! computedEigenvalueEstimates && STS::isnaninf (userLambdaMax_))) {
     const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -877,8 +884,10 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters) {
   x.randomize ();
   norm = x.norm2 ();
   TEUCHOS_TEST_FOR_EXCEPTION(norm == zero, std::runtime_error, 
-    "Chebyshev::powerMethod: Tpetra::Vector::randomize filled the vector "
-    "with zeros.  This is not impossible, but is unlikely.");
+    "Ifpack2::Chebyshev::powerMethod: "
+    "Tpetra::Vector's randomize() method filled the vector "
+    "with zeros.  This is not impossible, but is unlikely.  "
+    "It's far more likely that there is a bug in Tpetra.");
 
   x.scale (one / norm);
   for (int iter = 0; iter < numIters; ++iter) {
@@ -1016,6 +1025,7 @@ describe (Teuchos::FancyOStream& out,
 	    << "numIters_: " << numIters_ << endl
 	    << "eigMaxIters_: " << eigMaxIters_ << endl
 	    << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
+	    << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
 	    << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
 	    << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
       }

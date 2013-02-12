@@ -174,6 +174,13 @@ public:
   ///   with ML.
   ///
   /// Parameters that govern other algorithmic details:
+  /// - "chebyshev: assume matrix does not change": Whether compute()
+  ///   should always assume that the matrix has not changed since the
+  ///   last call to compute().  The default is false.  If true,
+  ///   compute() will not recompute the inverse diagonal or the
+  ///   estimates of the max and min eigenvalues.  compute() will
+  ///   always compute any quantity which the user did not provide and
+  ///   which we have not yet computed before.
   /// - "chebyshev: operator inv diagonal" (<tt>RCP<const V></tt> or
   ///   <tt>const V*</tt>): If nonnull, we will use a deep copy of
   ///   this vector for left scaling as the inverse diagonal of the
@@ -229,17 +236,21 @@ public:
   /// Chebyshev iterations.
   ///
   /// Advanced users may avoid recomputing the left scaling and max
-  /// eigenvalue estimate by setting assumeMatrixUnchanged to \c true,
-  /// as long as none of the changed parameters affect either
-  /// computation of the inverse diagonal, or estimation of the max or
-  /// min eigenvalues.
+  /// eigenvalue estimate by setting the "Assume matrix does not
+  /// change" parameter of setParameters() to \c true.  The estimates
+  /// will always be computed if the user did not provide them and we
+  /// have not yet estimated them.  Any changes to parameters that
+  /// affect computation of the inverse diagonal or estimation of the
+  /// eigenvalue bounds will not affect subsequent apply() operations,
+  /// until the "Assume matrix does not change" parameter is set back
+  /// to \c false (its default value).
   ///
   /// \param assumeMatrixUnchanged [in] If false, always compute the
   ///   left scaling D_inv and estimate the max eigenvalue of D_inv *
   ///   A.  If true, do not recompute these quantities.  (This method
   ///   will always compute them if they have not yet been computed
   ///   and if the user has not provided them to setParameters().)
-  void compute (const bool assumeMatrixUnchanged=false);
+  void compute ();
 
   /// \brief Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
   ///
@@ -359,6 +370,13 @@ private:
   int eigMaxIters_;
   //! Whether to assume that the X input to apply() is always zero.
   bool zeroStartingSolution_;
+  /// Whether compute() should assume that the matrix has not changed.
+  ///
+  /// If true, compute() will not recompute the inverse diagonal or
+  /// the estimates of the max and min eigenvalues.  compute() will
+  /// always compute any quantity which the user did not provide and
+  /// which we have not yet computed before.
+  bool assumeMatrixUnchanged_;
   //! Whether to use the textbook version of the algorithm.
   bool textbookAlgorithm_;
   //! Whether apply() will compute and return the max residual norm.
