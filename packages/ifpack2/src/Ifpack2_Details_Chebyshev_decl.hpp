@@ -132,6 +132,8 @@ public:
   /// ParameterList used in the previous call in order to get the same
   /// behavior as before.
   ///
+  /// \section Ifpack2_Details_Chebyshev_setParameters_List List of parameters
+  ///
   /// Parameters that govern spectral bounds of the matrix:
   /// - "chebyshev: max eigenvalue" (\c ScalarType): lambdaMax, an
   ///   upper bound of the bounding ellipse of the eigenvalues of the
@@ -188,8 +190,8 @@ public:
   ///   We will make a copy every time you call setParameters().  If
   ///   you ever call setParameters() without this parameter, we will
   ///   clear our copy and compute the inverse diagonal ourselves
-  ///   again.  You are responsible for updating this if the matrix
-  ///   has changed.
+  ///   again.  If you choose to provide this parameter, you are
+  ///   responsible for updating this if the matrix has changed.
   /// - "chebyshev: min diagonal value" (\c ST): minDiagVal.  If any
   ///   entry of the diagonal of the matrix is less than this in
   ///   magnitude, it will be replaced with this value in the inverse
@@ -207,6 +209,10 @@ public:
   /// - "chebyshev: compute max residual norm" (\c bool): If true,
   ///   apply() will compute and return the max (absolute) residual
   ///   norm.  Otherwise, apply() returns 0.  This defaults to false.
+  ///
+  /// The above compatibility parameters are not exposed in the
+  /// documentation of Ifpack2::Chebyshev, because they are more
+  /// useful to Ifpack2 developers than to users.
   ///
   /// \pre lambdaMin, lambdaMax, and eigRatio are real
   /// \pre 0 < lambdaMin <= lambdaMax
@@ -235,21 +241,16 @@ public:
   /// eigenvalues is required, this method may take as long as several
   /// Chebyshev iterations.
   ///
-  /// Advanced users may avoid recomputing the left scaling and max
-  /// eigenvalue estimate by setting the "Assume matrix does not
-  /// change" parameter of setParameters() to \c true.  The estimates
-  /// will always be computed if the user did not provide them and we
-  /// have not yet estimated them.  Any changes to parameters that
-  /// affect computation of the inverse diagonal or estimation of the
+  /// Advanced users may avoid recomputing the left scaling vector and
+  /// eigenvalue estimates by setting the "chebyshev: assume matrix
+  /// does not change" parameter of setParameters() to \c true.  The
+  /// left scaling vector and eigenvalue estimates will always be
+  /// computed if the user did not provide them and we have not yet
+  /// computed them.  Any changes to parameters that affect
+  /// computation of the inverse diagonal or estimation of the
   /// eigenvalue bounds will not affect subsequent apply() operations,
-  /// until the "Assume matrix does not change" parameter is set back
-  /// to \c false (its default value).
-  ///
-  /// \param assumeMatrixUnchanged [in] If false, always compute the
-  ///   left scaling D_inv and estimate the max eigenvalue of D_inv *
-  ///   A.  If true, do not recompute these quantities.  (This method
-  ///   will always compute them if they have not yet been computed
-  ///   and if the user has not provided them to setParameters().)
+  /// until the "chebyshev: assume matrix does not change" parameter
+  /// is set back to \c false (its default value).
   void compute ();
 
   /// \brief Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
