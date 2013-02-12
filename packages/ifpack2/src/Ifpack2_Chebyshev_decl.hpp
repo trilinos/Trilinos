@@ -423,7 +423,7 @@ public:
   /// Whether the preconditioner has been successfully initialized
   /// (by calling initialize()).
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return IsInitialized_;
   }
 
   /// \brief (Re)compute the left scaling, and (if applicable)

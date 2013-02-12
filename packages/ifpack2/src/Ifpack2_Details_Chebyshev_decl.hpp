@@ -84,6 +84,8 @@ namespace Details {
 template<class ScalarType, class MV, class MAT>
 class Chebyshev : public Teuchos::Describable {
 public:
+  //! \name Typedefs
+  //@{ 
   typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename STS::magnitudeType MT;
@@ -98,6 +100,7 @@ public:
   typedef Tpetra::Map<typename MV::local_ordinal_type,
 		      typename MV::global_ordinal_type,
 		      typename MV::node_type> map_type;
+  //@}
 
   /// Constructor that takes a sparse matrix and sets default parameters.
   ///
@@ -207,27 +210,35 @@ public:
   /// from Ifpack.
   void setParameters (Teuchos::ParameterList& plist);
 
-  /// \brief Establishes which parameters (user-supplied or estimates)
-  /// will be used by apply method. Optionally (re)compute the left
-  /// scaling, and (if applicable)
-  /// estimate max and min eigenvalues of D_inv * A.
-  /// 
-  /// \param [in] assumeMatrixUnchanged If false, scaling and eigenvalue
-  ///             estimation is performed. If true, these calculations
-  ///             are skipped.
+  /// \brief (Re)compute the left scaling D_inv, and estimate min and
+  ///   max eigenvalues of D_inv * A.
   ///
   /// You must call this method before calling apply(),
   /// - if you have not yet called this method,
   /// - if the matrix (either its values or its structure) has changed, or
-  /// - any time after you call setParameters().
+  /// - any time after you call setParameters(). 
   ///
-  /// Advanced users may call compute(\c true) after calling
-  /// setParameters(), as long as none of the changed parameters
-  /// affect either computation of the inverse diagonal, or estimation
-  /// of the max or min eigenvalues.
+  /// Users have the option to supply the left scaling vector D_inv
+  /// and estimates of the min and max eigenvalues of D_inv * A as
+  /// parameters to setParameters().  If users did <i>not</i> supply a
+  /// left scaling, then this method will compute it by default (if
+  /// assumeMatrixUnchanged is false).  Likewise, if users did
+  /// <i>not</i> supply at least an estimate of the max eigenvalue,
+  /// this method will estimate it by default.  If estimation of the
+  /// eigenvalues is required, this method may take as long as several
+  /// Chebyshev iterations.
   ///
-  /// If estimation of the eigenvalues is required, this method may
-  /// take as long as several Chebyshev iterations.
+  /// Advanced users may avoid recomputing the left scaling and max
+  /// eigenvalue estimate by setting assumeMatrixUnchanged to \c true,
+  /// as long as none of the changed parameters affect either
+  /// computation of the inverse diagonal, or estimation of the max or
+  /// min eigenvalues.
+  ///
+  /// \param assumeMatrixUnchanged [in] If false, always compute the
+  ///   left scaling D_inv and estimate the max eigenvalue of D_inv *
+  ///   A.  If true, do not recompute these quantities.  (This method
+  ///   will always compute them if they have not yet been computed
+  ///   and if the user has not provided them to setParameters().)
   void compute (const bool assumeMatrixUnchanged=false);
 
   /// \brief Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
@@ -257,14 +268,19 @@ public:
   //! Print instance data to the given output stream.
   void print (std::ostream& out);
 
-  //! Return single line description of the Chebyshev solver.
-    std::string description() const;
+  //@}
+  //! \name Implementation of Teuchos::Describable
+  //@{ 
 
-  //! Return more verbose description of the Chebyshev solver.
-  //!
-  //! @todo Currently returns just the single line description.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  //! A single-line description of the Chebyshev solver.
+  std::string description() const;
 
+  //! Print a description of the Chebyshev solver to \c out.
+  void 
+  describe (Teuchos::FancyOStream& out, 
+	    const Teuchos::EVerbosityLevel verbLevel = 
+	    Teuchos::Describable::verbLevel_default) const;
+  //@}
 private:
   //! \name The sparse matrix, and other related data.
   //@{
@@ -304,28 +320,42 @@ private:
   ST computedLambdaMin_;
 
   //@}
-  //! \name Parameters (from the user-supplied ParameterList)
+  //! \name Eigenvalue estimates to be used by apply().
   //@{
 
-  //! Range Map version of user-supplied inverse diagonal of the matrix A.
-  Teuchos::RCP<const V> userInvDiag_;
-
-  /// User-provided estimate for maximum eigenvalue of A.
-  /// This is set to NaN if the user did not provide this.
-  ST lambdaMax_; 
-  /// User-provided estimate for minimum eigenvalue of A.
-  /// This is set to NaN if the user did not provide this.
-  ST lambdaMin_; 
+  /// Estimate for maximum eigenvalue of A.
+  /// This is the value actually used by ifpackApplyImpl().
+  ST lambdaMaxForApply_; 
+  /// Estimate for minimum eigenvalue of A.
+  /// This is the value actually used by ifpackApplyImpl().
+  ST lambdaMinForApply_; 
   /// Estimate for ratio of max to min eigenvalue of A.
-  /// Not necessarily equal to lambdaMax_/lambdaMin_.
-  ST eigRatio_;  
+  /// This is the ratio actually used by ifpackApplyImpl().
+  ST eigRatioForApply_;
+
+  //@}
+  //! \name Parameters given by the user to setParameters().
+  //@{
+
+  /// Range Map version of user-supplied inverse diagonal of the matrix A.
+  /// This is null if the user did not provide it.
+  Teuchos::RCP<const V> userInvDiag_;
+  /// User-provided estimate for maximum eigenvalue of A.
+  /// This is NaN if the user did not provide this.
+  ST userLambdaMax_; 
+  /// User-provided estimate for minimum eigenvalue of A.
+  /// This is NaN if the user did not provide this.
+  ST userLambdaMin_; 
+  /// User-provided estimate for ratio of max to min eigenvalue of A.
+  /// Not necessarily equal to userLambdaMax_ / userLambdaMin_.
+  ST userEigRatio_;  
   /// Minimum allowed value on the diagonal of the matrix.  
   /// When computing the inverse diagonal, values less than this in
   /// magnitude are replaced with 1.
   ST minDiagVal_;
   //! Number of Chebyshev iterations to run on each call to apply().
   int numIters_;
-  //! Number of iterations of the power method for estimating lambdaMax_.
+  //! Number of power method iterations for estimating the max eigenvalue.
   int eigMaxIters_;
   //! Whether to assume that the X input to apply() is always zero.
   bool zeroStartingSolution_;
@@ -333,17 +363,6 @@ private:
   bool textbookAlgorithm_;
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
-
-  //@}
-  //! \name Parameters to be used by the apply.
-  //@{
-
-  /// Estimate for ratio of max to min eigenvalue of A.
-  ST eigRatioForApply_;
-  /// Estimate for maximum eigenvalue of A.
-  ST lambdaMaxForApply_; 
-  /// Estimate for minimum eigenvalue of A.
-  ST lambdaMinForApply_; 
 
   //@}
   //! \name Computational helper methods
