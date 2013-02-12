@@ -722,10 +722,11 @@ namespace panzer {
      Teuchos::RCP<Stokhos::ProductBasis<int,double> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     
      // build Cijk and "expansion"
-     int kExpOrder = basis->size();
+     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
      if(!fullExpansion)
-        kExpOrder = numDim+1;
-     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
+       Cijk == basis->computeLinearTripleProductTensor();
+     else
+       Cijk == basis->computeTripleProductTensor();
      Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     
      return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));
