@@ -73,6 +73,10 @@ int Aztec2Petra(int * proc_config,
     throw error;
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // REMOVE BEGIN
+  // If no 32 bit indices, remove the code below using the preprocessor
+  // otherwise VbrMatrix functions cause linker issues.
+
   // Build Epetra_Comm object
 
 #ifdef AZTEC_MPI
@@ -252,5 +256,7 @@ int Aztec2Petra(int * proc_config,
    else
      global_indices = &global_bindx;
    }
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES REMOVE END
+
   return 0;
 }
