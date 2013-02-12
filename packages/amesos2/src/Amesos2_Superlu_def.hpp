@@ -450,13 +450,13 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     setStringToIntegralParameter<SLU::IterRefine_t>("IterRefine", "NOREFINE",
                                                     "Type of iterative refinement to use",
-                                                    tuple<string>("NOREFINE", "SINGLE", "DOUBLE"),
+                                                    tuple<string>("NOREFINE", "SLU_SINGLE", "SLU_DOUBLE"),
                                                     tuple<string>("Do not use iterative refinement",
                                                                   "Do single iterative refinement",
                                                                   "Do double iterative refinement"),
                                                     tuple<SLU::IterRefine_t>(SLU::NOREFINE,
-                                                                             SLU::SINGLE,
-                                                                             SLU::DOUBLE),
+                                                                             SLU::SLU_SINGLE,
+                                                                             SLU::SLU_DOUBLE),
                                                     pl.getRawPtr());
 
     // Note: MY_PERMC not yet supported

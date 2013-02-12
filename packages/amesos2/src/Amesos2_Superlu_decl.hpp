@@ -178,7 +178,7 @@ private:
    *     \c "CONJ" }.  Specifies whether to solve with the transpose system.</li>
    *   <li> \c "Equil" : { \c true | \c false }.  Specifies whether
    *     the solver to equilibrate the matrix before solving.</li>
-   *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
+   *   <li> \c "IterRefine" : { \c "NO" | \c "SLU_SINGLE" | \c "SLU_DOUBLE" | \c "EXTRA"
    *     }. Specifies whether to perform iterative refinement, and in
    *     what precision to compute the residual.</li>
    *   <li> \c "SymmetricMode" : { \c true | \c false }.</li>

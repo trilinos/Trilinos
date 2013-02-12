@@ -10,12 +10,12 @@
 	<ParameterList name="single iterrefine">
 	  <!-- For epetra, we cannot specify types, so solver_run_params are the most meaningful -->
 	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SINGLE"/>
+	    <Parameter name="IterRefine" type="string" value="SLU_SINGLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="double iterrefine">
 	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="DOUBLE"/>
+	    <Parameter name="IterRefine" type="string" value="SLU_DOUBLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
@@ -37,7 +37,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <!-- Optional parameter list whose values override those in the "solver_params" parameter list -->
 	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SINGLE"/>
+	    <Parameter name="IterRefine" type="string" value="SLU_SINGLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run2 - double iterrefine">
@@ -45,7 +45,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="DOUBLE"/>
+	    <Parameter name="IterRefine" type="string" value="SLU_DOUBLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run3">
