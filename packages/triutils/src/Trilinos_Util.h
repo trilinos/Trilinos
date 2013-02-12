@@ -190,6 +190,15 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact);
 
+void Trilinos_Util_ReadHb2Epetra_internal(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact,
+				 bool FakeLongLong);
+
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_ReadHb2Epetra(char *data_file,

@@ -910,16 +910,10 @@ int AztecOO::Iterate(long long MaxIters, double Tolerance)
   if (UserMatrixData_!=0)
     if (GetUserMatrix()!=0) {
 
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
       long long nnz = GetUserMatrix()->NumGlobalNonzeros64();
-#elif !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
-      int nnz = GetUserMatrix()->NumGlobalNonzeros();
-#endif
-#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (nnz==0) {
 	EPETRA_CHK_ERR(-12); // Matrix has no entries.
       }
-#endif
     }
 
   // MaxIters not greater than INT_MAX because of check above.
