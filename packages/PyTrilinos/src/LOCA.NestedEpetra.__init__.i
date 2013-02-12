@@ -135,7 +135,8 @@ using Teuchos::rcp;
 
 // Trilinos interface support
 %import "Teuchos.i"
-%include "Epetra_Base.i"
+%include "Epetra_Base.i"   // For PyExc_EpetraError
+%import "Epetra.i"
 %import "NOX.Abstract.i"
 %import "NOX.NestedEpetra.__init__.i"
 %import "NOX.NestedEpetra.Interface.i"
