@@ -85,6 +85,7 @@
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
@@ -195,6 +196,13 @@ namespace MueLu {
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
+      }
+      if (factoryName == "Zoltan2Interface") {
+#if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+        return Build2<Zoltan2Interface>(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
       if (factoryName == "RepartitionFactory") {

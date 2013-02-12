@@ -73,20 +73,15 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  DeclareInput(Level & currentLevel) const
-  {
-    Input(currentLevel, "number of partitions");
-
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
+    Input(currentLevel, "number of partitions");
 
   } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  Build(Level &level) const
-  {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(level, "A");
@@ -99,6 +94,8 @@ namespace MueLu {
       Set(level, "Partition", decomposition);
       return;
     }
+
+    GetOStream(Runtime0, 0) << "=== Building Zoltan ===" << std::endl;
 
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
@@ -230,9 +227,7 @@ namespace MueLu {
   //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  GetLocalNumberOfRows(void *data, int *ierr)
-  {
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLocalNumberOfRows(void *data, int *ierr) {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return -1;
