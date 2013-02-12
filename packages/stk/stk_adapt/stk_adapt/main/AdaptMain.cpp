@@ -1356,6 +1356,7 @@ namespace stk {
                   }
                   catch ( const std::exception & X ) {
                     std::cout << "AdaptMain:: unexpected exception: " << X.what() << std::endl;
+                    stk::percept::pout() << "AdaptMain:: unexpected exception: " << X.what() << "\n";
                     failed_proc_rank = p_rank+1u;
                   }
                   catch( ... ) {
@@ -1363,9 +1364,10 @@ namespace stk {
                     failed_proc_rank = p_rank+1u;
                   }
 
-                  stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
+                  //stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
                   if (failed_proc_rank)
                     {
+                      std::cout << "P[" << p_rank << "] AdaptMain::exception found on processor " << (failed_proc_rank-1) << std::endl;
                       stk::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
                       exit(1);
                     }
