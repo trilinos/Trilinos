@@ -58,7 +58,6 @@
 #include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_TentativePFactory_decl.hpp"
-#include "MueLu_QR_Interface.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
