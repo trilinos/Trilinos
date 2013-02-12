@@ -36,7 +36,33 @@ algorithm package LOCA:
     http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA is to provide a library of continuation
-algorithms.
+algorithms.  It includes the following sub-modules:
+
+    * Extended           -
+    * MultiContinuation  -
+    * TimeDependent      -
+    * TurningPoint       -
+    * Hopf               -
+    * Pitchfork          -
+    * Homotopy           -
+    * PhaseTransition    -
+    * Abstract           -
+    * Parameter          -
+    * BorderedSolver     -
+    * BorderedSystem     -
+    * Bifurcation        -
+    * StatusTest         -
+    * StepSize           -
+    * MultiPredictor     -
+
+and classes:
+
+    * GlobalData  -
+    * ErrorCheck  -
+    * Factory     -
+    * DerivUtils  -
+    * Stepper     -
+
 "
 %enddef
 

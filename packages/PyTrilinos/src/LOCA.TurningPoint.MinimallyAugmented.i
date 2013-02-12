@@ -40,7 +40,8 @@ The purpose of LOCA.TurningPoint.MinimallyAugmented is to provide ***.
 The python version of LOCA.TurningPoint.MinimallyAugmented supports
 the following classes:
 
-    * *****                - 
+    * AbstractGroup          -
+    * FiniteDifferenceGroup  -
 
 Any other notes about the package as a whole. . . .
 "

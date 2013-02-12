@@ -38,7 +38,13 @@ MultiContinuation of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.MultiContinuation is to provide ***.  The python
 version of LOCA.MultiContinuation supports the following classes:
 
-    * *****                - 
+    * AbstractGroup            -
+    * FiniteDifferenceGroup    -
+    * ConstraintInterface      -
+    * ConstraintInterfaceMVDX  -
+    * ExtendedMultiVector      -
+    * ExtendedVector           -
+    * Factory                  -
 
 Any other notes about the package as a whole. . . .
 "

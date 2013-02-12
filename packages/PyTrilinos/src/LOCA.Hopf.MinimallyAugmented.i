@@ -40,7 +40,10 @@ The purpose of LOCA.Hopf.MinimallyAugmented is to provide ***.  The
 python version of LOCA.Hopf.MinimallyAugmented supports the following
 classes:
 
-    * *****                - 
+    * Constraint             -
+    * AbstractGroup          -
+    * FiniteDifferenceGroup  -
+    * ExtendedGroup          -
 
 Any other notes about the package as a whole. . . .
 "

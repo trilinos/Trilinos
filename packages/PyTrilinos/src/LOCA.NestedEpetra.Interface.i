@@ -38,7 +38,10 @@ Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Epetra.Interface is to provide ***.  The python
 version of LOCA.Epetra.Interface supports the following classes:
 
-    * *****                - 
+    * Required                 -
+    * MassMatrix               -
+    * TimeDependent            -
+    * TimeDependentMatrixFree  -
 
 Any other notes about the package as a whole. . . .
 "

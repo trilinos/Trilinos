@@ -38,7 +38,7 @@ TimeDependent of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.TimeDependent is to provide ***.  The python
 version of LOCA.TimeDependent supports the following classes:
 
-    * *****                - 
+    * AbstractGroup  -
 
 Any other notes about the package as a whole. . . .
 "

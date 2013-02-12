@@ -38,7 +38,7 @@ BorderedSystem of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.BorderedSystem is to provide ***.  The python
 version of LOCA.BorderedSystem supports the following classes:
 
-    * *****                - 
+    * AbstractGroup  -
 
 Any other notes about the package as a whole. . . .
 "

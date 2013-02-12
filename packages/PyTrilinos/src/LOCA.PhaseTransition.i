@@ -38,7 +38,7 @@ PhaseTransition of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.PhaseTransition is to provide ***.  The python
 version of LOCA.PhaseTransition supports the following classes:
 
-    * *****                - 
+    * AbstractGroup  -
 
 Any other notes about the package as a whole. . . .
 "

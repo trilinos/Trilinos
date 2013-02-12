@@ -38,7 +38,14 @@ Hopf::MooreSpence of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Hopf.MooreSpence is to provide ***.  The python
 version of LOCA.Hopf.MooreSpence supports the following classes:
 
-    * *****                - 
+    * AbstractGroup          -
+    * ExtendedGroup          - 
+    * ExtendedMultiVector    -
+    * ExtendedVector         -
+    * FiniteDifferenceGroup  -
+    * SolverFactory          -
+    * SolverStrategy         -
+    * SalingerBordering      -
 
 Any other notes about the package as a whole. . . .
 "

@@ -36,9 +36,15 @@ Trilinos continuation algorithm package LOCA:
     http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA.Hopf is to provide ***.  The python version of
-LOCA.Hopf supports the following classes:
+LOCA.Hopf supports the following sub-modules:
 
-    * *****                - 
+    * MooreSpence         -
+    * MinimallyAugmented  -
+
+and classes:
+
+    * ComplexMultiVector  -
+    * ComplexVector       -
 
 Any other notes about the package as a whole. . . .
 "

@@ -38,7 +38,8 @@ Parameter of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Parameter is to provide ***.  The python version
 of LOCA.Parameter supports the following classes:
 
-    * *****                - 
+    * Library  -
+    * Vector   -
 
 Any other notes about the package as a whole. . . .
 "

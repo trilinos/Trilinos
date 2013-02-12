@@ -38,7 +38,9 @@ of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Extended is to provide ***.  The python version of
 LOCA.Extended supports the following classes:
 
-    * *****                - 
+    * MultiVector         -
+    * Vector              -
+    * MultiAbstractGroup  -
 
 Any other notes about the package as a whole. . . .
 "

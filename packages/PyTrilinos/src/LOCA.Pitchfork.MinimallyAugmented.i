@@ -40,7 +40,7 @@ The purpose of LOCA.Pitchfork.MinimallyAugmented is to provide ***.
 The python version of LOCA.Pitchfork.MinimallyAugmented supports the
 following classes:
 
-    * *****                - 
+    * AbstractGroup  -
 
 Any other notes about the package as a whole. . . .
 "

@@ -38,7 +38,8 @@ AnasaziOperator of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.AnasaziOperator is to provide ***.  The python
 version of LOCA.AnasaziOperator supports the following classes:
 
-    * *****                - 
+    * AbstractStrategy  -
+    * Factory           -
 
 Any other notes about the package as a whole. . . .
 "

@@ -38,7 +38,8 @@ the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.StatusTest is to provide ***.  The python version
 of LOCA.StatusTest supports the following classes:
 
-    * *****                - 
+    * Abstract  -
+    * Wrapper   -
 
 Any other notes about the package as a whole. . . .
 "

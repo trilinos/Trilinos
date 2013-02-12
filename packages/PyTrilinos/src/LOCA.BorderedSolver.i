@@ -38,7 +38,7 @@ BorderedSolver of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.BorderedSolver is to provide ***.  The python
 version of LOCA.BorderedSolver supports the following classes:
 
-    * *****                - 
+    * Factory  -
 
 Any other notes about the package as a whole. . . .
 "

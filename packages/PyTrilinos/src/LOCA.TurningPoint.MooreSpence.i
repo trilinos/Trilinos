@@ -40,7 +40,9 @@ The purpose of LOCA.TurningPoint.MooreSpence is to provide ***.  The
 python version of LOCA.TurningPoint.MooreSpence supports the following
 classes:
 
-    * *****                - 
+    * AbstractGroup          -
+    * FiniteDifferenceGroup  -
+    * SolverFactory          -
 
 Any other notes about the package as a whole. . . .
 "

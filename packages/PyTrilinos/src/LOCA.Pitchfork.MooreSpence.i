@@ -40,7 +40,8 @@ The purpose of LOCA.Pitchfork.MooreSpence is to provide ***.  The
 python version of LOCA.Pitchfork.MooreSpence supports the following
 classes:
 
-    * *****                - 
+    * AbstractGroup  -
+    * SolverFactory  -
 
 Any other notes about the package as a whole. . . .
 "
