@@ -724,9 +724,9 @@ namespace panzer {
      // build Cijk and "expansion"
      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
      if(!fullExpansion)
-       Cijk == basis->computeLinearTripleProductTensor();
+       Cijk = basis->computeLinearTripleProductTensor();
      else
-       Cijk == basis->computeTripleProductTensor();
+       Cijk = basis->computeTripleProductTensor();
      Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     
      return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));
