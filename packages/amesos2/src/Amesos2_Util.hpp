@@ -605,10 +605,10 @@ namespace Amesos2 {
       switch( distribution ){
       case DISTRIBUTED:
       case DISTRIBUTED_NO_OVERLAP:
-	return Tpetra::createUniformContigMap<LO,GO>(num_global_elements, comm);
+	return Tpetra::createUniformContigMap<LO,GO, Node>(num_global_elements, comm);
 	break;
       case GLOBALLY_REPLICATED:
-	return Tpetra::createLocalMap<LO,GO>(num_global_elements, comm);
+	return Tpetra::createLocalMap<LO,GO, Node>(num_global_elements, comm);
 	break;
       case ROOTED:
 	{

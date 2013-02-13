@@ -272,7 +272,7 @@ namespace MueLu {
     GO indexBase = decomposition->getMap()->getIndexBase();
 
     // Source map is overlapping.  GIDs owned by this pid are the partition numbers found above.
-    RCP<Map> sourceMap = MapFactory::Build(decomposition->getMap()->lib(),
+    RCP<Map> sourceMap = Xpetra::MapFactory<LO, GO, NO>::Build(decomposition->getMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            allPartitionsIContributeTo(),
                                            decomposition->getMap()->getIndexBase(),
