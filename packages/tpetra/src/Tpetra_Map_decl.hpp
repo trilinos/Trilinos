@@ -45,13 +45,10 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
-#ifdef HAVE_TPETRA_UNORDERED_MAP
-#  include <unordered_map>
-#endif // HAVE_TPETRA_UNORDERED_MAP
-
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
+#include "Tpetra_HashTable.hpp"
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
 ///
@@ -652,16 +649,12 @@ namespace Tpetra {
     /// \typedef global_to_local_table_type
     /// \brief Type of the table that maps global IDs to local IDs.
     ///
-    /// The actual type depends on the Tpetra_ENABLE_UNORDERED_MAP
-    /// configure-time option.  If the option was set, we use
+    /// We could use Tpetra_ENABLE_UNORDERED_MAP
+    /// configure-time option.  If the option was set, we could use
     /// std::unordered_map (implemented as a hash table with linear
-    /// chaining).  Otherwise, we use std::map (a sorted data
-    /// structure which is typically implemented as a red-black tree).
-#ifdef HAVE_TPETRA_UNORDERED_MAP
-    typedef std::unordered_map<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#else
-    typedef std::map<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#endif // HAVE_TPETRA_UNORDERED_MAP
+    /// chaining). However, we are using Tpeta_HashTable in all cases.
+    typedef Details::Tpetra_HashTable<GlobalOrdinal, LocalOrdinal>
+                 global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
