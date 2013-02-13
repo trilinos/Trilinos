@@ -264,6 +264,6 @@ void Tpetra_HashTable<KeyType, ValueType>::describe(
 //on the default node for specified ordinals.
 // Must be explanded within the Tpetra::Details namespace
 #define TPETRA_HASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
- template Teuchos::RCP< const Tpetra_HashTable<GO, LO> > \
+  template class Tpetra_HashTable< LO , GO >;                         \
 
 #endif
