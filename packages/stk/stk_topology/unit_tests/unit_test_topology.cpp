@@ -74,3 +74,31 @@ STKUNIT_UNIT_TEST( stk_topology, lexicographical_smallest_permutation)
 
   STKUNIT_EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
 }
+
+STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
+{
+  using stk::topology;
+
+  const char nodes[] = "12345678";
+
+  {
+    topology t = topology::QUAD_4_2D;
+    std::cout << "QUAD_4_2D side_nodes\n";
+    for (int s=0; s<t.num_sides(); ++s) {
+      char side_nodes[9] = {};
+      t.side_nodes( nodes, s, side_nodes );
+      std::cout << "  " << side_nodes << std::endl;
+    }
+  }
+
+  {
+    topology t = topology::HEX_8;
+    std::cout << "HEX_8 side_nodes\n";
+    for (int s=0; s<t.num_sides(); ++s) {
+      char side_nodes[9] = {};
+      t.side_nodes( nodes, s, side_nodes );
+      std::cout << "  " << side_nodes << std::endl;
+    }
+  }
+
+};

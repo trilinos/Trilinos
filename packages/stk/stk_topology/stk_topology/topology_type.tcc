@@ -278,6 +278,38 @@ struct topology::topology_type
   operator topology_t() const
   { return Topology; }
 
+  /// fill the output ordinals with the ordinals that make up the given side topology
+  template <typename OrdinalOutputIterator>
+  STKTOPOLOGY_INLINE_FUNCTION
+  static void side_node_ordinals(int side_ordinal, OrdinalOutputIterator output_ordinals)
+  {
+    sub_topology_node_ordinals( side_rank, side_ordinal, output_ordinals);
+  }
+
+  /// fill the output nodes with the nodes that make up the given side topology
+  /// input 'nodes' is expected to be of length num_nodes.
+  template <typename NodeArray, typename NodeOutputIterator>
+  STKTOPOLOGY_INLINE_FUNCTION
+  static void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes)
+  {
+    sub_topology_nodes( nodes, side_rank, side_ordinal, output_nodes);
+  }
+
+  /// how many 'side topologies' does this topology have
+  STKTOPOLOGY_INLINE_FUNCTION
+  static int num_sides()
+  {
+    return num_sub_topology(side_rank);
+  }
+
+
+  /// what is the topology of the given side topology
+  STKTOPOLOGY_INLINE_FUNCTION
+  static topology side_topology(int side_ordinal = 0)
+  {
+    return sub_topology(side_rank, side_ordinal);
+  }
+
 };
 
 } //namespace stk

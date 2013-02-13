@@ -234,6 +234,40 @@ struct topology
     return INVALID_TOPOLOGY;
   }
 
+
+
+  /// fill the output ordinals with the ordinals that make up the given side topology
+  template <typename OrdinalOutputIterator>
+  STKTOPOLOGY_INLINE_FUNCTION
+  void side_node_ordinals(int side_ordinal, OrdinalOutputIterator output_ordinals) const
+  {
+    sub_topology_node_ordinals( side_rank(), side_ordinal, output_ordinals);
+  }
+
+  /// fill the output nodes with the nodes that make up the given side topology
+  /// input 'nodes' is expected to be of length num_nodes.
+  template <typename NodeArray, typename NodeOutputIterator>
+  STKTOPOLOGY_INLINE_FUNCTION
+  void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes) const
+  {
+    sub_topology_nodes( nodes, side_rank(), side_ordinal, output_nodes);
+  }
+
+  /// how many 'side topologies' does this topology have
+  STKTOPOLOGY_INLINE_FUNCTION
+  int num_sides() const
+  {
+    return num_sub_topology(side_rank());
+  }
+
+
+  /// what is the topology of the given side topology
+  STKTOPOLOGY_INLINE_FUNCTION
+  topology side_topology(int side_ordinal = 0) const
+  {
+    return sub_topology(side_rank(), side_ordinal);
+  }
+
   //***************************************************************************
   //cast to integer type
   //***************************************************************************

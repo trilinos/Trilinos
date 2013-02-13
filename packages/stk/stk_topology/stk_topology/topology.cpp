@@ -128,7 +128,10 @@ std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 
 std::ostream & operator<<(std::ostream &out, topology t)
 {
-  return out << t.name();
+  if ( t <= topology::END_TOPOLOGY )
+    return out << t.name();
+  return out << "TOPOLOGY_" << static_cast<int>(t);
+
 }
 
 void verbose_print_topology(std::ostream &out, topology t)
