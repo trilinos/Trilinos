@@ -698,8 +698,8 @@ namespace Tpetra {
 
       \relatesalso Map
    */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal> >
   createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
   /** \brief Non-member constructor for a locally replicated Map with a specified Kokkos Node.
@@ -710,7 +710,7 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+  createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node = Kokkos::Details::getNode<Node>());
 
   /** \brief Non-member constructor for a uniformly distributed, contiguous Map with the default Kokkos Node.
 
@@ -720,8 +720,8 @@ namespace Tpetra {
 
       \relatesalso Map
    */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal> >
   createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
   /** \brief Non-member constructor for a uniformly distributed, contiguous Map with a user-specified Kokkos Node.
@@ -734,7 +734,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode(global_size_t numElements,
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                 const Teuchos::RCP< Node > &node);
+                                 const Teuchos::RCP< Node > &node = Kokkos::Details::getNode<Node>());
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
