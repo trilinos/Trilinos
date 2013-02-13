@@ -421,6 +421,7 @@ namespace MueLu {
       //            and TentativePFactory::Build is complaining on level 1
       Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(HierarchyManager::GetFactoryManager(0)->GetFactory("A"))->DisableMultipleCallCheck();
       Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(HierarchyManager::GetFactoryManager(1)->GetFactory("P"))->DisableMultipleCallCheck();
+      Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(HierarchyManager::GetFactoryManager(1)->GetFactory("Ptent"))->DisableMultipleCallCheck();
 
       HierarchyManager::SetupHierarchy(H);
     }
