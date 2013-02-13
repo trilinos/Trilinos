@@ -743,7 +743,7 @@ namespace Tpetra {
         else if (globalChecks[1] == 2) {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
             errPrefix << "On at least one process in the input communicator "
-            "(including process " << globalChecks[0] << ", the given number of "
+            "(including process " << globalChecks[0] << "), the given number of "
             "global elements (numGlobalElements_in argument to the Map "
             "constructor) does not match the sum " << global_sum << " of the "
             "number of elements on each process.  The latter is the sum of "

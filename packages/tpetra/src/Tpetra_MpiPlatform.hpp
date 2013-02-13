@@ -49,16 +49,6 @@
 
 namespace Tpetra {
 
-namespace Details {
-  //! Create a Kokkos Node instance with default parameters.
-  template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode() {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new NodeType (defaultParams));
-  }
-} // namespace Details
-
   /// \brief Implementation of the Platform concept for MPI-based platforms.
   ///
   /// MpiPlatform is an implementation of Tpetra's Platform concept.
@@ -105,7 +95,7 @@ namespace Details {
     ///   class will create a Node with default parameters.
     explicit MpiPlatform (const RCP<Node> &node) :
       comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-      node_ (node.is_null () ? Details::getNode<Node> () : node)
+      node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a wrapped MPI communicator.
@@ -129,7 +119,7 @@ namespace Details {
     MpiPlatform (const RCP<Node> &node, 
                  const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
-	node_ (node.is_null () ? Details::getNode<Node> () : node)
+	node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a raw MPI communicator.
@@ -144,7 +134,7 @@ namespace Details {
     ///   communicator.
     MpiPlatform (const RCP<Node> &node, MPI_Comm rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
-	node_ (node.is_null () ? Details::getNode<Node> () : node)
+	node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -154,7 +144,7 @@ namespace Details {
     //! @name Methods to access the communicator and Kokkos Node.
     //@{ 
 
-    //! The \c Teuchos::Comm instance with which this object was created.
+    //! The Teuchos::Comm instance with which this object was created.
     RCP<const Comm<int> > getComm() const {
       return comm_; 
     }
@@ -178,12 +168,11 @@ namespace Details {
     MpiPlatform& operator= (const MpiPlatform<Node> &platform);
   };
 
-
   /// \class MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>
-  /// \brief MpiPlatform specialization for \c Kokkos::DefaultNode::DefaultNodeType.
+  /// \brief MpiPlatform specialization for Kokkos::DefaultNode::DefaultNodeType.
   ///
-  /// \warning \c Kokkos::DefaultNode::DefaultNodeType is a typedef,
-  ///   and may have a different type, depending on Trilinos' build
+  /// \warning Kokkos::DefaultNode::DefaultNodeType is a typedef, and
+  ///   may have a different type, depending on Trilinos' build
   ///   options.  For example, it may be Kokkos::SerialNode if
   ///   Trilinos was built without a threading library, or
   ///   Kokkos::TPINode if Trilinos was built with Pthreads.
@@ -283,22 +272,17 @@ namespace Details {
     //! @name Methods to access the communicator and Kokkos Node.
     //@{ 
 
-    //! The \c Teuchos::Comm instance with which this object was created.
+    //! The Teuchos::Comm instance with which this object was created.
     RCP<const Comm<int> > getComm() const {
       return comm_; 
     }
 
-    /// \brief The Kokkos Node instance for this platform to use.
-    /// 
-    /// This MpiPlatform specialization's constructor may have created
-    /// the Node instance, if you invoked the default constructor or
-    /// passed in a null Node pointer.
+    //! The Kokkos Node instance for this platform to use.
     RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {
       return node_;
     }
 
     //@}
-
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
     MpiPlatform (const MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
@@ -313,7 +297,6 @@ namespace Details {
     //! Kokkos Node object instantiated for the platform.
     RCP<Kokkos::DefaultNode::DefaultNodeType> node_;
   };
-
 
 } // namespace Tpetra
 

@@ -112,6 +112,37 @@ namespace Tpetra {
 
       template<class IntType>
       void
+      reduceSum (const IntType sendbuf[], 
+		 IntType recvbuf[],
+		 const int count,
+		 const int root,
+		 const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+      {
+#ifdef HAVE_MPI
+        using Teuchos::RCP;
+        using Teuchos::rcp_dynamic_cast;
+        using Teuchos::MpiComm;
+
+        // Get the raw MPI communicator, so we don't have to wrap MPI_Reduce in Teuchos.
+        RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
+        if (! mpiComm.is_null ()) {
+          MPI_Datatype rawMpiType = getMpiDatatype<IntType> ();
+          MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+          const int err = 
+	    MPI_Reduce (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)),
+			reinterpret_cast<void*> (const_cast<IntType*> (recvbuf)),
+			count, rawMpiType, MPI_SUM, root, rawMpiComm);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Reduce failed");
+          return;
+        }
+#endif // HAVE_MPI
+        // Serial communicator case: just copy.  count is the
+        // amount to receive, so it's the amount to copy.
+        std::copy (sendbuf, sendbuf + count, recvbuf);
+      }		 
+
+      template<class IntType>
+      void
       gather (const IntType sendbuf[], const int sendcnt,
               IntType recvbuf[], const int recvcnt,
               const int root, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
@@ -175,7 +206,13 @@ namespace Tpetra {
           return;
         }
 #endif // HAVE_MPI
-        TEUCHOS_TEST_FOR_EXCEPTION(recvcnts[0] > sendcnt, std::invalid_argument, "Can't receive more than you send, for the serial communicator case.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          recvcnts[0] > sendcnt, 
+	  std::invalid_argument, 
+	  "gatherv: If the input communicator contains only one process, "
+	  "then you cannot receive more entries than you send.  "
+	  "You aim to receive " << recvcnts[0] << " entries, "
+	  "but to send " << sendcnt << ".");
         // Serial communicator case: just copy.  recvcnts[0] is the
         // amount to receive, so it's the amount to copy.  Start
         // writing to recvbuf at the offset displs[0].
@@ -197,13 +234,26 @@ namespace Tpetra {
         using Teuchos::as;
         using Teuchos::Comm;
         using Teuchos::RCP;
+	using std::cerr;
+	using std::endl;
         typedef typename MapType::local_ordinal_type LO;
         typedef typename MapType::global_ordinal_type GO;
         typedef typename MapType::node_type NT;
 
+        RCP<const Comm<int> > comm = map->getComm ();
+        const int numProcs = comm->getSize ();
+        const int myRank = comm->getRank ();
+	// mfh 12 Feb 2013: This should always be false, unless debugging.
+	const bool debug = false;
+
+	if (debug && myRank == 0) {
+	  cerr << "computeGatherMap:" << endl
+	       << "- Calling createOneToOne" << endl;
+	}
+
         RCP<const MapType> oneToOneMap;
         if (map->isContiguous ()) {
-          oneToOneMap = map;
+          oneToOneMap = map; // contiguous Maps are always 1-to-1
         } else {
 	  // It could be that Map is one-to-one, but the class doesn't
 	  // give us a way to test this, other than to create the
@@ -212,13 +262,12 @@ namespace Tpetra {
         }
 
         RCP<const MapType> gatherMap;
-        RCP<const Comm<int> > comm = map->getComm ();
-        const int numProcs = comm->getSize ();
-        const int myRank = comm->getRank ();
-
         if (numProcs == 1) {
           gatherMap = oneToOneMap;
         } else {
+	  if (debug && myRank == 0) {
+	    cerr << "- Gathering the Map elements" << endl;
+	  }
           // Gather each process' count of Map elements to Proc 0,
           // into the recvCounts array.  This will tell Proc 0 how
           // many GIDs to expect from each process when calling
@@ -236,7 +285,7 @@ namespace Tpetra {
           // order of rows right) at a time, and overlapping writing
           // to the file (resp. reading from it) with receiving (resp.
           // sending) the next chunk.
-          const int myEltCount = as<int> (oneToOneMap->getGlobalNumElements ());
+          const int myEltCount = as<int> (oneToOneMap->getNodeNumElements ());
           Array<int> recvCounts (numProcs);
           const int rootProc = 0;
           gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
@@ -252,26 +301,100 @@ namespace Tpetra {
           }
           //const int numAllGlobalElts = as<int> (allGlobalElts.size ());
 
+	  if (debug) {
+	    if (myRank == 0) {
+	      cerr << "- Partial sum" << endl;
+	    }
+	    comm->barrier ();
+	    comm->barrier ();
+	    comm->barrier ();
+	  }
           // Displacements for gatherv() in this case (where we are
           // gathering into a contiguous array) are an exclusive
           // partial sum (first entry is zero, second starts the
           // partial sum) of recvCounts.
           Array<int> displs (numProcs, 0);
           std::partial_sum (recvCounts.begin (), recvCounts.end () - 1, displs.begin () + 1);
+
+	  if (debug) {
+	    if (myRank == 0) {
+	      cerr << "- Partial sum results:" << endl;
+	    }
+	    comm->barrier ();
+	    comm->barrier ();
+	    comm->barrier ();
+	    std::ostringstream os;
+	    os << "  - Proc " << myRank << ":" << endl
+	       << "    - recvCounts (input): " << Teuchos::toString (recvCounts) << endl
+	       << "    - displs (output): " << Teuchos::toString (displs) << endl;
+	    for (int p = 0; p < numProcs; ++p) {
+	      if (p == myRank) {
+		cerr << os.str ();
+	      }
+	      comm->barrier ();
+	      comm->barrier ();
+	      comm->barrier ();
+	    }
+	  }
+
+	  if (debug) {
+	    if (myRank == 0) {
+	      cerr << "- Gatherv" << endl;
+	    }
+	    comm->barrier ();
+	    comm->barrier ();
+	    comm->barrier ();
+	    {
+	      std::ostringstream os;
+	      os << "  - Proc " << myRank << ":" << endl
+		 << "    - myGlobalElts: " << Teuchos::toString (myGlobalElts) << endl
+		 << "    - numMyGlobalElts: " << numMyGlobalElts << endl
+		 << "    - myGlobalElts: " << Teuchos::toString (myGlobalElts) << endl
+		 << "    - allGlobalElts: " << Teuchos::toString (allGlobalElts) << endl
+		 << "    - recvCounts: " << Teuchos::toString (recvCounts) << endl
+		 << "    - displs: " << Teuchos::toString (displs) << endl;
+	      for (int p = 0; p < numProcs; ++p) {
+		if (p == myRank) {
+		  cerr << os.str ();
+		}
+		comm->barrier ();
+		comm->barrier ();
+		comm->barrier ();
+	      }
+	    }
+	  }
           gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
                        allGlobalElts.getRawPtr (), recvCounts.getRawPtr (), displs.getRawPtr (),
                        rootProc, comm);
 
           // Create a Map with all the GIDs, in the same order as in
           // the one-to-one Map, but owned by Proc 0.
-          ArrayView<const GO> allElts;
+          ArrayView<const GO> allElts (NULL, 0);
           if (myRank == 0) {
             allElts = allGlobalElts ();
           }
-          gatherMap = rcp (new MapType (as<global_size_t> (allElts.size ()), 
+	  if (debug) {
+	    if (myRank == 0) {
+	      cerr << "- Creating Map:" << endl;
+	    }
+	    comm->barrier ();
+	    comm->barrier ();
+	    comm->barrier ();
+	    std::ostringstream os;
+	    os << "  - Proc " << myRank << endl
+	       << "    - allElts: " << Teuchos::toString (allElts) << endl;
+	    cerr << os.str ();
+	    comm->barrier ();
+	    comm->barrier ();
+	    comm->barrier ();
+	  } // if debug
+          gatherMap = rcp (new MapType (Teuchos::OrdinalTraits<global_size_t>::invalid (),
 					allElts, oneToOneMap->getIndexBase (),
 					comm, map->getNode ()));
         }
+	if (debug && myRank == 0) {
+	  cerr << "- Done" << endl;
+	}
         return gatherMap;
       }
 
@@ -3025,110 +3148,7 @@ namespace Tpetra {
                   const std::string& matrixName,
                   const std::string& matrixDescription)
       {
-        using Tpetra::createOneToOne;
-        using Tpetra::createNonContigMapWithNode;
-        using Teuchos::as;
-        using Teuchos::rcp;
-        using Teuchos::rcp_const_cast;
-        using Teuchos::rcp_dynamic_cast;
-        using std::endl;
-        typedef typename Teuchos::ScalarTraits<scalar_type> STS;
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
-        typedef typename ArrayView<scalar_type>::size_type size_type;
-
-        // Convenient abbreviations.
-        typedef local_ordinal_type LO;
-        typedef global_ordinal_type GO;
-        typedef node_type NT;
-
-        // If true, print the global row index in front of each row.
-        const bool printGlobalRowIndex = false;
-
-        // If true, when making the "gather" Map, use the same index
-        // base as X's Map.  Otherwise, just use the default index
-        // base for the gather Map.
-        //const bool keepTheSameIndexBase = false;
-
-        // Make the output stream write floating-point numbers in
-        // scientific notation.  It will politely put the output
-        // stream back to its state on input, when this scope
-        // terminates.
-        Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (out);
-
-        RCP<const Comm<int> > comm = X->getMap()->getComm();
-        const int myRank = comm->getRank ();
-        RCP<const map_type> map = X->getMap();
-        const global_size_t numRows = map->getGlobalNumElements();
-        // Promote to global_size_t.
-        const global_size_t numCols = X->getNumVectors();
-
-        // Make the "gather" map, where Proc 0 owns all rows of X, and
-        // the other procs own no rows.
-        //const size_t localNumRows = (myRank == 0) ? numRows : 0;
-        RCP<NT> node = map->getNode();
-        // RCP<const map_type> gatherMap = keepTheSameIndexBase ?
-        //   rcp_const_cast<const map_type> (rcp (new map_type (numRows, localNumRows, map->getIndexBase(), comm, node))) :
-        //   createContigMapWithNode<LO, GO, NT> (numRows, localNumRows, comm, node);
-
-        // FIXME (mfh 20 Dec 2012) What about keepTheSameIndexBase?
-        RCP<const map_type> gatherMap = computeGatherMap<map_type> (map);
-
-        // Create an Import object to import X's data into a
-        // multivector Y owned entirely by Proc 0.  In the Import
-        // constructor, X's map is the source map, and the "gather
-        // map" is the target map.
-        Import<LO, GO, NT> importer (map, gatherMap);
-
-        // Create a new multivector Y to hold the result of the import.
-        RCP<multivector_type> Y =
-          createMultiVector<scalar_type, LO, GO, NT> (gatherMap, numCols);
-
-        // Import the multivector onto Proc 0.
-        Y->doImport (*X, importer, INSERT);
-
-        //
-        // Print the matrix in Matrix Market format on Rank 0.
-        //
-        if (myRank == 0) {
-          // Print the Matrix Market banner line.  MultiVector
-          // stores data nonsymmetrically, hence "general".
-          out << "%%MatrixMarket matrix array "
-              << (STS::isComplex ? "complex" : "real")
-              << " general" << endl;
-
-          // Print comments (the matrix name and / or description).
-          if (matrixName != "") {
-            printAsComment (out, matrixName);
-          }
-          if (matrixDescription != "") {
-            printAsComment (out, matrixDescription);
-          }
-          // Print the Matrix Market dimensions header for dense matrices.
-          out << numRows << " " << numCols << endl;
-
-          // Get a read-only view of the entries of Y.
-          // Rank 0 owns all of the entries of Y.
-          ArrayRCP<ArrayRCP<const scalar_type> > Y_view = Y->get2dView ();
-
-          // Print the entries of the matrix, in column-major order.
-          for (global_size_t j = 0; j < numCols; ++j) {
-            for (global_size_t i = 0; i < numRows; ++i) {
-              if (printGlobalRowIndex) {
-                const GO globalRowIndex = Y->getMap ()->getGlobalElement (as<LO> (i));
-                out << globalRowIndex << ": ";
-              }
-
-              const scalar_type Y_ij = Y_view[j][i];
-              if (STS::isComplex) {
-                out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
-              }
-              else {
-                out << Y_ij << endl;
-              }
-            }
-          }
-        } // if (myRank == 0)
+	writeDenseImpl<scalar_type> (out, *X, matrixName, matrixDescription);
       }
 
       /// \brief Print the multivector in Matrix Market format.
@@ -3156,7 +3176,282 @@ namespace Tpetra {
         writeDense (out, X, "", "");
       }
 
+      //! Print the Map to the given output stream.
+      static void
+      writeMap (std::ostream& out, const map_type& map)
+      {
+	using Teuchos::ArrayRCP;
+	using Teuchos::ArrayView;
+	using Teuchos::as;
+	using Teuchos::rcp_const_cast;
+	using Teuchos::rcpFromRef;
+	using Teuchos::TypeNameTraits;
+	using std::cerr;
+	using std::endl;
+	typedef local_ordinal_type LO;
+	typedef global_ordinal_type GO;
+	typedef node_type NT;
+	typedef int pid_type;
+
+	// ptrdiff_t should be the biggest signed built-in integer
+	// type that can hold any GO or pid_type (= int) quantity
+	// without overflow.  Nevertheless, we'll test this.
+	typedef ptrdiff_t int_type;
+	TEUCHOS_TEST_FOR_EXCEPTION(
+	  sizeof(GO) > sizeof(int_type), std::logic_error,
+	  "The global ordinal type GO=" << TypeNameTraits<GO>::name () 
+	  << " is too big for ptrdiff_t.  sizeof(GO) = " << sizeof (GO) 
+	  << " > sizeof(ptrdiff_t) = " << sizeof (ptrdiff_t) << ".");
+	TEUCHOS_TEST_FOR_EXCEPTION(
+	  sizeof(pid_type) > sizeof(int_type), std::logic_error,
+	  "The process rank type pid_type=" << TypeNameTraits<pid_type>::name ()
+	  << " is too big for ptrdiff_t.  sizeof(pid_type) = " << sizeof (pid_type)
+	  << " > sizeof(ptrdiff_t) = " << sizeof (ptrdiff_t) << ".");
+
+	const int myRank = map.getComm ()->getRank ();
+	const bool debug = false;
+
+	// We pack the Map into a 2-column MultiVector.  Column 0
+	// holds the GIDs, and Column 1 holds the PIDs.
+	typedef Tpetra::MultiVector<int_type, LO, GO, NT> MV;
+	MV data (rcpFromRef (map), 2);
+
+	if (debug) {
+	  if (myRank == 0) {
+	    cerr << endl << "writeMap:" << endl << endl;
+	  }
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	}
+
+	// Column 0: GIDs for each process in sequence (by their
+	// process ranks), in their original order on that process.
+	// We put the GIDs first because the ordering of GIDs defines
+	// the permutation that the Map represents, no matter how the
+	// GIDs are distributed over processes.
+	ArrayView<const GO> gidList = map.getNodeElementList ();
+	{
+	  ArrayRCP<int_type> V0 = data.getDataNonConst (0);
+	  for (int_type k = 0; k < gidList.size (); ++k) {
+	    V0[k] = as<int_type> (gidList[k]);
+	  }
+	}
+
+	if (debug) {
+	  if (myRank == 0) {
+	    cerr << endl << "  - Done with Column 0" << endl << endl;
+	  }
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	}
+
+	// Column 1: PID (process rank) that owns the GID in the same
+	// row.  The same GID might be owned by multiple processes; in
+	// that case, it will appear multiple times in the first
+	// column, with a different PID each time.
+	{
+	  const pid_type myRank = map.getComm ()->getRank ();
+	  ArrayRCP<int_type> V1 = data.getDataNonConst (1);
+	  for (int_type k = 0; k < gidList.size (); ++k) {
+	    V1[k] = as<int_type> (myRank);
+	  }
+	}
+
+	if (debug) {
+	  if (myRank == 0) {
+	    cerr << endl << "  - Done with Column 1" << endl << endl;
+	  }
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	  map.getComm ()->barrier ();
+	}
+
+	// Map description explains each column.
+	std::ostringstream desc; 
+	desc << "This file encodes a Tpetra::Map." << endl
+	     << "It is stored as a dense matrix with 2 columns:" << endl
+	     << "  - Column 1: GID (global index)" << endl
+	     << "  - Column 2: PID (rank) of process owning that GID" << endl;
+	writeDenseImpl<int_type> (out, data, map.getObjectLabel (), desc.str ());
+      }
+
+      //! Write the Map to the given file.
+      static void
+      writeMapFile (const std::string& filename,
+		    const map_type& map)
+      {
+        const int myRank = map.getComm ()->getRank ();
+        std::ofstream out;
+        if (myRank == 0) { // Only open the file on Proc 0.
+          out.open (filename.c_str());
+	}
+        writeMap (out, map);
+        // We can rely on the destructor of the output stream to close
+        // the file on scope exit, even if writeDense() throws an
+        // exception.
+      }
+
     private:
+      /// \brief Print the multivector in Matrix Market format.
+      ///
+      /// Write the given Tpetra::MultiVector matrix to an output
+      /// stream, using the Matrix Market "array" format for dense
+      /// matrices.  MPI Proc 0 is the only MPI process that writes to
+      /// the output stream.
+      ///
+      /// \param out [out] The output stream to which to write (on MPI
+      ///   Proc 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output stream.
+      ///
+      /// \param matrixName [in] Name of the matrix, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output stream.  If empty,
+      ///   we don't print anything (not even an empty line).
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      template<class MultiVectorScalarType>
+      static void
+      writeDenseImpl (std::ostream& out,
+		      const Tpetra::MultiVector<MultiVectorScalarType, local_ordinal_type, global_ordinal_type, node_type>& X,
+		      const std::string& matrixName,
+		      const std::string& matrixDescription)
+      {
+        using Tpetra::createOneToOne;
+        using Tpetra::createNonContigMapWithNode;
+        using Teuchos::as;
+        using Teuchos::rcp;
+        using Teuchos::rcp_const_cast;
+        using Teuchos::rcp_dynamic_cast;
+        using std::endl;
+
+	typedef MultiVectorScalarType ST;
+        typedef local_ordinal_type LO;
+        typedef global_ordinal_type GO;
+        typedef node_type NT;
+
+        typedef typename Teuchos::ScalarTraits<ST> STS;
+        typedef typename STS::magnitudeType MT;
+        typedef typename Teuchos::ScalarTraits<MT> STM;
+        typedef typename ArrayView<ST>::size_type size_type;
+	typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
+
+        // Make the output stream write floating-point numbers in
+        // scientific notation.  It will politely put the output
+        // stream back to its state on input, when this scope
+        // terminates.
+        Teuchos::MatrixMarket::details::SetScientific<ST> sci (out);
+
+        RCP<const Comm<int> > comm = X.getMap ()->getComm ();
+        const int myRank = comm->getRank ();
+        RCP<const map_type> map = X.getMap ();
+        const global_size_t numRows = map->getGlobalNumElements ();
+        // Promote to global_size_t.
+        const global_size_t numCols = X.getNumVectors ();
+
+	const bool debug = false;
+	using std::cerr;
+	if (debug && myRank == 0) {
+	  cerr << "  writeDenseImpl:" << endl
+	       << "  - Computing gather Map" << endl;
+	}
+
+        // Make the "gather" map, where Proc 0 owns all rows of X, and
+        // the other procs own no rows.
+        RCP<NT> node = map->getNode();
+        RCP<const map_type> gatherMap = computeGatherMap<map_type> (map);
+
+	if (debug && myRank == 0) {
+	  cerr << "  - Computing Import" << endl;
+	}
+
+        // Create an Import object to import X's data into a
+        // multivector Y owned entirely by Proc 0.  In the Import
+        // constructor, X's map is the source map, and the "gather
+        // map" is the target map.
+        Import<LO, GO, NT> importer (map, gatherMap);
+
+	if (debug && myRank == 0) {
+	  cerr << "  - Creating target MultiVector" << endl;
+	}
+
+        // Create a new multivector Y to hold the result of the import.
+        RCP<MV> Y = createMultiVector<ST, LO, GO, NT> (gatherMap, numCols);
+
+	if (debug && myRank == 0) {
+	  cerr << "  - Doing Import" << endl;
+	}
+
+        // Import the multivector onto Proc 0.
+        Y->doImport (X, importer, INSERT);
+
+        //
+        // Print the matrix in Matrix Market format on Rank 0.
+        //
+        if (myRank == 0) {
+	  std::string dataType;
+	  if (STS::isComplex) {
+	    dataType = "complex";
+	  } else if (STS::isOrdinal) {
+	    dataType = "integer";
+	  } else {
+	    dataType = "real";
+	  }
+
+          // Print the Matrix Market banner line.  MultiVector
+          // stores data nonsymmetrically, hence "general".
+          out << "%%MatrixMarket matrix array " 
+	      << dataType << " general" << endl;
+
+          // Print comments (the matrix name and / or description).
+          if (matrixName != "") {
+            printAsComment (out, matrixName);
+          }
+          if (matrixDescription != "") {
+            printAsComment (out, matrixDescription);
+          }
+          // Print the Matrix Market dimensions header for dense matrices.
+          out << numRows << " " << numCols << endl;
+
+          // Get a read-only view of the entries of Y.
+          // Rank 0 owns all of the entries of Y.
+          ArrayRCP<ArrayRCP<const ST> > Y_view = Y->get2dView ();
+	  TEUCHOS_TEST_FOR_EXCEPTION(
+            as<global_size_t> (Y_view.size ()) < numCols,
+	    std::logic_error,
+	    "Y_view has size " << Y_view.size () << " < numCols = " << numCols << ".");
+
+          // Print the entries of the matrix, in column-major order.
+          for (global_size_t j = 0; j < numCols; ++j) {
+	    ArrayRCP<const ST> Y_j = Y_view[j];
+	    TEUCHOS_TEST_FOR_EXCEPTION(
+              as<global_size_t> (Y_j.size ()) < numRows,
+	      std::logic_error,
+	      "The current column's data has length " << Y_j.size () << " < numRows=" << numRows << ".");
+            for (global_size_t i = 0; i < numRows; ++i) {
+              const ST Y_ij = Y_j[i];
+              if (STS::isComplex) {
+                out << STS::real (Y_ij) << " " << STS::imag (Y_ij) << endl;
+              } else {
+                out << Y_ij << endl;
+              }
+            }
+          }
+        } // if (myRank == 0)
+	if (debug && myRank == 0) {
+	  cerr << "  - Done" << endl;
+	}
+      }
+
       /// \brief Print the given possibly multiline string as a comment.
       ///
       /// If the string is empty, don't print anything (not even an
