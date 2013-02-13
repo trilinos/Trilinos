@@ -180,19 +180,33 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), 0);
 }
 
-void process_nodeblocks(stk::io::MeshData &mesh)
+template <typename INT>
+void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
 {
-  // This must be called after the "process_element_blocks" call
-  // since there may be nodes that exist in the database that are
-  // not part of the analysis mesh due to subsetting of the element
-  // blocks.
+  // Currently, all nodes found in the finite element mesh are defined
+  // as nodes in the stk_mesh database. If some of the element blocks
+  // are omitted, then there will be disconnected nodes defined.
+  // However, if we only define nodes that are connected to elements,
+  // then we risk missing "free" nodes that the user may want to have
+  // existing in the model.
   const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
+  size_t node_count = nb->get_property("entity_count").get_int();
+
   std::vector<stk::mesh::Entity> nodes;
-  stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, mesh.bulk_data(), nodes);
+  nodes.reserve(node_count);
+
+  std::vector<INT> ids;
+  nb->get_field_data("ids", ids);
+
+  for (size_t i=0; i < ids.size(); i++) {
+    stk::mesh::Entity node = mesh.bulk_data().declare_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
+    node.set_local_id(i);
+    nodes.push_back(node);
+  }
 
   stk::io::CoordinateFieldType *coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
@@ -256,6 +270,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
         elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        elements[i].set_local_id(i);
       }
 
       // Add all element attributes as fields.
@@ -544,8 +559,8 @@ namespace stk {
       size_t spatial_dimension = m_input_region->get_property("spatial_dimension").get_int();
       initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
 
-      process_elementblocks(*m_input_region.get(), meta_data());
       process_nodeblocks(*m_input_region.get(),    meta_data());
+      process_elementblocks(*m_input_region.get(), meta_data());
       process_sidesets(*m_input_region.get(),      meta_data());
       process_nodesets(*m_input_region.get(),      meta_data());
     }
@@ -648,18 +663,17 @@ namespace stk {
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
         int64_t zero = 0;
+        process_nodeblocks(*this, zero);
         process_elementblocks(*region, bulk_data(), zero);
-        process_nodeblocks(*this);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       } else {
         int zero = 0;
+        process_nodeblocks(*this, zero);
         process_elementblocks(*region, bulk_data(), zero);
-        process_nodeblocks(*this);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       }
-
       bulk_data().modification_end();
     }
 
