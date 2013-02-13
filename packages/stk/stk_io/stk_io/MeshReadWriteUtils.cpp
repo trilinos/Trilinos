@@ -58,7 +58,7 @@ namespace {
           if (!surface_df_defined) {
             std::string field_name = sset->name() + "_df";
             distribution_factors_field =
-              &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
+                &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
             stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
             stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
             surface_df_defined = true;
@@ -176,7 +176,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
-      meta.spatial_dimension());
+                       meta.spatial_dimension());
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), 0);
 }
 
@@ -406,10 +406,10 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
 // ========================================================================
 void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
-    stk::mesh::EntityRank part_type,
-    Ioss::GroupingEntity *io_entity,
-    Ioss::Field::RoleType filter_role,
-    const stk::mesh::Selector *anded_selector=NULL)
+                    stk::mesh::EntityRank part_type,
+                    Ioss::GroupingEntity *io_entity,
+                    Ioss::Field::RoleType filter_role,
+                    const stk::mesh::Selector *anded_selector=NULL)
 {
   std::vector<stk::mesh::Entity> entities;
   if (io_entity->type() == Ioss::SIDEBLOCK) {
@@ -469,21 +469,21 @@ namespace stk {
     void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
       ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
-      "This MeshData already has an Ioss::Region associated with it.");
+          "This MeshData already has an Ioss::Region associated with it.");
       m_input_region = ioss_input_region;
     }
 
     void MeshData::set_meta_data( Teuchos::RCP<stk::mesh::MetaData> arg_meta_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_meta_data),
-                       "Meta data already initialized" );
+          "Meta data already initialized" );
       m_meta_data = arg_meta_data;
     }
 
     void MeshData::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_bulk_data),
-                       "Bulk data already initialized" );
+          "Bulk data already initialized" );
       m_bulk_data = arg_bulk_data;
 
       if (Teuchos::is_null(m_meta_data)) {
@@ -517,9 +517,9 @@ namespace stk {
                                       const std::string &mesh_type)
     {
       ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
-      "This MeshData already has an Ioss::DatabaseIO associated with it.");
+          "This MeshData already has an Ioss::DatabaseIO associated with it.");
       ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
-      "This MeshData already has an Ioss::Region associated with it.");
+                      "This MeshData already has an Ioss::Region associated with it.");
 
       m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                               Ioss::READ_MODEL, m_communicator_,
@@ -597,7 +597,7 @@ namespace stk {
                                                       m_property_manager);
       if (dbo == NULL || !dbo->ok()) {
         std::cerr << "ERROR: Could not open results database '" << out_filename
-                  << "' of type 'exodusII'\n";
+            << "' of type 'exodusII'\n";
         std::exit(EXIT_FAILURE);
       }
 
@@ -612,7 +612,7 @@ namespace stk {
     void MeshData::create_output_mesh()
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output database associated with this Mesh Data.");
+          "There is no Output database associated with this Mesh Data.");
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
                        "There is no Output database associated with this Mesh Data.");
       stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get());
@@ -624,7 +624,7 @@ namespace stk {
                                          const std::set<const stk::mesh::Part*> &exclude)
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output mesh region associated with this Mesh Data.");
+          "There is no Output mesh region associated with this Mesh Data.");
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
@@ -639,7 +639,7 @@ namespace stk {
     int MeshData::process_output_request(double time)
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output mesh region associated with this Mesh Data.");
+          "There is no Output mesh region associated with this Mesh Data.");
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
@@ -691,7 +691,7 @@ namespace stk {
     void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output mesh region associated with this Mesh Data.");
+          "There is no Output mesh region associated with this Mesh Data.");
 
       Ioss::Region *region = m_output_region.get();
       ThrowErrorMsgIf (region==NULL,
@@ -706,7 +706,7 @@ namespace stk {
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
       for ( stk::mesh::PartVector::const_iterator
-              ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+          ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
         stk::mesh::Part * const part = *ip;
 
@@ -717,7 +717,7 @@ namespace stk {
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
             put_field_data(bulk_data(), *part, rank, entity,
-                           Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+                Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
           }
 
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -728,7 +728,7 @@ namespace stk {
             Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
             if (node_entity != NULL) {
               put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
-                             Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+                  Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
             }
           }
         }
@@ -921,7 +921,7 @@ namespace stk {
 
         const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
         for ( stk::mesh::PartVector::const_iterator
-                ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+            ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
           stk::mesh::Part * const part = *ip;
 
