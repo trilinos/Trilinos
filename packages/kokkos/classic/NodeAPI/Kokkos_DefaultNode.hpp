@@ -75,8 +75,12 @@ namespace Details {
   template<class NodeType>
   Teuchos::RCP<NodeType>
   getNode() {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new NodeType (defaultParams));
+    static Teuchos::RCP<NodeType> theNode;
+    if (theNode.is_null ()) {
+      Teuchos::ParameterList defaultParams;
+      theNode = Teuchos::rcp (new NodeType (defaultParams));
+    }
+    return theNode;
   }
 } // namespace Details
 
