@@ -65,7 +65,7 @@ const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Tpetra
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
   RCP<XMatrix> A = L0->Get< RCP<XMatrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
   if(tpbA != Teuchos::null)
     return Xpetra::toTpetra(tpbA->getDomainMap());
 
@@ -83,7 +83,7 @@ const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Tpetra
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
   RCP<XMatrix> A = L0->Get< RCP<XMatrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
   if(tpbA != Teuchos::null)
     return Xpetra::toTpetra(tpbA->getRangeMap());
 
