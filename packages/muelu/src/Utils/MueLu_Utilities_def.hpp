@@ -1197,7 +1197,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
       //     Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
       //     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal>::simple_Transpose(tpetraOp);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::simple_Transpose(tpetraOp);
       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
       RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
       RCP<Matrix> AAAA = rcp( new CrsMatrixWrap(AAA) );
