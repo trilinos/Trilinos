@@ -94,10 +94,13 @@ namespace stk {
       std::vector<T> m_ranges;
       std::vector<CountsType> m_counts;
       unsigned m_max_column_width;
+      const char m_bar_symbol;
+
     public:
       typedef std::vector<T> RangesType;
 
-      Histogram(unsigned max_column_width=40) : m_max_column_width(max_column_width)
+      Histogram(unsigned max_column_width=40, const char bar_symbol = '=') : 
+        m_max_column_width(max_column_width), m_bar_symbol(bar_symbol)
       {
         reset();
       }
@@ -290,8 +293,11 @@ namespace stk {
         //table.setAutoEndCol(false);
 
         std::ostringstream ostr0;
+        double npsym = 100.0/double(m_max_column_width);
         if (use_percentage)
-          ostr0 << "[0:100]";
+          {
+            ostr0 << "[0:100]" << "  each '" << m_bar_symbol << "' is " << npsym << "%";
+          }
         else
           ostr0 << "[0:" << max_tot_count.first << "]";
 
@@ -299,7 +305,7 @@ namespace stk {
         table << "|" << justify(PrintTable::Cell::CENTER) << "      " <<  "|" << justify(PrintTable::Cell::CENTER)  << ostr0.str() << "|" << stk::end_header;
         if (use_percentage)
           {
-            std::string line_equal(m_max_column_width, '=');
+            std::string line_equal(m_max_column_width, m_bar_symbol);
             table << "|" << "       " <<  "|" << justify(PrintTable::Cell::CENTER)  << line_equal << "|" << stk::end_header;
           }
 
@@ -313,7 +319,7 @@ namespace stk {
             unsigned end_loop = m_counts[i];
             if (use_percentage)
               end_loop = unsigned(double(m_max_column_width)*double(end_loop)/double(max_tot_count.second));
-            std::string count(end_loop, '=');
+            std::string count(end_loop, m_bar_symbol);
             table << justify(PrintTable::Cell::LEFT) <<  count << "|" << stk::end_row;
           }
 

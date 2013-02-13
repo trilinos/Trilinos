@@ -2652,7 +2652,7 @@ namespace stk {
         {
           side_rank_iter_begin = m_eMesh.edge_rank();
         }
-      // first, delete all relations from side to elem
+      // first, delete all relations from side to elem, except ghosts and parents
       for (unsigned side_rank_iter = side_rank_iter_begin; side_rank_iter <= side_rank_iter_end; side_rank_iter++)
         {
           SetOfEntities side_set;
@@ -2671,6 +2671,7 @@ namespace stk {
                   if (side.relations(node_rank).size() == 0)
                     continue;
 
+                  // skip if it's a parent
                   if (!m_eMesh.isLeafElement(side))
                     continue;
 
@@ -2691,7 +2692,7 @@ namespace stk {
 
                   bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side, to_id);
                   if (!del)
-                    throw std::logic_error("connectSides:: destroy_relation failed");
+                    throw std::logic_error("fix_side_sets_2:: destroy_relation failed");
                 }
             }
         }
@@ -2823,7 +2824,7 @@ namespace stk {
               if (found == side_part_map->end())
                 {
                   //std::cout << "side_part = " << side_parts[isp]->name() << std::endl;
-                  //throw std::runtime_error("Refiner::connectSides: couldn't find side map part");
+                  //throw std::runtime_error("Refiner::connectSidesForced: couldn't find side map part");
                   continue;
                 }
               std::string& elem_part_name = found->second;
@@ -2891,7 +2892,7 @@ namespace stk {
                     {
                       stk::mesh::RelationIdentifier rel_id = elem_sides[0].relation_ordinal();
                       if (rel_id > 1)
-                        throw std::logic_error("connectSides:: logic 1");
+                        throw std::logic_error("connectSidesForced:: logic 1");
                       k_element_side = (rel_id == 0 ? 1 : 0);
                       if (debug) std::cout << "tmp srk k_element_side= " << k_element_side << " rel_id= " << rel_id << std::endl;
                     }

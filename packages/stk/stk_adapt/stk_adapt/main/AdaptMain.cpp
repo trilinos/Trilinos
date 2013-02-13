@@ -1012,7 +1012,7 @@ namespace stk {
                         if (compute_hmesh.size() != 0)
                           {
                             double hmesh=0.0;
-                            Histogram<double> histogram, quality_histogram;
+                            Histogram<double> histogram(50), quality_histogram(50);
                             if (compute_hmesh == "eigens")
                               {
                                 hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor, &histogram, &quality_histogram);
@@ -1259,7 +1259,7 @@ namespace stk {
                               {
                                 double hmesh=0.0;
                                 double min_max_ave[3];
-                                Histogram<double> histogram, quality_histogram;
+                                Histogram<double> histogram(50), quality_histogram(50);
                                 if (compute_hmesh == "eigens")
                                   {
                                     hmesh = eMesh.hmesh_stretch_eigens(min_max_ave, &histogram, &quality_histogram);
