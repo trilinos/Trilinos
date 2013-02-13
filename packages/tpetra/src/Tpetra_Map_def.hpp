@@ -788,7 +788,12 @@ namespace Tpetra {
     // entryList are distinct.  In the case that a GID is duplicated,
     // each duplication gets a new LID.
     //
-    glMap_ = rcp(new global_to_local_table_type());
+    // FIXME (mfh 20 Mar 2012) This code doesn't do what it claims to
+    // do: it uses a different LID for local duplicates.  The
+    // numUniqueGIDs counter is a red herring; it just increases by
+    // one each iteration.
+    size_t numUniqueGIDs = 0;
+    glMap_ = rcp(new global_to_local_table_type(numLocalElements_));
     if (numLocalElements_ > 0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
       // While iterating through entryList, we compute its (local)
@@ -797,7 +802,9 @@ namespace Tpetra {
       maxMyGID_ = entryList[0];
       for (size_t i=0; i < numLocalElements_; i++) {
         lgMap_[i] = entryList[i];      // lgMap_:  LID to GID
-        (*glMap_)[entryList[i]] = i;   // glMap_: GID to LID
+        glMap_->add(entryList[i], numUniqueGIDs);   // glMap_: GID to LID
+        numUniqueGIDs++;
+
         if (entryList[i] < minMyGID_) {
           minMyGID_ = entryList[i];
         }
@@ -851,12 +858,11 @@ namespace Tpetra {
       return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
     }
     else {
-      typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_->find(globalIndex);
-      if (i == glMap_->end()) {
+      LocalOrdinal i = glMap_->get(globalIndex);
+      if (i == -1) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       }
-      return i->second;
+      return i;
     }
   }
 
@@ -887,9 +893,8 @@ namespace Tpetra {
       return (getMinGlobalIndex() <= globalIndex) && (globalIndex <= getMaxGlobalIndex());
     }
     else {
-      typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_->find(globalIndex);
-      return (i != glMap_->end());
+      LocalOrdinal i = glMap_->get(globalIndex);
+      return (i != -1);
     }
   }
 
