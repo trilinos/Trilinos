@@ -545,6 +545,13 @@ namespace stk {
         m_input_region = Teuchos::rcp(new Ioss::Region(m_input_database.release().get(), "input_model"));
       }
     }
+
+    void MeshData::set_rank_name_vector(const std::vector<std::string> &rank_names)
+    {
+      m_rank_names.clear();
+      std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
+    }
+
     void MeshData::create_input_mesh()
     {
       if (Teuchos::is_null(m_input_region)) {
@@ -557,7 +564,11 @@ namespace stk {
       }
 
       size_t spatial_dimension = m_input_region->get_property("spatial_dimension").get_int();
-      initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
+      if (m_rank_names.empty()) {
+        initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
+      } else {
+        initialize_spatial_dimension(meta_data(), spatial_dimension, m_rank_names);
+      }
 
       process_nodeblocks(*m_input_region.get(),    meta_data());
       process_elementblocks(*m_input_region.get(), meta_data());

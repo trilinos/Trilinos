@@ -78,6 +78,22 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
 
         /**
+         * The default entity rank names are "NODE", "EDGE", "FACE", "ELEMENT"
+         * If an application wants to change these names and/or add additional
+         * names, it should call this function with a vector containing the
+         * desired names.  To use the default names, but add additional names,
+         * call stk::mesh::entity_rank_names() which will return a reference
+         * to the default entity name vector; copy these and add the new names
+         * and then call this function.
+         *
+         * Must be called prior to create_input_mesh() or it will have no affect
+         *
+         * @param rank_names -- std::vector<std::string> containing the names
+         * of your entities.
+         */
+        void set_rank_name_vector(const std::vector<std::string> &rank_names);
+
+        /**
          * The selector is an optional selector that can be provided
          * which will be used to filter the mesh entities (node,
          * element, face, edge) associated with an
@@ -333,6 +349,7 @@ namespace stk {
         void create_ioss_region();
 
         MPI_Comm m_communicator_;
+        std::vector<std::string>       m_rank_names; // Optional rank name vector.
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
         Teuchos::RCP<Ioss::Region>     m_input_region;
