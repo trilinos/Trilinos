@@ -35,6 +35,8 @@ namespace {
   const std::string internal_selector_name = "_stk_io_internal_selector";
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
+  // Need to somehow associate this with the string in MeshReadWriteUtils
+  const std::string coordinate_field_name = "coordinates";
   
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta)
@@ -1076,8 +1078,8 @@ bool include_entity(const Ioss::GroupingEntity *entity)
 namespace {
 
 void define_side_block(const stk::mesh::BulkData &bulk,
-		       const stk::mesh::Selector &selector,
-		       stk::mesh::Part &part,
+                       const stk::mesh::Selector &selector,
+                       stk::mesh::Part &part,
                        Ioss::SideSet *sset,
                        int spatial_dimension)
 {
@@ -1178,7 +1180,7 @@ void define_node_block(stk::mesh::Part &part,
   /// string lookup.  App infrastructure is not shown here, so
   /// lookup by string for the example.
   mesh::Field<double, mesh::Cartesian> *coord_field =
-    meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
+    meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
   assert(coord_field != NULL);
   const mesh::FieldBase::Restriction &res = coord_field->restriction(stk::mesh::MetaData::NODE_RANK, part);
 
@@ -1217,7 +1219,7 @@ void define_node_block(stk::mesh::Part &part,
 }
 
 void define_node_set(stk::mesh::Part &part,
-		     const std::string &name,
+                     const std::string &name,
                      const stk::mesh::BulkData &bulk,
                      Ioss::Region &io_region,
                      const stk::mesh::Selector *anded_selector)
@@ -1296,8 +1298,8 @@ void define_element_block(stk::mesh::Part &part,
 }
 
 void define_communication_maps(const stk::mesh::BulkData &bulk,
-			       Ioss::Region &io_region,
-			       const stk::mesh::Selector *anded_selector)
+                               Ioss::Region &io_region,
+                               const stk::mesh::Selector *anded_selector)
 {
   if (bulk.parallel_size() > 1) {
     const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
@@ -1598,7 +1600,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   /// lookup by string for the example.
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   mesh::Field<double, mesh::Cartesian> *coord_field =
-    meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(std::string("coordinates"));
+    meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
   assert(coord_field != NULL);
   field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 
@@ -1748,9 +1750,9 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
 
 template <typename INT>
 void output_communication_maps(Ioss::Region &io_region,
-			       const stk::mesh::BulkData &bulk,
-			       const stk::mesh::Selector *anded_selector,
-			       INT /*dummy*/)
+                               const stk::mesh::BulkData &bulk,
+                               const stk::mesh::Selector *anded_selector,
+                               INT /*dummy*/)
 {
   if (bulk.parallel_size() > 1) {
     const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
