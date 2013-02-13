@@ -194,12 +194,12 @@ namespace MueLu {
             Proceed as usual
           */
           //Note is to avoid that Epetra only supports vectors of type int or double, not size_t, which is unsigned.
-          RCP<Xpetra::Vector<double, LO, GO> > originalNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getSourceMap());
+          RCP<Xpetra::Vector<double, LO, GO, NO> > originalNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getSourceMap());
           ArrayRCP<double> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
           for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
             nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
           nnzPerRow = Teuchos::null;
-          RCP<Xpetra::Vector<double, LO, GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getTargetMap());
+          RCP<Xpetra::Vector<double, LO, GO, NO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO, NO>::Build(rebalanceImporter->getTargetMap());
           permutedNnzPerRowVec->doImport(*originalNnzPerRowVec, *rebalanceImporter, Xpetra::INSERT);
 
           ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
