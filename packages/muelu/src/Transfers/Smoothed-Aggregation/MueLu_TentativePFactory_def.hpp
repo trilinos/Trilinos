@@ -291,7 +291,8 @@ namespace MueLu {
           // Only one nullspace vector, so normalize by hand
           Magnitude dtemp=0;
           for (size_t k=0; k<static_cast<size_t>(myAggSize); ++k) {
-            dtemp += Magnitude(localQR(k,0))*Magnitude(localQR(k,0));
+	    Magnitude tmag = Teuchos::ScalarTraits<SC>::magnitude(localQR(k,0));
+            dtemp += tmag*tmag;
           }
           dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
           tau = localQR(0,0);
@@ -322,7 +323,7 @@ namespace MueLu {
 
          if (NSDim == 1) {
            // Only one nullspace vector, so calculate Q by hand
-           Magnitude dtemp = Magnitude(localQR(0,0));
+           Magnitude dtemp = Teuchos::ScalarTraits<SC>::magnitude(localQR(0,0));
            localQR(0,0) = tau;
            dtemp = 1 / dtemp;
            for (LocalOrdinal i=0; i<myAggSize; ++i) {

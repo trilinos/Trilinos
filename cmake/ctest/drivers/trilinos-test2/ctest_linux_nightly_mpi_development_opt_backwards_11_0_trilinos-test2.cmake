@@ -68,9 +68,16 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test2.gcc.cm
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_OPT_DEV_INSTALL)
+SET(BUILD_DIR_NAME MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.0)
 #SET(CTEST_TEST_TIMEOUT 900)
-SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE EXPERIMENTAL)
+
+#setting this temporarily while this is an experimental test
+#the default repository for experimental is /space/git/Trilinos
+#but the branch in question only exists on /space/git/nightly/Trilinos
+SET(Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/Trilinos")
+
+SET(Trilinos_BRANCH "trilinos-release-11-0-branch")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
@@ -84,7 +91,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0/include"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
