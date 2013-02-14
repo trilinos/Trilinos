@@ -543,12 +543,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Building Maps" << endl;
 
-  RCP<Teuchos::Time> timerBuildGlobalMaps =
-    TimeMonitor::getNewTimer ("Build global Maps and Export");
   Array<int> ownedGIDs;
   RCP<const map_type> globalMapG;
   {
-    TimeMonitor timerBuildGlobalMapsL (*timerBuildGlobalMaps);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build global maps", build_maps);
+
     // Count owned nodes
     int ownedNodes = 0;
     for (int i = 0; i < numNodes; ++i) {
@@ -604,10 +603,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   RCP<sparse_graph_type> overlappedGraph;
   RCP<sparse_graph_type> ownedGraph;
-  RCP<Teuchos::Time> timerBuildOverlapGraph =
-    TimeMonitor::getNewTimer ("Build graphs for overlapped and owned solutions");
   {
-    TimeMonitor timerBuildOverlapGraphL (*timerBuildOverlapGraph);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build matrix graph: 0-Total", graph_total);
 
     // Construct Epetra_CrsGraph objects.
     overlappedGraph = rcp (new sparse_graph_type (Copy, *overlappedMapG, 0));
@@ -621,7 +618,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     for (int workset = 0; workset < numWorksets; ++workset) {
       // Compute cell numbers where the workset starts and ends
-      int worksetSize  = 0;
       int worksetBegin = (workset + 0)*desiredWorksetSize;
       int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
@@ -631,10 +627,13 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
       // Now we know the actual workset size and can allocate the
       // array for the cell nodes.
-      worksetSize = worksetEnd - worksetBegin;
+      // int worksetSize = worksetEnd - worksetBegin;
 
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
+	TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	  "Build matrix graph: 1-Insert global indices", graph_insert);
+
         // Compute cell ordinal relative to the current workset
         //int worksetCellOrdinal = cell - worksetBegin;
 
@@ -671,17 +670,30 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }// *** workset loop ***
 
     // Fill-complete overlapping distribution Graph.
-    errCode = overlappedGraph->FillComplete ();
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 2-Overlapped fill complete", 
+	overlapped_fill_complete);
+      errCode = overlappedGraph->FillComplete ();
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
       "Epetra_CrsGraph::FillComplete on overlapped graph on process "
       << myRank << " failed with error code " << errCode << ".");
 
     // Export to owned distribution Graph, and fill-complete the latter.
-    errCode = ownedGraph->Export (*overlappedGraph, *exporter, Insert);
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 3-Owned graph export", graph_export);
+      errCode = ownedGraph->Export (*overlappedGraph, *exporter, Insert);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
       "Epetra_CrsGraph::Export from overlapped to owned graph on process "
       << myRank << " failed with error code " << errCode << ".");
-    errCode = ownedGraph->FillComplete ();
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 4-Owned fill complete", owned_fill_complete);
+      errCode = ownedGraph->FillComplete ();
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
       "Epetra_CrsGraph::FillComplete on owned graph on process "
       << myRank << " failed with error code " << errCode << ".");
@@ -728,14 +740,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Setting up Dirichlet boundary conditions" << endl;
 
-  // Timer for Dirichlet BC setup
-  RCP<Teuchos::Time> timerDirichletBC =
-    TimeMonitor::getNewTimer ("Get Dirichlet boundary values: Total Time");
   int numBCNodes = 0;
   RCP<vector_type> v;
   Array<int> BCNodes;
   {
-    TimeMonitor timerDirichletBCL(*timerDirichletBC);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Dirichlet BC setup", bc_setup);
     for (int inode = 0; inode < numNodes; ++inode) {
       if (nodeOnBoundary(inode) && nodeIsOwned[inode]) {
         ++numBCNodes;
@@ -793,6 +802,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /**********************************************************************************/
 
   *out << "Building discretization matrix and right hand side" << endl;
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Matrix/RHS fill:  0-Total", fill_total);
 
   // Define desired workset size and count how many worksets there are
   // on this processor's mesh block
@@ -874,6 +886,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     /*                                Calculate Jacobians                             */
     /**********************************************************************************/
 
+    {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  1-Element discretization", elem_discretization);
+
     IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
     IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
     IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
@@ -934,14 +950,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                                     worksetHGBValuesWeighted,
                                     COMP_BLAS);
 
+    } // Element discretization timer
+
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
 
-    RCP<Teuchos::Time> timerAssembleGlobalMatrix =
-      TimeMonitor::getNewTimer ("Assemble overlapped global matrix and RHS");
     {
-      TimeMonitor timerAssembleGlobalMatrixL (*timerAssembleGlobalMatrix);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
 
       // "WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
@@ -956,7 +973,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
 
 	  {
-	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
+	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	    //   "Matrix/RHS fill:  2a-RHS sum into local values", 
+	    //   elem_rhs);
+
 	    errCode = rhsVector->SumIntoMyValues (
 	      1, &sourceTermContribution, &localRow);
 	    TEUCHOS_TEST_FOR_EXCEPTION(
@@ -969,8 +989,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // "CELL VARIABLE" loop for the workset cell: sum entire element
 	  // stiff matrix contribution in one function call
 	  {
-	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
-					   elem_matrix);
+	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	    //   "Matrix/RHS fill:  2b-Matrix sum into local values", 
+	    //   elem_matrix);
 	    errCode = StiffMatrix->SumIntoMyValues (
 	      localRow,
 	      numFieldsG,
@@ -995,50 +1016,46 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Exporting matrix and right-hand side from overlapped to owned Map" << endl;
 
-  RCP<Teuchos::Time> timerAssembMultProc =
-    TimeMonitor::getNewTimer ("Export from overlapped to owned");
+  errCode = gl_StiffMatrix->PutScalar (STS::zero ());
+  TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
+    "Epetra_CrsMatrix::PutScalar on process " << myRank << " failed with "
+    "error code " << errCode << ".");
+
   {
-    TimeMonitor timerAssembMultProcL (*timerAssembMultProc);
-    errCode = gl_StiffMatrix->PutScalar (STS::zero ());
-    TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-      "Epetra_CrsMatrix::PutScalar on process " << myRank << " failed with "
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  3-Matrix export", matrix_export);
+    errCode = gl_StiffMatrix->Export (*StiffMatrix, *exporter, Add);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errCode != 0, std::runtime_error,
+      "Epetra_CrsMatrix::Export on process " << myRank << " failed with "
       "error code " << errCode << ".");
+  }
 
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix Export", matrix_export);
-      errCode = gl_StiffMatrix->Export (*StiffMatrix, *exporter, Add);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	errCode != 0, std::runtime_error,
-	"Epetra_CrsMatrix::Export on process " << myRank << " failed with "
-	"error code " << errCode << ".");
-    }
+  // If target of export has static graph, no need to do
+  // PutScalar(0.0); export will clobber values.
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  4-Matrix fill complete", matrix_fill_complete);
+    errCode = gl_StiffMatrix->FillComplete ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errCode != 0, std::runtime_error,
+      "Epetra_CrsMatrix::FillComplete on process " << myRank
+      << "failed with error code " << errCode << ".");
+  }
 
-    // If target of export has static graph, no need to do
-    // PutScalar(0.0); export will clobber values.
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix FillComplete", 
-				     matrix_fill_complete);
-      errCode = gl_StiffMatrix->FillComplete ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	errCode != 0, std::runtime_error,
-	"Epetra_CrsMatrix::FillComplete on process " << myRank
-	<< "failed with error code " << errCode << ".");
-    }
+  errCode = gl_rhsVector->PutScalar (STS::zero ());
+  TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
+    "Epetra_Vector::PutScalar on process " << myRank << " failed with "
+    "error code " << errCode << ".");
 
-    errCode = gl_rhsVector->PutScalar (STS::zero ());
-    TEUCHOS_TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
-      "Epetra_Vector::PutScalar on process " << myRank << " failed with "
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  5-RHS export", rhs_export);
+    errCode = gl_rhsVector->Export (*rhsVector, *exporter, Add);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errCode != 0, std::runtime_error,
+      "Epetra_Vector::Export on process " << myRank << " failed with "
       "error code " << errCode << ".");
-
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: RHS Export", 
-				     rhs_export);
-      errCode = gl_rhsVector->Export (*rhsVector, *exporter, Add);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	errCode != 0, std::runtime_error,
-	"Epetra_Vector::Export on process " << myRank << " failed with "
-	"error code " << errCode << ".");
-    }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -1047,10 +1064,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Adjusting matrix and right-hand side for BCs" << endl;
 
-  RCP<Teuchos::Time> timerAdjustMatrixBC =
-    TimeMonitor::getNewTimer ("Adjust owned matrix and RHS for BCs");
   {
-    TimeMonitor timerAdjustMatrixBCL (*timerAdjustMatrixBC);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  6-Dirichlet BC assembly", bc_assembly);
 
     // Apply owned stiffness matrix to v: rhs := A*v
     RCP<multivector_type> rhsDir =
@@ -1230,6 +1246,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   // we don't need to call FillComplete() again here (in fact, it's
   // not allowed to call FillComplete() more than once).
   // gl_StiffMatrix->FillComplete ();
+
+  } // Matrix/RHS fill timing
 
   //
   // We're done with assembly, so we can delete the mesh.
