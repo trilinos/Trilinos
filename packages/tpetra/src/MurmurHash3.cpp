@@ -33,10 +33,22 @@ namespace Details
 
 // Other compilers
 
-#else	// defined(_MSC_VER)
+#else	// not defined(_MSC_VER)
 
 #if __GNUC__ && __GNUC_STDC_INLINE__
+  // Forcing inlining triggers a GCC 4.1.2 bug ("sorry, unimplemented:
+  // inlining failed..."):
+  //
+  // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31886
+  // http://testing.sandia.gov/cdash/viewBuildError.php?type=0&buildid=915491
+  // http://testing.sandia.gov/cdash/viewBuildError.php?type=0&buildid=916189
+  //
+  // That's why we select on the GCC version here.
+#  if __GNUC__ == 4 && __GNUC_MINOR__ == 1
+#define FORCE_INLINE inline
+#  else
 #define FORCE_INLINE inline __attribute__((always_inline))
+#  endif 
 #else
 #define FORCE_INLINE __attribute__((always_inline))
 #endif
