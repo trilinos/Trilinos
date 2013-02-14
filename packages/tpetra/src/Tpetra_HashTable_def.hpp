@@ -49,7 +49,7 @@
 #endif
 
 
-#include "MurmurHash3.h"
+#include "MurmurHash3.hpp"
 
 
 namespace Tpetra
