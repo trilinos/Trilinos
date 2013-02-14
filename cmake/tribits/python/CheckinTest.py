@@ -691,6 +691,23 @@ def getCurrentDiffOutput(gitRepo, inOptions, baseTestDir):
     )
 
 
+def repoHasModifiedFiles(gitRepo, baseTestDir):
+  modifiedFilesStr = readStrFromFile(
+    baseTestDir+"/"+getModifiedFilesOutputFileName(gitRepo.repoName))
+  if modifiedFilesStr:
+    return True
+  return False
+
+
+def getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir):
+  getCurrentDiffOutput(gitRepo, inOptions, baseTestDir)
+  gitRepo.hasChanges = repoHasModifiedFiles(gitRepo, baseTestDir)
+  if gitRepo.hasChanges:
+    print "\n  ==> '"+gitRepo.repoName+"': Has modified files!"
+  else:
+    print "\n  ==> '"+gitRepo.repoName+"': Does *not* have any modified files!"
+
+
 def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_inout,
   gitRepo, enablePackagesList_inout, verbose=True,
   projectDependenciesLocal=None ) \
@@ -2076,10 +2093,14 @@ def checkinTest(baseDir, inOptions, configuration={}):
     print "*** 4) Get the list of all the modified files ..."
     print "***"
 
+    hasChangesToPush = False
+
     if pullPassed:
 
       for gitRepo in tribitsGitRepos.gitRepoList():
-        getCurrentDiffOutput(gitRepo, inOptions, baseTestDir)
+        getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir)
+        if gitRepo.hasChanges:
+          hasChangesToPush = True
 
     else:
 
@@ -2094,15 +2115,25 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
     # Set runBuildCases flag and other logic
     abortGracefullyDueToNoUpdates = False
+    abortGracefullyDueToNoChangesToPush = False
     if not performAnyBuildTestActions(inOptions):
       print "\nNot performing any build cases because no --configure, --build or --test" \
         " was specified!\n"
       runBuildCases = False
     elif doingAtLeastOnePull:
-      if repoIsClean and not pulledSomeChanges and inOptions.abortGracefullyIfNoUpdates:
-        abortGracefullyDueToNoUpdates = True
-        print "\nNot perfoming any build cases because pull did not give any changes" \
+      if repoIsClean and not pulledSomeChanges and \
+        inOptions.abortGracefullyIfNoUpdates \
+        :
+        print "\nNot perfoming any build cases because pull did not bring any commits" \
           " and --abort-gracefully-if-no-updates!\n"
+        abortGracefullyDueToNoUpdates = True
+        runBuildCases = False
+      elif repoIsClean and not hasChangesToPush and \
+        inOptions.abortGracefullyIfNoChangesToPush \
+        :
+        print "\nNot perfoming any build cases because there are no local changes to push" \
+          " and --abort-gracefully-if-no-changes-to-push!\n"
+        abortGracefullyDueToNoChangesToPush = True
         runBuildCases = False
       elif pullPassed:
         print "\nThe updated passsed, running the build/test cases ...\n"
@@ -2451,18 +2482,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
   
           print "\n7.c."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-          # ToDo: Determine if there is anything to push by examining
-          # getModifiedFilesOutputFileName(gitRepoName) and only push if that
-          # file is not empty.
-
-          modifiedFilesStr = getCmndOutput(
-            "cat "+getModifiedFilesOutputFileName(gitRepo.repoName),
-            stripTrailingSpaces=True,
-            throwOnError=True,
-            workingDir=baseTestDir
-            );
-
-          if modifiedFilesStr:
+          if gitRepo.hasChanges:
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
@@ -2547,6 +2567,10 @@ def checkinTest(baseDir, inOptions, configuration={}):
         subjectLine = "ABORTED DUE TO NO UPDATES"
         commitEmailBodyExtra += "\n\nAborted because no updates and --abort-gracefully-if-no-updates was set!\n\n"
         success = True
+      elif abortGracefullyDueToNoChangesToPush:
+        subjectLine = "ABORTED DUE TO NO CHANGES TO PUSH"
+        commitEmailBodyExtra += "\n\nAborted because no changes to push and --abort-gracefully-if-no-changes-to-push was set!\n\n"
+        success = True
       elif allConfiguresAbortedDueToNoEnablesGracefullAbort:
         subjectLine = "ABORTED DUE TO NO ENABLES"
         commitEmailBodyExtra += "\n\nAborted because no enables and --abort-gracefully-if-no-enables was set!\n\n"
@@ -2612,6 +2636,11 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
         print "\nSkipping sending final email because there were no updates" \
           " and --abort-gracefully-if-no-updates was set!"
+
+      elif inOptions.sendEmailTo and abortGracefullyDueToNoChangesToPush:
+
+        print "\nSkipping sending final email because there are no local changes to push" \
+          " and --abort-gracefully-if-no-changes-to-push was set!"
 
       elif inOptions.sendEmailTo and allConfiguresAbortedDueToNoEnablesGracefullAbort:
 
