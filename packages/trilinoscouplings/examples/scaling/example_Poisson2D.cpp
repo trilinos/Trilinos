@@ -574,13 +574,9 @@ int main(int argc, char *argv[]) {
 
              int sideNode0 = cellType.getNodeMap(1,sideSetSideList[j]-1,0);
              int sideNode1 = cellType.getNodeMap(1,sideSetSideList[j]-1,1);
-	     //             int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
-	     //             int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
 
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
-	     //             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
-	     //             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
           }
           delete [] sideSetElemList;
           delete [] sideSetSideList;
