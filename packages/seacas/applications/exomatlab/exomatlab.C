@@ -138,9 +138,7 @@ namespace {
     }
 
     dbi->set_field_separator(interface.field_suffix());
-    dbi->set_node_global_id_backward_compatibility(false);
-    dbi->set_lower_case_variable_names(false);
-    
+
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
 

@@ -83,7 +83,6 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  void show_usage(const std::string &prog);
   void show_step(int istep, double time);
 
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
@@ -202,7 +201,6 @@ namespace {
 
     dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
     dbi->set_field_separator(interface.field_suffix_separator());
-    dbi->set_node_global_id_backward_compatibility(false);
     if (interface.ints_64_bit())
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     

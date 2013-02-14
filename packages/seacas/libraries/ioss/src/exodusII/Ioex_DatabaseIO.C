@@ -1154,106 +1154,78 @@ namespace Ioex {
 
       if (is_input() || open_create_behavior() == Ioss::DB_APPEND) {
 
-	// Remove this soon (2012/10/19)
-	// backward_compat implies:
-	// 1. READ_MODEL and entity_type == EX_NODE_BLOCK|EX_NODE_SET
-	//    - Parallel? -- do not use original_global_id_map
-	//    - Serial?   -- do not use any node map.
-	// This was originally needed for old nem_spread output which only had
-	// a single node map.  If the original serial model had a node map, then that map was
-	// lost in a parallel decomposition since the parallel-to-serial mapping needed
-	// to use the map instead. In that case, the mesh numbering for a serial run would
-	// differ from a parallel run unless the node map was ignored in the serial case.
-	// Nem_slice was modified to keep the original map in "original_global_id_map" which
-	// eliminated this problem, but did change numbering of mesh, so the backward compatibility
-	// was added to workaround this issue.  In some rare cases, this may still be needed, but
-	// try removing completly in the next few months(?)
-	// --Greg Sjaardema
-	bool backward_compat = (entity_type == EX_NODE_BLOCK || entity_type == EX_NODE_SET) &&
-	  dbUsage == Ioss::READ_MODEL && get_node_global_id_backward_compatibility() &&
-	  !isParallel;
-	if (!backward_compat) {
-	  Ioss::SerializeIO	serializeIO__(this);
-	  // Check whether there is a "original_global_id_map" map on
-	  // the database. If so, use it instead of the "node_num_map".
-	  bool map_read = false;
-	  int map_count = ex_inquire_int(get_file_pointer(), inquiry_type);
-	  if (map_count > 0 && !get_node_global_id_backward_compatibility()) {
-	    char **names = get_exodus_names(map_count, maximumNameLength);
-	    int ierr = ex_get_names(get_file_pointer(), entity_type, names);
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, -1);
+        Ioss::SerializeIO	serializeIO__(this);
+        // Check whether there is a "original_global_id_map" map on
+        // the database. If so, use it instead of the "node_num_map".
+        bool map_read = false;
+        int map_count = ex_inquire_int(get_file_pointer(), inquiry_type);
+        if (map_count > 0) {
+          char **names = get_exodus_names(map_count, maximumNameLength);
+          int ierr = ex_get_names(get_file_pointer(), entity_type, names);
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, -1);
 
-	    if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
-	      int error = 0;
-	      if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-		error = ex_get_num_map(get_file_pointer(), entity_type, 1, &entity_map.map[1]);
-	      } else {
-		// Ioss stores as 64-bit, read as 32-bit and copy over...
-		Ioss::IntVector tmp_map(entity_map.map.size());
-		error = ex_get_num_map(get_file_pointer(), entity_type, 1, &tmp_map[1]);
-		if (error >= 0)
-		  std::copy(tmp_map.begin(), tmp_map.end(), entity_map.map.begin());
-	      }
-	      if (error >= 0) {
-		map_read = true;
-	      } else {
-		// Clear out the vector...
-		Ioss::MapContainer().swap(entity_map.map);
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-		map_read = false;
-	      }
-	    }
-	    delete_exodus_names(names, map_count);
-	  }
+          if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
+            int error = 0;
+            if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+              error = ex_get_num_map(get_file_pointer(), entity_type, 1, &entity_map.map[1]);
+            } else {
+              // Ioss stores as 64-bit, read as 32-bit and copy over...
+              Ioss::IntVector tmp_map(entity_map.map.size());
+              error = ex_get_num_map(get_file_pointer(), entity_type, 1, &tmp_map[1]);
+              if (error >= 0)
+                std::copy(tmp_map.begin(), tmp_map.end(), entity_map.map.begin());
+            }
+            if (error >= 0) {
+              map_read = true;
+            } else {
+              // Clear out the vector...
+              Ioss::MapContainer().swap(entity_map.map);
+              exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              map_read = false;
+            }
+          }
+          delete_exodus_names(names, map_count);
+        }
 
-	  if (!map_read) {
-	    int error = 0;
-	    if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	      error = ex_get_id_map(get_file_pointer(), entity_type, &entity_map.map[1]);
-	    } else {
-	      // Ioss stores as 64-bit, read as 32-bit and copy over...
-	      Ioss::IntVector tmp_map(entity_map.map.size());
-	      error = ex_get_id_map(get_file_pointer(), entity_type, &tmp_map[1]);
-	      if (error >= 0)
-		std::copy(tmp_map.begin(), tmp_map.end(), entity_map.map.begin());
-	    }
-	    if (error < 0) {
-	      // Clear out the vector...
-	      Ioss::MapContainer().swap(entity_map.map);
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-	  }
+        if (!map_read) {
+          int error = 0;
+          if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+            error = ex_get_id_map(get_file_pointer(), entity_type, &entity_map.map[1]);
+          } else {
+            // Ioss stores as 64-bit, read as 32-bit and copy over...
+            Ioss::IntVector tmp_map(entity_map.map.size());
+            error = ex_get_id_map(get_file_pointer(), entity_type, &tmp_map[1]);
+            if (error >= 0)
+              std::copy(tmp_map.begin(), tmp_map.end(), entity_map.map.begin());
+          }
+          if (error < 0) {
+            // Clear out the vector...
+            Ioss::MapContainer().swap(entity_map.map);
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          }
+        }
 
-	} else { // backward_compat == true
-	  // The node map is ignored in the serial case (Unless
-	  // reading a restart file). This is to provide a consistent
-	  // id space for a serial model and a model that has been
-	  // decomposed using nem_slice/nem_spread.
-	  for (int64_t i=1; i < nodeCount+1; i++) {
-	    entity_map.map[i] = i;
-	  }
-	}
 
-	// Check for sequential node map.
-	// If not, build the reverse G2L node map...
-	entity_map.map[0] = -1;
-	for (int64_t i=1; i < entityCount+1; i++) {
-	  if (i != entity_map.map[i]) {
-	    entity_map.map[0] = 1;
-	    break;
-	  }
-	}
+        // Check for sequential node map.
+        // If not, build the reverse G2L node map...
+        entity_map.map[0] = -1;
+        for (int64_t i=1; i < entityCount+1; i++) {
+          if (i != entity_map.map[i]) {
+            entity_map.map[0] = 1;
+            break;
+          }
+        }
 
-	entity_map.build_reverse_map(myProcessor);
+        entity_map.build_reverse_map(myProcessor);
 
       } else {
-	// Output database; entity_map.map not set yet... Build a default map.
-	for (int64_t i=1; i < nodeCount+1; i++) {
-	  entity_map.map[i] = i;
-	}
-	// Sequential map
-	entity_map.map[0] = -1;
+        // Output database; entity_map.map not set yet... Build a default map.
+        for (int64_t i=1; i < nodeCount+1; i++) {
+          entity_map.map[i] = i;
+        }
+        // Sequential map
+        entity_map.map[0] = -1;
       }
     }
     return entity_map;
@@ -6060,8 +6032,6 @@ namespace Ioex {
 	  // Add to VariableNameMap so can determine exodusII index given a
 	  // Sierra field name.  exodusII index is just 'i+1'
 	  for (int i=0; i < nvar; i++) {
-	    if (lowerCaseVariableNames)
-	      Ioss::Utils::fixup_name(names[i]);
 	    variables.insert(VNMValuePair(std::string(names[i]),   i+1));
 	  }
 

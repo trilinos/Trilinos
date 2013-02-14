@@ -334,31 +334,31 @@ namespace Ioss {
     } else {
       switch (get_state()) {
       case STATE_CLOSED:
-	// Make sure we can go to the specified state.
-	switch (new_state) {
-	default:
-	  success = set_state(new_state);
-	}
-	break;
+        // Make sure we can go to the specified state.
+        switch (new_state) {
+        default:
+          success = set_state(new_state);
+        }
+        break;
 
-	// For the invalid transitions; provide a more meaningful
-	// message in certain cases...
-      case STATE_READONLY:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Cannot change state of an input (readonly) database in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        // For the invalid transitions; provide a more meaningful
+        // message in certain cases...
+        case STATE_READONLY:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Cannot change state of an input (readonly) database in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
 
-	break;
-      default:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Invalid nesting of begin/end pairs in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        break;
+        default:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Invalid nesting of begin/end pairs in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
       }
     }
     // Pass the 'begin state' message on to the database so it can do any
@@ -437,26 +437,26 @@ namespace Ioss {
   int Region::add_state(double time)
   {
     static bool warning_output = false;
-    
+
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
       if (!warning_output) {
-	std::ostringstream errmsg;
-	errmsg << "IOSS WARNING: Current time, " << time
-	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
-	       << " in\n"
-	       << get_database()->get_filename()
-	       << ". This may cause problems in applications that assume monotonically increasing time values.\n";
-	IOSS_WARNING << errmsg.str();
-	warning_output = true;
+        std::ostringstream errmsg;
+        errmsg << "IOSS WARNING: Current time, " << time
+            << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
+                                                                     << " in\n"
+                                                                     << get_database()->get_filename()
+                                                                     << ". This may cause problems in applications that assume monotonically increasing time values.\n";
+        IOSS_WARNING << errmsg.str();
+        warning_output = true;
       }
     }
 
     if (get_database()->is_input() ||
-	get_database()->usage() == WRITE_RESULTS ||
-	get_database()->usage() == WRITE_RESTART ) {
+        get_database()->usage() == WRITE_RESULTS ||
+        get_database()->usage() == WRITE_RESTART ) {
       stateTimes.push_back(time);
       assert((int)stateTimes.size() == stateCount+1);
 
@@ -467,9 +467,9 @@ namespace Ioss {
       // a list of times that have been written since they are just streamed out and never read
       // We do sometimes need the list of times written to restart or results files though...
       if (stateTimes.empty()) {
-	stateTimes.push_back(time);
+        stateTimes.push_back(time);
       } else {
-	stateTimes[0] = time;
+        stateTimes[0] = time;
       }
     }
     return ++stateCount;;
