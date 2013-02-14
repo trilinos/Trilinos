@@ -9,10 +9,6 @@
 
 #include "MurmurHash3.h"
 
-//-----------------------------------------------------------------------------
-// Platform-specific functions and macros
-
-// Microsoft Visual Studio
 namespace Tpetra
 {
 
@@ -20,6 +16,10 @@ namespace Details
 
 {
 
+//-----------------------------------------------------------------------------
+// Platform-specific functions and macros
+
+// Microsoft Visual Studio
 #if defined(_MSC_VER)
 
 #define FORCE_INLINE	__forceinline
@@ -35,7 +35,11 @@ namespace Details
 
 #else	// defined(_MSC_VER)
 
-#define	FORCE_INLINE __attribute__((always_inline))
+#if __GNUC__ && __GNUC_STDC_INLINE__
+#define FORCE_INLINE inline __attribute__((always_inline))
+#else
+#define FORCE_INLINE __attribute__((always_inline))
+#endif
 
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
 {
