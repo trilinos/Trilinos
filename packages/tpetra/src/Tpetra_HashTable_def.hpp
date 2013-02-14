@@ -60,7 +60,7 @@ namespace Details
 
 template<typename KeyType, typename ValueType>
 int
-Tpetra_HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
+HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
     uint32_t k;
     MurmurHash3_x86_32((void *)&key, sizeof(KeyType),
                           1, (void *)&k);
@@ -73,7 +73,7 @@ Tpetra_HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
 
 template<typename KeyType, typename ValueType>
 int
-Tpetra_HashTable<KeyType, ValueType>:: getRecommendedSize( const int size ) {
+HashTable<KeyType, ValueType>:: getRecommendedSize( const int size ) {
    // A large list of prime numbers.
    // Based on a recommendation by Andres Valloud in hash forums.
    //  There are only enough primes here so that between any number N and 2*N,
@@ -134,13 +134,13 @@ Tpetra_HashTable<KeyType, ValueType>:: getRecommendedSize( const int size ) {
 }
 
 template<typename KeyType, typename ValueType>
-Tpetra_HashTable<KeyType, ValueType>::
-  Tpetra_HashTable( const int size, const unsigned int seed )
+HashTable<KeyType, ValueType>::
+  HashTable( const int size, const unsigned int seed )
   : Container_(NULL),
     Seed_(seed)
   {
   TEUCHOS_TEST_FOR_EXCEPTION(size < 0, std::runtime_error,
-    "Tpetra_HashTable : ERROR, size cannot be less than zero");
+    "HashTable : ERROR, size cannot be less than zero");
 
     Size_ = getRecommendedSize(size);
     Container_ = new Node * [Size_];
@@ -152,8 +152,8 @@ Tpetra_HashTable<KeyType, ValueType>::
   }
 
 template<typename KeyType, typename ValueType>
-Tpetra_HashTable<KeyType, ValueType>::
-  Tpetra_HashTable( const Tpetra_HashTable & obj )
+HashTable<KeyType, ValueType>::
+  HashTable( const HashTable & obj )
   : Container_(NULL),
     Size_(obj.Size_),
     Seed_(obj.Seed_)
@@ -171,8 +171,8 @@ Tpetra_HashTable<KeyType, ValueType>::
   }
 
 template<typename KeyType, typename ValueType>
-Tpetra_HashTable<KeyType, ValueType>::
-  ~Tpetra_HashTable() {
+HashTable<KeyType, ValueType>::
+  ~HashTable() {
     Node * ptr1;
     Node * ptr2;
     for( int i = 0; i < Size_; ++i ) {
@@ -185,7 +185,7 @@ Tpetra_HashTable<KeyType, ValueType>::
 
 template<typename KeyType, typename ValueType>
 void
-Tpetra_HashTable<KeyType, ValueType>::
+HashTable<KeyType, ValueType>::
   add( const KeyType key, const ValueType value ) {
     int v = hashFunc(key);
     Node * n1 = Container_[v];
@@ -194,7 +194,7 @@ Tpetra_HashTable<KeyType, ValueType>::
 
 template<typename KeyType, typename ValueType>
 ValueType
-Tpetra_HashTable<KeyType, ValueType>::
+HashTable<KeyType, ValueType>::
   get( const KeyType key ) {
     Node * n = Container_[ hashFunc(key) ];
 
@@ -218,52 +218,119 @@ Tpetra_HashTable<KeyType, ValueType>::
   }
 
 template <typename KeyType, typename ValueType>
-std::string Tpetra_HashTable<KeyType, ValueType>::description() const {
-    std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    oss << "Tpetra_HashTable size=" << Size_ << " "; 
-    return oss.str();
-  }
+std::string HashTable<KeyType, ValueType>::description() const {
+  std::ostringstream oss;
+  oss << "HashTable<" 
+      << Teuchos::TypeNameTraits<KeyType>::name() << "," 
+      << Teuchos::TypeNameTraits<ValueType>::name() << "> "
+      << "{ Size_: " << Size_ << " }"; 
+  return oss.str();
+}
 
 template <typename KeyType, typename ValueType>
-void Tpetra_HashTable<KeyType, ValueType>::describe(
+void HashTable<KeyType, ValueType>::describe(
  Teuchos::FancyOStream &out,
  const Teuchos::EVerbosityLevel verbLevel) const {
-    using std::endl;
-    using std::setw;
-    using Teuchos::VERB_DEFAULT;
-    using Teuchos::VERB_NONE;
-    using Teuchos::VERB_LOW;
+  using std::endl;
+  using std::setw;
+  using Teuchos::OSTab;
+  using Teuchos::rcpFromRef;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::VERB_DEFAULT;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_EXTREME;
 
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
+  Teuchos::EVerbosityLevel vl = verbLevel;
+  if (vl == VERB_DEFAULT) vl = VERB_LOW;
 
-    if (vl == VERB_NONE) {
-      // do nothing
-    }
-    else if (vl == VERB_LOW) {
-      out << this->description() << endl;
-    }
-    else {  // MEDIUM, HIGH or EXTREME
-      out << this->description() << endl;
-#ifdef HAVE_TEUCHOS_DEBUG
-    out << endl
-        << "Maximum number of collisions in Tpetra_HashTable (for a key) "
-        << maxc_ << std::endl;
-    out << "Number of collisions in Tpetra_HashTable " << nc_
-        << std::endl;
-#endif
-    }
+  if (vl == VERB_NONE) {
+    // do nothing
   }
+  else if (vl == VERB_LOW) {
+    out << this->description() << endl;
+  }
+  else {  // MEDIUM, HIGH or EXTREME
+    out << "HashTable: {" << endl;
+    {
+      OSTab tab1 (rcpFromRef (out));	
+
+      const std::string label = this->getObjectLabel ();
+      if (label != "") {
+	out << "label: " << label << endl;
+      }
+      out << "Template parameters: {" << endl;
+      {
+	OSTab tab2 (rcpFromRef (out));
+	out << "KeyType: " << TypeNameTraits<KeyType>::name () << endl
+	    << "ValueType" << TypeNameTraits<ValueType>::name () << endl;
+      }
+      out << "}" << endl << "Table parameters: {" << endl;
+      {
+	OSTab tab2 (rcpFromRef (out));
+	out << "Size_: " << Size_ << endl;
+      }
+      out << "}" << endl;
+#ifdef HAVE_TEUCHOS_DEBUG
+      out << "Debug info: {" << endl;
+      {
+	OSTab tab2 (rcpFromRef (out));
+	out << "Maximum number of collisions for any key: " << maxc_ << endl
+	    << "Total number of collisions: " << nc_ << endl;
+      }
+      out << "}" << endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
+      if (vl >= VERB_EXTREME) {
+	out << "Contents: ";
+	if (Container_ == NULL || Size_ == 0) {
+	  out << "[]" << endl;
+	} else {
+	  out << "[" << endl;
+	  {
+	    OSTab tab2 (rcpFromRef (out));
+	    for (int i = 0; i < Size_; ++i) {
+	      Node* curNode = Container_[i];
+	      if (curNode == NULL) {
+		out << "NULL";
+	      } else { // curNode != NULL
+		// Print all the buckets at the current table position i.
+		out << "[";
+		// Print the first bucket.
+		out << "[" << curNode->Key << "," << curNode->Value << "]";
+		curNode = curNode->Ptr;
+		// Print the remaining buckets, if there are any.
+		while (curNode != NULL) {
+		  out << ", [" << curNode->Key << "," << curNode->Value << "]";
+		  curNode = curNode->Ptr;
+		}
+		out << "]" << endl;
+	      } // if curNode == or != NULL
+	      if (i + 1 < Size_) {
+		out << ", ";
+	      }
+	    } // for each table position i
+	  }
+	  out << "]" << endl;
+	} // The table contains entries
+      } // vl >= VERB_EXTREME
+    }
+    out << "}" << endl;
+  } // if vl > VERB_LOW
+}
 
 } // namespace Details
-
 } // namespace Tpetra
 
-//! Explicit instantiation macro supporting the HashTable class,
-//on the default node for specified ordinals.
-// Must be explanded within the Tpetra::Details namespace
+// Macro that explicitly instantiates HashTable for the given local
+// ordinal (LO) and global ordinal (GO) types.  Note that HashTable's
+// template parameters occur in the opposite order of most Tpetra
+// classes.  This is because HashTable performs global-to-local
+// lookup, and the convention in templated C++ lookup tables (such as
+// std::map) is <KeyType, ValueType>.
+// 
+// This macro must be explanded within the Tpetra::Details namespace.
 #define TPETRA_HASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
-  template class Tpetra_HashTable< GO , LO >;                         \
+  template class HashTable< GO , LO >;                         \
 
 #endif

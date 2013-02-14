@@ -646,39 +646,31 @@ namespace Tpetra {
     /// describe(), may invoke \c getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
-    /// \typedef global_to_local_table_type
-    /// \brief Type of the table that maps global IDs to local IDs.
-    ///
-    /// We could use Tpetra_ENABLE_UNORDERED_MAP
-    /// configure-time option.  If the option was set, we could use
-    /// std::unordered_map (implemented as a hash table with linear
-    /// chaining). However, we are using Tpeta_HashTable in all cases.
-    typedef Details::Tpetra_HashTable<GlobalOrdinal, LocalOrdinal>
-                 global_to_local_table_type;
+    //! Type of the table that maps global IDs to local IDs.
+    typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
-    /// This is a local mapping.  \c Directory implements the global
-    /// mapping for all global IDs (both remote and locally owned).
-    /// This object corresponds roughly to Epetra_BlockMapData's
-    /// LIDHash_ hash table (which also maps from global IDs to local
-    /// IDs).
+    /// This is a local mapping.  Directory implements the global
+    /// mapping for all global indices (both remote and locally
+    /// owned).  This object corresponds roughly to
+    /// Epetra_BlockMapData's LIDHash_ hash table (which also maps
+    /// from global to local indices).
     ///
     /// This mapping is built only for a noncontiguous map, by the
-    /// noncontiguous map constructor.  For noncontiguous maps, the \c
-    /// getLocalElement() and \c isNodeGlobalElement() methods use
+    /// noncontiguous map constructor.  For noncontiguous maps, the 
+    /// getLocalElement() and isNodeGlobalElement() methods use
     /// this mapping.
     RCP<global_to_local_table_type> glMap_;
 
-    /// \brief A Directory for looking up nodes for this Map.
+    /// Directory: finds the process rank and local ID for any given global ID.
     ///
-    /// *** This directory is not allowed to persist beyond the lifetime of this Map ***
-    ///
-    /// Never allow this pointer to escape the Map.
-    /// The directory must hold an RCP to this Map, which must be non-owning
-    /// to prevent a circular dependency.
-    /// Therefore, allowing the Directory to persist beyond this Map would result
-    /// in a dangling RCP. We avoid this by not sharing the Directory.
+    /// \warning Never allow this pointer to escape the Map.  The
+    ///   directory must hold an RCP to this Map, which must be
+    ///   non-owning to prevent a circular dependency.  Therefore,
+    ///   allowing the Directory to persist beyond this Map would
+    ///   result in a dangling RCP. We avoid this by not sharing the
+    ///   Directory.
     Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
