@@ -29,11 +29,11 @@
 // @HEADER
 
 /** \file   example_Poisson.cpp
-    \brief  Example solution of a Poisson equation on a hexahedral mesh using
+    \brief  Example solution of a Poisson equation on a quad mesh using
             nodal (Hgrad) elements.
 
            This example uses the following Trilinos packages:
-    \li     Pamgen to generate a Hexahedral mesh.
+    \li     Pamgen to generate a Quad mesh.
     \li     Sacado to form the source term from user-specified manufactured solution.
     \li     Intrepid to build the discretization matrix and right-hand side.
     \li     Epetra to handle the global matrix and vector.
@@ -66,7 +66,7 @@
     \remark Usage:
     \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
 
-    \remark Example driver requires input file named Poisson.xml with Pamgen
+    \remark Example driver requires input file named Poisson2D.xml with Pamgen
             formatted mesh description and settings for Isorropia (a version
             is included in the Trilinos repository with this driver).
 
@@ -134,17 +134,6 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
-#ifdef TrilinosCouplings_ENABLE_Isorropia
-#define TC_HAVE_ISORROPIA
-#endif
-
-#ifdef TC_HAVE_ISORROPIA
-// Isorropia includes
-#include "Isorropia_Epetra.hpp"
-#include "Isorropia_EpetraRedistributor.hpp"
-#include "Isorropia_EpetraPartitioner.hpp"
-#endif
-
 // Sacado includes
 #include "Sacado.hpp"
 
@@ -155,7 +144,7 @@ using namespace Intrepid;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef Sacado::Fad::SFad<double,3>      Fad3; //# ind. vars fixed at 3
+typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
@@ -197,34 +186,31 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
     \param  x           [in]    x-coordinate of the evaluation point
     \param  y           [in]    y-coordinate of the evaluation point
-    \param  z           [in]    z-coordinate of the evaluation point
 
-    \return Value of the exact solution at (x,y,z)
+    \return Value of the exact solution at (x,y)
  */
 template<typename Scalar>
-const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z);
+const Scalar exactSolution(const Scalar& x, const Scalar& y);
 
 /** \brief  User-defined material tensor.
 
-    \param  material    [out]   3 x 3 material tensor evaluated at (x,y,z)
+    \param  material    [out]   3 x 3 material tensor evaluated at (x,y)
     \param  x           [in]    x-coordinate of the evaluation point
     \param  y           [in]    y-coordinate of the evaluation point
-    \param  z           [in]    z-coordinate of the evaluation point
 
-    \warning Symmetric and positive definite tensor is required for every (x,y,z).
+    \warning Symmetric and positive definite tensor is required for every (x,y).
 */
 template<typename Scalar>
-void materialTensor(Scalar material[][3], const Scalar&  x, const Scalar&  y, const Scalar&  z);
+void materialTensor(Scalar material[][2], const Scalar&  x, const Scalar&  y);
 
 /** \brief  Computes gradient of the exact solution. Requires user-defined exact solution.
 
-    \param  gradExact  [out]   gradient of the exact solution evaluated at (x,y,z)
+    \param  gradExact  [out]   gradient of the exact solution evaluated at (x,y)
     \param  x          [in]    x-coordinate of the evaluation point
     \param  y          [in]    y-coordinate of the evaluation point
-    \param  z          [in]    z-coordinate of the evaluation point
  */
 template<typename Scalar>
-void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, const Scalar& z);
+void exactSolutionGrad(Scalar gradExact[2], const Scalar& x, const Scalar& y);
 
 
 /** \brief Computes source term: f = -div(A.grad u).  Requires user-defined exact solution
@@ -232,12 +218,11 @@ void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, co
 
     \param  x          [in]    x-coordinate of the evaluation point
     \param  y          [in]    y-coordinate of the evaluation point
-    \param  z          [in]    z-coordinate of the evaluation point
 
-    \return Source term corresponding to the user-defined exact solution evaluated at (x,y,z)
+    \return Source term corresponding to the user-defined exact solution evaluated at (x,y)
  */
 template<typename Scalar>
-const Scalar sourceTerm(Scalar& x, Scalar& y, Scalar& z);
+const Scalar sourceTerm(Scalar& x, Scalar& y);
 
 
 /** \brief Computation of the material tensor at array of points in physical space.
@@ -349,7 +334,7 @@ int main(int argc, char *argv[]) {
   // Command line for xml file, otherwise use default
     std::string   xmlMeshInFileName, xmlSolverInFileName;
     if(argc>=2) xmlMeshInFileName=string(argv[1]);
-    else xmlMeshInFileName="Poisson.xml";
+    else xmlMeshInFileName="Poisson2D.xml";
     if(argc>=3) xmlSolverInFileName=string(argv[2]);
 
   // Read xml file into parameter list
@@ -395,12 +380,12 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Get cell topology for base hexahedron
-    shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+    shards::CellTopology cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
    // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
     int spaceDim = cellType.getDimension();
-    int dim = 3;
+    int dim = 2;
 
 /**********************************************************************************/
 /******************************* GENERATE MESH ************************************/
@@ -496,14 +481,11 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
-    double * nodeCoordz = new double [numNodes];
-    im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
+    im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,0);
     for (int i=0; i<numNodes; i++) {
       nodeCoord(i,0)=nodeCoordx[i];
       nodeCoord(i,1)=nodeCoordy[i];
-      nodeCoord(i,2)=nodeCoordz[i];
     }
-
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -590,15 +572,15 @@ int main(int argc, char *argv[]) {
           im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
 
-             int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
-             int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
-             int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
-             int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
+             int sideNode0 = cellType.getNodeMap(1,sideSetSideList[j]-1,0);
+             int sideNode1 = cellType.getNodeMap(1,sideSetSideList[j]-1,1);
+	     //             int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
+	     //             int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
 
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
-             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
-             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
+	     //             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
+	     //             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
           }
           delete [] sideSetElemList;
           delete [] sideSetSideList;
@@ -617,15 +599,15 @@ int main(int argc, char *argv[]) {
    // Get numerical integration points and weights
     DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
+    Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);
 
-    int cubDim       = hexCub->getDimension();
-    int numCubPoints = hexCub->getNumPoints();
+    int cubDim       = myCub->getDimension();
+    int numCubPoints = myCub->getNumPoints();
 
     FieldContainer<double> cubPoints(numCubPoints, cubDim);
     FieldContainer<double> cubWeights(numCubPoints);
 
-    hexCub->getCubature(cubPoints, cubWeights);
+    myCub->getCubature(cubPoints, cubWeights);
 
    if(MyPID==0) {std::cout << "Getting cubature                            "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
@@ -637,14 +619,14 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Define basis
-     Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
-     int numFieldsG = hexHGradBasis.getCardinality();
+     Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis;
+     int numFieldsG = myHGradBasis.getCardinality();
      FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
      FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-     hexHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
-     hexHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
+     myHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
+     myHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
 
    if(MyPID==0) {std::cout << "Getting basis                               "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
@@ -686,7 +668,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
   // Put coordinates in multivector for output
-    Epetra_MultiVector nCoord(globalMapG,3);
+    Epetra_MultiVector nCoord(globalMapG,dim);
     Epetra_MultiVector nBound(globalMapG,1);
 
      int indOwned = 0;
@@ -694,7 +676,6 @@ int main(int argc, char *argv[]) {
        if (nodeIsOwned[inode]) {
           nCoord[0][indOwned]=nodeCoord(inode,0);
           nCoord[1][indOwned]=nodeCoord(inode,1);
-          nCoord[2][indOwned]=nodeCoord(inode,2);
           nBound[0][indOwned]=nodeOnBoundary(inode);
           indOwned++;
        }
@@ -742,8 +723,7 @@ int main(int argc, char *argv[]) {
            indbc++;
            double x  = nodeCoord(inode, 0);
            double y  = nodeCoord(inode, 1);
-           double z  = nodeCoord(inode, 2);
-           v[0][iOwned]=exactSolution(x, y, z);
+           v[0][iOwned]=exactSolution(x, y);
         }
          iOwned++;
       }
@@ -793,7 +773,6 @@ int main(int argc, char *argv[]) {
       for (int node = 0; node < numNodesPerElem; node++) {
         cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
         cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-        cellWorkset(cellCounter, node, 2) = nodeCoord( elemToNode(cell, node), 2);
       }
       cellCounter++;
     }
@@ -988,71 +967,6 @@ int main(int argc, char *argv[]) {
                   << " sec \n"; Time.ResetStartTime();}
 
 
-/**********************************************************************************/
-/************************** PARTITION MATRIX WITH ISORROPIA ***********************/
-/**********************************************************************************/
-
-#ifdef TC_HAVE_ISORROPIA
-    if(MyPID==0)
-        {
-                cout << msg << "Adjust Matrix = " << Time.ElapsedTime() << endl;
-        cout << "rows = " << StiffMatrix.NumGlobalRows() << endl ;
-        cout << "cols = " << StiffMatrix.NumGlobalCols() << endl ;
-        cout << "nnzs = " << StiffMatrix.NumGlobalNonzeros() << endl ;
-                Time.ResetStartTime();
-        }
-
-    /* ****************** Call Isorropia to partition the matrix *********** */
-    Teuchos::RCP <const Epetra_RowMatrix> rowmat = Teuchos::rcpFromRef
-                                                    (StiffMatrix) ;
-
-    // Create the partitioner.
-    Isorropia::Epetra::Partitioner iso_part (rowmat, iso_paramlist) ;
-    Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
-                                                Teuchos::rcpFromRef (iso_part) ;
-    if (MyPID == 0)
-    {
-        cout << msg << "Partition Time = " << Time.ElapsedTime() << endl;
-        Time.ResetStartTime();
-    }
-
-    // Create the redistributor
-    Isorropia::Epetra::Redistributor redist(partitioner) ;
-
-    Teuchos::RCP<Epetra_CrsMatrix> bal_matrix ;
-    Teuchos::RCP<Epetra_MultiVector> bal_rhs ;
-    Teuchos::RCP<Epetra_Map> iso_bal_map ;
-    try
-    {
-        // Redistribute the matrix and the rhs.
-        bal_matrix = redist.redistribute(StiffMatrix) ;
-        bal_rhs = redist.redistribute(rhsVector) ;
-    }
-    catch (std::exception& exc)
-    {
-        std::cout << "example_Poisson: Isorropia exception ' "
-            << exc.what() << " ' on proc " << MyPID  << std::endl ;
-        return  1;
-    }
-
-    if (MyPID == 0)
-    {
-        cout << msg << "Redistribute Time = " << Time.ElapsedTime() << endl;
-        Time.ResetStartTime();
-    }
-
-    // Get the map from Isorropia for lhs.
-    iso_bal_map = iso_part.createNewMap() ;
-    globalMapG = *iso_bal_map ;
-
-    if(MyPID==0)
-        {
-                cout << msg << "Isorropia create new map = " << Time.ElapsedTime()
-                     << endl;
-                Time.ResetStartTime();
-        }
-#endif
-
 #ifdef DUMP_DATA
   // Dump matrices to disk
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
@@ -1066,10 +980,9 @@ int main(int argc, char *argv[]) {
  // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
-  
+  MLList.set("repartition: Zoltan dimensions",2);
   MLList.set("x-coordinates",nodeCoordx);
   MLList.set("y-coordinates",nodeCoordy);
-  MLList.set("z-coordinates",nodeCoordz);
 
 
   Epetra_FEVector exactNodalVals(globalMapG);
@@ -1082,8 +995,7 @@ int main(int argc, char *argv[]) {
      if (nodeIsOwned[i]){
       double x = nodeCoord(i,0);
       double y = nodeCoord(i,1);
-      double z = nodeCoord(i,2);
-      double exactu = exactSolution(x, y, z);
+      double exactu = exactSolution(x, y);
 
       int rowindex=globalNodeIds[i];
       exactNodalVals.SumIntoGlobalValues(1, &rowindex, &exactu);
@@ -1094,18 +1006,10 @@ int main(int argc, char *argv[]) {
   char probType[10] = "laplace";
 
 
-#ifdef TC_HAVE_ISORROPIA
-    TestMultiLevelPreconditionerLaplace(probType,           MLList,
-                                        *bal_matrix,        exactNodalVals,
-                                        *bal_rhs,           femCoefficients,
-                                        TotalErrorResidual, TotalErrorExactSol);
-
-#else
     TestMultiLevelPreconditionerLaplace(probType,             MLList,
                                        StiffMatrix,          exactNodalVals,
                                        rhsVector,            femCoefficients,
                                        TotalErrorResidual,   TotalErrorExactSol);
-#endif
 
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
@@ -1149,8 +1053,8 @@ int main(int argc, char *argv[]) {
     // Evaluate basis values and gradients at cubature points
      Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
      Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
-     hexHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
-     hexHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
+     myHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
+     myHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
 
    // Loop over worksets
      for(int workset = 0; workset < numWorksetsErr; workset++){
@@ -1175,7 +1079,6 @@ int main(int argc, char *argv[]) {
             for (int node = 0; node < numNodesPerElem; node++) {
                 cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
                 cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-                cellWorksetEr(cellCounter, node, 2) = nodeCoord( elemToNode(cell, node), 2);
 
                 int rowIndex  = globalNodeIds[elemToNode(cell, node)];
 #ifdef HAVE_MPI
@@ -1321,9 +1224,8 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_proc_ids;
    }
 
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
+   delete [] nodeCoordx;
+   delete [] nodeCoordy;
 
    // delete mesh
    Delete_Pamgen_Mesh();
@@ -1340,33 +1242,27 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
 template<typename Scalar>
-const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z) {
+const Scalar exactSolution(const Scalar& x, const Scalar& y) {
 
-  // Patch test: tri-linear function is in the FE space and should be recovered
-   return 1. + x + y + z + x*y + x*z + y*z + x*y*z;
+  // Patch test: bi-linear function is in the FE space and should be recovered
+   return 1. + x + y + x*y;
 
   // Analytic solution with homogeneous Dirichlet boundary data
-  // return sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+  // return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
 
   // Analytic solution with inhomogeneous Dirichlet boundary data
-  // return exp(x + y + z)/(1. + x*y + y*z + x*y*z);
+  // return exp(x + y )/(1. + x*y);
 }
 
 
 template<typename Scalar>
-void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, const Scalar& z) {
+void materialTensor(Scalar material[][2], const Scalar& x, const Scalar& y) {
 
   material[0][0] = 1.;
   material[0][1] = 0.;
-  material[0][2] = 0.;
   //
   material[1][0] = 0.;
   material[1][1] = 1.;
-  material[1][2] = 0.;
-  //
-  material[2][0] = 0.;
-  material[2][1] = 0.;
-  material[2][2] = 1.;
 }
 
 /**********************************************************************************/
@@ -1375,59 +1271,55 @@ void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, cons
 
 /************ Grad of Exact Solution ****************/
 template<typename Scalar>
-void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, const Scalar& z) {
+void exactSolutionGrad(Scalar gradExact[2], const Scalar& x, const Scalar& y) {
 
   // To enable derivatives of the gradient (i.e., 2nd derivatives of the exact solution) need 2 levels of fad types
-  Sacado::Fad::SFad<Scalar,3> fad_x = x;
-  Sacado::Fad::SFad<Scalar,3> fad_y = y;
-  Sacado::Fad::SFad<Scalar,3> fad_z = z;
-  Sacado::Fad::SFad<Scalar,3> u;
+  Sacado::Fad::SFad<Scalar,2> fad_x = x;
+  Sacado::Fad::SFad<Scalar,2> fad_y = y;
+  Sacado::Fad::SFad<Scalar,2> u;
 
   // Indicate the independent variables
-  fad_x.diff(0,3);
-  fad_y.diff(1,3);
-  fad_z.diff(2,3);
+  fad_x.diff(0,2);
+  fad_y.diff(1,2);
 
-  u = exactSolution(fad_x, fad_y, fad_z);
+  u = exactSolution(fad_x, fad_y);
 
   gradExact[0] = u.dx(0);
   gradExact[1] = u.dx(1);
-  gradExact[2] = u.dx(2);
 }
 
 /************ Source Term (RHS) ****************/
 template<typename Scalar>
-const Scalar sourceTerm(Scalar& x, Scalar& y, Scalar& z){
+const Scalar sourceTerm(Scalar& x, Scalar& y){
 
   Scalar u;
-  Scalar grad_u[3];
-  Scalar flux[3];
-  Scalar material[3][3];
+  Scalar grad_u[2];
+  Scalar flux[2];
+  Scalar material[2][2];
   Scalar f = 0.;
 
   // Indicate the independent variables
-  x.diff(0,3);
-  y.diff(1,3);
-  z.diff(2,3);
+  x.diff(0,2);
+  y.diff(1,2);
 
   // Get exact solution and its gradient
-  u = exactSolution(x, y, z);
-  exactSolutionGrad(grad_u, x, y, z);
+  u = exactSolution(x, y);
+  exactSolutionGrad(grad_u, x, y);
 
   // Get material tensor
-  materialTensor<Scalar>(material, x, y, z);
+  materialTensor<Scalar>(material, x, y);
 
   // Compute total flux = (A.grad u)
-  for(int i = 0; i < 3; i++){
+  for(int i = 0; i < 2; i++){
 
     // Add diffusive flux
-    for(int j = 0; j < 3; j++){
+    for(int j = 0; j < 2; j++){
       flux[i] += material[i][j]*grad_u[j];
     }
   }
 
   // Compute source term (right hand side): f = -div(A.grad u)
-  f = -(flux[0].dx(0) + flux[1].dx(1) + flux[2].dx(2));
+  f = -(flux[0].dx(0) + flux[1].dx(1));
 
   return f;
 }
@@ -1445,16 +1337,15 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
   int numPoints        = evaluationPoints.dimension(1);
   int spaceDim         = evaluationPoints.dimension(2);
 
-  double material[3][3];
+  double material[2][2];
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
 
-      materialTensor<double>(material, x, y, z);
+      materialTensor<double>(material, x, y);
 
       for(int row = 0; row < spaceDim; row++){
         for(int col = 0; col < spaceDim; col++){
@@ -1475,11 +1366,10 @@ void evaluateSourceTerm(ArrayOut &       sourceTermValues,
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
 
-      Sacado::Fad::SFad<double,3> x = evaluationPoints(cell, pt, 0);
-      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);
-      Sacado::Fad::SFad<double,3> z = evaluationPoints(cell, pt, 2);
+      Sacado::Fad::SFad<double,2> x = evaluationPoints(cell, pt, 0);
+      Sacado::Fad::SFad<double,2> y = evaluationPoints(cell, pt, 1);
 
-      sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,3> >(x, y, z).val();
+      sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,2> >(x, y).val();
     }
   }
 }
@@ -1497,9 +1387,8 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
 
-      exactSolutionValues(cell, pt) = exactSolution<double>(x, y, z);
+      exactSolutionValues(cell, pt) = exactSolution<double>(x, y);
     }
   }
 }
@@ -1512,16 +1401,15 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
   int numPoints = evaluationPoints.dimension(1);
   int spaceDim  = evaluationPoints.dimension(2);
 
-  double gradient[3];
+  double gradient[2];
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
 
-      exactSolutionGrad<double>(gradient, x, y, z);
+      exactSolutionGrad<double>(gradient, x, y);
 
       for(int row = 0; row < spaceDim; row++){
         exactSolutionGradValues(cell, pt, row) = gradient[row];

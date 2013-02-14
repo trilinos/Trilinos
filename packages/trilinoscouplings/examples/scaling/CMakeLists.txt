@@ -26,6 +26,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson2D
+    SOURCES example_Poisson2D.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
@@ -38,7 +45,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Maxwell.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Maxwell.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
