@@ -82,7 +82,7 @@ ExtraRepo1 main repo:  Pushed to by the core ExtraRepo1 team
   url2.gov:/git/ExtraRepo1
 
 ExtraRepo2 main repo:  Pushed to by the core ExtraRepo2 team
-  url3.gov:/git/ExtraRepo3
+  url3.gov:/git/ExtraRepo2
 
 Because of the independent development processes of these three teams, unless
 these development teams maintain 100% backward compatibility w.r.t. the
@@ -146,11 +146,11 @@ $ cd ..
 Above, the remote 'integrate-from' is used by the checkin-test.py wrapper
 script (see below) to pull and merge in additional changes that will be tested
 and pushed to the 'origin' repos on url4.gov.  In this case, the BaseProj and
-ExtraRepo2 repos have the remote 'integrate-from' that points to same repos as
-'origin' (and will therefore not result in any merging) but the ExtraRepo1
-remote 'integrate-from' will result in updates being pulled from the main
-development repo on url2.gov, thereby facilitating the update of ExtraRepo1 in
-the integrated project.
+ExtraRepo2 repos have the remote 'integrate-from' that points to the
+same repos as 'origin' (and will therefore not result in any merging)
+but the ExtraRepo1 remote 'integrate-from' will result in updates being
+pulled from the main development repo on url2.gov, thereby facilitating
+the update of ExtraRepo1 in the integrated project.
 
 
 D) Integration Build Directory Setup
@@ -203,12 +203,12 @@ like:
     $EXTRA_ARGS
 
 NOTE, in the above example sync_ExtraRepo1.sh script, the variable
-CHECKIN_TEST_WRAPPER is set to the a wrapper script
+CHECKIN_TEST_WRAPPER is set to a wrapper script
 
    BaseProj/sampleScripts/checkin-test-foo.sh
 
-which is would be set up to call the checkin-test.py script with configure
-options for the specific machine.  Th location and the nature of the wrapper
+which would be set up to call the checkin-test.py script with configure
+options for the specific machine.  The location and the nature of the wrapper
 script will vary project to project.  In some simple cases,
 CHECKIN_TEST_WRAPPER might just be set to be the raw machine-independent
 checkin-test.py script for the project.
@@ -251,7 +251,7 @@ script is given below.
   The option --no-rebase is needed to avoid rebasing the new commits pulled
   from being rebased.  While the default behavior of the checkin-test.py
   script is to amend the last commit message and rebase the local commits
-  (which is considered best practice when testing locally commits), this is a
+  (which is considered best practice when testing local commits), this is a
   very bad thing to do when a ACI sync server is only testing and moving
   commits between public repos.  Amending the last commit would change the
   SHA1 of the commit (just as a rebase would) and would fork the history and
@@ -307,15 +307,15 @@ my-crontab-file.txt'), the script:
 
   ~/sync_base_dir/sync_ExtraRepo1.sh
  
-would assumed to be a soft symbolic link to some version controlled copy of
+is assumed to be a soft symbolic link to some version controlled copy of
 the ACI sync script.  For example, it might make sense for this script to be
 version controlled in the BaseProj repo and therefore the symbolic link would
-be created with with something like:
+be created with something like:
 
 $ cd ~/sync_base_dir/
 $ ln -s BaseProj/sampleScripts/sync_ExtraRepo1.sh .
 
-Such a setup would ensure that sync scripts would always up to date due to the
+Such a setup would ensure that sync scripts would always be up-to-date due to the
 git pulls part of the ACI process.
 
 
