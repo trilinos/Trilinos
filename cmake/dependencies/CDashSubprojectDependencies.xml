@@ -922,7 +922,7 @@
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="TO"/>
-    <Dependency name="Tpetra" type="TO"/>
+    <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Xpetra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
