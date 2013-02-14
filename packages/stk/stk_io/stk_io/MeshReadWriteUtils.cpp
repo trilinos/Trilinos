@@ -266,11 +266,12 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
       std::vector<stk::mesh::Entity> elements(element_count);
 
+      size_t offset = entity->get_offset();
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
         elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
-        elements[i].set_local_id(i);
+        elements[i].set_local_id(offset+i);
       }
 
       // Add all element attributes as fields.
