@@ -194,6 +194,7 @@ like:
 
   $CHECKIN_TEST_WRAPPER \
     --extra-pull-from=integrate-from:master \
+    --abort-gracefully-if-no-changes-to-push \
     --send-email-to=base-proj-integrators@url4.gov \
     --send-email-to-on-push=base-proj-integrators@url4.gov \
     --no-append-test-results --no-rebase \
@@ -227,6 +228,22 @@ script is given below.
   checkin-test.py script and no notification email would go out.  However,
   integrating 'master' branches in different git repos is a very common use
   case when good Lean/Agile CI practices are used by all of the projects.
+
+--abort-gracefully-if-no-changes-to-push
+
+  This option makes the checkin-test.py script gracefully terminate without
+  sending out any emails if after all the pulls, there are no local changes to
+  push to the 'origin' repos.  This can happen, for example, if no commits
+  were pushed to the main development git repo for ExtraRepo1 at
+  url2.gov:/git/ExtraRepo1 since the last time this sync process was run.
+  This avoids getting confusing and annoying emails like "PUSH FAILED".  The
+  reason this option is not generally needed for local developer usage of the
+  checkin-test.py script is that in general a developer will not run the
+  checkin-test.py script with --push unless they have made local changes; it
+  just does not make any sense at all to do that and if they do by accident,
+  they should get an error email.  However, for an automated CI sync process,
+  there is no easy way to know a priori if changes needs to be synced so the
+  script supports this option to deal with that case gracefully.
 
 --send-email-to=base-proj-integrators@url4.gov
 
