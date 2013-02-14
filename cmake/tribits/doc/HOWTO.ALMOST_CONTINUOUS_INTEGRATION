@@ -231,19 +231,20 @@ script is given below.
 
 --abort-gracefully-if-no-changes-to-push
 
-  This option makes the checkin-test.py script gracefully terminate without
-  sending out any emails if after all the pulls, there are no local changes to
-  push to the 'origin' repos.  This can happen, for example, if no commits
-  were pushed to the main development git repo for ExtraRepo1 at
-  url2.gov:/git/ExtraRepo1 since the last time this sync process was run.
-  This avoids getting confusing and annoying emails like "PUSH FAILED".  The
-  reason this option is not generally needed for local developer usage of the
-  checkin-test.py script is that in general a developer will not run the
-  checkin-test.py script with --push unless they have made local changes; it
-  just does not make any sense at all to do that and if they do by accident,
-  they should get an error email.  However, for an automated CI sync process,
-  there is no easy way to know a priori if changes needs to be synced so the
-  script supports this option to deal with that case gracefully.
+  The option --abort-gracefully-if-no-changes-to-push makes the
+  checkin-test.py script gracefully terminate without sending out any emails
+  if after all the pulls, there are no local changes to push to the 'origin'
+  repos.  This can happen, for example, if no commits were pushed to the main
+  development git repo for ExtraRepo1 at url2.gov:/git/ExtraRepo1 since the
+  last time this sync process was run.  This avoids getting confusing and
+  annoying emails like "PUSH FAILED".  The reason this option is not generally
+  needed for local developer usage of the checkin-test.py script is that in
+  general a developer will not run the checkin-test.py script with --push
+  unless they have made local changes; it just does not make any sense at all
+  to do that and if they do by accident, they should get an error email.
+  However, for an automated CI sync process, there is no easy way to know a
+  priori if changes needs to be synced so the script supports this option to
+  deal with that case gracefully.
 
 --send-email-to=base-proj-integrators@url4.gov
 
@@ -285,6 +286,12 @@ script is given below.
   These are standard options that always get used when invoking the
   checkin-test.py script and need no further explanation.
 
+--wipe-clean
+
+  This option is added if you want to make the sync server most robust to
+  changes that might require a clean configure from script.  If you care more
+  about using less computer resoruces and rebuild, remove this option.
+
 Note that since the option --enable-packages is not set in the above
 invocation of the checkin-test.py script, therefore the checkin-test.py script
 will decide on its own what packages to test just based on what packages have
@@ -300,6 +307,16 @@ repos and packages.
 
 The sync script can be created and tested locally to ensure that it works
 correctly first, before setting it as a cron job as described next.
+
+Note, if using this in a continuous sync server that runs many times in a day
+in a loop, you also want to set the option --abort-gracefully-if-no-updates in
+addition to the option --abort-gracefully-if-no-changes-to-push.  That is
+because if the updated repos are in a broken state such that there are always
+local changes at every CI iteration (becuase they have not been pushed to
+origin), you don't want to do a new CI build unless something has changed that
+would otherwise perhaps make the error go away.  That allows the CI server to
+sit ready to try out any change that gets pulled that might allow the
+integrated build to work and then push the updates.
 
 
 F) Cron Job Setup
