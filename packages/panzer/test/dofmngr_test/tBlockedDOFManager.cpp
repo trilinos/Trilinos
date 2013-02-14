@@ -198,28 +198,29 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields();
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::DOFManagerFEI<int,int> > > & subManagers = 
+   const std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > & subManagers = 
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
+   typedef panzer::DOFManagerFEI<int,int> DOFManagerFEI;
 
    TEST_EQUALITY(subManagers[0]->getNumFields(),2);
-   TEST_EQUALITY(subManagers[0]->getFieldPattern("block_0","Ux"),patternC1);
-   TEST_EQUALITY(subManagers[0]->getFieldPattern("block_0","Uy"),patternC1);
-   TEST_EQUALITY(subManagers[0]->getFieldPattern("block_1","Uy"),Teuchos::null);
-   TEST_EQUALITY(subManagers[0]->getFieldPattern("block_1","T"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_0","Ux"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_0","Uy"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_1","Uy"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_1","T"),Teuchos::null);
 
    TEST_EQUALITY(subManagers[1]->getNumFields(),1);
-   TEST_EQUALITY(subManagers[1]->getFieldPattern("block_0","P"),patternC1);
-   TEST_EQUALITY(subManagers[1]->getFieldPattern("block_1","T"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[1])->getFieldPattern("block_0","P"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[1])->getFieldPattern("block_1","T"),Teuchos::null);
 
    TEST_EQUALITY(subManagers[2]->getNumFields(),2);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_0","T"),patternC1);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_1","T"),patternC1);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_2","T"),patternC1);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_0","rho"),Teuchos::null);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_1","rho"),Teuchos::null);
-   TEST_EQUALITY(subManagers[2]->getFieldPattern("block_2","rho"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_0","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_1","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_2","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_0","rho"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_1","rho"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_2","rho"),patternC1);
 
    // test field numbers, should be based on a field block index * largest field
    // number+1 (in this case the largest field number is 1...hence this size for
@@ -529,7 +530,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
-      Teuchos::RCP<const DOFManagerFEI<int,int> > subManager;
+      Teuchos::RCP<const UniqueGlobalIndexer<int,int> > subManager;
    
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];

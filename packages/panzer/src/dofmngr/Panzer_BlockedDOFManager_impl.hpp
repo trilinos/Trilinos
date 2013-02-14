@@ -59,12 +59,12 @@ namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager()
-   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true)
 {
    setConnManager(connMngr,mpiComm);
 }
@@ -212,7 +212,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::vector<int> & subGIDOffsets 
@@ -279,7 +279,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::pair<std::vector<int>,std::vector<int> > & subGIDOffsets_closure
@@ -385,6 +385,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
 {
    communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
+
    // this kills any old connection manager as well as the old FEI objects
    resetIndices();
 
@@ -410,8 +411,12 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<Local
    ownedGIDHashTable_.clear(); 
    blockGIDOffset_.clear();
 
-   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++)
-      fieldBlockManagers_[fbm]->resetIndices();
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+     Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofMngr 
+         = Teuchos::rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers_[fbm]);
+     if(dofMngr!=Teuchos::null)
+       dofMngr->resetIndices();
+   }
 
    return connMngr;
 }
@@ -503,9 +508,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 
    // build sub DOFManagers for each field block
    for(std::size_t fldBlk=0;fldBlk<fieldOrder_.size();fldBlk++) {
-      Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager =
-         Teuchos::rcp(new panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>);
-      dofManager->setConnManager(getConnManager(),mpiComm_);
+      Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = buildNewIndexer(getConnManager(),mpiComm_);
 
       // add in these fields to the new manager
       this->addFieldsToFieldBlockManager(fieldOrder_[fldBlk],*dofManager);
@@ -524,7 +527,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    maxSubFieldNum_ = -1;
    std::map<std::string,int> tempStrToNum;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
-      Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager =
+      Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager =
          fieldBlockManagers_[fldBlk];
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
 
@@ -577,6 +580,183 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
+Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > 
+BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,MPI_Comm mpiComm) const
+{
+  if(getUseDOFManagerFEI()) {
+    Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>);
+    dofManager->setConnManager(connManager,mpiComm);
+
+    return dofManager;
+  }
+  else {
+    Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
+    dofManager->setConnManager(connManager,mpiComm);
+
+    return dofManager;
+  }
+
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,bool required) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  // standard version
+  {
+    RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->setOrientationsRequired(required);
+      return;
+    }
+  }
+
+  // now the FEI version
+  {
+    RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->setOrientationsRequired(required);
+      return;
+    }
+  }
+
+  // you should never get here!
+  TEUCHOS_ASSERT(false);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  // standard version
+  {
+    RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->buildGlobalUnknowns(geomPattern);
+      return;
+    }
+  }
+
+  // now the FEI version
+  {
+    RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->buildGlobalUnknowns(geomPattern);
+      return;
+    }
+  }
+
+  // you should never get here!
+  TEUCHOS_ASSERT(false);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,std::ostream & os) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  // standard version
+  {
+    RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->printFieldInformation(os);
+      return;
+    }
+  }
+
+  // now the FEI version
+  {
+    RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) {
+      dofManager->printFieldInformation(os);
+      return;
+    }
+  }
+
+  // you should never get here!
+  TEUCHOS_ASSERT(false);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::string & elementBlock) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  // standard version
+  {
+    RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null) 
+      return dofManager->getElementBlockGIDCount(elementBlock);
+  }
+
+  // now the FEI version
+  {
+    RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+
+    if(dofManager!=Teuchos::null)
+      return dofManager->getElementBlockGIDCount(elementBlock);
+  }
+
+  // you should never get here!
+  TEUCHOS_ASSERT(false);
+
+  return -1;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
+                             UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const
+{
+  using Teuchos::Ptr;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
+
+  Ptr<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_ptr = ptrFromRef(fieldBlockManager);
+
+  // standard version
+  {
+    Ptr<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager_ptr = ptr_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(ugi_ptr);
+
+    if(dofManager_ptr!=Teuchos::null) {
+      addFieldsToFieldBlockManager(activeFields,*dofManager_ptr);
+      return;
+    }
+  }
+
+  // now the FEI version
+  {
+    Ptr<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager_ptr = ptr_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(ugi_ptr);
+
+    if(dofManager_ptr!=Teuchos::null) {
+      addFieldsToFieldBlockManager(activeFields,*dofManager_ptr);
+      return;
+    }
+  }
+
+  // you should never get here!
+  TEUCHOS_ASSERT(false);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
 addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                              DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const
@@ -611,6 +791,40 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
 
    // register added fields
    fieldBlockManager.registerFields();
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
+                             DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const
+{
+   std::vector<std::size_t> correctnessCheck(activeFields.size(),0);
+   std::vector<std::string> elementBlocks;
+   this->getElementBlockIds(elementBlocks);
+
+   // loop over element blocks adding each field in this element block and this field block
+   for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
+      std::string elementBlock = elementBlocks[eb];
+
+      // loop over active fields extracting those that are associated with this element block
+      for(std::size_t f=0;f<activeFields.size();f++) {
+         std::string fieldName = activeFields[f];
+         Teuchos::RCP<const FieldPattern> fp = this->getFieldPattern(elementBlock,fieldName);
+
+         if(fp!=Teuchos::null) {
+            fieldBlockManager.addField(elementBlock,fieldName,fp);
+            correctnessCheck[f] = 1; // all active fields should be placed in DOFManager
+         }
+      }
+   }
+
+   // verify correctness check
+   std::size_t correctFlag = std::accumulate(correctnessCheck.begin(),correctnessCheck.end(),0);
+   TEUCHOS_TEST_FOR_EXCEPTION(correctFlag!=activeFields.size(),std::logic_error,
+                      "BlockedDOFManager::addFieldsToFieldBlockManager detected inconsistincies in the active fields.");
+
+   // set field order
+   fieldBlockManager.setFieldOrder(activeFields);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -661,8 +875,11 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
    // build global unknowns for each field block
    for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
       // std::cout << "building field block fb = " << fb << std::endl;
-      fieldBlockManagers_[fb]->setOrientationsRequired(getOrientationsRequired());
-      fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
+      // fieldBlockManagers_[fb]->setOrientationsRequired(getOrientationsRequired());
+      // fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
+
+      setOrientationsRequired(fieldBlockManagers_[fb],getOrientationsRequired());
+      buildGlobalUnknowns(fieldBlockManagers_[fb],geomPattern_);
    }
 
    // build field block offsets: this helps fast construction
@@ -672,7 +889,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
    for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
       int offset = 0;
       for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
-         int cnt = fieldBlockManagers_[fb]->getElementBlockGIDCount(elementBlocks[eb]);
+         // int cnt = fieldBlockManagers_[fb]->getElementBlockGIDCount(elementBlocks[eb]);
+         int cnt = getElementBlockGIDCount(fieldBlockManagers_[fb],elementBlocks[eb]);
          blockGIDOffset_[std::make_pair(elementBlocks[eb],fb)] = offset;
          offset += cnt;
       }
@@ -714,7 +932,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std:
       for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
          os << "*************************************************\n";
          os << "Field Block Index = " << fbm << std::endl;
-         fieldBlockManagers_[fbm]->printFieldInformation(os);
+         printFieldInformation(fieldBlockManagers_[fbm],os);
 
          // print out mapping between sub field IDs and blocked field IDs
          os << "   Field String to Field Id (blocked/sub):\n";

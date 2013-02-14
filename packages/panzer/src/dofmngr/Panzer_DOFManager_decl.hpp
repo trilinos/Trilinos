@@ -102,7 +102,7 @@ public:
     * This could also be done using the number you'd get from getFieldNum which
     * isn't yet included.
     */
-  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name);
+  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name) const;
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 

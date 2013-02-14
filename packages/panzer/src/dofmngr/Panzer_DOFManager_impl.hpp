@@ -182,9 +182,16 @@ int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string &
 
   //Returns the fieldpattern of the given name
 template <typename LO, typename GO>
-Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::string & name)
+Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::string & name) const
 {
-  return fieldPatterns_[fieldNameToAID_[name]];
+  std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(name);
+  if(fitr==fieldNameToAID_.end())
+    return Teuchos::null;
+  
+  if(fitr->second<int(fieldPatterns_.size()))
+    return fieldPatterns_[fitr->second];
+
+  return Teuchos::null;
 }
 
 template <typename LO, typename GO>
@@ -220,7 +227,11 @@ const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string
   if(bitr==blockNameToID_.end())
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   int bid=bitr->second;
-  return fa_fps_[bid]->localOffsets(fieldNum);
+  if(fa_fps_[bid]!=Teuchos::null)
+    return fa_fps_[bid]->localOffsets(fieldNum);
+
+  static const std::vector<int> empty;
+  return empty;
 }
 
 template <typename LO, typename GO>
@@ -308,11 +319,17 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       }
     }
     
-    fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
+    if(faConstruct.size()>0) {
+      fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
     
-    // how many global IDs are this this element block?
-    int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
-    elementBlockGIDCount_.push_back(gidsInBlock);
+      // how many global IDs are this this element block?
+      int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
+      elementBlockGIDCount_.push_back(gidsInBlock);
+    }
+    else {
+      fa_fps_.push_back(Teuchos::null);
+      elementBlockGIDCount_.push_back(0);
+    }
   }
 
   /*
@@ -355,6 +372,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
   for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    // there has to be a field pattern assocaited with the block
+    if(fa_fps_[b]==Teuchos::null)
+      continue;
+
     const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
     const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
     const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
@@ -612,8 +633,14 @@ const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::stri
   if(bitr==blockNameToID_.end())
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   int bid=bitr->second;
-  return fa_fps_[bid]->fieldIds();
 
+  // there has to be a field pattern assocaited with the block
+  if(fa_fps_[bid]!=Teuchos::null)
+    return fa_fps_[bid]->fieldIds();
+
+  // nothing to return
+  static std::vector<int> empty;
+  return empty;
 }
 
 template <typename LO, typename GO>
@@ -623,7 +650,13 @@ DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int f
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
   if(bitr==blockNameToID_.end())
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "DOFManager::getGIDFieldOffsets_closure: invalid block name.");
-  return fa_fps_[bitr->second]->localOffsets_closure(fieldNum, subcellDim, subcellId);
+
+  // there has to be a field pattern assocaited with the block
+  if(fa_fps_[bitr->second]!=Teuchos::null)
+    return fa_fps_[bitr->second]->localOffsets_closure(fieldNum, subcellDim, subcellId);
+
+  static std::pair<std::vector<int>,std::vector<int> > empty;
+  return empty;
 }
 
 template <typename LO, typename GO>
@@ -717,6 +750,9 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
     }
 
     int bid=fap->second;
+
+    if(fa_fps_[bid]==Teuchos::null)
+      continue;
 
      // grab field patterns, will be necessary to compute orientations
     const FieldPattern & fieldPattern = *fa_fps_[bid];
