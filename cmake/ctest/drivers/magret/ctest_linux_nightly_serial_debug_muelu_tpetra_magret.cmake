@@ -72,8 +72,8 @@ SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.3/include"
-  "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.3/lib64/libsuperlu_4.3.a"
+  "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
+  "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"
 )
 
 #
