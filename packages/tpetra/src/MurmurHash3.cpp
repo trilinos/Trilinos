@@ -47,10 +47,12 @@ namespace Details
 #  if __GNUC__ == 4 && __GNUC_MINOR__ == 1
 #define FORCE_INLINE inline
 #  else
-#define FORCE_INLINE inline __attribute__((always_inline))
+  // mfh 14 Feb 2013: Disabling forced inlining for now.
+#define FORCE_INLINE inline // __attribute__((always_inline))
 #  endif 
 #else
-#define FORCE_INLINE __attribute__((always_inline))
+  // mfh 14 Feb 2013: Disabling forced inlining for now.
+#define FORCE_INLINE // __attribute__((always_inline))
 #endif
 
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
