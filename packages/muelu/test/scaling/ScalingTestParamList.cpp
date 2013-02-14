@@ -170,8 +170,13 @@ int main(int argc, char *argv[]) {
   matrixParams.set("mx", galeriList.get("mx", -1));
   matrixParams.set("my", galeriList.get("my", -1));
   matrixParams.set("mz", galeriList.get("mz", -1));
-  if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D")
-    matrixParams.set("left boundary", "Dirichlet");
+  if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D") {
+    matrixParams.set("right boundary" , "Neumann");
+    matrixParams.set("bottom boundary", "Neumann");
+    matrixParams.set("top boundary"   , "Neumann");
+    matrixParams.set("front boundary" , "Neumann");
+    matrixParams.set("back boundary"  , "Neumann");
+  }
 
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
