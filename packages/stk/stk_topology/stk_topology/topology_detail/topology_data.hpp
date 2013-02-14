@@ -21,13 +21,13 @@ struct topology_data
   static const topology::topology_t base = topology::INVALID_TOPOLOGY;
 
   static const bool is_valid = false;
-  static const topology::rank_t rank = topology::INVALID_RANK;
+  static const topology::rank_t rank= Topology > topology::END_TOPOLOGY ? topology::ELEMENT_RANK : topology::INVALID_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const int dimension = 0;
-  static const int num_nodes = 0;
+  static const int num_nodes = Topology > topology::END_TOPOLOGY ? Topology - topology::END_TOPOLOGY : 0;
   static const int num_vertices = 0;
   static const int num_edges = 0;
   static const int num_faces = 0;

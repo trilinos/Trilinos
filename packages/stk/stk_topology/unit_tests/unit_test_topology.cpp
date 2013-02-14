@@ -102,3 +102,44 @@ STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
   }
 
 };
+
+
+STKUNIT_UNIT_TEST( stk_topology, arbitrary_topology )
+{
+  using stk::topology;
+
+  topology t = stk::create_superelement_topology(6);
+
+  STKUNIT_EXPECT_EQ( t.num_nodes(), 6);
+  STKUNIT_EXPECT_EQ( t.rank(), topology::ELEMENT_RANK);
+
+  STKUNIT_EXPECT_EQ( true, t.is_superelement());
+  {
+    std::ostringstream name;
+    name << t ;
+    std::string goldName("SUPERELEMENT_TOPOLOGY_6");
+    STKUNIT_EXPECT_EQ( goldName, name.str() );
+  }
+
+  topology notSuper = topology::HEX_8;
+  STKUNIT_EXPECT_EQ( false, notSuper.is_superelement());
+
+  topology newT = stk::create_superelement_topology(8);
+
+  STKUNIT_EXPECT_NE( newT.num_nodes(), 6);
+  STKUNIT_EXPECT_EQ( newT.rank(), topology::ELEMENT_RANK);
+
+  STKUNIT_EXPECT_EQ( true, newT.is_superelement());
+  {
+    std::ostringstream name;
+    name << newT ;
+    std::string goldName("SUPERELEMENT_TOPOLOGY_6");
+    STKUNIT_EXPECT_NE( goldName, name.str() );
+  }
+
+  topology anotherT = stk::create_superelement_topology(6);
+  STKUNIT_EXPECT_EQ(t, anotherT);
+
+  topology badT = stk::create_superelement_topology(-2);
+  STKUNIT_EXPECT_EQ( badT.rank(), topology::INVALID_RANK);
+}

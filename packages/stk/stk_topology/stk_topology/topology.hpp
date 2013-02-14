@@ -77,6 +77,8 @@ struct topology
     , END_TOPOLOGY
     , INVALID_TOPOLOGY = END_TOPOLOGY
     , NUM_TOPOLOGIES = END_TOPOLOGY
+    , SUPERELEMENT_START = END_TOPOLOGY+1
+    , FORCE_TO_INT_TYPE = ~0
   };
 
   static const char * rank_names[];     // indexed by rank_t
@@ -268,6 +270,12 @@ struct topology
     return sub_topology(side_rank(), side_ordinal);
   }
 
+  STKTOPOLOGY_INLINE_FUNCTION
+  bool is_superelement() const
+  {
+    return m_value > SUPERELEMENT_START;
+  }
+
   //***************************************************************************
   //cast to integer type
   //***************************************************************************
@@ -445,6 +453,13 @@ std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
 
 void verbose_print_topology(std::ostream &out, topology t);
+
+inline
+topology create_superelement_topology(int num_nodes)
+{
+  if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
+}
 
 } //namespace stk
 

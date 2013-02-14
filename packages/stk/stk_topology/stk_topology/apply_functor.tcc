@@ -77,6 +77,7 @@ struct topology::apply_functor
     case HEX_20:       return m_functor( topology_type< HEX_20       >() );
     case HEX_27:       return m_functor( topology_type< HEX_27       >() );
     case INVALID_TOPOLOGY: break;
+    default: break;
     }
     return m_functor( topology_type<INVALID_TOPOLOGY>() );
   }
@@ -127,6 +128,7 @@ struct topology::apply_functor
     case HEX_20:       return m_functor( topology_type< HEX_20       >() );
     case HEX_27:       return m_functor( topology_type< HEX_27       >() );
     case INVALID_TOPOLOGY: break;
+    default: break;
     }
     return m_functor( topology_type<INVALID_TOPOLOGY>() );
   }

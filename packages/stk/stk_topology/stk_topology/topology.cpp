@@ -42,10 +42,8 @@
 
 STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(rank,stk::topology::rank_t)
 STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
 STKTOPOLOGY_SIMPLE_MEMBER(dimension,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_nodes,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
@@ -117,6 +115,38 @@ const char * topology::topology_names[] =
   , "INVALID_TOPOLOGY"
 };
 
+// support runtime number of nodes
+// num_nodes
+namespace {
+struct num_nodes_impl {
+  typedef int result_type;
+  template <typename Topology>
+  result_type operator()(Topology) const
+  { return Topology::num_nodes; }
+};
+}  /*namespace */
+int topology::num_nodes() const
+{
+  topology::apply_functor< num_nodes_impl > apply;
+  return m_value <= END_TOPOLOGY ? apply(m_value) : m_value - SUPERELEMENT_START;
+}
+
+// support runtime number of nodes
+// rank
+namespace {
+struct rank_impl {
+  typedef topology::rank_t result_type;
+  template <typename Topology>
+  result_type operator()(Topology) const
+  { return Topology::rank; }
+};
+}  /*namespace */
+topology::rank_t topology::rank() const
+{
+  topology::apply_functor< rank_impl > apply;
+  return m_value <= END_TOPOLOGY ? apply(m_value) : topology::ELEMENT_RANK;
+}
+
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
   if ( r < topology::END_RANK )
@@ -130,8 +160,9 @@ std::ostream & operator<<(std::ostream &out, topology t)
 {
   if ( t <= topology::END_TOPOLOGY )
     return out << t.name();
-  return out << "TOPOLOGY_" << static_cast<int>(t);
-
+  if ( t.is_superelement() )
+    return out << "SUPERELEMENT_TOPOLOGY_" << (static_cast<int>(t) - topology::SUPERELEMENT_START);
+  return out << "ARBITRARY_NODE_TOPOLOGY_" << (static_cast<int>(t) - topology::END_TOPOLOGY);
 }
 
 void verbose_print_topology(std::ostream &out, topology t)
