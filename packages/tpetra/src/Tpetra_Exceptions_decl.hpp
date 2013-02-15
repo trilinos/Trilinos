@@ -70,42 +70,47 @@ namespace Tpetra {
 ///
 /// \warning Users must not rely on anything in this namespace.
 namespace Details {
-  /// \class InvalidGlobalIndex
-  /// \brief Exception thrown by CrsMatrix on invalid global index.
-  ///
-  /// \tparam GlobalOrdinal Same as the GlobalOrdinal template
-  ///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
-  template<class GlobalOrdinal>
-  class InvalidGlobalIndex : public std::domain_error {
-  public:
-    /// \brief Constructor.
-    ///
-    /// \param msg [in] The exception message.
-    /// \param globalIndex [in] The offending global index.
-    InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex);
 
-    //! The offending global index.
-    GlobalOrdinal offendingIndex () const;
-      
-  private:
-    //! The offending global index.
-    const GlobalOrdinal glInd_; 
-  };
-
-  /// \class InvalidGlobalRowIndex
-  /// \brief Exception thrown by CrsMatrix on invalid global row index.
+/// \class InvalidGlobalIndex
+/// \brief Exception thrown by CrsMatrix on invalid global index.
+///
+/// \tparam GlobalOrdinal Same as the GlobalOrdinal template
+///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
+template<class GlobalOrdinal>
+class InvalidGlobalIndex : public std::domain_error {
+public:
+  /// \brief Constructor.
   ///
-  /// \tparam GlobalOrdinal Same as the GlobalOrdinal template
-  ///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
-  template<class GlobalOrdinal>
-  class InvalidGlobalRowIndex : public InvalidGlobalIndex<GlobalOrdinal> {
-  public:
-    /// \brief Constructor.
-    ///
-    /// \param msg [in] The exception message.
-    /// \param globalIndex [in] The offending global index.
-    InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex);
-  };
+  /// \param msg [in] The exception message.
+  /// \param globalIndex [in] The offending global index.
+  InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex)
+    : std::domain_error (msg), glInd_ (globalIndex) 
+    {}
+  
+  //! The offending global index.
+  GlobalOrdinal offendingIndex () const { return glInd_; }
+  
+private:
+  //! The offending global index.
+  const GlobalOrdinal glInd_; 
+};
+
+/// \class InvalidGlobalRowIndex
+/// \brief Exception thrown by CrsMatrix on invalid global row index.
+///
+/// \tparam GlobalOrdinal Same as the GlobalOrdinal template
+///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
+template<class GlobalOrdinal>
+class InvalidGlobalRowIndex : public InvalidGlobalIndex<GlobalOrdinal> {
+public:
+  /// \brief Constructor.
+  ///
+  /// \param msg [in] The exception message.
+  /// \param globalIndex [in] The offending global index.
+  InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex)
+    : InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex)
+    {}
+};
 
 } // namespace Details
 } // namespace Tpetra
