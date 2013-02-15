@@ -200,3 +200,20 @@ IF(Trilinos_ENABLE_Belos AND
     ADD_DIR_TO_NAME
     )
 ENDIF()
+
+# mfh 14 Feb 2013
+#
+# Just build this executable; don't run it as a test.
+#
+# Tpetra has a required dependency on Teuchos and Kokkos,
+# so we don't have to name those packages explicitly here.
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    epetraTpetraImportBenchmark
+    SOURCES epetraTpetraImportBenchmark.cpp
+    COMM serial mpi
+    DEPLIBS tpetra epetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
+
