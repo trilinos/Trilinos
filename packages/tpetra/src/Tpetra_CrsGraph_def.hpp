@@ -659,6 +659,12 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
+    // Instead of allocating the requested amount, double the current size 
+    // to allow for amortized constant time insertion at the end of the array
+    const size_t doubleSize = 2*rowinfo.allocSize;
+    if (doubleSize > newAllocSize)
+      newAllocSize = doubleSize;
+
     // If this reallocates, it does copy over into new storage.
     // It's also nice because it doesn't change the reference count.
     lclInds2D_[rowinfo.localRow].resize (newAllocSize);
@@ -681,6 +687,12 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
+    // Instead of allocating the requested amount, double the current size 
+    // to allow for amortized constant time insertion at the end of the array
+    const size_t doubleSize = 2*rowinfo.allocSize;
+    if (doubleSize > newAllocSize)
+      newAllocSize = doubleSize;
+
     // If this reallocates, it does copy over into new storage.
     // It's also nice because it doesn't change the reference count.
     gblInds2D_[rowinfo.localRow].resize (newAllocSize);
