@@ -46,6 +46,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 using Tpetra::global_size_t;
+using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::as;
 using Teuchos::Comm;
@@ -108,14 +109,14 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   {
     TimeMonitor timeMon (*mapCreateTimer);
     for (int k = 0; k < numMapCreateTrials; ++k) {
-      srcMap = rcp (new map_type (invalid, srcGlobalElts, indexBase, comm, node));
-      destMap = rcp (new map_type (invalid, destGlobalElts, indexBase, comm, node));
+      srcMap = rcp (new map_type (INVALID, srcGlobalElts, indexBase, comm, node));
+      destMap = rcp (new map_type (INVALID, destGlobalElts, indexBase, comm, node));
     }
   }
   RCP<import_type> import;
   {
     TimeMonitor timeMon (*importCreateTimer);
-    for (int k = 0; k < numCreateTrials; ++k) {
+    for (int k = 0; k < numImportCreateTrials; ++k) {
       import = rcp (new import_type (srcMap, destMap));
     }
   }
@@ -130,7 +131,7 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   {
     TimeMonitor timeMon (*importExecTimer);
     for (int k = 0; k < numExecTrials; ++k) {
-      destVec->doImport (*import, *srcVec, Tpetra::ADD);
+      destVec->doImport (*srcVec, *import, Tpetra::ADD);
     }
   }
 }
@@ -206,7 +207,8 @@ createGidLists (Array<GO>& srcGlobalElts,
 		Array<GO>& destGlobalElts,
 		const int numProcs,
 		const int myRank,
-		const int numEltsPerProc)
+		const int numEltsPerProc,
+		const GO indexBase)
 {
   const int overlap = (myRank == 0 || myRank == numProcs-1) ? 1 : 2;
 
@@ -219,17 +221,43 @@ createGidLists (Array<GO>& srcGlobalElts,
   // Put the GIDs in reverse order, to simulate a noncontiguously
   // ordered Map.  Neither Epetra nor Tpetra optimize for this case.
   for (int k = 0; k < numEltsPerProc; ++k) {
-    srcGlobalElts[numEltsPerProc - k - 1] = myStartSrcGid + as<GO> (k);
+    const GO curGid = myStartSrcGid + as<GO> (k);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      curGid < indexBase, std::logic_error, 
+      "curGid = " << curGid << " < indexBase = " << indexBase << ".");
+    srcGlobalElts[numEltsPerProc - k - 1] = curGid;
+    destGlobalElts[numEltsPerProc - k - 1] = curGid;
   }
 
   // 1-D Poisson overlap.
   if (myRank == 0) {
-    destGlobalElts[numEltsPerProc] = myEndSrcGid + 1;
+    const GO rightGid = myEndSrcGid + 1;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rightGid < indexBase, std::logic_error, 
+      "At left proc, right boundary GID = " << rightGid 
+      << " < indexBase = " << indexBase << ".");
+    destGlobalElts[numEltsPerProc] = rightGid;
   } else if (myRank == numProcs-1) {
-    destGlobalElts[numEltsPerProc] = myStartSrcGid - 1; 
+    const GO leftGid = myStartSrcGid - 1;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      leftGid < indexBase, std::logic_error, 
+      "At right proc, left boundary GID = " << leftGid 
+      << " < indexBase = " << indexBase << ".");
+    destGlobalElts[numEltsPerProc] = leftGid;
   } else {
-    destGlobalElts[numEltsPerProc] = myStartSrcGid - 1;
-    destGlobalElts[numEltsPerProc+1] = myEndSrcGid + 1;
+    const GO leftGid = myStartSrcGid - 1;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      leftGid < indexBase, std::logic_error, 
+      "At middle proc, left boundary GID = " << leftGid 
+      << " < indexBase = " << indexBase << ".");
+    destGlobalElts[numEltsPerProc] = leftGid;
+
+    const GO rightGid = myEndSrcGid + 1;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rightGid < indexBase, std::logic_error, 
+      "At middle proc, right boundary GID = " << rightGid 
+      << " < indexBase = " << indexBase << ".");
+    destGlobalElts[numEltsPerProc+1] = rightGid;
   }
 }
 
@@ -237,15 +265,16 @@ createGidLists (Array<GO>& srcGlobalElts,
 int main (int argc, char* argv[]) {
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > tpetraComm = 
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Kokkos::Details::getNode<NT> ();
 
+  RCP<const Teuchos::Comm<int> > tpetraComm;
 #ifdef EPETRA_MPI
   Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
+  tpetraComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
 #else
   Epetra_SerialComm epetraComm;
-#endif EPETRA_MPI
+  tpetraComm = rcp (new Teuchos::SerialComm<int>);
+#endif // EPETRA_MPI
+  RCP<NT> node = Kokkos::Details::getNode<NT> ();
 
   const int numProcs = tpetraComm->getSize ();
   const int myRank = tpetraComm->getRank ();
@@ -262,12 +291,12 @@ int main (int argc, char* argv[]) {
   Array<GO> srcGlobalElts, destGlobalElts;
   createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank, 
 		  numEltsPerProc, indexBase);
+  benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
+			 node, numMapCreateTrials, numImportCreateTrials,
+			 numVectorCreateTrials, numExecTrials);
   benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase, epetraComm,
 			 numMapCreateTrials, numImportCreateTrials,
 			 numVectorCreateTrials, numExecTrials);
-  benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, comm, node, 
-			 numMapCreateTrials, numImportCreateTrials,
-			 numVectorCreateTrials, numExecTrials);
-  TimeMonitor::report (tpetraComm.ptr ());
+  TimeMonitor::report (tpetraComm.ptr (), std::cout);
   return EXIT_SUCCESS;
 }
