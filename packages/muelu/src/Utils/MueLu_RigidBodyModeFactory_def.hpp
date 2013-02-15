@@ -82,14 +82,17 @@ namespace MueLu {
       else {
         RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
         GetOStream(Runtime1, 0) << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
-	if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1); }
-	else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 3); }
-	else if(numPDEs_==3) { nullspace = MultiVectorFactory::Build(A->getDomainMap(), 6); }
+	RCP<const Map> xmap=A->getDomainMap();
+	if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(xmap, 1); }
+	else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(xmap, 3); }
+	else if(numPDEs_==3) { nullspace = MultiVectorFactory::Build(xmap, 6); }
+	Scalar zero(0.0);
+	nullspace -> putScalar(zero);
 	RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel,"Coordinates");
 	ArrayRCP<Scalar> xnodes, ynodes, znodes;
 	Scalar cx, cy, cz;
 	ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
-	int nDOFs=A->getDomainMap()->getNodeNumElements();
+	int nDOFs=xmap->getNodeNumElements();
 	if(numPDEs_==1) {
 	  nsValues0 = nullspace->getDataNonConst(0);
 	  for(int j=0; j<nDOFs; j++) {

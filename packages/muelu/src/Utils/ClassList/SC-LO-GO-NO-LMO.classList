@@ -9,6 +9,7 @@ BlockedRAPFactory
 BraessSarazinSmoother
 CoalesceDropFactory
 CoarseMapFactory
+CoupledRBMFactory
 DemoFactory
 DirectSolver
 DistanceLaplacianFactory
