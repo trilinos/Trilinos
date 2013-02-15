@@ -72,6 +72,7 @@ Ioss::ShellLine2D2::ShellLine2D2()
   : Ioss::ElementTopology("shellline2d2", "ShellLine_2")
 {
   Ioss::ElementTopology::alias("shellline2d2", "Shell_Line_2_2D");
+  Ioss::ElementTopology::alias("shellline2d2", "SHELL_LINE_2");
 }
 
 Ioss::ShellLine2D2::~ShellLine2D2() {}

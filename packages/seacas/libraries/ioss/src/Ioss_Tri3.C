@@ -81,6 +81,7 @@ Ioss::Tri3::Tri3()
   Ioss::ElementTopology::alias("tri3", "Solid_Tri_3_2D");
   Ioss::ElementTopology::alias("tri3", "Face_Tri_3_3D");
   Ioss::ElementTopology::alias("tri3", "triface3");
+  Ioss::ElementTopology::alias("tri3", "TRIANGLE_3_2D");
 }
 
 Ioss::Tri3::~Tri3() {}

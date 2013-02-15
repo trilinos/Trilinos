@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_ElementVariableType.h>
-#include <Ioss_TriShell3.h>
+#include <Ioss_TriShell4.h>
 #include <assert.h>
 
 #include "Ioss_ElementTopology.h"
@@ -39,23 +39,23 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
-  class St_TriShell3 : public ElementVariableType
+  class St_TriShell4 : public ElementVariableType
   {
   public:
-    static void factory() {static St_TriShell3 registerThis;}
+    static void factory() {static St_TriShell4 registerThis;}
   protected:
-    St_TriShell3()
-      : ElementVariableType("trishell3", 3) {}
+    St_TriShell4()
+      : ElementVariableType("trishell4", 4) {}
   };
 }
 // ========================================================================
 namespace {
   struct Constants {
-    static const int nnode     = 3;
+    static const int nnode     = 4;
     static const int nedge     = 3;
     static const int nedgenode = 2;
     static const int nface     = 2;
-    static const int nfacenode = 3;
+    static const int nfacenode = 4;
     static const int nfaceedge = 3;
     static int edge_node_order[nedge][nedgenode];
     static int face_node_order[nface][nfacenode];
@@ -71,8 +71,8 @@ int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
 
 // Face numbers are zero-based [0..number_faces)
 int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-{ {0,1,2},
-  {0,2,1} };
+  { {0,1,2,3},
+    {0,2,1,3} };
 
 int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
 { {0,1,2},
@@ -81,55 +81,54 @@ int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
 // face 0 returns number of nodes for all faces if homogenous
 //        returns -1 if faces have differing topology
 int Constants::nodes_per_face[nface+1] =
-{3,3,3};
+  {4,4,4};
 
 // face 0 returns number of edges for all faces if homogenous
 //        returns -1 if faces have differing topology
 int Constants::edges_per_face[nface+1] =
 {3,3,3};
 
-void Ioss::TriShell3::factory()
+void Ioss::TriShell4::factory()
 {
-  static Ioss::TriShell3 registerThis;
-  Ioss::St_TriShell3::factory();
+  static Ioss::TriShell4 registerThis;
+  Ioss::St_TriShell4::factory();
 }
 
-Ioss::TriShell3::TriShell3()
-  : Ioss::ElementTopology("trishell3", "ShellTriangle_3")
+Ioss::TriShell4::TriShell4()
+  : Ioss::ElementTopology("trishell4", "ShellTriangle_4")
 {
-  Ioss::ElementTopology::alias("trishell3", "trishell");
-  Ioss::ElementTopology::alias("trishell3", "Shell_Tri_3_3D");
-  Ioss::ElementTopology::alias("trishell3", "SHELL_TRIANGLE_3");
+  Ioss::ElementTopology::alias("trishell4", "Shell_Tri_4_3D");
+  Ioss::ElementTopology::alias("trishell4", "SHELL_TRIANGLE_4");
 }
 
-Ioss::TriShell3::~TriShell3() {}
+Ioss::TriShell4::~TriShell4() {}
 
-int Ioss::TriShell3::parametric_dimension()           const {return  2;}
-int Ioss::TriShell3::spatial_dimension()           const {return  3;}
-int Ioss::TriShell3::order()               const {return  1;}
+int Ioss::TriShell4::parametric_dimension()           const {return  2;}
+int Ioss::TriShell4::spatial_dimension()           const {return  3;}
+int Ioss::TriShell4::order()               const {return  2;}
 
-int Ioss::TriShell3::number_corner_nodes() const {return     3;}
-int Ioss::TriShell3::number_nodes()        const {return Constants::nnode;}
-int Ioss::TriShell3::number_edges()        const {return Constants::nedge;}
-int Ioss::TriShell3::number_faces()        const {return Constants::nface;}
+int Ioss::TriShell4::number_corner_nodes() const {return     3;}
+int Ioss::TriShell4::number_nodes()        const {return Constants::nnode;}
+int Ioss::TriShell4::number_edges()        const {return Constants::nedge;}
+int Ioss::TriShell4::number_faces()        const {return Constants::nface;}
 
-int Ioss::TriShell3::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
+int Ioss::TriShell4::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
 
-int Ioss::TriShell3::number_nodes_face(int face) const
+int Ioss::TriShell4::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return  Constants::nodes_per_face[face];
 }
 
-int Ioss::TriShell3::number_edges_face(int face) const
+int Ioss::TriShell4::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::edges_per_face[face];
 }
 
-Ioss::IntVector Ioss::TriShell3::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::TriShell4::edge_connectivity(int edge_number) const
 {
   assert(edge_number > 0 && edge_number <= Constants::nedge);
   Ioss::IntVector connectivity(Constants::nedgenode);
@@ -140,7 +139,7 @@ Ioss::IntVector Ioss::TriShell3::edge_connectivity(int edge_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::TriShell3::face_connectivity(int face_number) const
+Ioss::IntVector Ioss::TriShell4::face_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
@@ -151,7 +150,7 @@ Ioss::IntVector Ioss::TriShell3::face_connectivity(int face_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::TriShell3::element_connectivity() const
+Ioss::IntVector Ioss::TriShell4::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
   for (int i=0; i < number_nodes(); i++)
@@ -159,20 +158,20 @@ Ioss::IntVector Ioss::TriShell3::element_connectivity() const
   return connectivity;
 }
 
-Ioss::ElementTopology* Ioss::TriShell3::face_type(int face_number) const
+Ioss::ElementTopology* Ioss::TriShell4::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
-//  return Ioss::ElementTopology::factory("triface3");
-  return Ioss::ElementTopology::factory("tri3");
+//  return Ioss::ElementTopology::factory("triface4");
+  return Ioss::ElementTopology::factory("tri4");
 }
 
-Ioss::ElementTopology* Ioss::TriShell3::edge_type(int edge_number) const
+Ioss::ElementTopology* Ioss::TriShell4::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
   return Ioss::ElementTopology::factory("edge2");
 }
 
-Ioss::IntVector Ioss::TriShell3::face_edge_connectivity(int face_number) const
+Ioss::IntVector Ioss::TriShell4::face_edge_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= Constants::nface);
 

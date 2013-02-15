@@ -78,6 +78,7 @@ Ioss::Tri4::Tri4()
   Ioss::ElementTopology::alias("tri4", "Solid_Tri_4_2D");
   Ioss::ElementTopology::alias("tri4", "Face_Tri_4_3D");
   Ioss::ElementTopology::alias("tri4", "triface4");
+  Ioss::ElementTopology::alias("tri4", "TRIANGLE_4_2D");
 }
 
 Ioss::Tri4::~Tri4() {}

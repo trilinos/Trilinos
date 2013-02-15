@@ -31,32 +31,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_ElementVariableType.h>
-#include <Ioss_TriShell3.h>
+#include <Ioss_Wedge18.h>
 #include <assert.h>
+#include <stddef.h>
 
 #include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
-  class St_TriShell3 : public ElementVariableType
+  class St_Wedge18 : public ElementVariableType
   {
   public:
-    static void factory() {static St_TriShell3 registerThis;}
+    static void factory();
+
   protected:
-    St_TriShell3()
-      : ElementVariableType("trishell3", 3) {}
+    St_Wedge18()
+      : ElementVariableType("wedge18", 18) {}
   };
 }
+void Ioss::St_Wedge18::factory()
+{ static Ioss::St_Wedge18 registerThis; }
+
 // ========================================================================
 namespace {
   struct Constants {
-    static const int nnode     = 3;
-    static const int nedge     = 3;
-    static const int nedgenode = 2;
-    static const int nface     = 2;
-    static const int nfacenode = 3;
-    static const int nfaceedge = 3;
+    static const int nnode     = 18;
+    static const int nedge     =  9;
+    static const int nedgenode =  3;
+    static const int nface     =  5;
+    static const int nfacenode =  9;
+    static const int nfaceedge =  4;
     static int edge_node_order[nedge][nedgenode];
     static int face_node_order[nface][nfacenode];
     static int face_edge_order[nface][nfaceedge];
@@ -64,94 +69,94 @@ namespace {
     static int edges_per_face[nface+1];
   };
 }
-
+  
 // Edge numbers are zero-based [0..number_edges)
 int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-{ {0,1}, {1,2}, {2,0} };
+  {  {0,1, 6},  {1,2, 7}, {2,0, 8},
+     {3,4,12},  {4,5,13}, {5,3,14},
+     {0,3, 9},  {1,4,10}, {2,5,11} };
 
 // Face numbers are zero-based [0..number_faces)
 int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-{ {0,1,2},
-  {0,2,1} };
+  { {0,1,4,3,  6,10,12, 9,  15},
+    {1,2,5,4,  7,11,13,10,  16},
+    {0,3,5,2,  9,14,11, 8,  17},
+    {0,2,1,    8, 7, 6,-1, -1, -1},
+    {3,4,5,   12,13,14,-1, -1, -1} };
 
 int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-{ {0,1,2},
-  {2,1,0} };
+  { {0,7,3,6},  {1,8,4,7}, {6,5,8,2},
+    {2,1,0,-1}, {3,4,5,-1}                   };
 
-// face 0 returns number of nodes for all faces if homogenous
-//        returns -1 if faces have differing topology
 int Constants::nodes_per_face[nface+1] =
-{3,3,3};
+  { -1, 9, 9, 9, 6, 6 };
 
-// face 0 returns number of edges for all faces if homogenous
-//        returns -1 if faces have differing topology
 int Constants::edges_per_face[nface+1] =
-{3,3,3};
+  { -1, 4, 4, 4, 3, 3 };
 
-void Ioss::TriShell3::factory()
+void Ioss::Wedge18::factory()
 {
-  static Ioss::TriShell3 registerThis;
-  Ioss::St_TriShell3::factory();
+  static Ioss::Wedge18 registerThis;
+  Ioss::St_Wedge18::factory();
 }
 
-Ioss::TriShell3::TriShell3()
-  : Ioss::ElementTopology("trishell3", "ShellTriangle_3")
+Ioss::Wedge18::Wedge18()
+  : Ioss::ElementTopology("wedge18", "Wedge_18")
 {
-  Ioss::ElementTopology::alias("trishell3", "trishell");
-  Ioss::ElementTopology::alias("trishell3", "Shell_Tri_3_3D");
-  Ioss::ElementTopology::alias("trishell3", "SHELL_TRIANGLE_3");
+  Ioss::ElementTopology::alias("wedge18", "Solid_Wedge_18_3D");
 }
 
-Ioss::TriShell3::~TriShell3() {}
+Ioss::Wedge18::~Wedge18() {}
 
-int Ioss::TriShell3::parametric_dimension()           const {return  2;}
-int Ioss::TriShell3::spatial_dimension()           const {return  3;}
-int Ioss::TriShell3::order()               const {return  1;}
+int Ioss::Wedge18::parametric_dimension()           const {return  3;}
+int Ioss::Wedge18::spatial_dimension()           const {return  3;}
+int Ioss::Wedge18::order()               const {return  2;}
 
-int Ioss::TriShell3::number_corner_nodes() const {return     3;}
-int Ioss::TriShell3::number_nodes()        const {return Constants::nnode;}
-int Ioss::TriShell3::number_edges()        const {return Constants::nedge;}
-int Ioss::TriShell3::number_faces()        const {return Constants::nface;}
+int Ioss::Wedge18::number_corner_nodes() const {return 6;}
+int Ioss::Wedge18::number_nodes()        const {return Constants::nnode;}
+int Ioss::Wedge18::number_edges()        const {return Constants::nedge;}
+int Ioss::Wedge18::number_faces()        const {return Constants::nface;}
 
-int Ioss::TriShell3::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
+bool Ioss::Wedge18::faces_similar()      const {return false;}
 
-int Ioss::TriShell3::number_nodes_face(int face) const
+int Ioss::Wedge18::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
+
+int Ioss::Wedge18::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return  Constants::nodes_per_face[face];
 }
 
-int Ioss::TriShell3::number_edges_face(int face) const
+int Ioss::Wedge18::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::edges_per_face[face];
 }
 
-Ioss::IntVector Ioss::TriShell3::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::Wedge18::edge_connectivity(int edge_number) const
 {
-  assert(edge_number > 0 && edge_number <= Constants::nedge);
-  Ioss::IntVector connectivity(Constants::nedgenode);
+  Ioss::IntVector connectivity(number_nodes_edge(edge_number));
 
-  for (int i=0; i < Constants::nedgenode; i++)
+  for (int i=0; i < number_nodes_edge(edge_number); i++)
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
 
   return connectivity;
 }
 
-Ioss::IntVector Ioss::TriShell3::face_connectivity(int face_number) const
+Ioss::IntVector Ioss::Wedge18::face_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= number_faces());
-  Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
+  Ioss::IntVector connectivity(number_nodes_face(face_number));
 
-  for (int i=0; i < Constants::nodes_per_face[face_number]; i++)
+  for (int i=0; i < number_nodes_face(face_number); i++)
     connectivity[i] = Constants::face_node_order[face_number-1][i];
 
   return connectivity;
 }
 
-Ioss::IntVector Ioss::TriShell3::element_connectivity() const
+Ioss::IntVector Ioss::Wedge18::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
   for (int i=0; i < number_nodes(); i++)
@@ -159,20 +164,26 @@ Ioss::IntVector Ioss::TriShell3::element_connectivity() const
   return connectivity;
 }
 
-Ioss::ElementTopology* Ioss::TriShell3::face_type(int face_number) const
+Ioss::ElementTopology* Ioss::Wedge18::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
-//  return Ioss::ElementTopology::factory("triface3");
-  return Ioss::ElementTopology::factory("tri3");
+  if (face_number == 0)
+    return (Ioss::ElementTopology*)NULL;
+  else if (face_number <= 3)
+//    return Ioss::ElementTopology::factory("quadface9");
+    return Ioss::ElementTopology::factory("quad9");
+  else
+//    return Ioss::ElementTopology::factory("triface6");
+    return Ioss::ElementTopology::factory("tri6");
 }
 
-Ioss::ElementTopology* Ioss::TriShell3::edge_type(int edge_number) const
+Ioss::ElementTopology* Ioss::Wedge18::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2");
+  return Ioss::ElementTopology::factory("edge3");
 }
 
-Ioss::IntVector Ioss::TriShell3::face_edge_connectivity(int face_number) const
+Ioss::IntVector Ioss::Wedge18::face_edge_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= Constants::nface);
 

@@ -69,7 +69,7 @@ void Ioss::Edge2D3::factory()
 }
 
 Ioss::Edge2D3::Edge2D3()
-  : Ioss::ElementTopology("edge2d3", "Line_3")
+  : Ioss::ElementTopology("edge2d3", "Line_3_2D")
 {
   Ioss::ElementTopology::alias("edge2d3", "Edge_3_2D");
 }

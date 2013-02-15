@@ -93,7 +93,7 @@ int test_all_elements()
   for (int i=0; i < element_count; i++) {
     OUTPUT << "Testing element: " << std::setw(20) << elements[i];
     bool result = test_element(elements[i]);
-    if (elements[i] == "unknown" || result == true)
+    if (result == true || elements[i] == "unknown" || elements[i] == "invalid_topology")
       OUTPUT << "OK" << '\n';
     else {
       OUTPUT << "\n        element: " << std::setw(20) << elements[i]

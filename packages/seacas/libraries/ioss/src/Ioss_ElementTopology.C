@@ -69,13 +69,21 @@ Ioss::ElementTopology::ElementTopology(const std::string &type, const std::strin
 				       bool delete_me)
   : name_(type), masterElementName_(master_elem_name)
 {
-  registry().insert(Ioss::ETM_VP(type, this), delete_me);
+  registry().insert(Ioss::ETM_VP(name_, this), delete_me);
+  std::string lname = Ioss::Utils::lowercase(name_);
+  if (lname != name_) {
+    alias(name_, lname);
+  }
   alias(name_, masterElementName_);
 }
 
 void Ioss::ElementTopology::alias(const std::string& base, const std::string& syn)
 {
   registry().insert(Ioss::ETM_VP(syn, factory(base)), false);
+  std::string lsyn = Ioss::Utils::lowercase(syn);
+  if (lsyn != syn) {
+    alias(base, lsyn);
+  }
 }
 
 Ioss::ETRegistry& Ioss::ElementTopology::registry()
@@ -92,16 +100,22 @@ bool Ioss::ElementTopology::faces_similar() const {return true;}
 
 Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, bool ok_to_fail)
 {
+  std::string ltype = Ioss::Utils::lowercase(type);
+  
   Ioss::ElementTopology* inst = NULL;
-  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
-  if (iter == registry().end() && std::strncmp(type.c_str(), "super", 5) == 0) {
+  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
+
+  std::string base1 = "super";
+  std::string base2 = "superelement_topology_";
+  if (iter == registry().end() && 
+      (ltype.find(base1) == 0) || (ltype.find(base2) == 0)) {
     // A super element can have a varying number of nodes.  Create
     // an IO element type for this super element. The node count
     // should be encoded in the 'type' as 'super42' for a 42-node
     // superelement.
     
-    Ioss::Super::make_super(type);
-    iter = registry().find(type);
+    Ioss::Super::make_super(ltype);
+    iter = registry().find(ltype);
   }
 
   if (iter == registry().end()) {

@@ -78,6 +78,7 @@ Ioss::Quad4::Quad4()
 {
   Ioss::ElementTopology::alias("quad4", "quad");
   Ioss::ElementTopology::alias("quad4", "Solid_Quad_4_2D");
+  Ioss::ElementTopology::alias("quad4", "QUADRILATERAL_4_2D");
   Ioss::ElementTopology::alias("quad4", "Face_Quad_4_3D");
   Ioss::ElementTopology::alias("quad4", "quadface4");
 }

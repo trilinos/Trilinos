@@ -78,6 +78,7 @@ Ioss::Bar3::Bar3()
   Ioss::ElementTopology::alias("bar3", "beam3");
   Ioss::ElementTopology::alias("bar3", "Rod_3_2D");
   Ioss::ElementTopology::alias("bar3", "rod2d3");
+  Ioss::ElementTopology::alias("bar3", "LINE_3_1D");
 }
 
 Ioss::Bar3::~Bar3() {}

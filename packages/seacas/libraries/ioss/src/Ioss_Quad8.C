@@ -77,6 +77,7 @@ Ioss::Quad8::Quad8()
   : Ioss::ElementTopology("quad8", "Quadrilateral_8")
 {
   Ioss::ElementTopology::alias("quad8", "Solid_Quad_8_2D");
+  Ioss::ElementTopology::alias("quad8", "QUADRILATERAL_8_2D");
   Ioss::ElementTopology::alias("quad8", "Face_Quad_8_3D");
   Ioss::ElementTopology::alias("quad8", "quadface8");
 }

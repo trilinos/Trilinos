@@ -41,8 +41,9 @@
 #include <Ioss_Hex8.h>
 #include <Ioss_Initializer.h>
 #include <Ioss_Node.h>
-#include <Ioss_Pyramid13.h>
 #include <Ioss_Pyramid5.h>
+#include <Ioss_Pyramid13.h>
+#include <Ioss_Pyramid14.h>
 #include <Ioss_Quad4.h>
 #include <Ioss_Quad8.h>
 #include <Ioss_Quad9.h>
@@ -53,19 +54,24 @@
 #include <Ioss_ShellLine2D3.h>
 #include <Ioss_Sphere.h>
 #include <Ioss_Super.h>
-#include <Ioss_Tet10.h>
 #include <Ioss_Tet4.h>
-#include <Ioss_Tet7.h>
+  // Disable for now.  Might be needed for adagio/salinas coupling...
+//#include <Ioss_Tet7.h>
 #include <Ioss_Tet8.h>
+#include <Ioss_Tet10.h>
+#include <Ioss_Tet11.h>
 #include <Ioss_Tri3.h>
 #include <Ioss_Tri4.h>
-#include <Ioss_Tri4a.h>
+// Disable for now.  Might be needed for adagio/salinas coupling...
+//#include <Ioss_Tri4a.h>
 #include <Ioss_Tri6.h>
 #include <Ioss_TriShell3.h>
+#include <Ioss_TriShell4.h>
 #include <Ioss_TriShell6.h>
 #include <Ioss_Unknown.h>
-#include <Ioss_Wedge15.h>
 #include <Ioss_Wedge6.h>
+#include <Ioss_Wedge15.h>
+#include <Ioss_Wedge18.h>
 
 Ioss::Initializer::Initializer()
 {
@@ -73,10 +79,10 @@ Ioss::Initializer::Initializer()
   // This is Used to get the linker to pull in all needed libraries.
   Ioss::Sphere::factory();
   
-  Ioss::Edge2::factory();
-  Ioss::Edge3::factory();
   Ioss::Edge2D2::factory();
   Ioss::Edge2D3::factory();
+  Ioss::Edge2::factory();
+  Ioss::Edge3::factory();
 
   Ioss::Bar2::factory();
   Ioss::Bar3::factory();
@@ -91,6 +97,7 @@ Ioss::Initializer::Initializer()
 
   Ioss::Pyramid5::factory();
   Ioss::Pyramid13::factory();
+  Ioss::Pyramid14::factory();
   
   Ioss::Quad4::factory();
   Ioss::Quad8::factory();
@@ -101,22 +108,28 @@ Ioss::Initializer::Initializer()
   Ioss::Shell9::factory();
 
   Ioss::Tet4::factory();
-  Ioss::Tet7::factory();
+
+  // Disable for now.  Might be needed for adagio/salinas coupling...
+  //Ioss::Tet7::factory();
   Ioss::Tet8::factory();
   Ioss::Tet10::factory();
+  Ioss::Tet11::factory();
 
   Ioss::Tri3::factory();
   Ioss::Tri4::factory();
-  Ioss::Tri4a::factory();
+  // Disable for now.  Might be needed for adagio/salinas coupling...
+  //Ioss::Tri4a::factory();
   Ioss::Tri6::factory();
 
   Ioss::TriShell3::factory();
+  Ioss::TriShell4::factory();
   Ioss::TriShell6::factory();
 
   Ioss::Unknown::factory();
 
   Ioss::Wedge6::factory();
   Ioss::Wedge15::factory();
+  Ioss::Wedge18::factory();
 
   Ioss::Super::factory();
 }

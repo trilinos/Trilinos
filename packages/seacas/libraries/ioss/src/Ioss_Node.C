@@ -72,6 +72,7 @@ Ioss::Node::Node()
   : Ioss::ElementTopology("node", "Node_0_3D")
 {
   Ioss::ElementTopology::alias("node", "Node_0_2D");
+  Ioss::ElementTopology::alias("node", "NODE");
 }
 
 Ioss::Node::~Node() {}
