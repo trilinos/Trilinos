@@ -43,6 +43,7 @@
 
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 using Tpetra::global_size_t;
@@ -50,6 +51,7 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::as;
 using Teuchos::Comm;
+using Teuchos::CommandLineProcessor;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Time;
@@ -80,7 +82,7 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
 		       const int numMapCreateTrials,
 		       const int numImportCreateTrials,
 		       const int numVectorCreateTrials,
-		       const int numExecTrials)
+		       const int numImportExecTrials)
 {
   typedef Tpetra::Import<LO, GO, NT> import_type;
   typedef Tpetra::Map<LO, GO, NT> map_type;
@@ -91,14 +93,14 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
     numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
     "numMapCreateTrials must be > 0 if numImportCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportCreateTrials < 1 && numExecTrials > 0, std::invalid_argument, 
-    "numImportCreateTrials must be > 0 if numExecTrials > 0.");
+    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    "numImportCreateTrials must be > 0 if numImportExecTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument, 
-    "numVectorCreateTrials must be > 0 if numExecTrials > 0.");
+    "numVectorCreateTrials must be > 0 if numMapCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numExecTrials > 0, std::invalid_argument, 
-    "numVectorCreateTrials must be > 0 if numExecTrials > 0.");
+    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
 
   RCP<Time> mapCreateTimer = getTimer ("Tpetra: Map: Create");
   RCP<Time> importCreateTimer = getTimer ("Tpetra: Import: Create");
@@ -123,14 +125,14 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   RCP<vector_type> srcVec, destVec;
   {
     TimeMonitor timeMon (*vectorCreateTimer);
-    for (int k = 0; k < numExecTrials; ++k) {
+    for (int k = 0; k < numVectorCreateTrials; ++k) {
       srcVec = rcp (new vector_type (srcMap));
       destVec = rcp (new vector_type (destMap));
     }
   }
   {
     TimeMonitor timeMon (*importExecTimer);
-    for (int k = 0; k < numExecTrials; ++k) {
+    for (int k = 0; k < numImportExecTrials; ++k) {
       destVec->doImport (*srcVec, *import, Tpetra::ADD);
     }
   }
@@ -144,7 +146,7 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
 		       const int numMapCreateTrials,
 		       const int numImportCreateTrials,
 		       const int numVectorCreateTrials,
-		       const int numExecTrials)
+		       const int numImportExecTrials)
 {
   const int INVALID = -1;
 
@@ -152,14 +154,14 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
     numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
     "numMapCreateTrials must be > 0 if numImportCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportCreateTrials < 1 && numExecTrials > 0, std::invalid_argument, 
-    "numImportCreateTrials must be > 0 if numExecTrials > 0.");
+    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    "numImportCreateTrials must be > 0 if numImportExecTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument, 
-    "numVectorCreateTrials must be > 0 if numExecTrials > 0.");
+    "numVectorCreateTrials must be > 0 if numMapCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numExecTrials > 0, std::invalid_argument, 
-    "numVectorCreateTrials must be > 0 if numExecTrials > 0.");
+    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
 
   RCP<Time> mapCreateTimer = getTimer ("Epetra: Map: Create");
   RCP<Time> importCreateTimer = getTimer ("Epetra: Import: Create");
@@ -181,7 +183,7 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
   }
   RCP<Epetra_Import> import;
   {
-    TimeMonitor timeMon (*mapCreateTimer);
+    TimeMonitor timeMon (*importCreateTimer);
     for (int k = 0; k < numImportCreateTrials; ++k) {
       import = rcp (new Epetra_Import (*srcMap, *destMap));
     }
@@ -196,7 +198,7 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
   }
   {
     TimeMonitor timeMon (*importExecTimer);
-    for (int k = 0; k < numExecTrials; ++k) {
+    for (int k = 0; k < numImportExecTrials; ++k) {
       (void) destVec->Import (*srcVec, *import, Add);
     }
   }
@@ -281,22 +283,58 @@ int main (int argc, char* argv[]) {
   const int indexBase = 1; // of interest to Sierra
 
   // Benchmark parameters
-  const int numEltsPerProc = 10000;
-  const int numMapCreateTrials = 100;
-  const int numImportCreateTrials = 100;
-  const int numVectorCreateTrials = 100;
-  const int numExecTrials = 100;
+  int numEltsPerProc = 100000;
+  int numTrials = 100;
+  bool runEpetra = true;
+  bool runTpetra = true;
+
+  CommandLineProcessor cmdp;
+  cmdp.setOption ("numEltsPerProc", &numEltsPerProc, "Number of global indices "
+		  "owned by each process");
+  cmdp.setOption ("numTrials", &numTrials, "Number of times to repeat each "
+		  "operation in a timing loop");
+  cmdp.setOption ("runEpetra", "noEpetra", &runEpetra, 
+		  "Whether to run the Epetra benchmark");
+  cmdp.setOption ("runTpetra", "noTpetra", &runTpetra, 
+		  "Whether to run the Tpetra benchmark");
+  const CommandLineProcessor::EParseCommandLineReturn parseResult =
+    cmdp.parse (argc, argv);
+  if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
+    // The user specified --help at the command line to print help
+    // with command-line arguments.  We printed help already, so quit
+    // with a happy return code.
+    return EXIT_SUCCESS;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+      std::invalid_argument, "Failed to parse command-line arguments.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numTrials < 0, std::invalid_argument, "numTrials must be nonnegative.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numEltsPerProc < 0, std::invalid_argument, 
+      "numEltsPerProc must be nonnegative.");
+  }
+
+  // Derived benchmark parameters
+  const int numMapCreateTrials = numTrials;
+  const int numImportCreateTrials = numTrials;
+  const int numVectorCreateTrials = 1; // numTrials;
+  const int numImportExecTrials = numTrials;
 
   // Run the benchmark
   Array<GO> srcGlobalElts, destGlobalElts;
   createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank, 
 		  numEltsPerProc, indexBase);
-  benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
-			 node, numMapCreateTrials, numImportCreateTrials,
-			 numVectorCreateTrials, numExecTrials);
-  benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase, epetraComm,
-			 numMapCreateTrials, numImportCreateTrials,
-			 numVectorCreateTrials, numExecTrials);
+  if (runEpetra) {
+    benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase, epetraComm,
+			   numMapCreateTrials, numImportCreateTrials,
+			   numVectorCreateTrials, numImportExecTrials);
+  }
+  if (runTpetra) {
+    benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
+			   node, numMapCreateTrials, numImportCreateTrials,
+			   numVectorCreateTrials, numImportExecTrials);
+  }
   TimeMonitor::report (tpetraComm.ptr (), std::cout);
   return EXIT_SUCCESS;
 }
