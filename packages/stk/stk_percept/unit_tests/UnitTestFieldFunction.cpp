@@ -15,6 +15,8 @@
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 
+#include <stk_mesh/base/FieldParallel.hpp>
+
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/diag/PrintTable.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -626,6 +628,152 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
   }
   //std::cout << "P[" << Util::get_rank() <<  "] TEST::function::fieldFunction_point_eval_timing done " << std::endl;
 }
+
+static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
+{
+  stk::mesh::FieldBase* pressure_field =  eMesh.get_field("pressure");
+  unsigned p_rank = eMesh.get_bulk_data()->parallel_rank();
+
+  const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
+
+  enum Type{ Owned, Shared, Ghost };
+  std::string types[] = {"Owned", "Shared", "Ghost" };
+  std::ostringstream out;
+  out << "\n\n=========================\ntest_sync: sync_shared= " << sync_shared << " sync_aura= " << sync_aura << "\n";
+  for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+    {
+      {
+        stk::mesh::Bucket & bucket = **k ;
+
+        const unsigned num_elements_in_bucket = bucket.size();
+
+        for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+          {
+            stk::mesh::Entity entity = bucket[iEntity];
+            double * const p = eMesh.field_data_entity( pressure_field , entity );
+            stk::mesh::EntityId id=entity.identifier();
+
+            int type=Owned;
+            if (bucket.owned())
+              {
+                p[0] = (p_rank?200+id:100+id);
+              }
+            else if (bucket.shared())
+              {
+                p[0] = -(p_rank?double(100+id):double(200+id));
+                type=Shared;
+              }
+            else
+              {
+                p[0] = (p_rank?2000+id:1000+id);
+                type=Ghost;
+                //std::cout << "P["<<p_rank<<"] ghost= " << p[0] << std::endl;
+              }
+            out << "P["<<p_rank<<"] id= " << entity.identifier() << " p= " << p[0] << " type= " << types[type] << std::endl;
+
+          }
+      }
+    }
+  std::cout << out.str() << std::endl;
+  eMesh.save_as("./field_before_sync.e");
+
+  {
+    std::vector< const stk::mesh::FieldBase *> fields;
+    fields.push_back(pressure_field);
+
+    // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
+    if (sync_aura) stk::mesh::communicate_field_data(eMesh.get_bulk_data()->shared_aura(), fields);
+
+    // the shared part (just the shared boundary)
+    if (sync_shared) stk::mesh::communicate_field_data(*eMesh.get_bulk_data()->ghostings()[0], fields);
+  }
+  std::ostringstream out1;
+  out1 << "test_sync: sync_shared= " << sync_shared << " sync_aura= " << sync_aura << "\n";
+
+  for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+    {
+      {
+        stk::mesh::Bucket & bucket = **k ;
+
+        const unsigned num_elements_in_bucket = bucket.size();
+
+        for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+          {
+            stk::mesh::Entity entity = bucket[iEntity];
+            stk::mesh::EntityId id=entity.identifier();
+            double * const p = eMesh.field_data_entity( pressure_field , entity );
+            int type=Owned;
+            double p_e = (p_rank?200+id:100+id);
+            if (bucket.owned())
+              {
+                STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+              }
+            else if (bucket.shared())
+              {
+                p_e = (p_rank?100+id:200+id);
+                type = Shared;
+                if (sync_shared)
+                  {
+                    if (std::fabs(p[0]-p_e) > 1.e-6)
+                      {
+                        out1 << "P[" << p_rank << "] ERROR: p[0] = " << p[0] << " p_e= " << p_e << std::endl;
+                      }
+                    STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+                  }
+              }
+            else
+              {
+                p_e = (p_rank?100+id:200+id);
+                type = Ghost;
+                if (sync_aura)
+                  STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+              }
+            out1 << "P["<<p_rank<<"] after id= " << entity.identifier() << " p= " << p[0] << " type= " << types[type] << std::endl;
+
+          }
+      }
+    }
+  std::cout << out1.str() << std::endl;
+
+
+  eMesh.save_as("./field_sync.e");
+
+}
+
+STKUNIT_UNIT_TEST(function, fieldFunction_field_sync)
+{
+  EXCEPTWATCH;
+
+  //PerceptMesh eMesh(3u);
+  //eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1")); // create a 3x3x3 hex mesh in the unit cube
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+  bool sidesets_on = false;
+  percept::QuadFixture<double> fixture( pm , 2 , 2, sidesets_on);
+  fixture.set_bounding_box(0,1,0,1);
+
+  percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, false);
+  // add a new field
+  int vectorDimension = 0;  // signifies a scalar field
+  stk::mesh::FieldBase* pressure_field =  eMesh.add_field("pressure", mesh::MetaData::NODE_RANK, vectorDimension);
+  (void)pressure_field;
+  fixture.meta_data.commit();
+  fixture.generate_mesh();
+
+  unsigned p_rank = eMesh.get_bulk_data()->parallel_rank();
+  (void)p_rank;
+  unsigned p_size = eMesh.get_bulk_data()->parallel_size();
+  if (p_size <= 2)
+    {
+      test_sync(eMesh, false, false);
+      test_sync(eMesh, true, false);
+      test_sync(eMesh, true, true);
+      test_sync(eMesh, false, true);
+    }
+
+}
+
 
 #if 0
 int main()
