@@ -35,26 +35,6 @@ namespace Details
 
 #else	// not defined(_MSC_VER)
 
-#if __GNUC__ && __GNUC_STDC_INLINE__
-  // Forcing inlining triggers a GCC 4.1.2 bug ("sorry, unimplemented:
-  // inlining failed..."):
-  //
-  // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31886
-  // http://testing.sandia.gov/cdash/viewBuildError.php?type=0&buildid=915491
-  // http://testing.sandia.gov/cdash/viewBuildError.php?type=0&buildid=916189
-  //
-  // That's why we select on the GCC version here.
-#  if __GNUC__ == 4 && __GNUC_MINOR__ == 1
-#define FORCE_INLINE inline
-#  else
-  // mfh 14 Feb 2013: Disabling forced inlining for now.
-#define FORCE_INLINE inline // __attribute__((always_inline))
-#  endif 
-#else
-  // mfh 14 Feb 2013: Disabling forced inlining for now.
-#define FORCE_INLINE // __attribute__((always_inline))
-#endif
-
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
 {
   return (x << r) | (x >> (32 - r));
@@ -76,42 +56,38 @@ inline uint64_t rotl64 ( uint64_t x, int8_t r )
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
 
-FORCE_INLINE uint32_t getblock ( const uint32_t * p, int i )
-{
-  return p[i];
-}
+#define GETBLOCK(lhs, p, i ) \
+{ \
+  lhs = p[(i)];\
+} \
 
-FORCE_INLINE uint64_t getblock ( const uint64_t * p, int i )
-{
-  return p[i];
-}
 
 //-----------------------------------------------------------------------------
 // Finalization mix - force all bits of a hash block to avalanche
 
-FORCE_INLINE uint32_t fmix ( uint32_t h )
-{
-  h ^= h >> 16;
-  h *= 0x85ebca6b;
-  h ^= h >> 13;
-  h *= 0xc2b2ae35;
-  h ^= h >> 16;
-
-  return h;
-}
+#define FMIX_32( h ) \
+{ \
+  uint32_t t_h = (h); \
+  t_h ^= t_h >> 16; \
+  t_h *= 0x85ebca6b; \
+  t_h ^= t_h >> 13; \
+  t_h *= 0xc2b2ae35; \
+  t_h ^= t_h >> 16; \
+  h = t_h; \
+} \
 
 //----------
 
-FORCE_INLINE uint64_t fmix ( uint64_t k )
-{
-  k ^= k >> 33;
-  k *= BIG_CONSTANT(0xff51afd7ed558ccd);
-  k ^= k >> 33;
-  k *= BIG_CONSTANT(0xc4ceb9fe1a85ec53);
-  k ^= k >> 33;
-
-  return k;
-}
+#define FMIX_64( k )\
+{\
+  uint64_t t_k = (k);\
+  t_k ^= t_k >> 33;\
+  t_k *= BIG_CONSTANT(0xff51afd7ed558ccd);\
+  t_k ^= t_k >> 33;\
+  t_k *= BIG_CONSTANT(0xc4ceb9fe1a85ec53);\
+  t_k ^= t_k >> 33;\
+  k = t_k;\
+}\
 
 //-----------------------------------------------------------------------------
 
@@ -133,7 +109,8 @@ void MurmurHash3_x86_32 ( const void * key, int len,
 
   for(int i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock(blocks,i);
+    uint32_t k1;
+    GETBLOCK(k1, blocks,i);
 
     k1 *= c1;
     k1 = ROTL32(k1,15);
@@ -164,7 +141,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
 
   h1 ^= len;
 
-  h1 = fmix(h1);
+  FMIX_32(h1);
 
   *(uint32_t*)out = h1;
 } 
@@ -194,10 +171,11 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
 
   for(int i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock(blocks,i*4+0);
-    uint32_t k2 = getblock(blocks,i*4+1);
-    uint32_t k3 = getblock(blocks,i*4+2);
-    uint32_t k4 = getblock(blocks,i*4+3);
+    uint32_t k1, k2, k3, k4;
+    GETBLOCK(k1, blocks,i*4+0);
+    GETBLOCK(k2, blocks,i*4+1);
+    GETBLOCK(k3, blocks,i*4+2);
+    GETBLOCK(k4, blocks,i*4+3);
 
     k1 *= c1; k1  = ROTL32(k1,15); k1 *= c2; h1 ^= k1;
 
@@ -260,10 +238,10 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
   h1 += h2; h1 += h3; h1 += h4;
   h2 += h1; h3 += h1; h4 += h1;
 
-  h1 = fmix(h1);
-  h2 = fmix(h2);
-  h3 = fmix(h3);
-  h4 = fmix(h4);
+  FMIX_32(h1);
+  FMIX_32(h2);
+  FMIX_32(h3);
+  FMIX_32(h4);
 
   h1 += h2; h1 += h3; h1 += h4;
   h2 += h1; h3 += h1; h4 += h1;
@@ -295,8 +273,9 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
 
   for(int i = 0; i < nblocks; i++)
   {
-    uint64_t k1 = getblock(blocks,i*2+0);
-    uint64_t k2 = getblock(blocks,i*2+1);
+    uint64_t k1, k2;
+    GETBLOCK(k1, blocks,i*2+0);
+    GETBLOCK(k2, blocks,i*2+1);
 
     k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
 
@@ -345,8 +324,8 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   h1 += h2;
   h2 += h1;
 
-  h1 = fmix(h1);
-  h2 = fmix(h2);
+  FMIX_64(h1);
+  FMIX_64(h2);
 
   h1 += h2;
   h2 += h1;
