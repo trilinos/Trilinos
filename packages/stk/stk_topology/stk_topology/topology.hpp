@@ -212,7 +212,7 @@ struct topology
   {
     switch(sub_rank)
     {
-    case NODE_RANK: return num_nodes();
+    case NODE_RANK: return num_vertices();
     case EDGE_RANK: return num_edges();
     case FACE_RANK: return num_faces();
     default: break;

@@ -122,7 +122,7 @@ STKUNIT_UNIT_TEST( stk_topology, arbitrary_topology )
   }
 
   topology notSuper = topology::HEX_8;
-  STKUNIT_EXPECT_EQ( false, notSuper.is_superelement());
+  STKUNIT_EXPECT_FALSE( notSuper.is_superelement());
 
   topology newT = stk::create_superelement_topology(8);
 
