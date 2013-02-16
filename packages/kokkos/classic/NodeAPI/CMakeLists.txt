@@ -131,7 +131,7 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::SerialNode")
 ELSE()
   MESSAGE(WARNING "Unrecognized or disabled node type; setting default node to Kokkos::SerialNode.")
   SET(KokkosClassic_DefaultNode "Kokkos::SerialNode")
-  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE "")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
 ENDIF()
 SET(KokkosClassic_DefaultNode "${KokkosClassic_DefaultNode}" CACHE STRING "" FORCE)
 
