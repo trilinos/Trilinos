@@ -126,8 +126,9 @@ int DOFManager<LO,GO>::addField(const std::string & str, const Teuchos::RCP<cons
   fieldStringOrder_.push_back(str);
   fieldAIDOrder_.push_back(numFields_);
 
-  //This is going to be associated with everyblock.
-  FPsInAll_.push_back(numFields_);
+  for(std::size_t i=0;i<blockOrder_.size();i++) {
+    blockToAssociatedFP_[i].push_back(numFields_);
+  }
 
   ++numFields_;
   return numFields_-1;
@@ -190,6 +191,37 @@ Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::s
   
   if(fitr->second<int(fieldPatterns_.size()))
     return fieldPatterns_[fitr->second];
+
+  return Teuchos::null;
+}
+
+//Returns the fieldpattern of the given name
+template <typename LO, typename GO>
+Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::string & blockId, const std::string & fieldName) const
+{
+  std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(fieldName);
+  if(fitr==fieldNameToAID_.end())
+    return Teuchos::null;
+
+  bool found=false;
+  size_t blocknum=0;
+  while(!found && blocknum<blockOrder_.size()){
+    if(blockOrder_[blocknum]==blockId){
+      found=true;
+      break;
+    }
+    blocknum++;
+  }
+
+  if(!found)
+    return Teuchos::null;
+
+  std::vector<int>::const_iterator itr = std::find(blockToAssociatedFP_[blocknum].begin(),
+                                                   blockToAssociatedFP_[blocknum].end(),fitr->second);
+  if(itr!=blockToAssociatedFP_[blocknum].end()) {
+    if(fitr->second<int(fieldPatterns_.size()))
+      return fieldPatterns_[fitr->second];
+  }
 
   return Teuchos::null;
 }
@@ -306,19 +338,15 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
     for (size_t i = 0; i < fieldAIDOrder_.size(); ++i) {
       int looking = fieldAIDOrder_[i];
-      //Check if in FPsInAll
-      std::vector<int>::const_iterator ret = std::find(FPsInAll_.begin(), FPsInAll_.end(), looking);
-      
-      if(!(ret==FPsInAll_.end())){
-        faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
-      }
+
       //Check if in b's fp list
       std::vector<int>::const_iterator reu = std::find(blockToAssociatedFP_[b].begin(), blockToAssociatedFP_[b].end(), looking);
       if(!(reu==blockToAssociatedFP_[b].end())){
         faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
       }
+
     }
-    
+
     if(faConstruct.size()>0) {
       fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
     
@@ -364,7 +392,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   Teuchos::RCP<MultiVector> overlap_mv;
   overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
 
-
  /* 5.  Iterate through all local elements again, checking with the FP
    *     information. Mark up the overlap map accordingly.
    */
@@ -395,7 +422,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       }
     }
   }
-  
   
  /* 6.  Create a OneToOne map from the overlap map.
    */
@@ -457,13 +483,24 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   //To generate elementGIDs_ we need to go through all of the local elements.
   ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
-  
+
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
   for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+
+    if(fa_fps_[b]==Teuchos::null) {
+      // fill elements that are not used with empty vectors
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        LO thisID=myElements[l];
+        if(elementGIDs_.size()<=(size_t)thisID)
+          elementGIDs_.resize(thisID+1);
+      }
+      continue;
+    }
+
     const std::vector<int> & numFields= fa_fps_[b]->numFieldsPerId();
     const std::vector<int> & fieldIds= fa_fps_[b]->fieldIds();
-    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
     //
     //
     for (size_t l = 0; l < myElements.size(); ++l) {
@@ -504,6 +541,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
+
+      if(fa_fps_[b]==Teuchos::null)
+        continue;
+ 
       const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
 
       for (size_t l = 0; l < myElements.size(); ++l) {
@@ -532,10 +573,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       owned_.push_back(*itr);       
 
     if(owned_.size()!=isOwned.size()) {
-      out << "I'm qbout to hang because of unknown numbering failure ... sorry! (line = " << __LINE__ << ")" << std::endl; 
+      out << "I'm about to hang because of unknown numbering failure ... sorry! (line = " << __LINE__ << ")" << std::endl; 
       TEUCHOS_TEST_FOR_EXCEPTION(owned_.size()!=isOwned.size(),std::logic_error,
                                  "DOFManager::buildGlobalUnkonwns: Failure because not all owned unknowns have been accounted for.");
     }
+
   }
 
   // build owned and ghosted array: The old simple way led to slow
@@ -547,6 +589,9 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     typedef boost::unordered_set<GO> HashTable;
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      if(fa_fps_[b]==Teuchos::null)
+        continue;
+
       const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
 
       for (size_t l = 0; l < myElements.size(); ++l) {
@@ -610,12 +655,6 @@ bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::strin
   bool found=false;
   for (size_t i = 0; i < blockToAssociatedFP_[bid].size(); ++i) {
     if(blockToAssociatedFP_[bid][i]==fid){
-      found=true;
-      break;
-    }
-  }
-  for (size_t i = 0; i < FPsInAll_.size(); ++i) {
-    if(FPsInAll_[i]==fid){
       found=true;
       break;
     }
@@ -843,8 +882,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
     const std::vector<int> & fieldIds = blockToAssociatedFP_[i];
     for(std::size_t f=0;f<fieldIds.size();f++)
       os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
-    for (size_t f = 0; f < FPsInAll_.size(); ++f)
-      os << "      \"" << getFieldString(FPsInAll_[f]) << "\" is field ID " << FPsInAll_[f] << std::endl;
   }
 }
 

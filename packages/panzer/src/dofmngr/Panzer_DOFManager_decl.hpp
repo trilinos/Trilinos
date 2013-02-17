@@ -98,11 +98,35 @@ public:
   int addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
 
 
-  /** Returns the fieldpattern of the given name
-    * This could also be done using the number you'd get from getFieldNum which
-    * isn't yet included.
-    */
+   /** \brief Find a field pattern stored for a particular block and field number. This will
+     *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
+     *
+     * Find a field pattern stored for a particular block and field number. This will
+     * retrive the pattern added with <code>addField(blockId,fieldNum)</code>. If no pattern
+     * is found this function returns <code>Teuchos::null</code>.
+     *
+     * \param[in] blockId Element block id
+     * \param[in] fieldNum Field integer identifier
+     *
+     * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
+     *          otherwise <code>Teuchos::null</code> is returned.
+     */
   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name) const;
+
+  /** \brief Find a field pattern stored for a particular block and field number. This will
+    *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
+    *
+    * Find a field pattern stored for a particular block and field number. This will
+    * retrive the pattern added with <code>addField(blockId,fieldNum)</code>. If no pattern
+    * is found this function returns <code>Teuchos::null</code>.
+    *
+    * \param[in] blockId Element block id
+    * \param[in] fieldName Field string identifier
+    *
+    * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
+    *          otherwise <code>Teuchos::null</code> is returned.
+    */
+  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
@@ -222,11 +246,11 @@ protected:
   //fieldPatterns_ is unchanging storage for FPs.
   std::vector<Teuchos::RCP<const FieldPattern> > fieldPatterns_;
   std::map<std::string,int> fieldNameToAID_;
+
   std::vector<std::string> blockOrder_; //To be got from the ConnManager.
   std::map<std::string,int> blockNameToID_; //I'm not sure the above vector is needed, this might suffice.
   std::vector<std::vector<int> > blockToAssociatedFP_; //each sub-vector is associated by
   //a block, with ordering given in blockOrder_. ints refer to the order in fieldPatterns_;
-  std::vector<int> FPsInAll_;
   std::vector<std::string> fieldStringOrder_;
   std::vector<int> fieldAIDOrder_; //Both of these must be updated and edited together.
   //The AID offers a simpler way to manage FPs internally.

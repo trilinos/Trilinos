@@ -93,8 +93,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
-   // panzer::pauseToAttach();
-
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
@@ -104,7 +102,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
 
    TEST_ASSERT(dofManager.getComm()!=Teuchos::null);
@@ -153,7 +150,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -206,25 +202,25 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
-   typedef panzer::DOFManager<int,int> DOFManager;
+   typedef panzer::DOFManagerFEI<int,int> DOFManagerFEI;
 
    TEST_EQUALITY(subManagers[0]->getNumFields(),2);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[0])->getFieldPattern("block_0","Ux"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[0])->getFieldPattern("block_0","Uy"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[0])->getFieldPattern("block_1","Uy"),Teuchos::null);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[0])->getFieldPattern("block_1","T"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_0","Ux"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_0","Uy"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_1","Uy"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[0])->getFieldPattern("block_1","T"),Teuchos::null);
 
    TEST_EQUALITY(subManagers[1]->getNumFields(),1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[1])->getFieldPattern("block_0","P"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[1])->getFieldPattern("block_1","T"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[1])->getFieldPattern("block_0","P"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[1])->getFieldPattern("block_1","T"),Teuchos::null);
 
    TEST_EQUALITY(subManagers[2]->getNumFields(),2);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_0","T"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_1","T"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_2","T"),patternC1);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_0","rho"),Teuchos::null);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_1","rho"),Teuchos::null);
-   TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[2])->getFieldPattern("block_2","rho"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_0","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_1","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_2","T"),patternC1);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_0","rho"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_1","rho"),Teuchos::null);
+   TEST_EQUALITY(rcp_dynamic_cast<DOFManagerFEI>(subManagers[2])->getFieldPattern("block_2","rho"),patternC1);
 
    // test field numbers, should be based on a field block index * largest field
    // number+1 (in this case the largest field number is 1...hence this size for
@@ -283,7 +279,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -316,12 +311,10 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    std::vector<bool> ownedAndShared_bool, owned_bool;
    dofManager.getOwnedAndSharedIndices(ownedAndShared);
    dofManager.getOwnedIndices(owned);
-/*
    if(myRank==0)
    { TEST_EQUALITY(ownedAndShared.size(),39); }
    else
    { TEST_EQUALITY(ownedAndShared.size(),30); }
-*/
 
    int sum = 0;
    int mySize = (int) owned.size();
@@ -398,7 +391,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -556,7 +548,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(false);
 
    std::set<std::string> validFields;
    validFields.insert("horse");

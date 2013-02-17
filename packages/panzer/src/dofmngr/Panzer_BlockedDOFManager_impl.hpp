@@ -874,10 +874,6 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
 
    // build global unknowns for each field block
    for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
-      // std::cout << "building field block fb = " << fb << std::endl;
-      // fieldBlockManagers_[fb]->setOrientationsRequired(getOrientationsRequired());
-      // fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
-
       setOrientationsRequired(fieldBlockManagers_[fb],getOrientationsRequired());
       buildGlobalUnknowns(fieldBlockManagers_[fb],geomPattern_);
    }
