@@ -79,6 +79,7 @@ void Multiply(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
   bool call_FillComplete_on_result)
 {
+  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("My Matrix Mult", mmm_multiply);
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> Matrix_t;
   //
   //This method forms the matrix-matrix product C = op(A) * op(B), where
@@ -407,6 +408,7 @@ void mult_A_B(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool onlyCalculateStructure)
 {
+  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
 
@@ -436,8 +438,10 @@ void mult_A_B(
   Array<Scalar> C_row_i = dwork;
   Array<GlobalOrdinal> C_cols = iwork;
   Array<size_t> c_index = iwork2;
+  Array<GlobalOrdinal> combined_index = Array<GlobalOrdinal>(2*C_numCols);
+  Array<Scalar> combined_values = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(2*C_numCols);
 
-  size_t C_row_i_length, j, k, lastj;
+  size_t C_row_i_length, j, k, lastj, last_index;
 
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
@@ -529,13 +533,17 @@ void mult_A_B(
     for (size_t ii = 0; ii < C_row_i_length; ii++) {
       c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
       C_cols[ii] = bcols[C_cols[ii]];
+      combined_index[ii] = C_cols[ii];
+      if (!onlyCalculateStructure)
+          combined_values[ii] = C_row_i[ii];
     }
+    last_index = C_row_i_length;
 
       //
       //Now put the C_row_i values into C.
       //
       // We might have to revamp this later.
-    if (!onlyCalculateStructure)
+    /*if (!onlyCalculateStructure)
     {
       C_filled ?
         C.sumIntoGlobalValues(
@@ -549,7 +557,7 @@ void mult_A_B(
           C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
           onlyCalculateStructure ? null :
           C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
-    }
+    }*/
 
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
@@ -589,6 +597,10 @@ void mult_A_B(
     for (size_t ii = 0; ii < C_row_i_length; ii++) {
       c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
       C_cols[ii] = bcols_import[C_cols[ii]];
+      combined_index[last_index] = C_cols[ii];
+      if (!onlyCalculateStructure)
+          combined_values[last_index] = C_row_i[ii];
+      last_index++;
     }
 
       //
@@ -600,13 +612,15 @@ void mult_A_B(
       C_filled ?
         C.sumIntoGlobalValues(
           global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
+          combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
+          onlyCalculateStructure ? null : combined_values.view(
+          OrdinalTraits<size_t>::zero(), last_index))
         :
         C.insertGlobalValues(
           global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
+          combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
+          onlyCalculateStructure ? null : combined_values.view(
+          OrdinalTraits<size_t>::zero(), last_index));
     }
 
   }
