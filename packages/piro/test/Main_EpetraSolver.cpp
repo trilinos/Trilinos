@@ -129,9 +129,12 @@ int main(int argc, char *argv[]) {
       // Wrap original model into a Piro solver to build a response-only application
       const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
 
+      const Teuchos::RCP<Teuchos::ParameterList> solveParams =
+        Teuchos::sublist(Teuchos::sublist(piroParams, "Analysis"), "Solve");
+
       Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > responses;
       Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > sensitivities;
-      Piro::Epetra::PerformSolve(*piro, *piroParams, responses, sensitivities);
+      Piro::Epetra::PerformSolve(*piro, *solveParams, responses, sensitivities);
 
       // Extract
       const RCP<const Epetra_Vector> g1 = responses[0];

@@ -1,6 +1,5 @@
 <ParameterList>
   <Parameter name="Solver Type" type="string" value="NOX"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Jacobian Operator" type="string" value="Have Jacobian"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>

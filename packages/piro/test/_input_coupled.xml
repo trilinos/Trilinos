@@ -6,7 +6,6 @@
   <Parameter name="Stochastic" type="bool" value="0"/>
   <Parameter name="Reduce Dimension" type="bool" value="0"/>
   <Parameter name="Solver Type" type="string" value="NOX"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Print Convergence Stats" type="bool" value="0"/>
   <ParameterList name="NOX">
     <Parameter name="Reset Initial Guess" type="bool" value="1"/>

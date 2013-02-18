@@ -1,6 +1,5 @@
 <ParameterList>
   <Parameter name="Solver Type" type="string" value="Rythmos"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
     <ParameterList name="Constraints"/>

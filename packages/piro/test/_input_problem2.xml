@@ -1,6 +1,5 @@
 <ParameterList>
   <Parameter name="Solver Type" type="string" value="NOX"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Print Convergence Stats" type="bool" value="0"/>
   <ParameterList name="NOX">
     <ParameterList name="Direction">

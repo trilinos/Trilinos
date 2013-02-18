@@ -150,9 +150,12 @@ int main(int argc, char *argv[]) {
         piro = solverFactory.createSolver(piroParams, thyraModel);
       }
 
+      const Teuchos::RCP<Teuchos::ParameterList> solveParams =
+        Teuchos::sublist(Teuchos::sublist(piroParams, "Analysis"), "Solve");
+
       Teuchos::Array<RCP<const Thyra::VectorBase<double> > > responses;
       Teuchos::Array<Teuchos::Array<RCP<const Thyra::MultiVectorBase<double> > > > sensitivities;
-      Piro::PerformSolve(*piro, *piroParams, responses, sensitivities);
+      Piro::PerformSolve(*piro, *solveParams, responses, sensitivities);
 
       // Extract default input parameters
       const RCP<const Thyra::VectorBase<double> > p1 = piro->getNominalValues().get_p(0);

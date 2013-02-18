@@ -1,6 +1,10 @@
 <ParameterList>
   <Parameter name="Solver Type" type="string" value="NOX"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="1"/>
+  <ParameterList name="Analysis">
+    <ParameterList name="Solve">
+      <Parameter name="Compute Sensitivities" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
   <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
   <Parameter name="Matrix-Free Perturbation" type="double" value="1.0e-7"/>
   <ParameterList name="LOCA">
