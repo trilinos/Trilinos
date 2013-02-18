@@ -42,7 +42,6 @@
 
 #include "Piro_Epetra_StokhosSolver.hpp"
 #include "Piro_Epetra_Factory.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 
 #include "Stokhos.hpp"
 #include "Stokhos_Epetra.hpp"
@@ -64,8 +63,6 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   Teuchos::readVerboseObjectSublist(piroParams.get(), this);
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-
-  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   // Validate parameters
   Teuchos::ParameterList& sgParams =

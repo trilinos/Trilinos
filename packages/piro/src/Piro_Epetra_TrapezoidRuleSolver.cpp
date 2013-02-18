@@ -43,7 +43,6 @@
 #include <cmath>
 
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -60,8 +59,6 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   appParams(appParams_),
   observer(observer_)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   using Teuchos::RCP;
   using Teuchos::rcp;
 

@@ -44,7 +44,6 @@
 
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
 #include "Piro_Epetra_InvertMassMatrixDecorator.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -56,8 +55,6 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
   model(model_),
   observer(observer_)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   using Teuchos::RCP;
   using Teuchos::rcp;
 
