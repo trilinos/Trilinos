@@ -133,14 +133,13 @@ int main(int argc, char *argv[]) {
 
       // Now the (somewhat cumbersome) setting of inputs and outputs
       EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-      int num_p = inArgs.Np();     // Number of *vectors* of parameters
+      TEUCHOS_ASSERT(inArgs.Np() > 0); // Number of *vectors* of parameters
       RCP<Epetra_Vector> p1 = rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-      int numParams = p1->MyLength(); // Number of parameters in p1 vector
       inArgs.set_p(0,p1);
 
       // Set output arguments to evalModel call
       EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-      int num_g = outArgs.Ng(); // Number of *vectors* of responses
+      TEUCHOS_ASSERT(outArgs.Ng() >= 2); // Number of *vectors* of responses
       RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
       outArgs.set_g(0,g1);
       // Solution vector is returned as extra respons vector

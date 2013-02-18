@@ -136,8 +136,12 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_g_map(int
                      "Invalid response index j = " <<
                      j << std::endl);
 
-  if      (j < num_g) return model->get_g_map(j);
-  else if (j == num_g) return model->get_x_map();
+  if (j < num_g) {
+    return model->get_g_map(j);
+  } else {
+    // j == num_g
+    return model->get_x_map();
+  }
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::VelocityVerletSolver::get_x_init() const
