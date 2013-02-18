@@ -1,5 +1,5 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="Velocity Verlet"/>
+  <Parameter name="Solver Type" type="string" value="Velocity Verlet"/>
   <ParameterList name="Velocity Verlet">
     <Parameter name="Num Time Steps" type="int" value="173"/>
     <Parameter name="Final Time" type="double" value="2.0"/>

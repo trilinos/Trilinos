@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
       RCP<EpetraExt::ModelEvaluator> piro;
 
-      std::string& solver = piroParams->get("Piro Solver","NOX");
+      std::string& solver = piroParams->get("Solver Type","NOX");
       RCP<NOX::Epetra::Observer> observer = rcp(new ObserveSolution_Epetra());
 
       if (solver=="NOX") {

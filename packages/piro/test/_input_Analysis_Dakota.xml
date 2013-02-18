@@ -1,6 +1,6 @@
 <ParameterList>
   <ParameterList name="Piro">
-    <Parameter name="Piro Solver" type="string" value="NOX"/>
+    <Parameter name="Solver Type" type="string" value="NOX"/>
     <Parameter name="Compute Sensitivities" type="bool" value="0"/>
     <!--Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/-->
     <ParameterList name="LOCA">

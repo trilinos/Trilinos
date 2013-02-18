@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
 #ifdef Piro_ENABLE_NOX
-      const std::string &solver = piroParams->get("Piro Solver","NOX");
+      const std::string &solver = piroParams->get("Solver Type","NOX");
       if (solver == "LOCA") {
         const RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
             rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));

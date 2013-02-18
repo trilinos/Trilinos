@@ -10,7 +10,7 @@
 	       value="Product Lanczos"/>
     <Parameter name="Reduced Order" type="int" value="-1"/>
   </ParameterList>
-  <Parameter name="Piro Solver" type="string" value="NOX"/>
+  <Parameter name="Solver Type" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Print Convergence Stats" type="bool" value="0"/>
   <ParameterList name="NOX">

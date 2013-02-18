@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
       // Use these two objects to construct a Piro solved application
       RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double> > piro;
       {
-        const std::string& solver = piroParams->get("Piro Solver","NOX");
+        const std::string& solver = piroParams->get("Solver Type","NOX");
 
         RCP<Teuchos::ParameterList> stratParams;
         if (solver=="NOX" || solver=="LOCA") {

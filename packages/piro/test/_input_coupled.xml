@@ -5,7 +5,7 @@
 	     value="{ 0, 0 }"/>
   <Parameter name="Stochastic" type="bool" value="0"/>
   <Parameter name="Reduce Dimension" type="bool" value="0"/>
-  <Parameter name="Piro Solver" type="string" value="NOX"/>
+  <Parameter name="Solver Type" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Print Convergence Stats" type="bool" value="0"/>
   <ParameterList name="NOX">
