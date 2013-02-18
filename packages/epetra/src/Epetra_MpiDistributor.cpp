@@ -42,6 +42,8 @@
 #include "Epetra_MpiDistributor.h"
 #include "Epetra_MpiComm.h"
 
+#include <stdexcept>
+#include <vector>
 
 //==============================================================================
 Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm): 
@@ -191,16 +193,157 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
                                             bool Deterministic,
                                             int & NumRemoteIDs )
 {
-  (void)Deterministic; // Prevent compiler warnings for unused argument.
-  nexports_ = NumExportIDs;
-
-  int i;
-
+ (void)Deterministic; // Prevent compiler warnings for unused argument.
   int my_proc;
   MPI_Comm_rank( comm_, &my_proc );
 
   int nprocs;
   MPI_Comm_size( comm_, &nprocs );
+
+  // Do the forward map component
+  CreateSendStructures_(my_proc,nprocs,NumExportIDs,ExportPIDs);
+
+  //Invert map to see what msgs are received and what length
+  EPETRA_CHK_ERR( ComputeRecvs_( my_proc, nprocs ) );
+
+  if (nrecvs_>0) {
+    if( !request_ ) {
+      request_ = new MPI_Request[ nrecvs_ ];
+      status_ = new MPI_Status[ nrecvs_ ];
+    }
+  }
+
+  NumRemoteIDs = total_recv_length_;
+
+  return 0;
+}
+
+//==============================================================================
+int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
+				   const int * RemoteGIDs,
+			           const int * RemotePIDs,
+				   bool Deterministic,
+			           int & NumExportIDs,
+				   int *& ExportGIDs,
+				   int *& ExportPIDs )
+{
+  int my_proc;
+  MPI_Comm_rank( comm_, &my_proc );
+
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
+
+  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
+				 ExportGIDs, ExportPIDs, my_proc) );
+
+  int testNumRemoteIDs;
+  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
+				   Deterministic, testNumRemoteIDs ) );
+
+  return(0);
+}
+
+//==============================================================================
+//---------------------------------------------------------------------------
+//CreateFromRecvs Method
+// - create communication plan given a known list of procs to recv from
+//---------------------------------------------------------------------------
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
+				   const long long * RemoteGIDs,
+			           const int * RemotePIDs,
+				   bool Deterministic,
+			           int & NumExportIDs,
+				   long long *& ExportGIDs,
+				   int *& ExportPIDs )
+{
+  int my_proc;
+  MPI_Comm_rank( comm_, &my_proc );
+
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
+
+  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
+				 ExportGIDs, ExportPIDs, my_proc) );
+
+  int testNumRemoteIDs;
+  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
+				   Deterministic, testNumRemoteIDs ) );
+
+  return(0);
+}
+#endif
+
+
+
+//==============================================================================
+//---------------------------------------------------------------------------
+//CreateFromSendsAndRecvs Method
+//---------------------------------------------------------------------------
+int Epetra_MpiDistributor::CreateFromSendsAndRecvs( const int & NumExportIDs,
+						    const int * ExportPIDs,
+						    const int & NumRemoteIDs,
+						    const int * RemoteGIDs,
+						    const int * RemotePIDs,
+						    bool Deterministic)
+{
+  (void)RemoteGIDs;
+  (void)Deterministic; // Prevent compiler warnings for unused argument.
+  nexports_ = NumExportIDs;
+
+  int my_proc;
+  MPI_Comm_rank( comm_, &my_proc );
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
+
+  // Do the forward map component
+  CreateSendStructures_(my_proc,nprocs,NumExportIDs,ExportPIDs);
+
+  // Do the reverse map component
+  CreateRecvStructures_(NumRemoteIDs,RemotePIDs);
+
+  return 0;
+}
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int  Epetra_MpiDistributor::CreateFromSendsAndRecvs( const int & NumExportIDs,
+						     const int * ExportPIDs,
+						     const int & NumRemoteIDs,
+						     const long long * RemoteGIDs,
+						     const int * RemotePIDs,
+						     bool Deterministic)
+{
+  (void)RemoteGIDs;
+  (void)Deterministic; // Prevent compiler warnings for unused argument.
+  nexports_ = NumExportIDs;
+
+  int my_proc;
+  MPI_Comm_rank( comm_, &my_proc );
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
+
+  // Do the forward map component
+  CreateSendStructures_(my_proc,nprocs,NumExportIDs,ExportPIDs);
+
+  // Do the reverse map component
+  CreateRecvStructures_(NumRemoteIDs,RemotePIDs);
+
+  return 0;
+
+
+}
+#endif
+
+
+
+//==============================================================================
+int Epetra_MpiDistributor::CreateSendStructures_(int my_proc,
+						 int nprocs,
+						 const int & NumExportIDs,
+						 const int * ExportPIDs)
+{
+  nexports_ = NumExportIDs;
+
+  int i;
 
   // Check to see if items are grouped by processor w/o gaps
   // If so, indices_to -> 0
@@ -324,76 +467,53 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
 
   nsends_ -= self_msg_;
 
-  //Invert map to see what msgs are received and what length
-  EPETRA_CHK_ERR( ComputeRecvs_( my_proc, nprocs ) );
-
-  if (nrecvs_>0) {
-    if( !request_ ) {
-      request_ = new MPI_Request[ nrecvs_ ];
-      status_ = new MPI_Status[ nrecvs_ ];
-    }
-  }
-
-  NumRemoteIDs = total_recv_length_;
-
   return 0;
 }
 
 //==============================================================================
-int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
-				   const int * RemoteGIDs,
-			           const int * RemotePIDs,
-				   bool Deterministic,
-			           int & NumExportIDs,
-				   int *& ExportGIDs,
-				   int *& ExportPIDs )
+int Epetra_MpiDistributor::CreateRecvStructures_(const int & NumRemoteIDs,
+						 const int * RemotePIDs)
 {
-  int my_proc;
-  MPI_Comm_rank( comm_, &my_proc );
+  int i, j;
 
-  int nprocs;
-  MPI_Comm_size( comm_, &nprocs );
+  // Since the RemotePIDs should be sorted, counting the total number of recvs should be easy...
+  // use nsends as an initial guess for space.
+  std::vector<int> recv_list;
+  recv_list.reserve(nsends_);
+  
+  int last_pid=-2;
+  for(i=0; i<NumRemoteIDs; i++) { 
+    if(RemotePIDs[i]>last_pid) {
+      recv_list.push_back(RemotePIDs[i]);
+      last_pid = RemotePIDs[i];
+    }
+    else if (RemotePIDs[i]<last_pid)
+      throw std::runtime_error("Epetra_MpiDistributor::CreateRecvStructures_ expected RemotePIDs to be in sorted order");    
+  }
+  nrecvs_=recv_list.size();
 
-  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
-				 ExportGIDs, ExportPIDs, my_proc) );
+  if (nrecvs_>0) {
+    starts_from_  = new int[nrecvs_];
+    procs_from_   = new int[nrecvs_];
+    lengths_from_ = new int[nrecvs_];
+    request_      = new MPI_Request[ nrecvs_ ];
+    status_       = new MPI_Status[ nrecvs_ ];
+  }
 
-  int testNumRemoteIDs;
-  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
-				   Deterministic, testNumRemoteIDs ) );
+  for(i=0,j=0; i<nrecvs_; ++i) {
+    int jlast=j;
+    procs_from_[i]  = recv_list[i];
+    starts_from_[i] = j;
+    for( ; RemotePIDs[jlast]==RemotePIDs[j] && j<NumRemoteIDs ; j++){;}
+    lengths_from_[i]=j-jlast;
+  }
+  total_recv_length_=NumRemoteIDs;
 
-  return(0);
+  nrecvs_ -= self_msg_;
+
+  return 0;
 }
 
-//==============================================================================
-//---------------------------------------------------------------------------
-//CreateFromRecvs Method
-// - create communication plan given a known list of procs to recv from
-//---------------------------------------------------------------------------
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
-				   const long long * RemoteGIDs,
-			           const int * RemotePIDs,
-				   bool Deterministic,
-			           int & NumExportIDs,
-				   long long *& ExportGIDs,
-				   int *& ExportPIDs )
-{
-  int my_proc;
-  MPI_Comm_rank( comm_, &my_proc );
-
-  int nprocs;
-  MPI_Comm_size( comm_, &nprocs );
-
-  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
-				 ExportGIDs, ExportPIDs, my_proc) );
-
-  int testNumRemoteIDs;
-  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
-				   Deterministic, testNumRemoteIDs ) );
-
-  return(0);
-}
-#endif
 
 //==============================================================================
 //---------------------------------------------------------------------------
@@ -685,6 +805,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
       if( p > (nblocks-1) ) p -= nblocks;
 
       if( procs_to_[p] != my_proc ) {
+
 #ifndef EPETRA_NO_READY_SEND_IN_DO_POSTS
         MPI_Rsend( &export_objs[starts_to_[p]*obj_size],
                    lengths_to_[p]*obj_size,
@@ -768,7 +889,6 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
         self_recv_address += obj_size;
       }
   }
-
   return(0);
 }
 
