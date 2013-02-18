@@ -2002,7 +2002,6 @@ namespace Iopx {
 		get_region()->add_alias(side_block);
 
 		if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
-		    && (number_distribution_factors > 0 || isParallel)
 		    && side_set_name != "universal_sideset") {
 		  std::string storage = "Real[";
 		  storage += Ioss::Utils::to_string(side_topo->number_nodes());
