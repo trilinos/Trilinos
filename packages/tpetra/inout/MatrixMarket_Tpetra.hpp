@@ -3676,11 +3676,11 @@ namespace Tpetra {
       ///
       /// Write the given Tpetra::MultiVector matrix to an output
       /// stream, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Proc 0 is the only MPI process that writes to
+      /// matrices.  Process 0 is the only MPI process that writes to
       /// the output stream.
       ///
-      /// \param out [out] The output stream to which to write (on MPI
-      ///   Proc 0 only).
+      /// \param out [out] The output stream to which to write (on
+      ///   Process 0 only).
       ///
       /// \param X [in] The dense matrix (stored as a multivector) to
       ///   write to the output stream.
@@ -3694,7 +3694,7 @@ namespace Tpetra {
       ///   we don't print anything (not even an empty line).
       ///
       /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   onto Process 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
       ///   fixed in the future.
       template<class MultiVectorScalarType>
@@ -3773,58 +3773,75 @@ namespace Tpetra {
         Y->doImport (X, importer, INSERT);
 
         //
-        // Print the matrix in Matrix Market format on Rank 0.
+        // Print the matrix in Matrix Market format on Proc 0.
         //
+	std::ostringstream err; // for exception messages on Proc 0
+	int localWriteSuccess = 1; // whether the write succeeded on Proc 0
         if (myRank == 0) {
-	  std::string dataType;
-	  if (STS::isComplex) {
-	    dataType = "complex";
-	  } else if (STS::isOrdinal) {
-	    dataType = "integer";
-	  } else {
-	    dataType = "real";
-	  }
+	  try {
+	    std::string dataType;
+	    if (STS::isComplex) {
+	      dataType = "complex";
+	    } else if (STS::isOrdinal) {
+	      dataType = "integer";
+	    } else {
+	      dataType = "real";
+	    }
 
-          // Print the Matrix Market banner line.  MultiVector
-          // stores data nonsymmetrically, hence "general".
-          out << "%%MatrixMarket matrix array " 
-	      << dataType << " general" << endl;
+	    // Print the Matrix Market banner line.  MultiVector
+	    // stores data nonsymmetrically, hence "general".
+	    out << "%%MatrixMarket matrix array " 
+		<< dataType << " general" << endl;
 
-          // Print comments (the matrix name and / or description).
-          if (matrixName != "") {
-            printAsComment (out, matrixName);
-          }
-          if (matrixDescription != "") {
-            printAsComment (out, matrixDescription);
-          }
-          // Print the Matrix Market dimensions header for dense matrices.
-          out << numRows << " " << numCols << endl;
+	    // Print comments (the matrix name and / or description).
+	    if (matrixName != "") {
+	      printAsComment (out, matrixName);
+	    }
+	    if (matrixDescription != "") {
+	      printAsComment (out, matrixDescription);
+	    }
+	    // Print the Matrix Market dimensions header for dense matrices.
+	    out << numRows << " " << numCols << endl;
 
-          // Get a read-only view of the entries of Y.
-          // Rank 0 owns all of the entries of Y.
-          ArrayRCP<ArrayRCP<const ST> > Y_view = Y->get2dView ();
-	  TEUCHOS_TEST_FOR_EXCEPTION(
-            as<global_size_t> (Y_view.size ()) < numCols,
-	    std::logic_error,
-	    "Y_view has size " << Y_view.size () << " < numCols = " << numCols << ".");
-
-          // Print the entries of the matrix, in column-major order.
-          for (global_size_t j = 0; j < numCols; ++j) {
-	    ArrayRCP<const ST> Y_j = Y_view[j];
+	    // Get a read-only view of the entries of Y.
+	    // Rank 0 owns all of the entries of Y.
+	    ArrayRCP<ArrayRCP<const ST> > Y_view = Y->get2dView ();
 	    TEUCHOS_TEST_FOR_EXCEPTION(
-              as<global_size_t> (Y_j.size ()) < numRows,
-	      std::logic_error,
-	      "The current column's data has length " << Y_j.size () << " < numRows=" << numRows << ".");
-            for (global_size_t i = 0; i < numRows; ++i) {
-              const ST Y_ij = Y_j[i];
-              if (STS::isComplex) {
-                out << STS::real (Y_ij) << " " << STS::imag (Y_ij) << endl;
-              } else {
-                out << Y_ij << endl;
-              }
-            }
-          }
+              as<global_size_t> (Y_view.size ()) < numCols, std::logic_error,
+	      "Y_view has size " << Y_view.size () << " < numCols = " 
+	      << numCols << ".");
+
+	    // Print the entries of the matrix, in column-major order.
+	    for (global_size_t j = 0; j < numCols; ++j) {
+	      ArrayRCP<const ST> Y_j = Y_view[j];
+	      TEUCHOS_TEST_FOR_EXCEPTION(
+                as<global_size_t> (Y_j.size ()) < numRows, std::logic_error,
+	        "The current column's data has length " << Y_j.size () 
+		<< " < numRows=" << numRows << ".");
+	      for (global_size_t i = 0; i < numRows; ++i) {
+		const ST Y_ij = Y_j[i];
+		if (STS::isComplex) {
+		  out << STS::real (Y_ij) << " " << STS::imag (Y_ij) << endl;
+		} else {
+		  out << Y_ij << endl;
+		}
+	      }
+	    }
+	  } catch (std::exception& e) {
+	    err << e.what ();
+	    localWriteSuccess = 0;
+	  }
         } // if (myRank == 0)
+
+	// Synchronize on error.  This is not necessary here, but it
+	// will prevent later code from hanging in Proc 0 threw an
+	// exception above.
+	int globalWriteSuccess = localWriteSuccess;
+	broadcast (*comm, 0, outArg (globalWriteSuccess));
+	TEUCHOS_TEST_FOR_EXCEPTION(
+          globalWriteSuccess == 0, std::runtime_error, 
+	  "Failed to write data: " << err.str ());
+
 	if (debug && myRank == 0) {
 	  cerr << "  - Done" << endl;
 	}
