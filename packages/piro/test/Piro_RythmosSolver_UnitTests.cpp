@@ -274,6 +274,27 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultSolutionSensitivityOp)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_NoResponseSensitivity)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDgDp(defaultModelNew()));
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  const int responseIndex = 0;
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
+  TEST_ASSERT(!outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
+
+  TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
+}
+
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
@@ -512,7 +533,7 @@ public:
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ExternalStepper_Interface)
 {
   // a simple parameter list to get things started
-  Teuchos::RCP<Teuchos::ParameterList> pl = 
+  Teuchos::RCP<Teuchos::ParameterList> pl =
     Teuchos::getParametersFromXmlString("\
    <ParameterList>\
      <ParameterList name=\"Rythmos\">\
@@ -536,19 +557,19 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ExternalStepper_Interface)
 
   {
     // this is simply to excercise externally added stepper is easy to use
-    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>); 
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>);
 
     const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
     solver->addStepperFactory("Test Stepper",testStepperFactory); // now "Stepper Type" can be used
 
     solver->initialize(pl,model);
-    // should find the "Test Stepper", so this method call should succeed 
+    // should find the "Test Stepper", so this method call should succeed
     TEST_NOTHROW(solver->initialize(pl,model));
   }
 
   {
     // this is simply to excercise externally added stepper is easy to use
-    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>); 
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>);
 
     const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
     solver->addStepperFactory("Test Stepper New",testStepperFactory); // now "Stepper Type" can be used

@@ -503,7 +503,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     if (num_g > 0) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
         outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-      if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+      if (!dgdp_support.none()) {
         dgdp_deriv_out = outArgs.get_DgDp(j, l);
       }
     }
