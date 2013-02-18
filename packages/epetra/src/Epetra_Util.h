@@ -209,7 +209,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   //! Epetra_Util GetPids function
   /*! Like GetPidGidPairs, but just gets the PIDs, ordered by the columnmap 
    */
-  int GetPids(const Epetra_Import & Importer, std::vector<int> &pids, bool use_minus_one_for_local);
+  static int GetPids(const Epetra_Import & Importer, std::vector<int> &pids, bool use_minus_one_for_local);
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value);
