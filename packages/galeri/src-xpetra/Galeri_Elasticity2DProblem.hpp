@@ -261,8 +261,8 @@ namespace Galeri {
                 LO j0 = numDofPerNode*j, j1 = j0+1;
 
                 size_t numDirGeomNeigh = 0;
-                for (LO k1 = 1; k1 <= 3; k1 += 2) {
-                  LO k = (j+k1) % 4;
+                for (LO offset = 1; offset <= 3; offset += 2) {
+                  LO k = (j+offset) % 4;
                   // Check geometric neighbors
                   // Works because of the order of nodes in the cells
                   if (dirichlet_[elemNodes[k]]) {
@@ -272,7 +272,7 @@ namespace Galeri {
                   }
                 }
 
-                SC factor = pow(2, numDirGeomNeigh);
+                SC factor = pow(2*Teuchos::ScalarTraits<SC>::one(), numDirGeomNeigh);
                 KE(j0,j0) *= factor; KE(j0,j1) *= factor; KE(j1,j0) *= factor; KE(j1,j1) *= factor;
               }
           }
