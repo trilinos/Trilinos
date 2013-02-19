@@ -2664,8 +2664,26 @@ namespace stk {
                             if (block_to->attribute<Ioss::GroupingEntity>() == 0) {
                               stk::io::put_io_part_attribute(*block_to);
                             }
-                          }
 
+                            if (1)
+                            {
+                              stk::mesh::PartVector *pv  = const_cast<stk::mesh::PartVector *>(part->attribute<stk::mesh::PartVector>());
+                              if (pv == 0)
+                                {
+                                  pv = new stk::mesh::PartVector;
+                                  eMesh.get_fem_meta_data()->declare_attribute_with_delete(*part, pv);
+                                }
+                              pv->push_back(block_to);
+                              if (DEBUG_SET_NEEDED_PARTS)
+                                {
+                                  for (unsigned ii=0; ii < pv->size(); ii++)
+                                    {
+                                      std::cout << "tmp srk part.attr = " << part->name() << " block_to= " << (*pv)[ii]->name() << std::endl;
+                                    }
+                                }
+                            }
+
+                          }
 
                         if (!((part->name()).find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos))
                           {

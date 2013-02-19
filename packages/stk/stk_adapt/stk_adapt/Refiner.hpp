@@ -48,7 +48,8 @@ namespace stk {
 
     typedef std::set<stk::mesh::Entity> ElementUnrefineCollection;
     typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SideElementPartMap;
-    typedef std::map<std::string, std::string> SidePartMap;
+    typedef std::map<stk::mesh::Part*, stk::mesh::PartVector> SidePartMap;
+    //typedef std::map<std::string, std::string> SidePartMap;
 
     using std::vector;
     using std::map;
@@ -86,7 +87,7 @@ namespace stk {
     //========================================================================================================================
     //template<class UniformRefinerPattern>
     class Refiner
-#ifndef SWIG //NLM    
+#ifndef SWIG //NLM
   : public stk::percept::Observable<ProgressMeterData>
 #endif
     {
@@ -94,9 +95,9 @@ namespace stk {
       Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
       Refiner(percept::PerceptMesh& eMesh, Pattern refine_type, stk::mesh::FieldBase *proc_rank_field=0);
       //Refiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, stk::mesh::FieldBase *proc_rank_field=0);
-      
+
       virtual ~Refiner();
-      
+
       void
       doBreak();
 
@@ -165,7 +166,7 @@ namespace stk {
 
       enum SMOOTHING_OPTIONS {
         // snaps and discards original coord field, tries to smooth
-        SNAP_PLUS_SMOOTH,    
+        SNAP_PLUS_SMOOTH,
         // keeps original and snapped states; does line search between; tries to keep always-valid mesh
         USE_LINE_SEARCH_WITH_MULTIPLE_STATES
         //,END_OPTIONS
@@ -185,13 +186,13 @@ namespace stk {
       void check_sidesets_2(std::string msg);
       void fix_side_sets_1();
       void fix_side_sets_2();
-      void fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map);
+      //void fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map);
 
       /// determine side part to elem part relations
       void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
 
       bool connectSides(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap* side_part_map=0);
-      bool connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap* side_part_map=0);
+      bool connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem);
       void fixElementSides2();
       void fixSides(stk::mesh::Entity parent);
 
@@ -200,7 +201,7 @@ namespace stk {
     protected:
 
       //============= unrefine
-      void 
+      void
       filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
 
       void
@@ -210,13 +211,13 @@ namespace stk {
       getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
 
 
-      void 
+      void
       removeDeletedNodes(NodeSetType& deleted_nodes);
 
       void getChildrenToBeRemoved(ElementUnrefineCollection& elements_to_unref,
-                                  SetOfEntities& children_to_be_removed, SetOfEntities& children_to_be_removed_with_ghosts, 
+                                  SetOfEntities& children_to_be_removed, SetOfEntities& children_to_be_removed_with_ghosts,
                                   SetOfEntities& copied_children_to_be_removed,
-                                  SetOfEntities& family_trees_to_be_removed, 
+                                  SetOfEntities& family_trees_to_be_removed,
                                   SetOfEntities& parent_elements);
 
       void removeFamilyTrees(SetOfEntities& family_trees_to_be_removed);
@@ -243,7 +244,7 @@ namespace stk {
        *   is policy associated with the @param only_count and @param doAllElements inputs.  If doAllElements==true, then ghost elements should not be skipped.
        *   If only_count==true, then *do not* call the supplied @param function, rather just count the number of elements to be visited and return that number.
        *   @return Always return the number of elements visited (modulo the doAllElements parameter).
-       * 
+       *
        *   Note: client code can just use the supplied implementation in this base class - it is not necessary to override
        *
        *   @see UniformRefiner implementation of this method for an example.
@@ -253,7 +254,7 @@ namespace stk {
       doForAllElements(unsigned irank, std::string function_info,
                        stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        unsigned elementType,
-                       vector<NeededEntityType>& needed_entity_ranks,  
+                       vector<NeededEntityType>& needed_entity_ranks,
                        bool only_count=false, bool doAllElements=true) ;
 
       /** Create a list of nodes from the new nodes that can be easily deciphered by the UniformRefinerPattern.
@@ -283,7 +284,7 @@ namespace stk {
        *  Override it to only apply the @param function to the desired sub-entities (e.g. for non-uniform/local refinement)
        *
        *  It is a copy of NodeRegistry's doForAllSubEntities method.  Provided here so it can be overridden.
-       * 
+       *
        *  Note: this is the minimal function that needs to be overridden to get different marking/refining behavior
        */
 
@@ -314,7 +315,7 @@ namespace stk {
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
-      void 
+      void
       removeFromOldPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
       void
@@ -361,7 +362,7 @@ namespace stk {
       stk::mesh::FieldBase *m_proc_rank_field;
       bool m_doRemove;
 
-      // for future: 
+      // for future:
       // bool m_doIOSaveInactiveElements; // default false
 
       std::vector<stk::mesh::EntityRank> m_ranks;
@@ -374,12 +375,13 @@ namespace stk {
 
       int m_progress_meter_frequency;
       bool m_doProgress;
-      
+
       bool m_alwaysInitNodeRegistry;
       bool m_doSmoothGeometry;
       bool m_allocated;
 
       bool m_removeGeometryBlocks;
+      SidePartMap m_side_part_map;
 
     };
 

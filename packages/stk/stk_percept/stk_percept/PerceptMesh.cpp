@@ -15,6 +15,7 @@
 
 #include <Ioss_NullEntity.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_PropertyManager.h>
 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 //#include "Intrepid_Basis.hpp"
@@ -1166,6 +1167,12 @@ namespace stk {
       m_ownData       = true;
 
       m_iossMeshData = Teuchos::rcp( new stk::io::MeshData(comm) );
+      if (m_iossMeshData->m_property_manager.exists("MAXIMUM_NAME_LENGTH"))
+        {
+          m_iossMeshData->m_property_manager.erase("MAXIMUM_NAME_LENGTH");
+        }
+      m_iossMeshData->m_property_manager.add(Ioss::Property("MAXIMUM_NAME_LENGTH", 100));
+
       std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
       entity_rank_names.push_back("FAMILY_TREE");
