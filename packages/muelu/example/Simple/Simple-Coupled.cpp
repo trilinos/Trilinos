@@ -380,12 +380,19 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
-  ifpack2Type = "KRYLOV";
-  ifpack2List.set("krylov: number of iterations",5);
-  ifpack2List.set("krylov: residual tolerance",1e-6);
-  ifpack2List.set("krylov: block size",1);
-  ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  // ifpack2Type = "KRYLOV";
+  // ifpack2List.set("krylov: number of iterations",5);
+  // ifpack2List.set("krylov: residual tolerance",1e-6);
+  // ifpack2List.set("krylov: block size",1);
+  // ifpack2List.set("krylov: zero starting solution",true);
+  // ifpack2List.set("krylov: preconditioner type",1);
+  // Additive Schwarz smoother
+  ifpack2Type = "SCHWARZ";
+  ifpack2List.set("schwarz: compute condest", false);
+  ifpack2List.set("schwarz: combine mode", "Add"); // use string mode for this
+  ifpack2List.set("schwarz: reordering type", "none");
+  ifpack2List.set("schwarz: filter singletons", false);  
+  ifpack2List.set("schwarz: overlap level", 10);
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
@@ -463,7 +470,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", true);          // set flexible GMRES on
+  belosList.set("Flexible Gmres", false);         // set flexible GMRES on
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );

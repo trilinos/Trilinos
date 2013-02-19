@@ -155,6 +155,20 @@ namespace MueLu {
     else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
     }
+    else if (type_ == "SCHWARZ") {
+      int overlap;
+      Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
+      if (InitialGuessIsZero == false && overlap > 0) {
+        if (this->IsPrint(Warnings0, 0)) {
+          static int warning_only_once=0;
+          if ((warning_only_once++) == 0)
+            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): Additive Schwarz with overlap has no provision for a nonzero initial guess." << std::endl;
+        }
+      }
+      else {
+	paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
+      }
+    }
     else if (type_ == "ILUT") {
       if (InitialGuessIsZero == false) {
         if (this->IsPrint(Warnings0, 0)) {
@@ -170,7 +184,7 @@ namespace MueLu {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"Ifpack2Smoother::Apply(): Ifpack2 preconditioner '"+type_+"' not supported");
     }
     prec_->setParameters(paramList);
 
