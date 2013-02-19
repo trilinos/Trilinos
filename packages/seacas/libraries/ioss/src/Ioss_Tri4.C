@@ -131,5 +131,5 @@ Ioss::ElementTopology* Ioss::Tri4::face_type(int /* face_number */) const
 Ioss::ElementTopology* Ioss::Tri4::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2d2");
+  return Ioss::ElementTopology::factory("edge2");
 }

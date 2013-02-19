@@ -150,7 +150,8 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
   if (type == "unknown")
     return 0;
   unsigned int hash_val = 0;
-  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
+  std::string ltype = Ioss::Utils::lowercase(type);
+  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
   if (iter == registry().end()) {
     IOSS_WARNING << "WARNING: The topology type '" << type
 		 << "' is not supported.\n";
@@ -198,7 +199,8 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 
 bool Ioss::ElementTopology::is_alias(const std::string &my_alias) const
 {
-  Ioss::ElementTopologyMap::iterator iter = registry().find(my_alias);
+  std::string low_my_alias = Ioss::Utils::lowercase(my_alias);
+  Ioss::ElementTopologyMap::iterator iter = registry().find(low_my_alias);
   if (iter == registry().end()) {
     return false;
   } else {
@@ -224,6 +226,9 @@ int Ioss::ElementTopology::number_boundaries() const
   if (parametric_dimension() == 2 && spatial_dimension() == 2)
     return number_edges();
 
+  if (parametric_dimension() == 1 && !is_element())
+    return number_corner_nodes();
+  
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);

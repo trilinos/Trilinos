@@ -133,4 +133,4 @@ Ioss::ElementTopology* Ioss::ShellLine2D2::face_type(int /* face_number */) cons
 { return (Ioss::ElementTopology*)NULL; }
 
 Ioss::ElementTopology* Ioss::ShellLine2D2::edge_type(int /* edge_number */) const
-{ return Ioss::ElementTopology::factory("edge2d2"); }
+{ return Ioss::ElementTopology::factory("edge2"); }

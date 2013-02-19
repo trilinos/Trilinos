@@ -33,8 +33,8 @@
 #include <Ioss_Bar2.h>
 #include <Ioss_Bar3.h>
 #include <Ioss_Edge2.h>
-#include <Ioss_Edge2D2.h>
-#include <Ioss_Edge2D3.h>
+//#include <Ioss_Edge2D2.h>
+//#include <Ioss_Edge2D3.h>
 #include <Ioss_Edge3.h>
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
@@ -55,15 +55,11 @@
 #include <Ioss_Sphere.h>
 #include <Ioss_Super.h>
 #include <Ioss_Tet4.h>
-  // Disable for now.  Might be needed for adagio/salinas coupling...
-//#include <Ioss_Tet7.h>
 #include <Ioss_Tet8.h>
 #include <Ioss_Tet10.h>
 #include <Ioss_Tet11.h>
 #include <Ioss_Tri3.h>
 #include <Ioss_Tri4.h>
-// Disable for now.  Might be needed for adagio/salinas coupling...
-//#include <Ioss_Tri4a.h>
 #include <Ioss_Tri6.h>
 #include <Ioss_TriShell3.h>
 #include <Ioss_TriShell4.h>
@@ -79,8 +75,8 @@ Ioss::Initializer::Initializer()
   // This is Used to get the linker to pull in all needed libraries.
   Ioss::Sphere::factory();
   
-  Ioss::Edge2D2::factory();
-  Ioss::Edge2D3::factory();
+  //  Ioss::Edge2D2::factory();
+  //  Ioss::Edge2D3::factory();
   Ioss::Edge2::factory();
   Ioss::Edge3::factory();
 
@@ -109,16 +105,12 @@ Ioss::Initializer::Initializer()
 
   Ioss::Tet4::factory();
 
-  // Disable for now.  Might be needed for adagio/salinas coupling...
-  //Ioss::Tet7::factory();
   Ioss::Tet8::factory();
   Ioss::Tet10::factory();
   Ioss::Tet11::factory();
 
   Ioss::Tri3::factory();
   Ioss::Tri4::factory();
-  // Disable for now.  Might be needed for adagio/salinas coupling...
-  //Ioss::Tri4a::factory();
   Ioss::Tri6::factory();
 
   Ioss::TriShell3::factory();

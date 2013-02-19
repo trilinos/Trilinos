@@ -72,6 +72,7 @@ Ioss::Edge2D2::Edge2D2()
   : Ioss::ElementTopology("edge2d2", "Line_2D_2")
 {
   Ioss::ElementTopology::alias("edge2d2", "Edge_2_2D");
+  //  Ioss::ElementTopology::alias("edge2d2", "LINE_2");
 }
 
 
