@@ -304,11 +304,9 @@ void Multiply(
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &       tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
 
-      //FIXME change this
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,false);
-      haveMultiplyDoFillComplete=false;
-      //FIXME to the following once Tpetra MM works with fillComplete
-      //Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
+      //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+      //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -322,7 +320,7 @@ void Multiply(
           params);
     }
 
-    // transfer striding inforamtion
+    // transfer striding information
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(A));
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB); // TODO use references instead of RCPs
