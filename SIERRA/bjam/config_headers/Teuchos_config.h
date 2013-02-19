@@ -34,23 +34,24 @@
 
 #define HAVE_TEUCHOS_MPI
 
-/* #undef HAVE_COMPLEX_BLAS_PROBLEM */
+/* detected problems with the blas and solution methods */
+#define HAVE_TEUCHOS_BLASFLOAT
+/* #undef HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX */
+#define HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN
 
-/* #undef HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM */
-
-/* #undef HAVE_SLAPY2_PROBLEM */
-
-/* #undef HAVE_SLAPY2_DOUBLE_RETURN */
+#define HAVE_SLAPY2_PROBLEM
+#define HAVE_SLAPY2_DOUBLE_RETURN
 
 #define HAVE_COMPLEX_BLAS
+#define HAVE_COMPLEX_BLAS_PROBLEM
+#define HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+/* #undef HAVE_VECLIB_COMPLEX_BLAS */
 
 /* define if the compiler supports access of protected templated nested
    classes in derived classes */
 /* #undef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS */
 
 /* #undef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK */
-
-#define HAVE_TEUCHOS_BLASFLOAT
 
 /* #undef HAVE_TEUCHOS_LAPACKLARND */
 
@@ -65,6 +66,8 @@
 /* #undef HAVE_TEUCHOS_QT */
 
 /* #undef HAVE_TEUCHOS_QD */
+
+/* #undef HAVE_TEUCHOSNUMERICS_EIGEN */
 
 /* Deprecated */
 /* #undef HAVE_TEUCHOSCORE_QD */

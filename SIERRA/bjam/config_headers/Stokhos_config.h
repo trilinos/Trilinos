@@ -69,5 +69,11 @@
 /* Define if MueLu is enabled */
 #define HAVE_STOKHOS_MUELU
 
+/* Define if Ifpack2 is enabled */
+/* #undef HAVE_STOKHOS_IFPACK2 */
+
+/* Define if Belos is enabled */
+/* #undef HAVE_STOKHOS_BELOS */
+
 /* Define if MATLAB is enabled */
 /* #undef HAVE_STOKHOS_MATLABLIB */
