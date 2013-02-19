@@ -62,12 +62,17 @@ ENDIF (CMAKE_COMPILER_IS_GNUCXX)
     NOEXEPREFIX
   )
 
+IF (TPL_ENABLE_gpcd     AND
+    TPL_ENABLE_METIS    AND
+    TPL_ENABLE_ParMETIS AND
+    TPL_ENABLE_LibTopoMap)
   TRIBITS_ADD_EXECUTABLE(
     nssi-placement
     SOURCES nssi-placement.cpp
     DEPLIBS ${DEPLIBS}
     NOEXEPREFIX
   )
+ENDIF()
 
   TRIBITS_ADD_EXECUTABLE(
     ping-service

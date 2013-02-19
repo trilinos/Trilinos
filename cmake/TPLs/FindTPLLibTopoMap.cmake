@@ -57,5 +57,5 @@ INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( LibTopoMap
 REQUIRED_HEADERS libtopomap.hpp
-  REQUIRED_LIBS_NAMES "mpiext;topomap;parmetis;metis;gpcd"
+  REQUIRED_LIBS_NAMES "mpiext;topomap"
   )
