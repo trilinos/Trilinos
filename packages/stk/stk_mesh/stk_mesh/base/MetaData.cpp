@@ -829,6 +829,11 @@ bool is_cell_topology_root_part(const Part & part) {
 /// Note:  MetaData::declare_part_subset is the function that actually
 /// updates the PartCellTopologyVector in MetaData for fast look-up of the
 /// Cell Topology.
+void set_topology(Part & part, stk::topology topo)
+{
+  set_cell_topology(part, get_cell_topology(topo));
+}
+
 void set_cell_topology(
   Part &                        part,
   CellTopology             cell_topology)

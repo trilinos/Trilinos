@@ -11,6 +11,7 @@
 
 #include <string>
 #include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_topology/topology.hpp>
 #include <Ioss_Field.h>
 #include <Ioss_DBUsage.h>
 
@@ -22,8 +23,6 @@ class SideSet;
 class Field;
 class ElementTopology;
 }
-
-struct CellTopologyData;
 
 namespace stk {
   namespace mesh {
@@ -189,18 +188,17 @@ void define_io_fields(Ioss::GroupingEntity *entity,
                       stk::mesh::EntityRank part_type);
 
 /** Given an Ioss::ElementTopolgy, return the corresponding
- *  CellTopologyData. If a corresponding topology is not found, a
+ *  stk::topology. If a corresponding topology is not found, a
  *  runtime error exception will be thrown.
  */
-const CellTopologyData *map_topology_ioss_to_cell(const Ioss::ElementTopology *topology);
+stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology);
 
-/** Given a CellTopologyData and a spatial_dimension, return the
- *	corresponding Ioss::ElementTopology. If a corresponding
+/** Given a stk::topology, return the
+ *	corresponding Ioss::ElementTopology string. If a corresponding
  *	topology is not found, a runtime error exception will be
  *	thrown.
  */
-std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
-                                       int spatial_dimension);
+std::string map_stk_topology_to_ioss(stk::topology topo);
 
 /**
  * For the given Ioss entity, create a vector of stk::mesh::Entity
@@ -306,7 +304,6 @@ mesh::EntityRank side_rank(const mesh::MetaData &meta);
 mesh::EntityRank face_rank(const mesh::MetaData &meta);
 mesh::EntityRank edge_rank(const mesh::MetaData &meta);
 mesh::EntityRank node_rank(const mesh::MetaData &meta);
-const CellTopologyData *get_cell_topology(const mesh::Part &part);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 

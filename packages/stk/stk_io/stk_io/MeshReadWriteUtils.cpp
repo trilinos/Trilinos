@@ -247,10 +247,10 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
 
-      const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
-      if (cell_topo == NULL) {
+      stk::topology topo = part->topology();
+      if (topo == stk::topology::INVALID_TOPOLOGY) {
         std::ostringstream msg ;
-        msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+        msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
         throw std::runtime_error( msg.str() );
       }
 
@@ -261,7 +261,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       entity->get_field_data("connectivity", connectivity);
 
       size_t element_count = elem_ids.size();
-      int nodes_per_elem = cell_topo->node_count ;
+      int nodes_per_elem = topo.num_nodes();
 
       std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
       std::vector<stk::mesh::Entity> elements(element_count);

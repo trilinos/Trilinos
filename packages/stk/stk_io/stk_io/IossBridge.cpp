@@ -27,7 +27,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-
+#include <stk_topology/topology.hpp>
 #include <Shards_BasicTopologies.hpp>
 
 namespace {
@@ -88,156 +88,6 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
   }
 }
 
-const CellTopologyData *map_ioss_to_topology( const std::string &element_type ,
-                                              const int node_count)
-{
-  /// \todo REFACTOR Is there a good type to return for an "unknown"
-  /// topology type other than NULL?
-
-  const CellTopologyData* celltopo = NULL ;
-
-  const char *etype = element_type.c_str();
-  if ( 0 == strncasecmp( "circle" , etype , 6 ) ) {
-    celltopo = shards::getCellTopologyData< shards::Particle >();
-  }
-  else if ( 0 == strncasecmp( "sphere" , etype , 6) ) {
-    celltopo = shards::getCellTopologyData< shards::Particle >();
-  }
-  // bar, beam, truss, rod...
-  else if ( 0 == strncasecmp( "bar" , etype , 3 ) ) {
-    if ( node_count == 2 ) {
-      celltopo = shards::getCellTopologyData< shards::Beam<2> >();
-    }
-    else if ( node_count == 3 ) {
-      celltopo = shards::getCellTopologyData< shards::Beam<3> >();
-    }
-  }
-  else if ( 0 == strncasecmp( "shellline2d" , etype , 11 ) ) {
-    if ( node_count == 2) {
-      celltopo = shards::getCellTopologyData< shards::ShellLine<2> >();
-    }
-    else if ( node_count == 3) {
-      celltopo = shards::getCellTopologyData< shards::ShellLine<3> >();
-    }
-  } else if ( 0 == strncasecmp( "shell" , etype , 5 ) ) {
-    // shell4, shell8, shell9
-    if ( node_count == 4 ) {
-      celltopo = shards::getCellTopologyData< shards::ShellQuadrilateral<4> >();
-    }
-    else if ( node_count == 8 ) {
-      celltopo = shards::getCellTopologyData< shards::ShellQuadrilateral<8> >();
-    }
-    else if ( node_count == 9 ) {
-      celltopo = shards::getCellTopologyData< shards::ShellQuadrilateral<9> >();
-    }
-  }
-  else if ( 0 == strncasecmp( "quad" , etype , 3 ) ) {
-    // The 2D types would be quad4, quad8, and quad9.
-    // The 3D types would be quad faces of a hex... quadface4,
-    // quadface8, quadface9.
-    if ( node_count == 4 ) {
-      celltopo = shards::getCellTopologyData< shards::Quadrilateral<4> >();
-    }
-    else if ( node_count == 8 ) {
-      celltopo = shards::getCellTopologyData< shards::Quadrilateral<8> >();
-    }
-    else if ( node_count == 9 ) {
-      celltopo = shards::getCellTopologyData< shards::Quadrilateral<9> >();
-    }
-  }
-  else if ( 0 == strncasecmp( "trishell" , etype , 8 ) ) {
-    if ( node_count == 3 ) {
-      celltopo = shards::getCellTopologyData< shards::ShellTriangle<3> >();
-    }
-    else if ( node_count == 6 ) {
-      celltopo = shards::getCellTopologyData< shards::ShellTriangle<6> >();
-    }
-  }
-
-  else if (0 == strncasecmp("triface", etype, 7) ||
-           0 == strncasecmp("tri",     etype, 3)) {
-    if ( node_count == 3 ) {
-      celltopo = shards::getCellTopologyData< shards::Triangle<3> >();
-    }
-    else if ( node_count == 4 ) {
-      celltopo = shards::getCellTopologyData< shards::Triangle<4> >();
-    }
-    else if ( node_count == 6 ) {
-      celltopo = shards::getCellTopologyData< shards::Triangle<6> >();
-    }
-  }
-
-  else if ( 0 == strncasecmp( "pyramid" , etype , 7 ) ) {
-    if ( node_count == 5 ) {
-      celltopo = shards::getCellTopologyData< shards::Pyramid<5> >();
-    }
-    else if ( node_count == 13 ) {
-      celltopo = shards::getCellTopologyData< shards::Pyramid<13> >();
-    }
-    else if ( node_count == 14 ) {
-      celltopo = shards::getCellTopologyData< shards::Pyramid<14> >();
-    }
-  }
-
-  /// \todo REFACTOR Need to handle 8-node tet...
-  else if ( 0 == strncasecmp( "tetra" , etype , 5 ) ) {
-    if ( node_count == 4 ) {
-      celltopo = shards::getCellTopologyData< shards::Tetrahedron<4> >();
-    }
-    else if ( node_count ==  8 ) {
-      celltopo = shards::getCellTopologyData< shards::Tetrahedron<8> >();
-    }
-    else if ( node_count == 10 ) {
-      celltopo = shards::getCellTopologyData< shards::Tetrahedron<10> >();
-    }
-  }
-  else if ( 0 == strncasecmp( "wedge" , etype , 5 ) ) {
-    if ( node_count == 6 ) {
-      celltopo = shards::getCellTopologyData< shards::Wedge<6> >();
-    }
-    else if ( node_count == 15 ) {
-      celltopo = shards::getCellTopologyData< shards::Wedge<15> >();
-    }
-    else if ( node_count == 18 ) {
-      celltopo = shards::getCellTopologyData< shards::Wedge<18> >();
-    }
-  }
-  else if ( 0 == strncasecmp( "hex" , etype , 3 ) ) {
-    if ( node_count == 8 ) {
-      celltopo = shards::getCellTopologyData< shards::Hexahedron<8> >();
-    }
-    else if ( node_count == 20 ) {
-      celltopo = shards::getCellTopologyData< shards::Hexahedron<20> >();
-    }
-    else if ( node_count == 27 ) {
-      celltopo = shards::getCellTopologyData< shards::Hexahedron<27> >();
-    }
-  }
-
-  else if (0 == strncasecmp("edge", etype, 4)) {
-    if ( node_count == 2) {
-      // edge2, edge2d2, edge3d2
-      celltopo = shards::getCellTopologyData< shards::Line<2> >();
-    }
-    else if ( node_count == 3) {
-      // edge3, edge2d3, edge3d3
-      celltopo = shards::getCellTopologyData< shards::Line<3> >();
-    }
-  }
-
-  else if (0 == strncasecmp("node", etype, 4)) {
-    celltopo = shards::getCellTopologyData< shards::Node >();
-  }
-
-  if ( NULL == celltopo ) {
-    std::ostringstream oss;
-    oss << "ERROR, unsupported topology name = '" << element_type
-        << "' , node_count = " << node_count;
-    throw std::runtime_error(oss.str());
-  }
-
-  return celltopo;
-}
 
 template <typename T>
 const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &meta,
@@ -419,7 +269,6 @@ bool will_output_lower_rank_fields(const stk::mesh::Part &part, stk::mesh::Entit
   }
   return false;
 }
-
 }//namespace <empty>
 
 namespace stk {
@@ -468,11 +317,6 @@ stk::mesh::EntityRank edge_rank(const stk::mesh::MetaData &)
 stk::mesh::EntityRank node_rank(const stk::mesh::MetaData&)
 {
   return stk::mesh::MetaData::NODE_RANK;
-}
-
-const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
-{
-  return stk::mesh::MetaData::get(part).get_cell_topology(part).getCellTopologyData();
 }
 
 void initialize_spatial_dimension(stk::mesh::MetaData & meta, size_t spatial_dimension,
@@ -663,126 +507,21 @@ void remove_io_part_attribute(mesh::Part & part)
   }
 }
 
-/** Determine whether the field is defined on the specified part
- * and should also be associated with a Ioss GroupingEntity for
- * input or output
- */
-/// \todo QUESTION Should this function be at the application level,
-/// or provided by stk_io? In either case, applications should have
-/// capabilty to register new mappings.
-// ========================================================================
-const CellTopologyData *map_topology_ioss_to_cell(const Ioss::ElementTopology *topology)
+stk::topology map_ioss_topology_to_stk( const Ioss::ElementTopology *topology)
 {
-  /// \todo REFACTOR Consider either using or integrating the
-  /// Trilinos CellTopology package into or with the
-  /// Ioss::ElementTopology classes. That would then totally
-  /// eliminate the need for these fragile mapping functions.
-  /// However, it would still need to be extensible via application
-  /// registration of new type mappings.
-
-  std::string name         = topology->name();
-  int io_nodes_per_element = topology->number_nodes();
-
-  const CellTopologyData *cell_topology = map_ioss_to_topology(name, io_nodes_per_element);
-
-  return cell_topology;
+  for (int i=stk::topology::BEGIN_TOPOLOGY; i < stk::topology::NUM_TOPOLOGIES; i++) {
+    stk::topology topo = static_cast<stk::topology::topology_t>(i);
+    if (topology->is_alias(topo.name())) {
+      return topo;
+    }
+  }
+  return stk::topology::INVALID_TOPOLOGY;
 }
 
-std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
-                                       int spatial_dimension)
+std::string map_stk_topology_to_ioss(stk::topology topo)
 {
-  std::string extype = "unknown";
-
-  if (cell_top == NULL)
-	return extype;
-
-  if(strcmp(cell_top->name, "super") == 0) {
-    std::stringstream oss;
-    oss << "super" << cell_top->node_count;
-    return oss.str();
-  }
-  else if(strncasecmp(cell_top->name, "super", 5) == 0) {
-    return cell_top->name;
-  }
-
-  switch( cell_top->key ) {
-  case shards::Node::key : extype.assign( "node" ); break ;
-  case shards::Particle::key :
-	if (spatial_dimension == 2) extype = "circle1";
-	else                        extype = "sphere1";
-	break ;
-
-  case shards::Beam<2>::key :
-	extype = "bar2";
-	break ;
-
-  case shards::Beam<3>::key :
-	extype = "bar3";
-	break ;
-
-  case shards::Line<2>::key :
-	if (spatial_dimension == 2) extype = "edge2d2";
-	else                        extype = "edge2";
-	break ;
-  case shards::Line<3>::key :
-	if (spatial_dimension == 2) extype = "edge2d3";
-	else                        extype = "edge3";
-	break ;
-
-  case shards::ShellLine<2>::key : extype.assign( "shellline2d2" ); break ;
-  case shards::ShellLine<3>::key : extype.assign( "shellline2d3" ); break ;
-
-  case shards::Triangle<3>::key :
-	extype = "tri3";
-	break ;
-  case shards::Triangle<4>::key :
-    extype = "tri4";
-	break ;
-  case shards::Triangle<6>::key :
-    extype = "tri6";
-	break ;
-
-  case shards::ShellTriangle<3>::key : extype.assign( "trishell3" ); break ;
-  case shards::ShellTriangle<6>::key : extype.assign( "trishell6" ); break ;
-
-  case shards::Quadrilateral<4>::key :
-    extype = "quad4";
-	break ;
-  case shards::Quadrilateral<8>::key :
-    extype = "quad8";
-	break ;
-  case shards::Quadrilateral<9>::key :
-    extype = "quad9";
-	break ;
-
-  case shards::ShellQuadrilateral<4>::key : extype.assign( "shell4" ); break ;
-  case shards::ShellQuadrilateral<8>::key : extype.assign( "shell8" ); break ;
-  case shards::ShellQuadrilateral<9>::key : extype.assign( "shell9" ); break ;
-
-  case shards::Tetrahedron< 4>::key : extype.assign( "tetra4" ); break ;
-  case shards::Tetrahedron<8>::key : extype.assign( "tetra8" ); break ;
-  case shards::Tetrahedron<10>::key : extype.assign( "tetra10" ); break ;
-
-  case shards::Pyramid< 5>::key : extype.assign( "pyramid5" ); break ;
-  case shards::Pyramid<13>::key : extype.assign( "pyramid13" ); break ;
-  case shards::Pyramid<14>::key : extype.assign( "pyramid14" ); break ;
-
-  case shards::Wedge< 6>::key : extype.assign( "wedge6" ); break ;
-  case shards::Wedge<15>::key : extype.assign( "wedge15" ); break ;
-  case shards::Wedge<18>::key : extype.assign( "wedge18" ); break ;
-
-  case shards::Hexahedron< 8>::key : extype.assign( "hex8" ); break ;
-  case shards::Hexahedron<20>::key : extype.assign( "hex20" ); break ;
-  case shards::Hexahedron<27>::key : extype.assign( "hex27" ); break ;
-
-  default:
-	std::ostringstream oss;
-	oss << "stk::io::map_topology_to_ioss( '" << cell_top->name
-	    << "' ) ERROR unmapped topology" << std::endl ;
-	throw std::runtime_error(oss.str());
-  }
-
-  return extype ;
+  Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(topo.name(), true);
+  return ioss_topo != NULL ? ioss_topo->name() : "invalid";
 }
 
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta)
@@ -826,18 +565,8 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
       }
     }
 
-    const CellTopologyData * const cell_topology = map_topology_ioss_to_cell(topology);
-    // \todo IMPLEMENT Determine whether application can work
-    // with this topology type... Perhaps map_topology_ioss_to_cell only
-    // returns a valid topology if the application has registered
-    // that it can handle that specific topology.
-
-    if (cell_topology != NULL) {
-      const stk::mesh::CellTopology cell_topo(cell_topology);
-      stk::mesh::set_cell_topology(*part, cell_topo);
-    } else {
-      // \todo IMPLEMENT handle cell_topolgy mapping error...
-    }
+    stk::topology stk_topology = map_ioss_topology_to_stk(topology);
+    stk::mesh::set_topology(*part, stk_topology);
     stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
   }
 }
@@ -1088,11 +817,8 @@ void define_side_block(const stk::mesh::BulkData &bulk,
   const stk::mesh::EntityRank edgerank = stk::mesh::MetaData::EDGE_RANK;
   ThrowRequire(type == siderank || type == edgerank);
 
-  const CellTopologyData *const side_topology =   stk::io::get_cell_topology(part) ?
-    stk::io::get_cell_topology(part) :
-    stk::mesh::MetaData::get(part).get_cell_topology(part).getCellTopologyData();
-
-  std::string io_topo = map_topology_cell_to_ioss(side_topology, spatial_dimension);
+  stk::topology side_topology = part.topology();
+  std::string io_topo = map_stk_topology_to_ioss(side_topology);
   std::string element_topo_name = "unknown";
 
   // Get sideblock parent element topology quantities...
@@ -1119,7 +845,7 @@ void define_side_block(const stk::mesh::BulkData &bulk,
 
   const mesh::Field<double, mesh::ElementNode> *df = get_distribution_factor_field(part);
   if (df != NULL) {
-    int nodes_per_side = side_topology->node_count;
+    int nodes_per_side = side_topology.num_nodes();
     std::string storage_type = "Real[";
     storage_type += Ioss::Utils::to_string(nodes_per_side);
     storage_type += "]";
@@ -1255,14 +981,10 @@ void define_element_block(stk::mesh::Part &part,
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
-  const CellTopologyData * const cell_top =
-    stk::io::get_cell_topology(part) ?
-    stk::io::get_cell_topology(part) :
-    meta.get_cell_topology(part).getCellTopologyData();
-
-  if (cell_top == NULL) {
+  stk::topology topo = part.topology();
+  if (topo == stk::topology::INVALID_TOPOLOGY) {
     std::ostringstream msg ;
-    msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
+    msg << " INTERNAL_ERROR: Part " << part.name() << " returned INVALID from get_topology()";
     throw std::runtime_error( msg.str() );
   }
 
@@ -1270,14 +992,12 @@ void define_element_block(stk::mesh::Part &part,
   if (anded_selector) selector &= *anded_selector;
   const size_t num_elems = count_selected_entities( selector, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK));
 
-  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-
   // Defer the counting of attributes until after we define the
   // element block so we can count them as we add them as fields to
   // the element block
   Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database() ,
                                                   part.name() ,
-                                                  map_topology_cell_to_ioss(cell_top, spatial_dim) ,
+                                                  map_stk_topology_to_ioss(part.topology()),
                                                   num_elems);
   io_region.add(eb);
 
@@ -1629,16 +1349,13 @@ void output_element_block(Ioss::ElementBlock *block,
   stk::mesh::EntityRank type = part_primary_entity_rank(*part);
   size_t num_elems = get_entities(*part, type, bulk, elements, false, anded_selector);
 
-  const CellTopologyData * cell_topo =
-    stk::io::get_cell_topology(*part) ?
-    stk::io::get_cell_topology(*part) :
-    stk::mesh::MetaData::get(*part).get_cell_topology(*part).getCellTopologyData();
-  if (cell_topo == NULL) {
+  stk::topology topo = part->topology();
+  if (topo == stk::topology::INVALID_TOPOLOGY) {
     std::ostringstream msg ;
-    msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+    msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
     throw std::runtime_error( msg.str() );
   }
-  size_t nodes_per_elem = cell_topo->node_count;
+  size_t nodes_per_elem = topo.num_nodes();
 
   std::vector<INT> elem_ids; elem_ids.reserve(num_elems);
   std::vector<INT> connectivity; connectivity.reserve(num_elems*nodes_per_elem);
