@@ -187,6 +187,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar, Node )
   {
+    using Teuchos::as;
     typedef Tpetra::Map<LO,GO,Node>           Map;
     typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -203,7 +204,7 @@ namespace {
     //
     // create a point Map
     //
-    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
+    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), as<size_t>(0) );
     RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing

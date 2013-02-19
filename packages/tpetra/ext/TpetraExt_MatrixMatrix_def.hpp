@@ -721,7 +721,7 @@ void import_and_extract_views(
     }
 
     RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
-      OrdinalTraits<GlobalOrdinal>::invalid(), 
+      OrdinalTraits<global_size_t>::invalid(), 
       MremoteRows(), 
       Mrowmap->getIndexBase(), 
       Mrowmap->getComm(), 

@@ -950,7 +950,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Describable, LO, GO , Node )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1002,7 +1002,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();

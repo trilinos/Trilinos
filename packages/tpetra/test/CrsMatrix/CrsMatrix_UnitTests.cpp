@@ -2075,7 +2075,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   {
     RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create Map

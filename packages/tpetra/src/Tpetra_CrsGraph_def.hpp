@@ -2438,7 +2438,6 @@ namespace Tpetra {
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap()
   {
     std::string tfecfFuncName("makeColMap()");
-    typedef OrdinalTraits<GlobalOrdinal> GOT;
     //
     if (hasColMap()) return;
     const size_t nlrs = getNodeNumRows();
@@ -2573,6 +2572,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numlocalagain != numLocalColGIDs, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
       }
     }
+    typedef OrdinalTraits<global_size_t> GOT;
     colMap_ = rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(GOT::invalid(), myColumns, domainMap_->getIndexBase(), domainMap_->getComm(), domainMap_->getNode()) );
     checkInternalState();
     return;
