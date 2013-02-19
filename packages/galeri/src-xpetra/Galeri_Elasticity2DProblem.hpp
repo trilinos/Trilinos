@@ -272,7 +272,7 @@ namespace Galeri {
                   }
                 }
 
-                SC factor = pow(2*Teuchos::ScalarTraits<SC>::one(), numDirGeomNeigh);
+                SC factor = pow(2*Teuchos::ScalarTraits<SC>::one(), (int)numDirGeomNeigh);
                 KE(j0,j0) *= factor; KE(j0,j1) *= factor; KE(j1,j0) *= factor; KE(j1,j1) *= factor;
               }
           }
