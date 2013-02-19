@@ -153,6 +153,7 @@ namespace Ioss {
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
     char get_field_separator() const;
     void set_field_separator(const char separator);
+    void set_lower_case_variable_names(bool true_false) const {lowerCaseVariableNames = true_false;}
     void set_surface_split_type(Ioss::SurfaceSplitType split_type) {splitType = split_type;}
     Ioss::SurfaceSplitType get_surface_split_type() const {return splitType;}
 
@@ -306,6 +307,7 @@ namespace Ioss {
     Ioss::SurfaceSplitType splitType;
     Ioss::DatabaseUsage dbUsage;
     mutable Ioss::DataSize dbIntSizeAPI;
+    mutable bool lowerCaseVariableNames;
 
     // List of element blocks that should be omitted from this model.
     // Surfaces will take this into account while splitting;

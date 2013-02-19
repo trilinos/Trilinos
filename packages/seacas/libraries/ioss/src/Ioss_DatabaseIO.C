@@ -99,7 +99,7 @@ DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
   : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
     splitType(SPLIT_BY_TOPOLOGIES),
-    dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
+    dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
     singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
     doLogging(false)

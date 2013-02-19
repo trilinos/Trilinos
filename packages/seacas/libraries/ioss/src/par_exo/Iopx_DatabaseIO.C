@@ -5382,6 +5382,8 @@ namespace Iopx {
 	// Add to VariableNameMap so can determine exodusII index given a
 	// Sierra field name.  exodusII index is just 'i+1'
 	for (int i=0; i < nvar; i++) {
+	  if (lowerCaseVariableNames)
+	    Ioss::Utils::fixup_name(names[i]);
 	  variables.insert(VNMValuePair(std::string(names[i]),   i+1));
 	}
 
