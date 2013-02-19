@@ -79,8 +79,6 @@ namespace stk {
     PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
       m_metaData(NULL),
       m_bulkData(NULL),
-      m_fixture(NULL),
-      m_iossMeshData_created(false),
       m_sync_io_regions(true),
       m_coordinatesField(NULL),
       m_spatialDim(spatialDimension),
@@ -106,9 +104,9 @@ namespace stk {
 
     /// reads and commits mesh, editing disabled
     void PerceptMesh::
-    open_read_only(const std::string& in_filename)
+    open_read_only(const std::string& in_filename, const std::string &type)
     {
-      open(in_filename);
+      open(in_filename, type);
       commit();
     }
 
@@ -129,6 +127,18 @@ namespace stk {
           init( m_comm);
         }
 
+      std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+#if PERCEPT_USE_FAMILY_TREE
+      entity_rank_names.push_back("FAMILY_TREE");
+#endif
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+      entity_rank_names.push_back("PSEUDO_ELEMENT");
+#endif
+
+      m_metaData = new stk::mesh::MetaData();
+      m_metaData->initialize(m_spatialDim, entity_rank_names);
+      m_bulkData = new stk::mesh::BulkData(*m_metaData, m_comm);
+
       //const unsigned p_rank = parallel_machine_rank( get_bulk_data()->parallel() );
       const unsigned p_rank = parallel_machine_rank( m_comm );
 
@@ -143,7 +153,7 @@ namespace stk {
 
     /// reads but doesn't commit mesh, enabling edit
     void PerceptMesh::
-    open(const std::string& in_filename)
+    open(const std::string& in_filename, const std::string &type)
     {
       if (m_isOpen)
         {
@@ -162,47 +172,21 @@ namespace stk {
       const unsigned p_rank = parallel_machine_rank( m_comm );
 
       if (p_rank == 0)  std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
-      read_metaDataNoCommit(in_filename);
+      read_metaDataNoCommit(in_filename, type);
       m_isCommitted = false;
       m_isAdopted = false;
       m_isOpen = true;
       m_filename = in_filename;
     }
 
-    /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec
+    /// creates a new mesh using the GeneratedMesh with spec @param gmesh_spec
     void PerceptMesh::
     new_mesh(const GMeshSpec gmesh_spec)
     {
-      if (m_isOpen)
-        {
-          throw std::runtime_error("stk::percept::Mesh::new_mesh: mesh is already opened.  Please close() before trying to create a new mesh, or use reopen().");
-        }
-      if (m_isCommitted)
-        {
-          throw std::runtime_error("stk::percept::Mesh::new_mesh: mesh is already committed. Internal code error");
-        }
-      m_ownData = false;
-      if (!m_isInitialized)
-        {
-          init( m_comm, true);
-        }
-      create_metaDataNoCommit( gmesh_spec.getName() );
-      m_isOpen = true;
-      m_isCommitted = false;
-      m_isAdopted = false;
-
-#if PERCEPT_USE_FAMILY_TREE
-      // FIXME
-      // do a "reopen" operation to allow FAMILY_TREE type ranks (family_tree search term)
-      if (1)
-      {
-        commit();
-        reopen();
-      }
-#endif
+      open(gmesh_spec.getName(), "generated");
     }
 
-    /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
+    /// creates a new mesh using the GeneratedMesh with spec @param gmesh_spec, Read Only mode, no edits allowed
     void PerceptMesh::
     new_mesh_read_only(const GMeshSpec gmesh_spec)
     {
@@ -267,9 +251,9 @@ namespace stk {
       writeModel(temp_file_name);
       //      std::cout << "reopen: after writeModel" << std::endl;
       close();
-      //      std::cout << "reopen: after close, m_fixture = " << m_fixture << std::endl;
+      //      std::cout << "reopen: after close " << std::endl;
       open(temp_file_name);
-      //      std::cout << "reopen: after open, m_fixture = " << m_fixture << std::endl;
+      //      std::cout << "reopen: after open " << std::endl;
     }
 
     /// commits mesh if not committed and saves it in new file
@@ -289,7 +273,6 @@ namespace stk {
       m_isCommitted = false;
       m_isAdopted = false;
       destroy();
-      m_iossRegion = Teuchos::null;
     }
 
 
@@ -592,7 +575,7 @@ namespace stk {
       //       unsigned dataStride = r.dimension() ;
       //       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::get_spatial_dim() bad spatial dim");
       // #endif
-      return m_spatialDim;
+      return m_metaData->spatial_dimension();
     }
 
     int PerceptMesh::
@@ -1140,9 +1123,6 @@ namespace stk {
     PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
       m_metaData(const_cast<mesh::MetaData *>(metaData)),
       m_bulkData(bulkData),
-        m_fixture(NULL),
-        m_iossRegion(NULL),
-        m_iossMeshData_created(false),
         m_sync_io_regions(true),
         m_coordinatesField(NULL),
         m_spatialDim(metaData->spatial_dimension()),
@@ -1185,28 +1165,16 @@ namespace stk {
       m_comm          = comm;
       m_ownData       = true;
 
-      if (!no_alloc)
-        {
-          if (m_spatialDim)
-            {
-              //m_metaData   = new stk::mesh::MetaData( m_spatialDim, stk::mesh::entity_rank_names(m_spatialDim) );
-              std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData(comm) );
+      std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
-              entity_rank_names.push_back("FAMILY_TREE");
+      entity_rank_names.push_back("FAMILY_TREE");
 #endif
 #if PERCEPT_USE_PSEUDO_ELEMENTS
-              entity_rank_names.push_back("PSEUDO_ELEMENT");
+      entity_rank_names.push_back("PSEUDO_ELEMENT");
 #endif
-              m_metaData   = new stk::mesh::MetaData( m_spatialDim, entity_rank_names);
-              m_bulkData   = new stk::mesh::BulkData( *m_metaData, comm );
-            }
-          else
-            {
-              m_metaData   = new stk::mesh::MetaData( );
-            }
-        }
+      m_iossMeshData->set_rank_name_vector(entity_rank_names);
 
-      m_fixture       = 0;
       m_isCommitted   = false;
       m_isAdopted     = false;
       m_isOpen        = false;
@@ -1217,19 +1185,6 @@ namespace stk {
     void PerceptMesh::destroy()
     {
       //EXCEPTWATCH;
-      if (m_ownData)
-        {
-          delete m_metaData;
-          delete m_bulkData;
-          m_metaData = 0;
-          m_bulkData = 0;
-        }
-      if (m_fixture)
-        {
-          delete m_fixture;
-          m_fixture = 0;
-        }
-      //m_spatialDim = 0;
       m_coordinatesField = NULL;
       if (m_geometry_parts) delete m_geometry_parts;
     }
@@ -1791,42 +1746,7 @@ namespace stk {
     }
 
     // ========================================================================
-    static void setup_spatialDim_metaData(Ioss::Region &region, stk::mesh::MetaData &meta, int& spatial_dim)
-    {
-      size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
-      spatial_dim = spatial_dimension;
-
-      if (!meta.is_initialized())
-        {
-          std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
-#if PERCEPT_USE_FAMILY_TREE
-          entity_rank_names.push_back("FAMILY_TREE");
-#endif
-#if PERCEPT_USE_PSEUDO_ELEMENTS
-          entity_rank_names.push_back("PSEUDO_ELEMENT");
-#endif
-          meta.initialize(spatial_dim, entity_rank_names);
-        }
-
-      //s_spatial_dim = spatial_dim;
-      //std::cout << "PerceptMesh::setup_spatialDim_metaData: spatial_dim= " << spatial_dim << std::endl;
-
-#if 0
-      stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-        meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
-
-      stk::mesh::put_field( coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
-                            spatial_dim);
-
-      /** \todo IMPLEMENT truly handle fields... For this case we are
-       * just defining a field for each transient field that is present
-       * in the mesh...
-       */
-      stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::MetaData::NODE_RANK);
-#endif
-    }
-
-    void PerceptMesh::read_metaDataNoCommit( const std::string& in_filename)
+    void PerceptMesh::read_metaDataNoCommit( const std::string& in_filename, const std::string& type)
     {
       EXCEPTWATCH;
       //checkState("read_metaDataNoCommit");
@@ -1834,87 +1754,32 @@ namespace stk {
       //                   << " Use Case: Subsetting with df and attribute field input/output          \n"
       //                   << "========================================================================\n";
 
-      //const stk::ParallelMachine& comm = m_bulkData->parallel();
-      const stk::ParallelMachine& comm = m_comm;
-
-      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData(comm) );
-      m_iossMeshData_created = true;
       stk::io::MeshData& mesh_data = *m_iossMeshData;
 
-      if (!m_iossMeshData->open_mesh_database(in_filename)) {
+      if (!mesh_data.open_mesh_database(in_filename, type)) {
         std::exit(EXIT_FAILURE);
       }
 
-      m_iossRegion = Teuchos::rcp(new Ioss::Region(m_iossMeshData->input_io_database().release().get(), "input_model"));
-
-      //Teuchos::RCP<stk::mesh::MetaData> arg_meta_data = Teuchos::rcp(m_metaData);
-      mesh_data.set_meta_data(*m_metaData);
-      //m_iossRegion = m_iossMeshData->input_io_region();
-      mesh_data.set_input_io_region(m_iossRegion);
-      Ioss::Region& in_region = *m_iossRegion;
-      checkForPartsToAvoidReading(in_region, s_omit_part);
-
-      //----------------------------------
-      // Process Entity Types. Subsetting is possible.
-      //stk::mesh::MetaData meta_data( stk::percept::PerceptMesh::fem_entity_rank_names() );
-      //stk::mesh::MetaData& meta_data = *m_metaData;
-      //std::cout << "tmp1.0 m_fem_meta_data = " << m_fem_meta_data << std::endl;
-
-      stk::mesh::MetaData& meta_data = *m_metaData;
-      //      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
-
-      bool meta_is_init = meta_data.is_initialized();
-      setup_spatialDim_metaData(in_region, meta_data, m_spatialDim);
-      if (!meta_is_init)
-        {
-          m_bulkData   = new stk::mesh::BulkData( *m_metaData, m_comm );
-        }
-      if (0)
-        {
-          const size_t ntype = stk::mesh::MetaData::get(*m_bulkData).entity_rank_count();
-          const size_t ntype1 = stk::mesh::MetaData::get(*m_bulkData).entity_rank_count();
-          std::cout << "tmp SRK m_spatialDim= " << m_spatialDim << " ntype= " << ntype << " ntype1= " << ntype1 << std::endl;
-        }
-
-      //Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data = Teuchos::rcp(m_bulkData);
-      if (m_bulkData) mesh_data.set_bulk_data(*m_bulkData);
+      checkForPartsToAvoidReading(*mesh_data.input_io_region(), s_omit_part);
 
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
       mesh_data.create_input_mesh();
       mesh_data.define_input_fields();
-    }
-
-    void PerceptMesh::create_metaDataNoCommit( const std::string& gmesh_spec)
-    {
-      EXCEPTWATCH;
-      m_fixture = new stk::io::util::Gmesh_STKmesh_Fixture(MPI_COMM_WORLD, gmesh_spec);
-
-      if (m_metaData)
-        delete m_metaData;
-
-      m_metaData = &m_fixture->getMetaData();
-      m_ownData = false;
+      m_metaData = &mesh_data.meta_data();
     }
 
     void PerceptMesh::commit_metaData()
     {
-      if (m_fixture) {
-        m_fixture->commit();
-	if (m_bulkData)
-	  delete m_bulkData;
-	m_bulkData = &m_fixture->getBulkData();
-      }
-      else
-        m_metaData->commit();
+      m_metaData->commit();
     }
 
     void PerceptMesh::readBulkData()
     {
       //std::cout << "PerceptMesh::readBulkData() " << std::endl;
-      if (m_fixture || m_isAdopted)
+      if (m_isAdopted)
         {
-          //std::cout << "PerceptMesh::readBulkData() m_fixture " << std::endl;
+          //std::cout << "PerceptMesh::readBulkData()" << std::endl;
           return;
         }
 
@@ -1937,13 +1802,13 @@ namespace stk {
 
     int PerceptMesh::get_database_time_step_count()
     {
-      int timestep_count = m_iossRegion->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->input_io_region()->get_property("state_count").get_int();
       return timestep_count;
     }
 
     double PerceptMesh::get_database_time_at_step(int step)
     {
-      int timestep_count = m_iossRegion->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -1952,17 +1817,17 @@ namespace stk {
           throw std::runtime_error("step is out of range for PerceptMesh::get_database_time_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
 
-      double state_time = timestep_count > 0 ? m_iossRegion->get_state_time(step) : 0.0;
+      double state_time = timestep_count > 0 ? m_iossMeshData->input_io_region()->get_state_time(step) : 0.0;
       return state_time;
     }
 
     int PerceptMesh::get_database_step_at_time(double time)
     {
-      int step_count = m_iossRegion->get_property("state_count").get_int();
+      int step_count = m_iossMeshData->input_io_region()->get_property("state_count").get_int();
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
-        double state_time = m_iossRegion->get_state_time(istep+1);
+        double state_time = m_iossMeshData->input_io_region()->get_state_time(istep+1);
         double delta = state_time - time;
         if (delta < 0.0) delta = -delta;
         if (delta < delta_min) {
@@ -1978,9 +1843,9 @@ namespace stk {
     {
       EXCEPTWATCH;
       std::cout << "PerceptMesh::read_database_at_step() " << std::endl;
-      if (m_fixture || m_isAdopted)
+      if (m_isAdopted)
         {
-          std::cout << "PerceptMesh::read_database_at_step() m_fixture " << std::endl;
+          std::cout << "PerceptMesh::read_database_at_step() m_isAdopted " << std::endl;
           return;
         }
 
@@ -1991,9 +1856,8 @@ namespace stk {
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      if (!mesh_data.bulk_data_is_set()) 
-        mesh_data.set_bulk_data(*m_bulkData);
       mesh_data.populate_bulk_data();
+      m_bulkData = &mesh_data.bulk_data();
 
       int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
@@ -2013,9 +1877,9 @@ namespace stk {
     void PerceptMesh::read_database_at_time(double time)
     {
       std::cout << "PerceptMesh::read_database_at_time() " << std::endl;
-      if (m_fixture || m_isAdopted)
+      if (m_isAdopted)
         {
-          std::cout << "PerceptMesh::read_database_at_time() m_fixture " << std::endl;
+          std::cout << "PerceptMesh::read_database_at_time() m_isAdopted " << std::endl;
           return;
         }
 
@@ -2354,9 +2218,9 @@ namespace stk {
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data_0;
-      stk::io::MeshData& mesh_data = (m_iossMeshData_created && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
+      stk::io::MeshData& mesh_data = (!Teuchos::is_null(m_iossMeshData) && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
 
-      if (!(m_iossMeshData_created && m_sync_io_regions)) {
+      if (!(!Teuchos::is_null(m_iossMeshData) && m_sync_io_regions)) {
         if (!mesh_data.bulk_data_is_set())
           mesh_data.set_bulk_data(bulk_data);
       }

@@ -64,15 +64,11 @@ struct LocalFixture
 {
   PerceptMesh eMesh;
   int bogus_init;
-  mesh::MetaData& metaData;
-  mesh::BulkData& bulkData;
   mesh::FieldBase *coords_field;
   StringFunction sfx;
   ConstantFunction sfx_res;
 
   LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0, bool sidesets=false, bool commit=true) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z, sidesets, commit)),
-                                                                     metaData(*eMesh.get_fem_meta_data()), bulkData(*eMesh.get_bulk_data()),
-                                                                     coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
                                                                      sfx_res (0.0, "sfx_res")
 
@@ -94,6 +90,7 @@ struct LocalFixture
 	
     eMesh.new_mesh(GMeshSpec(config_mesh));
     if (commit) eMesh.commit();
+    coords_field = eMesh.get_fem_meta_data()->get_field<mesh::FieldBase>("coordinates");
     return 1;
   }
 
@@ -115,14 +112,14 @@ STKUNIT_UNIT_TEST(norm, volume)
   dw().m(LOG_NORM) << "TEST::norm::volume " << stk::diag::dendl;
 
   LocalFixture fix(3,3,12);
-  mesh::MetaData& metaData = fix.metaData;
-  mesh::BulkData& bulkData = fix.bulkData;
+  mesh::MetaData* metaData = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData* bulkData = fix.eMesh.get_bulk_data();
   PerceptMesh& eMesh = fix.eMesh;
 
   mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
@@ -136,9 +133,9 @@ STKUNIT_UNIT_TEST(norm, volume)
   { 
     bool expected_1 = false;
     bool expected_2 = false;
-    Norm<2> l2Norm_test(bulkData, &metaData.universal_part(), TURBO_NONE, true); 
+    Norm<2> l2Norm_test(*bulkData, &metaData->universal_part(), TURBO_NONE, true);
     expected_1 = !l2Norm_test.get_is_surface_norm();
-    Norm<2> l2Norm_test1(bulkData, &metaData.universal_part(), TURBO_NONE, false); 
+    Norm<2> l2Norm_test1(*bulkData, &metaData->universal_part(), TURBO_NONE, false);
     expected_2 = !l2Norm_test1.get_is_surface_norm();
     STKUNIT_EXPECT_TRUE(expected_1);
     STKUNIT_EXPECT_TRUE(expected_2);
@@ -146,7 +143,7 @@ STKUNIT_UNIT_TEST(norm, volume)
 
 
   /// Create the operator that will do the work
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   /// get the l2 norm of identity
   l2Norm(identity, sqrt_volume);
 
@@ -255,14 +252,14 @@ STKUNIT_UNIT_TEST(norm, surface_area)
   bool sidesets=true;
   LocalFixture fix(3,3,12,sidesets);
   //mesh::MetaData& metaData = fix.metaData;
-  mesh::BulkData& bulkData = fix.bulkData;
+  mesh::BulkData* bulkData = fix.eMesh.get_bulk_data();
   PerceptMesh& eMesh = fix.eMesh;
   //eMesh.save_as("junk.123.e");
 
   mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the area of faces
@@ -286,13 +283,13 @@ STKUNIT_UNIT_TEST(norm, surface_area)
     bool expected_1 = false;
     bool expected_2 = false;
     bool expected_3 = false;
-    Norm<2> l2Norm_test(bulkData, &selector, TURBO_NONE, true); 
+    Norm<2> l2Norm_test(*bulkData, &selector, TURBO_NONE, true);
     expected_1 = l2Norm_test.get_is_surface_norm();
-    Norm<2> l2Norm_test1(bulkData, &selector, TURBO_NONE, false); 
+    Norm<2> l2Norm_test1(*bulkData, &selector, TURBO_NONE, false);
     expected_2 = l2Norm_test1.get_is_surface_norm();
     STKUNIT_EXPECT_TRUE(expected_1);
     STKUNIT_EXPECT_TRUE(expected_2);
-    try { Norm<2> l2Norm_test2(bulkData, &selector_test, TURBO_NONE, true); } 
+    try { Norm<2> l2Norm_test2(*bulkData, &selector_test, TURBO_NONE, true); }
     catch ( const std::exception & X ) {
       std::cout << "expected exception: " << X.what() << std::endl;
       expected_3 = true; 
@@ -300,8 +297,8 @@ STKUNIT_UNIT_TEST(norm, surface_area)
     STKUNIT_EXPECT_TRUE(expected_3);
   }
 
-  Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
-  Norm<2> l2Norm1(bulkData, "surface_1", TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &selector, TURBO_NONE, is_surface_norm);
+  Norm<2> l2Norm1(*bulkData, "surface_1", TURBO_NONE);
   l2Norm1.set_is_surface_norm(true);
 
   /// get the l2 norm of identity
@@ -388,8 +385,8 @@ STKUNIT_UNIT_TEST(norm, string_function)
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
   LocalFixture     fix(4);
-  mesh::MetaData&        metaData     = fix.metaData;
-  mesh::BulkData&        bulkData     = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   PerceptMesh&        eMesh     = fix.eMesh;
   //mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
@@ -397,7 +394,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
 
   /// Create the operator that will do the work
   /// get the l2 norm
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l2Norm(sfx, sfx_res);
 
   double sfx_expect = std::sqrt(0.25/3.);
@@ -411,7 +408,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   }
 
   /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
-  Norm<1> l1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<1> l1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l1Norm(sfx, sfx_res);
 
   sfx_expect = 0.25;
@@ -419,7 +416,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
 
   /// the function to be integrated:  (Max[ x^2+y^3+z^4, dxdydz]) =?= (@ [-0.5, 0.5]^3 ) ==> .5^2+.5^3+.5^4)
   StringFunction sfmax("x^2 + y^3 + z^4", Name("sfmax"), Dimensions(3), Dimensions(1) );
-  Norm<-1> lInfNorm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<-1> lInfNorm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   lInfNorm.setCubDegree(10);
   lInfNorm(sfmax, sfx_res);
   double sf1=eval(.5,.5,.5,0.0, sfmax);
@@ -472,8 +469,8 @@ STKUNIT_UNIT_TEST(norm, string_function_1)
 {
   EXCEPTWATCH;
   LocalFixture     fix(4);
-  mesh::MetaData&        metaData     = fix.metaData;
-  mesh::BulkData&        bulkData     = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   //PerceptMesh&        eMesh     = fix.eMesh;
   //mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
@@ -481,7 +478,7 @@ STKUNIT_UNIT_TEST(norm, string_function_1)
 
   /// Create the operator that will do the work
   /// get the l2 norm
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   if (0) l2Norm(sfx, sfx_res);
 
   /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
@@ -514,15 +511,15 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
   LocalFixture     fix(4);
-  mesh::MetaData&        metaData     = fix.metaData;
-  mesh::BulkData&        bulkData     = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   PerceptMesh&        eMesh     = fix.eMesh;
   mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
   ConstantFunction sfx_res      = fix.sfx_res;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
@@ -557,12 +554,11 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 
   /// Create the operator that will do the work
   /// get the l2 norm
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l2Norm(sfx, sfx_res);
-
-  Norm<2> l2Norm_turbo(bulkData, &metaData.universal_part(), turboOpt);
-  Norm<2> l2Norm_turbo_bucket(bulkData, &metaData.universal_part(), TURBO_BUCKET);
-  Norm<2> l2Norm_turbo1(bulkData, &metaData.universal_part(), turboOpt);
+  Norm<2> l2Norm_turbo(*bulkData, &metaData->universal_part(), turboOpt);
+  Norm<2> l2Norm_turbo_bucket(*bulkData, &metaData->universal_part(), TURBO_BUCKET);
+  Norm<2> l2Norm_turbo1(*bulkData, &metaData->universal_part(), turboOpt);
   l2Norm_turbo(sfx, sfx_res_turbo);
 
   l2Norm_turbo1(sfx_mc1, sfx_res_fast);
@@ -589,10 +585,10 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   //Util::pause(true, "13");
 
   /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
-  Norm<1> l1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<1> l1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l1Norm(sfx, sfx_res);
 
-  Norm<1> l1Norm_turbo(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<1> l1Norm_turbo(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l1Norm_turbo(sfx, sfx_res_turbo);
   l1Norm_turbo(sfx_mc, sfx_res_fast);
   l1Norm(sfx_mc, sfx_res_slow);
@@ -632,6 +628,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
     STKUNIT_EXPECT_TRUE(false);
   }
   if (std::fabs(sfx_res_turbo.getValue()-sfx_expect) > 0.01*sfx_expect)
+
   {
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res_turbo.getValue());
     STKUNIT_EXPECT_TRUE(false);
@@ -687,14 +684,14 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
     eMesh.commit();
   }
 
-  mesh::MetaData& metaData = *eMesh.get_fem_meta_data();
-  mesh::BulkData& bulkData = *eMesh.get_bulk_data();
+  mesh::MetaData* metaData = eMesh.get_fem_meta_data();
+  mesh::BulkData* bulkData = eMesh.get_bulk_data();
 
   /// the coordinates field is always created by the PerceptMesh read operation, here we just get the field
-  mesh::FieldBase *coords_field = metaData.get_field<mesh::FieldBase>("coordinates");
+  mesh::FieldBase *coords_field = metaData->get_field<mesh::FieldBase>("coordinates");
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
@@ -734,8 +731,8 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   {
     /// Create the operator that will do the work
     /// get the l2 norm
-    Norm<2> l2Norm      (bulkData, &metaData.universal_part(), TURBO_NONE);
-    Norm<2> l2Norm_turbo(bulkData, &metaData.universal_part(), turboOpt);
+    Norm<2> l2Norm      (*bulkData, &metaData->universal_part(), TURBO_NONE);
+    Norm<2> l2Norm_turbo(*bulkData, &metaData->universal_part(), turboOpt);
 
     //double TURBO_ELEMENT_time=0;
     TIME_IT2(l2Norm(sfx, sfx_res); , l2Norm_turbo(sfx, sfx_res_turbo);, "Should be the same turboOpt= ", turboOpt );
@@ -748,10 +745,10 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res_fast.getValue());
 
     /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
-    Norm<1> l1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+    Norm<1> l1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
     l1Norm(sfx, sfx_res);
 
-    Norm<1> l1Norm_turbo(bulkData, &metaData.universal_part(), TURBO_NONE);
+    Norm<1> l1Norm_turbo(*bulkData, &metaData->universal_part(), TURBO_NONE);
     l1Norm_turbo(sfx, sfx_res_turbo);
 
     sfx_expect = 0.25;
@@ -821,16 +818,16 @@ STKUNIT_UNIT_TEST(norm, field_function)
   dw().m(LOG_NORM) << "TEST.norm.field_function " << stk::diag::dendl;
 
   LocalFixture     fix(4);
-  mesh::MetaData&        metaData     = fix.metaData;
-  mesh::BulkData&        bulkData     = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   //PerceptMesh&        eMesh     = fix.eMesh;
   mesh::FieldBase*       coords_field = fix.coords_field;
 
   /// Create the operator that will do the work
   /// get the l2 norm
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
 
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   std::vector<double> vals(3,0.0);
@@ -844,7 +841,7 @@ STKUNIT_UNIT_TEST(norm, field_function)
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX(sfx_expect, sfx_res_vec.getValue()[0]);
 
   /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
-  Norm<1> l1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<1> l1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   l1Norm(ff_coords, sfx_res_vec);
 
   sfx_expect = 0.25;
@@ -865,14 +862,14 @@ STKUNIT_UNIT_TEST(norm, h1_volume)
   MPI_Barrier( MPI_COMM_WORLD );
 
   LocalFixture fix(3,3,12);
-  mesh::MetaData& metaData = fix.metaData;
-  mesh::BulkData& bulkData = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   //PerceptMesh& eMesh = fix.eMesh;
 
   mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
@@ -886,7 +883,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume)
   ConstantFunction sqrt_volume(0.0, "sqrt_volume");
 
   /// Create the operator that will do the work
-  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  H1Norm h1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   /// get the l2 norm of identity
   h1Norm(identity, sqrt_volume);
 
@@ -905,14 +902,14 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
   MPI_Barrier( MPI_COMM_WORLD );
 
   LocalFixture fix(3,3,12);
-  mesh::MetaData& metaData = fix.metaData;
-  mesh::BulkData& bulkData = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
   PerceptMesh& eMesh = fix.eMesh;
 
   mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
@@ -926,7 +923,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
   ConstantFunction result1(0.0, "result1");
 
   /// Create the operator that will do the work
-  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  H1Norm h1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   /// get the l2 norm of plane
   h1Norm(plane, result1);
 
@@ -962,13 +959,13 @@ STKUNIT_UNIT_TEST(norm, h1_volume_2)
   int vectorDimension = 0;  // signifies a scalar field
   stk::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::MetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
-  mesh::MetaData& metaData = fix.metaData;
-  mesh::BulkData& bulkData = fix.bulkData;
+  mesh::MetaData*        metaData     = fix.eMesh.get_fem_meta_data();
+  mesh::BulkData*        bulkData     = fix.eMesh.get_bulk_data();
 
   mesh::FieldBase *coords_field = fix.coords_field;
 
   /// create a field function from the existing coordinates field
-  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+  FieldFunction ff_coords("ff_coords", coords_field, bulkData,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
@@ -1004,8 +1001,8 @@ STKUNIT_UNIT_TEST(norm, h1_volume_2)
 
   /// Create the operator that will do the work
 
-  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE); 
-  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  Norm<2> l2Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
+  H1Norm h1Norm(*bulkData, &metaData->universal_part(), TURBO_NONE);
   /// get the l2 norm of plane
   h1Norm(plane, result2);
   h1Norm(ff_plane, result1);

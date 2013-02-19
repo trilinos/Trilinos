@@ -20,6 +20,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <stdexcept>

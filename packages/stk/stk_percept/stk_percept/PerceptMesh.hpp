@@ -26,11 +26,10 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
 
-#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
-
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <Intrepid_FieldContainer.hpp>
 
@@ -128,11 +127,11 @@ namespace stk {
 
       /// reads and commits mesh, editing disabled
       void
-      open_read_only(const std::string& in_filename);
+      open_read_only(const std::string& in_filename, const std::string &type = "exodus");
 
       /// reads but doesn't commit mesh, enabling edit
       void
-      open(const std::string& in_filename);
+      open(const std::string& in_filename, const std::string &type = "exodus");
 
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
       void
@@ -200,9 +199,10 @@ namespace stk {
       get_number_elements_locally_owned();
 
       /// parallel rank
-      unsigned get_rank() { return get_bulk_data()->parallel_rank(); }
-      unsigned get_parallel_rank() { return get_bulk_data()->parallel_rank(); }
-      unsigned get_parallel_size() { return get_bulk_data()->parallel_size(); }
+      unsigned get_rank() { return stk::parallel_machine_rank(m_comm); }
+      unsigned get_parallel_rank() { return stk::parallel_machine_rank(m_comm); }
+      unsigned get_parallel_size() { return stk::parallel_machine_size(m_comm); }
+      stk::ParallelMachine parallel() {return m_comm;}
 
       /// print a node, edge, element, etc; optionally pass in a field to dump data associated with the entity
       void print_entity(const stk::mesh::Entity entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
@@ -680,7 +680,7 @@ namespace stk {
       void readModel( const std::string& in_filename );
 
       /// read with no commit
-      void read_metaDataNoCommit( const std::string& in_filename );
+      void read_metaDataNoCommit( const std::string& in_filename, const std::string &type = "exodus" );
 
       /// create with no commit
       void create_metaDataNoCommit( const std::string& gmesh_spec);
@@ -720,10 +720,7 @@ namespace stk {
       //stk::mesh::MetaData *         m_fem_meta_data;
       stk::mesh::MetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
-      stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
-      Teuchos::RCP<Ioss::Region>            m_iossRegion;
       Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
-      bool                                  m_iossMeshData_created;
       bool                                  m_sync_io_regions;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;

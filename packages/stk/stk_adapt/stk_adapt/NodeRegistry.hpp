@@ -360,7 +360,7 @@ namespace stk {
 
       NodeRegistry(percept::PerceptMesh& eMesh, bool useCustomGhosting = false) : m_eMesh(eMesh),
                                                   //m_comm_all(0),
-                                                  m_comm_all( new stk::CommAll(eMesh.get_bulk_data()->parallel()) ),
+                                                  m_comm_all( new stk::CommAll(eMesh.parallel()) ),
                                                   //m_comm_all(eMesh.get_bulk_data()->parallel()),
                                                   // why does this cause failures?
                                                   //m_cell_2_data_map(eMesh.get_number_elements()*8u),
@@ -396,7 +396,7 @@ namespace stk {
         //std::cout << "tmp &m_eMesh = " << &m_eMesh << std::endl;
         if (m_comm_all)
           delete m_comm_all;
-        m_comm_all = new stk::CommAll(m_eMesh.get_bulk_data()->parallel());
+        m_comm_all = new stk::CommAll(m_eMesh.parallel());
       }
 
       void init_entity_repo()
@@ -549,7 +549,7 @@ namespace stk {
       {
         if (m_debug)
           std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endCheckForRemote start " << std::endl;
-        stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
+        stk::ParallelMachine pm = m_eMesh.parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -579,7 +579,7 @@ namespace stk {
       {
         if (m_debug)
           std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endGetFromRemote start " << std::endl;
-        stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
+        stk::ParallelMachine pm = m_eMesh.parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -1899,7 +1899,7 @@ namespace stk {
 #endif
         comm_all.communicate();
 
-        stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
+        stk::ParallelMachine pm = m_eMesh.parallel();
         int failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
@@ -1915,8 +1915,8 @@ namespace stk {
         int failed = 0;
         std::string msg;
 
-        stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
-        unsigned proc_size = m_eMesh.get_bulk_data()->parallel_size();
+        stk::ParallelMachine pm = m_eMesh.parallel();
+        unsigned proc_size = m_eMesh.get_parallel_size();
         unsigned proc_rank = comm_all.parallel_rank();
 
         vector<stk::mesh::EntityProc> nodes_to_ghost;
