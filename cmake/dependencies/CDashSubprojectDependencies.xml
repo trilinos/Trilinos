@@ -196,7 +196,6 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Trios">
-    <Dependency name="Teuchos" type="LO"/>
     <EmailAddresses>
       <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>

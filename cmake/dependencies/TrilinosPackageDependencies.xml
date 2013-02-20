@@ -966,12 +966,12 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosprograms" dir="packages/trios/programs" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="LibTopoMap,ParMETIS,METIS,gpcd"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -980,7 +980,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosexamples" dir="packages/trios/examples" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -994,7 +994,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triostests" dir="packages/trios/tests" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1008,7 +1008,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosnetcdf-service" dir="packages/trios/services/netcdf" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1023,7 +1023,7 @@
   </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="TeuchosCore,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
