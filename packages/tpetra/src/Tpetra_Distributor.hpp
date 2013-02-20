@@ -887,6 +887,9 @@ namespace Tpetra {
 
     // setup scan through imagesTo_ list starting with higher numbered images
     // (should help balance message traffic)
+    //
+    // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
+    // It doesn't depend on the input at all.
     size_t numBlocks = numSends_ + selfMessage_;
     size_t imageIndex = 0;
     while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
@@ -911,8 +914,15 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend =
             exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-          if (sendType == DISTRIBUTOR_RSEND) {
-            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+	  if (sendType == DISTRIBUTOR_SEND) { // the default, so put it first
+            // FIXME (mfh 23 Mar 2012) Implement a three-argument
+            // version of send() that takes an ArrayView instead of a
+            // raw array.
+            send<int, Packet> (*comm_, tmpSend.size(),
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+	  } 
+	  else if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (*comm_, tmpSend, imagesTo_[p]);
           }
           else if (sendType == DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -925,16 +935,10 @@ namespace Tpetra {
             ssend<int, Packet> (*comm_, tmpSend.size(),
                                 tmpSend.getRawPtr(), imagesTo_[p]);
 
-          } else { // if (sendType == DISTRIBUTOR_SEND)
-            // We've already validated sendType, so it has to be
-            // DISTRIBUTOR_SEND.  If it's not, well, this is a
-            // reasonable fallback.
-            //
-            // FIXME (mfh 23 Mar 2012) Implement a three-argument
-            // version of send() that takes an ArrayView instead of a
-            // raw array.
-            send<int, Packet> (*comm_, tmpSend.size(),
-                               tmpSend.getRawPtr(), imagesTo_[p]);
+          } else {
+	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+              "Distributor: Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
         }
         else { // "Sending" the message to myself
