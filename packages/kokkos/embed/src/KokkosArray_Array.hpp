@@ -89,11 +89,16 @@ namespace KokkosArray {
 
 #if defined( KOKKOSARRAY_EXPRESSION_CHECK )
 
-void array_check_bounds_throw( const unsigned , const unsigned );
-
-inline
+KOKKOSARRAY_INLINE_FUNCTION
 void array_check_bounds( const unsigned i , const unsigned count )
-  { array_check_bounds_throw( i , N ); }
+{
+  if ( count <= i ) {
+    Impl::AssertShapeBoundsAbort< ExecutionSpace >
+      ::apply( 1 ,
+               count, 0, 0, 0, 0, 0, 0, 0,
+               i,     0, 0, 0, 0, 0, 0, 0 );
+  }
+}
 
 #else
 

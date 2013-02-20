@@ -53,20 +53,18 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace ,
-          typename ScalarType ,
-          unsigned ScalarSize ,
-          unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,1,Count> >
+                ShapeType , LayoutRight , 1 >
 {
 private:
 
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,1,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -101,17 +99,17 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,2,s0,Count> >
+                ShapeType , LayoutRight , 2 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,2,s0,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -124,7 +122,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape , i0 , i1 );
-      return m_ptr_on_device[ i1 + i0 * m_shape.Stride ];
+      return m_ptr_on_device[ i1 + i0 * m_stride ];
     }
 
   template< typename iType0 >
@@ -133,24 +131,24 @@ public:
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape , i0 , 0 );
-      return ArrayProxyType( m_ptr_on_device + i0 * m_shape.Stride );
+      return ArrayProxyType( m_ptr_on_device + i0 * m_stride );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,3,s0,s1,Count> >
+                ShapeType , LayoutRight , 3 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,3,s0,s1,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -164,7 +162,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, i2 );
       return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * m_shape.Stride ];
+                              i1 ) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -175,24 +173,24 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0 );
       return ArrayProxyType( m_ptr_on_device +
                              m_shape.N2 * ( i1 ) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,4,s0,s1,s2,Count> >
+                ShapeType , LayoutRight , 4 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,4,s0,s1,s2,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -209,7 +207,7 @@ public:
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_shape.Stride ];
+                              i1 )) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -223,26 +221,24 @@ public:
       return ArrayProxyType( m_ptr_on_device + 
                              m_shape.N3 * ( i2 +
                              m_shape.N2 * ( i1 )) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,5,s0,s1,s2,s3,Count> >
+                ShapeType , LayoutRight , 5 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-
-  Shape<LayoutRight,ScalarSize,5,s0,s1,s2,s3,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -261,7 +257,7 @@ public:
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_shape.Stride ];
+                              i1 ))) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -277,25 +273,24 @@ public:
                              m_shape.N4 * ( i3 +
                              m_shape.N3 * ( i2 +
                              m_shape.N2 * ( i1 ))) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,6,s0,s1,s2,s3,s4,Count> >
+                ShapeType , LayoutRight , 6 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,6,s0,s1,s2,s3,s4,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -315,7 +310,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_shape.Stride ];
+                              i1 )))) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -333,25 +328,24 @@ public:
                              m_shape.N4 * ( i3 +
                              m_shape.N3 * ( i2 +
                              m_shape.N2 * ( i1 )))) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned s5 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,7,s0,s1,s2,s3,s4,s5,Count> >
+                ShapeType , LayoutRight , 7 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,7,s0,s1,s2,s3,s4,s5,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -374,7 +368,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_shape.Stride ];
+                              i1 ))))) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -393,25 +387,24 @@ public:
                              m_shape.N4 * ( i3 +
                              m_shape.N3 * ( i2 +
                              m_shape.N2 * ( i1 ))))) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ScalarType , unsigned ScalarSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned s5 , unsigned s6 , unsigned Count >
+template< class MemorySpace , typename ScalarType , unsigned Count , class ShapeType>
 class ViewOper< MemorySpace ,
                 Array< ScalarType , Count , void > ,
-                Shape<LayoutRight,ScalarSize,8,s0,s1,s2,s3,s4,s5,s6,Count> >
+                ShapeType , LayoutRight , 8 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ScalarType * m_ptr_on_device ;
-  Shape<LayoutRight,ScalarSize,8,s0,s1,s2,s3,s4,s5,s6,Count> m_shape ;
+  ShapeType    m_shape ;
+  unsigned     m_stride ;
 
   typedef Array< ScalarType , Count , ArrayProxyContiguous > ArrayProxyType ;
 
@@ -435,7 +428,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * m_shape.Stride ];
+                              i1 )))))) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -457,7 +450,7 @@ public:
                              m_shape.N4 * ( i3 +
                              m_shape.N3 * ( i2 +
                              m_shape.N2 * ( i1 )))))) +
-                             m_shape.Stride * i0 );
+                             m_stride * i0 );
     }
 
 };

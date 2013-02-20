@@ -68,7 +68,10 @@ namespace Impl {
  */
 
 template< class T >
-struct AnalyzeShape {
+struct AnalyzeShape : public Shape< sizeof(T) , 0 >
+{
+  typedef Shape< sizeof(T), 0 >  shape ;
+
   typedef       T  scalar_type ;
   typedef       T  array_type ;
   typedef       T  value_type ;
@@ -81,18 +84,16 @@ struct AnalyzeShape {
   typedef       T  non_const_array_type ;
   typedef       T  non_const_value_type ;
   typedef       T  non_const_type ;
-
-  typedef Shape< sizeof(T), 0 >  shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T >
-struct AnalyzeShape< const T > {
+struct AnalyzeShape< const T > : public AnalyzeShape<T>::shape
+{
 private:
   typedef AnalyzeShape<T> nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename nested::shape shape ;
 
   typedef typename nested::const_scalar_type scalar_type ;
   typedef typename nested::const_array_type  array_type ;
@@ -108,19 +109,17 @@ public:
   typedef typename nested::non_const_array_type  non_const_array_type ;
   typedef typename nested::non_const_value_type  non_const_value_type ;
   typedef typename nested::non_const_type        non_const_type ;
-
-  typedef nested_shape shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T >
 struct AnalyzeShape< T * >
+  : public ShapeInsert< typename AnalyzeShape<T>::shape , 0 >::type
 {
 private:
   typedef AnalyzeShape<T> nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type  scalar_type ;
   typedef typename nested::array_type * array_type ;
@@ -136,19 +135,17 @@ public:
   typedef typename nested::non_const_array_type * non_const_array_type ;
   typedef typename nested::non_const_value_type   non_const_value_type ;
   typedef typename nested::non_const_type       * non_const_type ;
-
-  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T >
 struct AnalyzeShape< T[] >
+  : public ShapeInsert< typename AnalyzeShape<T>::shape , 0 >::type
 {
 private:
   typedef AnalyzeShape<T> nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
   typedef typename nested::array_type  array_type [] ;
@@ -164,19 +161,17 @@ public:
   typedef typename nested::non_const_array_type  non_const_array_type [] ;
   typedef typename nested::non_const_value_type  non_const_value_type ;
   typedef typename nested::non_const_type        non_const_type [] ;
-
-  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T >
 struct AnalyzeShape< const T[] >
+  : public ShapeInsert< typename AnalyzeShape< const T >::shape , 0 >::type
 {
 private:
   typedef AnalyzeShape< const T > nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
   typedef typename nested::array_type  array_type [] ;
@@ -192,19 +187,17 @@ public:
   typedef typename nested::non_const_array_type  non_const_array_type [] ;
   typedef typename nested::non_const_value_type  non_const_value_type ;
   typedef typename nested::non_const_type        non_const_type [] ;
-
-  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T , unsigned N >
 struct AnalyzeShape< T[N] >
+  : public ShapeInsert< typename AnalyzeShape<T>::shape , N >::type
 {
 private:
   typedef AnalyzeShape<T> nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
   typedef typename nested::array_type  array_type [N] ;
@@ -220,19 +213,17 @@ public:
   typedef typename nested::non_const_array_type  non_const_array_type [N] ;
   typedef typename nested::non_const_value_type  non_const_value_type ;
   typedef typename nested::non_const_type        non_const_type [N] ;
-
-  typedef typename ShapeInsert< nested_shape , N >::type shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 template< class T , unsigned N >
 struct AnalyzeShape< const T[N] >
+  : public ShapeInsert< typename AnalyzeShape< const T >::shape , N >::type
 {
 private:
   typedef AnalyzeShape< const T > nested ;
-  typedef typename nested::shape nested_shape ;
 public:
+
+  typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
   typedef typename nested::array_type  array_type [N] ;
@@ -248,10 +239,6 @@ public:
   typedef typename nested::non_const_array_type  non_const_array_type [N] ;
   typedef typename nested::non_const_value_type  non_const_value_type ;
   typedef typename nested::non_const_type        non_const_type [N] ;
-
-  typedef typename ShapeInsert< nested_shape , N >::type shape ;
-
-  static const unsigned rank = shape::rank ;
 };
 
 } // namespace Impl

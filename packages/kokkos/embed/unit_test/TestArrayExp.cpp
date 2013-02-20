@@ -340,10 +340,10 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
   std::cout << "  distance( x(0)[0] , x(0)[last] ) = "
             << (int)( & x(0)[Count-1] - & x(0)[0] )
             << std::endl
-            << "  x.shape() = { " << x.shape().Stride
-            << " : " << x.shape().N0 
+            << "  x.shape() ="
+            << " { " << x.shape().N0
             << " , " << x.shape().N1
-            << std::endl ;
+            << " }" <<" }" <<  std::endl ;
 
   if ( & x(0)[0] != & x(0,0) ) {
     std::cout << "  FAILED & x(0)[0] != & x(0,0) : "
