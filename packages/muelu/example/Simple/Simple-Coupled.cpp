@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
   ifpack2List.set("schwarz: combine mode", "Add"); // use string mode for this
   ifpack2List.set("schwarz: reordering type", "none");
   ifpack2List.set("schwarz: filter singletons", false);  
-  ifpack2List.set("schwarz: overlap level", 10);
+  ifpack2List.set("schwarz: overlap level", 0);
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);

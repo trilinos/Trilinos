@@ -75,7 +75,7 @@ namespace Xpetra {
 
     //! Constructor
     MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap)
-      : rowMap_ (rowMap), colMap_(colMap), maxEigValueEstimate_(-1*Teuchos::ScalarTraits<Scalar>::one())
+      : rowMap_ (rowMap), colMap_(colMap), maxEigValueEstimate_(-Teuchos::ScalarTraits<Scalar>::one())
     { }
 
     //! Destructor

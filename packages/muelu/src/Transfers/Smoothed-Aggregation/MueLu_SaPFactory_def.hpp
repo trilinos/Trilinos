@@ -163,7 +163,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
-        if (lambdaMax == -1*Teuchos::ScalarTraits<SC>::one()) {
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
           GetOStream(Statistics1, 0) << "Calculating max eigenvalue estimate now" << std::endl;
           Magnitude stopTol = 1e-4;
           lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
