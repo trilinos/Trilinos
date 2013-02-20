@@ -355,22 +355,22 @@ namespace MueLu {
       }
 
       //If on the coarse level, do either smoothing (if defined) or a direct solve.
-      if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
-        {
-          bool emptySolve = true;
-          if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
-            RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
-            preSmoo->Apply(X, B, false);
-            emptySolve=false;
-          }
-          if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
-            RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-            postSmoo->Apply(X, B, false);
-            emptySolve=false;
-          }
-          if (emptySolve==true)
-            GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
-        } else {
+      if (startLevel == ((LO)Levels_.size())-1) { //FIXME is this right?
+        bool emptySolve = true;
+        if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+          preSmoo->Apply(X, B, false);
+          emptySolve=false;
+        }
+        if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+          postSmoo->Apply(X, B, false);
+          emptySolve=false;
+        }
+        if (emptySolve==true)
+          GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
+
+      } else {
         //on an intermediate level
         RCP<Level> Coarse = Levels_[startLevel+1];
 
