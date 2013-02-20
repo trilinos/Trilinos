@@ -658,25 +658,15 @@ MetaData::get_cell_topology(
     return CellTopology();
 }
 
-Part* MetaData::get_cell_topology_root_part_ptr(const CellTopology cell_topology) const
+Part &MetaData::get_cell_topology_root_part(const CellTopology cell_topology) const
 {
   ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology_root_part: initialize() must be called before this function");
   CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
-  if( it == m_cellTopologyPartEntityRankMap.end() )
-  {
-      return NULL;
-  }
-  return (*it).second.first;
-}
-
-Part &MetaData::get_cell_topology_root_part(const CellTopology cell_topology) const
-{
-  Part* part_ptr = get_cell_topology_root_part_ptr(cell_topology);
-  ThrowErrorMsgIf(part_ptr == NULL,
+  ThrowErrorMsgIf(it == m_cellTopologyPartEntityRankMap.end(),
                   "Cell topology " << cell_topology.getName() <<
                   " has not been registered");
 
-  return *part_ptr;
+  return *(*it).second.first;
 }
 
 /// Note:  This function only uses the PartCellTopologyVector to look up the
@@ -888,13 +878,8 @@ void set_cell_topology(
 
   ThrowRequireMsg(meta.is_initialized(),"set_cell_topology: initialize() must be called before this function");
 
-  Part *root_part_ptr = meta.get_cell_topology_root_part_ptr(cell_topology);
-  if (root_part_ptr == NULL )
-  {
-      meta.register_cell_topology(cell_topology, part.primary_entity_rank());
-      root_part_ptr = meta.get_cell_topology_root_part_ptr(cell_topology);
-  }
-  meta.declare_part_subset(*root_part_ptr, part);
+  Part &root_part = meta.get_cell_topology_root_part(cell_topology);
+  meta.declare_part_subset(root_part, part);
 }
 
 const std::vector<std::string>&
@@ -1103,29 +1088,7 @@ CellTopology get_cell_topology(stk::topology t)
   case stk::topology::HEX_20:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
   case stk::topology::HEX_27:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
   case stk::topology::INVALID_TOPOLOGY: break;
-  default:
-      if (t.is_superelement())
-      {
-          std::string topology_name = "SUPER" + sierra::to_string(t.num_nodes());
-          shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topology_name);
-
-          shards::CellTopology cell_topology(cell_topology_data);
-
-          cell_topology_data->base              = cell_topology_data ;
-          cell_topology_data->dimension         = 1 ;
-          cell_topology_data->vertex_count      = t.num_nodes() ;
-          cell_topology_data->node_count        = t.num_nodes() ;
-          cell_topology_data->edge_count        = 0 ;
-          cell_topology_data->side_count        = 0 ;
-          cell_topology_data->permutation_count = 0 ;
-          cell_topology_data->subcell_count[0]  = t.num_nodes() ;
-          cell_topology_data->subcell_count[1]  = 1 ;
-          cell_topology_data->subcell_count[2]  = 0 ;
-          cell_topology_data->subcell_count[3]  = 0 ;
-
-          return cell_topology;
-      }
-      break;
+  default: break;
   }
   return CellTopology(NULL);
 }
