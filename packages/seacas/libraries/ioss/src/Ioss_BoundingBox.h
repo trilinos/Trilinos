@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010
+// Copyright(C) 2013
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -30,46 +30,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_ElementBlock_h
-#define IOSS_Ioss_ElementBlock_h
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_BoundingBox.h>
-#include <Ioss_Property.h>
-#include <Ioss_EntityBlock.h>
-#include <string>
-#include <assert.h>
+#ifndef IOSS_Ioss_BoundingBox_h
+#define IOSS_Ioss_BoundingBox_h
 
 namespace Ioss {
-  class DatabaseIO;
+  struct AxisAlignedBoundingBox {
+    AxisAlignedBoundingBox() :
+      xmin(0), ymin(0), zmin(0), xmax(0), ymax(0), zmax(0) {}
 
-  class ElementBlock : public EntityBlock {
-  public:
-    ElementBlock(DatabaseIO *io_database,
-		 const std::string& name, const std::string& element_type,
-		 int64_t number_elements);
+    AxisAlignedBoundingBox(double xm, double ym, double zm, double xM, double yM, double zM) :
+      xmin(xm), ymin(ym), zmin(zm), xmax(xM), ymax(yM), zmax(zM) {}
+    
+    double xmin;
+    double ymin;
+    double zmin;
 
-    ~ElementBlock();
-
-    std::string type_string() const {return "ElementBlock";}
-    EntityType type() const {return ELEMENTBLOCK;}
-
-    /// Handle implicit properties -- These are calcuated from data stored
-    /// in the grouping entity instead of having an explicit value assigned.
-    /// An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
-
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
-    AxisAlignedBoundingBox get_bounding_box() const;
-
-  protected:
-    int64_t internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-    int64_t internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
-  private:
-
+    double xmax;
+    double ymax;
+    double zmax;
   };
 }
+
 #endif

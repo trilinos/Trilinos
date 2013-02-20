@@ -53,6 +53,7 @@ namespace Info {
       int summary() const {return summary_;}
       bool check_node_status() const {return checkNodeStatus_;}
       bool compute_volume()  const {return computeVolume_;}
+      bool compute_bbox()  const {return computeBBox_;}
       bool adjacencies() const {return adjacencies_;}
       bool ints_64_bit() const {return ints64Bit_;}
       
@@ -80,6 +81,7 @@ namespace Info {
       bool computeVolume_;
       bool adjacencies_;
       bool ints64Bit_;
+      bool computeBBox_;
  
       char fieldSuffixSeparator_;
       

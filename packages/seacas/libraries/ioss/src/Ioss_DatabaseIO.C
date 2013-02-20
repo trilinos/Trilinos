@@ -32,6 +32,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_NodeBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_ParallelUtils.h>
@@ -39,6 +40,7 @@
 #include <Ioss_Utils.h>
 #include <assert.h>
 #include <stddef.h>
+#include <float.h>
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -89,6 +91,47 @@ namespace {
     }
   }
 #endif
+  double my_min(double x1, double x2)
+  {
+    return x1 < x2 ? x1 : x2;
+  }
+
+  double my_max(double x1, double x2)
+  {
+    return x1 > x2 ? x1 : x2;
+  }
+
+  template <typename INT>
+  void calc_bounding_box(size_t node_count, size_t elem_count,
+			 std::vector<double> coordinates, std::vector<INT> connectivity,
+			 double &xmin, double &ymin, double &zmin,
+			 double &xmax, double &ymax, double &zmax)
+  {
+    std::vector<int> elem_block_nodes(node_count);
+    for (size_t i=0; i < connectivity.size(); i++) {
+      elem_block_nodes[connectivity[i]-1] = 1;
+    }
+
+    xmin = DBL_MAX;
+    ymin = DBL_MAX;
+    zmin = DBL_MAX;
+
+    xmax = -DBL_MAX;
+    ymax = -DBL_MAX;
+    zmax = -DBL_MAX;
+
+    for (size_t i=0; i < node_count; i++) {
+      if (elem_block_nodes[i] == 1) {
+	xmin = my_min(xmin,coordinates[3*i+0]);
+	ymin = my_min(ymin,coordinates[3*i+1]);
+	zmin = my_min(zmin,coordinates[3*i+2]);
+
+	xmax = my_max(xmax,coordinates[3*i+0]);
+	ymax = my_max(ymax,coordinates[3*i+1]);
+	zmax = my_max(zmax,coordinates[3*i+2]);
+      }
+    }
+  }
 }
 
 namespace Ioss {
@@ -456,26 +499,59 @@ namespace Ioss {
       std::copy(side_topo.begin(), side_topo.end(),
 		std::back_inserter(new_this->sideTopology));
     }
-    if (all_sphere) {
-      // If we end up here, the model either contains all spheres, or there are no
-      // element blocks in the model...
-      const ElementTopology *ftopo = ElementTopology::factory("unknown");
-      if (element_blocks.empty()) {
-	side_topo.insert(std::make_pair(ftopo, ftopo));
-      } else {
-	const ElementBlock *block = *element_blocks.begin();
-	side_topo.insert(std::make_pair(block->topology(), ftopo));
+    assert(sideTopology.size() > 0);
+  }
+
+  AxisAlignedBoundingBox DatabaseIO::get_bounding_box(const Ioss::ElementBlock *eb) const
+  {
+    if (elementBlockBoundingBoxes.empty()) {
+      // Calculate the bounding boxes for all element blocks...
+      std::vector<double> coordinates;
+      Ioss::NodeBlock *nb = get_region()->get_node_blocks()[0];
+      nb->get_field_data("mesh_model_coordinates", coordinates);
+      ssize_t nnode = nb->get_property("entity_count").get_int();
+      
+      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      size_t nblock = element_blocks.size();
+      std::vector<double> minmax;
+      minmax.reserve(6*nblock);
+      
+      for (size_t i=0; i < element_blocks.size(); i++) {
+	double xmin, ymin, zmin, xmax, ymax, zmax;
+	Ioss::ElementBlock *block = element_blocks[i];
+	ssize_t nelem = block->get_property("entity_count").get_int();
+	if (block->get_database()->int_byte_size_api() == 8) {
+	  std::vector<int64_t> connectivity;
+	  block->get_field_data("connectivity_raw", connectivity);
+	  calc_bounding_box(nnode, nelem, coordinates, connectivity,
+			    xmin, ymin, zmin, xmax, ymax, zmax);
+	} else {
+	  std::vector<int> connectivity;
+	  block->get_field_data("connectivity_raw", connectivity);
+	  calc_bounding_box(nnode, nelem, coordinates, connectivity,
+			    xmin, ymin, zmin, xmax, ymax, zmax);
+	}
+
+	minmax.push_back(xmin);
+	minmax.push_back(ymin);
+	minmax.push_back(zmin);
+	minmax.push_back(-xmax);
+	minmax.push_back(-ymax);
+	minmax.push_back(-zmax);
+      }
+
+      util().global_array_minmax(minmax,  Ioss::ParallelUtils::DO_MIN);
+
+      for (size_t i=0; i < element_blocks.size(); i++) {
+	Ioss::ElementBlock *block = element_blocks[i];
+	std::string name = block->name();
+	AxisAlignedBoundingBox bbox(minmax[6*i+0], minmax[6*i+1], minmax[6*i+2],
+				    -minmax[6*i+3], -minmax[6*i+4], -minmax[6*i+5]);
+	elementBlockBoundingBoxes[name] = bbox;
       }
     }
-    assert(side_topo.size() > 0);
-    assert(sideTopology.size() == 0);
-    // Copy into the sideTopology container...
-    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-    std::copy(side_topo.begin(), side_topo.end(),
-	      std::back_inserter(new_this->sideTopology));
+    return elementBlockBoundingBoxes[eb->name()];
   }
-  assert(sideTopology.size() > 0);
-}
 } // namespace Ioss
 
 #include <sys/time.h>

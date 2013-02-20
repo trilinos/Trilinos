@@ -45,6 +45,7 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_EntityType.h>
+#include <Ioss_BoundingBox.h>
 
 #include <vector>
 
@@ -163,6 +164,8 @@ namespace Ioss {
     virtual void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const {}
     virtual void compute_block_membership(Ioss::SideBlock *efblock, std::vector<std::string> &block_membership) const {}
 
+    AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
+    
     int  int_byte_size_api() const; //! Returns 4 or 8
     void set_int_byte_size_api(Ioss::DataSize size) const;
 
@@ -375,6 +378,8 @@ namespace Ioss {
     DatabaseIO(); // Do not implement
     DatabaseIO(const DatabaseIO&); // Do not implement
     DatabaseIO& operator=(const DatabaseIO&); // Do not implement
+
+    mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 
     Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
     Region *region_;

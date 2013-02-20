@@ -329,8 +329,17 @@ namespace {
 	}
 	info_fields(*i, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
 	OUTPUT << "\n";
-      }
 
+	if (interface.compute_bbox()) {
+	  Ioss::AxisAlignedBoundingBox bbox = (*i)->get_bounding_box();
+	  OUTPUT << "\tBounding Box: Minimum X,Y,Z = "
+		 << std::setw(12) << std::setprecision(4) << std::scientific
+		 << bbox.xmin << "\t" << bbox.ymin << "\t" << bbox.zmin << "\n"
+		 << "\t              Maximum X,Y,Z = "
+		 << std::setw(12) << std::setprecision(4) << std::scientific
+		 << bbox.xmax << "\t" << bbox.ymax << "\t" << bbox.zmax << "\n";
+	}
+      }
       ++i;
     }
     if (summary) {

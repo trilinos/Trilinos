@@ -350,6 +350,7 @@ namespace {
 				  Ioex::IntVector &truth_table,
 				  std::vector<T*> &blocks,
 				  char field_suffix_separator);
+
 }
 
 namespace Ioex {

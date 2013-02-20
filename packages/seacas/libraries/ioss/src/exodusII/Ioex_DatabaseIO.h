@@ -406,7 +406,7 @@ namespace Ioex {
 
     mutable std::vector<std::vector<bool> > blockAdjacency;
     mutable std::vector<unsigned char> nodeConnectivityStatus;
-      
+    
     time_t timeLastFlush;
 
     mutable bool fileExists; // False if file has never been opened/created
