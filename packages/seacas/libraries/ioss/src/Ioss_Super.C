@@ -68,17 +68,12 @@ Ioss::Super::~Super()
 void Ioss::Super::make_super(const std::string &type)
 {
   // Decode name to determine number of nodes...
-  std::string base1 = "super";
-  std::string base2 = "superelement_topology_";
-
-  std::string node_count_str;
-  if (type.find(base1) == 0)
-    node_count_str = type.substr(base1.size());
-  else if (type.find(base2) == 0)
-    node_count_str = type.substr(base2.size());
-
-  int node_count = std::atoi(node_count_str.c_str());
-  new Ioss::Super(type, node_count);
+  size_t under = type.find_last_of('_');
+  if (under != std::string::npos) {
+    std::string node_count_str = type.substr(under+1);
+    int node_count = std::atoi(node_count_str.c_str());
+    new Ioss::Super(type, node_count);
+  }
 }
 
 int Ioss::Super::parametric_dimension() const {return  3;}
