@@ -1212,7 +1212,7 @@ NNTI_result_t NNTI_gni_connect (
         }
 
         trios_start_timer(call_time);
-        rc=GNI_CdmAttach(conn->cdm_hdl,
+        rc=GNI_CdmAttach_wrapper (conn->cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &conn->nic_hdl);
@@ -7166,7 +7166,7 @@ inline int DEQUEUE_POST_DESCRIPTOR(
     *post_desc_ptr=NULL;
 
     log_debug(nnti_debug_level, "calling GetComplete(DEQUEUE_POST_DESCRIPTOR)");
-    rc=GNI_GetCompleted (cq_hdl, *ev_data, post_desc_ptr);
+    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, post_desc_ptr);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(DEQUEUE_POST_DESCRIPTOR post_desc_ptr(%p)) failed: %d", *post_desc_ptr, rc);
     print_post_desc(*post_desc_ptr);
 

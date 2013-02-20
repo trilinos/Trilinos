@@ -1175,13 +1175,14 @@ NNTI_result_t NNTI_ib_send (
     if (config.use_wr_pool) {
         wr=wr_pool_sendrecv_pop();
     } else {
-        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        wr=(ib_work_request *)malloc(sizeof(ib_work_request));
+        memset(wr, 0, sizeof(ib_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
 
-    // RAOLDFI ADDED
-    memset(wr, 0, sizeof(ib_work_request));
+//    // RAOLDFI ADDED
+//    memset(wr, 0, sizeof(ib_work_request));
 
     wr->conn = get_conn_peer(peer_hdl);
     assert(wr->conn);
@@ -4840,7 +4841,7 @@ static void config_get_from_env(nnti_ib_config *c)
 
     // defaults
     c->use_wr_pool = false;
-    c->use_rdma_target_ack=true;
+    c->use_rdma_target_ack=false;
 
     if ((env_str=getenv("TRIOS_NNTI_USE_WR_POOL")) != NULL) {
         if ((!strcasecmp(env_str, "TRUE")) ||
