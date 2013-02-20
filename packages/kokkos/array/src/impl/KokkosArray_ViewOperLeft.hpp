@@ -60,6 +60,7 @@ private:
 
   ValueType                   * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,0> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -92,6 +93,7 @@ private:
 
   ValueType                      * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,1,s0> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -130,6 +132,7 @@ private:
 
   ValueType                         * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,2,s0,s1> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -141,7 +144,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * i1 ];
+      return m_ptr_on_device[ i0 + m_stride * i1 ];
     }
 };
 
@@ -159,6 +162,7 @@ private:
 
   ValueType                            * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,3,s0,s1,s2> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -171,7 +175,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 };
@@ -190,6 +194,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,4,s0,s1,s2,s3> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -203,7 +208,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -224,6 +229,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,5,s0,s1,s2,s3,s4> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -238,7 +244,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -260,6 +266,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,6,s0,s1,s2,s3,s4,s5> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -274,7 +281,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -297,6 +304,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -313,7 +321,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -337,6 +345,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -353,7 +362,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_shape.Stride * (
+      return m_ptr_on_device[ i0 + m_stride * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (

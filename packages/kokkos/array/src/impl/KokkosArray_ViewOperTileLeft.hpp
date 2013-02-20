@@ -66,6 +66,7 @@ private:
 
   ValueType                         * m_ptr_on_device ;
   Shape<LayoutTileLeft<M,N,false>,ValueSize,2,s0,s1> m_shape ;
+  unsigned m_stride ;
 
 public:
 
@@ -87,8 +88,7 @@ public:
 
       typedef Shape<LayoutLeft,ValueSize,2,M,N> tile_shape_type ;
 
-      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()),
-                        tile_shape_type::create_unpadded() );
+      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()), tile_shape_type() , M );
     }
 
 
@@ -161,6 +161,7 @@ private:
 
   ValueType                         * m_ptr_on_device ;
   Shape<LayoutTileLeft<M,N,true>,ValueSize,2,s0,s1> m_shape ;
+  unsigned m_stride ;
 
   enum {
       M_SHIFT = Impl::power_of_2<M>::value
@@ -191,7 +192,7 @@ public:
 
       return tile_type( m_ptr_on_device
                         + ( (itile + jtile * tiles_in_dimension_0() ) << ( M_SHIFT + N_SHIFT )),
-                        tile_shape_type::create_unpadded() );
+                        tile_shape_type() , M );
     }
 
   KOKKOSARRAY_INLINE_FUNCTION

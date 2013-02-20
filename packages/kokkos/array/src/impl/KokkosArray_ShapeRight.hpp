@@ -58,14 +58,15 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,0> >
   typedef Shape<LayoutRight,ValueSize,0> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & ) { return 1 ; }
-
-  static inline
-  size_t offset( const shape_type & ) { return 0 ; }
+  size_t offset( const shape_type & , const unsigned ) { return 0 ; }
 
   template< class MemorySpace >
   static inline
   size_t stride( const shape_type & ) { return 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & , unsigned ) { return 1 ; }
 };
 
 template < unsigned ValueSize , unsigned s0 >
@@ -74,10 +75,7 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,1,s0> >
   typedef Shape<LayoutRight,ValueSize,1,s0> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & shape ) { return shape.N0 ; }
-
-  static inline
-  size_t offset( const shape_type & shape , const size_t i0 )
+  size_t offset( const shape_type & shape , const unsigned , const size_t i0 )
   { assert_shape_bounds( shape, i0 ); return i0 ; }
 
   // Stride is not used, hard-code to '1' for interoperability
@@ -85,6 +83,10 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,1,s0> >
   template< class MemorySpace >
   static inline
   size_t stride( const shape_type & ) { return 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & shape , unsigned ) { return shape.N0 ; }
 };
 
 
@@ -96,12 +98,8 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   typedef Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & shape )
-  { return shape.N0 * shape.Stride ; }
-
-  static inline
   size_t offset(
-    const shape_type & shape ,
+    const shape_type & shape , const unsigned stride ,
     const size_t i0     , const size_t i1     ,
     const size_t i2 = 0 , const size_t i3 = 0 ,
     const size_t i4 = 0 , const size_t i5 = 0 ,
@@ -115,7 +113,7 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
            i4 + shape.N4 * (
            i3 + shape.N3 * (
            i2 + shape.N2 * (
-           i1 )))))) + i0 * shape.Stride ;
+           i1 )))))) + i0 * stride ;
   }
 
   template< class MemorySpace >
@@ -126,6 +124,13 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
                                shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
 
     return MemorySpace::preferred_alignment( shape.scalar_size , block_count );
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & shape , unsigned stride )
+  {
+    return shape.N0 * stride ;
   }
 };
 

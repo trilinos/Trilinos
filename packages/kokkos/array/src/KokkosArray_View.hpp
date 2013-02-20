@@ -199,6 +199,10 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   shape_type shape() const { return oper_type::m_shape ; }
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t allocation_count() const
+  { return Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride ); }
+
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
   KOKKOSARRAY_INLINE_FUNCTION
@@ -256,9 +260,10 @@ private:
      scalar_type , shape_type , memory_space > internal_management ;
 
   KOKKOSARRAY_INLINE_FUNCTION
-  void internal_private_assign( const shape_type & shape , scalar_type * ptr )
+  void internal_private_assign( const shape_type & shape , const unsigned stride , scalar_type * ptr )
   {
     oper_type::m_shape          = shape ;
+    oper_type::m_stride         = stride ;
     oper_type::m_ptr_on_device  = ptr ;
 
     internal_management::increment( oper_type::m_ptr_on_device );
@@ -269,14 +274,6 @@ private:
   {
     internal_management::decrement( oper_type::m_ptr_on_device );
     oper_type::m_ptr_on_device = 0 ;
-  }
-
-  void internal_private_create( const std::string & label ,
-                                const shape_type shape )
-  {
-    oper_type::m_ptr_on_device = internal_management::allocate( label , shape );
-    oper_type::m_shape = 0 != oper_type::m_ptr_on_device ? shape : shape_type();
-    Impl::ViewInitialize< View >::apply( *this );
   }
 
 public:
@@ -293,7 +290,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
     {
-      internal_private_assign( rhs.m_shape , rhs.m_ptr_on_device );
+      internal_private_assign( rhs.m_shape , rhs.m_stride , rhs.m_ptr_on_device );
     }
 
   /**  \brief  Destroy this view of the array.
@@ -313,7 +310,7 @@ public:
   View & operator = ( const View & rhs )
   {
     internal_private_clear();
-    internal_private_assign( rhs.m_shape , rhs.m_ptr_on_device );
+    internal_private_assign( rhs.m_shape , rhs.m_stride , rhs.m_ptr_on_device );
     return *this ;
   }
 
@@ -346,9 +343,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() );
+      const subshape_type data( rhs.m_shape, rhs.m_stride );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   // Assign a compatible view:
@@ -380,10 +377,10 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() );
+      const subshape_type data( rhs.m_shape, rhs.m_stride );
 
       internal_private_clear();
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
 
       return *this ;
     }
@@ -419,9 +416,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() , arg0 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -453,9 +450,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() , arg0 , arg1 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 , arg1 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -488,9 +485,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() , arg0 , arg1 , arg2 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -525,9 +522,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape() , arg0 , arg1 , arg2 , arg3 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -563,9 +560,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type data( rhs.shape(), arg0, arg1, arg2, arg3, arg4 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -602,10 +599,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type
-         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -644,10 +640,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type
-         data( rhs.shape() , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   template< class rhsData ,
@@ -687,10 +682,9 @@ public:
         Impl::SubShape< shape_type , rhs_shape_type >::type
           subshape_type ;
 
-      const subshape_type
-         data( rhs.shape(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6, arg7 );
 
-      internal_private_assign( data.shape , rhs.m_ptr_on_device + data.offset );
+      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
     }
 
   /*------------------------------------------------------------------*/
@@ -702,253 +696,62 @@ public:
     typedef typename
       Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
 
-    internal_private_create( label , shape );
+    oper_type::m_shape  = shape ;
+    oper_type::m_stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( oper_type::m_shape );
+
+    const unsigned allocation_count =
+      Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride );
+
+    oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
+
   }
 
-  explicit View( const std::string & label )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>() );
-  }
-
+  explicit
   View( const std::string & label ,
-        const size_t n0 )
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
   {
     typedef typename
       Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
 
-    internal_private_create( label , shape_type::template create<memory_space>(n0) );
-  }
+    shape_type::assign( oper_type::m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
 
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
+    oper_type::m_stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( oper_type::m_shape );
 
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1) );
-  }
+    const unsigned allocation_count =
+      Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride );
 
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
+    oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
 
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2) );
-  }
-
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3) );
-  }
-
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
-  }
-
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
-  }
-
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 ,
-        const size_t n6 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
-  }
-
-  View( const std::string & label ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 ,
-        const size_t n6 ,
-        const size_t n7 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
+    Impl::ViewInitialize< View >::apply( *this );
   }
 
   /*------------------------------------------------------------------*/
   /** \brief  For unit testing shape mapping. */
   explicit View( const shape_type & shape )
-    { internal_private_assign( shape , 0 ); }
+    {
+      unsigned stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( shape );
+      internal_private_assign( shape , stride , 0 );
+    }
 
   /*------------------------------------------------------------------*/
   /* Create an unmannaged view */
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View( scalar_type * data_ptr , const shape_type shape )
+  View( scalar_type * data_ptr , const shape_type shape , const unsigned stride )
   {
     typedef typename
      Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
        ok_create ;
 
-    internal_private_assign( shape , data_ptr );
+    internal_private_assign( shape , stride , data_ptr );
   }
-
-#if 0
-  explicit View( scalar_type * data_ptr )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>() , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3,n4) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 ,
-        const size_t n6 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) , data_ptr );
-  }
-
-  View( scalar_type * data_ptr ,
-        const size_t n0 ,
-        const size_t n1 ,
-        const size_t n2 ,
-        const size_t n3 ,
-        const size_t n4 ,
-        const size_t n5 ,
-        const size_t n6 ,
-        const size_t n7 )
-  {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
-    internal_private_assign( shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) , data_ptr );
-  }
-#endif
 };
 
 //----------------------------------------------------------------------------

@@ -65,7 +65,7 @@ struct ViewManagement
   KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * ) {}
 
   inline static 
-  ScalarType * allocate( const std::string & , const ShapeType & )
+  ScalarType * allocate( const std::string & , const unsigned )
   { return 0 ; }
 };
 
@@ -81,14 +81,13 @@ struct ViewManagement< HostSpace , MemoryManaged ,
 
   inline static 
   ScalarType * allocate( const std::string & label ,
-                         const ShapeType & shape )
+                         const unsigned alloc_count )
   {
     return (ScalarType *)
       MemorySpace::allocate( label ,
                              typeid(ScalarType) ,
                              sizeof(ScalarType) ,
-                             Impl::ShapeMap<ShapeType>
-                                 ::allocation_count( shape ) );
+                             alloc_count );
   }
 };
 
@@ -213,8 +212,7 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
       const size_t n =
-        sizeof(typename dst_type::scalar_type) *
-        ShapeMap< shape_type >::allocation_count( dst.shape() );
+        sizeof(typename dst_type::scalar_type) * dst.allocation_count();
 
         KokkosArray::DeepCopy< typename DeviceDst::memory_space ,
                                typename DeviceSrc::memory_space >(

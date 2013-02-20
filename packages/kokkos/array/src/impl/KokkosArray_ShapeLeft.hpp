@@ -58,14 +58,15 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,0> >
   typedef Shape<LayoutLeft,ValueSize,0> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & ) { return 1 ; }
-
-  static inline
-  size_t offset( const shape_type & ) { return 0 ; }
+  size_t offset( const shape_type & , const unsigned ) { return 0 ; }
 
   template< class MemorySpace >
   static inline
   size_t stride( const shape_type & ) { return 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & , unsigned ) { return 1 ; }
 };
 
 template < unsigned ValueSize , unsigned s0 >
@@ -74,15 +75,16 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,1,s0> >
   typedef Shape<LayoutLeft,ValueSize,1,s0> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & shape ) { return shape.N0 ; }
-
-  static inline
-  size_t offset( const shape_type & shape , const size_t i0 )
+  size_t offset( const shape_type & shape , const unsigned , const size_t i0 )
   { assert_shape_bounds( shape, i0 ); return i0 ; }
 
   template< class MemorySpace >
   static inline
   size_t stride( const shape_type & ) { return 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & shape , unsigned ) { return shape.N0 ; }
 };
 
 template < unsigned ValueSize , unsigned Rank ,
@@ -93,15 +95,8 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   typedef Shape<LayoutLeft,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & shape )
-  {
-    return shape.Stride * shape.N1 * shape.N2 * shape.N3 *
-           shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
-  }
-
-  static inline
   size_t offset(
-    const shape_type & shape ,
+    const shape_type & shape , const unsigned stride ,
     const size_t i0     , const size_t i1     ,
     const size_t i2 = 0 , const size_t i3 = 0 ,
     const size_t i4 = 0 , const size_t i5 = 0 ,
@@ -109,7 +104,7 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   {
     assert_shape_bounds( shape, i0, i1, i2, i3, i4, i5, i6, i7 );
 
-    return i0 + shape.Stride * (
+    return i0 + stride * (
            i1 + shape.N1 * (
            i2 + shape.N2 * (
            i3 + shape.N3 * (
@@ -123,6 +118,14 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   size_t stride( const shape_type & shape )
   {
     return MemorySpace::preferred_alignment( shape.scalar_size , shape.N0 );
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  size_t allocation_count( const shape_type & shape , unsigned stride )
+  {
+    return stride * shape.N1 * shape.N2 * shape.N3 *
+           shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
   }
 };
 
@@ -139,14 +142,15 @@ struct SubShape< Shape< LayoutLeft, ValueSize, 1, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i1 )
+  SubShape( const SrcShape src , const unsigned src_stride , const size_t i1 )
   {
     assert_shape_bounds( src , 0 , i1 );
-    offset = ShapeMap<SrcShape>::offset( src , 0 , i1 );
-    shape.Stride = 1 ; // unused in rank-1 arrays
+    offset = ShapeMap<SrcShape>::offset( src , src_stride , 0 , i1 );
     shape.N0     = src.N0 ;
+    stride       = 1 ;
   }
 };
 
@@ -160,14 +164,15 @@ struct SubShape< Shape< LayoutRight, ValueSize, 1, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i1 )
+  SubShape( const SrcShape src , const unsigned src_stride , const size_t i1 )
   {
     assert_shape_bounds( src , 0 , i1 );
-    offset = ShapeMap<SrcShape>::offset( src , 0 , i1 );
-    shape.Stride = 1 ; // unused in rank-1 arrays
+    offset = ShapeMap<SrcShape>::offset( src , src_stride , 0 , i1 );
     shape.N0     = src.N0 ;
+    stride       = 1 ;
   }
 };
 

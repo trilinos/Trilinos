@@ -61,6 +61,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,0> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -94,6 +95,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,1,s0> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -133,6 +135,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,2,s0,s1> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -144,7 +147,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * m_shape.Stride ];
+      return m_ptr_on_device[ i1 + i0 * m_stride ];
     }
 };
 
@@ -161,6 +164,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,3,s0,s1,s2> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -174,7 +178,7 @@ public:
       KOKKOSARRAY_ASSUME_ALIGNED( MemorySpace , m_ptr_on_device );
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * m_shape.Stride ];
+                              i1 ) + i0 * m_stride ];
     }
 };
 
@@ -191,6 +195,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,4,s0,s1,s2,s3> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -206,7 +211,7 @@ public:
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_shape.Stride ];
+                              i1 )) + i0 * m_stride ];
     }
 };
 
@@ -224,6 +229,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,5,s0,s1,s2,s3,s4> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -241,7 +247,7 @@ public:
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_shape.Stride ];
+                              i1 ))) + i0 * m_stride ];
     }
 };
 
@@ -259,6 +265,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,6,s0,s1,s2,s3,s4,s5> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -277,7 +284,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_shape.Stride ];
+                              i1 )))) + i0 * m_stride ];
     }
 };
 
@@ -295,6 +302,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -316,7 +324,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_shape.Stride ];
+                              i1 ))))) + i0 * m_stride ];
     }
 };
 
@@ -334,6 +342,7 @@ private:
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutRight,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> m_shape ;
+  unsigned  m_stride ;
 
 public:
 
@@ -356,7 +365,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * m_shape.Stride ];
+                              i1 )))))) + i0 * m_stride ];
     }
 };
 

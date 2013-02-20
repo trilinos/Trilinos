@@ -68,11 +68,7 @@ struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType > >
 
   inline static void apply( const view_type & view )
   {
-    const size_t count =
-      Impl::ShapeMap<shape_type>::allocation_count( view.shape() );
-
-    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
-
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , view.allocation_count() );
   }
 };
 

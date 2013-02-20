@@ -104,8 +104,7 @@ bool operator == ( const Shape<xLayout,xSize,xRank,
 
   return same_size && same_layout && same_rank &&
          x.N0 == y.N0 && x.N1 == y.N1 && x.N2 == y.N2 && x.N3 == y.N3 &&
-         x.N4 == y.N4 && x.N5 == y.N5 && x.N6 == y.N6 && x.N7 == y.N7 &&
-         x.Stride == y.Stride ;
+         x.N4 == y.N4 && x.N5 == y.N5 && x.N6 == y.N6 && x.N7 == y.N7 ;
 }
 
 template< class    xLayout , unsigned xSize , unsigned xRank ,
@@ -126,7 +125,7 @@ bool operator != ( const Shape<xLayout,xSize,xRank,
 void assert_shapes_are_equal_throw(
   const std::type_info & x_layout ,
   const unsigned x_scalar_size ,
-  const unsigned x_rank , const unsigned x_stride ,
+  const unsigned x_rank ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
   const unsigned x_N4 , const unsigned x_N5 ,
@@ -134,7 +133,7 @@ void assert_shapes_are_equal_throw(
 
   const std::type_info & y_layout ,
   const unsigned y_scalar_size ,
-  const unsigned y_rank , const unsigned y_stride ,
+  const unsigned y_rank ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
   const unsigned y_N4 , const unsigned y_N5 ,
@@ -158,10 +157,10 @@ void assert_shapes_are_equal(
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
       x_type::scalar_size ,
-      x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
+      x_type::rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
       typeid(typename y_type::array_layout),
       y_type::scalar_size ,
-      y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
+      y_type::rank, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
 
@@ -185,10 +184,10 @@ void assert_shapes_equal_dimension(
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
       x_type::scalar_size ,
-      x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
+      x_type::rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
       typeid(typename y_type::array_layout),
       y_type::scalar_size ,
-      y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
+      y_type::rank, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
 
@@ -318,7 +317,6 @@ struct Shape< Layout , ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
   static const unsigned StaticN6     = 1 ;
   static const unsigned StaticN7     = 1 ;
 
-  static const unsigned Stride = 1 ;
   static const unsigned N0 = 1 ;
   static const unsigned N1 = 1 ;
   static const unsigned N2 = 1 ;
@@ -327,6 +325,13 @@ struct Shape< Layout , ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
   static const unsigned N5 = 1 ;
   static const unsigned N6 = 1 ;
   static const unsigned N7 = 1 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & ,
+               unsigned , unsigned , unsigned , unsigned ,
+               unsigned , unsigned , unsigned , unsigned )
+  {}
 
   template< class MemorySpace >
   static inline
@@ -367,7 +372,6 @@ struct Shape {
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
 
   static const unsigned N0 = s0 ;
   static const unsigned N1 = s1 ;
@@ -378,13 +382,18 @@ struct Shape {
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & ,
+               unsigned , unsigned , unsigned , unsigned ,
+               unsigned , unsigned , unsigned , unsigned )
+  {}
+
   template< class MemorySpace >
   static inline
   Shape create()
   {
     Shape shape ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -393,16 +402,13 @@ struct Shape {
   Shape create_unpadded()
   {
     Shape shape ;
-    shape.Stride = shape.N0 ;
     return shape ;
   }
 
   static inline
   Shape create( const Shape input )
   {
-    Shape shape ;
-    shape.Stride = input.Stride ;
-    return shape ;
+    return input ;
   }
 };
 
@@ -433,7 +439,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
 
   static const unsigned N1 = s1 ;
@@ -444,14 +449,19 @@ struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned , unsigned , unsigned ,
+               unsigned , unsigned , unsigned , unsigned )
+  { s.N0 = n0 ; }
+
   template< class MemorySpace >
   static inline
   Shape create( const unsigned arg_N0 )
   {
     Shape shape ;
     shape.N0 = arg_N0 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -462,7 +472,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
   {
     Shape shape ;
     shape.N0 = input.N0 ; // May or may not be static
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -491,7 +500,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
 
@@ -502,6 +510,13 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
 
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned , unsigned ,
+               unsigned , unsigned , unsigned , unsigned )
+  { s.N0 = n0 ; s.N1 = n1 ; }
+
   template< class MemorySpace >
   static inline
   Shape create( const unsigned arg_N0 ,
@@ -510,8 +525,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
     Shape shape ;
     shape.N0 = arg_N0 ;
     shape.N1 = arg_N1 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -523,7 +536,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
     Shape shape ;
     shape.N0 = input.N0 ; // May or may not be static
     shape.N1 = input.N1 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -551,7 +563,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -561,6 +572,13 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
   static const unsigned N5 = s5 ;
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned ,
+               unsigned , unsigned , unsigned , unsigned )
+  { s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; }
 
   template< class MemorySpace >
   static inline
@@ -572,8 +590,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
     shape.N0 = arg_N0 ;
     shape.N1 = arg_N1 ;
     shape.N2 = arg_N2 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -586,7 +602,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
     shape.N0 = input.N0 ;
     shape.N1 = input.N1 ;
     shape.N2 = input.N2 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -613,7 +628,6 @@ struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -623,6 +637,13 @@ struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
   static const unsigned N5 = s5 ;
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3 ,
+               unsigned , unsigned , unsigned , unsigned )
+  { s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; s.N3 = n3 ; }
 
   template< class MemorySpace >
   static inline
@@ -636,8 +657,6 @@ struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
     shape.N1 = arg_N1 ;
     shape.N2 = arg_N2 ;
     shape.N3 = arg_N3 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -651,7 +670,6 @@ struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
     shape.N1 = input.N1 ;
     shape.N2 = input.N2 ;
     shape.N3 = input.N3 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -677,7 +695,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -687,6 +704,13 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
   static const unsigned N5 = s5 ;
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3 ,
+               unsigned n4 , unsigned , unsigned , unsigned )
+  { s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; s.N3 = n3 ; s.N4 = n4 ; }
 
   template< class MemorySpace >
   static inline
@@ -702,8 +726,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
     shape.N2 = arg_N2 ;
     shape.N3 = arg_N3 ;
     shape.N4 = arg_N4 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -719,7 +741,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
     shape.N2 = input.N2 ;
     shape.N3 = input.N3 ;
     shape.N4 = input.N4 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -744,7 +765,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
   static const unsigned StaticN6     = s6 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -754,6 +774,16 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
 
   static const unsigned N6 = s6 ;
   static const unsigned N7 = s7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3 ,
+               unsigned n4 , unsigned n5 , unsigned , unsigned )
+  {
+    s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; s.N3 = n3 ;
+    s.N4 = n4 ; s.N5 = n5 ;
+  }
 
   template< class MemorySpace >
   static inline
@@ -771,8 +801,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
     shape.N3 = arg_N3 ;
     shape.N4 = arg_N4 ;
     shape.N5 = arg_N5 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -789,7 +817,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
     shape.N3 = input.N3 ;
     shape.N4 = input.N4 ;
     shape.N5 = input.N5 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -813,7 +840,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
   static const unsigned StaticN6     = 0 ;
   static const unsigned StaticN7     = s7 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -823,6 +849,17 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
   unsigned N6 ;
 
   static const unsigned N7 = s7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3 ,
+               unsigned n4 , unsigned n5 , unsigned n6 , unsigned )
+  {
+    s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; s.N3 = n3 ;
+    s.N4 = n4 ; s.N5 = n5 ; s.N6 = n6 ;
+  }
+
 
   template< class MemorySpace >
   static inline
@@ -842,8 +879,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
     shape.N4 = arg_N4 ;
     shape.N5 = arg_N5 ;
     shape.N6 = arg_N6 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -861,7 +896,6 @@ struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
     shape.N4 = input.N4 ;
     shape.N5 = input.N5 ;
     shape.N6 = input.N6 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
 };
@@ -876,7 +910,6 @@ struct Shape< Layout , ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
   static const unsigned rank_dynamic = 8 ;
   static const unsigned rank         = 8 ;
 
-  unsigned Stride ;
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
@@ -885,6 +918,16 @@ struct Shape< Layout , ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
   unsigned N5 ;
   unsigned N6 ;
   unsigned N7 ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  void assign( Shape & s ,
+               unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3 ,
+               unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7 )
+  {
+    s.N0 = n0 ; s.N1 = n1 ; s.N2 = n2 ; s.N3 = n3 ;
+    s.N4 = n4 ; s.N5 = n5 ; s.N6 = n6 ; s.N7 = n7 ;
+  }
 
   template< class MemorySpace >
   static inline
@@ -906,8 +949,6 @@ struct Shape< Layout , ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
     shape.N5 = arg_N5 ;
     shape.N6 = arg_N6 ;
     shape.N7 = arg_N7 ;
-    shape.Stride = 0 ; // to suppress compiler warning
-    shape.Stride = ShapeMap<Shape>::template stride<MemorySpace>( shape );
     return shape ;
   }
 
@@ -927,9 +968,9 @@ struct Shape< Layout , ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
     shape.N5 = input.N5 ;
     shape.N6 = input.N6 ;
     shape.N7 = input.N7 ;
-    shape.Stride = input.Stride ;
     return shape ;
   }
+
 };
 
 } /* namespace Impl */
@@ -943,6 +984,8 @@ namespace Impl {
 
 template< class DstShape , class SrcShape >
 struct SubShape ;
+
+// Equal rank:
 
 template< class Layout , unsigned ScalarSize , unsigned Rank ,
           unsigned DstN0 , unsigned DstN1 , unsigned DstN2 , unsigned DstN3 ,
@@ -969,11 +1012,13 @@ struct SubShape< Shape< Layout , ScalarSize , Rank ,
       ::type type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src )
+  SubShape( const SrcShape src , const unsigned src_stride )
   {
     shape  = DstShape::create( src );
+    stride = src_stride ;
     offset = 0 ;
   }
 };
@@ -992,11 +1037,13 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 )
+  SubShape( const SrcShape src , const unsigned src_stride , const size_t i0 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0);
   }
 };
 
@@ -1011,11 +1058,13 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 )
+  SubShape( const SrcShape src , const unsigned src_stride , const size_t i0 , const size_t i1 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1);
   }
 };
 
@@ -1030,12 +1079,14 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2);
   }
 };
 
@@ -1051,12 +1102,14 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 , const size_t i3 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 , const size_t i3 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2,i3);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2,i3);
   }
 };
 
@@ -1073,13 +1126,15 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 , const size_t i3 ,
-                                 const size_t i4 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 ,
+            const size_t i3 , const size_t i4 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2,i3,i4);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2,i3,i4);
   }
 };
 
@@ -1096,13 +1151,15 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 , const size_t i3 ,
-                                 const size_t i4 , const size_t i5 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2,i3,i4,i5);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2,i3,i4,i5);
   }
 };
 
@@ -1119,14 +1176,15 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 , const size_t i3 ,
-                                 const size_t i4 , const size_t i5 ,
-                                 const size_t i6 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 , const size_t i6 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2,i3,i4,i5,i6);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2,i3,i4,i5,i6);
   }
 };
 
@@ -1143,14 +1201,15 @@ struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src , const size_t i0 , const size_t i1 ,
-                                 const size_t i2 , const size_t i3 ,
-                                 const size_t i4 , const size_t i5 ,
-                                 const size_t i6 , const size_t i7 )
+  SubShape( const SrcShape src , const unsigned src_stride ,
+            const size_t i0 , const size_t i1 , const size_t i2 , const size_t i3 ,
+            const size_t i4 , const size_t i5 , const size_t i6 , const size_t i7 )
   {
-    offset = ShapeMap<SrcShape>::offset(src,i0,i1,i2,i3,i4,i5,i6,i7);
+    stride = 0 ;
+    offset = ShapeMap<SrcShape>::offset(src,src_stride,i0,i1,i2,i3,i4,i5,i6,i7);
   }
 };
 
@@ -1167,27 +1226,29 @@ struct SubShape< Shape< Layout, ScalarSize, 1, 0 > ,
   typedef SubShape type ;
 
   DstShape shape ;
+  size_t   stride ;
   size_t   offset ;
 
-  SubShape( const SrcShape src )
+  SubShape( const SrcShape src , const unsigned )
   {
     shape  = DstShape::create( src );
+    stride = 1 ;
     offset = 0 ;
   }
 
   template< typename iType >
-  SubShape( const SrcShape src , const std::pair<iType,iType> span )
+  SubShape( const SrcShape src , const unsigned src_stride , const std::pair<iType,iType> span )
   {
     if ( span.first < span.second ) {
       assert_shape_bounds( src , span.first );
       assert_shape_bounds( src , span.second - 1 );
       shape.N0     = span.second - span.first ;
-      shape.Stride = src.Stride ;
+      stride       = 1 ;
       offset       = span.first ;
     }
     else {
       shape.N0     = 0 ;
-      shape.Stride = src.Stride ;
+      stride       = 1 ;
       offset       = 0 ;
     }
   }

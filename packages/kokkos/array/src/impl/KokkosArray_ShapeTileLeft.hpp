@@ -58,7 +58,8 @@ struct ShapeMap< Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> >
   typedef Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> shape_type ;
 
   static inline
-  size_t allocation_count( const shape_type & shape ) { return M*N*((shape.N0+M-1)/M)*((shape.N1+N-1)/N); }
+  size_t allocation_count( const shape_type & shape , unsigned )
+  { return M*N*((shape.N0+M-1)/M)*((shape.N1+N-1)/N); }
 
   static inline
   size_t offset( const shape_type & shape , const size_t i0, const size_t i1 )

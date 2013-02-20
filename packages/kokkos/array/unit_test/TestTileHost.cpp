@@ -65,7 +65,7 @@ TEST( host_tile, tile_2x2)
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
-  EXPECT_EQ( errors, 0u);
+  EXPECT_EQ( errors, ptrdiff_t(0) );
 }
 
 TEST( host_tile, tile_4x4)
@@ -76,7 +76,7 @@ TEST( host_tile, tile_4x4)
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
-  EXPECT_EQ( errors, 0u);
+  EXPECT_EQ( errors, ptrdiff_t(0) );
 }
 
 TEST( host_tile, tile_8x8)
@@ -87,7 +87,7 @@ TEST( host_tile, tile_8x8)
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
-  EXPECT_EQ( errors, 0u);
+  EXPECT_EQ( errors, ptrdiff_t(0) );
 }
 
 TEST( host_tile, tile_16x16)
@@ -98,5 +98,5 @@ TEST( host_tile, tile_16x16)
 
   functor_type::array_type array("",dim,dim);
   ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
-  EXPECT_EQ( errors, 0u);
+  EXPECT_EQ( errors, ptrdiff_t(0) );
 }
