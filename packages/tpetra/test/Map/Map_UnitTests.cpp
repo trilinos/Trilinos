@@ -460,6 +460,9 @@ namespace {
 #ifdef HAVE_TPETRA_DEBUG
   // all ordinals, default node
 #  define UNIT_TEST_GROUP( LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
@@ -468,9 +471,6 @@ namespace {
 #else
   // all ordinals, default node
 #  define UNIT_TEST_GROUP( LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
