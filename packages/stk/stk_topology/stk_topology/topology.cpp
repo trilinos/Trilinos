@@ -1,7 +1,7 @@
 #include <stk_topology/topology.hpp>
 #include <ostream>
+#include <sstream>
 #include <iomanip>
-
 
 #define STKTOPOLOGY_SIMPLE_MEMBER(name,result)         \
   namespace {                                          \
@@ -165,6 +165,15 @@ std::ostream & operator<<(std::ostream &out, topology t)
   return out << "ARBITRARY_NODE_TOPOLOGY_" << (static_cast<int>(t) - topology::END_TOPOLOGY);
 }
 
+const char *topology::superelement_name() const
+{
+  static char basename[128];
+  std::ostringstream oss;
+  oss << *this;
+  std::strncpy(basename, oss.str().c_str(), 128);
+  basename[127] = '\0';
+  return basename;
+}
 void verbose_print_topology(std::ostream &out, topology t)
 {
   int shiftwidth = 34;

@@ -91,8 +91,18 @@ struct topology
   /// is this topology valid
   bool is_valid() const { return m_value != INVALID_TOPOLOGY; }
 
+  /// get the name of a topology that is a superelement.
+  /// The returned char* is only valid until the next
+  /// call of superelement_name().
+  const char * superelement_name() const;
+
   /// get the name of this topology
-  const char * name() const { return topology_names[m_value]; }
+  const char * name() const 
+  { 
+    if (is_superelement() )
+      return superelement_name();
+    return topology_names[m_value]; 
+  }
 
   /// does this topology have homogeneous faces
   bool has_homogeneous_faces() const;
