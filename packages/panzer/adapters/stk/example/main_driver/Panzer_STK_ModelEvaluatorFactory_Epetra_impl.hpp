@@ -341,6 +341,8 @@ namespace panzer_stk {
        blockedAssembly = true;
 
        panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
@@ -1031,11 +1033,11 @@ namespace panzer_stk {
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,int> >(globalIndexer);
 
           // loop over blocks
-          const std::vector<Teuchos::RCP<panzer::DOFManagerFEI<int,int> > > & dofVec
+          const std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > > & dofVec
              = blkDofs->getFieldDOFManagers(); 
           for(std::size_t i=0;i<dofVec.size();i++) { 
             std::string fieldName;
-            Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs = dofVec[i];
+            Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs = Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(dofVec[i],true);
 
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofs,fieldName)); 
@@ -1103,9 +1105,9 @@ namespace panzer_stk {
     using Teuchos::RCP;
 
     // loop over each field block
-    const std::vector<RCP<panzer::DOFManagerFEI<int,int> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
+    const std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
     for(std::size_t b=0;b<blk_dofMngrs.size();b++) {
-      RCP<panzer::DOFManagerFEI<int,int> > dofMngr = blk_dofMngrs[b];
+      RCP<panzer::DOFManagerFEI<int,int> > dofMngr = Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(blk_dofMngrs[b],true);
 
       std::vector<std::string> eBlocks;
       dofMngr->getElementBlockIds(eBlocks);

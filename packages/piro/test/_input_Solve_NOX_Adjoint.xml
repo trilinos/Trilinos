@@ -1,7 +1,11 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="NOX"/>
+  <Parameter name="Solver Type" type="string" value="NOX"/>
   <Parameter name="Sensitivity Method" type="string" value="Adjoint"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="1"/>
+  <ParameterList name="Analysis">
+    <ParameterList name="Solve">
+      <Parameter name="Compute Sensitivities" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
     <ParameterList name="Constraints"/>

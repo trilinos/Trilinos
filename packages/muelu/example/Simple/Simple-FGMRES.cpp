@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // Parameters and constants
-  GO numGlobalElements = 10000;
+  GO numGlobalElements = 1000;
   SC h(1.0/((double) (numGlobalElements-1)),0.0);
   SC kh(0.625,0.0);
   SC kh2=kh*kh;
@@ -280,7 +280,9 @@ int main(int argc, char *argv[]) {
   RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
-  B->replaceGlobalValue(0, 1.0);
+  if(comm->getRank()==0) {
+    B->replaceGlobalValue(0, 1.0);
+  }
 
   // Define Operator and Preconditioner
   RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
@@ -291,7 +293,9 @@ int main(int argc, char *argv[]) {
   belosProblem->setRightPrec(belosPrec);    
   bool set = belosProblem->setProblem();
   if (set == false) {
-    std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    if(comm->getRank()==0)
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    
     return EXIT_FAILURE;
   }
     
@@ -310,7 +314,8 @@ int main(int argc, char *argv[]) {
   Belos::ReturnType ret = solver->solve();
   
   // Get the number of iterations for this solve.
-  std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+  if(comm->getRank()==0)
+    std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
   
   // Compute actual residuals.
   int numrhs=1;
@@ -322,20 +327,27 @@ int main(int argc, char *argv[]) {
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);
   MVT::MvNorm(*B, rhs_norm);
-  std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  if(comm->getRank()==0) {
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  }
   for (int i = 0; i < numrhs; i++) {
     double actRes = abs(actual_resids[i])/rhs_norm[i];
-    std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
+    if(comm->getRank()==0) {
+      std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
+    }
     if (actRes > tol) { badRes = true; }
   }
 
   // Check convergence
   if (ret != Belos::Converged || badRes) {
-    std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    if(comm->getRank()==0) {
+      std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    }
     return EXIT_FAILURE;
   }
-  std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
+  if(comm->getRank()==0) {
+    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  }
   // print solution entries
   // using Teuchos::VERB_EXTREME;
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );

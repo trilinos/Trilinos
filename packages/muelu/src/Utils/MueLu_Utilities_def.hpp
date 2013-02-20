@@ -974,9 +974,6 @@ namespace MueLu {
       oneOverDiagonal = VectorFactory::Build(A.getRowMap());
       oneOverDiagonal->reciprocal(*diagVec);
     }
-    //FIXME for the moment, the following matvec gives q and z the same coefficient pattern
-    //FIXME for PCE scalar types.  Discuss this with ETP.
-    A.apply(*qinit, *q);
     for (int iter = 0; iter < niters; ++iter) {
       z->norm2(norms);                               // Compute 2-norm of z
       q->update(one / norms[0],*z,zero);                 // Set q = z / normz

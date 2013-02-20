@@ -68,6 +68,9 @@
 #include <string.h>
 
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
+
 #include "Trios_threads.h"
 #include "Trios_timer.h"
 #include "Trios_logger.h"

@@ -343,9 +343,9 @@ namespace Tpetra {
       // total number of GIDs is small (i.e., if the noncontiguous Map
       // is very "sparse").
       nodeIDs_ = arcp<int>(dir_numMyEntries);
-      std::fill( nodeIDs_.begin(), nodeIDs_.end(), -1 );
+      std::fill (nodeIDs_.getRawPtr (), nodeIDs_.getRawPtr () + dir_numMyEntries, -1);
       LIDs_ = arcp<LO>(dir_numMyEntries);
-      std::fill( LIDs_.begin(), LIDs_.end(), LINVALID );
+      std::fill (LIDs_.getRawPtr (), LIDs_.getRawPtr () + dir_numMyEntries, LINVALID);
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the

@@ -155,7 +155,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        const bool lump = rythmosPL->get("Lump Mass Matrix", false);
+        rythmosPL->get("Lump Mass Matrix", false);
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
               sublist(rythmosPL,"Stratimikos", true), origModel));
       }
@@ -196,7 +196,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     {
       RCP<Teuchos::ParameterList>
         integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-      bool var = integrationControlPL->get( "Take Variable Steps", false );
+      integrationControlPL->get( "Take Variable Steps", false );
       integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
       RCP<Rythmos::DefaultIntegrator<double> >
@@ -251,7 +251,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        const bool lump = rythmosSolverPL->get("Lump Mass Matrix", false);
+        rythmosSolverPL->get("Lump Mass Matrix", false);
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
               sublist(rythmosSolverPL,"Stratimikos", true), origModel));
       }
@@ -396,8 +396,12 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_g_map(int j) con
       "Invalid response index j = " <<
       j << std::endl);
 
-  if      (j < num_g) return model->get_g_map(j);
-  else if (j == num_g) return model->get_x_map();
+  if (j < num_g) {
+    return model->get_g_map(j);
+  } else {
+    // j == num_g
+    return model->get_x_map();
+  }
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::RythmosSolver::get_x_init() const

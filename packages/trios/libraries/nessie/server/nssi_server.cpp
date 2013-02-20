@@ -56,6 +56,8 @@
 #include "Trios_nssi_server.h"
 
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 #include "Trios_nssi_xdr.h"
 #include "Trios_nnti.h"
 
@@ -566,6 +568,10 @@ static int send_result(const NNTI_peer_t   *caller,
     NNTI_status_t wait_status;
     nssi_result_header header;
 
+    int8_t        long_res_ack;
+    NNTI_buffer_t long_res_ack_hdl;
+    NNTI_status_t long_res_ack_status;
+
     int i=0;
 
     request_args_t *args=request_args_get(caller, request_id);
@@ -709,6 +715,23 @@ static int send_result(const NNTI_peer_t   *caller,
 
         log_debug(rpc_debug_level, "allocated long_res_buf(%lu) req_id(%lu)", buf, request_id);
 
+        trios_start_timer(call_time);
+        rc=NNTI_register_memory(
+                &transports[caller->peer.transport_id],
+                (char *)&long_res_ack,
+                sizeof(long_res_ack),
+                1,
+                NNTI_RECV_DST,
+                caller,
+                &long_res_ack_hdl);
+        trios_stop_timer("NNTI_register_memory - long result ack", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering long result ack: %s",
+                    nnti_err_str(rc));
+        }
+
+        header.result_ack_addr=long_res_ack_hdl;
+
         /* we want the client to fetch the result */
         /* client needs this information from the header */
         header.fetch_result = TRUE;
@@ -800,17 +823,17 @@ static int send_result(const NNTI_peer_t   *caller,
      * the GET to complete */
     if (header.fetch_result) {
         log_debug(rpc_debug_level, "waiting for client to "
-            "fetch result %lu", request_id);
+            "ACK request %lu", request_id);
 
         trios_start_timer(call_time);
         rc=NNTI_wait(
-                &long_res_hdl,
-                NNTI_GET_SRC,
+                &long_res_ack_hdl,
+                NNTI_RECV_DST,
                 -1,
-                &wait_status);
-        trios_stop_timer("NNTI_wait - long result", call_time);
+                &long_res_ack_status);
+        trios_stop_timer("NNTI_wait - long result ack", call_time);
         if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed waiting for client to fetch long result: %s",
+            log_error(rpc_debug_level, "failed waiting for client to send long result ack: %s",
                     nnti_err_str(rc));
         }
     }
@@ -824,6 +847,12 @@ cleanup:
                     nnti_err_str(rc));
         }
         free(buf);
+
+        rc=NNTI_unregister_memory(&long_res_ack_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering long result ack: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     if (nssi_config.use_buffer_queue) {

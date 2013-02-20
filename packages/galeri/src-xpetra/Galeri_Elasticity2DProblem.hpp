@@ -225,15 +225,58 @@ namespace Galeri {
           elemDofs[numDofPerNode*j + 1] = elemDofs[numDofPerNode*j + 0] + 1;
         }
 
+        // Deal with Dirichlet nodes
+        bool isDirichlet = false;
         for (size_t j = 0; j < numNodesPerElem; j++)
-          if (dirichlet_[elemNodes[j]]) {
-            LO j0 = numDofPerNode*j+0;
-            LO j1 = numDofPerNode*j+1;
+          if (dirichlet_[elemNodes[j]])
+            isDirichlet = true;
 
-            for (size_t k = 0; k < numDofPerElem; k++)
-              KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = zero;
-            KE[j0][j0] = KE[j1][j1] = one;
+        if (isDirichlet) {
+          bool keepBCs = this->list_.get("keepBCs", false);
+          if (keepBCs) {
+            // Simple case: keep Dirichlet DOF
+            // We rewrite rows and columns corresponding to Dirichlet DOF with zeros
+            // The diagonal elements corresponding to Dirichlet DOF are set to 1.
+            for (size_t j = 0; j < numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j+0;
+                LO j1 = numDofPerNode*j+1;
+
+                for (size_t k = 0; k < numDofPerElem; k++)
+                  KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = zero;
+                KE[j0][j0] = KE[j1][j1] = one;
+              }
+          } else {
+            // Complex case: get rid of Dirichlet DOF
+            // The case is complex because if we simply reduce the size of the matrix, it would become inconsistent
+            // with maps. So, instead, we modify values of the boundary cells as if we had an additional cell close
+            // to the boundary. For instance, if we have a following cell
+            //  D--.
+            //  |  |
+            //  D--D
+            // we multiply all D-D connections by 2 and multiply diagonals corresponding to D by 2 or 4, depending
+            // whether it is connected to 1 or 2 other D DOFs.
+            for (size_t j = 0; j < numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j, j1 = j0+1;
+
+                size_t numDirGeomNeigh = 0;
+                for (LO offset = 1; offset <= 3; offset += 2) {
+                  LO k = (j+offset) % 4;
+                  // Check geometric neighbors
+                  // Works because of the order of nodes in the cells
+                  if (dirichlet_[elemNodes[k]]) {
+                    LO k0 = numDofPerNode*k, k1 = k0+1;
+                    KE(j0,k0) *= 2; KE(j0,k1) *= 2; KE(j1,k0) *= 2; KE(j1,k1) *= 2;
+                    numDirGeomNeigh++;
+                  }
+                }
+
+                SC factor = pow(2*Teuchos::ScalarTraits<SC>::one(), (int)numDirGeomNeigh);
+                KE(j0,j0) *= factor; KE(j0,j1) *= factor; KE(j1,j0) *= factor; KE(j1,j1) *= factor;
+              }
           }
+        }
 
         // Insert KE into the global matrix
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format

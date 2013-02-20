@@ -242,6 +242,10 @@ int main(int argc, char *argv[]) {
 
   mueLuFactory.SetupHierarchy(*H);
 
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(-1);
+  H->print(*fos);
+
   tm = Teuchos::null;
   //
   // Solve Ax = b
@@ -266,9 +270,6 @@ int main(int argc, char *argv[]) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
     H->IsPreconditioner(false);
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fos->setOutputToRootOnly(-1);
-    H->print(*fos);
     H->Iterate(*B,25,*X);
 
     tm = Teuchos::null;

@@ -121,6 +121,11 @@
       <Parameter name="MinNodesPerAggregate"    type="int"    value="5"/>
     </ParameterList>
 
+    <ParameterList name="CoalesceDropFact">
+      <Parameter name="factory"          type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap" type="bool"   value="true"/>
+    </ParameterList>
+
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
 
@@ -160,6 +165,7 @@
       <Parameter name="Nullspace"  type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
+      <Parameter name="Graph"      type="string" value="CoalesceDropFact"/>
     </ParameterList>
 
     <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
@@ -174,6 +180,7 @@
       <Parameter name="Nullspace"   type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"    type="string" value="myRepartitionFact"/>
+      <Parameter name="Graph"      type="string" value="CoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">

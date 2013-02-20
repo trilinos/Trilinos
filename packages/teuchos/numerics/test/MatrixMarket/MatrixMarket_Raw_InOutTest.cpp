@@ -41,6 +41,7 @@
 
 #include <Teuchos_MatrixMarket_Raw_Checker.hpp>
 #include <Teuchos_MatrixMarket_Raw_Reader.hpp>
+#include <Teuchos_MatrixMarket_Raw_Writer.hpp>
 #include <Teuchos_MatrixMarket_SetScientific.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -87,57 +88,6 @@ namespace {
     "2 1 21.0\n"
     "5 1 51.0\n";
 
-  // Given the three arrays of a CSR data structure, along with the
-  // numbers of rows and columns, print the result to the given output
-  // stream as a MatrixMarket file.
-  template<class OrdinalType, class ScalarType>
-  void
-  csrToMatrixMarket (std::ostream& out,
-                     Teuchos::ArrayView<OrdinalType> ptr,
-                     Teuchos::ArrayView<OrdinalType> ind,
-                     Teuchos::ArrayView<ScalarType> val,
-                     const OrdinalType numRows,
-                     const OrdinalType numCols)
-  {
-    using Teuchos::ArrayView;
-    using std::endl;
-    typedef typename ArrayView<OrdinalType>::size_type size_type;
-    typedef Teuchos::ScalarTraits<ScalarType> STS;
-
-    // Make the output stream write floating-point numbers in
-    // scientific notation.  It will politely put the output
-    // stream back to its state on input, when this scope
-    // terminates.
-    Teuchos::MatrixMarket::details::SetScientific<ScalarType> sci (out);
-
-    out << "%%MatrixMarket matrix coordinate ";
-    if (STS::isComplex) {
-      out << "complex ";
-    }
-    else {
-      out << "real ";
-    }
-    out << "general" << endl;
-    out << numRows << " " << numCols << " " << ptr[numRows] << endl;
-    OrdinalType k;
-    for (OrdinalType i = 0; i < numRows; ++i) {
-      for (k = ptr[i]; k < ptr[i+1]; ++k) {
-        // Matrix Market files use 1-based row and column indices.
-        out << (i+1) << " " << (ind[k]+1) << " ";
-        if (STS::isComplex) {
-          out << STS::real (val[k]) << " " << STS::imag (val[k]);
-        }
-        else {
-          out << val[k];
-        }
-        out << endl;
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(k != ptr[numRows], std::logic_error,
-      "csrToMatrixMarket: Failed to print all the matrix entries!  The last k "
-      "index value is " << k << ", but the number of entries is " << ptr[numRows]
-      << ".");
-  }
 } // namespace (anonymous)
 
 // Benchmark driver
@@ -300,13 +250,15 @@ main (int argc, char *argv[])
     // Then read in the output stream.  The resulting matrix should be
     // exactly the same (unless the original file had elements at the
     // same location that were added together with rounding error).
+    // This is a test for both Writer and Reader.
     std::ostringstream outStr;
     if (success && verbose) {
       cout << "Printing the CSR arrays to a Matrix Market output stream"
            << endl << std::flush;
     }
-    csrToMatrixMarket<ordinal_type, scalar_type> (outStr, ptr (), ind (), val (),
-                                                  numRows, numCols);
+    Teuchos::MatrixMarket::Raw::Writer<scalar_type, ordinal_type> writer;
+    writer.write (outStr, ptr (), ind (), val (), numRows, numCols);
+
     if (debug && echo) {
       cerr << "CSR data:" << endl
            << "- ptr = [";
@@ -335,8 +287,7 @@ main (int argc, char *argv[])
       cerr << "]" << endl;
 
       cerr << "CSR data, converted back to Matrix Market format" << endl;
-      csrToMatrixMarket<ordinal_type, scalar_type> (cerr, ptr (), ind (), val (),
-                                                    numRows, numCols);
+      writer.write (cerr, ptr (), ind (), val (), numRows, numCols);
       cerr << endl;
     }
 

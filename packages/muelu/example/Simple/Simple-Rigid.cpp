@@ -52,10 +52,6 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
 
 #include "MueLu.hpp"
 #include "MueLu_FactoryManager.hpp"
@@ -142,11 +138,11 @@ int main(int argc, char *argv[]) {
     int current_row, current_column;
     SC current_value;
     matfile >> current_row >> current_column >> current_value ;
-    //if(map->isNodeLocalElement(current_row)==true) {
+    if(map->isNodeGlobalElement(current_row)==true) {
       A->insertGlobalValues(current_row,
 			    Teuchos::tuple<GO> (current_column),
 			    Teuchos::tuple<SC> (current_value));
-      //}
+    }
   }
   A->fillComplete();
 

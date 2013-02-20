@@ -30,6 +30,12 @@
 #include <iostream>
 #include <cstdlib>
 
+#ifdef EPETRA_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
 #include "EpetraExt_BlockUtility.h"

@@ -108,6 +108,8 @@ namespace MueLu {
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
 
+    GetOStream(Parameters0, 0) << "CoalesceDropFactory::Build : lightweight wrap = " << doExperimentalWrap << std::endl;
+
     if (doExperimentalWrap) {
 
       Scalar threshold = STS::zero();

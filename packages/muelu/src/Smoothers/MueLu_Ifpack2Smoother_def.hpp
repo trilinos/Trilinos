@@ -97,14 +97,29 @@ namespace MueLu {
 
     RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    if (type_ == "CHEBYSHEV") {
-      Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
-      if (maxEigenValue == -1.0) {
-        maxEigenValue = Utils::PowerMethod(*A,true,10,1e-4);
-        paramList_.set("chebyshev: max eigenvalue", maxEigenValue);
+    Scalar negone = Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(-1.0);
 
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
+    if (type_ == "CHEBYSHEV") {
+      bool useCached=false;
+      Scalar lambdaMax = negone;
+      if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
+        lambdaMax = A->GetMaxEigenvalueEstimate();
+        if (lambdaMax != negone) {
+          useCached=true;
+          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
+        }
       }
+      if (!useCached) {
+        lambdaMax = paramList_.get("chebyshev: max eigenvalue",negone);
+        if (lambdaMax != negone) {
+          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (set in parameter list)" << " = " << lambdaMax << std::endl;
+        } else {
+          lambdaMax = Utils::PowerMethod(*A,true,10,1e-4);
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated with power method)" << " = " << lambdaMax << std::endl;
+        }
+      }
+      paramList_.set("chebyshev: max eigenvalue", lambdaMax);
     }
 
     RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A);
@@ -140,6 +155,20 @@ namespace MueLu {
     else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
     }
+    else if (type_ == "SCHWARZ") {
+      int overlap;
+      Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
+      if (InitialGuessIsZero == false && overlap > 0) {
+        if (this->IsPrint(Warnings0, 0)) {
+          static int warning_only_once=0;
+          if ((warning_only_once++) == 0)
+            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): Additive Schwarz with overlap has no provision for a nonzero initial guess." << std::endl;
+        }
+      }
+      else {
+	paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
+      }
+    }
     else if (type_ == "ILUT") {
       if (InitialGuessIsZero == false) {
         if (this->IsPrint(Warnings0, 0)) {
@@ -155,7 +184,7 @@ namespace MueLu {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"Ifpack2Smoother::Apply(): Ifpack2 preconditioner '"+type_+"' not supported");
     }
     prec_->setParameters(paramList);
 

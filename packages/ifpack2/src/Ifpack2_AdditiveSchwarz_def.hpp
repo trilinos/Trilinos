@@ -235,7 +235,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
     // Make the default be a string to be consistent with the valid parameters!
     List_.get("schwarz: combine mode","Add");
   }
-  
+
+  Ifpack2::getParameter(List_, "schwarz: overlap level",OverlapLevel_);  
+  if(OverlapLevel_>0) {
+    IsOverlapping_=true;
+  }
+
   // Will we be doing reordering?
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
   UseReordering_ = List_.get("schwarz: use reordering",false);

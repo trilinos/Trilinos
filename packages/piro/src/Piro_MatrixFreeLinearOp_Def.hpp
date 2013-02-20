@@ -158,13 +158,8 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
   }
 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMagnitude;
-  const ScalarMagnitude relative_pert_ratio = static_cast<ScalarMagnitude>(1.0e-6);
-  const ScalarMagnitude absolute_pert_ratio = relative_pert_ratio * relative_pert_ratio;
 
   const RCP<const Thyra::VectorBase<Scalar> > x_dot_base = basePoint_.get_x_dot();
-  const bool isDynamic = Teuchos::nonnull(x_dot_base);
-  const Scalar W_alpha = isDynamic ? basePoint_.get_alpha() : Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar W_beta = isDynamic ? basePoint_.get_beta() : Teuchos::ScalarTraits<Scalar>::one();
 
   RCP<const Thyra::VectorBase<Scalar> > x_base = basePoint_.get_x();
   if (Teuchos::is_null(x_base)) {
@@ -193,6 +188,7 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
       }
     } else {
       // Scalar perturbation
+      const ScalarMagnitude relative_pert_ratio = static_cast<ScalarMagnitude>(1.0e-6);
       const ScalarMagnitude eta = (relative_pert_ratio * ((norm_x_base / norm_dx) + relative_pert_ratio));
 
       // Compute perturbed residual
@@ -204,6 +200,8 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
         {
           pertInArgs.setArgs(basePoint_);
 
+          const bool isDynamic = Teuchos::nonnull(x_dot_base);
+
           if (isDynamic) {
             const RCP<Thyra::VectorBase<Scalar> > x_dot_pert = Thyra::createMember(this->domain());
             const Scalar W_alpha = pertInArgs.get_alpha();
@@ -212,6 +210,7 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
           }
 
           const RCP<Thyra::VectorBase<Scalar> > x_pert = Thyra::createMember(this->domain());
+          const Scalar W_beta = isDynamic ? pertInArgs.get_beta() : Teuchos::ScalarTraits<Scalar>::one();
           Thyra::V_VpStV<Scalar>(x_pert.ptr(), *x_base, W_beta * eta, *X_vec);
           pertInArgs.set_x(x_pert);
         }

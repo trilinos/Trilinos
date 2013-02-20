@@ -105,6 +105,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: combine mode", "Zero"); // use string mode for this
   params.set("schwarz: reordering type", "none");
   params.set("schwarz: filter singletons", false);
+  params.set("schwarz: overlap level", (int)0);
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set

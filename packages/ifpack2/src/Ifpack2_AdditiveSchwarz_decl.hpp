@@ -32,6 +32,7 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Parameters.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Time.hpp"

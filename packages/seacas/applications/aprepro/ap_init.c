@@ -135,7 +135,7 @@ extern char *do_tolower(char *string), *do_toupper(char *string), *do_tostring(d
 #if !defined(NO_EXODUSII)
   *do_exodus_info(char *filename), *do_exodus_meta(char *filename),
 #endif
-  *do_include_path(char *new_path), *do_intout(double intval), *do_get_date(void), *do_get_time(void),
+  *do_include_path(char *new_path), *do_intout(double intval), *do_get_date(void), *do_get_iso_date(void), *do_get_time(void),
   *do_extract(char *string, char *begin, char *end);
   
 
@@ -163,6 +163,7 @@ struct str_init string_fncts[] =
   {"include_path",   do_include_path,"include_path(path)","Specify an optional path to be prepended to a filename when opening a file. Can also be specified via the -I command line option when executing aprepro."},
   {"IO",             do_intout,      "IO(x)","Convert x to an integer and then to a string. "},
   {"get_date",       do_get_date,    "get_date()","Returns a string representing the current date in the form YYYY/MM/DD."},
+  {"get_iso_date",   do_get_iso_date,"get_iso_date()","Returns a string representing the current date in the form YYYYMMDD."},
   {"get_time",       do_get_time,    "get_time()","Returns a string representing the current time in the form HH:MM:SS."},
   {"extract",        do_extract,     "extract(s, b, e)","Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If 'e' not found, return rest of string. If 'b' empty, start at beginning; if 'e' empty, return rest of string."},
 #if !defined(NO_EXODUSII)
@@ -179,6 +180,7 @@ struct var_init variables[] =
   {"E",     2.71828182845904523536},	/* e, base of natural log     */
   {"GAMMA", 0.57721566490153286060},	/* euler-mascheroni constant  */
   {"PHI",   1.61803398874989484820},	/* golden ratio               */
+  {"TAU",   6.28318530717958623200},    /* 2*PI see Tau Manifesto, http://tauday.com */
   {"PI",    3.14159265358979323846},	/* pi                         */
   {"PI_2",  1.57079632679489661923},	/* pi / 2			 */
   {"SQRT2", 1.41421356237309504880},	/* square root of 2		 */

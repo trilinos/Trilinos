@@ -131,6 +131,7 @@ BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<con
    // build the DOF manager for the problem
    Teuchos::RCP<panzer::BlockedDOFManager<LO,GO> > dofManager 
          = Teuchos::rcp(new panzer::BlockedDOFManager<LO,GO>(connMngr,*mpiComm));
+   dofManager->setUseDOFManagerFEI(useDOFManagerFEI_);
 
    // by default assume orientations are not required
    bool orientationsRequired = false;

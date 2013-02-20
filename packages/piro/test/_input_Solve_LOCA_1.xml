@@ -1,6 +1,10 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="LOCA"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="1"/>
+  <Parameter name="Solver Type" type="string" value="LOCA"/>
+  <ParameterList name="Analysis">
+    <ParameterList name="Solve">
+      <Parameter name="Compute Sensitivities" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
   <Parameter name="Jacobian Operator" type="string" value="Have Jacobian"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
