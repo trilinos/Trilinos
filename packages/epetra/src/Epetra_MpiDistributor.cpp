@@ -504,7 +504,7 @@ int Epetra_MpiDistributor::CreateRecvStructures_(const int & NumRemoteIDs,
     int jlast=j;
     procs_from_[i]  = recv_list[i];
     starts_from_[i] = j;
-    for( ; RemotePIDs[jlast]==RemotePIDs[j] && j<NumRemoteIDs ; j++){;}
+    for( ; j<NumRemoteIDs && RemotePIDs[jlast]==RemotePIDs[j]  ; j++){;}
     lengths_from_[i]=j-jlast;
   }
   total_recv_length_=NumRemoteIDs;
