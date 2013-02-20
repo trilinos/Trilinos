@@ -77,7 +77,12 @@ namespace MueLu {
   {
     permFact_ = permFact;
     if(permFact_ == Teuchos::null)
-      permFact_ = Teuchos::rcp(new PermutationFactory(mapName,mapFact));
+    {
+      RCP<PermutationFactory> newPermFact = Teuchos::rcp(new PermutationFactory());
+      newPermFact->SetParameter("PermutationRowMapName",Teuchos::ParameterEntry(mapName));
+      newPermFact->SetFactory("PermutationRowMapFactory", mapFact);
+      permFact_ = newPermFact;
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

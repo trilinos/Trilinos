@@ -13,6 +13,7 @@
 #include <Xpetra_CrsGraph_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
@@ -38,7 +39,7 @@ namespace MueLu {
     //@{
 
     //! Apply constraint.
-    void Apply(const Matrix& Ain, Matrix& Aout) const;
+    void BuildPermutation(Level & currentLevel) const;
 
     //@}
 

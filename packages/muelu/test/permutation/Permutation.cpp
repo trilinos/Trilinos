@@ -139,7 +139,9 @@ bool runPermutationTest(const std::string input_filename, const std::string expe
   Finest->Set("A", A);
 
   // permute full matrix
-  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>("",Teuchos::null));
+  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>());
+  PermFact->SetParameter("PermutationRowMapName",Teuchos::ParameterEntry(std::string("")));
+  PermFact->SetFactory("PermutationRowMapFactory", Teuchos::null);
 
   // setup main factory manager
   Teuchos::RCP<FactoryManager> M = Teuchos::rcp(new FactoryManager());
