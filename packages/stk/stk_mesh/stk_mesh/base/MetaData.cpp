@@ -6,10 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-/**
- * @author H. Carter Edwards
- */
-
 #include <string.h>
 #include <stdexcept>
 #include <iostream>
@@ -26,6 +22,7 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <Shards_CellTopologyManagedData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -99,7 +96,11 @@ MetaData & MetaData::get( const Entity entity) {
   return MetaData::get(BulkData::get(entity));
 }
 
-MetaData & MetaData::get( const Ghosting & ghost) {
+MetaData & MetaData::/**
+ * @author H. Carter Edwards
+ */
+
+get( const Ghosting & ghost) {
   return MetaData::get(BulkData::get(ghost));
 }
 //----------------------------------------------------------------------
@@ -824,14 +825,40 @@ bool is_cell_topology_root_part(const Part & part) {
   return false;
 }
 
-/// This is a convenience function to get the root cell topology part and then
+/// This is a convenience get_cellfunction to get the root cell topology part and then
 /// call declare_part_subset.
 /// Note:  MetaData::declare_part_subset is the function that actually
 /// updates the PartCellTopologyVector in MetaData for fast look-up of the
 /// Cell Topology.
 void set_topology(Part & part, stk::topology topo)
 {
-  set_cell_topology(part, get_cell_topology(topo));
+  if (topo.is_superelement()) {
+    // Need to (possibly) create a CellTopology corresponding to this superelement stk::topology.
+    MetaData &meta = part.mesh_meta_data();
+    shards::CellTopology cell_topology = meta.get_cell_topology(topo.name());
+    if (!cell_topology.isValid()) {
+      shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topo.name());
+
+      cell_topology = shards::CellTopology(cell_topology_data);
+
+      cell_topology_data->base              = cell_topology_data ;
+      cell_topology_data->dimension         = 1 ;
+      cell_topology_data->vertex_count      = topo.num_nodes();
+      cell_topology_data->node_count        = topo.num_nodes();
+      cell_topology_data->edge_count        = 0 ;
+      cell_topology_data->side_count        = 0 ;
+      cell_topology_data->permutation_count = 0 ;
+      cell_topology_data->subcell_count[0]  = topo.num_nodes();
+      cell_topology_data->subcell_count[1]  = 1 ;
+      cell_topology_data->subcell_count[2]  = 0 ;
+      cell_topology_data->subcell_count[3]  = 0 ;
+
+      meta.register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
+    }
+    set_cell_topology(part, cell_topology);
+  } else {
+    set_cell_topology(part, get_cell_topology(topo));
+  }
 }
 
 void set_cell_topology(
@@ -995,6 +1022,8 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
   else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()) )
     t = stk::topology::HEX_27;
 
+  else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPERELEMENT", 12) == 0)
+    return create_superelement_topology(shards_topology.getNodeCount());
 
   if (t.defined_on_spatial_dimension(spatial_dimension))
     return t;
@@ -1052,7 +1081,6 @@ CellTopology get_cell_topology(stk::topology t)
   case stk::topology::INVALID_TOPOLOGY: break;
   default: break;
   }
-
   return CellTopology(NULL);
 }
 
