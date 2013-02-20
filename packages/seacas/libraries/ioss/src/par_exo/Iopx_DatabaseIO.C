@@ -541,13 +541,7 @@ namespace Iopx {
       int isize = properties.get("INTEGER_SIZE_API").get_int();
       if (isize == 8) {
 	exodusMode |= EX_ALL_INT64_API;
-	set_int_byte_size_api(Ioss::USE_INT64_API);
       }
-    }
-    
-    if (properties.exists("LOGGING")) {
-      int logging = properties.get("LOGGING").get_int();
-      set_logging(logging != 0);
     }
     
     // Don't open output files until they are actually going to be

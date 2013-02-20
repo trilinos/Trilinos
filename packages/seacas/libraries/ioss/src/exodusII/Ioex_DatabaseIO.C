@@ -444,11 +444,6 @@ namespace Ioex {
       }
     }
     
-    if (properties.exists("LOGGING")) {
-      int logging = properties.get("LOGGING").get_int();
-      set_logging(logging != 0);
-    }
-    
     // Don't open output files until they are actually going to be
     // written to.  This is needed for proper support of the topology
     // files and auto restart so we don't overwrite a file with data we
