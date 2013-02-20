@@ -231,9 +231,8 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_MAX;
-    using Teuchos::OrdinalTraits;
-    using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_SUM;
+    using Teuchos::OrdinalTraits;
     using Teuchos::reduceAll;
     using Teuchos::scan;
     typedef GlobalOrdinal GO;
