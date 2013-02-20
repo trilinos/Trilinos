@@ -503,6 +503,11 @@ MetaData::~MetaData()
     for ( ; j != m_properties.end() ; ++j ) { delete *j ; }
 
     m_properties.clear();
+
+    std::vector<shards::CellTopologyManagedData*>::iterator i = m_created_topologies.begin();
+    for ( ; i != m_created_topologies.end(); ++i) {
+      delete *i;
+    }
   } catch(...) {}
 
   // PartRepository is member data
@@ -615,6 +620,30 @@ void MetaData::register_cell_topology(const CellTopology cell_topology, EntityRa
   //check_topo_db();
 }
 
+shards::CellTopology MetaData::register_superelement_cell_topology(stk::topology topo)
+{
+  shards::CellTopology cell_topology = get_cell_topology(topo.name());
+  if (!cell_topology.isValid()) {
+    shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topo.name());
+    m_created_topologies.push_back(cell_topology_data);
+    cell_topology = shards::CellTopology(cell_topology_data);
+
+    cell_topology_data->base              = cell_topology_data ;
+    cell_topology_data->dimension         = 1 ;
+    cell_topology_data->vertex_count      = topo.num_nodes();
+    cell_topology_data->node_count        = topo.num_nodes();
+    cell_topology_data->edge_count        = 0 ;
+    cell_topology_data->side_count        = 0 ;
+    cell_topology_data->permutation_count = 0 ;
+    cell_topology_data->subcell_count[0]  = topo.num_nodes();
+    cell_topology_data->subcell_count[1]  = 1 ;
+    cell_topology_data->subcell_count[2]  = 0 ;
+    cell_topology_data->subcell_count[3]  = 0 ;
+
+    register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
+  }
+  return cell_topology;
+}
 
 CellTopology
 MetaData::get_cell_topology(
@@ -835,26 +864,7 @@ void set_topology(Part & part, stk::topology topo)
   if (topo.is_superelement()) {
     // Need to (possibly) create a CellTopology corresponding to this superelement stk::topology.
     MetaData &meta = part.mesh_meta_data();
-    shards::CellTopology cell_topology = meta.get_cell_topology(topo.name());
-    if (!cell_topology.isValid()) {
-      shards::CellTopologyManagedData *cell_topology_data = new shards::CellTopologyManagedData(topo.name());
-
-      cell_topology = shards::CellTopology(cell_topology_data);
-
-      cell_topology_data->base              = cell_topology_data ;
-      cell_topology_data->dimension         = 1 ;
-      cell_topology_data->vertex_count      = topo.num_nodes();
-      cell_topology_data->node_count        = topo.num_nodes();
-      cell_topology_data->edge_count        = 0 ;
-      cell_topology_data->side_count        = 0 ;
-      cell_topology_data->permutation_count = 0 ;
-      cell_topology_data->subcell_count[0]  = topo.num_nodes();
-      cell_topology_data->subcell_count[1]  = 1 ;
-      cell_topology_data->subcell_count[2]  = 0 ;
-      cell_topology_data->subcell_count[3]  = 0 ;
-
-      meta.register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
-    }
+    shards::CellTopology cell_topology = meta.register_superelement_cell_topology(topo);
     set_cell_topology(part, cell_topology);
   } else {
     set_cell_topology(part, get_cell_topology(topo));

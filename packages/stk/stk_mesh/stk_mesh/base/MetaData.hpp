@@ -33,6 +33,10 @@
 
 #include <stk_topology/topology.hpp>
 
+namespace shards {
+  class CellTopologyManagedData;
+}
+
 namespace stk {
 namespace mesh {
 
@@ -472,6 +476,8 @@ public:
    */
   void register_cell_topology(const CellTopology cell_topology, EntityRank in_entity_rank);
 
+  shards::CellTopology register_superelement_cell_topology(stk::topology t);
+
   /** \brief Return the root cell topology part associated with the given cell topology.
    * This Part is created in register_cell_topology
    */
@@ -524,6 +530,7 @@ private:
   std::vector< FieldRelation > m_field_relations ;
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
+  std::vector<shards::CellTopologyManagedData*> m_created_topologies;
 
   unsigned m_spatial_dimension;
   EntityRank m_side_rank;
