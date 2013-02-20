@@ -100,6 +100,7 @@ namespace {
     }
     if (db_integer_size == 8) {
       mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
+      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
     }
 
     mesh_read_write(type, working_directory, filename, mesh_data);
