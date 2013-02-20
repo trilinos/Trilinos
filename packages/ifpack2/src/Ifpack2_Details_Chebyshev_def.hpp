@@ -942,7 +942,14 @@ template<class ScalarType, class MV, class MAT>
 std::string
 Chebyshev<ScalarType, MV, MAT>::
 description() const {
-  return "Ifpack2::Details::Chebyshev";
+  std::ostringstream oss;
+  oss << "Ifpack2::Details::Chebyshev : "
+      << "degree = " << numIters_
+      << ", lambdaMax = " << lambdaMaxForApply_
+      << ", alpha = " << eigRatioForApply_
+      << ", lambdaMin = " << lambdaMinForApply_;
+
+  return oss.str();
 }
 
 template<class ScalarType, class MV, class MAT>
