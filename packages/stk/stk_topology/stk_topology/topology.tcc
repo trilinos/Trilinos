@@ -65,6 +65,64 @@
   }                                                                                \
   } /*namespace stk*/
 
+#define STKTOPOLOGY_SIMPLE_MEMBER(name,result)         \
+  namespace stk { namespace topology_detail {          \
+  struct name##_impl {                                 \
+    typedef result result_type;                        \
+    template <typename Topology>                       \
+    STKTOPOLOGY_INLINE_FUNCTION                        \
+    result_type operator()(Topology) const             \
+    { return Topology::name; }                         \
+  };                                                   \
+  }} /*namespace stk::topology_detail*/                \
+  namespace stk {                                      \
+  STKTOPOLOGY_INLINE_FUNCTION                          \
+  result topology::name() const                        \
+  { typedef topology_detail::name##_impl functor;      \
+    topology::apply_functor< functor > apply;          \
+    return apply(m_value);                             \
+  }                                                    \
+  } /*namespace stk*/
+
+#define STKTOPOLOGY_ORDINAL_MEMBER(name,result)        \
+  namespace stk { namespace topology_detail {          \
+  struct name##_impl {                                 \
+    typedef result result_type;                        \
+    STKTOPOLOGY_INLINE_FUNCTION                        \
+    name##_impl(int ordinal)                           \
+      : m_ordinal(ordinal)                             \
+    {}                                                 \
+    template <typename Topology>                       \
+    STKTOPOLOGY_INLINE_FUNCTION                        \
+    result_type operator()(Topology) const             \
+    { return Topology::name(m_ordinal); }              \
+    int m_ordinal;                                     \
+  };                                                   \
+  }} /*namespace stk::topology_detail*/                \
+  namespace stk {                                      \
+  STKTOPOLOGY_INLINE_FUNCTION                          \
+  result topology::name(int ordinal) const             \
+  { typedef topology_detail::name##_impl functor;      \
+    functor f(ordinal);                                \
+    topology::apply_functor< functor > apply( f );     \
+    return apply(m_value);                             \
+  }                                                    \
+  } /*namespace stk*/
+
+STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
+STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
+STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
+STKTOPOLOGY_SIMPLE_MEMBER(dimension,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
+STKTOPOLOGY_SIMPLE_MEMBER(base,stk::topology)
+STKTOPOLOGY_SIMPLE_MEMBER(edge_topology,stk::topology)
+
+STKTOPOLOGY_ORDINAL_MEMBER(defined_on_spatial_dimension,bool)
+STKTOPOLOGY_ORDINAL_MEMBER(face_topology,stk::topology)
 
 STKTOPOLOGY_ORDINAL_NODES_MEMBER(edge_node_ordinals)
 STKTOPOLOGY_ORDINAL_NODES_MEMBER(face_node_ordinals)
@@ -74,11 +132,29 @@ STKTOPOLOGY_NODES_MEMBER(edge_nodes)
 STKTOPOLOGY_NODES_MEMBER(face_nodes)
 STKTOPOLOGY_NODES_MEMBER(permutation_nodes)
 
+#undef STKTOPOLOGY_SIMPLE_MEMBER
+#undef STKTOPOLOGY_ORDINAL_MEMBER
+
 #undef STKTOPOLOGY_ORDINAL_NODES_MEMBER
 #undef STKTOPOLOGY_NODES_MEMBER
 
-
 namespace stk { namespace topology_detail {
+
+struct num_nodes_impl {
+  typedef int result_type;
+  template <typename Topology>
+  STKTOPOLOGY_INLINE_FUNCTION
+  result_type operator()(Topology) const
+  { return Topology::num_nodes; }
+};
+
+struct rank_impl {
+  typedef topology::rank_t result_type;
+  template <typename Topology>
+  STKTOPOLOGY_INLINE_FUNCTION
+  result_type operator()(Topology) const
+  { return Topology::rank; }
+};
 
 template <typename NodeArrayA, typename NodeArrayB>
 struct equivalent_impl {
@@ -119,6 +195,22 @@ struct lexicographical_smallest_permutation_impl {
 }} /*namespace stk::topology_detail*/
 
 namespace stk {
+
+STKTOPOLOGY_INLINE_FUNCTION
+int topology::num_nodes() const
+{
+  typedef topology_detail::num_nodes_impl functor;
+  topology::apply_functor< functor > apply;
+  return m_value <= END_TOPOLOGY ? apply(m_value) : m_value - SUPERELEMENT_START;
+}
+
+STKTOPOLOGY_INLINE_FUNCTION
+topology::rank_t topology::rank() const
+{
+  typedef topology_detail::rank_impl functor;
+  topology::apply_functor< functor > apply;
+  return m_value <= END_TOPOLOGY ? apply(m_value) : topology::ELEMENT_RANK;
+}
 
 template <typename NodeArrayA, typename NodeArrayB>
 STKTOPOLOGY_INLINE_FUNCTION

@@ -3,60 +3,7 @@
 #include <sstream>
 #include <iomanip>
 
-#define STKTOPOLOGY_SIMPLE_MEMBER(name,result)         \
-  namespace {                                          \
-  struct name##_impl {                                 \
-    typedef result result_type;                        \
-    template <typename Topology>                       \
-    result_type operator()(Topology) const             \
-    { return Topology::name; }                         \
-  };                                                   \
-  }  /*namespace */                                    \
-  namespace stk {                                      \
-  result topology::name() const                        \
-  { topology::apply_functor< name##_impl > apply;      \
-    return apply(m_value);                             \
-  }                                                    \
-  } /*namespace stk*/
 
-#define STKTOPOLOGY_ORDINAL_MEMBER(name,result)        \
-  namespace {                                          \
-  struct name##_impl {                                 \
-    typedef result result_type;                        \
-    name##_impl(int ordinal)                           \
-      : m_ordinal(ordinal)                             \
-    {}                                                 \
-    template <typename Topology>                       \
-    result_type operator()(Topology) const             \
-    { return Topology::name(m_ordinal); }              \
-    int m_ordinal;                                     \
-  };                                                   \
-  }  /*namespace */                                    \
-  namespace stk {                                      \
-  result topology::name(int ordinal) const             \
-  { name##_impl f(ordinal);                            \
-    topology::apply_functor< name##_impl > apply( f ); \
-    return apply(m_value);                             \
-  }                                                    \
-  } /*namespace stk*/
-
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
-STKTOPOLOGY_SIMPLE_MEMBER(dimension,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
-STKTOPOLOGY_SIMPLE_MEMBER(base,stk::topology)
-STKTOPOLOGY_SIMPLE_MEMBER(edge_topology,stk::topology)
-
-STKTOPOLOGY_ORDINAL_MEMBER(defined_on_spatial_dimension,bool)
-STKTOPOLOGY_ORDINAL_MEMBER(face_topology,stk::topology)
-
-#undef STKTOPOLOGY_SIMPLE_MEMBER
-#undef STKTOPOLOGY_ORDINAL_MEMBER
 
 namespace stk {
 
@@ -115,37 +62,6 @@ const char * topology::topology_names[] =
   , "INVALID_TOPOLOGY"
 };
 
-// support runtime number of nodes
-// num_nodes
-namespace {
-struct num_nodes_impl {
-  typedef int result_type;
-  template <typename Topology>
-  result_type operator()(Topology) const
-  { return Topology::num_nodes; }
-};
-}  /*namespace */
-int topology::num_nodes() const
-{
-  topology::apply_functor< num_nodes_impl > apply;
-  return m_value <= END_TOPOLOGY ? apply(m_value) : m_value - SUPERELEMENT_START;
-}
-
-// support runtime number of nodes
-// rank
-namespace {
-struct rank_impl {
-  typedef topology::rank_t result_type;
-  template <typename Topology>
-  result_type operator()(Topology) const
-  { return Topology::rank; }
-};
-}  /*namespace */
-topology::rank_t topology::rank() const
-{
-  topology::apply_functor< rank_impl > apply;
-  return m_value <= END_TOPOLOGY ? apply(m_value) : topology::ELEMENT_RANK;
-}
 
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {

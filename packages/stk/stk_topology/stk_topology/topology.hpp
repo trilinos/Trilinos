@@ -97,11 +97,11 @@ struct topology
   const char * superelement_name() const;
 
   /// get the name of this topology
-  const char * name() const 
-  { 
+  const char * name() const
+  {
     if (is_superelement() )
       return superelement_name();
-    return topology_names[m_value]; 
+    return topology_names[m_value];
   }
 
   /// does this topology have homogeneous faces
@@ -309,11 +309,13 @@ struct topology
   //constructors
   //***************************************************************************
   /// default construct to invalid
+  STKTOPOLOGY_INLINE_FUNCTION
   topology()
     : m_value(INVALID_TOPOLOGY)
   {}
 
   /// implicit construct from a topology_t
+  STKTOPOLOGY_INLINE_FUNCTION
   topology(topology_t topo)
     : m_value(topo)
   {}
@@ -345,6 +347,7 @@ struct topology
   // topology_type conversion constructors
   //***************************************************************************
   template <topology_t Topology>
+  STKTOPOLOGY_INLINE_FUNCTION
   topology(topology_type<Topology> /* t */ )
     : m_value(Topology)
   {}
@@ -464,7 +467,7 @@ std::ostream & operator<<(std::ostream &out, topology t);
 
 void verbose_print_topology(std::ostream &out, topology t);
 
-inline
+STKTOPOLOGY_INLINE_FUNCTION
 topology create_superelement_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
