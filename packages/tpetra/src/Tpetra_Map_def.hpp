@@ -738,7 +738,7 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
       Teuchos::ArrayRCP<GlobalOrdinal> lgMapPtr = lgMap_;
 #else
-      GlobalOrdinal* const lgMapPtr = lgMap_.getRawPtr ();
+      GlobalOrdinal* lgMapPtr = lgMap_.getRawPtr ();
 #endif // HAVE_TEUCHOS_DEBUG
       for (GlobalOrdinal gid = minMyGID_; gid <= maxMyGID_; ++gid) {
         *(lgMapPtr++) = gid;
