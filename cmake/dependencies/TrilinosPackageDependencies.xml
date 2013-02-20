@@ -1301,11 +1301,25 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="MueLu" dir="packages/muelu" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Zoltan2,Stratimikos"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="muelu-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="TrilinosCouplings" dir="packages/trilinoscouplings" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STK"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko,Tpetra"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko,Tpetra,MueLu"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -1354,20 +1368,6 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="aristos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
-  <Package name="MueLu" dir="packages/muelu" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Zoltan2,Stratimikos"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
-    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="muelu-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

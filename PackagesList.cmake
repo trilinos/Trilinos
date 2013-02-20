@@ -150,11 +150,11 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Phdmesh               packages/phdmesh                  EX # to be replaced by STK
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
+  MueLu                 packages/muelu                    SS
   TrilinosCouplings     packages/trilinoscouplings        SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
-  MueLu                 packages/muelu                    SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
