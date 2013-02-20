@@ -165,7 +165,9 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra)
+   Trilinos_ENABLE_Tpetra AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_MueLu)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Tpetra
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
@@ -188,7 +190,9 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra)
+   Trilinos_ENABLE_Epetra AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_MueLu)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Epetra
     SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp
@@ -200,6 +204,11 @@ IF(Trilinos_ENABLE_Belos AND
     ADD_DIR_TO_NAME
     )
 ENDIF()
+
+# Copy over example xml file for [E|T]petraIntrepidPoisson example
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
+  DEST_FILES   intrepid_poisson.xml
+  )
 
 # mfh 14 Feb 2013
 #
@@ -216,4 +225,3 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
     ADD_DIR_TO_NAME
     )
 ENDIF()
-
