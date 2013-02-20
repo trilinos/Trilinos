@@ -46,6 +46,9 @@ public:
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_name ; }
 
+  int64_t id() const { return m_id; }
+  void set_id(int64_t lid) { m_id = lid; }
+
   /** \brief  Internally generated ordinal of this part that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
@@ -106,6 +109,7 @@ private:
   PartImpl & operator = ( const PartImpl & );
 
   const std::string         m_name ;
+  int64_t                   m_id;
   CSet                      m_attribute ;
   PartVector                m_subsets ;
   PartVector                m_supersets ;

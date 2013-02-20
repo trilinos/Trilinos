@@ -68,6 +68,7 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
                     EntityRank          arg_rank ,
                     size_t              arg_ordinal )
   : m_name( arg_name ),
+    m_id( -1 ),
     m_attribute(),
     m_subsets() , m_supersets() , m_intersect() , m_relations() ,
     m_mesh_meta_data( arg_meta_data ),

@@ -68,6 +68,9 @@ public:
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_partImpl.name(); }
 
+  void set_id(int64_t lid) { m_partImpl.set_id(lid); }
+  int64_t id() const { return m_partImpl.id(); }
+
   /** \brief  Internally generated ordinal of this part that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */

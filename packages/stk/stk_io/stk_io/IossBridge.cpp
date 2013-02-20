@@ -529,6 +529,9 @@ void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData 
   if (include_entity(entity)) {
     mesh::EntityRank type = get_entity_rank(entity, meta);
     stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+    if (entity->property_exists("id")) {
+        part.set_id(entity->get_property("id").get_int());
+    }
     stk::io::put_io_part_attribute(part, entity);
   }
 }
@@ -539,6 +542,9 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
     mesh::EntityRank type = get_entity_rank(entity, meta);
     stk::mesh::Part * part = NULL;
     part = &meta.declare_part(entity->name(), type);
+    if (entity->property_exists("id")) {
+        part->set_id(entity->get_property("id").get_int());
+    }
     stk::io::put_io_part_attribute(*part, entity);
 
     const Ioss::ElementTopology *topology = entity->topology();
