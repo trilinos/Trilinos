@@ -185,30 +185,34 @@ namespace Tpetra {
 
     /** \brief Constructor with Tpetra-defined contiguous uniform distribution.
      *
-     * This constructor produces a Map with the given number of
-     * elements distributed among processes in the given communicator,
-     * so that the subsets of global elements are nonoverlapping,
-     * contiguous, and as evenly distributed across the processes as
-     * possible.
+     * This constructor produces a nonoverlapping Map with
+     * numGlobalElements elements distributed over all the processes
+     * in the given communicator.  If the communicator contains P
+     * processes, then each process will own either
+     * <tt>numGlobalElements/P</tt> or <tt>numGlobalElements/P + 1</tt>
+     * nonoverlapping contiguous elements.
+     *
+     * Preconditions on numGlobalElements and indexBase will only be
+     * checked in a debug build (when Trilinos was configured with
+     * CMake option <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If checks
+     * are enabled and any check fails, the constructor will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
      *
      * \param numGlobalElements [in] Number of elements in the Map
      *   (over all processes)
      *
-     * \param indexBase [in] The base of the global indices
-     *   in the Map.
-     *   This must be the same on every node in the comm.
-     *    For this Map constructor, the index
-     *   base will also be the smallest global ID in the Map.
-     *   (If you don't know what this should be, use zero.)
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every node in the comm.  For
+     *   this Map constructor, the index base will also be the
+     *   smallest global ID in the Map.  (If you don't know what this
+     *   should be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
      *
      * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter of
-     *   Map.  If Node is not the same as the default Node type
-     *   Kokkos::DefaultNode::DefaultNodeType, you will need to
-     *   provide a nondefault value.
+     *   object must match the type of the Node template parameter.
      */
     Map (global_size_t numGlobalElements,
          GlobalOrdinal indexBase,
@@ -219,38 +223,40 @@ namespace Tpetra {
     /** \brief Constructor with a user-defined contiguous distribution.
      *
      * If N is the sum of numLocalElements over all processes, then
-     * this constructor produces a nonoverlapping Map distributed over
-     * the processes in the given communicator, with numLocalElements
-     * contiguous elements on the calling process.
+     * this constructor produces a nonoverlapping Map with N elements
+     * distributed over all the processes in the given communicator,
+     * with either numLocalElements or numLocalElements+1 contiguous
+     * elements on the calling process.
      *
-     * \param numGlobalElements [in] If numGlobalElements ==
-     *   Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
-     *   of global elements will be computed (via a global
-     *   communication) as the sum of the counts of local elements.
-     *   Otherwise, it must equal the sum of the local elements over
-     *   all processes.  This will only be checked if Trilinos'
-     *   Teuchos package was built with debug support (CMake Boolean
-     *   option TEUCHOS_ENABLE_DEBUG=ON).  If verification fails, the
-     *   constructor will throw std::invalid_argument.
+     * Preconditions on numGlobalElements, numLocalElements, and
+     * indexBase will only be checked in a debug build (when Trilinos
+     * was configured with CMake option
+     * <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If checks are enabled
+     * and any check fails, the constructor will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
+     *
+     * \param numGlobalElements [in] If <tt>numGlobalElements ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   then the number of global elements will be computed (via a
+     *   global communication) as the sum of numLocalElements over all
+     *   processes.  Otherwise, it must equal the sum of
+     *   numLocalElements over all processes.
      *
      * \param numLocalElements [in] Number of elements that the
      *   calling process will own in the Map.
      *
-     * \param indexBase [in] The base of the global indices
-     *   in the Map.
-     *   This must be the same on every node in the comm.
-     *   For this Map constructor, the index
-     *   base will also be the smallest global ID in the Map. If you
-     *   don't know what this should be, use zero.
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every node in the comm.  For
+     *   this Map constructor, the index base will also be the
+     *   smallest global ID in the Map.  If you don't know what this
+     *   should be, use zero.
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
      *
      * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter of
-     *   Map.  If Node is not the same as the default Node type
-     *   Kokkos::DefaultNode::DefaultNodeType, you will need to
-     *   provide a nondefault value.
+     *   object must match the type of the Node template parameter.
      */
     Map (global_size_t numGlobalElements,
          size_t numLocalElements,
@@ -266,34 +272,30 @@ namespace Tpetra {
      * IDs on different processes may overlap.  This is the
      * constructor to use to make an overlapping distribution.
      *
-     * \param numGlobalElements [in] If numGlobalElements ==
-     *   Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
-     *   of global elements will be computed (via a global
+     * \param numGlobalElements [in] If <tt>numGlobalElements ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   the number of global elements will be computed (via a global
      *   communication) as the sum of the counts of local elements.
      *   Otherwise, it must equal the sum of the local elements over
      *   all processes.  This will only be checked if Trilinos'
      *   Teuchos package was built with debug support (CMake Boolean
-     *   option TEUCHOS_ENABLE_DEBUG=ON).  If verification fails, the
-     *   constructor will throw std::invalid_argument.
+     *   option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     *   verification fails, the constructor will throw
+     *   std::invalid_argument.
      *
      * \param elementList [in] List of global IDs owned by the calling
      *   process.
      *
-     * \param indexBase [in] The base of the global indices
-     *   in the Map.
-     *   This must be the same on every node in the comm.
-     *   This must be less than all of the global IDs in \c elementList.
-     *   (If you don't know what this should
-     *   be, use zero.)
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every node in the comm.  This
+     *   must be less than all of the global IDs in \c elementList.
+     *   (If you don't know what this should be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
      *
      * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter of
-     *   Map.  If Node is not the same as the default Node type
-     *   Kokkos::DefaultNode::DefaultNodeType, you will need to
-     *   provide a nondefault value.
+     *   object must match the type of the Node template parameter.
      */
     Map (global_size_t numGlobalElements,
          const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
