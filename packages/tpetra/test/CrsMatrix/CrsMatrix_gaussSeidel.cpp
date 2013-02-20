@@ -225,10 +225,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
       Teuchos::Array<GO> indices;
-      if (globalRow - numGlobalPoints >= globalMinAllRow) {
+      if (globalRow  >= globalMinAllRow + numGlobalPoints) {
         indices.push_back (globalRow - numGlobalPoints);
       }
-      if (globalRow - 1 >= globalMinAllRow) {
+      if (globalRow >= globalMinAllRow + 1) {
         indices.push_back (globalRow - 1);
       }
       indices.push_back (globalRow);
@@ -255,11 +255,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
       Teuchos::Array<GO> indices;
       Teuchos::Array<ST> values;
-      if (globalRow - numGlobalPoints >= globalMinAllRow) {
+      if (globalRow >= globalMinAllRow - numGlobalPoints) {
         indices.push_back (globalRow - numGlobalPoints);
         values.push_back (-STS::one ());
       }
-      if (globalRow - 1 >= globalMinAllRow) {
+      if (globalRow >= globalMinAllRow + 1) {
         indices.push_back (globalRow - 1);
         values.push_back (-STS::one ());
       }
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   }
 
   if (myRank == 0) {
-    cerr << "Extracting inverse diagonal" << endl;
+    out << "Extracting inverse diagonal" << endl;
   }
   RCP<vector_type> D = rcp (new vector_type (rowMap));
   matrix->getLocalDiagCopy (*D); // Get the diagonal entries.
@@ -318,7 +318,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   }
 
   if (myRank == 0) {
-    cerr << "Making vectors" << endl;
+    out << "Making vectors" << endl;
   }
 
   // Make (multi)vectors for the initial guess (which will also be the
@@ -356,7 +356,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const magnitude_type D_norm_orig = norm2 (*D);
   const magnitude_type B_norm_orig = norm2 (*B);
   if (myRank == 0) {
-    cerr << "Before iterating:" << endl
+    out << "Before iterating:" << endl
          << "- ||R||_2 = " << residNorms[0] << endl
          << "- ||X||_2 = " << X_norm_orig << endl
          << "- ||B||_2 = " << B_norm_orig << endl
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
     D_norm = norm2 (*D);
     B_norm = norm2 (*B);
     if (myRank == 0) {
-      cerr << "After iteration " << iter+1 << " of " << maxNumIters << ":" << endl
+      out << "After iteration " << iter+1 << " of " << maxNumIters << ":" << endl
            << "- ||R||_2 = " << residNorms[iter+1] << endl
            << "- ||X||_2 = " << X_norm << endl
            << "- ||B||_2 = " << B_norm << endl

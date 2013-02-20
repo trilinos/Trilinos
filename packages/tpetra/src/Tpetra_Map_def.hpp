@@ -1324,7 +1324,7 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   myOwned_vec.resize (numMyOwnedElems);
 
   RCP< const Tpetra::Map<LO,GO,Node> > one_to_one_map =
-    rcp (new map_type (Teuchos::OrdinalTraits<GO>::invalid (), myOwned_vec (),
+    rcp (new map_type (Teuchos::OrdinalTraits<global_size_t>::invalid (), myOwned_vec (),
                        M->getIndexBase (), M->getComm (), M->getNode()));
 
   return(one_to_one_map);
