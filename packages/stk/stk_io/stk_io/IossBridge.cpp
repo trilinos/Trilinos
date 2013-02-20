@@ -515,6 +515,13 @@ stk::topology map_ioss_topology_to_stk( const Ioss::ElementTopology *topology)
       return topo;
     }
   }
+  std::string tmpCopy = topology->name().substr(0,5);
+  sierra::make_lower(tmpCopy);
+  if (tmpCopy=="super")
+  {
+      return stk::create_superelement_topology(topology->number_nodes());
+  }
+
   return stk::topology::INVALID_TOPOLOGY;
 }
 

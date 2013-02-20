@@ -481,6 +481,8 @@ public:
   /** \brief Return the root cell topology part associated with the given cell topology.
    * This Part is created in register_cell_topology
    */
+
+  Part *get_cell_topology_root_part_ptr(const CellTopology cell_topology) const;
   Part &get_cell_topology_root_part(const CellTopology cell_topology) const;
 
   /** \brief Return the cell topology associated with the given part.
