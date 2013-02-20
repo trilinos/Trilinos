@@ -56,17 +56,15 @@ namespace Impl {
 #endif
 //----------------------------------------------------------------------------
 
-template< class MemorySpace ,
-          typename ValueType , unsigned ValueSize , unsigned M, unsigned N, unsigned s0 , unsigned s1 >
-class ViewOper< MemorySpace ,
-                ValueType , Shape< LayoutTileLeft<M,N,false/*not power of 2*/>, ValueSize, 2, s0, s1 > >
+template< class MemorySpace , typename ValueType , class ShapeType , unsigned M, unsigned N >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutTileLeft<M,N,false/*not power of 2*/> , 2 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
-  ValueType                         * m_ptr_on_device ;
-  Shape<LayoutTileLeft<M,N,false>,ValueSize,2,s0,s1> m_shape ;
-  unsigned m_stride ;
+  ValueType * m_ptr_on_device ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -83,12 +81,9 @@ public:
       //TODO: assert within tile bounds
 
       // Generate this tile 'subview' with the proper shape (stride == M).
-      // A default constructed Left-shape will attempt to align the leading dimension
-      // on a cache-line length.
 
-      typedef Shape<LayoutLeft,ValueSize,2,M,N> tile_shape_type ;
-
-      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()), tile_shape_type() , M );
+      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()),
+                        Shape< ShapeType::scalar_size,2,M,N>() , M );
     }
 
 
@@ -151,17 +146,16 @@ public:
 
 
 //----------------------------------------------------------------------------
-template< class MemorySpace ,
-          typename ValueType , unsigned ValueSize , unsigned M, unsigned N, unsigned s0 , unsigned s1 >
-class ViewOper< MemorySpace ,
-                ValueType , Shape< LayoutTileLeft<M,N,true/*power of 2*/>, ValueSize, 2, s0, s1 > >
+
+template< class MemorySpace , typename ValueType , class ShapeType , unsigned M, unsigned N >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutTileLeft<M,N,true/* power of 2*/> , 2 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
-  ValueType                         * m_ptr_on_device ;
-  Shape<LayoutTileLeft<M,N,true>,ValueSize,2,s0,s1> m_shape ;
-  unsigned m_stride ;
+  ValueType * m_ptr_on_device ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
   enum {
       M_SHIFT = Impl::power_of_2<M>::value
@@ -185,14 +179,10 @@ public:
       //TODO: assert within tile bounds
 
       // Generate this tile 'subview' with the proper shape (stride == M).
-      // A default constructed Left-shape will attempt to align the leading dimension
-      // on a cache-line length.
-
-      typedef Shape<LayoutLeft,ValueSize,2,M,N> tile_shape_type ;
 
       return tile_type( m_ptr_on_device
                         + ( (itile + jtile * tiles_in_dimension_0() ) << ( M_SHIFT + N_SHIFT )),
-                        tile_shape_type() , M );
+                        Shape< ShapeType::scalar_size,2,M,N>() , M );
     }
 
   KOKKOSARRAY_INLINE_FUNCTION

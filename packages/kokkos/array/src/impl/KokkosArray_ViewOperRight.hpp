@@ -51,17 +51,15 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,0> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 0 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,0> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -84,18 +82,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,1,s0> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 1 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,1,s0> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -124,18 +119,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,2,s0,s1> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 2 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,2,s0,s1> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -153,18 +145,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,3,s0,s1,s2> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 3 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,3,s0,s1,s2> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -184,18 +173,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,4,s0,s1,s2,s3> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 4 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,4,s0,s1,s2,s3> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -217,19 +203,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,5,s0,s1,s2,s3,s4> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 5 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,5,s0,s1,s2,s3,s4> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -253,19 +235,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned s5 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,6,s0,s1,s2,s3,s4,s5> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 6 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,6,s0,s1,s2,s3,s4,s5> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -290,19 +268,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned s5 , unsigned s6 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 7 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 
@@ -330,19 +304,15 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , typename ValueType , unsigned ValueSize ,
-          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 , 
-          unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
-class ViewOper< MemorySpace ,
-                ValueType ,
-                Shape<LayoutRight,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> >
+template< class MemorySpace , typename ValueType , class ShapeType >
+class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 8 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
-  Shape<LayoutRight,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> m_shape ;
-  unsigned  m_stride ;
+  ShapeType   m_shape ;
+  unsigned    m_stride ;
 
 public:
 

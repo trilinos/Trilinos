@@ -54,140 +54,6 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class ShapeType , unsigned N ,
-          unsigned R = ShapeType::rank_dynamic >
-struct ShapeInsert ;
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 0 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 N ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 1 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 N ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 2 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 N ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 3 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 N ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 4 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 N ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 5 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 N ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 6 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 N ,
-                 ShapeType::StaticN6 > type ;
-};
-
-template< class ShapeType , unsigned N >
-struct ShapeInsert< ShapeType , N , 7 >
-{
-  typedef Shape< typename ShapeType::array_layout ,
-                 ShapeType::scalar_size ,
-                 ShapeType::rank + 1 ,
-                 ShapeType::StaticN0 ,
-                 ShapeType::StaticN1 ,
-                 ShapeType::StaticN2 ,
-                 ShapeType::StaticN3 ,
-                 ShapeType::StaticN4 ,
-                 ShapeType::StaticN5 ,
-                 ShapeType::StaticN6 ,
-                 N > type ;
-};
-
-//----------------------------------------------------------------------------
-
 /** \brief  Analyze the array shape defined by a KokkosArray::View data type.
  *
  *  It is presumed that the data type can be mapped down to a multidimensional
@@ -201,7 +67,7 @@ struct ShapeInsert< ShapeType , N , 7 >
  *  to map it down to a shape and intrinsic scalar numerical type.
  */
 
-template< class T , class Layout = void >
+template< class T >
 struct AnalyzeShape {
   typedef       T  scalar_type ;
   typedef       T  array_type ;
@@ -216,15 +82,15 @@ struct AnalyzeShape {
   typedef       T  non_const_value_type ;
   typedef       T  non_const_type ;
 
-  typedef Shape< Layout, sizeof(T), 0 >  shape ;
+  typedef Shape< sizeof(T), 0 >  shape ;
 
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , class Layout >
-struct AnalyzeShape< const T , Layout > {
+template< class T >
+struct AnalyzeShape< const T > {
 private:
-  typedef AnalyzeShape<T,Layout> nested ;
+  typedef AnalyzeShape<T> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
@@ -248,11 +114,11 @@ public:
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , class Layout >
-struct AnalyzeShape< T * , Layout >
+template< class T >
+struct AnalyzeShape< T * >
 {
 private:
-  typedef AnalyzeShape<T, Layout > nested ;
+  typedef AnalyzeShape<T> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
@@ -276,11 +142,11 @@ public:
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , class Layout >
-struct AnalyzeShape< T[] , Layout >
+template< class T >
+struct AnalyzeShape< T[] >
 {
 private:
-  typedef AnalyzeShape<T,Layout> nested ;
+  typedef AnalyzeShape<T> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
@@ -304,11 +170,11 @@ public:
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , class Layout >
-struct AnalyzeShape< const T[] , Layout >
+template< class T >
+struct AnalyzeShape< const T[] >
 {
 private:
-  typedef AnalyzeShape< const T,Layout> nested ;
+  typedef AnalyzeShape< const T > nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
@@ -332,11 +198,11 @@ public:
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , unsigned N , class Layout >
-struct AnalyzeShape< T[N] , Layout >
+template< class T , unsigned N >
+struct AnalyzeShape< T[N] >
 {
 private:
-  typedef AnalyzeShape<T, Layout > nested ;
+  typedef AnalyzeShape<T> nested ;
   typedef typename nested::shape nested_shape ;
 public:
 
@@ -360,11 +226,11 @@ public:
   static const unsigned rank = shape::rank ;
 };
 
-template< class T , unsigned N , class Layout >
-struct AnalyzeShape< const T[N] , Layout >
+template< class T , unsigned N >
+struct AnalyzeShape< const T[N] >
 {
 private:
-  typedef AnalyzeShape< const T, Layout > nested ;
+  typedef AnalyzeShape< const T > nested ;
   typedef typename nested::shape nested_shape ;
 public:
 

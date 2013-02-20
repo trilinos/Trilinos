@@ -53,9 +53,9 @@ namespace KokkosArray {
 namespace Impl {
 
 template < unsigned ValueSize >
-struct ShapeMap< Shape<LayoutRight,ValueSize,0> >
+struct ShapeMap< Shape<ValueSize,0> , LayoutRight >
 {
-  typedef Shape<LayoutRight,ValueSize,0> shape_type ;
+  typedef Shape<ValueSize,0> shape_type ;
 
   static inline
   size_t offset( const shape_type & , const unsigned ) { return 0 ; }
@@ -70,9 +70,9 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,0> >
 };
 
 template < unsigned ValueSize , unsigned s0 >
-struct ShapeMap< Shape<LayoutRight,ValueSize,1,s0> >
+struct ShapeMap< Shape<ValueSize,1,s0> , LayoutRight >
 {
-  typedef Shape<LayoutRight,ValueSize,1,s0> shape_type ;
+  typedef Shape<ValueSize,1,s0> shape_type ;
 
   static inline
   size_t offset( const shape_type & shape , const unsigned , const size_t i0 )
@@ -93,9 +93,9 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,1,s0> >
 template < unsigned ValueSize , unsigned Rank ,
            unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
            unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
-struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
+struct ShapeMap< Shape<ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> , LayoutRight >
 {
-  typedef Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
+  typedef Shape<ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
 
   static inline
   size_t offset(

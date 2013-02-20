@@ -53,9 +53,9 @@ namespace KokkosArray {
 namespace Impl {
 
 template < unsigned ValueSize , unsigned M, unsigned N, unsigned s0 , unsigned s1 >
-struct ShapeMap< Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> >
+struct ShapeMap< Shape<ValueSize,2,s0,s1> , LayoutTileLeft<M,N> >
 {
-  typedef Shape<LayoutTileLeft<M,N>,ValueSize,2,s0,s1> shape_type ;
+  typedef Shape<ValueSize,2,s0,s1> shape_type ;
 
   static inline
   size_t allocation_count( const shape_type & shape , unsigned )

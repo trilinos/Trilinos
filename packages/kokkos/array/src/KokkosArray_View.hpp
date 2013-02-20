@@ -59,20 +59,8 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class MemorySpace , class ValueType , class Shape >
+template< class MemorySpace , class ValueType , class Shape , class Layout , unsigned Rank = Shape::rank >
 class ViewOper ;
-
-/*
-template< class MemorySpace , class ValueType , class Shape , class Layout , class Enable >
-class ViewOper ;
-
-template< class MemorySpace , class ValueType , class Shape , class Layout , class Enable >
-class ViewOper {
-
-  ShapeMap< Shape , Layout > shape_map ;
-
-};
-*/
 
 template< class DstScalar , class DstMemory , class DstManagement ,
           class SrcScalar , class SrcMemory , class SrcManagement >
@@ -103,15 +91,13 @@ template< class DataType ,
 class View
   : public Impl::ViewOper<
       typename DeviceType::memory_space ,
-      typename Impl::AnalyzeShape< DataType , typename LayoutType::array_layout >
-                   ::value_type ,
-      typename Impl::AnalyzeShape< DataType , typename LayoutType::array_layout >
-                   ::shape >
+      typename Impl::AnalyzeShape< DataType >::value_type ,
+      typename Impl::AnalyzeShape< DataType >::shape ,
+      typename LayoutType::array_layout >
 {
 private:
 
-  typedef Impl::AnalyzeShape<DataType,
-                             typename LayoutType::array_layout >  analysis ;
+  typedef Impl::AnalyzeShape<DataType>       analysis ;
   typedef typename analysis::const_type      const_data_type ;
   typedef typename analysis::non_const_type  non_const_data_type ;
 
@@ -139,7 +125,8 @@ private:
 
   typedef Impl::ViewOper< memory_space ,
                           value_type ,
-                          shape_type > oper_type ;
+                          shape_type ,
+                          array_layout > oper_type ;
 
   template< class , class , class , class> friend class View ;
 
@@ -201,7 +188,7 @@ public:
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_t allocation_count() const
-  { return Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride ); }
+  { return Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride ); }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
@@ -340,7 +327,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride );
@@ -374,7 +362,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride );
@@ -413,7 +402,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 );
@@ -447,7 +437,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 , arg1 );
@@ -482,7 +473,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 );
@@ -519,7 +511,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 );
@@ -557,7 +550,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 );
@@ -596,7 +590,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
@@ -637,7 +632,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6 );
@@ -679,7 +675,8 @@ public:
       // SubShape<*,*> only exists for valid subshapes:
 
       typedef typename
-        Impl::SubShape< shape_type , rhs_shape_type >::type
+        Impl::SubShape< array_layout , shape_type ,
+                        typename rhsLayout::array_layout , rhs_shape_type >::type
           subshape_type ;
 
       const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6, arg7 );
@@ -697,10 +694,10 @@ public:
       Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
 
     oper_type::m_shape  = shape ;
-    oper_type::m_stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( oper_type::m_shape );
+    oper_type::m_stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( oper_type::m_shape );
 
     const unsigned allocation_count =
-      Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride );
+      Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride );
 
     oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
 
@@ -722,10 +719,10 @@ public:
 
     shape_type::assign( oper_type::m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
 
-    oper_type::m_stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( oper_type::m_shape );
+    oper_type::m_stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( oper_type::m_shape );
 
     const unsigned allocation_count =
-      Impl::ShapeMap<shape_type>::allocation_count( oper_type::m_shape , oper_type::m_stride );
+      Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride );
 
     oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
 
@@ -736,7 +733,7 @@ public:
   /** \brief  For unit testing shape mapping. */
   explicit View( const shape_type & shape )
     {
-      unsigned stride = Impl::ShapeMap<shape_type>::template stride<memory_space>( shape );
+      unsigned stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( shape );
       internal_private_assign( shape , stride , 0 );
     }
 
