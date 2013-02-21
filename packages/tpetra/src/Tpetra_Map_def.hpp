@@ -441,10 +441,15 @@ namespace Tpetra {
 	<< ".  The min and max values over all processes are " 
 	<< minIndexBase << " resp. " << maxIndexBase << ".");
 
+      std::cout << "\nInside of Tpetra::Map constructor:\n";
+      std::cout << "GSTI = " << GSTI << "\n";
+      std::cout << "numGlobalElements = " << numGlobalElements << "\n";
+      std::cout << "debugGlobalSum = " << debugGlobalSum << "\n";
+
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        numGlobalElements != GSTI && debugGlobalSum != numGlobalElements, 
+        ((numGlobalElements != GSTI) && (debugGlobalSum != numGlobalElements)), 
 	std::invalid_argument, 
 	"Tpetra::Map constructor: The sum of entryList.size() over all "
 	"processes = " << debugGlobalSum << " != numGlobalElements = " 
@@ -1066,7 +1071,8 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   }
   myOwned_vec.resize (numMyOwnedElems);
 
-  const GO GINV = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+  const global_size_t GINV =
+    Teuchos::OrdinalTraits<global_size_t>::invalid ();
   return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (), 
 			    M->getComm (), M->getNode ()));
 }

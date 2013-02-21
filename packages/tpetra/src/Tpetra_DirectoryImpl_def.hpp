@@ -236,7 +236,7 @@ namespace Tpetra {
           const GO two = as<GO> (2);
           const GO nOverP_GID = as<GO> (nOverP);
           const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs) - 1));
+          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
         }
         bool found = false;
         while (curRank >= 0 && curRank < numProcs) {

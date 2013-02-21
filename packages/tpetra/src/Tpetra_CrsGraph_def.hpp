@@ -2572,8 +2572,8 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numlocalagain != numLocalColGIDs, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
       }
     }
-    typedef OrdinalTraits<global_size_t> GOT;
-    colMap_ = rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(GOT::invalid(), myColumns, domainMap_->getIndexBase(), domainMap_->getComm(), domainMap_->getNode()) );
+    typedef OrdinalTraits<global_size_t> GSTT;
+    colMap_ = rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(GSTT::invalid(), myColumns, domainMap_->getIndexBase(), domainMap_->getComm(), domainMap_->getNode()) );
     checkInternalState();
     return;
   }
