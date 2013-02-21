@@ -97,7 +97,11 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
   }
 
   {
+#if (__GNUC_MINOR__ > 4)
+    std::string linux_name("bool ()");
+#else
     std::string linux_name("bool ()()");
+#endif
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
     STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
   }
