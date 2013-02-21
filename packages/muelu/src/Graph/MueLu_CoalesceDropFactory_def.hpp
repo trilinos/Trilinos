@@ -131,7 +131,7 @@ namespace MueLu {
 
       // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
       //                                          graph's map information, e.g., whether index is local
-      if ( (A->GetFixedBlockSize() == 1) && (predrop_ != null) ) {
+      if ( (A->GetFixedBlockSize() == 1) && threshold != STS::zero() ) {
 
         // allocate space for the local graph
         ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
@@ -139,11 +139,6 @@ namespace MueLu {
 
         RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
         const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
-
-        RCP<PreDropFunctionConstVal> predropConstVal = rcp_dynamic_cast<PreDropFunctionConstVal>(predrop_);
-        TEUCHOS_TEST_FOR_EXCEPTION(predropConstVal == Teuchos::null,Exceptions::BadCast,
-                                   "MueLu::CoalesceFactory::Build: cast to PreDropFunctionConstVal failed.");
-        //Scalar threshold = predropConstVal->GetThreshold();
 
         rows[0] = 0;
         for(LocalOrdinal row=0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {

@@ -120,6 +120,44 @@ namespace MueLu {
       this->maxCoarseSize_ = 50; /* default should be provided by the Hierarchy class */;
       if(hieraList.isParameter("maxCoarseSize")) { this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize"); hieraList.remove("maxCoarseSize"); }
 
+      //TODO Move this its own class or MueLu::Utils?
+      std::map<std::string,MsgType> verbMap;
+      //for developers
+      verbMap["Errors"] = Errors;
+      verbMap["Warnings0"] = Warnings0;
+      verbMap["Warnings00"] = Warnings00;
+      verbMap["Warnings1"] = Warnings1;
+      verbMap["PerfWarnings"] = PerfWarnings;
+      verbMap["Runtime0"] = Runtime0;
+      verbMap["Runtime1"] = Runtime1;
+      verbMap["RuntimeTimings"] = RuntimeTimings;
+      verbMap["NoTimeReport"] = NoTimeReport;
+      verbMap["Parameters0"] = Parameters0;
+      verbMap["Parameters1"] = Parameters1;
+      verbMap["Statistics0"] = Statistics0;
+      verbMap["Statistics1"] = Statistics1;
+      verbMap["Timings0"] = Timings0;
+      verbMap["Timings1"] = Timings1;
+      verbMap["TimingsByLevel"] = TimingsByLevel;
+      verbMap["External"] = External;
+      verbMap["Debug"] = Debug;
+      //for users and developers
+      verbMap["None"] = None;
+      verbMap["Low"] = Low;
+      verbMap["Medium"] = Medium;
+      verbMap["High"] = High;
+      verbMap["Extreme"] = Extreme;
+      if(hieraList.isParameter("verbosity")) {
+        std::string vl = hieraList.get<std::string>("verbosity");
+        hieraList.remove("verbosity");
+        //TODO Move this to its own class or MueLu::Utils?
+        if (verbMap.find(vl) != verbMap.end())
+          this->verbosity_ = verbMap[vl];
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
+      }
+
+
       // Get level configuration
       for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
         const std::string & paramName  = hieraList.name(param);

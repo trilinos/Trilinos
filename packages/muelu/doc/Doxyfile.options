@@ -32,7 +32,10 @@ OUTPUT_LANGUAGE        = English
 # What and how documentation is extracted
 #
 IGNORE_PREFIX          =
-INPUT_FILTER           =
+#from http://stackoverflow.com/questions/8535635
+#This filter replaces all instances of // FIXME (with any amount (or none) of whitespace between // and FIXME)
+#with /// \todo. This substitution is made internally by Doxygen only: your source files are not modified on disk.
+#INPUT_FILTER = "sed -e 's/\/\/.*FIXME/\/\/\/ \\todo/'"
 IMAGE_PATH             = images
 EXAMPLE_PATTERNS       =
 EXAMPLE_PATH           = ../examples .
