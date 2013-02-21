@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
   int  amgAsPrecond = 1;                       clp.setOption("precond",               &amgAsPrecond, "apply multigrid as preconditioner");
   int   amgAsSolver = 0;                       clp.setOption("fixPoint",              &amgAsSolver,  "apply multigrid as solver");
   bool printTimings = true;                    clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
+  int  writeMatricesOPT = -2;                  clp.setOption("write",                  &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -169,8 +170,13 @@ int main(int argc, char *argv[]) {
   matrixParams.set("mx", galeriList.get("mx", -1));
   matrixParams.set("my", galeriList.get("my", -1));
   matrixParams.set("mz", galeriList.get("mz", -1));
-  if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D")
-    matrixParams.set("left boundary", "Dirichlet");
+  if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D") {
+    matrixParams.set("right boundary" , "Neumann");
+    matrixParams.set("bottom boundary", "Neumann");
+    matrixParams.set("top boundary"   , "Neumann");
+    matrixParams.set("front boundary" , "Neumann");
+    matrixParams.set("back boundary"  , "Neumann");
+  }
 
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
@@ -272,7 +278,12 @@ int main(int argc, char *argv[]) {
     H->IsPreconditioner(false);
     H->Iterate(*B,25,*X);
 
+
     tm = Teuchos::null;
+  }
+
+  if (writeMatricesOPT > -2) {
+    H->Write(writeMatricesOPT,writeMatricesOPT);
   }
 
   if (amgAsPrecond) {

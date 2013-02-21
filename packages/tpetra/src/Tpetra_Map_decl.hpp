@@ -564,7 +564,7 @@ namespace Tpetra {
     //! Advanced methods
     //@{
 
-    //! \brief Create a shallow copy of this map, templated on a different node type
+    //! Create a shallow copy of this Map, with a different Node type.
     template <class Node2>
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const;
 
@@ -826,7 +826,8 @@ namespace Tpetra {
     // the hot new stuff!
     map->node_              = node2;
     if (directory_ != null) {
-      map->directory_ = directory_->template clone<Node2>(map.create_weak());
+      // mfh 20 Feb 2013: The weak reference prevents circularity.
+      map->directory_ = directory_->template clone<Node2> (map.create_weak ());
     }
     return map;
   }

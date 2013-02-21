@@ -111,8 +111,8 @@ namespace {
   // UNIT TESTS
   //
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor1, M, LO, GO )
   {
     // create a comm
@@ -134,9 +134,10 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif // HAVE_TPETRA_DEBUG
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor2, M, LO, GO )
   {
     // create a comm
@@ -157,9 +158,10 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif // HAVE_TPETRA_DEBUG
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor3, M, LO, GO )
   {
     // create a comm
@@ -180,6 +182,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor1, M, LO, GO )
@@ -387,7 +390,10 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+#   ifdef HAVE_TPETRA_DEBUG
+  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
+  // valid in a debug build (HAVE_TPETRA_DEBUG).
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
@@ -396,6 +402,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
       //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
+#   else
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+#   endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Xpetra::StridedTpetraMap<LO,GO> StridedTpetraMap ## LO ## GO; \
@@ -409,7 +423,10 @@ namespace {
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+#   ifdef HAVE_TPETRA_DEBUG
+  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
+  // valid in a debug build (HAVE_TPETRA_DEBUG).
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
@@ -418,6 +435,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
       //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
+#    else
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+#    endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Xpetra::StridedTpetraMap<LO,GO> StridedTpetraMap ## LO ## GO; \

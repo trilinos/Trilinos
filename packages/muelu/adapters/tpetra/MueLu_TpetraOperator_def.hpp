@@ -43,6 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
+
+#ifndef MUELU_TPETRAOPERATOR_DEF_HPP 
+#define MUELU_TPETRAOPERATOR_DEF_HPP 
+
+#include "MueLu_ConfigDefs.hpp"
+
+#ifdef HAVE_MUELU_TPETRA
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -125,3 +133,6 @@ bool TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTran
 }
 
 } // namespace
+#endif //ifdef HAVE_MUELU_TPETRA
+
+#endif //ifdef MUELU_TPETRAOPERATOR_DEF_HPP 
