@@ -1087,7 +1087,6 @@ CellTopology get_cell_topology(stk::topology t)
   case stk::topology::HEX_8:        return CellTopology( shards::getCellTopologyData< shards::Hexahedron<8>         >() );
   case stk::topology::HEX_20:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
   case stk::topology::HEX_27:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
-  case stk::topology::INVALID_TOPOLOGY: break;
   default: break;
   }
   return CellTopology(NULL);

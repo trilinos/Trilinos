@@ -15,13 +15,13 @@ STKUNIT_UNIT_TEST( stk_topology, node)
   STKUNIT_EXPECT_EQ(t.side_rank(),topology::INVALID_RANK);
 
 
-  STKUNIT_EXPECT_EQ(t.dimension(),0);
-  STKUNIT_EXPECT_EQ(t.num_nodes(),0);
-  STKUNIT_EXPECT_EQ(t.num_vertices(),0);
-  STKUNIT_EXPECT_EQ(t.num_edges(),0);
-  STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_permutations(),0);
-  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),0);
+  STKUNIT_EXPECT_EQ(t.dimension(),0u);
+  STKUNIT_EXPECT_EQ(t.num_nodes(),0u);
+  STKUNIT_EXPECT_EQ(t.num_vertices(),0u);
+  STKUNIT_EXPECT_EQ(t.num_edges(),0u);
+  STKUNIT_EXPECT_EQ(t.num_faces(),0u);
+  STKUNIT_EXPECT_EQ(t.num_permutations(),0u);
+  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),0u);
 
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));

@@ -113,7 +113,7 @@ struct create_edge_impl
       Entity elem = m_bucket[ielem];
       {
         PairIterRelation nodes = elem.node_relations();
-        for (int n=0; n<Topology::num_nodes; ++n) {
+        for (unsigned n=0; n<Topology::num_nodes; ++n) {
           elem_nodes[n] = nodes[n].entity();
         }
       }
@@ -126,7 +126,7 @@ struct create_edge_impl
         edge_exist[elem_edges->relation_ordinal()] = true;
       }
 
-      for (int e=0; e < Topology::num_edges; ++e) {
+      for (unsigned e=0; e < Topology::num_edges; ++e) {
 
         if (edge_exist[e]) continue;
 
@@ -145,7 +145,7 @@ struct create_edge_impl
           edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
           m_edge_map[edge_nodes] = edge;
           bool shared_edge = true;
-          for (int n=0; n<EdgeTopology::num_nodes; ++n) {
+          for (unsigned n=0; n<EdgeTopology::num_nodes; ++n) {
             Entity node = edge_nodes[n];
             mesh.declare_relation(edge,node,n);
             shared_edge = shared_edge && node.bucket().shared();
@@ -153,7 +153,7 @@ struct create_edge_impl
           if (shared_edge) {
             shared_edge_type sedge;
             sedge.topology = EdgeTopology::value;
-            for (int n=0; n<EdgeTopology::num_nodes; ++n) {
+            for (unsigned n=0; n<EdgeTopology::num_nodes; ++n) {
               sedge.nodes[n] = edge_nodes[n].key();
             }
             sedge.local_key   = edge.key();
@@ -204,7 +204,7 @@ struct connect_face_impl
       Entity face = m_bucket[iface];
       {
         PairIterRelation nodes = face.node_relations();
-        for (int n=0; n<Topology::num_nodes; ++n) {
+        for (unsigned n=0; n<Topology::num_nodes; ++n) {
           face_nodes[n] = nodes[n].entity();
         }
       }
@@ -217,7 +217,7 @@ struct connect_face_impl
         edge_exist[face_edges->relation_ordinal()] = true;
       }
 
-      for (int e=0; e < Topology::num_edges; ++e) {
+      for (unsigned e=0; e < Topology::num_edges; ++e) {
 
         if (edge_exist[e]) continue;
 
@@ -355,14 +355,14 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
         for (size_t i=0, ie=edge_buckets.size(); i<ie; ++i) {
           Bucket &b = *edge_buckets[i];
 
-          const int num_nodes = b.topology().num_nodes();
+          const unsigned num_nodes = b.topology().num_nodes();
           EntityVector edge_nodes(num_nodes);
 
           for (size_t j=0, je=b.size(); j<je; ++j) {
             Entity edge = b[j];
             PairIterRelation nodes_rel = edge.node_relations();
 
-            for (int n=0; n<num_nodes; ++n) {
+            for (unsigned n=0; n<num_nodes; ++n) {
               edge_nodes[n] = nodes_rel[n].entity();
             }
 

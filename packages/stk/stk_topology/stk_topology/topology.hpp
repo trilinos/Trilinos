@@ -1,7 +1,9 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
-#include <stk_topology/topology_detail/macros.hpp>
+#include <boost/config.hpp>
+
+#include <string>
 
 #include <utility>
 #include <iosfwd>
@@ -22,13 +24,15 @@ struct topology
     , CONSTRAINT_RANK
     , END_RANK
     , NUM_RANKS = END_RANK
-    , INVALID_RANK = ~0
+    , INVALID_RANK = ~0U
+    , FORCE_RANK_TO_UNSIGNED = ~0U
   };
 
   //To add new topologies consult the toolkit team
   enum topology_t
   {
-      BEGIN_TOPOLOGY
+      INVALID_TOPOLOGY
+    , BEGIN_TOPOLOGY
     //NODE_RANK
     , NODE = BEGIN_TOPOLOGY
     //EDGE_RANK
@@ -75,122 +79,132 @@ struct topology
     , HEX_20, HEXAHEDRON_20 = HEX_20
     , HEX_27, HEXAHEDRON_27 = HEX_27
     , END_TOPOLOGY
-    , INVALID_TOPOLOGY = END_TOPOLOGY
     , NUM_TOPOLOGIES = END_TOPOLOGY
     , SUPERELEMENT_START = END_TOPOLOGY+1
-    , FORCE_TO_INT_TYPE = ~0
+    , FORCE_TOPOLOGY_TO_UNSIGNED = ~0U
   };
-
-  static const char * rank_names[];     // indexed by rank_t
-  static const char * topology_names[]; // indexed by topology_t
 
   //***************************************************************************
   //member functions
   //***************************************************************************
 
   /// is this topology valid
+  BOOST_GPU_ENABLED
   bool is_valid() const { return m_value != INVALID_TOPOLOGY; }
 
-  /// get the name of a topology that is a superelement.
-  /// The returned char* is only valid until the next
-  /// call of superelement_name().
-  const char * superelement_name() const;
-
   /// get the name of this topology
-  const char * name() const
-  {
-    if (is_superelement() )
-      return superelement_name();
-    return topology_names[m_value];
-  }
+  std::string name() const;
 
   /// does this topology have homogeneous faces
+  BOOST_GPU_ENABLED
   bool has_homogeneous_faces() const;
 
   /// is this topology a shell topology (i.e. an element with only two sides)
+  BOOST_GPU_ENABLED
   bool is_shell() const;
 
   /// what is the rank of this topology
+  BOOST_GPU_ENABLED
   rank_t rank() const;
 
   /// what is the side rank of this topology
+  BOOST_GPU_ENABLED
   rank_t side_rank() const;
 
   /// what is the topological dimension of this topology
-  int dimension() const;
+  BOOST_GPU_ENABLED
+  unsigned dimension() const;
 
   /// how many nodes define this topology
-  int num_nodes() const;
+  BOOST_GPU_ENABLED
+  unsigned num_nodes() const;
 
   /// how many nodes are vertices
-  int num_vertices() const;
+  BOOST_GPU_ENABLED
+  unsigned num_vertices() const;
 
   /// how many edges does this topology have
-  int num_edges() const;
+  BOOST_GPU_ENABLED
+  unsigned num_edges() const;
 
   /// how many faces does this topology have
-  int num_faces() const;
+  BOOST_GPU_ENABLED
+  unsigned num_faces() const;
 
   /// how many different node permutations does this topology have
-  int num_permutations() const;
+  BOOST_GPU_ENABLED
+  unsigned num_permutations() const;
 
   /// how many different positive node permutations does this topology have
-  int num_positive_permutations() const;
+  BOOST_GPU_ENABLED
+  unsigned num_positive_permutations() const;
 
   /// is this topology defined on the given spatial dimension
-  bool defined_on_spatial_dimension(int spatial_dimension) const;
+  BOOST_GPU_ENABLED
+  bool defined_on_spatial_dimension(unsigned spatial_dimension) const;
 
   /// what is the base topology (i.e. topology where num_nodes == num_vertices)
+  BOOST_GPU_ENABLED
   topology base() const;
 
   /// what is the topology of the given edge
+  BOOST_GPU_ENABLED
   topology edge_topology() const;
 
   /// what is the topology of the given face
-  topology face_topology(int face_ordinal = 0) const;
+  BOOST_GPU_ENABLED
+  topology face_topology(unsigned face_ordinal = 0) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
-  void edge_node_ordinals(int edge_ordinal, OrdinalOutputIterator output_ordinals) const;
+  BOOST_GPU_ENABLED
+  void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output ordinals with the ordinals that make up the given face
   template <typename OrdinalOutputIterator>
-  void face_node_ordinals(int face_ordinal, OrdinalOutputIterator output_ordinals) const;
+  BOOST_GPU_ENABLED
+  void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output ordinals with the ordinals that make up the given permutation
   template <typename OrdinalOutputIterator>
-  void permutation_node_ordinals(int permutation_ordinal, OrdinalOutputIterator output_ordinals) const;
+  BOOST_GPU_ENABLED
+  void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output nodes with the nodes that make up the given edge
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
-  void edge_nodes(const NodeArray & nodes, int edge_ordinal, NodeOutputIterator output_nodes) const;
+  BOOST_GPU_ENABLED
+  void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given face
   /// input 'nodes' is expected to be of length num_nodes.
  template <typename NodeArray, typename NodeOutputIterator>
-  void face_nodes(const NodeArray & nodes, int face_ordinal, NodeOutputIterator output_nodes) const;
+  BOOST_GPU_ENABLED
+  void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given permutation
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
-  void permutation_nodes(const NodeArray & nodes, int permutation_ordinal, NodeOutputIterator output_nodes) const;
+  BOOST_GPU_ENABLED
+  void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes) const;
 
   /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
-  std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
+  BOOST_GPU_ENABLED
+  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
 
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray>
-  int lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
+  BOOST_GPU_ENABLED
+  unsigned lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
-  STKTOPOLOGY_INLINE_FUNCTION
-  void sub_topology_node_ordinals(int sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals) const
+  BOOST_GPU_ENABLED
+  void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     switch(sub_rank)
     {
@@ -204,8 +218,8 @@ struct topology
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
-  STKTOPOLOGY_INLINE_FUNCTION
-  void sub_topology_nodes(const NodeArray & nodes, int sub_rank, int sub_ordinal, NodeOutputIterator output_nodes) const
+  BOOST_GPU_ENABLED
+  void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const
   {
     switch(sub_rank)
     {
@@ -217,12 +231,12 @@ struct topology
   }
 
   /// how many 'sub topologies' does this topology have
-  STKTOPOLOGY_INLINE_FUNCTION
-  int num_sub_topology(int sub_rank) const
+  BOOST_GPU_ENABLED
+  unsigned num_sub_topology(unsigned sub_rank) const
   {
     switch(sub_rank)
     {
-    case NODE_RANK: return num_vertices();
+    case NODE_RANK: return num_nodes();
     case EDGE_RANK: return num_edges();
     case FACE_RANK: return num_faces();
     default: break;
@@ -233,8 +247,8 @@ struct topology
 
 
   /// what is the topology of the given sub topology
-  STKTOPOLOGY_INLINE_FUNCTION
-  topology sub_topology(int sub_rank, int sub_ordinal = 0) const
+  BOOST_GPU_ENABLED
+  topology sub_topology(unsigned sub_rank, unsigned sub_ordinal = 0) const
   {
     switch(sub_rank)
     {
@@ -250,8 +264,8 @@ struct topology
 
   /// fill the output ordinals with the ordinals that make up the given side topology
   template <typename OrdinalOutputIterator>
-  STKTOPOLOGY_INLINE_FUNCTION
-  void side_node_ordinals(int side_ordinal, OrdinalOutputIterator output_ordinals) const
+  BOOST_GPU_ENABLED
+  void side_node_ordinals(unsigned side_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     sub_topology_node_ordinals( side_rank(), side_ordinal, output_ordinals);
   }
@@ -259,28 +273,28 @@ struct topology
   /// fill the output nodes with the nodes that make up the given side topology
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
-  STKTOPOLOGY_INLINE_FUNCTION
-  void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes) const
+  BOOST_GPU_ENABLED
+  void side_nodes(const NodeArray & nodes, unsigned side_ordinal, NodeOutputIterator output_nodes) const
   {
     sub_topology_nodes( nodes, side_rank(), side_ordinal, output_nodes);
   }
 
   /// how many 'side topologies' does this topology have
-  STKTOPOLOGY_INLINE_FUNCTION
-  int num_sides() const
+  BOOST_GPU_ENABLED
+  unsigned num_sides() const
   {
-    return num_sub_topology(side_rank());
+    return side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
   }
 
 
   /// what is the topology of the given side topology
-  STKTOPOLOGY_INLINE_FUNCTION
-  topology side_topology(int side_ordinal = 0) const
+  BOOST_GPU_ENABLED
+  topology side_topology(unsigned side_ordinal = 0) const
   {
     return sub_topology(side_rank(), side_ordinal);
   }
 
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   bool is_superelement() const
   {
     return m_value > SUPERELEMENT_START;
@@ -291,17 +305,17 @@ struct topology
   //***************************************************************************
 
   /// implicit cast to topology_t enum type
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   operator topology_t() const
   { return m_value; }
 
   /// return topology_t enum type
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   topology_t operator()() const
   { return m_value; }
 
   /// return topology_t enum type
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   topology_t value() const
   { return m_value; }
 
@@ -309,13 +323,13 @@ struct topology
   //constructors
   //***************************************************************************
   /// default construct to invalid
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   topology()
     : m_value(INVALID_TOPOLOGY)
   {}
 
   /// implicit construct from a topology_t
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   topology(topology_t topo)
     : m_value(topo)
   {}
@@ -347,7 +361,7 @@ struct topology
   // topology_type conversion constructors
   //***************************************************************************
   template <topology_t Topology>
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   topology(topology_type<Topology> /* t */ )
     : m_value(Topology)
   {}
@@ -362,14 +376,14 @@ struct topology
 //***************************************************************************
 //increment and decrement rank_t
 //***************************************************************************
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::rank_t operator++(topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r+1);
   return r;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::rank_t operator++(topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -377,14 +391,14 @@ topology::rank_t operator++(topology::rank_t &r,int)
   return tmp;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::rank_t operator--(topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r-1);
   return r;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::rank_t operator--(topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -395,14 +409,14 @@ topology::rank_t operator--(topology::rank_t &r,int)
 //***************************************************************************
 //increment and decrement topology_t
 //***************************************************************************
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::topology_t operator++(topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t+1);
   return t;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::topology_t operator++(topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -410,14 +424,14 @@ topology::topology_t operator++(topology::topology_t &t,int)
   return tmp;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::topology_t operator--(topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t-1);
   return t;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::topology_t operator--(topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -428,14 +442,14 @@ topology::topology_t operator--(topology::topology_t &t,int)
 //***************************************************************************
 //increment and decrement topology
 //***************************************************************************
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology operator++(topology &t)
 {
   ++t.m_value;
   return t;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology operator++(topology &t,int)
 {
   topology tmp = t;
@@ -443,14 +457,14 @@ topology operator++(topology &t,int)
   return tmp;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology operator--(topology &t)
 {
   --t.m_value;
   return t;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology operator--(topology &t,int)
 {
   topology tmp = t;
@@ -458,21 +472,30 @@ topology operator--(topology &t,int)
   return tmp;
 }
 
+//***************************************************************************
+//create superelement
+//***************************************************************************
+BOOST_GPU_ENABLED inline
+topology create_superelement_topology(unsigned num_nodes)
+{
+  if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
+}
+
+BOOST_GPU_ENABLED inline
+topology create_superelement_topology(int num_nodes)
+{
+  if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
+  return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
+}
 
 //***************************************************************************
 //output operators and verbose topology printing
 //***************************************************************************
 std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
-
 void verbose_print_topology(std::ostream &out, topology t);
 
-STKTOPOLOGY_INLINE_FUNCTION
-topology create_superelement_topology(int num_nodes)
-{
-  if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
-  return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
-}
 
 } //namespace stk
 

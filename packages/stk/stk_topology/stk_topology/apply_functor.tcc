@@ -23,14 +23,17 @@ struct topology::apply_functor
 {
   typedef typename Functor::result_type result_type;
 
+  BOOST_GPU_ENABLED
   apply_functor()
     : m_functor()
   {}
 
+  BOOST_GPU_ENABLED
   apply_functor(Functor f)
     : m_functor(f)
   {}
 
+  BOOST_GPU_ENABLED
   result_type operator()(topology_t t) const
   {
     switch(t)
@@ -76,12 +79,12 @@ struct topology::apply_functor
     case HEX_8:        return m_functor( topology_type< HEX_8        >() );
     case HEX_20:       return m_functor( topology_type< HEX_20       >() );
     case HEX_27:       return m_functor( topology_type< HEX_27       >() );
-    case INVALID_TOPOLOGY: break;
     default: break;
     }
     return m_functor( topology_type<INVALID_TOPOLOGY>() );
   }
 
+  BOOST_GPU_ENABLED
   result_type operator()(topology_t t)
   {
     switch(t)
@@ -127,7 +130,6 @@ struct topology::apply_functor
     case HEX_8:        return m_functor( topology_type< HEX_8        >() );
     case HEX_20:       return m_functor( topology_type< HEX_20       >() );
     case HEX_27:       return m_functor( topology_type< HEX_27       >() );
-    case INVALID_TOPOLOGY: break;
     default: break;
     }
     return m_functor( topology_type<INVALID_TOPOLOGY>() );

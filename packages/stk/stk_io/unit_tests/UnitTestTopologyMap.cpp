@@ -79,19 +79,19 @@ int testElement(const std::string &name)
   // Exceptions:
   // 1. An Ioss Node has 1 node per element; a shards Node has 0 nodes per element...
 
-  errors += my_assert(cell.num_nodes(),
+  errors += my_assert((int)cell.num_nodes(),
                       element->number_nodes(),
                       "node count");
-  errors += my_assert(cell.num_vertices(),
+  errors += my_assert((int)cell.num_vertices(),
                       element->number_corner_nodes(),
                       "vertex count");
 
   // NOTE: CellTopology and Ioss disagree on parametric dimension.
   int add_to = element->spatial_dimension() != element->parametric_dimension() && element->is_element() ? 1 : 0;
-  errors += my_assert(cell.dimension(),
+  errors += my_assert((int)cell.dimension(),
                       element->parametric_dimension()+add_to,
                       "parametric dimension");
-  errors += my_assert(cell.num_edges(),
+  errors += my_assert((int)cell.num_edges(),
                       element->number_edges(),
                       "edge count");
 
@@ -101,7 +101,7 @@ int testElement(const std::string &name)
     add_boundary = cell.num_edges();
   if (cell == stk::topology::PARTICLE)
     add_boundary = -1;
-  errors += my_assert(cell.num_sides() + add_boundary,
+  errors += my_assert((int)cell.num_sides() + add_boundary,
                       element->number_boundaries(),
                       "boundary count");
 

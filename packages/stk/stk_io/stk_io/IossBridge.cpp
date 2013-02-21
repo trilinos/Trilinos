@@ -37,7 +37,7 @@ namespace {
   const std::string block_nodes_suffix = "_nodes";
   // Need to somehow associate this with the string in MeshReadWriteUtils
   const std::string coordinate_field_name = "coordinates";
-  
+
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta)
 {
@@ -258,7 +258,7 @@ bool will_output_lower_rank_fields(const stk::mesh::Part &part, stk::mesh::Entit
 {
   // Determine whether the part 'part' needs to output any fields of rank 'rank'
   // to the output database.
-  
+
   const std::vector<stk::mesh::FieldBase *> &fields = stk::mesh::MetaData::get(part).get_fields();
   std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
@@ -509,8 +509,7 @@ void remove_io_part_attribute(mesh::Part & part)
 
 stk::topology map_ioss_topology_to_stk( const Ioss::ElementTopology *topology)
 {
-  for (int i=stk::topology::BEGIN_TOPOLOGY; i < stk::topology::NUM_TOPOLOGIES; i++) {
-    stk::topology topo = static_cast<stk::topology::topology_t>(i);
+  for (stk::topology topo=stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {
     if (topology->is_alias(topo.name())) {
       return topo;
     }
@@ -706,7 +705,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
 {
   std::vector<INT> ids ;
   io_entity->get_field_data("ids", ids);
-  
+
   size_t count = ids.size();
   entities.reserve(count);
 
@@ -729,7 +728,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
   } else {
     // Output database...
     assert(io_entity->property_exists(internal_selector_name));
-    
+
     mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property(internal_selector_name).get_pointer());
     get_selected_entities(*select, bulk.buckets(part_type), entities);
   }
@@ -950,7 +949,7 @@ void define_node_block(stk::mesh::Part &part,
   mesh::Selector *node_select = new mesh::Selector(all_selector);
   nb->property_add(Ioss::Property(internal_selector_name, node_select, false));
   nb->property_add(Ioss::Property(base_stk_part_name, part.name()));
-  
+
   // Add locally-owned property...
   nb->property_add(Ioss::Property("locally_owned_count", own_nodes));
   // Add the attribute fields.
@@ -1037,13 +1036,13 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
   if (bulk.parallel_size() > 1) {
     const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
     const std::string cs_name("node_symm_comm_spec");
-    
+
     mesh::Selector selector = meta.globally_shared_part();
     if (anded_selector) selector &= *anded_selector;
 
     std::vector<mesh::Entity> entities;
     get_selected_entities(selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK), entities);
-  
+
     size_t size = 0;
     for (size_t i=0; i < entities.size(); i++) {
       for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(entities[i].key()); ! ec.empty() ; ++ec ) {
@@ -1149,7 +1148,7 @@ void define_output_db(Ioss::Region & io_region ,
   }
 
   define_communication_maps(bulk_data, io_region, anded_selector);
-  
+
   if (input_region != NULL)
 	io_region.synchronize_id_and_name(input_region, true);
 
@@ -1491,7 +1490,7 @@ void output_communication_maps(Ioss::Region &io_region,
 
     std::vector<mesh::Entity> entities;
     get_selected_entities(selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK), entities);
-  
+
     const std::string cs_name("node_symm_comm_spec");
     Ioss::CommSet * io_cs = io_region.get_commset(cs_name);
     ThrowRequire(io_cs != NULL);
@@ -1587,7 +1586,7 @@ void write_output_db(Ioss::Region& io_region,
     output_communication_maps(io_region, bulk, anded_selector, z64);
   else
     output_communication_maps(io_region, bulk, anded_selector, z32);
-  
+
   io_region.end_mode( Ioss::STATE_MODEL );
 }
 

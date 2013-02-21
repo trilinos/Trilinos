@@ -18,13 +18,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_2)
   STKUNIT_EXPECT_EQ(t.side_rank(),topology::NODE_RANK);
 
 
-  STKUNIT_EXPECT_EQ(t.dimension(),1);
-  STKUNIT_EXPECT_EQ(t.num_nodes(),2);
-  STKUNIT_EXPECT_EQ(t.num_vertices(),2);
-  STKUNIT_EXPECT_EQ(t.num_edges(),0);
-  STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_permutations(),2);
-  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1);
+  STKUNIT_EXPECT_EQ(t.dimension(),1u);
+  STKUNIT_EXPECT_EQ(t.num_nodes(),2u);
+  STKUNIT_EXPECT_EQ(t.num_vertices(),2u);
+  STKUNIT_EXPECT_EQ(t.num_edges(),0u);
+  STKUNIT_EXPECT_EQ(t.num_faces(),0u);
+  STKUNIT_EXPECT_EQ(t.num_permutations(),2u);
+  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1u);
 
   STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
@@ -36,13 +36,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_2)
   {
     const char b[] = "ab";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0u);
   }
 
   {
     const char b[] = "ba";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1u);
   }
 }
 
@@ -61,13 +61,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_3)
   STKUNIT_EXPECT_EQ(t.side_rank(),topology::NODE_RANK);
 
 
-  STKUNIT_EXPECT_EQ(t.dimension(),1);
-  STKUNIT_EXPECT_EQ(t.num_nodes(),3);
-  STKUNIT_EXPECT_EQ(t.num_vertices(),2);
-  STKUNIT_EXPECT_EQ(t.num_edges(),0);
-  STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_permutations(),2);
-  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1);
+  STKUNIT_EXPECT_EQ(t.dimension(),1u);
+  STKUNIT_EXPECT_EQ(t.num_nodes(),3u);
+  STKUNIT_EXPECT_EQ(t.num_vertices(),2u);
+  STKUNIT_EXPECT_EQ(t.num_edges(),0u);
+  STKUNIT_EXPECT_EQ(t.num_faces(),0u);
+  STKUNIT_EXPECT_EQ(t.num_permutations(),2u);
+  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1u);
 
   STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
@@ -79,13 +79,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_3)
   {
     const char b[] = "abc";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0u);
   }
 
   {
     const char b[] = "bac";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1u);
   }
 }
 
@@ -105,13 +105,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_2_1d)
   STKUNIT_EXPECT_EQ(t.side_rank(),topology::NODE_RANK);
 
 
-  STKUNIT_EXPECT_EQ(t.dimension(),1);
-  STKUNIT_EXPECT_EQ(t.num_nodes(),2);
-  STKUNIT_EXPECT_EQ(t.num_vertices(),2);
-  STKUNIT_EXPECT_EQ(t.num_edges(),0);
-  STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_permutations(),2);
-  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1);
+  STKUNIT_EXPECT_EQ(t.dimension(),1u);
+  STKUNIT_EXPECT_EQ(t.num_nodes(),2u);
+  STKUNIT_EXPECT_EQ(t.num_vertices(),2u);
+  STKUNIT_EXPECT_EQ(t.num_edges(),0u);
+  STKUNIT_EXPECT_EQ(t.num_faces(),0u);
+  STKUNIT_EXPECT_EQ(t.num_permutations(),2u);
+  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1u);
 
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
@@ -123,13 +123,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_2_1d)
   {
     const char b[] = "ab";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0u);
   }
 
   {
     const char b[] = "ba";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1u);
   }
 }
 
@@ -148,13 +148,13 @@ STKUNIT_UNIT_TEST( stk_topology, line_3_1d)
   STKUNIT_EXPECT_EQ(t.side_rank(),topology::NODE_RANK);
 
 
-  STKUNIT_EXPECT_EQ(t.dimension(),1);
-  STKUNIT_EXPECT_EQ(t.num_nodes(),3);
-  STKUNIT_EXPECT_EQ(t.num_vertices(),2);
-  STKUNIT_EXPECT_EQ(t.num_edges(),0);
-  STKUNIT_EXPECT_EQ(t.num_faces(),0);
-  STKUNIT_EXPECT_EQ(t.num_permutations(),2);
-  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1);
+  STKUNIT_EXPECT_EQ(t.dimension(),1u);
+  STKUNIT_EXPECT_EQ(t.num_nodes(),3u);
+  STKUNIT_EXPECT_EQ(t.num_vertices(),2u);
+  STKUNIT_EXPECT_EQ(t.num_edges(),0u);
+  STKUNIT_EXPECT_EQ(t.num_faces(),0u);
+  STKUNIT_EXPECT_EQ(t.num_permutations(),2u);
+  STKUNIT_EXPECT_EQ(t.num_positive_permutations(),1u);
 
   STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(1));
   STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
@@ -166,12 +166,12 @@ STKUNIT_UNIT_TEST( stk_topology, line_3_1d)
   {
     const char b[] = "abc";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,0u);
   }
 
   {
     const char b[] = "bac";
     STKUNIT_EXPECT_TRUE(t.equivalent(a,b).first);
-    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1);
+    STKUNIT_EXPECT_EQ(t.equivalent(a,b).second,1u);
   }
 }

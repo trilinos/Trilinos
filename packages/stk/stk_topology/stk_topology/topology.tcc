@@ -6,23 +6,23 @@
   template <typename OrdinalOutputIterator>                                        \
   struct name##_impl {                                                             \
     typedef void result_type;                                                      \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
-    name##_impl(int ordinal, OrdinalOutputIterator output_ordinals)                \
+    BOOST_GPU_ENABLED                                                              \
+    name##_impl(unsigned ordinal, OrdinalOutputIterator output_ordinals)           \
       : m_ordinal(ordinal)                                                         \
       , m_output_ordinals(output_ordinals)                                         \
     {}                                                                             \
     template <typename Topology>                                                   \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
+    BOOST_GPU_ENABLED                                                              \
     result_type operator()(Topology) const                                         \
     { return Topology::name(m_ordinal,m_output_ordinals); }                        \
-    int                   m_ordinal;                                               \
+    unsigned                   m_ordinal;                                          \
     OrdinalOutputIterator m_output_ordinals;                                       \
   };                                                                               \
   }} /*namespace stk::topology_detail*/                                            \
   namespace stk {                                                                  \
   template <typename OrdinalOutputIterator>                                        \
-  STKTOPOLOGY_INLINE_FUNCTION                                                      \
-  void topology::name( int ordinal, OrdinalOutputIterator output_ordinals) const   \
+  BOOST_GPU_ENABLED inline                                                         \
+  void topology::name( unsigned ordinal, OrdinalOutputIterator output_ordinals) const   \
   { typedef topology_detail::name##_impl<OrdinalOutputIterator> functor;           \
     functor f(ordinal,output_ordinals);                                            \
     topology::apply_functor< functor > apply( f );                                 \
@@ -35,28 +35,28 @@
   template <typename NodeArray, typename NodeOutputIterator>                       \
   struct name##_impl {                                                             \
     typedef void result_type;                                                      \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
+    BOOST_GPU_ENABLED                                                              \
     name##_impl(   const NodeArray &nodes                                          \
-                 , int ordinal                                                     \
+                 , unsigned ordinal                                                \
                  , NodeOutputIterator output_ordinals)                             \
       : m_nodes(nodes)                                                             \
       , m_ordinal(ordinal)                                                         \
       , m_output_ordinals(output_ordinals)                                         \
     {}                                                                             \
     template <typename Topology>                                                   \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
+    BOOST_GPU_ENABLED                                                              \
     result_type operator()(Topology) const                                         \
     { return Topology::name(m_nodes,m_ordinal,m_output_ordinals); }                \
     const NodeArray    & m_nodes;                                                  \
-    int                  m_ordinal;                                                \
+    unsigned                  m_ordinal;                                           \
     NodeOutputIterator   m_output_ordinals;                                        \
   };                                                                               \
   }} /*namespace stk::topology_detail*/                                            \
   namespace stk {                                                                  \
   template <typename NodeArray, typename NodeOutputIterator>                       \
-  STKTOPOLOGY_INLINE_FUNCTION                                                      \
+  BOOST_GPU_ENABLED inline                                                         \
   void topology::name(   const NodeArray & nodes                                   \
-                       , int ordinal                                               \
+                       , unsigned ordinal                                          \
                        , NodeOutputIterator output_ordinals) const                 \
   { typedef topology_detail::name##_impl<NodeArray,NodeOutputIterator> functor;    \
     functor f(nodes,ordinal,output_ordinals);                                      \
@@ -70,13 +70,13 @@
   struct name##_impl {                                 \
     typedef result result_type;                        \
     template <typename Topology>                       \
-    STKTOPOLOGY_INLINE_FUNCTION                        \
+    BOOST_GPU_ENABLED                                  \
     result_type operator()(Topology) const             \
     { return Topology::name; }                         \
   };                                                   \
   }} /*namespace stk::topology_detail*/                \
   namespace stk {                                      \
-  STKTOPOLOGY_INLINE_FUNCTION                          \
+  BOOST_GPU_ENABLED inline                             \
   result topology::name() const                        \
   { typedef topology_detail::name##_impl functor;      \
     topology::apply_functor< functor > apply;          \
@@ -88,20 +88,20 @@
   namespace stk { namespace topology_detail {          \
   struct name##_impl {                                 \
     typedef result result_type;                        \
-    STKTOPOLOGY_INLINE_FUNCTION                        \
-    name##_impl(int ordinal)                           \
+    BOOST_GPU_ENABLED                                  \
+    name##_impl(unsigned ordinal)                      \
       : m_ordinal(ordinal)                             \
     {}                                                 \
     template <typename Topology>                       \
-    STKTOPOLOGY_INLINE_FUNCTION                        \
+    BOOST_GPU_ENABLED                                  \
     result_type operator()(Topology) const             \
     { return Topology::name(m_ordinal); }              \
-    int m_ordinal;                                     \
+    unsigned m_ordinal;                                \
   };                                                   \
   }} /*namespace stk::topology_detail*/                \
   namespace stk {                                      \
-  STKTOPOLOGY_INLINE_FUNCTION                          \
-  result topology::name(int ordinal) const             \
+  BOOST_GPU_ENABLED inline                             \
+  result topology::name(unsigned ordinal) const        \
   { typedef topology_detail::name##_impl functor;      \
     functor f(ordinal);                                \
     topology::apply_functor< functor > apply( f );     \
@@ -112,12 +112,12 @@
 STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
-STKTOPOLOGY_SIMPLE_MEMBER(dimension,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
+STKTOPOLOGY_SIMPLE_MEMBER(dimension,unsigned)
+STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,unsigned)
+STKTOPOLOGY_SIMPLE_MEMBER(num_edges,unsigned)
+STKTOPOLOGY_SIMPLE_MEMBER(num_faces,unsigned)
+STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,unsigned)
+STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,unsigned)
 STKTOPOLOGY_SIMPLE_MEMBER(base,stk::topology)
 STKTOPOLOGY_SIMPLE_MEMBER(edge_topology,stk::topology)
 
@@ -141,9 +141,9 @@ STKTOPOLOGY_NODES_MEMBER(permutation_nodes)
 namespace stk { namespace topology_detail {
 
 struct num_nodes_impl {
-  typedef int result_type;
+  typedef unsigned result_type;
   template <typename Topology>
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   result_type operator()(Topology) const
   { return Topology::num_nodes; }
 };
@@ -151,22 +151,22 @@ struct num_nodes_impl {
 struct rank_impl {
   typedef topology::rank_t result_type;
   template <typename Topology>
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   result_type operator()(Topology) const
   { return Topology::rank; }
 };
 
 template <typename NodeArrayA, typename NodeArrayB>
 struct equivalent_impl {
-  typedef std::pair<bool,int> result_type;
+  typedef std::pair<bool,unsigned> result_type;
 
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   equivalent_impl( const NodeArrayA &a , const NodeArrayB &b )
     : m_a(a), m_b(b)
   {}
 
   template <typename Topology>
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   result_type operator()(Topology) const
   { return Topology::equivalent(m_a, m_b); }
 
@@ -176,15 +176,15 @@ struct equivalent_impl {
 
 template <typename NodeArray>
 struct lexicographical_smallest_permutation_impl {
-  typedef int result_type;
+  typedef unsigned result_type;
 
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   lexicographical_smallest_permutation_impl( const NodeArray &nodes , bool only_positive_permutations )
     : m_nodes(nodes), m_only_positive_permutations(only_positive_permutations)
   {}
 
   template <typename Topology>
-  STKTOPOLOGY_INLINE_FUNCTION
+  BOOST_GPU_ENABLED
   result_type operator()(Topology) const
   { return Topology::lexicographical_smallest_permutation(m_nodes, m_only_positive_permutations); }
 
@@ -196,25 +196,25 @@ struct lexicographical_smallest_permutation_impl {
 
 namespace stk {
 
-STKTOPOLOGY_INLINE_FUNCTION
-int topology::num_nodes() const
+BOOST_GPU_ENABLED inline
+unsigned topology::num_nodes() const
 {
   typedef topology_detail::num_nodes_impl functor;
   topology::apply_functor< functor > apply;
-  return m_value <= END_TOPOLOGY ? apply(m_value) : m_value - SUPERELEMENT_START;
+  return m_value < SUPERELEMENT_START ? apply(m_value) : m_value - SUPERELEMENT_START;
 }
 
-STKTOPOLOGY_INLINE_FUNCTION
+BOOST_GPU_ENABLED inline
 topology::rank_t topology::rank() const
 {
   typedef topology_detail::rank_impl functor;
   topology::apply_functor< functor > apply;
-  return m_value <= END_TOPOLOGY ? apply(m_value) : topology::ELEMENT_RANK;
+  return m_value < SUPERELEMENT_START ? apply(m_value) : topology::ELEMENT_RANK;
 }
 
 template <typename NodeArrayA, typename NodeArrayB>
-STKTOPOLOGY_INLINE_FUNCTION
-std::pair<bool,int> topology::equivalent( const NodeArrayA &a, const NodeArrayB &b) const
+BOOST_GPU_ENABLED inline
+std::pair<bool,unsigned> topology::equivalent( const NodeArrayA &a, const NodeArrayB &b) const
 { typedef topology_detail::equivalent_impl<NodeArrayA,NodeArrayB> functor;
   functor f(a,b);
   topology::apply_functor< functor > apply( f );
@@ -222,8 +222,8 @@ std::pair<bool,int> topology::equivalent( const NodeArrayA &a, const NodeArrayB 
 }
 
 template <typename NodeArray>
-STKTOPOLOGY_INLINE_FUNCTION
-int topology::lexicographical_smallest_permutation( const NodeArray &nodes, bool only_positive_permutations) const
+BOOST_GPU_ENABLED inline
+unsigned topology::lexicographical_smallest_permutation( const NodeArray &nodes, bool only_positive_permutations) const
 {
   typedef topology_detail::lexicographical_smallest_permutation_impl< NodeArray > functor;
   functor f(nodes, only_positive_permutations);

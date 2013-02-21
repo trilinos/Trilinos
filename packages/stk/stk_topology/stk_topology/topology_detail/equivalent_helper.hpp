@@ -6,12 +6,12 @@
 namespace stk { namespace topology_detail {
 
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
-STKTOPOLOGY_INLINE_FUNCTION
-std::pair<bool,int> equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
+BOOST_GPU_ENABLED inline
+std::pair<bool,unsigned> equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
   Node permutation[Topology::num_nodes];
 
-  for (int i=0; i<Topology::num_permutations; ++i) {
+  for (unsigned i=0; i<Topology::num_permutations; ++i) {
     Topology::permutation_nodes(a,i,permutation);
 
     if ( std::equal(permutation, permutation + Topology::num_nodes, &b[0]) )
@@ -22,21 +22,21 @@ std::pair<bool,int> equivalent_helper(Topology, const NodeArrayA &a, const NodeA
 }
 
 template <typename Topology, typename NodeArray, typename Node>
-STKTOPOLOGY_INLINE_FUNCTION
-int lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
+BOOST_GPU_ENABLED inline
+unsigned lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
   Node permutation[Topology::num_nodes];
 
   const Node * nbegin = &nodes[0];
   const Node * nend = nbegin + Topology::num_nodes;
 
-  int min_permutation_index = 0;
+  unsigned min_permutation_index = 0;
   Node min_permutation[Topology::num_nodes];
 
   std::copy(nbegin,nend,min_permutation);
 
   if (!only_positive_permutations) {
-    for (int i=1; i<Topology::num_permutations; ++i) {
+    for (unsigned i=1; i<Topology::num_permutations; ++i) {
       Topology::permutation_nodes(nodes,i,permutation);
 
       if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
@@ -48,7 +48,7 @@ int lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes
     }
   }
   else {
-    for (int i=1; i<Topology::num_positive_permutations; ++i) {
+    for (unsigned i=1; i<Topology::num_positive_permutations; ++i) {
       Topology::permutation_nodes(nodes,i,permutation);
 
       if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,

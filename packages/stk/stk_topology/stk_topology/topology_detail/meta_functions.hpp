@@ -24,18 +24,18 @@ STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(has_homogeneous_faces,bool)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(rank,topology::rank_t)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(side_rank,topology::rank_t)
 
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(dimension,int)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_nodes,int)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_vertices,int)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_edges,int)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_faces,int)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_permutations,int)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(dimension,unsigned)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_nodes,unsigned)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_vertices,unsigned)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_edges,unsigned)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_faces,unsigned)
+STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_permutations,unsigned)
 
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(base,topology::topology_t)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(edge_topology,topology::topology_t)
 
 
-template <typename Topology, int SpatialDimension>
+template <typename Topology, unsigned SpatialDimension>
 struct defined_on_spatial_dimension_
   : public boost::mpl::eval_if_c<  (SpatialDimension < 4)
       , boost::mpl::at_c< typename Topology::spatial_dimension_vector, SpatialDimension >
@@ -43,15 +43,15 @@ struct defined_on_spatial_dimension_
     >::type
 {};
 
-template <typename Topology, int EdgeOrdinal>
+template <typename Topology, unsigned EdgeOrdinal>
 struct edge_node_ordinals_
   : public boost::mpl::eval_if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
       , boost::mpl::at_c< typename Topology::edge_node_ordinals_vector, EdgeOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<int> >
+      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
     >::type
 {};
 
-template <typename Topology, int FaceOrdinal>
+template <typename Topology, unsigned FaceOrdinal>
 struct face_topology_
   : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
       , boost::mpl::at_c< typename Topology::face_topology_vector, FaceOrdinal >
@@ -59,19 +59,19 @@ struct face_topology_
     >::type
 {};
 
-template <typename Topology, int FaceOrdinal>
+template <typename Topology, unsigned FaceOrdinal>
 struct face_node_ordinals_
   : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
       , boost::mpl::at_c< typename Topology::face_node_ordinals_vector, FaceOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<int> >
+      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
     >::type
 {};
 
-template <typename Topology, int PermutationOrdinal>
+template <typename Topology, unsigned PermutationOrdinal>
 struct permutation_node_ordinals_
   : public boost::mpl::eval_if_c<  (PermutationOrdinal < num_permutations_<Topology>::value)
       , boost::mpl::at_c< typename Topology::permutation_node_ordinals_vector, PermutationOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<int> >
+      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
     >::type
 {};
 

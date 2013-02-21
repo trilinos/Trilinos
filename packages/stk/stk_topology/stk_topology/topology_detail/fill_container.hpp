@@ -10,9 +10,11 @@ template <typename OrdinalOutputIterator>
 struct fill_ordinal_container {
 
   template <typename Ordinal>
+  BOOST_GPU_ENABLED
   void operator()(Ordinal i)
   { *m_itr = i; ++m_itr; }
 
+  BOOST_GPU_ENABLED
   fill_ordinal_container( OrdinalOutputIterator itr)
     : m_itr(itr)
   {}
@@ -24,9 +26,11 @@ template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
 
   template <typename Ordinal>
+  BOOST_GPU_ENABLED
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
 
+  BOOST_GPU_ENABLED
   fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
     : m_nodes(nodes)
     , m_itr(itr)

@@ -12,7 +12,7 @@ using namespace boost;
 
 namespace {
 
-template <typename TopologyData, typename PermutationVector, int NumNodes, int Permutation = 0, int NumPermutations = mpl::size<PermutationVector>::value>
+template <typename TopologyData, typename PermutationVector, unsigned NumNodes, unsigned Permutation = 0, unsigned NumPermutations = mpl::size<PermutationVector>::value>
 struct check_permutations
 {
   static const bool value =    (NumNodes == mpl::size< typename mpl::at_c<PermutationVector,Permutation>::type>::value)
@@ -25,7 +25,7 @@ struct check_permutations
 
 };
 
-template <typename TopologyData, typename PermutationVector, int NumNodes, int Permutation>
+template <typename TopologyData, typename PermutationVector, unsigned NumNodes, unsigned Permutation>
 struct check_permutations<TopologyData,PermutationVector,NumNodes,Permutation,Permutation>
 {
   static const bool value = true;
@@ -33,7 +33,7 @@ struct check_permutations<TopologyData,PermutationVector,NumNodes,Permutation,Pe
 
 
 
-template <typename TopologyData, int Face = 0, int NumFaces = TopologyData::num_faces >
+template <typename TopologyData, unsigned Face = 0, unsigned NumFaces = TopologyData::num_faces >
 struct check_faces
 {
 
@@ -52,7 +52,7 @@ struct check_faces
 
 };
 
-template <typename TopologyData, int Face>
+template <typename TopologyData, unsigned Face>
 struct check_faces<TopologyData,Face,Face>
 {
   static const bool value = true;

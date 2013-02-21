@@ -12,9 +12,9 @@ STKUNIT_UNIT_TEST( stk_topology, hex8)
   STKUNIT_EXPECT_EQ(hex8.rank(),stk::topology::ELEMENT_RANK);
   STKUNIT_EXPECT_EQ(hex8.side_rank(),stk::topology::FACE_RANK);
 
-  const int num_nodes = 8;
-  const int num_edges = 12;
-  const int num_faces = 6;
+  const unsigned num_nodes = 8;
+  const unsigned num_edges = 12;
+  const unsigned num_faces = 6;
 
   STKUNIT_EXPECT_EQ(hex8.num_nodes(),num_nodes);
   STKUNIT_EXPECT_EQ(hex8.num_vertices(),num_nodes);

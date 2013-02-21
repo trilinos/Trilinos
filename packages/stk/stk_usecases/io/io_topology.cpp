@@ -90,8 +90,7 @@ int convert_stk_to_ioss_topology()
 {
   int err_count = 0;
 
-  for (int i=stk::topology::BEGIN_TOPOLOGY; i < stk::topology::NUM_TOPOLOGIES; i++) {
-    stk::topology topo = (stk::topology::topology_t)i;
+  for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {
     OUTPUT << "Testing stk topology: " << std::setw(20) << topo.name() << "\n";
 
     Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(topo.name(), true);
