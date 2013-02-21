@@ -125,74 +125,62 @@ STKUNIT_UNIT_TEST( MeshData, active_and_all )
 {
   // A simple test for reading and writing two exodus files using the MeshData.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture(pm);
+  stk::io::MeshData filtered_fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.open_mesh_database(input_base_filename);
-  fixture.create_input_mesh();
-  stk::mesh::MetaData & meta_data = fixture.meta_data();
+  filtered_fixture.open_mesh_database(input_base_filename);
+  filtered_fixture.create_input_mesh();
+  stk::mesh::MetaData & meta_data = filtered_fixture.meta_data();
 
   // Add an "active" part...
   stk::mesh::Part &active = meta_data.declare_part("active", stk::mesh::MetaData::ELEMENT_RANK);
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  fixture.populate_bulk_data();
+  filtered_fixture.populate_bulk_data();
 
   // Put some entities into the "active" part...
   // This will be used to test the I/O filtering via a selector...
-  activate_entities(fixture, active);
+  activate_entities(filtered_fixture, active);
+
+  // Create a second fixture which will output unfiltered results
+  // It shares the meta_data, bulk_data, and input_io_region with
+  // the "filtered_fixture".
+  stk::io::MeshData universal_fixture(pm);
+  universal_fixture.set_bulk_data(filtered_fixture.bulk_data());
+  universal_fixture.set_input_io_region(filtered_fixture.input_io_region());
 
   // Set the output filter on the mesh_data...
+  // Only output the part declared above as "active"
   stk::mesh::Selector active_selector(active);
-  fixture.set_selector(active_selector);
+  filtered_fixture.set_selector(active_selector);
 
   // exodus file creation
   std::string filtered_output_base_filename = "unit_test_output_first_of_two.e";
-  fixture.create_output_mesh( filtered_output_base_filename );
+  std::string unfiltered_output_base_filename = "unit_test_output_second_of_two.e";
+  filtered_fixture.create_output_mesh( filtered_output_base_filename );
+  universal_fixture.create_output_mesh( unfiltered_output_base_filename );
 
   // process output
   double time_step = 0;
-  fixture.process_output_request( time_step );
-
-
-  Teuchos::RCP<Ioss::Region> active_output_io_region = fixture.output_io_region();
-
-  // Set the output filter on the mesh_data...
-  stk::mesh::Selector universal_selector(meta_data.universal_part());
-  fixture.set_selector(universal_selector);
-
-  // exodus file creation
-  std::string unfiltered_output_base_filename = "unit_test_output_second_of_two.e";
-  fixture.create_output_mesh( unfiltered_output_base_filename );
-  fixture.process_output_request( time_step );
-
-  Teuchos::RCP<Ioss::Region> universal_output_io_region = fixture.output_io_region();
+  filtered_fixture.process_output_request( time_step );
+  universal_fixture.process_output_request( time_step );
 
   ++time_step;
 
-  fixture.set_output_io_region(active_output_io_region);
-  fixture.set_selector(active_selector);
-  fixture.process_output_request( time_step );
-
-  fixture.set_output_io_region(universal_output_io_region);
-  fixture.set_selector(universal_selector);
-  fixture.process_output_request( time_step );
+  filtered_fixture.process_output_request( time_step );
+  universal_fixture.process_output_request( time_step );
 
   ++time_step;
 
-  fixture.set_output_io_region(active_output_io_region);
-  fixture.set_selector(active_selector);
-  fixture.process_output_request( time_step );
+  filtered_fixture.process_output_request( time_step );
+  universal_fixture.process_output_request( time_step );
 
-  fixture.set_output_io_region(universal_output_io_region);
-  fixture.set_selector(universal_selector);
-  fixture.process_output_request( time_step );
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
-}
+ }
 
 STKUNIT_UNIT_TEST( MeshData, large_mesh_test )
 {
