@@ -1820,7 +1820,7 @@ namespace Tpetra {
                   << prvRow << ", at curPos = " << curPos << ".  Please report "
                   "this bug to the Tpetra developers.");
                 if (curRow > prvRow) {
-                  for (size_type r = prvRow+1; r <= curRow; ++r) {
+                  for (global_ordinal_type r = prvRow+1; r <= curRow; ++r) {
                     rowPtr[r] = curPos;
                   }
                   prvRow = curRow;

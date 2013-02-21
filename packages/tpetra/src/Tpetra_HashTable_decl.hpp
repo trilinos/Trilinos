@@ -52,9 +52,9 @@ namespace Details {
 
 /// \class HashTable
 /// \tparam KeyType The type of the hash table's keys.  This must be a
-///   built-in signed integer type.
+///   built-in signed or unsinged integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
-///   be a built-in signed integer type.
+///   be a built-in signed or unsigned integer type.
 ///
 /// This class implements a hash table from signed integer keys to
 /// signed integer values.  Keys and values may have different types.

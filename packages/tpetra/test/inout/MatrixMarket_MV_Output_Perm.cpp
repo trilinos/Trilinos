@@ -293,7 +293,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   // Get the default communicator.
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int numProcs = comm->getSize ();
-  const int myRank = comm->getRank ();
 
   out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
 

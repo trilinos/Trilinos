@@ -837,6 +837,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NonLocals, LO, GO , Node )
   {
+    using Teuchos::as;
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -858,7 +859,7 @@ namespace {
         // let node i contribute to row i+1, where node the last node contributes to row 0
         GRAPH diaggraph(map,1,pftype);
         GO grow = myImageID+1;
-        if (grow == numImages) {
+        if (as<int>(grow) == numImages) {
           grow = 0;
         }
         diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));

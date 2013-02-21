@@ -309,6 +309,7 @@ namespace {
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
+    const LO localIndexBase = 0;
     M map(numGlobalEntries,indexBase,comm);
 
     TEST_EQUALITY_CONST(map.isContiguous(), true);
@@ -316,7 +317,7 @@ namespace {
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
     TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
-    TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
+    TEST_EQUALITY_CONST(map.getMinLocalIndex(), localIndexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
     TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[0]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);

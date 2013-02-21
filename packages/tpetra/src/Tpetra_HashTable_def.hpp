@@ -144,7 +144,7 @@ HashTable<KeyType, ValueType>::
 
     Size_ = getRecommendedSize(size);
     Container_ = new Node * [Size_];
-    for( int i = 0; i < Size_; ++i ) Container_[i] = NULL;
+    for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
 #ifdef HAVE_TEUCHOS_DEBUG
     maxc_ = 0;
     nc_ = 0;
@@ -163,8 +163,8 @@ HashTable<KeyType, ValueType>::
     nc_ = 0;
 #endif
     Container_ = new Node * [Size_];
-    for( int i = 0; i < Size_; ++i ) Container_[i] = NULL;
-    for( int i = 0; i < Size_; ++i ) {
+    for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
+    for( KeyType i = 0; i < Size_; ++i ) {
       Node * ptr = obj.Container_[i];
       while( ptr ) { add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
     }
@@ -175,7 +175,7 @@ HashTable<KeyType, ValueType>::
   ~HashTable() {
     Node * ptr1;
     Node * ptr2;
-    for( int i = 0; i < Size_; ++i ) {
+    for( KeyType i = 0; i < Size_; ++i ) {
       ptr1 = Container_[i];
       while( ptr1 ) { ptr2 = ptr1; ptr1 = ptr1->Ptr; delete ptr2; }
     }
@@ -289,7 +289,7 @@ void HashTable<KeyType, ValueType>::describe(
 	  out << "[" << endl;
 	  {
 	    OSTab tab2 (rcpFromRef (out));
-	    for (int i = 0; i < Size_; ++i) {
+	    for (KeyType i = 0; i < Size_; ++i) {
 	      Node* curNode = Container_[i];
 	      if (curNode == NULL) {
 		out << "NULL";
