@@ -145,13 +145,13 @@ namespace MueLu {
         RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
         const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
-        rows[0] = 0;
-        GlobalOrdinal numDropped = 0;
-        for(LocalOrdinal row=0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
+        LocalOrdinal realnnz = 0, numDropped = 0;
 
+        rows[0] = 0;
+        for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
           size_t nnz = A->getNumEntriesInLocalRow(row);
           ArrayView<const LocalOrdinal> indices;
-          ArrayView<const Scalar> vals;
+          ArrayView<const Scalar>       vals;
           A->getLocalRowView(row, indices, vals);
 
           //FIXME the current predrop function uses the following
@@ -159,26 +159,23 @@ namespace MueLu {
           //FIXME but the threshold doesn't take into account the rows' diagonal entries
           //FIXME For now, hardwiring the dropping in here
 
-          LocalOrdinal realnnz = 0;
-          for (LocalOrdinal col = 0; col < Teuchos::as<LocalOrdinal>(nnz); ++col) {
-            if (col == row)
-              continue;
+          for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+            LocalOrdinal col = indices[colID];
 
+            // we avoid a square root by using squared values
             typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
-            typename STS::magnitudeType aij    = STS::magnitude(vals[col]*vals[col]);                                              // |a_ij|^2
+            typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
 
-            // if |a_ij|^2 > eps^2*|a_ii|*|a_jj|, thus avoiding a squareroot
-            if (aij > aiiajj) {
+            if (aij > aiiajj || row == col)
               columns[realnnz++] = col;
-            } else {
+            else
               numDropped++;
-            }
           }
           rows[row+1] = realnnz;
         }
         GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows,columns,A->getCrsGraph(), "amalgamated graph of A"));
+        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
         Set(currentLevel, "Graph", graph);
         Set(currentLevel, "DofsPerNode", 1);
         return;
