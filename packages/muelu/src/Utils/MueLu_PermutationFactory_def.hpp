@@ -74,6 +74,7 @@
 #include "MueLu_Monitor.hpp"
 
 #include "MueLu_AlgebraicPermutationStrategy.hpp"
+#include "MueLu_LocalPermutationStrategy.hpp"
 
 #undef DEBUG_OUTPUT
 
@@ -145,10 +146,19 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
 
   std::string strStrategy = pL.get<std::string> ("PermutationStrategy");
   if( strStrategy == "Algebraic" ) {
-  // TODO switch between different permutation strategies
-  Teuchos::RCP<AlgebraicPermutationStrategy> permStrat = Teuchos::rcp(new AlgebraicPermutationStrategy());
-  permStrat->BuildPermutation(A,permRowMap,currentLevel,this);
-  }
+    // TODO switch between different permutation strategies
+    Teuchos::RCP<AlgebraicPermutationStrategy> permStrat = Teuchos::rcp(new AlgebraicPermutationStrategy());
+    permStrat->BuildPermutation(A,permRowMap,currentLevel,this);
+  } else if( strStrategy == "Local" ) {
+    // TODO switch between different permutation strategies
+    Teuchos::RCP<LocalPermutationStrategy> permStrat = Teuchos::rcp(new LocalPermutationStrategy());
+    permStrat->BuildPermutation(A,permRowMap,currentLevel,this);
+  } else
+    TEUCHOS_TEST_FOR_EXCEPTION(true,
+                                  std::logic_error,
+                                  "`PermutationStrategy' has incorrect value (" << strStrategy << ") in input to PermutationFactory."
+                                  << "Check the documentation for a list of valid choices");
+
 
 
 }

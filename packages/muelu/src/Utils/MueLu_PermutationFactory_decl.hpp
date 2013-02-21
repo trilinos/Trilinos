@@ -69,6 +69,7 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_AlgebraicPermutationStrategy_fwd.hpp"
+#include "MueLu_LocalPermutationStrategy_fwd.hpp"
 
 namespace MueLu {
 
