@@ -155,18 +155,15 @@ namespace MueLu {
           //FIXME For now, hardwiring the dropping in here
     
           LocalOrdinal realnnz = 0;
-          for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); ++col) {
-    
-            // eps*|a_ii|*|a_jj|
-            typename STS::magnitudeType aiiajj = STS::magnitude(threshold)*STS::magnitude(ghostedDiagVals[col]*ghostedDiagVals[row]);
-            // (eps*|a_ii|*|a_jj|)^2
-            aiiajj *= aiiajj;
-            // |a_ij|
-            typename STS::magnitudeType aij = STS::magnitude(vals[col]);
-            // |a_ij|^2
-            aij *= aij;
-            // if |a_ij|^2 > (eps*|a_ii|*|a_jj|)^2, thus avoiding a squareroot
-            if ( aij > aiiajj) {
+          for (LocalOrdinal col = 0; col < Teuchos::as<LocalOrdinal>(nnz); ++col) {
+            if (col == row)
+              continue;
+
+            typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+            typename STS::magnitudeType aij    = STS::magnitude(vals[col]*vals[col]);                                              // |a_ij|^2
+
+            // if |a_ij|^2 > eps^2*|a_ii|*|a_jj|, thus avoiding a squareroot
+            if (aij > aiiajj) {
               columns[realnnz++] = col;
             }
           }
