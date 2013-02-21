@@ -31,7 +31,7 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
-  Gmesh_STKmesh_Fixture(stk::ParallelMachine comm, const std::string& gmesh_spec);
+  Gmesh_STKmesh_Fixture(stk::ParallelMachine comm, const std::string& gmesh_spec, bool use_64bit_int_IO_api=false);
 
   /**
    * Commits the meta-data of the mesh and populates the bulk-data. Don't call

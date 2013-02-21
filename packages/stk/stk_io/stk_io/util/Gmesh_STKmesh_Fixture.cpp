@@ -21,16 +21,21 @@ using namespace stk::io::util;
 
 ///////////////////////////////////////////////////////////////////////////////
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
-                                             const std::string& gmesh_spec)
+                                             const std::string& gmesh_spec,
+                                             bool use_64bit_int_IO_api)
   : m_mesh_data(comm)
 
 ///////////////////////////////////////////////////////////////////////////////
 {
+  if (use_64bit_int_IO_api) {
+    m_mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_API", 8));
+  }
   m_mesh_data.open_mesh_database(gmesh_spec, "generated");
   m_mesh_data.create_input_mesh();
 
   const Iogn::DatabaseIO* database =
     dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.input_io_region()->get_database());
+//  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
   // get face parts names; need to convert these to strings
   const std::vector<std::string> sideset_names = database->get_sideset_names();
