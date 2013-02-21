@@ -1,11 +1,2 @@
-/* #undef HAVE_XPETRA_DEBUG */
-
-#define HAVE_XPETRA_TPETRA
-
-#define HAVE_XPETRA_EPETRA
-
-#define HAVE_XPETRA_EPETRAEXT
-
-/* #undef HAVE_XPETRA_PROFILING */
-
-/* #undef HAVE_XPETRA_EXPERIMENTAL */
+#include "TrilinosSierraConfig.h"
+#include "Xpetra_config_fcs.hpp"

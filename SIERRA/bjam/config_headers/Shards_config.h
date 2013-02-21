@@ -1,4 +1,2 @@
-
-#define HAVE_MPI
-
-#define HAVE_SHARDS_TEUCHOS
+#include "TrilinosSierraConfig.h"
+#include "Shards_config_fcs.h"

@@ -1,5 +1,2 @@
-/* #undef HAVE_MOOCHO_MA28 */
-#define HAVE_MOOCHO_QPKWIK
-#define HAVE_MOOCHO_FORTRAN
-/* #undef HAVE_MOOCHO_THYRA */
-#define HAVE_MPI
+#include "TrilinosSierraConfig.h"
+#include "Moocho_Config_fcs.h"
