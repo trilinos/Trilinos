@@ -182,6 +182,21 @@ IF(Tpetra_INST_INT_LONG)
   LIST(APPEND Tpetra_ETI_SCALARS "long")
 ENDIF()
 
+SET(Tpetra_INST_UNSIGNED_LONG
+  ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  CACHE BOOL
+  "If explicit instantiation is enabled, instatiate over global ordinal unsigned int."
+  )
+IF (Tpetra_INST_UNSIGNED_LONG)
+  LIST(APPEND Tpetra_ETI_GORDS   "unsigned int")
+  LIST(APPEND Tpetra_ETI_SCALARS "unsigned int")
+  # NOTE: The above types are used because they help catch errors with caused
+  # when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
+  # global_size_t (using wrong OrdinalTraits<>::invald(). 
+ENDIF()
+
+
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
   HAVE_TPETRA_THREADED_MKL
@@ -271,14 +286,3 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
-
-IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE})
-  MESSAGE("Adding unsigned integral types to instantiations for added testing!")
-  TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra
-    "S={unsigned int} LO={int} GO={unsigned int} N={${KokkosClassic_DefaultNode}}"
-    "S={int} LO={int} GO={unsigned int} N={${KokkosClassic_DefaultNode}}"
-    )
-  # NOTE: The above types are used because they help catch errors with caused
-  # when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
-  # global_size_t (using wrong OrdinalTraits<>::invald(). 
-ENDIF()
