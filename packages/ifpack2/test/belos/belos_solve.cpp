@@ -29,6 +29,8 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -42,103 +44,113 @@
 #include "build_problem.hpp"
 #include "build_solver.hpp"
 
+
 void process_command_line(int argc, char*argv[], std::string& xml_file);
+
 
 int main(int argc, char*argv[])
 {
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Teuchos::GlobalMPISession mpisess(&argc, &argv);
 
-  Teuchos::Time timer("total");
-  timer.start();
+  bool success = true;
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Teuchos::RCP<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-  typedef double Scalar;
-  typedef int LO; //LocalOrdinal
-  typedef int GO; //GlobalOrdinal
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
-  typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
-  typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
-  typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
+  try {
 
-  //Just get one parameter from the command-line: the name of an xml file
-  //to get parameters from.
+    Teuchos::Time timer("total");
+    timer.start();
 
-  std::string xml_file("calore1_mm.xml");
-  process_command_line(argc, argv, xml_file);
+    Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
-  //Read the contents of the xml file into a ParameterList. That parameter list
-  //should specify a matrix-file and optionally which Belos solver to use, and
-  //which Ifpack2 preconditioner to use, etc. If there are sublists of parameters
-  //for Belos and Ifpack2, those will be passed to the respective destinations
-  //from within the build_problem and build_solver functions.
+    typedef double Scalar;
+    typedef int LO; //LocalOrdinal
+    typedef int GO; //GlobalOrdinal
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
+    typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
+    typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
+    typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
 
-  std::cout << "Every proc reading parameters from xml_file: "
-            << xml_file << std::endl;
-  Teuchos::ParameterList test_params =
+    //Just get one parameter from the command-line: the name of an xml file
+    //to get parameters from.
+
+    std::string xml_file("calore1_mm.xml");
+    process_command_line(argc, argv, xml_file);
+
+    //Read the contents of the xml file into a ParameterList. That parameter list
+    //should specify a matrix-file and optionally which Belos solver to use, and
+    //which Ifpack2 preconditioner to use, etc. If there are sublists of parameters
+    //for Belos and Ifpack2, those will be passed to the respective destinations
+    //from within the build_problem and build_solver functions.
+
+    *out << "Every proc reading parameters from xml_file: "
+         << xml_file << std::endl;
+    Teuchos::ParameterList test_params =
       Teuchos::ParameterXMLFileReader(xml_file).getParameters();
 
-  //The build_problem function is located in build_problem.hpp.
-  //Note that build_problem calls build_precond and sets a preconditioner on the
-  //linear-problem, if a preconditioner is specified.
+    //The build_problem function is located in build_problem.hpp.
+    //Note that build_problem calls build_precond and sets a preconditioner on the
+    //linear-problem, if a preconditioner is specified.
 
-  Teuchos::RCP<BLinProb> problem =
-    build_problem<Scalar,LO,GO,Node>(test_params, comm, platform.getNode());
+    Teuchos::RCP<BLinProb> problem =
+      build_problem<Scalar,LO,GO,Node>(test_params, comm, platform.getNode());
 
-  //The build_solver function is located in build_solver.hpp:
+    //The build_solver function is located in build_solver.hpp:
 
-  Teuchos::RCP<BSolverMgr> solver = build_solver<Scalar,TMV,TOP>(test_params, problem);
+    Teuchos::RCP<BSolverMgr> solver = build_solver<Scalar,TMV,TOP>(test_params, problem);
 
-  Belos::ReturnType ret = solver->solve();
+    Belos::ReturnType ret = solver->solve();
 
-  if (comm->getRank() == 0) {
-    std::cout << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
-  }
+    *out << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
 
-  Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
-  problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
-  Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
-  R->norm2(norms);
+    Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
+    problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
+    Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
+    R->norm2(norms);
 
-  if (norms.size() < 1) {
-    throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
-  }
+    if (norms.size() < 1) {
+      throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
+    }
 
-  if (comm->getRank() == 0) {
-    std::cout << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
-  }
+    *out << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
 
-  //If the xml file specified a number of iterations to expect, then we will
-  //use that as a test pass/fail criteria.
+    //If the xml file specified a number of iterations to expect, then we will
+    //use that as a test pass/fail criteria.
 
-  if (test_params.isParameter("expectNumIters")) {
-    int expected_iters = 0;
-    Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
-    int actual_iters = solver->getNumIters();
-    if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
-      if (comm->getRank() == 0) {
-        std::cout << "End Result: TEST PASSED" << std::endl;
+    if (test_params.isParameter("expectNumIters")) {
+      int expected_iters = 0;
+      Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
+      int actual_iters = solver->getNumIters();
+      if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
+        *out << "End Result: TEST PASSED" << std::endl;
+      }
+      else {
+        *out << "Actual iters("<<actual_iters
+             <<") > expected number of iterations ("
+             <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
       }
     }
-    else {
-      if (comm->getRank() == 0) {
-        std::cout << "Actual iters("<<actual_iters
-           <<") > expected number of iterations ("
-              <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
-      }
-    }
+
+    timer.stop();
+    *out << "proc 0 total program time: " << timer.totalElapsedTime()
+         << std::endl;
+    
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success)
+
+  if (success) {
+    *out << "FINAL PASSED\n";
+  }
+  else {
+    *out << "FINAL FAILED\n";
   }
 
-  timer.stop();
-  if (comm->getRank() == 0) {
-    std::cout << "proc 0 total program time: " << timer.totalElapsedTime()
-       << std::endl;
-  }
-
-  return 0;
+  return ( success ? 0 : 1 );
 }
+
 
 void process_command_line(int argc, char*argv[], std::string& xml_file)
 {
