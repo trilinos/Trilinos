@@ -441,11 +441,6 @@ namespace Tpetra {
 	<< ".  The min and max values over all processes are " 
 	<< minIndexBase << " resp. " << maxIndexBase << ".");
 
-      std::cout << "\nInside of Tpetra::Map constructor:\n";
-      std::cout << "GSTI = " << GSTI << "\n";
-      std::cout << "numGlobalElements = " << numGlobalElements << "\n";
-      std::cout << "debugGlobalSum = " << debugGlobalSum << "\n";
-
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
       TEUCHOS_TEST_FOR_EXCEPTION(
