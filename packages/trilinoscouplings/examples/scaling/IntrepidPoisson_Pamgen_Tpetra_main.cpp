@@ -66,9 +66,7 @@
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 // MueLu includes
-#include "MueLu.hpp"
-#include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_TpetraOperator.hpp"
+#include "MueLu_CreateTpetraPreconditioner.hpp"
 
 int
 main (int argc, char *argv[])
@@ -208,27 +206,12 @@ main (int argc, char *argv[])
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
     if (prec_type == "MueLu") {
-      // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
-      RCP<Xpetra::CrsMatrix<ST, LO, GO, Node> > mueluA_ = 
-	rcp(new Xpetra::TpetraCrsMatrix<ST, LO, GO, Node>(A));
-      RCP<Xpetra::Matrix <ST, LO, GO, Node> > mueluA  = 
-	rcp(new Xpetra::CrsMatrixWrap<ST, LO, GO, Node>(mueluA_));
-      
-      // Multigrid Hierarchy
-      ParameterList mueluParams;
-      if (inputList.isSublist("MueLu"))
-	mueluParams = inputList.sublist("MueLu");
-      MueLu::ParameterListInterpreter<ST, LO, GO, Node> mueLuFactory(mueluParams);
-      RCP<MueLu::Hierarchy<ST, LO, GO, Node> > H = 
-	mueLuFactory.CreateHierarchy();
-      H->setVerbLevel(Teuchos::VERB_HIGH);
-      H->GetLevel(0)->Set("A", mueluA);
-      
-      // Multigrid setup phase
-      H->Setup();
-
-      // Wrap MueLu Hierarchy as a Tpetra::Operator
-      M = rcp(new MueLu::TpetraOperator<ST,LO,GO,Node>(H));
+      if (inputList.isSublist("MueLu")) {
+        ParameterList mueluParams = inputList.sublist("MueLu");
+        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+      } else {
+        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+      }
     }
   }
 
