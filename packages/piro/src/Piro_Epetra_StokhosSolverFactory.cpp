@@ -149,8 +149,7 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
 {
   Teuchos::ParameterList& sgParams =
     piroParams->sublist("Stochastic Galerkin");
-  Teuchos::ParameterList& sg_basisParams = sgParams.sublist("Basis");
-  int dim = sg_basisParams.get<int>("Dimension");
+  sgParams.sublist("Basis");
 
   model = model_;
 
