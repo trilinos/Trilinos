@@ -105,15 +105,27 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, b
   Ioss::ElementTopology* inst = NULL;
   Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
 
-  std::string base1 = "super";
-  if (iter == registry().end() && ltype.find(base1) == 0) {
-    // A super element can have a varying number of nodes.  Create
-    // an IO element type for this super element. The node count
-    // should be encoded in the 'type' as 'super42' for a 42-node
-    // superelement.
-    
-    Ioss::Super::make_super(ltype);
-    iter = registry().find(ltype);
+  if (iter == registry().end()) {
+    std::string base1 = "super";
+    if (ltype.find(base1) == 0) {
+      // A super element can have a varying number of nodes.  Create
+      // an IO element type for this super element. The node count
+      // should be encoded in the 'type' as 'super42' for a 42-node
+      // superelement.
+
+      Ioss::Super::make_super(ltype);
+      iter = registry().find(ltype);
+    }
+    else {
+      // See if 'type' contains a '-'.  Some codes create their
+      // own topologies by adding a "-something" onto the end of a
+      // standard topology.
+      size_t dash = ltype.find('-');
+      if (dash != std::string::npos) {
+        std::string sub_type = ltype.substr(0, dash);
+        iter = registry().find(sub_type);
+      }
+    }
   }
 
   if (iter == registry().end()) {
