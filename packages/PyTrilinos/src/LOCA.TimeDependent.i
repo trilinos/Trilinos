@@ -35,8 +35,9 @@ TimeDependent of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.TimeDependent is to provide ***.  The python
-version of LOCA.TimeDependent supports the following classes:
+The purpose of LOCA.TimeDependent is to provide an abstract group for
+time dependent problems with a mass matrix.  The python version of
+LOCA.TimeDependent supports the following classes:
 
     * AbstractGroup  -
 

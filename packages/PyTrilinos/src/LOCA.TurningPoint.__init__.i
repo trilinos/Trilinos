@@ -35,11 +35,12 @@ TurningPoint of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.TurningPoint is to provide ***.  The python
-version of LOCA.TurningPoint supports the following sub-modules:
+The purpose of LOCA.TurningPoint is to provide groups and vectors for
+turning point bifurcations.  The python version of LOCA.TurningPoint
+supports the following sub-modules:
 
-    * MooreSpence         -
-    * MinimallyAugmented  -
+    * MooreSpence         - 
+    * MinimallyAugmented  - 
 
 Any other notes about the package as a whole. . . .
 "

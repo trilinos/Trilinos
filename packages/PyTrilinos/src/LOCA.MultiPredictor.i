@@ -35,10 +35,11 @@ MultiPredictor of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.MultiPredictor is to provide ***.  The python
-version of LOCA.MultiPredictor supports the following classes:
+The purpose of LOCA.MultiPredictor is to provide predictor direction
+strategies.  The python version of LOCA.MultiPredictor supports the
+following classes:
 
-    * Factory  -
+    * Factory  - 
 
 Any other notes about the package as a whole. . . .
 "

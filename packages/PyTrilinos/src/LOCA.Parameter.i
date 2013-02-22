@@ -35,8 +35,9 @@ Parameter of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Parameter is to provide ***.  The python version
-of LOCA.Parameter supports the following classes:
+The purpose of LOCA.Parameter is to provide a centralized library for
+setting/retrieving numerical parameter values in application codes.
+The python version of LOCA.Parameter supports the following classes:
 
     * Library  -
     * Vector   -

@@ -35,16 +35,17 @@ Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Hopf is to provide ***.  The python version of
-LOCA.Hopf supports the following sub-modules:
+The purpose of LOCA.Hopf is to provide groups and vectors for Hopf
+bifurcations.  The python version of LOCA.Hopf supports the following
+sub-modules:
 
-    * MooreSpence         -
-    * MinimallyAugmented  -
+    * MooreSpence         - 
+    * MinimallyAugmented  - 
 
 and classes:
 
-    * ComplexMultiVector  -
-    * ComplexVector       -
+    * ComplexMultiVector  - 
+    * ComplexVector       - 
 
 Any other notes about the package as a whole. . . .
 "

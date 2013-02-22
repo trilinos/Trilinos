@@ -35,10 +35,11 @@ of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.StepSize is to provide ***.  The python version of
-LOCA.StepSize supports the following classes:
+The purpose of LOCA.StepSize is to provide a collection of step size
+control strategies.  The python version of LOCA.StepSize supports the
+following classes:
 
-    * Factory  -
+    * Factory  - 
 
 Any other notes about the package as a whole. . . .
 "

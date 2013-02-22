@@ -38,31 +38,39 @@ algorithm package LOCA:
 The purpose of LOCA is to provide a library of continuation
 algorithms.  It includes the following sub-modules:
 
-    * Extended           -
-    * MultiContinuation  -
-    * TimeDependent      -
-    * TurningPoint       -
-    * Hopf               -
-    * Pitchfork          -
-    * Homotopy           -
-    * PhaseTransition    -
-    * Abstract           -
-    * Parameter          -
-    * BorderedSolver     -
-    * BorderedSystem     -
-    * Bifurcation        -
-    * StatusTest         -
-    * StepSize           -
-    * MultiPredictor     -
+    * Abstract           - Abstract continuation problem base classes
+    * Extended           - Classes that extend NOX.Abstract classes to
+                           handle an arbitrary number of multi-vectors
+                           and scalars
+    * MultiContinuation  - Groups and vectors for multi-parameter continuation
+    * TimeDependent      - Abstract group for time dependent problems with a
+                           mass matrix
+    * TurningPoint       - Groups and vectors for turning point bifurcations
+    * Hopf               - Groups and vectors for Hopf bifurcations
+    * Pitchfork          - Groups and vectors for pitchfork bifurcations
+    * Homotopy           - Groups that allow for Homotopy to be applied
+    * PhaseTransition    - Groups and vectors for phase transition bifurcations
+    * Parameter          - Centralized library for setting/retrieving numerical
+                           parameter values in application codes
+    * BorderedSolver     - Strategies for solving bordered systems of equations
+    * BorderedSystem     - Interface for groups that are bordered systems
+    * Bifurcation        - Strategies for creating bifurcation objects
+    * StatusTest         - Status checkers
+    * StepSize           - Collection of step size control strategies
+    * MultiPredictor     - Predictor direction strategies
 
 and classes:
 
-    * GlobalData  -
-    * ErrorCheck  -
-    * Factory     -
-    * DerivUtils  -
-    * Stepper     -
-
+    * GlobalData  - Container class that holds ref-count pointers to 'global'
+                    objects, i.e., objects that nearly every LOCA object will
+                    need access to
+    * ErrorCheck  - Error checking algorithm for NOX/LOCA routines
+    * Factory     - Provides a single location for instantiating various
+                    strategies based on parameter list choices
+    * DerivUtils  - Generic derivative computation class to compute various
+                    derivatives via finite differencing
+    * Stepper     - Implementation of LOCA.Abstract.Iterator for computing
+                    points along a continuation curve
 "
 %enddef
 

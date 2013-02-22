@@ -35,10 +35,11 @@ PhaseTransition of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.PhaseTransition is to provide ***.  The python
-version of LOCA.PhaseTransition supports the following classes:
+The purpose of LOCA.PhaseTransition is to provide groups and vectors
+for phase transition bifurcations.  The python version of
+LOCA.PhaseTransition supports the following classes:
 
-    * AbstractGroup  -
+    * AbstractGroup  - 
 
 Any other notes about the package as a whole. . . .
 "

@@ -35,10 +35,11 @@ BorderedSystem of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.BorderedSystem is to provide ***.  The python
-version of LOCA.BorderedSystem supports the following classes:
+The purpose of LOCA.BorderedSystem is to provide an interface for
+groups that are bordered systems.  The python version of
+LOCA.BorderedSystem supports the following classes:
 
-    * AbstractGroup  -
+    * AbstractGroup  - 
 
 Any other notes about the package as a whole. . . .
 "

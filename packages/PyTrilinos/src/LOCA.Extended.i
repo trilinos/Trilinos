@@ -35,8 +35,10 @@ of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Extended is to provide ***.  The python version of
-LOCA.Extended supports the following classes:
+The purpose of LOCA.Extended is to provide classes that extend
+NOX.Abstract classes to handle an arbitrary number of multi-vectors
+and scalars.  The python version of LOCA.Extended supports the
+following classes:
 
     * MultiVector         -
     * Vector              -

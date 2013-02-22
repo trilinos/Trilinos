@@ -35,12 +35,13 @@ of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Homotopy is to provide ***.  The python version of
-LOCA.Homotopy supports the following classes:
+The purpose of LOCA.Homotopy is to provide groups that allow for
+Homotopy to be applied.  The python version of LOCA.Homotopy supports
+the following classes:
 
-    * Group          -
-    * AbstractGroup  -
-    * DeflatedGroup  -
+    * Group          - 
+    * AbstractGroup  - 
+    * DeflatedGroup  - 
 
 Any other notes about the package as a whole. . . .
 "

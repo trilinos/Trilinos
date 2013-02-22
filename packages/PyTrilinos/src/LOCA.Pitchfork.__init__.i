@@ -35,11 +35,12 @@ Pitchfork of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Pitchfork is to provide ***.  The python version
-of LOCA.Pitchfork supports the following sub-modules:
+The purpose of LOCA.Pitchfork is to provide groups and vectors for
+pitchfork bifurcations.  The python version of LOCA.Pitchfork supports
+the following sub-modules:
 
-    * MooreSpence         -
-    * MinimallyAugmented  -
+    * MooreSpence         - 
+    * MinimallyAugmented  - 
 
 Any other notes about the package as a whole. . . .
 "
