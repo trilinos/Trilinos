@@ -140,7 +140,9 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     // construct aggStat information
     Teuchos::ArrayRCP<unsigned int> aggStat;
     if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
-    const ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    if (dirichletBoundaryMap == Teuchos::null)
+      dirichletBoundaryMap = ArrayRCP<bool>(nRows,false);
     for(LocalOrdinal i=0; i<nRows; ++i) {
       if (dirichletBoundaryMap[i] == false)
         aggStat[i] = NodeStats::READY;
