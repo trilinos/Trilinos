@@ -467,7 +467,7 @@ namespace Iopx {
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("elem"),
+    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("element"),
     timeLastFlush(0), fileExists(false),
     metaDataWritten(false), blockAdjacenciesCalculated(false),
     nodeConnectivityStatusCalculated(false)
@@ -1217,16 +1217,19 @@ namespace Iopx {
 	if (entity_type == EX_ELEM_BLOCK) {
 	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp->el_blocks[iblk].ioss_count());
 	  io_block = eblock;
+	  io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(eblock);
 #if 0
 	} else if (entity_type == EX_FACE_BLOCK) {
 	  Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, block.num_entry);
+    io_block = fblock;
+    io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(fblock);
-	  io_block = fblock;
 	} else if (entity_type == EX_EDGE_BLOCK) {
 	  Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, block.num_entry);
+    io_block = eblock;
+    io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(eblock);
-	  io_block = eblock;
 #endif
 	} else {
 	  std::ostringstream errmsg;
@@ -1252,7 +1255,6 @@ namespace Iopx {
 					  block.num_entry));
 	}
 #endif	
-	io_block->property_add(Ioss::Property("id", id));
 	
 	// Maintain block order on output database...
 	io_block->property_add(Ioss::Property("original_block_order", iblk));
@@ -1728,8 +1730,8 @@ namespace Iopx {
 	    check_non_null(side_set, "sideset", efs_name);
 	  } else {
 	    side_set = new Ioss::SideSet(this, side_set_name);
+      side_set->property_add(Ioss::Property("id", id));
 	    get_region()->add((Ioss::SideSet*)side_set);
-	    side_set->property_add(Ioss::Property("id", id));
 
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
@@ -1955,12 +1957,12 @@ namespace Iopx {
 								  side_topo->name(),
 								  elem_topo->name(),
 								  my_side_count);
+    assert(side_block != NULL);
+    side_block->property_add(Ioss::Property("id", id));
 		side_set->add(side_block);
 
 		// Note that all sideblocks within a specific
 		// sideset might have the same id.
-		assert(side_block != NULL);
-		side_block->property_add(Ioss::Property("id", id));
 
 		// If splitting by element block, need to set the
 		// element block member on this side block.
