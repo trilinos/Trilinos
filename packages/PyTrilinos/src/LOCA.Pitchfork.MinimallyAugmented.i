@@ -42,8 +42,6 @@ following classes:
 
     * AbstractGroup  - Interface to underlying groups for pitchfork
                        calculations using the minimally augmented formulation
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

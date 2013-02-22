@@ -49,8 +49,6 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
                                methods of the LOCA.TurningPoint.Minimally-
                                Augmented.AbstractGroup using first-order finite
                                differencing
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

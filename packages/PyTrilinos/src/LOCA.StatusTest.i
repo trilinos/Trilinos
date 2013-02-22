@@ -41,8 +41,6 @@ python version of LOCA.StatusTest supports the following classes:
     * Abstract  - Generic status test to check for convergence or failure of
                   the LOCA continuation
     * Wrapper   - A wrapper class for wrapping a NOX status test
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

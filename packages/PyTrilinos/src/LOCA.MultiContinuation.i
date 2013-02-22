@@ -60,8 +60,6 @@ LOCA.MultiContinuation supports the following classes:
                                  vectors, etc. for continuation equations
     * Factory                  - Factory for creating continuation strategy
                                  objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

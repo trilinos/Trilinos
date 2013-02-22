@@ -50,8 +50,6 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
                                differencing
     * SolverFactory          - Factory for creating solver objects for solving
                                Moore-Spence turning point equations
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

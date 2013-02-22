@@ -44,8 +44,6 @@ supports the following sub-modules:
     * MinimallyAugmented  - Groups and vectors for locating turning point
                             bifurcations using the minimally augmented
                             formulation
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

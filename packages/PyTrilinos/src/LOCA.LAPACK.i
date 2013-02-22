@@ -40,8 +40,6 @@ LOCA.LAPACK supports the following classes:
 
     * Interface  - 
     * Group      - 
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

@@ -40,8 +40,6 @@ version of LOCA.SaveEigenData supports the following classes:
 
     * Factory  - Factory for creating strategy objects to save eigenvectors/
                  values
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

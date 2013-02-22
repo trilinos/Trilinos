@@ -42,8 +42,6 @@ the following classes:
     * Group          - LOCA's Homotopy algorithm
     * AbstractGroup  - Interface to underlying groups for homotopy calculations
     * DeflatedGroup  - LOCA's deflated Homotopy algorithm
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

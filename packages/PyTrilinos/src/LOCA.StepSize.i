@@ -40,8 +40,6 @@ control strategies.  The python version of LOCA.StepSize supports the
 following classes:
 
     * Factory  - Factory for creating step size control strategy objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

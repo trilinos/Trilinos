@@ -41,8 +41,6 @@ LOCA.TimeDependent supports the following classes:
 
     * AbstractGroup  - Interface to underlying groups for time dependent
                        systems
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

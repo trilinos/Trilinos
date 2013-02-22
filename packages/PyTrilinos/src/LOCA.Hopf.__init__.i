@@ -50,8 +50,6 @@ and classes:
                             represent a complex multi-vector
     * ComplexVector       - Vector class to hold two vectors to represent a
                             complex vector
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

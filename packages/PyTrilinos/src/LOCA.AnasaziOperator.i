@@ -42,8 +42,6 @@ version of LOCA.AnasaziOperator supports the following classes:
                           strategies
     * Factory           - Factory for creating Anasazi operator strategy
                           objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

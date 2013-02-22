@@ -40,8 +40,6 @@ groups that are bordered systems.  The python version of
 LOCA.BorderedSystem supports the following classes:
 
     * AbstractGroup  - Interface for groups that are bordered systems
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

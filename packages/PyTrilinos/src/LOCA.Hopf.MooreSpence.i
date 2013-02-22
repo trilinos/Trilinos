@@ -59,8 +59,6 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
     * SalingerBordering      - Moore-Spence Hopf solver strategy based on
                                'Salinger' bordering.  This is the classic 5-
                                solve Hopf bordering method
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

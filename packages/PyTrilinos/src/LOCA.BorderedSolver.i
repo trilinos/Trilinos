@@ -40,8 +40,6 @@ solving bordered systems of equations.  The python version of
 LOCA.BorderedSolver supports the following classes:
 
     * Factory  - Factory for creating BorderedSolver strategy objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

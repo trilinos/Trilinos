@@ -41,8 +41,6 @@ The python version of LOCA.Parameter supports the following classes:
 
     * Library  - Class to provide a centralized library for setting/retrieving
                  numerical parameter values in application codes
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

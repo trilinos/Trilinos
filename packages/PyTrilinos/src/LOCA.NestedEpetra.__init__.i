@@ -40,8 +40,6 @@ NOX.Epetra.Group to LOCA.  The python version of LOCA.Epetra supports
 the following classes:
 
     * Group  - Extension of the NOX.Epetra.Group to LOCA
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

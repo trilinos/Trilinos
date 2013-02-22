@@ -51,8 +51,6 @@ LOCA.Epetra.Interface supports the following classes:
     * TimeDependentMatrixFree  - Used by LOCA.Epetra.Group to provide a link
                                  to the external code for applying the shifted
                                  matrix in a matrix-free setting
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

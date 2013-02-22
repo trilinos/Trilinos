@@ -55,8 +55,6 @@ supports the following classes:
                                differencing
     * ExtendedGroup          - Group representing the minimally augemented Hopf
                                equations
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

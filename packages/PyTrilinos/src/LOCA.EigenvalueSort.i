@@ -39,8 +39,6 @@ The purpose of LOCA.EigenvalueSort is to provide ***.  The python
 version of LOCA.EigenvalueSort supports the following classes:
 
     * Factory  - Factory for creating EigenvalueSort strategy objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

@@ -50,8 +50,6 @@ following classes:
                             derived from the NOX.Abstract.Group, i.e., an
                             abstract interface for 'super' groups that have an
                             underlying group component
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

@@ -40,8 +40,6 @@ strategies.  The python version of LOCA.MultiPredictor supports the
 following classes:
 
     * Factory  - Factory for creating Predictor strategy objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

@@ -45,8 +45,6 @@ the following classes:
     * Iterator             - Abstract interface for implementing iteration
     * Factory              - Abstract interface for providing a user-defined
                              factory
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

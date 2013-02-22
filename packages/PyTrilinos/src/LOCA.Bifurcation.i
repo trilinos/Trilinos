@@ -40,8 +40,6 @@ bifurcation objects.  The python version of LOCA.Bifurcation supports
 the following classes:
 
     * Factory  - Factory for creating bifurcation strategy objects
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

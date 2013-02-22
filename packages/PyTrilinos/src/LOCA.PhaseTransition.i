@@ -41,8 +41,6 @@ LOCA.PhaseTransition supports the following classes:
 
     * AbstractGroup  - Interface to underlying groups for phase transition
                        calculations
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 

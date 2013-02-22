@@ -45,8 +45,6 @@ supports the following classes:
                        calculations using the Moore-Spence formulation
     * SolverFactory  - Factory for creating solver objects for solving Moore-
                        Spence pitchfork equations
-
-Any other notes about the package as a whole. . . .
 "
 %enddef
 
