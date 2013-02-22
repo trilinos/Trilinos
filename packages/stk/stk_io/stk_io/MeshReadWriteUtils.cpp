@@ -114,6 +114,12 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       assert(side_ids.size() * 2 == elem_side.size());
       stk::mesh::PartVector add_parts( 1 , sb_part );
 
+      // Get topology of the sides being defined to see if they
+      // are 'faces' or 'edges'.  This is needed since for shell-type
+      // elements, (and actually all elements) a sideset can specify either a face or an edge...
+      // For a quad shell, sides 1,2 are faces and 3,4,5,6 are edges.
+      int par_dimen = block->topology()->parametric_dimension();
+
       size_t side_count = side_ids.size();
       std::vector<stk::mesh::Entity> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
@@ -127,7 +133,11 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
           // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
           int side_ordinal = elem_side[is*2+1] - 1;
 
-          stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+          stk::mesh::Entity side;
+          if (par_dimen == 1)
+            side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
+          else if (par_dimen == 2)
+            side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 
           bulk.change_entity_parts( side, add_parts );
           sides[is] = side;

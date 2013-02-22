@@ -1075,7 +1075,9 @@ void define_side_set(stk::mesh::Part &part,
     // in a surface...)
     const stk::mesh::PartVector &supersets = part.supersets();
     for (size_t i=0; i < supersets.size(); i++) {
-      if (is_part_io_part(*supersets[i]) && supersets[i]->primary_entity_rank() == si_rank) {
+      if (is_part_io_part(*supersets[i]) &&
+          (supersets[i]->primary_entity_rank() == stk::topology::FACE_RANK ||
+           supersets[i]->primary_entity_rank() == stk::topology::EDGE_RANK)) {
         create_sideset = false;
         break;
       }
