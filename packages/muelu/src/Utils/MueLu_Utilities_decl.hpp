@@ -379,12 +379,11 @@ namespace MueLu {
     /*! @brief Detect Dirichlet rows
 
         @param[in] A matrix
-        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is
-        considered to be zero.
+        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
 
-        @return boolean Xpetra::Vector.  The ith entry is true iff row i is a Dirichlet row.
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol);
+    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol=Teuchos::ScalarTraits<SC>::zero());
 
   }; // class Utils
 
