@@ -76,14 +76,17 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+
+    typedef  Teuchos::ScalarTraits<Scalar> TST;
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
     validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
+    validParamList->set< Scalar >                ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection"); 
+    validParamList->set< double >                ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
     validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
-    validParamList->set< double >                ("threshold",          0.0,           "Dropping threshold");
 
     return validParamList;
   }
@@ -123,7 +126,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (threshold|laplacian)");
 
-      Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("threshold"));
+      Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("aggregation threshold"));
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
 
       LocalOrdinal numDropped = 0;
@@ -150,9 +153,14 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
+        const  typename Teuchos::ScalarTraits<SC>::magnitudeType dirichletThreshold = pL.get<Scalar>("Dirichlet detection threshold");
+
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+          //Detect and record rows that correspond to Dirichlet boundary conditions
+          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A,dirichletThreshold);
+          graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
@@ -166,6 +174,7 @@ namespace MueLu {
 
           RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+          const ArrayRCP<bool> boundaryNodes(A->getNodeNumRows(),false);
 
           LocalOrdinal realnnz = 0;
 
@@ -193,10 +202,12 @@ namespace MueLu {
               else
                 numDropped++;
             }
+            if (realnnz == 1) boundaryNodes[row] = true;
             rows[row+1] = realnnz;
           }
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", 1);
 
@@ -283,11 +294,14 @@ namespace MueLu {
               columns[realnnz++] = col;
             else
               numDropped++;
+    
           }
+          if (realnnz == 1) boundaryNodes[row] = true;
           rows[row+1] = realnnz;
         }
 
         RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
+        graph->SetBoundaryNodeMap(boundaryNodes);
         Set(currentLevel, "Graph", graph);
         Set(currentLevel, "DofsPerNode", 1);
       }
@@ -295,6 +309,7 @@ namespace MueLu {
       GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
 
     } else {
+
       //what Tobias has implemented
 
       LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
@@ -333,7 +348,7 @@ namespace MueLu {
 
       /////////////////////// experimental
       // vector of boundary node GIDs on current proc
-      RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes = Teuchos::rcp(new std::map<GlobalOrdinal,bool>);
+      //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes = Teuchos::rcp(new std::map<GlobalOrdinal,bool>);
       ////////////////////////////////////
 
       // 4) create graph of amalgamated matrix
@@ -370,10 +385,10 @@ namespace MueLu {
         // todo avoid duplicate entries in cnodeIds
 
         ////////////////// experimental
-        if(gBoundaryNodes->count(nodeId) == 0)
-          (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
-        if(realnnz == 1)
-          (*gBoundaryNodes)[nodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+        //if(gBoundaryNodes->count(nodeId) == 0)
+        //  (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
+        //if(realnnz == 1)
+        //  (*gBoundaryNodes)[nodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
         ///////////////////////////////
 
         Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
@@ -385,29 +400,29 @@ namespace MueLu {
       crsGraph->fillComplete(nodeMap,nodeMap);
 
       ///////////////// experimental
-      LocalOrdinal nLocalBdryNodes = 0;
-      GlobalOrdinal nGlobalBdryNodes = 0;
-      Array<GlobalOrdinal> bdryNodeIds;
-      for(typename std::map<GlobalOrdinal,bool>::iterator it = gBoundaryNodes->begin(); it!=gBoundaryNodes->end(); it++) {
-        if ((*it).second == true) {
-          nLocalBdryNodes++;
-          bdryNodeIds.push_back((*it).first);
-        }
-      }
-      Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
-      GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
+      //LocalOrdinal nLocalBdryNodes = 0;
+      //GlobalOrdinal nGlobalBdryNodes = 0;
+      //Array<GlobalOrdinal> bdryNodeIds;
+      //for(typename std::map<GlobalOrdinal,bool>::iterator it = gBoundaryNodes->begin(); it!=gBoundaryNodes->end(); it++) {
+      //  if ((*it).second == true) {
+      //    nLocalBdryNodes++;
+      //    bdryNodeIds.push_back((*it).first);
+      //  }
+      //}
+      //Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
+      //GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
 
-      RCP<const Map> gBoundaryNodeMap = MapFactory::Build(nodeMap->lib(),
-                                                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                          bdryNodeIds,
-                                                          nodeMap->getIndexBase(), nodeMap->getComm());
+      //RCP<const Map> gBoundaryNodeMap = MapFactory::Build(nodeMap->lib(),
+      //                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+      //                                                    bdryNodeIds,
+      //                                                    nodeMap->getIndexBase(), nodeMap->getComm());
       //////////////////////////////
 
       // 6) create MueLu Graph object
       RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
       // 7) store results in Level
-      graph->SetBoundaryNodeMap(gBoundaryNodeMap);
+      //graph->SetBoundaryNodeMap(gBoundaryNodeMap);
       Set(currentLevel, "DofsPerNode", blockdim);
       Set(currentLevel, "Graph", graph);
 

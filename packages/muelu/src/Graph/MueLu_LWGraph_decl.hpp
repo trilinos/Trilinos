@@ -89,9 +89,8 @@ namespace MueLu {
     Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
-    const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
 
-    void SetBoundaryNodeMap(RCP<const Map> const &map) {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
+    const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
 
     //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
@@ -101,6 +100,13 @@ namespace MueLu {
 
     //! Return true if vertex with local id 'v' is on current process.
     bool isLocalNeighborVertex(LocalOrdinal v) const;
+
+    //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
+    void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry) { dirichletBoundaries_ = bndry; }
+
+    //! Returns map with global ids of boundary nodes.
+    const ArrayRCP<const bool> GetBoundaryNodeMap() const { return dirichletBoundaries_; }
+
 
     /// Return a simple one-line description of the Graph.
     std::string description() const;
@@ -120,6 +126,8 @@ namespace MueLu {
     const RCP<const CrsGraph> graph_;
     //! Name of this graph.
     const std::string & objectLabel_;
+    //! Boolean array marking Dirichlet rows.
+    ArrayRCP<const bool> dirichletBoundaries_;
 
   };
 

@@ -144,7 +144,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       aggStat[i] = NodeStats::READY;
       GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
       if(SmallAggMap != Teuchos::null) {
-         // reconstruct global row id (FIXME only works for contingoous maps)
+         // reconstruct global row id (FIXME only works for contiguous maps)
         for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
           if(SmallAggMap->isNodeGlobalElement(grid+kr)) {
             aggStat[i] = MueLu::NodeStats::SMALLAGG;
@@ -152,7 +152,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
         }
        }
       if(OnePtMap != Teuchos::null) {
-        // reconstruct global row id (FIXME only works for contingoous maps)
+        // reconstruct global row id (FIXME only works for contiguous maps)
         for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
           if(OnePtMap->isNodeGlobalElement(grid+kr)) {
             aggStat[i] = MueLu::NodeStats::ONEPT;

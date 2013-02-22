@@ -370,9 +370,21 @@ namespace MueLu {
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os);
 
-    // Squared distance between two rows in a multivector
-    // Used for coords vector
+    /*! @brief Squared distance between two rows in a multivector
+
+       Used for coordinate vectors.
+    */
     static Magnitude Distance2(const MultiVector& v, LO i0, LO i1);
+
+    /*! @brief Detect Dirichlet rows
+
+        @param[in] A matrix
+        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is
+        considered to be zero.
+
+        @return boolean Xpetra::Vector.  The ith entry is true iff row i is a Dirichlet row.
+    */
+    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol);
 
   }; // class Utils
 

@@ -1149,6 +1149,31 @@ namespace MueLu {
     return Teuchos::ScalarTraits<SC>::magnitude(d);
   }
 
+  template <class SC, class LO, class GO, class NO, class LMO>
+  ArrayRCP<const bool>
+  Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol)
+  {
+    const RCP<const Map> rowMap = A.getRowMap();
+    ArrayRCP<bool> boundaryNodes(A.getNodeNumRows(),true);
+
+    for(size_t row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
+
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      A.getLocalRowView(row, indices, vals);
+      size_t nnz = A.getNumEntriesInLocalRow(row);
+      if (nnz > 1) {
+        for(size_t col=0; col<nnz; ++col) {
+          if ( (col != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
+            boundaryNodes[row] = false;
+            break;
+          }
+        }
+      }
+    }
+    return boundaryNodes;
+  } //DetectDirichletRows
+
 #ifdef HAVE_MUELU_EPETRA
 //   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 //   RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {
