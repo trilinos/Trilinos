@@ -67,7 +67,7 @@ template< class MemorySpace ,
           unsigned Rank = Shape::rank >
 class ViewOper ;
 
-template< class DstViewType , class SrcViewType , class Enable = void >
+template< class DstViewType , class SrcViewType = void , class ArgCount = unsigned_<0> >
 struct ViewAssignment ;
 
 template< class DstViewType , class Enable = void >
@@ -132,6 +132,7 @@ public:
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
   typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::const_value_type const_value_type ;
   typedef typename analysis::shape            shape_type ;
   typedef typename layout_type::array_layout  array_layout ;
   typedef typename device_type::memory_space  memory_space ;
@@ -169,6 +170,7 @@ public:
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
   typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::const_value_type const_value_type ;
   typedef typename analysis::shape            shape_type ;
   typedef typename layout_type::array_layout  array_layout ;
   typedef typename device_type::memory_space  memory_space ;
@@ -206,6 +208,7 @@ public:
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
   typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::const_value_type const_value_type ;
   typedef typename analysis::shape            shape_type ;
   typedef typename layout_type::array_layout  array_layout ;
   typedef typename device_type::memory_space  memory_space ;
@@ -252,6 +255,7 @@ public:
   typedef typename view_traits::value_type       value_type ;
   typedef typename view_traits::array_layout     array_layout ;
   typedef typename view_traits::memory_space     memory_space ;
+  typedef typename view_traits::memory_traits    memory_traits ;
   typedef typename view_traits::memory_traits    memory_management ;
   typedef typename view_traits::shape_type       shape_type ;
 
@@ -265,6 +269,7 @@ private:
                           array_layout > oper_type ;
 
   template< class , class , class , class> friend class View ;
+  template< class , class , class > friend class Impl::ViewAssignment ;
 
 public:
 
@@ -379,7 +384,7 @@ public:
 private:
 
   typedef Impl::ViewManagement<
-     ExecutionSpace , memory_management ,
+     ExecutionSpace , memory_traits ,
      scalar_type , shape_type , memory_space > internal_management ;
 
   KOKKOSARRAY_INLINE_FUNCTION
@@ -406,24 +411,21 @@ public:
   View()
     {
       oper_type::m_ptr_on_device = 0 ;
+      oper_type::m_stride        = 0 ;
       oper_type::m_shape = shape_type();
     }
 
   /** \brief  Construct a view of the array */
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
-    {
-      internal_private_assign( rhs.m_shape , rhs.m_stride , rhs.m_ptr_on_device );
-    }
+    { oper_type::m_ptr_on_device = 0 ; Impl::ViewAssignment<View>( *this , rhs ); }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOSARRAY_INLINE_FUNCTION
   ~View()
-  {
-    internal_private_clear();
-  }
+  { Impl::ViewAssignment<View>(*this); }
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
@@ -431,277 +433,87 @@ public:
    */
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View & rhs )
-  {
-    internal_private_clear();
-    internal_private_assign( rhs.m_shape , rhs.m_stride , rhs.m_ptr_on_device );
-    return *this ;
-  }
+  { Impl::ViewAssignment<View>( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
-  // Construct a compatible view:
+  // Construct from a compatible view:
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement >
-  View( const View< rhsData , rhsLayout , rhsMemory, rhsManagement > & rhs )
+  template< class T , class L , class D , class M >
+  View( const View<T,L,D,M> & rhs )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M> >( *this , rhs );
     }
 
-  // Assign a compatible view:
+  // Assign from a compatible view:
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement >
-  View & operator =
-    ( const View< rhsData , rhsLayout , rhsMemory, rhsManagement > & rhs )
-    {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride );
-
-      internal_private_clear();
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
-
-      return *this ;
-    }
+  template< class T , class L , class D , class M >
+  View & operator = ( const View<T,L,D,M> & rhs )
+    { Impl::ViewAssignment<View,View<T,L,D,M> >( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a subview */
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement,
+  template< class T , class L , class D , class M ,
             class ArgType0 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement > & rhs ,
-        const ArgType0 & arg0 )
+  View( const View<T,L,D,M> & rhs , const ArgType0 & arg0 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<1> >( *this , rhs , arg0 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
+  template< class T , class L , class D , class M ,
             class ArgType0 , class ArgType1 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride, arg0 , arg1 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<2> >( *this, rhs, arg0, arg1 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
+  template< class T , class L , class D , class M ,
             class ArgType0 , class ArgType1 , class ArgType2 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement > & rhs ,
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<3> >( *this, rhs, arg0, arg1, arg2 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
-            class ArgType0 , class ArgType1 , class ArgType2 ,
-            class ArgType3 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  template< class T , class L , class D , class M ,
+            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 ,
         const ArgType3 & arg3 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<4> >( *this, rhs, arg0, arg1, arg2, arg3 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
-            class ArgType0 , class ArgType1 , class ArgType2 ,
-            class ArgType3 , class ArgType4 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  template< class T , class L , class D , class M ,
+            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+            class ArgType4 >
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 ,
         const ArgType3 & arg3 ,
         const ArgType4 & arg4 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<5> >
+        ( *this, rhs, arg0, arg1, arg2, arg3, arg4 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
-            class ArgType0 , class ArgType1 , class ArgType2 ,
-            class ArgType3 , class ArgType4 , class ArgType5 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  template< class T , class L , class D , class M ,
+            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+            class ArgType4 , class ArgType5 >
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 ,
@@ -709,40 +521,15 @@ public:
         const ArgType4 & arg4 ,
         const ArgType5 & arg5 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<6> >
+        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
-            class ArgType0 , class ArgType1 , class ArgType2 ,
-            class ArgType3 , class ArgType4 , class ArgType5 ,
-            class ArgType6 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  template< class T , class L , class D , class M ,
+            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+            class ArgType4 , class ArgType5 , class ArgType6 >
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 ,
@@ -751,40 +538,15 @@ public:
         const ArgType5 & arg5 ,
         const ArgType6 & arg6 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<7> >
+        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
     }
 
-  template< class rhsData ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement ,
-            class ArgType0 , class ArgType1 , class ArgType2 ,
-            class ArgType3 , class ArgType4 , class ArgType5 ,
-            class ArgType6 , class ArgType7 >
-  View( const View< rhsData , rhsLayout , rhsMemory , rhsManagement> & rhs ,
+  template< class T , class L , class D , class M ,
+            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+            class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
+  View( const View<T,L,D,M> & rhs ,
         const ArgType0 & arg0 ,
         const ArgType1 & arg1 ,
         const ArgType2 & arg2 ,
@@ -794,30 +556,9 @@ public:
         const ArgType6 & arg6 ,
         const ArgType7 & arg7 )
     {
-      typedef View< rhsData , rhsLayout , rhsMemory , rhsManagement > rhs_view ;
-      typedef typename rhs_view::scalar_type       rhs_scalar_type ;
-      typedef typename rhs_view::shape_type        rhs_shape_type ;
-      typedef typename rhs_view::memory_space      rhs_memory_space ;
-      typedef typename rhs_view::memory_management rhs_memory_management ;
-
-      typedef typename
-        Impl::ViewAssignable< scalar_type ,
-                              memory_space ,
-                              memory_management ,
-                              rhs_scalar_type ,
-                              rhs_memory_space ,
-                              rhs_memory_management >::type  ok_assign ;
-
-      // SubShape<*,*> only exists for valid subshapes:
-
-      typedef typename
-        Impl::SubShape< array_layout , shape_type ,
-                        typename rhsLayout::array_layout , rhs_shape_type >::type
-          subshape_type ;
-
-      const subshape_type data( rhs.m_shape, rhs.m_stride , arg0 , arg1 , arg2 , arg3 , arg4 , arg5, arg6, arg7 );
-
-      internal_private_assign( data.shape , data.stride , rhs.m_ptr_on_device + data.offset );
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<8> >
+        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
     }
 
   /*------------------------------------------------------------------*/
@@ -944,6 +685,10 @@ struct ViewCreatable< Scalar , MemoryManaged >
 } // namespace KokkosArray
 
 #include <impl/KokkosArray_View_factory.hpp>
+
+#include <impl/KokkosArray_ViewAssignment.hpp>
+#include <impl/KokkosArray_ViewLeft.hpp>
+#include <impl/KokkosArray_ViewRight.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

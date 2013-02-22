@@ -56,6 +56,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 0 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -87,6 +88,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 1 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -124,6 +126,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 2 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -150,6 +153,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 3 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -178,6 +182,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 4 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -208,6 +213,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 5 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -240,6 +246,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 6 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -273,6 +280,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 7 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;
@@ -309,6 +317,7 @@ class ViewOper< MemorySpace , ValueType , ShapeType , LayoutRight , 8 >
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
   ShapeType   m_shape ;

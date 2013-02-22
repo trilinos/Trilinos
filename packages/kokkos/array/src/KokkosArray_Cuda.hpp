@@ -69,7 +69,6 @@ public:
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
   typedef LayoutLeft            array_layout ;
-  // typedef MemoryManaged         memory_management ;
 
   //--------------------------------------------------------------------------
 
