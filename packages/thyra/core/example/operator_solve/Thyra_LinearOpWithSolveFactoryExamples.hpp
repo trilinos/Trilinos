@@ -629,9 +629,15 @@ void externallyPreconditionedLinearSolveUseCases(
       Teuchos::rcp(&A, false), P.getConst(), lowsFactory, out);
   // Grab a preconditioner operator out of the preconditioner object
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > P_op;
-  if (nonnull(P_op=P->getUnspecifiedPrecOp()));
-  else if (nonnull(P_op=P->getLeftPrecOp()));
-  else if (nonnull(P_op=P->getRightPrecOp()));
+  // Clang 3.2 issues a warning if semicolons are on the same line as
+  // the 'if' statement.  It's good practice in any case to make the
+  // empty 'if' body clear.
+  if (nonnull (P_op = P->getUnspecifiedPrecOp ()))
+    ;
+  else if (nonnull (P_op = P->getLeftPrecOp ()))
+    ;
+  else if (nonnull (P_op = P->getRightPrecOp ()))
+    ;
   // Create a LOWSB object given an unspecified preconditioner operator
   invertibleA = createUnspecifiedPreconditionedLinearOpWithSolve(
     rcpFromRef(A), P_op, lowsFactory, out);
