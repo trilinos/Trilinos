@@ -362,7 +362,7 @@ namespace Ioex {
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("elem"),
+    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("element"),
     timeLastFlush(0), fileExists(false),
     minimizeOpenFiles(false), blockAdjacenciesCalculated(false),
     nodeConnectivityStatusCalculated(false)
@@ -940,7 +940,8 @@ namespace Ioex {
 	  // worst case...
 	  IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
 		       << " in database file\n\t" << get_filename()
-		       << ".\nThe data for that step is possibly corrupt.\n";
+		       << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
+		       << last_time << ".\n";
 	}
       }
     }
@@ -1423,16 +1424,16 @@ namespace Ioex {
 	get_region()->add(eblock);
       } else if (entity_type == EX_FACE_BLOCK) {
 	Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, local_X_count[iblk]);
+  block = fblock;
 	get_region()->add(fblock);
-	block = fblock;
       } else if (entity_type == EX_EDGE_BLOCK) {
 	Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, local_X_count[iblk]);
+  block = eblock;
 	get_region()->add(eblock);
-	block = eblock;
       } else {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Invalid type in get_blocks()";
-	IOSS_ERROR(errmsg);
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Invalid type in get_blocks()";
+        IOSS_ERROR(errmsg);
       }
 
       // See which connectivity options were defined for this block.
@@ -1452,7 +1453,7 @@ namespace Ioex {
 				     local_X_count[iblk]));
       }
 
-      block->property_add(Ioss::Property("id", id));
+      block->property_add(Ioss::Property("id", id)); // Do before adding for better error messages.
       
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
@@ -1947,8 +1948,8 @@ namespace Ioex {
 	    check_non_null(side_set, "sideset", efs_name);
 	  } else {
 	    side_set = new Ioss::SideSet(this, side_set_name);
+      side_set->property_add(Ioss::Property("id", id));
 	    get_region()->add((Ioss::SideSet*)side_set);
-	    side_set->property_add(Ioss::Property("id", id));
 
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
@@ -6495,6 +6496,12 @@ namespace Ioex {
 	  std::vector<Ioss::Field>::const_iterator IF;
 	  for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
 	    Ioss::Field field = *IF;
+	    if (block->field_exists(field.get_name())) {
+	      std::ostringstream errmsg;
+	      errmsg << "ERROR: In block '" << block->name() << "', attribute '" << field.get_name()
+	             << "' is defined multiple times which is not allowed.\n";
+	      IOSS_ERROR(errmsg);
+	    }
 	    block->field_add(field);
 	    const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
 	    tmp_field.set_index(offset);
@@ -6742,10 +6749,10 @@ namespace Ioex {
 	  continue;
       
 	if (field_offset + comp_count - 1 > attribute_count) {
-	  std::ostringstream errmsg;
-	  errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
-		 << "', the indexing is incorrect.\n" 
-		 << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+    std::ostringstream errmsg;
+    errmsg << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
+     << "', the indexing is incorrect.\n"
+     << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
 	  IOSS_ERROR(errmsg);
 	}
 
