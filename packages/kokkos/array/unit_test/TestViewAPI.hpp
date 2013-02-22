@@ -92,6 +92,17 @@ struct TestViewOperator
 
 /*--------------------------------------------------------------------------*/
 
+template< class ViewType >
+ViewType create_test_view( const typename ViewType::shape_type shape )
+{
+  const unsigned stride =
+    KokkosArray::Impl::ShapeMap< typename ViewType::shape_type,
+                                 typename ViewType::array_layout >
+    ::template stride< typename ViewType::memory_space >( shape );
+
+  return ViewType( (typename ViewType::scalar_type *) 0 , shape , stride );
+}
+
 template< class DataType >
 struct rank {
 private:
@@ -143,8 +154,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc( left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -238,8 +249,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -331,8 +342,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -422,8 +433,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -511,8 +522,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -598,8 +609,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}
@@ -683,8 +694,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left( lsh )
-    , right( rsh )
+    , left(  create_test_view<left_view>( lsh ) )
+    , right( create_test_view<right_view>( rsh ) )
     , left_alloc(  left.allocation_count() )
     , right_alloc( right.allocation_count() )
     {}

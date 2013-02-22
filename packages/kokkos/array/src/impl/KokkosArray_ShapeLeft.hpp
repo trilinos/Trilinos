@@ -130,53 +130,6 @@ struct ShapeMap< Shape<ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> , LayoutLeft >
 };
 
 //----------------------------------------------------------------------------
-/** \brief  Subset of a multivector */
-
-template< unsigned ValueSize , unsigned s1 >
-struct SubShape< LayoutLeft , Shape< ValueSize, 1, 0 > ,
-                 LayoutLeft , Shape< ValueSize, 2, 0,s1 > >
-{
-  typedef Shape< ValueSize, 1, 0 >    DstShape ;
-  typedef Shape< ValueSize, 2, 0,s1 > SrcShape ;
-
-  typedef SubShape type ;
-
-  DstShape shape ;
-  size_t   stride ;
-  size_t   offset ;
-
-  SubShape( const SrcShape src , const unsigned src_stride , const size_t i1 )
-  {
-    assert_shape_bounds( src , 0 , i1 );
-    offset = ShapeMap<SrcShape,LayoutLeft>::offset( src , src_stride , 0 , i1 );
-    shape.N0     = src.N0 ;
-    stride       = 1 ;
-  }
-};
-
-template< unsigned ValueSize , unsigned s1 >
-struct SubShape< LayoutRight , Shape< ValueSize, 1, 0 > ,
-                 LayoutLeft ,  Shape< ValueSize, 2, 0,s1 > >
-{
-  typedef Shape< ValueSize, 1, 0 >    DstShape ;
-  typedef Shape< ValueSize, 2, 0,s1 > SrcShape ;
-
-  typedef SubShape type ;
-
-  DstShape shape ;
-  size_t   stride ;
-  size_t   offset ;
-
-  SubShape( const SrcShape src , const unsigned src_stride , const size_t i1 )
-  {
-    assert_shape_bounds( src , 0 , i1 );
-    offset = ShapeMap<SrcShape,LayoutLeft>::offset( src , src_stride , 0 , i1 );
-    shape.N0     = src.N0 ;
-    stride       = 1 ;
-  }
-};
-
-//----------------------------------------------------------------------------
 
 } /* namespace Impl */
 } /* namespace KokkosArray */

@@ -607,23 +607,10 @@ public:
   }
 
   /*------------------------------------------------------------------*/
-  /** \brief  For unit testing shape mapping. */
-  explicit View( const shape_type & shape )
-    {
-      unsigned stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( shape );
-      internal_private_assign( shape , stride , 0 );
-    }
-
-  /*------------------------------------------------------------------*/
-  /* Create an unmannaged view */
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( scalar_type * data_ptr , const shape_type shape , const unsigned stride )
   {
-    typedef typename
-     Impl::StaticAssertSame< MemoryUnmanaged , memory_management >::type
-       ok_create ;
-
     internal_private_assign( shape , stride , data_ptr );
   }
 };
