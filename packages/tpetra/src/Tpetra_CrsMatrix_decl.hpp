@@ -925,17 +925,54 @@ namespace Tpetra {
     //! @name Advanced templated methods
     //@{
 
-    //! Multiplies this matrix by a MultiVector.
-    /*! If \c trans is \c Teuchos::NO_TRANS, then  X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
-      Otherwise, then  X is should be described by the row map of the matrix and \c Y should be described by the column map of the matrix.
-
-      Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
-
-      This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
-
-      If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
-      will be accumulated into \c Y.
-    */
+    /// \brief Compute a sparse matrix-MultiVector product local to each process.
+    ///
+    /// This method computes the <i>local</i> part of <tt>Y := beta*Y
+    /// + alpha*Op(A)*X</tt>, where <tt>Op(A)</tt> is either \f$A\f$,
+    /// \f$A^T\f$ (the transpose), or \f$A^H\f$ (the conjugate
+    /// transpose).  "The local part" means that this method does no
+    /// communication between processes, even if this is necessary for
+    /// correctness of the matrix-vector multiply.  Use the apply()
+    /// method if you want to compute the mathematical sparse
+    /// matrix-vector multiply.  
+    ///
+    /// This method is mainly of use to Tpetra developers, though some
+    /// users may find it helpful if they plan to reuse the result of
+    /// doing an Import on the input MultiVector for several sparse
+    /// matrix-vector multiplies with matrices that have the same
+    /// column Map.
+    ///
+    /// When <tt>Op(A)</tt> is \f$A\f$ (<tt>trans ==
+    /// Teuchos::NO_TRANS</tt>), then X's Map must be the same as the
+    /// column Map of this matrix, and Y's Map must be the same as the
+    /// row Map of this matrix.  We say in this case that X is
+    /// "post-Imported," and Y is "pre-Exported."  When <tt>Op(A)</tt>
+    /// is \f$A^T\f$ or \f$A^H\f$ (\c trans is <tt>Teuchos::TRANS</tt>
+    /// or <tt>Teuchos::CONJ_TRANS</tt>, then X's Map must be the same
+    /// as the row Map of this matrix, and Y's Map must be the same as
+    /// the column Map of this matrix.
+    ///
+    /// Both X and Y must have constant stride, and they may not alias
+    /// one another (that is, occupy overlapping space in memory).  We
+    /// may not necessarily check for aliasing, and if we do, we will
+    /// only do this in a debug build.  Aliasing X and Y may cause
+    /// nondeterministically incorrect results.
+    ///
+    /// This method is templated on the type of entries in both the
+    /// input MultiVector (\c DomainScalar) and the output MultiVector
+    /// (\c RangeScalar).  Thus, this method works for MultiVector
+    /// objects of arbitrary type.  However, this method only performs
+    /// computation local to each MPI process.  Use
+    /// CrsMatrixMultiplyOp to handle global communication (the Import
+    /// and Export operations for the input resp. output MultiVector),
+    /// if you have a matrix with entries of a different type than the
+    /// input and output MultiVector objects.
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y will be overwritten with the result of the
+    /// multiplication, even if it contains <tt>NaN</tt>
+    /// (not-a-number) floating-point entries.  Otherwise, the
+    /// multiply result will be accumulated into \c Y.
     template <class DomainScalar, class RangeScalar>
     void
     localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -1006,14 +1043,22 @@ namespace Tpetra {
     //! @name Methods implementing Operator
     //@{
 
-    //! \brief Computes the sparse matrix-multivector multiplication.
-    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
-      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
-    */
-    void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = ScalarTraits<Scalar>::one(),
-               Scalar beta = ScalarTraits<Scalar>::zero()) const;
+    /// \brief Compute a sparse matrix-MultiVector multiply.
+    ///
+    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
+    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y's entries will be ignored, and Y will be
+    /// overwritten with the result of the multiplication, even if it
+    /// contains <tt>NaN</tt> (not-a-number) floating-point entries.
+    void 
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
+	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	   Scalar alpha = ScalarTraits<Scalar>::one(),
+	   Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
