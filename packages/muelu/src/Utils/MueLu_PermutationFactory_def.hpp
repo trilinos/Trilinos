@@ -159,7 +159,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
                                   "`PermutationStrategy' has incorrect value (" << strStrategy << ") in input to PermutationFactory."
                                   << "Check the documentation for a list of valid choices");
 
-
+  GetOStream(Runtime0, 0) << "Using " << strStrategy << " permutation strategy." << std::endl;
 
 }
 
