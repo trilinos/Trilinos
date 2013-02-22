@@ -305,8 +305,8 @@ namespace MueLu {
     C = C_in;
 
     if (C == Teuchos::null) {
-      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), 1);
-      else            C = MatrixFactory::Build(A.getRowMap(),    1);
+      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), 0);
+      else            C = MatrixFactory::Build(A.getRowMap(),    0);
     } else {
       C->resumeFill(); // why this is not done inside of Tpetra MxM?
       std::cout << "Reuse C pattern" << std::endl;
