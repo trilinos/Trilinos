@@ -17,7 +17,9 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <Parameter name="threshold"                           type="double" value="0.1"/>
+      <!--
+      <Parameter name="aggregation threshold"               type="double" value="0.1"/>
+      -->
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
