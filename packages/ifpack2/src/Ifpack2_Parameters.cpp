@@ -117,6 +117,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: overlap", (int)0);
 
   // Krylov smoother
+  params.set("krylov: iteration type",(int)1);
   params.set("krylov: number of iterations",(int)5);
   params.set("krylov: residual tolerance",(double)0.001);
   params.set("krylov: block size",(int)1);
