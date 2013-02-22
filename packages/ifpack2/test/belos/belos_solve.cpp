@@ -125,7 +125,7 @@ int main(int argc, char*argv[])
       Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
       int actual_iters = solver->getNumIters();
       if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
-        *out << "End Result: TEST PASSED" << std::endl;
+        success = false;
       }
       else {
         *out << "Actual iters("<<actual_iters
@@ -142,10 +142,10 @@ int main(int argc, char*argv[])
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success)
 
   if (success) {
-    *out << "FINAL PASSED\n";
+    *out << "End Result: TEST PASSED\n";
   }
   else {
-    *out << "FINAL FAILED\n";
+    *out << "End Result: TEST FAILED\n";
   }
 
   return ( success ? 0 : 1 );
