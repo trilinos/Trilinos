@@ -46,10 +46,6 @@ SET(Rythmos_ImplicitRK_ConvergenceTest_MPI_1_DISABLE TRUE)
 SET(ML_Blackboard_MPI_4_DISABLE TRUE)
 SET(ML_AdaptiveSA_MPI_4_DISABLE TRUE)
 
-# We don't need TPINodes!
-SET(KokkosClassic_ENABLE_ThreadPool OFF CACHE BOOL "")
-SET(KokkosClassic_DefaultNode "Kokkos::SerialNode" CACHE STRING "")
-
 # Turn off some failing Belos and Anasazi tests (see Trilinos bugs 5382 and 5383)
 SET(Belos_Tpetra_MVOPTester_complex_test_MPI_4_DISABLE TRUE)
 SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
