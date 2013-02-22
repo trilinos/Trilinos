@@ -1761,9 +1761,6 @@ namespace stk {
       // not used (yet)
       static unsigned renumber_quad_face_interior_nodes_quad8(unsigned original_node)
       {
-        // FIXME
-        if (1) return renumber_quad_face_interior_nodes(original_node);
-
         static int face_interior_inverse_map[] = { -1, /* 0 */
                                                    -1, -2, -3, -4, -5, -6, -7,
                                                    4,  /* 8 */
@@ -1902,9 +1899,14 @@ namespace stk {
                 ++n_face_n;
               }
 
-            if (1 && fromTopoKey == topo_key_hex20)
+            if (fromTopoKey == topo_key_hex20)
               {
                 n_ord = 9;
+              }
+            if (fromTopoKey == topo_key_wedge15)
+              {
+                if (i_face <= 2)  // quad faces
+                  n_ord = 9;
               }
 
             i_ord = 0;
@@ -1931,7 +1933,19 @@ namespace stk {
                       {
                         if (doRenumber)
                           {
-                            i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
+                            // FIXME - just reuse quad9 renumbering
+                            i_ord = renumber_quad_face_interior_nodes(i_face_n);
+                            //i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
+                            //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
+                          }
+                      }
+                    if (fromTopoKey == topo_key_wedge15 && i_face <= 2)
+                      {
+                        if (doRenumber)
+                          {
+                            // FIXME - just reuse quad9 renumbering
+                            i_ord = renumber_quad_face_interior_nodes(i_face_n);
+                            //i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
                             //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
                           }
                       }

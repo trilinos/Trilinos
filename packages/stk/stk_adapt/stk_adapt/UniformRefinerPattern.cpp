@@ -515,7 +515,7 @@ namespace stk {
       // try search
       for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
         {
-          PerceptMesh::element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity);
+          eMesh.element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity);
           if (permIndex >= 0)
             {
               k_element_side = j_element_side;

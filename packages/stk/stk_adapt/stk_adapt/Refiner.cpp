@@ -532,6 +532,8 @@ namespace stk {
 
       m_nodeRegistry->dumpDB("start of doBreak");
 
+      //m_eMesh.dump_vtk("before-ref.vtk");
+
       if (0) doPrintSizes();
 
       get_side_part_relations(false, m_side_part_map);
@@ -954,8 +956,14 @@ namespace stk {
       //std::cout << "tmp dump_elements 1" << std::endl;
       // m_eMesh.dump_elements();
 #endif
-      //m_eMesh.dump_vtk("after-ref-b4-fix.vtk");
+      if (0)
+        {
+          bulkData.modification_end();
 
+          m_eMesh.dump_vtk("after-ref-b4-fix.vtk");
+          //m_eMesh.save_as("after-ref-b4-fix.e");
+          bulkData.modification_begin();
+        }
       /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
 
       /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
@@ -2003,7 +2011,7 @@ namespace stk {
                       boolean sameTopology = false; // FIXME - get this from the break pattern
                       if (sameTopology)
                         {
-                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                          m_eMesh.element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
                         }
 #endif
 
@@ -2012,7 +2020,7 @@ namespace stk {
                           // try search
                           for (unsigned j_child_side = 0; j_child_side < child_nsides; j_child_side++)
                             {
-                              PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
+                              m_eMesh.element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
                               if (0)
                                 std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex
                                           << " child= " << *child
@@ -2035,7 +2043,7 @@ namespace stk {
                                       << " parent_side_child= " << *parent_side_child
                                       <<  std::endl;
                           m_eMesh.get_bulk_data()->declare_relation(*child, *parent_side_child, k_child_side);
-                          PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                          m_eMesh.element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
                         }
                       else
                         {
@@ -2094,7 +2102,7 @@ namespace stk {
                             {
                               int permIndex = -1;
                               int permPolarity = 1;
-                              PerceptMesh::element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
+                              m_eMesh.element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
                               if (permIndex >= 0)
                                 {
                                   found = true;
@@ -2223,7 +2231,7 @@ namespace stk {
                           {
                             int permIndex = -1;
                             int permPolarity = 1;
-                            PerceptMesh::element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
+                            m_eMesh.element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
                             if (permIndex >= 0)
                               {
                                 found = true;
@@ -2330,7 +2338,7 @@ namespace stk {
                         {
                           int permIndex = -1;
                           int permPolarity = 1;
-                          PerceptMesh::element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
+                          m_eMesh.element_side_permutation(element, side, j_element_side, permIndex, permPolarity);
                           if (permIndex >= 0)
                             {
                               found = true;
@@ -2575,7 +2583,7 @@ namespace stk {
               stk::mesh::PartVector& epv = iter->second;
               for (unsigned iepv=0; iepv < epv.size(); iepv++)
                 {
-                  std::cout << "Refiner::get_side_part_relations: side_part = " << iter->first->name() << " elem_part= " << epv[iepv]->name() << std::endl;
+                  std::cout << "Refiner::get_side_part_relations: side_part = " << std::setw(50) << iter->first->name() << " elem_part= " << std::setw(50) << epv[iepv]->name() << std::endl;
                 }
             }
         }
@@ -2702,7 +2710,7 @@ namespace stk {
               stk::mesh::Entity side = *it_side;
 
               bool found = false;
-
+              bool valid_side_part_map = false;
               stk::mesh::PairIterRelation side_nodes = side.relations(node_rank);
 
               for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
@@ -2720,13 +2728,120 @@ namespace stk {
                       // FIXME
                       if (m_eMesh.isLeafElement(element))
                         {
-                          if (connectSidesForced(element, side))
-                            found = true;
+                          if (connectSidesForced(element, side, valid_side_part_map))
+                            {
+                              found = true;
+                            }
                         }
                       if (found) break;
                     }
                   if (found) break;
                 }
+
+              // try again with coordinate compare
+              const bool try_again = false; // for future...
+              if (try_again && !found)
+                {
+                  if (DEBUG_GSPR) std::cout << "tmp srk f2: !found... " << std::endl;
+                  stk::mesh::Entity found_element;
+                  for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
+                    {
+                      stk::mesh::PairIterRelation node_elements = side_nodes[isnode].entity().relations(element_rank);
+                      for (unsigned ienode=0; ienode < node_elements.size(); ienode++)
+                        {
+                          stk::mesh::Entity element = node_elements[ienode].entity();
+
+                          if (element.relations(node_rank).size() == 0)
+                            continue;
+                          if (m_eMesh.isGhostElement(element))
+                            continue;
+
+                          // FIXME
+                          if (m_eMesh.isLeafElement(element))
+                            {
+                              bool csf = connectSidesForced(element, side, valid_side_part_map, true);
+                              if (DEBUG_GSPR) {
+                                std::cout << "tmp srk f2: csf= " << csf << " elem= "; m_eMesh.print(element, true, true);
+                                std::cout << " side= "; m_eMesh.print(side, true, true); 
+                              }
+                              if (csf)
+                                {
+                                  found = true;
+                                  found_element = element;
+                                }
+                            }
+                          if (found) break;
+                        }
+                      if (found) break;
+                    }
+
+                  // brute force
+                  if (1 && !found)
+                    {
+                      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
+                      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+                        {
+                          stk::mesh::Bucket & bucket = **k ;
+                          const unsigned num_elements_in_bucket = bucket.size();
+                          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                            {
+                              stk::mesh::Entity element = bucket[iElement];
+                              if (element.relations(node_rank).size() == 0)
+                                continue;
+                              if (m_eMesh.isGhostElement(element))
+                                continue;
+
+                              // FIXME
+                              if (m_eMesh.isLeafElement(element))
+                                {
+                                  bool csf = connectSidesForced(element, side, valid_side_part_map, true);
+                                  if (csf && DEBUG_GSPR) {
+                                    std::cout << "tmp srk f2a: csf= " << csf << " elem= "; m_eMesh.print(element, true, true);
+                                    std::cout << " side= "; m_eMesh.print(side, true, true);
+                                  }
+                                  if (csf)
+                                    {
+                                      found = true;
+                                      found_element = element;
+                                    }
+                                }
+                              if (found) break;
+                            }
+                          if (found) break;
+                        }
+                    }
+
+                  if (found)
+                    {
+                      double ave_edge_length = m_eMesh.edge_length_ave(side);
+
+                      const mesh::PairIterRelation elem_nodes = found_element.relations(stk::mesh::MetaData::NODE_RANK);
+                      for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
+                        {
+                          stk::mesh::Entity side_node = side_nodes[isnode].entity();
+                          for (unsigned ienode=0; ienode < elem_nodes.size(); ienode++)
+                            {
+                              stk::mesh::Entity elem_node = elem_nodes[ienode].entity();
+                              if (!m_eMesh.match(side_node, elem_node, false, ave_edge_length)
+                                  && m_eMesh.match(side_node, elem_node, true, ave_edge_length))
+                                {
+                                  EXCEPTWATCH;
+                                  std::cout << "fix_side_sets_2: reconnecting side_node= " << side_node.identifier() << " to " << elem_node.identifier() << std::endl;
+                                  bool del = m_eMesh.get_bulk_data()->destroy_relation( side, side_node, side_nodes[isnode].relation_ordinal());
+                                  if (!del)
+                                    {
+                                      throw std::runtime_error("fix_side_sets_2::couldn't delete relation");
+                                    }
+                                  {
+                                    EXCEPTWATCH;
+                                    m_eMesh.get_bulk_data()->declare_relation( side, elem_node, side_nodes[isnode].relation_ordinal());
+                                  }
+                                  break;
+                                }
+                            }
+                        }
+                    }
+                } // try again
 
               if (!found)
                 {
@@ -2755,7 +2870,7 @@ namespace stk {
     }
 
     // if the element (element) has a side that matches  the given side (side_elem), connect them but first delete old connections
-    bool Refiner::connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem)
+    bool Refiner::connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, bool& valid_side_part_map, bool use_coordinate_compare)
     {
       EXCEPTWATCH;
       bool debug = false;
@@ -2765,6 +2880,9 @@ namespace stk {
       //           if (side_elem.identifier() == 11174) debug = true;
       //           if (side_elem.identifier() == 10190) debug = true;
       //         }
+      //       if (side_elem.identifier() == 5 && element.identifier() == 473) {
+      //         debug = true;
+      //       }
 
       shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
@@ -2775,7 +2893,6 @@ namespace stk {
       }
 
       // check validity of connection
-      bool valid_side_part_map = true;
       if (m_side_part_map.size())
         {
           bool valid = false;
@@ -2802,6 +2919,10 @@ namespace stk {
                   stk::mesh::PartVector::iterator found_elem_part = std::find(found->second.begin(), found->second.end(), elem_parts[iep]);
                   if (found_elem_part != found->second.end())
                     {
+                      if (DEBUG_GSPR && 0)
+                        {
+                          std::cout << "connectSidesForced: found side/elem parts = " << found->first->name() << " " << (*found_elem_part)->name() << std::endl;
+                        }
                       valid = true;
                       break;
                     }
@@ -2835,7 +2956,7 @@ namespace stk {
       // try search
       for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
         {
-          PerceptMesh::element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity);
+          m_eMesh.element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity, use_coordinate_compare, false);
           if (permIndex >= 0)
             {
               k_element_side = j_element_side;
@@ -2902,7 +3023,28 @@ namespace stk {
       else
         {
           // error condition?
-          //throw std::runtime_error("fixElementSides2: couldn't find a matching face");
+          if (0 && DEBUG_GSPR && valid_side_part_map)
+            {
+              std::cout << "connectSidesForced:: ERROR: side = " << side_elem << std::endl;
+              m_eMesh.print(side_elem);
+              std::cout << "\n elem= " << std::endl;
+              m_eMesh.print(element);
+
+              stk::mesh::PartVector side_parts;
+              side_elem.bucket().supersets(side_parts);
+              for (unsigned isp = 0; isp < side_parts.size(); isp++)
+                {
+                  std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
+                }
+              stk::mesh::PartVector elem_parts;
+              element.bucket().supersets(elem_parts);
+              for (unsigned isp = 0; isp < elem_parts.size(); isp++)
+                {
+                  std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
+                }
+
+              //throw std::runtime_error("connectSidesForced: couldn't find a matching face");
+            }
           return false;
         }
     }

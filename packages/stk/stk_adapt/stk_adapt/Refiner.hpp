@@ -192,7 +192,7 @@ namespace stk {
       void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
 
       bool connectSides(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap* side_part_map=0);
-      bool connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem);
+      bool connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, bool& valid_side_part_map, bool use_coordinate_compare=false);
       void fixElementSides2();
       void fixSides(stk::mesh::Entity parent);
 

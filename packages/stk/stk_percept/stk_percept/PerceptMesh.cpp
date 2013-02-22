@@ -2817,22 +2817,52 @@ namespace stk {
       }
     }
 
+    bool PerceptMesh::match(stk::mesh::Entity node_0, stk::mesh::Entity node_1, bool use_coordinate_compare,
+                            double ave_edge_length, double tol)
+    {
+      if (!use_coordinate_compare)
+        {
+          stk::mesh::EntityId id0 = node_0.identifier();
+          stk::mesh::EntityId id1 = node_1.identifier();
+          bool isSame = id0 == id1;
+          return isSame;
+        }
+      else
+        {
+          double sum=0.0;
+          int spatialDim = get_spatial_dim();
+          stk::mesh::FieldBase *coord_field = get_coordinates_field();
+          double *c_0 = field_data(coord_field, node_0);
+          double *c_1 = field_data(coord_field, node_1);
+          for (int i=0; i < spatialDim; i++)
+            {
+              sum += (c_0[i] - c_1[i])*(c_0[i] - c_1[i]);
+            }
+          sum = std::sqrt(sum);
+          return sum < ave_edge_length*tol;
+        }
+    }
     /** In @param returnedIndex, return the index of the nodes in @param side that is the start of the matching nodes in element.side[iSubDimOrd].nodes
      *  If the side/element face don't match, return -1.
      *  If the side/element face pair match, but with opposite polarity, return -1 in returnedPolarity, else 1.
      *
      */
     void PerceptMesh::
-    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal, int& returnedIndex, int& returnedPolarity)
+    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal, 
+                             int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare, bool debug)
     {
-      bool debug = false;
-      //if (side.identifier() == 46832) debug = true;
+      //if (side.identifier() == 5 && element.identifier() == 473) debug = true;
       if (debug) {
-        PerceptMesh *eMesh = PerceptMesh::get_static_instance();
-        std::cout << "tmp srk element_side_permutation: element_side_ordinal= " << element_side_ordinal << "  element= "; eMesh->print(element);
-        std::cout << " side= "; eMesh->print(side);
+        std::cout << "tmp srk esp element_side_permutation: element_side_ordinal= " << element_side_ordinal << "  ielement.isLeaf= " << isLeafElement(element) << " element= "; print(element);
+        std::cout << " side= "; print(side);
       }
 
+      double ave_edge_length=0.0;
+      if (use_coordinate_compare)
+        {
+          ave_edge_length = edge_length_ave(side);
+          if (debug) std::cout << "tmp srk esp: ave_edge_length= " << ave_edge_length << std::endl;
+        }
       returnedPolarity = 1;
       returnedIndex = -1;
 
@@ -2873,7 +2903,8 @@ namespace stk {
       int nside_verts = side_topo_data->vertex_count;
       if ((int)n_elem_side_nodes != nside_verts)
         {
-          if (debug) std::cout << "found wedge/pyr or shell/beam" << std::endl;
+          if (debug) std::cout << "tmp srk esp: element_side_permutation:: found wedge/pyr or shell/beam: n_elem_side_nodes= " 
+                               << n_elem_side_nodes << " nside_verts= " << nside_verts << std::endl;
           returnedIndex = -1;
           returnedPolarity = 1;
           return;
@@ -2884,13 +2915,14 @@ namespace stk {
         {
           unsigned knode = node_offset;
           // just look for the first node of the element's face, if one matches, break
-          if (elem_nodes[inodes[0]].entity().identifier() == side_nodes[ knode ].entity().identifier() )
+          //if (elem_nodes[inodes[0]].entity().identifier() == side_nodes[ knode ].entity().identifier() )
+          if (match(elem_nodes[inodes[0]].entity(), side_nodes[ knode ].entity(), use_coordinate_compare, ave_edge_length))
             {
               found_node_offset = (int)node_offset;
               break;
             }
           if (debug) {
-            std::cout << "n_elem_side_nodes= " << n_elem_side_nodes << " inodes[0]= " << inodes[0] << " knode= " << knode
+            std::cout << "tmp srk esp: n_elem_side_nodes= " << n_elem_side_nodes << " inodes[0]= " << inodes[0] << " knode= " << knode
                       << " enode= " << elem_nodes[inodes[0]].entity().identifier()
                       << " snode= " << side_nodes[ knode ].entity().identifier()
                       << " found_node_offset= " << found_node_offset
@@ -2906,7 +2938,8 @@ namespace stk {
               unsigned knode = (jnode + found_node_offset) % n_elem_side_nodes;
               VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
               VERIFY_OP_ON(knode, < , side_nodes.size(), "err 2005");
-              if (elem_nodes[inodes[jnode]].entity().identifier() != side_nodes[ knode ].entity().identifier() )
+              //if (elem_nodes[inodes[jnode]].entity().identifier() != side_nodes[ knode ].entity().identifier() )
+              if (!match(elem_nodes[inodes[jnode]].entity(), side_nodes[ knode ].entity(), use_coordinate_compare, ave_edge_length))
                 {
                   matched = false;
                   break;
@@ -2930,7 +2963,8 @@ namespace stk {
 
                   VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
                   VERIFY_OP_ON(knode, < , (int)side_nodes.size(), "err 2005");
-                  if (elem_nodes[inodes[jnode]].entity().identifier() != side_nodes[ knode ].entity().identifier() )
+                  //if (elem_nodes[inodes[jnode]].entity().identifier() != side_nodes[ knode ].entity().identifier() )
+                  if (!match(elem_nodes[inodes[jnode]].entity(), side_nodes[ knode ].entity(), use_coordinate_compare, ave_edge_length))
                     {
                       matched = false;
                       break;
@@ -4093,6 +4127,9 @@ namespace stk {
         case shards::Hexahedron<8>::key:
           return 12;
 
+        case shards::Quadrilateral<8>::key:
+          return 23;
+
           // unimplemented
         case shards::Node::key:
         case shards::Particle::key:
@@ -4108,7 +4145,6 @@ namespace stk {
         case shards::ShellTriangle<3>::key:
         case shards::ShellTriangle<6>::key:
 
-        case shards::Quadrilateral<8>::key:
         case shards::Quadrilateral<9>::key:
         case shards::ShellQuadrilateral<4>::key:
         case shards::ShellQuadrilateral<8>::key:

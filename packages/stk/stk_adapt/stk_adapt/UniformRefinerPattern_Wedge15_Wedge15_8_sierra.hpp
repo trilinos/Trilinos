@@ -4,7 +4,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#define FACE_BREAKER_W15_W15_8 0
+#define FACE_BREAKER_W15_W15_8 1
 #if FACE_BREAKER_W15_W15_8
 #include "UniformRefinerPattern_Quad8_Quad8_4_sierra.hpp"
 #include "UniformRefinerPattern_Tri6_Tri6_4_sierra.hpp"

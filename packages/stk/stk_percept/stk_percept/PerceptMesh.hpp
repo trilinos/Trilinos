@@ -520,6 +520,10 @@ namespace stk {
                                       std::string nodal_proc_id_name="PROCESSOR_ID",
                                       std::string nodal_local_id_name="LOCAL_ID");
 
+      // return if two nodes are the same by identifier (use_coordinate_compare=false) or by coordinate.
+      bool match(stk::mesh::Entity node_0, stk::mesh::Entity node_1, bool use_coordinate_compare,
+                 double ave_edge_length, double tol=1.e-5);
+
       /**
        * A family tree relation holds the parent/child relations for a refined mesh.
        *
@@ -642,8 +646,9 @@ namespace stk {
       static void
       element_side_nodes( const mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity>& side_node_entities );
 
-      static void
-      element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
+      void
+      element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd, 
+                               int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare=false, bool debug=false);
 
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
