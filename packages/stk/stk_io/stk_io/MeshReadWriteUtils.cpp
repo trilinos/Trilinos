@@ -133,14 +133,16 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
           // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
           int side_ordinal = elem_side[is*2+1] - 1;
 
-          stk::mesh::Entity side;
-          if (par_dimen == 1)
-            side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
-          else if (par_dimen == 2)
-            side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
-
-          bulk.change_entity_parts( side, add_parts );
-          sides[is] = side;
+          if (par_dimen == 1) {
+            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
+            bulk.change_entity_parts( side, add_parts );
+            sides[is] = side;
+          }
+          else if (par_dimen == 2) {
+            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+            bulk.change_entity_parts( side, add_parts );
+            sides[is] = side;
+          }
         } else {
           sides[is] = stk::mesh::Entity();
         }
