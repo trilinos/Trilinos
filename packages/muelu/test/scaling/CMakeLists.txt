@@ -77,7 +77,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml
+    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml milestone.xml
     )
 
 ENDIF()
