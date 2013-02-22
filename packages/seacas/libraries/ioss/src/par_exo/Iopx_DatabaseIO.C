@@ -682,7 +682,7 @@ namespace Iopx {
 	    dbState = Ioss::STATE_INVALID;
 	    // NOTE: Code will not continue past this call...
 	    std::ostringstream errmsg;
-	    errmsg << "Cannot create specified file '" << get_filename() << "'";
+	    errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
 	    IOSS_ERROR(errmsg);
 	  }
 	}
@@ -694,7 +694,7 @@ namespace Iopx {
 	fileExists = false;
 	// NOTE: Code will not continue past this call...
 	std::ostringstream errmsg;
-	errmsg << "Problem opening specified file '" << get_filename() << "'";
+	errmsg << "ERROR: Problem opening specified file '" << get_filename() << "'";
 	IOSS_ERROR(errmsg);
       }
 
@@ -884,7 +884,7 @@ namespace Iopx {
     } else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "Negative node count was found in the model\n"
+      errmsg << "ERROR: Negative node count was found in the model\n"
 	     << "       File: '" << get_filename() << "'.\n";
       IOSS_ERROR(errmsg);
     }
@@ -896,7 +896,7 @@ namespace Iopx {
     if (elementCount < 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "Negative element count was found in the model, file: '"
+      errmsg << "ERROR: Negative element count was found in the model, file: '"
 	     << get_filename() << "'";
       IOSS_ERROR(errmsg);
     }
@@ -904,7 +904,7 @@ namespace Iopx {
     if (elementCount > 0 && m_groupCount[EX_ELEM_BLOCK] <= 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "No element blocks were found in the model, file: '" << get_filename() << "'";
+      errmsg << "ERROR: No element blocks were found in the model, file: '" << get_filename() << "'";
       IOSS_ERROR(errmsg);
     }
 
@@ -2252,7 +2252,7 @@ namespace Iopx {
 	get_reduction_field(EX_GLOBAL, field, get_region(), data);
       } else {
 	std::ostringstream errmsg;
-	errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
+	errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
 	IOSS_ERROR(errmsg);
       }
       return num_to_get;
@@ -2751,7 +2751,7 @@ namespace Iopx {
 	    }
 	  } else {
 	    std::ostringstream errmsg;
-	    errmsg << "Invalid commset type " << type;
+	    errmsg << "ERROR: Invalid commset type " << type;
 	    IOSS_ERROR(errmsg);
 	  }
 
@@ -2775,7 +2775,7 @@ namespace Iopx {
       int64_t entity_count = fb->get_property("entity_count").get_int();
       if (num_to_get != entity_count) {
 	std::ostringstream errmsg;
-	errmsg << "Partial field input not yet implemented for side blocks";
+	errmsg << "ERROR: Partial field input not yet implemented for side blocks";
 	IOSS_ERROR(errmsg);
       }
 
@@ -3588,7 +3588,7 @@ namespace Iopx {
 	;
       } else {
 	std::ostringstream errmsg;
-	errmsg << "The variable named '" << field.get_name()
+	errmsg << "ERROR: The variable named '" << field.get_name()
 	       << "' is of the wrong type. A region variable must be of type"
 	       << " TRANSIENT or REDUCTION.\n"
 	       << "This is probably an internal error; please notify gdsjaar@sandia.gov";

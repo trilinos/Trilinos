@@ -47,12 +47,12 @@ Ioss::Transform* Factory::create(const std::string& type)
   if (iter == registry()->end()) {
     if (registry()->size() == 0) {
       std::ostringstream errmsg;
-      errmsg << "FATAL: No transformations have been registered.\n"
+      errmsg << "ERROR: No transformations have been registered.\n"
 	     << "       Was Iotr::Initializer::initialize() called?\n\n";
       IOSS_ERROR(errmsg);
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: The transform named '" << type
+      errmsg << "ERROR: The transform named '" << type
 	     << "' is not supported.\n";
       IOSS_ERROR(errmsg);
     }

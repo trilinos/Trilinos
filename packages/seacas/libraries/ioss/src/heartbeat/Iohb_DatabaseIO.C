@@ -407,7 +407,7 @@ namespace Iohb {
       }
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
+      errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
       IOSS_ERROR(errmsg);
     }
     return num_to_get;

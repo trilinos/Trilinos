@@ -557,14 +557,14 @@ namespace Ioex {
     if (Ioss::SerializeIO::isEnabled()) {
       if (!Ioss::SerializeIO::inBarrier()) {
 	std::ostringstream errmsg;
-	errmsg << "Process " << Ioss::SerializeIO::getRank()
+	errmsg << "ERROR: Process " << Ioss::SerializeIO::getRank()
 	       << " is attempting to do I/O without serialized I/O";
 	IOSS_ERROR(errmsg);
       }
 
       if (!Ioss::SerializeIO::inMyGroup()) {
 	std::ostringstream errmsg;
-	errmsg << "Process " << Ioss::SerializeIO::getRank()
+	errmsg << "ERROR: Process " << Ioss::SerializeIO::getRank()
 	       << " is attempting to do I/O while " << Ioss::SerializeIO::getOwner()
 	       << " owns the token";
 	IOSS_ERROR(errmsg);
@@ -599,7 +599,7 @@ namespace Ioex {
 	    dbState = Ioss::STATE_INVALID;
 	    // NOTE: Code will not continue past this call...
 	    std::ostringstream errmsg;
-	    errmsg << "Cannot create specified file '" << decoded_filename << "'";
+	    errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
 	    IOSS_ERROR(errmsg);
 	  }
 	}
@@ -611,7 +611,7 @@ namespace Ioex {
 	fileExists = false;
 	// NOTE: Code will not continue past this call...
 	std::ostringstream errmsg;
-	errmsg << "Problem opening specified file '" << decoded_filename << "'";
+	errmsg << "ERROR: Problem opening specified file '" << decoded_filename << "'";
 	IOSS_ERROR(errmsg);
       }
 
@@ -828,7 +828,7 @@ namespace Ioex {
       // NOTE: Code will not continue past this call...
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
-      errmsg << "Negative node count was found in the model\n"
+      errmsg << "ERROR: Negative node count was found in the model\n"
 	     << "       File: '" << decoded_filename << "'.\n";
       IOSS_ERROR(errmsg);
     }
@@ -842,7 +842,7 @@ namespace Ioex {
       // NOTE: Code will not continue past this call...
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
-      errmsg << "Negative element count was found in the model, file: '"
+      errmsg << "ERROR: Negative element count was found in the model, file: '"
 	     << decoded_filename << "'";
       IOSS_ERROR(errmsg);
     }
@@ -851,7 +851,7 @@ namespace Ioex {
       // NOTE: Code will not continue past this call...
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
-      errmsg << "No element blocks were found in the model, file: '" << decoded_filename << "'";
+      errmsg << "ERROR: No element blocks were found in the model, file: '" << decoded_filename << "'";
       IOSS_ERROR(errmsg);
     }
 
@@ -983,7 +983,7 @@ namespace Ioex {
       nemesis_file = false;
       if (isParallel && util().parallel_size() > 1) {
 	std::ostringstream errmsg;
-	errmsg << "Exodus file does not contain nemesis information.\n";
+	errmsg << "ERROR: Exodus file does not contain nemesis information.\n";
 	IOSS_ERROR(errmsg);
       }
       num_proc = 1;
@@ -1001,7 +1001,7 @@ namespace Ioex {
     
     if (isParallel && num_proc != util().parallel_size() && util().parallel_size() > 1) {
       std::ostringstream errmsg;
-      errmsg <<  "Exodus file was decomposed for " << num_proc
+      errmsg <<  "ERROR: Exodus file was decomposed for " << num_proc
 	     << " processors; application is currently being run on "
 	     << util().parallel_size() << " processors";
       IOSS_ERROR(errmsg);
@@ -1009,14 +1009,14 @@ namespace Ioex {
     }
     if (num_proc_in_file != 1) {
       std::ostringstream errmsg;
-      errmsg <<"Exodus file contains data for " << num_proc_in_file
+      errmsg <<"ERROR: Exodus file contains data for " << num_proc_in_file
 	     << " processors; application requires 1 processor per file.";
       IOSS_ERROR(errmsg);
       
     }
     if (file_type[0] != 'p') {
       std::ostringstream errmsg;
-      errmsg << "Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
+      errmsg << "ERROR: Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
       IOSS_ERROR(errmsg);
     }
 
@@ -2588,7 +2588,7 @@ namespace Ioex {
 	  get_reduction_field(EX_GLOBAL, field, get_region(), data);
 	} else {
 	  std::ostringstream errmsg;
-	  errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
+	  errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
 	  IOSS_ERROR(errmsg);
 	}
 	return num_to_get;
@@ -3279,7 +3279,7 @@ namespace Ioex {
 	      }
 	    } else {
 	      std::ostringstream errmsg;
-	      errmsg << "Invalid commset type " << type;
+	      errmsg << "ERROR: Invalid commset type " << type;
 	      IOSS_ERROR(errmsg);
 	    }
 
@@ -3305,7 +3305,7 @@ namespace Ioex {
 	int64_t entity_count = fb->get_property("entity_count").get_int();
 	if (num_to_get != entity_count) {
 	  std::ostringstream errmsg;
-	  errmsg << "Partial field input not yet implemented for side blocks";
+	  errmsg << "ERROR: Partial field input not yet implemented for side blocks";
 	  IOSS_ERROR(errmsg);
 	}
 
@@ -4130,7 +4130,7 @@ namespace Ioex {
 	  ;
 	} else {
 	  std::ostringstream errmsg;
-	  errmsg << "The variable named '" << field.get_name()
+	  errmsg << "ERROR: The variable named '" << field.get_name()
 		 << "' is of the wrong type. A region variable must be of type"
 		 << " TRANSIENT or REDUCTION.\n"
 		 << "This is probably an internal error; please notify gdsjaar@sandia.gov";
@@ -5308,7 +5308,7 @@ namespace Ioex {
 
 	} else {
 	  std::ostringstream errmsg;
-	  errmsg << "Invalid commset type " << type;
+	  errmsg << "ERROR: Invalid commset type " << type;
 	  IOSS_ERROR(errmsg);
 	}
       } else if (field.get_name() == "ids") {

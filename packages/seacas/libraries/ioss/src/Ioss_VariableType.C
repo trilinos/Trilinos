@@ -173,7 +173,7 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_nam
       inst = (*iter).second;
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: The variable type '" << raw_name << "' is not supported.\n";
+      errmsg << "ERROR: The variable type '" << raw_name << "' is not supported.\n";
       IOSS_ERROR(errmsg);
     }
   } else {
