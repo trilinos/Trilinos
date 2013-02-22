@@ -37,7 +37,7 @@
 
 #define IFPACK2_INST_SPARSE_PREC(S,LO,GO) \
   template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::Preconditioner<S,LO,GO,NO> >;
+			Ifpack2::Preconditioner<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType> >;
 
 namespace Ifpack2 {
   
