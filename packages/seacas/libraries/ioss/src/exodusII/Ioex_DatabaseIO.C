@@ -6625,7 +6625,8 @@ namespace Ioex {
 	  }
 
 	  if (unknown_attributes > 0) {
-	    att_name = "extra_attribute";
+	    att_name = "extra_attribute_";
+	    att_name += Ioss::Utils::to_string(unknown_attributes);
 	    std::string storage = "Real[";
 	    storage += Ioss::Utils::to_string(unknown_attributes);
 	    storage += "]";
