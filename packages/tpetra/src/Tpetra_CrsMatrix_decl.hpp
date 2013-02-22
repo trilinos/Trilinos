@@ -56,7 +56,25 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+//#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of CrsMatrixMultiplyOp.
+//
+// Note the lack of default arguments here; they belong in the class
+// definition, not in the forward declaration.
+namespace Tpetra {
+template <class Scalar,
+	  class MatScalar,
+	  class LocalOrdinal,
+	  class GlobalOrdinal,
+	  class Node,
+	  class LocalMatOps>
+class CrsMatrixMultiplyOp;
+  // : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
