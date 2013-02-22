@@ -89,6 +89,8 @@ namespace MueLu {
 
     virtual void SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
 
+    virtual const ArrayRCP<const bool > GetBoundaryNodeMap() const = 0;
+
     //FIXME is this necessary?
     //! Return number of global edges in the graph.
     virtual Xpetra::global_size_t GetGlobalNumEdges() const = 0;
