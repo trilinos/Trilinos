@@ -38,6 +38,8 @@
 #include "Ifpack2_ILUT_def.hpp"
 #include "Ifpack2_Chebyshev_decl.hpp"
 #include "Ifpack2_Chebyshev_def.hpp"
+#include "Ifpack2_AdditiveSchwarz_decl.hpp"
+#include "Ifpack2_AdditiveSchwarz_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
@@ -55,6 +57,10 @@
   template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
 			Ifpack2::Chebyshev<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
 
+#define IFPACK2_INST_SPARSE_ADDITIVE(S,LO,GO) \
+  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
+			Ifpack2::AdditiveSchwarz<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > > >;
+
 namespace Ifpack2 {
   
   IFPACK2_ETI_MANGLING_TYPEDEFS()
@@ -64,6 +70,8 @@ namespace Ifpack2 {
   IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ILUT)
 
   IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_CHEBY)
+
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ADDITIVE)
 
 }
 

@@ -48,6 +48,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "--netcdf-dir=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0"
   "--verbose-errors"
+  "-j ${CTEST_PARALLEL_LEVEL}"
   )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -59,8 +60,8 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_10.8
-  ctest_linux_nightly_mpi_development_opt_backwards_10_8_trilinos-test2.cmake
+  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.0
+  ctest_linux_nightly_mpi_development_opt_backwards_11_0_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
   DEPENDS Install_Trilinos
   REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake

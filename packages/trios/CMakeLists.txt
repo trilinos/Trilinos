@@ -67,6 +67,8 @@ INCLUDE(TriosProbeTimers)
 INCLUDE(TriosProbeNetwork)
 # Checks for a POSIX semaphore implementation
 INCLUDE(TriosProbeSemaphores)
+# Checks for the gettid() system call
+INCLUDE(TriosProbeGettid)
 # Check XDR implementation
 INCLUDE(TriosProbeXDR)
 

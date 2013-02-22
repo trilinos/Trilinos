@@ -112,11 +112,11 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -167,11 +167,11 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -320,11 +320,11 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -369,17 +369,15 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -423,17 +421,15 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -502,19 +498,17 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
     RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
-
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -554,19 +548,17 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
     RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
-
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -611,19 +603,17 @@ namespace {
     panzer_stk::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
     RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
-
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -688,11 +678,11 @@ namespace {
     panzer_stk::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
-
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -702,7 +692,6 @@ namespace {
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
     my_DOFManager->addField("eblock-0_0",names[0], pattern);
     my_DOFManager->addField("eblock-0_1",names[1], pattern);
     my_DOFManager->addField(names[2], pattern);

@@ -974,9 +974,6 @@ namespace MueLu {
       oneOverDiagonal = VectorFactory::Build(A.getRowMap());
       oneOverDiagonal->reciprocal(*diagVec);
     }
-    //FIXME for the moment, the following matvec gives q and z the same coefficient pattern
-    //FIXME for PCE scalar types.  Discuss this with ETP.
-    A.apply(*qinit, *q);
     for (int iter = 0; iter < niters; ++iter) {
       z->norm2(norms);                               // Compute 2-norm of z
       q->update(one / norms[0],*z,zero);                 // Set q = z / normz
@@ -1197,7 +1194,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
       //     Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
       //     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal>::simple_Transpose(tpetraOp);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::simple_Transpose(tpetraOp);
       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
       RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
       RCP<Matrix> AAAA = rcp( new CrsMatrixWrap(AAA) );

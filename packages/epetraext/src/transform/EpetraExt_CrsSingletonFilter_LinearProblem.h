@@ -48,6 +48,7 @@
 #include "Epetra_SerialDenseVector.h"
 
 #include "EpetraExt_Transform.h"
+#include "Teuchos_RCP.hpp"
 
 class Epetra_LinearProblem;
 class Epetra_Map;
@@ -156,7 +157,7 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   int Analyze(Epetra_RowMatrix * FullMatrix);
 
   //! Returns true if singletons were detected in this matrix (must be called after Analyze() to be effective).
-  bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(RowMapColors_->MaxNumColors()>1);};
+  bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(NumSingletons()>0);};
   //@}
 
   //@{ \name Reduce methods.
@@ -214,13 +215,13 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   Epetra_LinearProblem * FullProblem() const {return(FullProblem_);};
 
   //! Returns pointer to the derived reduced Epetra_LinearProblem.
-  Epetra_LinearProblem * ReducedProblem() const {return(ReducedProblem_);};
+  Epetra_LinearProblem * ReducedProblem() const {return(ReducedProblem_.get());};
 
   //! Returns pointer to Epetra_CrsMatrix from full problem.
   Epetra_RowMatrix * FullMatrix() const {return(FullMatrix_);};
 
   //! Returns pointer to Epetra_CrsMatrix from full problem.
-  Epetra_CrsMatrix * ReducedMatrix() const {return(ReducedMatrix_);};
+  Epetra_CrsMatrix * ReducedMatrix() const {return(ReducedMatrix_.get());};
 
   //! Returns pointer to Epetra_MapColoring object: color 0 rows are part of reduced system.
   Epetra_MapColoring * RowMapColors() const {return(RowMapColors_);};
@@ -270,10 +271,10 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
 				    Epetra_Map * & RedistributeMap);
   
   Epetra_LinearProblem * FullProblem_;
-  Epetra_LinearProblem * ReducedProblem_;
+  Teuchos::RCP<Epetra_LinearProblem> ReducedProblem_;
   Epetra_RowMatrix * FullMatrix_;
   Epetra_CrsMatrix * FullCrsMatrix_;
-  Epetra_CrsMatrix * ReducedMatrix_;
+  Teuchos::RCP<Epetra_CrsMatrix> ReducedMatrix_;
   Epetra_MultiVector * ReducedRHS_;
   Epetra_MultiVector * ReducedLHS_;
   

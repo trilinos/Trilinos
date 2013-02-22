@@ -247,7 +247,7 @@ namespace MueLu {
 
       RCP<T> factory = rcp(new T());
 
-      const char* strarray[] = {"A", "P", "R", "Graph", "UnAmalgamationInfo", "Aggregates", "Nullspace", "TransferFactory"};
+      const char* strarray[] = {"A", "P", "R", "Graph", "UnAmalgamationInfo", "Aggregates", "Nullspace", "TransferFactory", "DofsPerNode"};
       std::vector<std::string> v(strarray, strarray + arraysize(strarray));
       for (std::vector<std::string>::iterator it = v.begin() ; it != v.end(); ++it) {
         if (paramList.isParameter(*it)) { factory->SetFactory(*it, BuildFactory(paramList.getEntry(*it), factoryMapIn)); }

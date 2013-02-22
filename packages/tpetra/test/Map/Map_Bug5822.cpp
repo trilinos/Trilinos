@@ -50,6 +50,7 @@
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 #include "Tpetra_Map_def.hpp"
 #include "Tpetra_Directory_def.hpp"
+#include "Tpetra_HashTable_def.hpp"
 #endif
 
 using Tpetra::global_size_t;
@@ -61,7 +62,6 @@ using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::tuple;
 using std::endl;
-
 
 // This test works (and exercises the interesting case) in serial mode
 // or for 1 MPI process, but it was originally written for 2 MPI

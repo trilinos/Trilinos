@@ -172,8 +172,8 @@ solveWithBelos (bool& converged,
                 const Teuchos::RCP<multivector_type>& X,
                 const Teuchos::RCP<const sparse_matrix_type>& A,
                 const Teuchos::RCP<const multivector_type>& B,
-                const Teuchos::RCP<const operator_type>& M_left=Teuchos::null,
-                const Teuchos::RCP<const operator_type>& M_right=Teuchos::null);
+                const Teuchos::RCP<operator_type>& M_left=Teuchos::null,
+                const Teuchos::RCP<operator_type>& M_right=Teuchos::null);
 
 } // namespace EpetraIntrepidPoissonExample
 } // namespace TrilinosCouplings

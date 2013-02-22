@@ -64,7 +64,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 {
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > result;
 
-  const std::string &solverType = piroParams->get("Piro Solver", "NOX");
+  const std::string &solverType = piroParams->get("Solver Type", "NOX");
 
 #ifdef Piro_ENABLE_NOX
   if (solverType == "NOX") {

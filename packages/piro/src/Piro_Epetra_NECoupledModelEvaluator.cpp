@@ -707,8 +707,6 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   }
   
 
-  int proc = comm->MyPID();
-
   // Evaluate models
   if (n_models == 2) {
     {
@@ -1010,11 +1008,6 @@ do_dimension_projection(
     inArgs.get_sg_basis();
   Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad =
     inArgs.get_sg_quadrature();
-  const Teuchos::Array<double>& weights = quad->getQuadWeights();
-  const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
-    quad->getBasisAtQuadPoints();
-  int nqp = weights.size();
-  const Teuchos::Array<double>& norms = basis->norm_squared();
   Teuchos::RCP<const Stokhos::ReducedPCEBasis<int,double> > red_basis = 
     Teuchos::rcp_dynamic_cast<const Stokhos::ReducedPCEBasis<int,double> >(reduced_inargs.get_sg_basis());
 

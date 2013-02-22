@@ -39,7 +39,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 4.8d)
+SET(PyTrilinos_VERSION 4.10d)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -203,6 +203,8 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 TRIBITS_EXCLUDE_FILES(
   doc/PyTrilinos-SciProg/CoupledSolver.png
   doc/PyTrilinos-SciProg/CoupledSolver.pptx
+  doc/PyTrilinos-SciProg/PyTrilinos.bib
+  doc/PyTrilinos-SciProg/PyTrilinos.tex
   doc/PyTrilinos-SciProg/Response.pdf
   doc/PyTrilinos-SciProg/Response.tex
   doc/PyTrilinos-SciProg/cage12rcb8.png

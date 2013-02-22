@@ -759,6 +759,15 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=False )
 
   clp.add_option(
+    "--continue-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_false",
+    help="If set, then the script will continue if no changes to push from any repo. [default]",
+    default=False )
+  clp.add_option(
+    "--abort-gracefully-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_true",
+    help="If set, then the script will abort gracefully if no changes to push from any repo.",
+    default=False )
+
+  clp.add_option(
     "--continue-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_false",
     help="If set, then the script will continue if no packages are enabled. [default]",
     default=False )
@@ -1023,6 +1032,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --abort-gracefully-if-no-updates \\"
   else:
     print "  --continue-if-no-updates \\"
+  if options.abortGracefullyIfNoChangesToPush:
+    print "  --abort-gracefully-if-no-changes-to-push \\"
+  else:
+    print "  --continue-if-no-changes-to-push \\"
   if options.abortGracefullyIfNoEnables:
     print "  --abort-gracefully-if-no-enables \\"
   else:

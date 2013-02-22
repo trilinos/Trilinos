@@ -319,6 +319,9 @@ struct nssi_result_header {
     /** @brief The remote memory address reserved for long results. */
     NNTI_buffer_t result_addr;
 
+    /** @brief The remote memory address reserved for long results ACK. */
+    NNTI_buffer_t result_ack_addr;
+
     /** @brief The return code of the function. */
     uint32_t rc;
 };

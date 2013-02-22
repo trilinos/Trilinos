@@ -219,12 +219,12 @@ namespace Amesos2 {
     /// Get the local number of non-zeros on this processor
     size_t getLocalNNZ() const;
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
     getRowMap() const {
       return row_map_;
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
     getColMap() const {
       return col_map_;
     }

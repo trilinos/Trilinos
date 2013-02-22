@@ -58,11 +58,15 @@
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
+// MueLu includes
+#include "MueLu_CreateTpetraPreconditioner.hpp"
 
 int
 main (int argc, char *argv[])
@@ -89,12 +93,18 @@ main (int argc, char *argv[])
   using std::endl;
   // Pull in typedefs from the example's namespace.
   typedef TpetraIntrepidPoissonExample::ST ST;
+  typedef TpetraIntrepidPoissonExample::LO LO;
+  typedef TpetraIntrepidPoissonExample::GO GO;
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef TpetraIntrepidPoissonExample::operator_type operator_type;
+
+  bool success = true;
+  try {
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -146,49 +156,40 @@ main (int argc, char *argv[])
 /**********************************************************************************/
 /********************************** GET XML INPUTS ********************************/
 /**********************************************************************************/
+  ParameterList inputList;
+  if (xmlInputParamsFile != "") {
+    *out << "Reading parameters from XML file \""
+         << xmlInputParamsFile << "\"..." << endl;
+    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, 
+					  outArg (inputList));
+    if (myRank == 0) {
+      inputList.print (*out, 2, true, true);
+      *out << endl;
+    }
+  }
 
   // Get Pamgen mesh definition string, either from the input
   // ParameterList or from our function that makes a cube and fills in
   // the number of cells along each dimension.
-  std::string meshInput;
-  if (xmlInputParamsFile == "") {
+  std::string meshInput = inputList.get("meshInput", "");
+  if (meshInput == "") {
     *out << "Generating mesh input string: nx = " << nx
          << ", ny = " << ny
          << ", nz = " << nz << endl;
     meshInput = makeMeshInput (nx, ny, nz);
   }
-  else {
-    // Read ParameterList from XML file.
-    ParameterList inputMeshList;
-    *out << "Reading mesh parameters from XML file \""
-         << xmlInputParamsFile << "\"..." << endl;
-    // FIXME (mfh 24 May 2012) If this only reads parameters on Proc
-    // 0, the check for the "meshInput" parameter below will be
-    // broken!
-    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, outArg (inputMeshList));
-    if (myRank == 0) {
-      inputMeshList.print (*out, 2, true, true);
-      *out << endl;
-    }
-    // If the input ParameterList has a "meshInput" parameter, use
-    // that, otherwise use our function.
-    if (inputMeshList.isParameter ("meshInput")) {
-      // Get Pamgen mesh definition string from the input ParameterList.
-      // There's nothing special about the "meshInput" parameter.
-      // Pamgen itself doesn't read ParameterLists, but takes a string
-      // of commands as input.  We've just chosen to make Pamgen's input
-      // string a parameter in the input ParameterList.
-      meshInput = inputMeshList.get<std::string> ("meshInput");
-    }
-    else {
-      meshInput = makeMeshInput (nx, ny, nz);
-    }
-  }
+
+  // Total application run time
+  {
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
 
   RCP<sparse_matrix_type> A;
   RCP<vector_type> B, X_exact, X;
-  makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
-                              out, err, verbose, debug);
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
+    makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+				out, err, verbose, debug);
+  }
 
   const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
   // X_exact is the exact solution of the PDE, projected onto the
@@ -198,12 +199,32 @@ main (int argc, char *argv[])
        << "||B||_2 = " << norms[1] << endl
        << "||A||_F = " << norms[2] << endl;
 
+  // Setup preconditioner
+  std::string prec_type = inputList.get("Preconditioner", "None");
+  RCP<operator_type> M;
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
+
+    if (prec_type == "MueLu") {
+      if (inputList.isSublist("MueLu")) {
+        ParameterList mueluParams = inputList.sublist("MueLu");
+        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+      } else {
+        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+      }
+    }
+  }
+
   bool converged = false;
   int numItersPerformed = 0;
-  const MT tol = STM::squareroot (STM::eps ());
-  const int maxNumIters = 100;
-  solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
-                  X, A, B, Teuchos::null, Teuchos::null);
+  const MT tol = inputList.get("Convergence Tolerance",
+			       STM::squareroot (STM::eps ()));
+  const int maxNumIters = inputList.get("Maximum Iterations", 100);
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
+    solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
+		    X, A, B, Teuchos::null, M);
+  }
 
   // Compute ||X-X_exact||_2
   MT norm_x = X_exact->norm2();
@@ -213,12 +234,20 @@ main (int argc, char *argv[])
        << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
        << endl;
 
+  } // total time block
+
   // Summarize timings
   // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
   // reportParams->set ("Report format", std::string ("YAML"));
   // reportParams->set ("writeGlobalStats", true);
   // Teuchos::TimeMonitor::report (*out, reportParams);
   Teuchos::TimeMonitor::summarize(std::cout);
-  return EXIT_SUCCESS;
+  
+  } //try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  if (success)
+    return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 }
 

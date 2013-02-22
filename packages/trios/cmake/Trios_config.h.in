@@ -63,6 +63,14 @@
 
 
 /* ************************************************
+ * Semaphore configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_UNISTD_H 1
+#cmakedefine HAVE_TRIOS_SYSCALL_H 1
+#cmakedefine HAVE_TRIOS_GETTID 1
+
+
+/* ************************************************
  * Timer configuration
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_SYS_TIME_H 1

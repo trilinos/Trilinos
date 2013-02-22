@@ -512,7 +512,10 @@ namespace Teuchos {
           return rcp_const_cast<const Banner> (banner);
         }
 
-        //! Report syntax errors in the spars matrix data of a Matrix Market file.
+        /// Report syntax errors in the input stream's sparse matrix data.
+	///
+	/// \param out [in/out] Output stream to which to report.
+	/// \param results [in] Return value of CoordDataReader's read() method.
         void
         reportBadness (std::ostream& out,
                        const std::pair<bool, std::vector<size_t> >& results)

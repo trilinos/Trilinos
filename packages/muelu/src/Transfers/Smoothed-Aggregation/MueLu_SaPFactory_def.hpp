@@ -162,9 +162,15 @@ namespace MueLu {
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
-        Magnitude stopTol = 1e-4;
-        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
-        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50, (Scalar)1e-7, true);
+        lambdaMax = A->GetMaxEigenvalueEstimate();
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
+          GetOStream(Statistics1, 0) << "Calculating max eigenvalue estimate now" << std::endl;
+          Magnitude stopTol = 1e-4;
+          lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+        } else {
+          GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
+        }
         GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 

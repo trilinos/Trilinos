@@ -104,7 +104,7 @@ namespace Xpetra {
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-    typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+    typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
   public:
 
@@ -557,6 +557,18 @@ namespace Xpetra {
         //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): no strided maps available."); // TODO remove this
         return 1;
     }; //TODO: why LocalOrdinal?
+
+    // ----------------------------------------------------------------------------------
+
+    virtual void SetMaxEigenvalueEstimate(Scalar const &sigma) {
+      operatorViewTable_.get(GetCurrentViewLabel())->SetMaxEigenvalueEstimate(sigma);
+    }
+
+    // ----------------------------------------------------------------------------------
+
+    virtual Scalar GetMaxEigenvalueEstimate() const {
+      return operatorViewTable_.get(GetCurrentViewLabel())->GetMaxEigenvalueEstimate();
+    }
 
     // ----------------------------------------------------------------------------------
 

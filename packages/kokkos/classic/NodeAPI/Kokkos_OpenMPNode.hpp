@@ -59,11 +59,9 @@ namespace Kokkos {
   /// \brief Kokkos Node using OpenMP for parallelization.
   class OpenMPNode : public StandardNodeMemoryModel {
   public:
-
     /// \brief Constructor.
     ///
-    /// The constructor currently accepts the following (optional)
-    /// parameters:
+    /// We accept the following (optional) parameters:
     /// - "Num Threads" (int): The number of threads that OpenMP
     ///   should use.  If not provided, or if -1 or 0, OpenMP will
     ///   pick the number of threads in the usual way.
@@ -71,7 +69,7 @@ namespace Kokkos {
     ///    status output to std::cout.
     ///
     /// \warning If you set the "Num Threads" parameter to a positive
-    ///   value, this will set the number of threads that _all_
+    ///   value, this will set the number of threads that <i>all</i>
     ///   OpenMPNode instances will use, not just this one.
     OpenMPNode(Teuchos::ParameterList &pl);
 
@@ -82,7 +80,7 @@ namespace Kokkos {
     /// argument.
     OpenMPNode();
 
-    /*! \brief Get default parameters for this node */
+    //! Get default parameters for this class.
     static ParameterList getDefaultParameters();
 
     //! Destructor.
@@ -143,7 +141,9 @@ namespace Kokkos {
     bool verbose_;
   };
 
-  template <> class ArrayOfViewsHelper<OpenMPNode> : public ArrayOfViewsHelperTrivialImpl<OpenMPNode> {};
+  template <> 
+  class ArrayOfViewsHelper<OpenMPNode> : 
+    public ArrayOfViewsHelperTrivialImpl<OpenMPNode> {};
 
 }
 

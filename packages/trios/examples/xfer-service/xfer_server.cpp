@@ -423,7 +423,7 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     // enqueue_reqs function and start the process_queue_reqs thread.
 
     if (num_threads > 0) {
-        log_debug(LOG_ALL, "Starting server threads");
+        log_debug(xfer_debug_level, "Starting server threads");
 
         rc = xfer_start_server_threads(num_threads, 1000);
 

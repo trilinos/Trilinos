@@ -59,7 +59,6 @@ namespace Tpetra {
   Directory<LO, GO, NT>::
   Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map)
   {
-    using Teuchos::gatherAll;
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
     // contiguous or noncontiguous.
