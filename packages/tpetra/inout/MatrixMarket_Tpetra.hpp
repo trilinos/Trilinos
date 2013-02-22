@@ -3309,12 +3309,11 @@ namespace Tpetra {
               << newMatrix->getDomainMap ()->getGlobalNumElements () << " "
               << newMatrix->getGlobalNumEntries () << endl;
 
-	  RCP<const map_type> gatherColMap = newMatrix->getColMap ();
 	  // The Matrix Market format expects one-based row and column
 	  // indices.  We'll convert the indices on output from
 	  // whatever index base they use to one-based indices.
           const GO rowIndexBase = gatherRowMap->getIndexBase ();
-          const GO colIndexBase = gatherColMap->getIndexBase ();
+          const GO colIndexBase = newMatrix->getColMap()->getIndexBase ();
           //
           // Print the entries of the matrix.
           //
@@ -3372,7 +3371,7 @@ namespace Tpetra {
 		   ++indIter, ++valIter) {
 		// Convert the column index from local to global.
 		const GO globalColIndex = 
-		  gatherColMap->getGlobalElement (*indIter);
+		  newMatrix->getColMap()->getGlobalElement (*indIter);
 		TEUCHOS_TEST_FOR_EXCEPTION(
                   globalColIndex == OTG::invalid(), std::logic_error,
 		  "On local row " << localRowIndex << " of the sparse matrix: "
@@ -3630,7 +3629,6 @@ namespace Tpetra {
 	// that case, it will appear multiple times in the first
 	// column, with a different PID each time.
 	{
-	  const pid_type myRank = map.getComm ()->getRank ();
 	  ArrayRCP<int_type> V1 = data.getDataNonConst (1);
 	  for (int_type k = 0; k < gidList.size (); ++k) {
 	    V1[k] = as<int_type> (myRank);
