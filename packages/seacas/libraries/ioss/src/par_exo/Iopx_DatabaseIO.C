@@ -5847,6 +5847,13 @@ namespace Iopx {
 	  std::vector<Ioss::Field>::const_iterator IF;
 	  for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
 	    Ioss::Field field = *IF;
+	    if (block->field_exists(field.get_name())) {
+	      std::ostringstream errmsg;
+	      errmsg << "ERROR: In block '" << block->name() << "', attribute '" << field.get_name()
+	                            << "' is defined multiple times which is not allowed.\n";
+	      IOSS_ERROR(errmsg);
+	    }
+
 	    block->field_add(field);
 	    const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
 	    tmp_field.set_index(offset);
