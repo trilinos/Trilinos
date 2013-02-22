@@ -140,8 +140,12 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     // construct aggStat information
     Teuchos::ArrayRCP<unsigned int> aggStat;
     if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
+    const ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     for(LocalOrdinal i=0; i<nRows; ++i) {
-      aggStat[i] = NodeStats::READY;
+      if (dirichletBoundaryMap[i] == false)
+        aggStat[i] = NodeStats::READY;
+      else
+        aggStat[i] = NodeStats::BOUNDARY;
       GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
       if(SmallAggMap != Teuchos::null) {
          // reconstruct global row id (FIXME only works for contiguous maps)
@@ -150,7 +154,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
             aggStat[i] = MueLu::NodeStats::SMALLAGG;
           }
         }
-       }
+      }
       if(OnePtMap != Teuchos::null) {
         // reconstruct global row id (FIXME only works for contiguous maps)
         for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
