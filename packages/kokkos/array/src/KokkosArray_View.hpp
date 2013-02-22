@@ -46,6 +46,7 @@
 
 #include <string>
 #include <KokkosArray_Macros.hpp>
+
 #include <KokkosArray_MemoryManagement.hpp>
 
 #include <impl/KokkosArray_StaticAssert.hpp>
@@ -59,8 +60,18 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class MemorySpace , class ValueType , class Shape , class Layout , unsigned Rank = Shape::rank >
+template< class MemorySpace ,
+          class ValueType ,
+          class Shape ,
+          class Layout ,
+          unsigned Rank = Shape::rank >
 class ViewOper ;
+
+template< class DstViewType , class SrcViewType , class Enable = void >
+struct ViewAssignment ;
+
+template< class DstViewType , class Enable = void >
+struct ViewAllocation ;
 
 template< class DstScalar , class DstMemory , class DstManagement ,
           class SrcScalar , class SrcMemory , class SrcManagement >
@@ -87,39 +98,164 @@ namespace KokkosArray {
 template< class DataType ,
           class LayoutType ,
           class DeviceType = LayoutType ,
-          class ManagementType = DeviceType >
-class View
-  : public Impl::ViewOper<
-      typename DeviceType::memory_space ,
-      typename Impl::AnalyzeShape< DataType >::value_type ,
-      typename Impl::AnalyzeShape< DataType >::shape ,
-      typename LayoutType::array_layout >
+          class MemoryTraits = void >
+class View ;
+
+
+/** \brief  ViewTraits
+ *
+ *  Template argument possibilities:
+ *    View< T , Device , Device , void >
+ *    View< T , Device , MemoryTraits , void >
+ *    View< T , Layout , Device , void >
+ *    View< T , Layout , Device , MemoryTraits >
+ */
+
+template< class DataType ,
+          class LayoutType ,
+          class DeviceType ,
+          class MemoryTraits >
+class ViewTraits {
+private:
+
+  typedef Impl::AnalyzeShape<DataType> analysis ;
+
+public:
+
+  typedef DataType       data_type ;
+  typedef LayoutType     layout_type ;
+  typedef DeviceType     device_type ;
+  typedef MemoryTraits   memory_traits ;
+
+  typedef ViewTraits                          view_traits ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+  typedef typename analysis::const_type       const_data_type ;
+  typedef typename analysis::scalar_type      scalar_type ;
+  typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::shape            shape_type ;
+  typedef typename layout_type::array_layout  array_layout ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { rank           = shape_type::rank };
+  enum { rank_dynamic   = shape_type::rank_dynamic };
+
+  typedef View<           data_type, layout_type, device_type, memory_traits > view_type ;
+  typedef View<     const_data_type, layout_type, device_type, memory_traits > view_const_type ;
+  typedef View< non_const_data_type, layout_type, device_type, memory_traits > view_non_const_type ;
+
+  typedef View< data_type , layout_type , Host >  HostMirror ;
+};
+
+/** \brief  Memory traits as third argument, void as fourth argument. */
+
+template< class DataType , class DeviceType , class MemoryTraits >
+class ViewTraits< DataType , DeviceType , MemoryTraits , 
+  typename Impl::enable_if_type< typename MemoryTraits::memory_management >::type >
 {
 private:
 
   typedef Impl::AnalyzeShape<DataType>       analysis ;
-  typedef typename analysis::const_type      const_data_type ;
-  typedef typename analysis::non_const_type  non_const_data_type ;
 
 public:
 
-  typedef DataType        data_type ;
-  typedef LayoutType      layout_type ;
-  typedef DeviceType      device_type ;
-  typedef ManagementType  management_type;
+  typedef DataType      data_type ;
+  typedef DeviceType    layout_type ;
+  typedef DeviceType    device_type ;
+  typedef MemoryTraits  memory_traits ;
 
-  typedef View<       data_type, layout_type, device_type, management_type > type ;
-  typedef View< const_data_type, layout_type, device_type, management_type > const_type ;
+  typedef ViewTraits                          view_traits ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+  typedef typename analysis::const_type       const_data_type ;
+  typedef typename analysis::scalar_type      scalar_type ;
+  typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::shape            shape_type ;
+  typedef typename layout_type::array_layout  array_layout ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { rank           = shape_type::rank };
+  enum { rank_dynamic   = shape_type::rank_dynamic };
+
+  typedef View<           data_type, DeviceType, MemoryTraits, void > view_type ;
+  typedef View<     const_data_type, DeviceType, MemoryTraits, void > view_const_type ;
+  typedef View< non_const_data_type, DeviceType, MemoryTraits, void > view_non_const_type ;
 
   typedef View< data_type , layout_type , Host >  HostMirror ;
+};
 
-  typedef typename analysis::scalar_type               scalar_type ;
-  typedef typename analysis::value_type                value_type ;
-  typedef typename LayoutType::array_layout            array_layout ;
-  typedef typename device_type::memory_space           memory_space ;
-  typedef typename management_type::memory_management  memory_management ;
-  typedef typename device_type::size_type              size_type ;
-  typedef typename analysis::shape                     shape_type ;
+/** \brief  Device as third argument, void as fourth argument. */
+
+template< class DataType , class LayoutType , class DeviceType >
+class ViewTraits< DataType , LayoutType , DeviceType ,
+  typename Impl::enable_if_type< typename DeviceType::device_type >::type >
+{
+private:
+
+  typedef Impl::AnalyzeShape<DataType>       analysis ;
+
+public:
+
+  typedef DataType       data_type ;
+  typedef LayoutType     layout_type ;
+  typedef DeviceType     device_type ;
+  typedef MemoryManaged  memory_traits ;
+
+  typedef ViewTraits                          view_traits ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+  typedef typename analysis::const_type       const_data_type ;
+  typedef typename analysis::scalar_type      scalar_type ;
+  typedef typename analysis::value_type       value_type ;
+  typedef typename analysis::shape            shape_type ;
+  typedef typename layout_type::array_layout  array_layout ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { rank         = shape_type::rank };
+  enum { rank_dynamic = shape_type::rank_dynamic };
+
+  typedef View<           data_type, layout_type, device_type, void > view_type ;
+  typedef View<     const_data_type, layout_type, device_type, void > view_const_type ;
+  typedef View< non_const_data_type, layout_type, device_type, void > view_non_const_type ;
+
+  typedef View< data_type , layout_type , Host >  HostMirror ;
+};
+
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+template< class DataType ,
+          class LayoutType ,
+          class DeviceType ,
+          class MemoryTraits >
+class View
+  : public Impl::ViewOper<
+      typename ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >::memory_space ,
+      typename ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >::value_type ,
+      typename ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >::shape_type ,
+      typename ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >::array_layout >
+{
+public:
+
+  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > view_traits ;
+
+  typedef typename view_traits::data_type        data_type ;
+  typedef typename view_traits::layout_type      layout_type ;
+  typedef typename view_traits::device_type      device_type ;
+  typedef typename view_traits::view_type        type ;
+  typedef typename view_traits::view_const_type  const_type ;
+  typedef typename view_traits::HostMirror       HostMirror ;
+  typedef typename view_traits::scalar_type      scalar_type ;
+  typedef typename view_traits::value_type       value_type ;
+  typedef typename view_traits::array_layout     array_layout ;
+  typedef typename view_traits::memory_space     memory_space ;
+  typedef typename view_traits::memory_traits    memory_management ;
+  typedef typename view_traits::shape_type       shape_type ;
+
+  typedef typename memory_space::size_type     size_type ;
 
 private:
 

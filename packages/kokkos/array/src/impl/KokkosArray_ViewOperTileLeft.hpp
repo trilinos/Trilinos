@@ -158,8 +158,8 @@ private:
   unsigned    m_stride ;
 
   enum {
-      M_SHIFT = Impl::power_of_2<M>::value
-    , N_SHIFT = Impl::power_of_2<N>::value
+      M_SHIFT = Impl::power_of_two<M>::value
+    , N_SHIFT = Impl::power_of_two<N>::value
     , M_MASK =  M-1
     , N_MASK =  N-1
   };

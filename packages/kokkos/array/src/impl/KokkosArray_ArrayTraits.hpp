@@ -52,6 +52,17 @@ namespace Impl {
  */
 //----------------------------------------------------------------------------
 
+template< bool , class = void >
+struct enable_if ;
+
+template< class T >
+struct enable_if< true , T > { typedef T type ; };
+
+template< class , class T = void >
+struct enable_if_type { typedef T type ; };
+
+//----------------------------------------------------------------------------
+
 template <class T, T v>
 struct integral_constant
 {
@@ -77,37 +88,31 @@ struct int_ : public integral_constant<int,I> {};
 template< class X , class Y > struct is_same : public false_type {};
 template< class X >           struct is_same<X,X> : public true_type {};
 
+//----------------------------------------------------------------------------
 
 template <size_t N>
-struct is_power_of_2
+struct is_power_of_two
 {
   enum type { value = (N != 0) && !(N & (N-1)) };
 };
 
 template <size_t N>
-struct power_of_2
+struct power_of_two
 {
-  enum type { value = 1+ power_of_2<(N>>1)>::value };
+  enum type { value = 1+ power_of_two<(N>>1)>::value };
 };
 
 template <>
-struct power_of_2<2>
+struct power_of_two<2>
 {
   enum type { value = 1 };
 };
 
 template <>
-struct power_of_2<1>
+struct power_of_two<1>
 {
   enum type { value = 0 };
 };
-
-template <>
-struct power_of_2<0>
-{
-  enum type { value = 0 };
-};
-
 
 //----------------------------------------------------------------------------
 

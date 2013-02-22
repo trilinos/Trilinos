@@ -68,8 +68,8 @@ public:
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
-  typedef MemoryManaged         memory_management ;
   typedef LayoutLeft            array_layout ;
+  // typedef MemoryManaged         memory_management ;
 
   //--------------------------------------------------------------------------
 

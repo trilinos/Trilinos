@@ -48,17 +48,16 @@
 
 namespace KokkosArray {
 
-struct MemoryManaged   { typedef MemoryManaged    memory_management ; };
-struct MemoryUnmanaged { typedef MemoryUnmanaged  memory_management ; };
+struct MemoryManaged
+{ typedef MemoryManaged  memory_management ; enum { managed = true }; };
+
+struct MemoryUnmanaged
+{ typedef MemoryUnmanaged  memory_management ; enum { managed = false }; };
 
 } // namespace Kokkos
 
 
-
-
-
 namespace KokkosArray {
-
 
 struct Host;
 struct Cuda;

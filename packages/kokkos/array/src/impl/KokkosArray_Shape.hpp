@@ -980,7 +980,7 @@ struct SubShape< Layout , Shape< ScalarSize, 1, 0 > ,
   SubShape( const SrcShape src , const unsigned src_stride )
   {
     shape  = src ;
-    stride = 1 ;
+    stride = src_stride ;
     offset = 0 ;
   }
 
@@ -991,12 +991,12 @@ struct SubShape< Layout , Shape< ScalarSize, 1, 0 > ,
       assert_shape_bounds( src , span.first );
       assert_shape_bounds( src , span.second - 1 );
       shape.N0     = span.second - span.first ;
-      stride       = 1 ;
+      stride       = src_stride ;
       offset       = span.first ;
     }
     else {
       shape.N0     = 0 ;
-      stride       = 1 ;
+      stride       = src_stride ;
       offset       = 0 ;
     }
   }

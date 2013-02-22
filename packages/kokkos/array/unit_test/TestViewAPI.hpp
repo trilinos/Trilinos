@@ -767,7 +767,7 @@ public:
   typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
   typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
 
-  typedef KokkosArray::View< T[][N1][N2][N3] , device, device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
+  typedef KokkosArray::View< T[][N1][N2][N3], device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
