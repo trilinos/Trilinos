@@ -94,7 +94,7 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
                                                         stk::mesh::EntityRank type,
                                                         stk::mesh::Part &part,
                                                         const Ioss::Field &io_field,
-                                                        bool use_cartesian_for_scalar, T /*dummy*/)
+                                                        bool use_array_for_scalar, T /*dummy*/)
 {
   stk::mesh::FieldBase *field_ptr = NULL;
   std::string field_type = io_field.transformed_storage()->name();
@@ -102,13 +102,13 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
   size_t num_components = io_field.transformed_storage()->component_count();
 
   if (field_type == "scalar" || num_components == 1) {
-    if (!use_cartesian_for_scalar) {
+    if (!use_array_for_scalar) {
       stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(name);
       stk::mesh::put_field(field, type, part);
       field_ptr = &field;
     } else {
-      stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-        meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(name);
+      stk::mesh::Field<double,shards::ArrayDimension> & field =
+        meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension> >(name);
       stk::mesh::put_field(field, type, part, 1);
       field_ptr = &field;
     }
@@ -158,15 +158,15 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
                                                stk::mesh::EntityRank type,
                                                stk::mesh::Part &part,
                                                const Ioss::Field &io_field,
-                                               bool use_cartesian_for_scalar)
+                                               bool use_array_for_scalar)
 {
   const stk::mesh::FieldBase *field_ptr = NULL;
   if (io_field.get_type() == Ioss::Field::INTEGER) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (int)1);
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_array_for_scalar, (int)1);
   } else if (io_field.get_type() == Ioss::Field::REAL) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (double)1.0);
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_array_for_scalar, (double)1.0);
   } else if (io_field.get_type() == Ioss::Field::COMPLEX) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, std::complex<double>(0.0,0.0));
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_array_for_scalar, std::complex<double>(0.0,0.0));
   } else {
     std::ostringstream errmsg;
     errmsg << "ERROR: Unrecognized field type for IO field '"
