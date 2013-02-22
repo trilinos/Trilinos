@@ -39,8 +39,11 @@ The purpose of LOCA.TurningPoint is to provide groups and vectors for
 turning point bifurcations.  The python version of LOCA.TurningPoint
 supports the following sub-modules:
 
-    * MooreSpence         - 
-    * MinimallyAugmented  - 
+    * MooreSpence         - Groups and vectors for locating turning point
+                            bifurcations using the Moore-Spence formulation
+    * MinimallyAugmented  - Groups and vectors for locating turning point
+                            bifurcations using the minimally augmented
+                            formulation
 
 Any other notes about the package as a whole. . . .
 "

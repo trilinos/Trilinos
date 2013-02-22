@@ -39,13 +39,17 @@ The purpose of LOCA.Hopf is to provide groups and vectors for Hopf
 bifurcations.  The python version of LOCA.Hopf supports the following
 sub-modules:
 
-    * MooreSpence         - 
-    * MinimallyAugmented  - 
+    * MooreSpence         - Groups and vectors for locating Hopf bifurcations
+                            using the Moore-Spence formulation
+    * MinimallyAugmented  - Groups and vectors for locating Hopf bifurcations
+                            using the minimally augmented Hopf formulation
 
 and classes:
 
-    * ComplexMultiVector  - 
-    * ComplexVector       - 
+    * ComplexMultiVector  - Multi-vector class to hold two multi-vectors to
+                            represent a complex multi-vector
+    * ComplexVector       - Vector class to hold two vectors to represent a
+                            complex vector
 
 Any other notes about the package as a whole. . . .
 "

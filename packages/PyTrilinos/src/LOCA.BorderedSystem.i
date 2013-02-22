@@ -39,7 +39,7 @@ The purpose of LOCA.BorderedSystem is to provide an interface for
 groups that are bordered systems.  The python version of
 LOCA.BorderedSystem supports the following classes:
 
-    * AbstractGroup  - 
+    * AbstractGroup  - Interface for groups that are bordered systems
 
 Any other notes about the package as a whole. . . .
 "

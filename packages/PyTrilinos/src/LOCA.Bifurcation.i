@@ -39,7 +39,7 @@ The purpose of LOCA.Bifurcation is to provide strategies for creating
 bifurcation objects.  The python version of LOCA.Bifurcation supports
 the following classes:
 
-    * Factory  - 
+    * Factory  - Factory for creating bifurcation strategy objects
 
 Any other notes about the package as a whole. . . .
 "

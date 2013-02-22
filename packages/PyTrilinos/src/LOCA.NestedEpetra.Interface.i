@@ -35,13 +35,22 @@ Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra.Interface is to provide ***.  The python
-version of LOCA.Epetra.Interface supports the following classes:
+The purpose of LOCA.Epetra.Interface is to provide a concrete Epetra
+implementation of LOCA interfaces.  The python version of
+LOCA.Epetra.Interface supports the following classes:
 
-    * Required                 -
-    * MassMatrix               -
-    * TimeDependent            -
-    * TimeDependentMatrixFree  -
+    * Required                 - Provides a set of interfaces for users to
+                                 provide information about the nonlinear
+                                 problem to LOCA
+    * MassMatrix               - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for the coefficients of
+                                 time dependent terms
+    * TimeDependent            - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for computing the shifted
+                                 matrix
+    * TimeDependentMatrixFree  - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for applying the shifted
+                                 matrix in a matrix-free setting
 
 Any other notes about the package as a whole. . . .
 "

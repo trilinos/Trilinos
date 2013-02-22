@@ -39,10 +39,12 @@ The purpose of LOCA.Abstract is to provide abstract continuation
 problem base classes.  The python version of LOCA.Abstract supports
 the following classes:
 
-    * Group                - 
-    * TransposeSolveGroup  - 
-    * Iterator             - 
-    * Factory              - 
+    * Group                - Compatiblity class for AbstractGroup hierarchy
+    * TransposeSolveGroup  - Abstract group interface class for solving the
+                             transpose of the Jacobian
+    * Iterator             - Abstract interface for implementing iteration
+    * Factory              - Abstract interface for providing a user-defined
+                             factory
 
 Any other notes about the package as a whole. . . .
 "

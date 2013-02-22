@@ -39,7 +39,7 @@ The purpose of LOCA.BorderedSolver is to provide strategies for
 solving bordered systems of equations.  The python version of
 LOCA.BorderedSolver supports the following classes:
 
-    * Factory  - 
+    * Factory  - Factory for creating BorderedSolver strategy objects
 
 Any other notes about the package as a whole. . . .
 "

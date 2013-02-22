@@ -38,7 +38,7 @@ Eigensolver of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Eigensolver is to provide ***.  The python version
 of LOCA.Eigensolver supports the following classes:
 
-    * Factory  -
+    * Factory  - Factory for creating Eigensolver strategy objects
 
 Any other notes about the package as a whole. . . .
 "

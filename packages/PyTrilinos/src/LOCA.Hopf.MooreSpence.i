@@ -38,14 +38,27 @@ Hopf::MooreSpence of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.Hopf.MooreSpence is to provide ***.  The python
 version of LOCA.Hopf.MooreSpence supports the following classes:
 
-    * AbstractGroup          -
-    * ExtendedGroup          - 
-    * ExtendedMultiVector    -
-    * ExtendedVector         -
-    * FiniteDifferenceGroup  -
-    * SolverFactory          -
-    * SolverStrategy         -
-    * SalingerBordering      -
+    * AbstractGroup          - Interface to underlying groups for Hopf point
+                               calculations using the Moore-Spence formulation
+    * ExtendedGroup          - A group representing the Moore-Spence Hopf
+                               equations
+    * ExtendedMultiVector    - Multi-vector class to hold solution vectors,
+                               Newton vectors, etc.for the Moore-Spence Hopf
+                               eqautions
+    * ExtendedVector         - Vector class to hold solution vectors, Newton
+                               vectors, etc. for Moore-Spence Hopf equations
+    * FiniteDifferenceGroup  - Concrete class that provides concrete
+                               implementations of the derivative computation
+                               methods of the LOCA.Hopf.MooreSpence.-
+                               AbstractGroup using first-order finite
+                               differencing
+    * SolverFactory          - Factory for creating solver objects for solving
+                               Moore-Spence Hopf equations
+    * SolverStrategy         - Abstract strategy for solving the Moore-Spence
+                               Hopf equations
+    * SalingerBordering      - Moore-Spence Hopf solver strategy based on
+                               'Salinger' bordering.  This is the classic 5-
+                               solve Hopf bordering method
 
 Any other notes about the package as a whole. . . .
 "

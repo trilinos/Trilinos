@@ -39,8 +39,11 @@ The purpose of LOCA.Pitchfork is to provide groups and vectors for
 pitchfork bifurcations.  The python version of LOCA.Pitchfork supports
 the following sub-modules:
 
-    * MooreSpence         - 
-    * MinimallyAugmented  - 
+    * MooreSpence         - Groups and vectors for locating pitchfork
+                            bifurcations using the Moore-Spence formulation
+    * MinimallyAugmented  - Groups and vectors for locating pitchfork
+                            bifurcations using the minimally augmented
+                            formulation
 
 Any other notes about the package as a whole. . . .
 "

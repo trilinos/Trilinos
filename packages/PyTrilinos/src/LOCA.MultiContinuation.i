@@ -39,13 +39,27 @@ The purpose of LOCA.MultiContinuation is to provide groups and vectors
 for multi-parameter continuation.  The python version of
 LOCA.MultiContinuation supports the following classes:
 
-    * AbstractGroup            - 
-    * FiniteDifferenceGroup    - 
-    * ConstraintInterface      - 
-    * ConstraintInterfaceMVDX  - 
-    * ExtendedMultiVector      - 
-    * ExtendedVector           - 
-    * Factory                  - 
+    * AbstractGroup            - LOCA abstract interface for continuation,
+                                 derived from the NOX.Abstract.Group.  This
+                                 abstract class provides the interface
+                                 necessary to perform continuation, i.e.,
+                                 compute families of solutions to F(x,p) = 0
+    * FiniteDifferenceGroup    - Concrete class that provides a concrete
+                                 implementation of the computeDfDp() method of
+                                 the LOCA.Continuation.AbstractGroup using
+                                 first-order finite differencing
+    * ConstraintInterface      - Abstract interface for the constraint portion
+                                 of a constrained nonlinear system
+    * ConstraintInterfaceMVDX  - Abstract interface for the constraint portion
+                                 of a constrained nonlinear system for
+                                 constraints that support computing a solution
+                                 component derivative as a multi-vector
+    * ExtendedMultiVector      - MultiVector class to hold solution vectors,
+                                 Newton vectors, etc. for continuation equations
+    * ExtendedVector           - Vector class to hold solution vectors, Newton
+                                 vectors, etc. for continuation equations
+    * Factory                  - Factory for creating continuation strategy
+                                 objects
 
 Any other notes about the package as a whole. . . .
 "

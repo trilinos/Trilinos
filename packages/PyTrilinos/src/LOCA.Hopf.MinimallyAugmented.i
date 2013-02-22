@@ -36,14 +36,25 @@ algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Hopf.MinimallyAugmented is to provide ***.  The
-python version of LOCA.Hopf.MinimallyAugmented supports the following
-classes:
+The purpose of LOCA.Hopf.MinimallyAugmented is to provide groups and
+vectors for locating Hopf bifurcations using the minimally augmented
+Hopf formulation.  The python version of LOCA.Hopf.MinimallyAugmented
+supports the following classes:
 
-    * Constraint             -
-    * AbstractGroup          -
-    * FiniteDifferenceGroup  -
-    * ExtendedGroup          -
+    * Constraint             - Implementation of LOCA.MultiContinuation.-
+                               ConstraintInterfaceMVDX for computing Hopf
+                               bifurcations for the minimally augmented Hopf
+                               formulation
+    * AbstractGroup          - Interface to underlying groups for Hopf
+                               calculations using the minimally augmented
+                               formulation
+    * FiniteDifferenceGroup  - Concrete class that provides concrete
+                               implementations of the derivative computation
+                               methods of the LOCA.Hopf.MinimallyAugmented.-
+                               AbstractGroup using first-order finite
+                               differencing
+    * ExtendedGroup          - Group representing the minimally augemented Hopf
+                               equations
 
 Any other notes about the package as a whole. . . .
 "

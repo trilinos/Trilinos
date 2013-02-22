@@ -39,7 +39,7 @@ The purpose of LOCA.StepSize is to provide a collection of step size
 control strategies.  The python version of LOCA.StepSize supports the
 following classes:
 
-    * Factory  - 
+    * Factory  - Factory for creating step size control strategy objects
 
 Any other notes about the package as a whole. . . .
 "

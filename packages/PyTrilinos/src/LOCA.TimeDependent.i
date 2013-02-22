@@ -39,7 +39,8 @@ The purpose of LOCA.TimeDependent is to provide an abstract group for
 time dependent problems with a mass matrix.  The python version of
 LOCA.TimeDependent supports the following classes:
 
-    * AbstractGroup  -
+    * AbstractGroup  - Interface to underlying groups for time dependent
+                       systems
 
 Any other notes about the package as a whole. . . .
 "

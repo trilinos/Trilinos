@@ -38,7 +38,7 @@ EigenvalueSort of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.EigenvalueSort is to provide ***.  The python
 version of LOCA.EigenvalueSort supports the following classes:
 
-    * Factory  -
+    * Factory  - Factory for creating EigenvalueSort strategy objects
 
 Any other notes about the package as a whole. . . .
 "

@@ -39,7 +39,8 @@ The purpose of LOCA.PhaseTransition is to provide groups and vectors
 for phase transition bifurcations.  The python version of
 LOCA.PhaseTransition supports the following classes:
 
-    * AbstractGroup  - 
+    * AbstractGroup  - Interface to underlying groups for phase transition
+                       calculations
 
 Any other notes about the package as a whole. . . .
 "

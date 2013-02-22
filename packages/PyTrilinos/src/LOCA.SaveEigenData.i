@@ -38,7 +38,8 @@ SaveEigenData of the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.SaveEigenData is to provide ***.  The python
 version of LOCA.SaveEigenData supports the following classes:
 
-    * Factory  -
+    * Factory  - Factory for creating strategy objects to save eigenvectors/
+                 values
 
 Any other notes about the package as a whole. . . .
 "

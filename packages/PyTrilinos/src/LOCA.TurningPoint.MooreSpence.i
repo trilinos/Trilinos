@@ -36,13 +36,20 @@ algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.TurningPoint.MooreSpence is to provide ***.  The
-python version of LOCA.TurningPoint.MooreSpence supports the following
-classes:
+The purpose of LOCA.TurningPoint.MooreSpence is to provide groups and
+vectors for locating turning point bifurcations using the Moore-
+Spence formulation.  The python version of
+LOCA.TurningPoint.MooreSpence supports the following classes:
 
-    * AbstractGroup          -
-    * FiniteDifferenceGroup  -
-    * SolverFactory          -
+    * AbstractGroup          - Interface to underlying groups for turning point
+                               calculations using the Moore-Spence formulation
+    * FiniteDifferenceGroup  - Concrete class that provides concrete
+                               implementations of the derivative computation
+                               methods of the LOCA.TurningPoint.MooreSpence.-
+                               AbstractGroup using first-order finite
+                               differencing
+    * SolverFactory          - Factory for creating solver objects for solving
+                               Moore-Spence turning point equations
 
 Any other notes about the package as a whole. . . .
 "

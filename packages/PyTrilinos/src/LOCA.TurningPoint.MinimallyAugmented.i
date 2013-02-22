@@ -36,12 +36,19 @@ Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.TurningPoint.MinimallyAugmented is to provide ***.
-The python version of LOCA.TurningPoint.MinimallyAugmented supports
-the following classes:
+The purpose of LOCA.TurningPoint.MinimallyAugmented is to provide
+groups and vectors for locating turning point bifurcations using the
+minimally augmented turning point formulation.  The python version of
+LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 
-    * AbstractGroup          -
-    * FiniteDifferenceGroup  -
+    * AbstractGroup          - Interface to underlying groups for turning point
+                               calculations using the minimally augmented
+                               formulation
+    * FiniteDifferenceGroup  - Concrete class that provides concrete
+                               implementations of the derivative computation
+                               methods of the LOCA.TurningPoint.Minimally-
+                               Augmented.AbstractGroup using first-order finite
+                               differencing
 
 Any other notes about the package as a whole. . . .
 "

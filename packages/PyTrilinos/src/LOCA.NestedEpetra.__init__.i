@@ -35,10 +35,11 @@ the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra is to provide ***.  The python version of
-LOCA.Epetra supports the following classes:
+The purpose of LOCA.Epetra is to provide an extension of the
+NOX.Epetra.Group to LOCA.  The python version of LOCA.Epetra supports
+the following classes:
 
-    * Group  -
+    * Group  - Extension of the NOX.Epetra.Group to LOCA
 
 Any other notes about the package as a whole. . . .
 "

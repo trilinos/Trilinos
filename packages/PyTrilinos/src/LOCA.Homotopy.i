@@ -39,9 +39,9 @@ The purpose of LOCA.Homotopy is to provide groups that allow for
 Homotopy to be applied.  The python version of LOCA.Homotopy supports
 the following classes:
 
-    * Group          - 
-    * AbstractGroup  - 
-    * DeflatedGroup  - 
+    * Group          - LOCA's Homotopy algorithm
+    * AbstractGroup  - Interface to underlying groups for homotopy calculations
+    * DeflatedGroup  - LOCA's deflated Homotopy algorithm
 
 Any other notes about the package as a whole. . . .
 "

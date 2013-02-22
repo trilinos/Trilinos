@@ -40,9 +40,16 @@ NOX.Abstract classes to handle an arbitrary number of multi-vectors
 and scalars.  The python version of LOCA.Extended supports the
 following classes:
 
-    * MultiVector         -
-    * Vector              -
-    * MultiAbstractGroup  -
+    * MultiVector         - Implemenatation of the NOX.Abstract.MultiVector
+                            class for extended multi-vectors comprised of an
+                            arbitrary number of multi-vectors and scalars
+    * Vector              - Implemenatation of the NOX.Abstract.Vector class
+                            for extended multi-vectors comprised of an
+                            arbitrary number of multi-vectors and scalars
+    * MultiAbstractGroup  - LOCA abstract interface for extended groups,
+                            derived from the NOX.Abstract.Group, i.e., an
+                            abstract interface for 'super' groups that have an
+                            underlying group component
 
 Any other notes about the package as a whole. . . .
 "

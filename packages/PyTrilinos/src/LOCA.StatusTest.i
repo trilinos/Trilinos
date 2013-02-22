@@ -38,8 +38,9 @@ the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.StatusTest is to provide status checkers.  The
 python version of LOCA.StatusTest supports the following classes:
 
-    * Abstract  - 
-    * Wrapper   - 
+    * Abstract  - Generic status test to check for convergence or failure of
+                  the LOCA continuation
+    * Wrapper   - A wrapper class for wrapping a NOX status test
 
 Any other notes about the package as a whole. . . .
 "

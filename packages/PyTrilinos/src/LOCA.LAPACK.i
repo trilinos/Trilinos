@@ -38,8 +38,8 @@ the Trilinos continuation algorithm package LOCA:
 The purpose of LOCA.LAPACK is to provide ***.  The python version of
 LOCA.LAPACK supports the following classes:
 
-    * Interface  -
-    * Group      -
+    * Interface  - 
+    * Group      - 
 
 Any other notes about the package as a whole. . . .
 "

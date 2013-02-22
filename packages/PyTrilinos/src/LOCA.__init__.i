@@ -61,16 +61,18 @@ algorithms.  It includes the following sub-modules:
 
 and classes:
 
-    * GlobalData  - Container class that holds ref-count pointers to 'global'
-                    objects, i.e., objects that nearly every LOCA object will
-                    need access to
-    * ErrorCheck  - Error checking algorithm for NOX/LOCA routines
-    * Factory     - Provides a single location for instantiating various
-                    strategies based on parameter list choices
-    * DerivUtils  - Generic derivative computation class to compute various
-                    derivatives via finite differencing
-    * Stepper     - Implementation of LOCA.Abstract.Iterator for computing
-                    points along a continuation curve
+    * GlobalData      - Container class that holds ref-count pointers to
+                        'global' objects, i.e., objects that nearly every LOCA
+                        object will need access to
+    * ErrorCheck      - Error checking algorithm for NOX/LOCA routines
+    * Factory         - Provides a single location for instantiating various
+                        strategies based on parameter list choices
+    * DerivUtils      - Generic derivative computation class to compute various
+                        derivatives via finite differencing
+    * Stepper         - Implementation of LOCA.Abstract.Iterator for computing
+                        points along a continuation curve
+    * ParameterVector - LOCA's container for holding a set of parameters that
+                        are used by the LOCA continuation routines
 "
 %enddef
 
@@ -222,3 +224,6 @@ import MultiPredictor
 
 // LOCA Stepper class
 %include "LOCA_Stepper.H"
+
+// LOCA ParameterVector class
+%include "LOCA_Parameter_Vector.H"

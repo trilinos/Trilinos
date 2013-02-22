@@ -36,12 +36,15 @@ algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Pitchfork.MooreSpence is to provide ***.  The
-python version of LOCA.Pitchfork.MooreSpence supports the following
-classes:
+The purpose of LOCA.Pitchfork.MooreSpence is to provide groups and
+vectors for locating pitchfork bifurcations using the Moore-Spence
+formulation.  The python version of LOCA.Pitchfork.MooreSpence
+supports the following classes:
 
-    * AbstractGroup  -
-    * SolverFactory  -
+    * AbstractGroup  - Interface to underlying groups for pitchfork
+                       calculations using the Moore-Spence formulation
+    * SolverFactory  - Factory for creating solver objects for solving Moore-
+                       Spence pitchfork equations
 
 Any other notes about the package as a whole. . . .
 "
