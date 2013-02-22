@@ -35,7 +35,7 @@ TRIBITS_ADD_ADVANCED_TEST( CompilerOptions_UnitTests
       -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -P "${CMAKE_CURRENT_SOURCE_DIR}/CompilerOptions_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 135"
+      "Final UnitTests Result: num_run = 144"
       "Final UnitTests Result: PASSED"
   )
 

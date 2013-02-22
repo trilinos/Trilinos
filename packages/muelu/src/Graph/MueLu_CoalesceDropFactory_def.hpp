@@ -76,9 +76,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
+    validParamList->set< double >                ("threshold",          0.0,           "Dropping threshold");
+
     return validParamList;
   }
 
@@ -93,15 +96,12 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+    FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
-    FactoryMonitor m(*this, "Build", currentLevel);
-    if(predrop_ != Teuchos::null) {
+    if (predrop_ != Teuchos::null)
       GetOStream(Parameters0, 0) << predrop_->description();
-    }
-
-    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -111,28 +111,33 @@ namespace MueLu {
     GetOStream(Parameters0, 0) << "CoalesceDropFactory::Build : lightweight wrap = " << doExperimentalWrap << std::endl;
 
     if (doExperimentalWrap) {
+      Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("threshold"));
 
-      Scalar threshold = STS::zero();
+      if (predrop_ == null && threshold != Teuchos::ScalarTraits<Scalar>::zero()) {
+        // ap: this is a hack: had to declare predrop_ as mutable
+        predrop_ = rcp(new PreDropFunctionConstVal(threshold));
+        GetOStream(Runtime0, 0) << "predrop_ constructed" << std::endl;
+      }
+
       if (predrop_ != null) {
         RCP<PreDropFunctionConstVal> predropConstVal = rcp_dynamic_cast<PreDropFunctionConstVal>(predrop_);
-        TEUCHOS_TEST_FOR_EXCEPTION(predropConstVal == Teuchos::null,Exceptions::BadCast,
+        TEUCHOS_TEST_FOR_EXCEPTION(predropConstVal == Teuchos::null, Exceptions::BadCast,
                                    "MueLu::CoalesceFactory::Build: cast to PreDropFunctionConstVal failed.");
         threshold = predropConstVal->GetThreshold();
       }
+      GetOStream(Runtime0, 0) << "threshold = " << threshold << std::endl;
 
       // Case 1:  scalar problem, no dropping => just use matrix graph
-      if ( (A->GetFixedBlockSize()==1) && ( (predrop_==null) || (predrop_!=null && threshold==STS::zero()) ) ) {
-
-          RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-          Set(currentLevel, "DofsPerNode", 1);
-          Set(currentLevel, "Graph", graph);
-          return;
+      if ( (A->GetFixedBlockSize() == 1) && ( (predrop_ == null) || (predrop_ != null && threshold == STS::zero()) ) ) {
+        RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+        Set(currentLevel, "DofsPerNode", 1);
+        Set(currentLevel, "Graph", graph);
+        return;
       }
 
       // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
       //                                          graph's map information, e.g., whether index is local
       if ( (A->GetFixedBlockSize() == 1) && threshold != STS::zero() ) {
-
         // allocate space for the local graph
         ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
         ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
@@ -140,41 +145,37 @@ namespace MueLu {
         RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
         const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
-        rows[0] = 0;
-        for(LocalOrdinal row=0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
+        LocalOrdinal realnnz = 0, numDropped = 0;
 
+        rows[0] = 0;
+        for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
           size_t nnz = A->getNumEntriesInLocalRow(row);
           ArrayView<const LocalOrdinal> indices;
-          ArrayView<const Scalar> vals;
+          ArrayView<const Scalar>       vals;
           A->getLocalRowView(row, indices, vals);
-
 
           //FIXME the current predrop function uses the following
           //FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
           //FIXME but the threshold doesn't take into account the rows' diagonal entries
           //FIXME For now, hardwiring the dropping in here
-    
-          LocalOrdinal realnnz = 0;
-          for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); ++col) {
-    
-            // eps*|a_ii|*|a_jj|
-            typename STS::magnitudeType aiiajj = STS::magnitude(threshold)*STS::magnitude(ghostedDiagVals[col]*ghostedDiagVals[row]);
-            // (eps*|a_ii|*|a_jj|)^2
-            aiiajj *= aiiajj;
-            // |a_ij|
-            typename STS::magnitudeType aij = STS::magnitude(vals[col]);
-            // |a_ij|^2
-            aij *= aij;
-            // if |a_ij|^2 > (eps*|a_ii|*|a_jj|)^2, thus avoiding a squareroot
-            if ( aij > aiiajj) {
+
+          for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+            LocalOrdinal col = indices[colID];
+
+            // we avoid a square root by using squared values
+            typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+            typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
+
+            if (aij > aiiajj || row == col)
               columns[realnnz++] = col;
-            }
+            else
+              numDropped++;
           }
           rows[row+1] = realnnz;
-    
         }
+        GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows,columns,A->getCrsGraph(), "amalgamated graph of A"));
+        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
         Set(currentLevel, "Graph", graph);
         Set(currentLevel, "DofsPerNode", 1);
         return;
