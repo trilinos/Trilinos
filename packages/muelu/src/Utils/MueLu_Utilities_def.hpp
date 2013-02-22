@@ -1156,7 +1156,7 @@ namespace MueLu {
     const RCP<const Map> rowMap = A.getRowMap();
     ArrayRCP<bool> boundaryNodes(A.getNodeNumRows(),true);
 
-    for(size_t row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
+    for(LO row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
 
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
@@ -1164,7 +1164,7 @@ namespace MueLu {
       size_t nnz = A.getNumEntriesInLocalRow(row);
       if (nnz > 1) {
         for(size_t col=0; col<nnz; ++col) {
-          if ( (col != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
+          if ( (indices[col] != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
             boundaryNodes[row] = false;
             break;
           }
