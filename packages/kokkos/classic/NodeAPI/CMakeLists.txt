@@ -75,9 +75,11 @@ APPEND_SET(SOURCES
 
 SET(kokkos_enabled_nodes "")
 
-MESSAGE(STATUS "Enabling node: Serial")
-LIST(APPEND kokkos_enabled_nodes "Kokkos::SerialNode")
-set(kokkos_defaultnode_default "Kokkos::SerialNode")
+IF (KokkosClassic_ENABLE_Serial)
+  MESSAGE(STATUS "Enabling node: Serial")
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::SerialNode")
+  set(kokkos_defaultnode_default "Kokkos::SerialNode")
+ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_Thrust)
 IF (KokkosClassic_ENABLE_Thrust)

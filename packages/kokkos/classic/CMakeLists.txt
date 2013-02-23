@@ -32,11 +32,17 @@ IF(KokkosClassic_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
   MESSAGE(WARNING "Disabling OpenMP in Kokkos because ${PROJECT_NAME}_ENABLE_OpenMP is ${${PROJECT_NAME}_ENABLE_OpenMP}")
 ENDIF()
 
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_NodeAPI
   HAVE_KOKKOSCLASSIC_NODEAPI
   "Enable Kokkos node programming API."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  KokkosClassic_ENABLE_Serial
+  HAVE_KOKKOSCLASSIC_SERIAL
+  "Add SerialNode to the list of enabled nodes (no by default)"
   ON
   )
 
