@@ -125,9 +125,9 @@ int main(int argc, char*argv[])
       Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
       int actual_iters = solver->getNumIters();
       if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
-        success = false;
       }
       else {
+        success = false;
         *out << "Actual iters("<<actual_iters
              <<") > expected number of iterations ("
              <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
