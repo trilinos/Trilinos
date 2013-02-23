@@ -302,6 +302,7 @@ namespace Tpetra {
     void
     applyTranspose (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+		    Teuchos::ETransp mode, 
                     Scalar alpha,
                     Scalar beta) const;
 
