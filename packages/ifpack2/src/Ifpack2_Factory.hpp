@@ -164,7 +164,7 @@ Factory::create(const std::string& prec_type,
     prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix));
   }
   else if (prec_type == "KRYLOV") {
-    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> > >(matrix));
+    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrix));
   }
   else {
     std::ostringstream os;

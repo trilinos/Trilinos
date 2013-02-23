@@ -221,12 +221,17 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
-  ifpack2Type = "KRYLOV";
+  /*ifpack2Type = "KRYLOV";
+  ifpack2List.set("krylov: iteration type",1);
   ifpack2List.set("krylov: number of iterations",4);
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  ifpack2List.set("krylov: preconditioner type",3);*/
+  // Additive Schwarz smoother
+  ifpack2Type = "SCHWARZ";
+  ifpack2List.set("schwarz: compute condest", false);
+  ifpack2List.set("schwarz: overlap level", 0);
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
@@ -236,9 +241,10 @@ int main(int argc, char *argv[]) {
   //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<SC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
-  //ifpack2List.set("relaxation: sweeps", (LO) 1);
-  //ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
+  //ifpack2List.set("relaxation: sweeps", (LO) 4);
+  //ifpack2List.set("relaxation: damping factor", 1.0); // 0.7
   //ifpack2List.set("relaxation: type", "Gauss-Seidel");
+
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;
@@ -305,7 +311,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", true);          // set flexible GMRES on
+  belosList.set("Flexible Gmres", false);          // set flexible GMRES on
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );

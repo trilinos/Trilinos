@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   int nnzeros_stiff = 12869;
   int nnzeros_damp  = 98;
   int nnzeros_mass  = 5635;
-  int maxDOFsPerRow = 50;
+  int maxDOFsPerRow = 100;
   double freq = 11.0;
   double h=0.5;
   int nx=3;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
   // Parameters
   double alpha  = 1.0;
-  double beta   = 0.25;
+  double beta   = 0.5;
   double omega  = 2.0*M_PI*freq;
   double omega2 = omega*omega;
   SC one(1.0,0.0);
@@ -280,12 +280,12 @@ int main(int argc, char *argv[]) {
       std::cout<<"current_row: "<<current_row<<" current_column: "<<current_column<<std::endl;
     }
     if(map->isNodeGlobalElement(current_row)==true) {
-      A->sumIntoGlobalValues(current_row,
-			     Teuchos::tuple<GO> (current_column),
-			     Teuchos::tuple<SC> (cpx_current_value));
-      S->sumIntoGlobalValues(current_row,
-			     Teuchos::tuple<GO> (current_column),
-			     Teuchos::tuple<SC> (cpx_current_value));
+      A->insertGlobalValues(current_row,
+			    Teuchos::tuple<GO> (current_column),
+			    Teuchos::tuple<SC> (cpx_current_value));
+      S->insertGlobalValues(current_row,
+			    Teuchos::tuple<GO> (current_column),
+			    Teuchos::tuple<SC> (cpx_current_value));
     }
   }
   // mass matrix
@@ -329,8 +329,8 @@ int main(int argc, char *argv[]) {
   mueluK->SetFixedBlockSize(nDOFsPerNode);
   mueluA->SetFixedBlockSize(nDOFsPerNode);
   mueluS->SetFixedBlockSize(nDOFsPerNode);
-  //xmap=mueluA->getDomainMap();
-  //map=Xpetra::toTpetra(xmap);
+  xmap=mueluA->getDomainMap();
+  map=Xpetra::toTpetra(xmap);
 
   // MultiVector of coordinates
   // NOTE: must be of size equal to the number of DOFs!
@@ -372,7 +372,8 @@ int main(int argc, char *argv[]) {
   // Prolongation/Restriction
   RCP<TPFactory>  TentPFact = rcp( new TPFactory     );
   RCP<SaPFactory> Pfact     = rcp( new SaPFactory    );
-  RCP<RAPFactory> Acfact    = rcp( new RAPFactory    );
+  RCP<GRFactory>  Rfact     = rcp( new GRFactory     );
+  //RCP<RAPFactory> Acfact    = rcp( new RAPFactory    );
   RCP<RBMFactory> RBMfact   = rcp( new RBMFactory(3) );
   RBMfact->setLastAcousticDOF(nPaddedDOFs);
 
@@ -380,19 +381,21 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
-  // ifpack2Type = "KRYLOV";
-  // ifpack2List.set("krylov: number of iterations",5);
-  // ifpack2List.set("krylov: residual tolerance",1e-6);
-  // ifpack2List.set("krylov: block size",1);
-  // ifpack2List.set("krylov: zero starting solution",true);
-  // ifpack2List.set("krylov: preconditioner type",1);
+  // Krylov smoother
+  ifpack2Type = "KRYLOV";
+  ifpack2List.set("krylov: iteration type",1);
+  ifpack2List.set("krylov: number of iterations",4);
+  ifpack2List.set("krylov: residual tolerance",1e-6);
+  ifpack2List.set("krylov: block size",1);
+  ifpack2List.set("krylov: zero starting solution",true);
+  ifpack2List.set("krylov: preconditioner type",1);
   // Additive Schwarz smoother
-  ifpack2Type = "SCHWARZ";
-  ifpack2List.set("schwarz: compute condest", false);
-  ifpack2List.set("schwarz: combine mode", "Add"); // use string mode for this
-  ifpack2List.set("schwarz: reordering type", "none");
-  ifpack2List.set("schwarz: filter singletons", false);  
-  ifpack2List.set("schwarz: overlap level", 0);
+  //ifpack2Type = "SCHWARZ";
+  //ifpack2List.set("schwarz: compute condest", false);
+  //ifpack2List.set("schwarz: combine mode", "Add"); // use string mode for this
+  //ifpack2List.set("schwarz: reordering type", "none");
+  //ifpack2List.set("schwarz: filter singletons", false);  
+  //ifpack2List.set("schwarz: overlap level", 0);
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
@@ -401,9 +404,10 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: relax value", (double)0.0);
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
-  //ifpack2List.set("relaxation: sweeps", (LO) 1);
-  //ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
-  //ifpack2List.set("relaxation: type", "Gauss-Seidel");
+  ifpack2List.set("relaxation: sweeps", (LO) 4);
+  ifpack2List.set("relaxation: damping factor", 1.0); // 0.7
+  ifpack2List.set("relaxation: type", "Gauss-Seidel");
+  
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;
@@ -427,10 +431,12 @@ int main(int argc, char *argv[]) {
 
   // Setup R's and P's
   M.SetFactory("P", Pfact);
-  M.SetFactory("A", Acfact);
+  M.SetFactory("R", Rfact);
+  //M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
   H->GetLevel(0)->Set("Nullspace",nullspace);
   H->Keep("P", Pfact.get());
+  H->Keep("R", Rfact.get());
   H->Keep("Ptent", TentPFact.get());
   H->Setup(M, 0, maxLevels);
   H->print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
@@ -470,13 +476,18 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", false);         // set flexible GMRES on
+  belosList.set("Flexible Gmres", true);         // set flexible GMRES on
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );
     
   // Perform solve
   Belos::ReturnType ret = solver->solve();
+
+  // print solution entries
+  //using Teuchos::VERB_EXTREME;
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );
+  //X->describe(*out,VERB_EXTREME);  
   
   // Get the number of iterations for this solve.
   if(comm->getRank()==0) {

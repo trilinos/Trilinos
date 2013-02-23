@@ -32,46 +32,18 @@
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #include "Ifpack2_Krylov_def.hpp"
-#include "Ifpack2_Relaxation_decl.hpp"
-#include "Ifpack2_Relaxation_def.hpp"
-#include "Ifpack2_ILUT_decl.hpp"
-#include "Ifpack2_ILUT_def.hpp"
-#include "Ifpack2_Chebyshev_decl.hpp"
-#include "Ifpack2_Chebyshev_def.hpp"
-#include "Ifpack2_AdditiveSchwarz_decl.hpp"
-#include "Ifpack2_AdditiveSchwarz_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
-// Note: Add similar explicit instantiation for other preconditioners when this gets implemented
-
-#define IFPACK2_INST_SPARSE_RELAX(S,LO,GO) \
+#define IFPACK2_INST_SPARSE_PREC(S,LO,GO) \
   template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::Relaxation<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
-
-#define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
-
-#define IFPACK2_INST_SPARSE_CHEBY(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::Chebyshev<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
-
-#define IFPACK2_INST_SPARSE_ADDITIVE(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::AdditiveSchwarz<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > > >;
+			Ifpack2::Preconditioner<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType> >;
 
 namespace Ifpack2 {
   
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_RELAX)
-
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ILUT)
-
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_CHEBY)
-
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ADDITIVE)
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_PREC)
 
 }
 

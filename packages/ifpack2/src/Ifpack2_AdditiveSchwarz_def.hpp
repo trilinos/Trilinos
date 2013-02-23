@@ -135,7 +135,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
   Time_->start();
 
   Teuchos::RCP<MultiVectorType> OverlappingX,OverlappingY,Xtmp;
-  
+
   if(IsOverlapping_){
     // Setup if we're overlapping
     OverlappingX = Teuchos::rcp( new MultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );

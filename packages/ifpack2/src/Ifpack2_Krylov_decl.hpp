@@ -41,9 +41,10 @@
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
-
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
+#include "Ifpack2_Relaxation.hpp"
+#include "Ifpack2_Chebyshev.hpp"
+#include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
 
 #include <BelosConfigDefs.hpp>
 #include <BelosSolverFactory.hpp>
