@@ -56,50 +56,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class ExecutionSpace , class MemoryManagement ,
-          class ScalarType , class ShapeType , class MemorySpace >
-struct ViewManagement 
-{
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * ) {}
-
-  inline static 
-  ScalarType * allocate( const std::string & , const unsigned )
-  { return 0 ; }
-};
-
-template< class ScalarType , class ShapeType , class MemorySpace >
-struct ViewManagement< HostSpace , MemoryManaged ,
-                       ScalarType , ShapeType , MemorySpace >
-{
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * p )
-  { MemorySpace::increment( p ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * p )
-  { MemorySpace::decrement( p ); }
-
-  inline static 
-  ScalarType * allocate( const std::string & label ,
-                         const unsigned alloc_count )
-  {
-    return (ScalarType *)
-      MemorySpace::allocate( label ,
-                             typeid(ScalarType) ,
-                             sizeof(ScalarType) ,
-                             alloc_count );
-  }
-};
-
-} // namespace Impl
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-namespace Impl {
-
 template< class > struct ViewCreateMirror ;
 
 template< class DataType , class LayoutType , class DeviceType , class ManageType >
@@ -242,29 +198,6 @@ void deep_copy( const View< DataDst, LayoutDst, DeviceDst, ManageDst> & dst ,
 //----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-namespace Impl {
-
-/** \brief  Subview must have compatible pointer types and same memory space */
-
-template< class DstType , class DstMemory ,
-          class SrcType , class SrcMemory >
-struct SubviewAssignable : public false_type {};
-
-template< class Type , class Memory >
-struct SubviewAssignable< Type , Memory , Type , Memory >
-  : public true_type {};
-
-template< class Type , class Memory >
-struct SubviewAssignable< const Type , Memory , Type , Memory >
-  : public true_type {};
-
-} // namespace Impl
-} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

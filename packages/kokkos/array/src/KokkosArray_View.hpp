@@ -68,24 +68,10 @@ template< class MemorySpace ,
 class ViewOper ;
 
 template< class DstViewType , class SrcViewType = void , class ArgCount = unsigned_<0> >
-struct ViewAssignment ;
-
-template< class DstViewType , class Enable = void >
-struct ViewAllocation ;
-
-template< class DstScalar , class DstMemory , class DstManagement ,
-          class SrcScalar , class SrcMemory , class SrcManagement >
-struct ViewAssignable ;
-
-template< class Scalar , class Management >
-struct ViewCreatable ;
+struct ViewAssignment {};
 
 template< class >
 struct ViewInitialize ;
-
-template< class ExecutionSpace , class MemoryManagement ,
-          class ScalarType , class ShapeType , class MemorySpace >
-struct ViewManagement ;
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -381,31 +367,6 @@ public:
 
   /*------------------------------------------------------------------*/
 
-private:
-
-  typedef Impl::ViewManagement<
-     ExecutionSpace , memory_traits ,
-     scalar_type , shape_type , memory_space > internal_management ;
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void internal_private_assign( const shape_type & shape , const unsigned stride , scalar_type * ptr )
-  {
-    oper_type::m_shape          = shape ;
-    oper_type::m_stride         = stride ;
-    oper_type::m_ptr_on_device  = ptr ;
-
-    internal_management::increment( oper_type::m_ptr_on_device );
-  }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  void internal_private_clear()
-  {
-    internal_management::decrement( oper_type::m_ptr_on_device );
-    oper_type::m_ptr_on_device = 0 ;
-  }
-
-public:
-
   /** \brief  Construct a NULL view */
   KOKKOSARRAY_INLINE_FUNCTION
   View()
@@ -566,19 +527,10 @@ public:
   /* Creation with allocation of memory on the device */
 
   View( const std::string & label , const shape_type shape )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
-
-    oper_type::m_shape  = shape ;
-    oper_type::m_stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( oper_type::m_shape );
-
-    const unsigned allocation_count =
-      Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride );
-
-    oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
-
-  }
+    {
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment< View , memory_space , void >( *this , label , shape );
+    }
 
   explicit
   View( const std::string & label ,
@@ -590,29 +542,26 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
-  {
-    typedef typename
-      Impl::ViewCreatable< scalar_type , memory_management >::type ok_create ;
+    {
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment< View , memory_space , void >( *this , label , n0, n1, n2, n3, n4, n5, n6, n7 );
 
-    shape_type::assign( oper_type::m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-
-    oper_type::m_stride = Impl::ShapeMap<shape_type,array_layout>::template stride<memory_space>( oper_type::m_shape );
-
-    const unsigned allocation_count =
-      Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride );
-
-    oper_type::m_ptr_on_device = internal_management::allocate( label , allocation_count );
-
-    Impl::ViewInitialize< View >::apply( *this );
-  }
+      Impl::ViewInitialize< View >::apply( *this );
+    }
 
   /*------------------------------------------------------------------*/
 
+#if 1
   KOKKOSARRAY_INLINE_FUNCTION
   View( scalar_type * data_ptr , const shape_type shape , const unsigned stride )
   {
-    internal_private_assign( shape , stride , data_ptr );
+    oper_type::m_shape          = shape ;
+    oper_type::m_stride         = stride ;
+    oper_type::m_ptr_on_device  = data_ptr ;
+
+    Impl::ViewAssignment< View >::increment( oper_type::m_ptr_on_device );
   }
+#endif
 };
 
 //----------------------------------------------------------------------------
@@ -627,48 +576,6 @@ create_mirror( const View<DataType,LayoutType,DeviceType,ManagedType > & );
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Impl {
-template< class DstScalar , class DstMemory , class DstManagement ,
-          class SrcScalar , class SrcMemory , class SrcManagement >
-struct ViewAssignable {};
-
-/* Fully compatible view: */
-template< class Scalar , class Memory , class Management >
-struct ViewAssignable< Scalar , Memory , Management ,
-                       Scalar , Memory , Management >
-{ typedef true_type type ; };
-
-/* Set const from non-const: */
-template< class Scalar , class Memory , class Management >
-struct ViewAssignable< const Scalar , Memory , Management ,
-                             Scalar , Memory , Management >
-{ typedef true_type type ; };
-
-/* Set unmanaged from managed: */
-template< class Scalar , class Memory >
-struct ViewAssignable< Scalar , Memory , MemoryUnmanaged ,
-                       Scalar , Memory , MemoryManaged >
-{ typedef true_type type ; };
-
-/* Set const unmanaged from managed: */
-template< class Scalar , class Memory >
-struct ViewAssignable< const Scalar , Memory , MemoryUnmanaged ,
-                             Scalar , Memory , MemoryManaged >
-{ typedef true_type type ; };
-
-
-template< class Scalar , class Management >
-struct ViewCreatable {};
-
-template< class Scalar >
-struct ViewCreatable< const Scalar , MemoryManaged > {};
-
-/* Only non-const managed memory view may be created */
-template< class Scalar >
-struct ViewCreatable< Scalar , MemoryManaged >
-{ typedef true_type type ; };
-
-}
 } // namespace KokkosArray
 
 #include <impl/KokkosArray_View_factory.hpp>
@@ -676,6 +583,7 @@ struct ViewCreatable< Scalar , MemoryManaged >
 #include <impl/KokkosArray_ViewAssignment.hpp>
 #include <impl/KokkosArray_ViewLeft.hpp>
 #include <impl/KokkosArray_ViewRight.hpp>
+#include <impl/KokkosArray_ViewTileLeft.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

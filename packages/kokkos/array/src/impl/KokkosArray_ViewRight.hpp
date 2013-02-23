@@ -50,6 +50,75 @@
 namespace KokkosArray {
 namespace Impl {
 
+template< class DstViewType >
+struct ViewAssignment<
+  DstViewType ,
+  typename DstViewType::memory_space ,
+  typename enable_if< (
+    ( is_same< typename DstViewType::array_layout , LayoutRight >::value )
+  ) >::type >
+{
+  typedef typename DstViewType::shape_type shape_type ;
+
+private:
+
+  static inline
+  void allocate( DstViewType & dst , const std::string & label )
+  {
+    typedef typename DstViewType::memory_space  memory_space ;
+
+    ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
+
+    const size_t block_count =
+                       dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
+      dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
+
+    dst.m_stride =
+      memory_space::preferred_alignment( dst.m_shape.scalar_size , block_count );
+
+    const size_t allocation_count = dst.m_shape.N0 * dst.m_stride ;
+
+    dst.m_ptr_on_device = (typename DstViewType::scalar_type *)
+      memory_space::allocate( label ,
+                              typeid(typename DstViewType::scalar_type) ,
+                              sizeof(typename DstViewType::scalar_type) ,
+                              allocation_count );
+  }
+
+public:
+
+  ViewAssignment( DstViewType & dst , const std::string & label , const shape_type shape )
+  {
+    dst.m_shape = shape ;
+
+    allocate( dst , label );
+  }
+
+  ViewAssignment( DstViewType & dst , const std::string & label ,
+                  const size_t n0 = 0 ,
+                  const size_t n1 = 0 ,
+                  const size_t n2 = 0 ,
+                  const size_t n3 = 0 ,
+                  const size_t n4 = 0 ,
+                  const size_t n5 = 0 ,
+                  const size_t n6 = 0 ,
+                  const size_t n7 = 0 )
+  {
+    shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+
+    allocate( dst , label );
+  }
+};
+
+} /* namespace Impl */
+} /* namespace KokkosArray */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
 template< class DstViewType , class SrcViewType >
 struct ViewAssignment< DstViewType , SrcViewType ,
   typename enable_if< (

@@ -44,14 +44,11 @@
 #ifndef KOKKOSARRAY_VIEWASSIGNMENT_HPP
 #define KOKKOSARRAY_VIEWASSIGNMENT_HPP
 
-#include <stdio.h>
-
 #include <typeinfo>
 #include <utility>
 #include <KokkosArray_Macros.hpp>
 
 #include <impl/KokkosArray_ArrayTraits.hpp>
-#include <impl/KokkosArray_StaticAssert.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
