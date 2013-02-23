@@ -1039,46 +1039,6 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
-  void TEUCHOS_DEPRECATED
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  transformValues (RowInfo rowinfo,
-                   const SLocalGlobalViews &inds,
-                   IterO rowVals,
-                   IterN newVals,
-                   BinaryFunction f) const
-  {
-    Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
-    (void)cta_lg;
-
-    const size_t STINV = OrdinalTraits<size_t>::invalid();
-    size_t hint = 0; // hint is a guess as to wheter the index is
-    if (lg == GlobalIndices) {
-      ArrayView<const GlobalOrdinal> search_ginds = inds.ginds;
-      for (size_t j=0; j < (size_t)search_ginds.size(); ++j) {
-        const size_t k = findGlobalIndex(rowinfo, search_ginds[j], hint);
-        if (k != STINV) {
-          rowVals[k] = f( rowVals[k], newVals[j] );
-          hint = k+1;
-        }
-      }
-    }
-    else if (lg == LocalIndices) {
-      ArrayView<const LocalOrdinal> search_linds = inds.linds;
-      for (size_t j=0; j < (size_t)search_linds.size(); ++j) {
-        const size_t k = findLocalIndex(rowinfo, search_linds[j], hint);
-        if (k != STINV) {
-          rowVals[k] = f( rowVals[k], newVals[j] );
-          hint = k+1;
-        }
-      }
-    }
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class Scalar, class BinaryFunction>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
