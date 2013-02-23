@@ -2,6 +2,7 @@ AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+AlgebraicPermutationStrategy
 BlockedCoarseMapFactory
 BlockedGaussSeidelSmoother
 BlockedPFactory

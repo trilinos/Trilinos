@@ -43,78 +43,31 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_AggregationExportFactory_decl.hpp
- *
- *  Created on: Feb 10, 2012
- *      Author: wiesner
- */
-
-#ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
-#define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
-
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_AggregationExportFactory_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-
-namespace MueLu {
-
-  class Level;
-
-  /*!
-    @class AggregationExportFactory class.
-    @brief Factory for exporting aggregates data
-
-  */
-
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggregationExportFactory : public TwoLevelFactoryBase {
-#undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    AggregationExportFactory() { }
-
-    //! Destructor.
-    virtual ~AggregationExportFactory() { }
-    //@}
-
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //! Input
-    //@{
-
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
-
-    //@{
-    //! @name Build methods.
-
-    //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
 
 
-  private:
+#include "MueLu_ExplicitInstantiation.hpp"
 
-    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
+#include "MueLu_AlgebraicPermutationStrategy_def.hpp"
 
-  }; // class AggregationExportFactory
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::AlgebraicPermutationStrategy<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+#endif
 
-} // namespace MueLu
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::AlgebraicPermutationStrategy<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
 
-#define MUELU_AGGREGATIONEXPORTFACTORY_SHORT
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::AlgebraicPermutationStrategy<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif
 
-#endif /* MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_ */
+

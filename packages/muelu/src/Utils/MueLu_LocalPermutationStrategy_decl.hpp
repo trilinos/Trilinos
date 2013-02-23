@@ -11,8 +11,12 @@
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
@@ -34,16 +38,28 @@ namespace MueLu {
     @brief Class which defines local permutations of matrix columns which correspond to DOFs of the same node.
     */
 
-    //! @name Apply methods.
-    //@{
+    //! build permutation operators
+    /*!
+     *  The following variables produced
+     *  "A"     :      permuted and scaled A
+     *  "permA" :      permuted A without scaling
+     *  "permP" :      permutation opertor (should be identity)
+     *  "permQT":      transpose permutation operators
+     *  "permScaling": scaling operator
+     *
+     * \param A: input matrix (input)
+     * \param permRowMap: Dof row map permutation shall be restricted on (input)
+     * \param currentLevel: only for output of variables
+     * \param genFactory: const pointer to generating (calling) PermutationFactory // TODO avoid this, not very elegant. Decide which variables have to be generated, give them back per reference to the PermutationFactory.
+     */
+    void BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const;
 
-    //! Apply constraint.
-    void Apply(const Matrix& Ain, Matrix& Aout) const;
-
-    //@}
 
 
   private:
+
+    GlobalOrdinal getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const;
+    GlobalOrdinal globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const;
    };
 
 } // namespace MueLu
