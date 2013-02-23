@@ -56,24 +56,6 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-//#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of CrsMatrixMultiplyOp.
-//
-// Note the lack of default arguments here; they belong in the class
-// definition, not in the forward declaration.
-namespace Tpetra {
-template <class Scalar,
-	  class MatScalar,
-	  class LocalOrdinal,
-	  class GlobalOrdinal,
-	  class Node,
-	  class LocalMatOps>
-class CrsMatrixMultiplyOp;
-  // : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -1517,6 +1499,97 @@ namespace Tpetra {
     /// This method is called in fillComplete().
     void computeGlobalConstants();
 
+    /// \brief Column Map MultiVector used in apply() and gaussSeidel().
+    ///
+    /// This is a column Map MultiVector.  It is used as the target of
+    /// the forward mode Import operation (if necessary) in apply()
+    /// and gaussSeidel(), and the source of the reverse mode Export
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> importMV_;
+
+    /// \brief Row Map MultiVector used in apply().
+    ///
+    /// This is a row Map MultiVector.  It is uses as the source of
+    /// the forward mode Export operation (if necessary) in apply()
+    /// and gaussSeidel(), and the target of the reverse mode Import
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> exportMV_;
+
+    /// \brief Create a (or fetch a cached) column Map MultiVector.
+    ///
+    /// \param X_domainMap [in] A domain Map Multivector.  The
+    ///   returned MultiVector, if nonnull, will have the same number
+    ///   of columns as Y_domainMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the domain Map and the
+    /// column Map are the same (so that normally we wouldn't need the
+    /// column Map MultiVector), but the following (for example)
+    /// holds:
+    ///
+    /// 1. The kernel needs a constant stride input MultiVector, but
+    ///    the given input MultiVector is not constant stride.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getColumnMapMultiVector (const MV& X_domainMap,
+                             const bool force = false) const;
+
+    /// \brief Create a (or fetch a cached) row Map MultiVector.
+    ///
+    /// \param Y_rangeMap [in] A range Map Multivector.  The returned
+    ///   MultiVector, if nonnull, will have the same number of
+    ///   columns as Y_rangeMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the range Map and the
+    /// row Map are the same (so that normally we wouldn't need the
+    /// row Map MultiVector), but one of the following holds:
+    ///
+    /// 1. The kernel needs a constant stride output MultiVector,
+    ///    but the given output MultiVector is not constant stride.
+    ///
+    /// 2. The kernel does not permit aliasing of its input and output
+    ///    MultiVector arguments, but they do alias each other.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getRowMapMultiVector (const MV& Y_rangeMap,
+                          const bool force = false) const;
+
+    //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
+    void 
+    applyNonTranspose (const MV& X_in,
+		       MV& Y_in,
+		       Scalar alpha,
+		       Scalar beta) const;
+
+    //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
+    void
+    applyTranspose (const MV& X_in,
+		    MV& Y_in,
+		    const Teuchos::ETransp mode, 
+		    Scalar alpha, 
+		    Scalar beta) const;
+
     // matrix data accessors
     ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
     ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
@@ -1603,13 +1676,6 @@ namespace Tpetra {
     ///   process.  The globalAssemble() method redistributes these
     ///   to their owning processes.
     std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
-
-    /// \brief A wrapper around multiply(), for use in apply.
-    ///
-    /// This object contains a non-owning RCP to <tt>*this</tt>.
-    /// Therefore, it is not allowed to persist past the destruction
-    /// of *this.  As a result, WE MAY NOT SHARE THIS POINTER.
-    RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///

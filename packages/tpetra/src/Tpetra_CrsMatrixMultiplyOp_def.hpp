@@ -64,8 +64,8 @@ namespace Tpetra {
   : matrix_(A) {
     // we don't require that A is fill complete; we will query for the importer/exporter at apply()-time
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-    importTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::import" );
-    exportTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::export" );
+    importTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::import");
+    exportTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::export");
 #endif
   }
 
