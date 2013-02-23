@@ -29,6 +29,11 @@ namespace mesh {
  * These functions are for making certain parallel operations more convenient.
  */
 
+/** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
+*/
+void copy_owned_to_shared( const BulkData& mesh,
+                           const std::vector< const FieldBase *> & fields );
+
 /** Communicate field data from domain to range.
  *  The fields array must be identical on all processors.
  *  All fields and mesh entities must belong to the same mesh.

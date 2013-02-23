@@ -11,6 +11,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
@@ -32,4 +33,16 @@ STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
   }
   
   STKUNIT_ASSERT_LT(mpi_rank, mpi_size);
+}
+
+STKUNIT_UNIT_TEST(UnitTestParallel, testCommAll)
+{
+  unsigned mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  unsigned mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  STKUNIT_ASSERT_LT(mpi_rank, mpi_size);
+
+  stk::CommAll comm_all(MPI_COMM_WORLD);
+
+  STKUNIT_ASSERT_EQ(comm_all.parallel_size(), mpi_size);
+  STKUNIT_ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);
 }

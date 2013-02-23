@@ -1523,7 +1523,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
     if (sync_aura) stk::mesh::communicate_field_data(eMesh.shared_aura(), fields);
 
     // the shared part (just the shared boundary)
-    if (sync_shared) stk::mesh::communicate_field_data(*eMesh.ghostings()[0], fields);
+    if (sync_shared) stk::mesh::copy_owned_to_shared(eMesh, fields);
   }
   std::ostringstream out1;
   out1 << "test_sync_1: sync_shared= " << sync_shared << " sync_aura= " << sync_aura << "\n";
@@ -1581,7 +1581,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFieldComm)
   MPI_Barrier( pm );
 
   // run this with exercise_field_sync_bug = true, and 3 <= nprocs <= 4 to show the possible bug
-  bool exercise_field_sync_bug = false;
+  bool exercise_field_sync_bug = true;
 
   const unsigned p_size = stk::parallel_machine_size( pm );
 
