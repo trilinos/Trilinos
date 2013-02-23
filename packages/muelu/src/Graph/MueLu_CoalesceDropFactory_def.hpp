@@ -50,6 +50,7 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -79,8 +80,9 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
     validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
-    validParamList->set< std::string >           ("algorithm",          "threshold",   "Dropping algorithm");
+    validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
     validParamList->set< double >                ("threshold",          0.0,           "Dropping threshold");
 
     return validParamList;
@@ -93,6 +95,10 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
+
+    const ParameterList  & pL = GetParameterList();
+    if (pL.get<std::string>("algorithm") == "laplacian")
+      Input(currentLevel, "Coordinates");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -114,11 +120,14 @@ namespace MueLu {
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("algorithm");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null && algo != "threshold", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (threshold|laplacian)");
 
-      if (algo == "threshold") {
-        Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("threshold"));
+      Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("threshold"));
+      GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
 
+      LocalOrdinal numDropped = 0;
+      if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
           predrop_ = rcp(new PreDropFunctionConstVal(threshold));
@@ -136,23 +145,21 @@ namespace MueLu {
             threshold = newt;
           }
         }
-        GetOStream(Runtime0, 0) << "threshold = " << threshold << std::endl;
 
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
-        // Case 1:  scalar problem, no dropping => just use matrix graph
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
+          // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
-          return;
-        }
 
-        // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
-        //                                          graph's map information, e.g., whether index is local
-        if ( (A->GetFixedBlockSize() == 1) && threshold != STS::zero() ) {
+        } else if ( (A->GetFixedBlockSize() == 1) && threshold != STS::zero() ) {
+          // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
+          //                                          graph's map information, e.g., whether index is local
+
           // allocate space for the local graph
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
@@ -160,7 +167,7 @@ namespace MueLu {
           RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
-          LocalOrdinal realnnz = 0, numDropped = 0;
+          LocalOrdinal realnnz = 0;
 
           rows[0] = 0;
           for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); ++row) {
@@ -188,28 +195,104 @@ namespace MueLu {
             }
             rows[row+1] = realnnz;
           }
-          GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", 1);
-          return;
 
-        } //if ( (A->GetFixedBlockSize() == 1) && (threshold != STS::zero()) )
-
-        // TODO
-        // Case 3:  Multiple DOF/node problem without dropping
-        if ( (A->GetFixedBlockSize() > 1) && (threshold == STS::zero()) ) {
+        } else if ( (A->GetFixedBlockSize() > 1) && (threshold == STS::zero()) ) {
+          // Case 3:  Multiple DOF/node problem without dropping
+          // TODO
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs is not yet implemented.");
-        }
 
-        // TODO
-        // Case 4:  Multiple DOF/node problem with dropping
-        if ( (A->GetFixedBlockSize() > 1) && (threshold != STS::zero()) ) {
+        } else if ( (A->GetFixedBlockSize() > 1) && (threshold != STS::zero()) ) {
+          // Case 4:  Multiple DOF/node problem with dropping
+          // TODO
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
         }
 
+      } else if (algo == "laplacian") {
+        // Trivial case: scalar problem, no dropping. Can return original graph
+        if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
+          RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+          Set(currentLevel, "DofsPerNode", 1);
+          Set(currentLevel, "Graph", graph);
+        }
+
+        // TODO: need to be very careful with maps for this case
+        if (A->GetFixedBlockSize() > 1)
+          throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFS is not yet implemented.");
+
+        // allocate space for the local graph
+        ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
+        ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+        const RCP<const Map> uniqueMap    = A->getDomainMap();
+        const RCP<const Map> nonUniqueMap = A->getColMap();
+        RCP<const Import>        importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+
+        // Get ghost coordinates
+        RCP<MultiVector>        Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
+        RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+        ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+
+        LocalOrdinal numRows = Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());
+
+        // Construct Distance Laplacian diagonal
+        RCP<Vector> localLaplDiag = VectorFactory::Build(uniqueMap);
+        Teuchos::ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          LocalOrdinal nnz = Teuchos::as<LocalOrdinal>(A->getNumEntriesInLocalRow(row));
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar>       vals;
+          A->getLocalRowView(row, indices, vals);
+
+          for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+            LocalOrdinal col = indices[colID];
+
+            if (row != col)
+              localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+          }
+        }
+        RCP<Vector> ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+        ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+        Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+
+        LocalOrdinal realnnz = 0;
+
+        rows[0] = 0;
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          LocalOrdinal nnz = Teuchos::as<LocalOrdinal>(A->getNumEntriesInLocalRow(row));
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar>       vals;
+          A->getLocalRowView(row, indices, vals);
+
+          for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+            LocalOrdinal col = indices[colID];
+
+            if (row == col) {
+              columns[realnnz++] = col;
+              continue;
+            }
+
+            Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+            typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+            typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+            if (aij > aiiajj)
+              columns[realnnz++] = col;
+            else
+              numDropped++;
+          }
+          rows[row+1] = realnnz;
+        }
+
+        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
+        Set(currentLevel, "Graph", graph);
+        Set(currentLevel, "DofsPerNode", 1);
       }
+
+      GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
 
     } else {
       //what Tobias has implemented

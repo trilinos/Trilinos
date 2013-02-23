@@ -1136,6 +1136,19 @@ namespace MueLu {
     return fancy;
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
+    size_t numVectors = v.getNumVectors();
+
+    Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
+    for (size_t j = 0; j < numVectors; j++) {
+      Teuchos::ArrayRCP<const Scalar> vv = v.getData(j);
+      d += (vv[i0] - vv[i1])*(vv[i0] - vv[i1]);
+    }
+
+    return Teuchos::ScalarTraits<SC>::magnitude(d);
+  }
+
 #ifdef HAVE_MUELU_EPETRA
 //   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 //   RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {

@@ -370,6 +370,10 @@ namespace MueLu {
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os);
 
+    // Squared distance between two rows in a multivector
+    // Used for coords vector
+    static Magnitude Distance2(const MultiVector& v, LO i0, LO i1);
+
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA
