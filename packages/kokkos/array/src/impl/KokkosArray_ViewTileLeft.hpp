@@ -68,6 +68,8 @@ struct ViewAssignment<
   typename DstViewType::memory_space ,
   typename enable_if< (
     is_LayoutTileLeft< typename DstViewType::array_layout >::value
+    &&
+    is_same< typename DstViewType::memory_traits , MemoryManaged >::value
   ) >::type >
 {
   typedef typename DstViewType::shape_type shape_type ;
