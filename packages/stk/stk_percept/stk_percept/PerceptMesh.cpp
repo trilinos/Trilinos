@@ -4945,6 +4945,37 @@ namespace stk {
       return true;
     }
 
+    stk::mesh::Entity PerceptMesh::getParent(stk::mesh::Entity element, bool check_for_family_tree)
+    {
+      const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      if (element_to_family_tree_relations.size()==0 )
+        {
+          if (check_for_family_tree)
+            {
+              std::cout << "PerceptMesh::getParent:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+              print_entity(std::cout, element);
+              throw std::runtime_error("PerceptMesh::getParent:: no FAMILY_TREE_RANK relations: element");
+            }
+          else
+            {
+              return stk::mesh::Entity();
+            }
+        }
+      if (element_to_family_tree_relations.size() > 2)
+        throw std::logic_error(std::string("PerceptMesh::getParent:: too many relations = ")+toString(element_to_family_tree_relations.size()));
+
+      unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+      stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
+      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      if (family_tree_relations.size() == 0)
+        {
+          throw std::logic_error(std::string("getChildren:: family_tree_relations size=0 = "));
+        }
+      stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
+      return parent;
+    }
+
     void PerceptMesh::printParentChildInfo(const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;

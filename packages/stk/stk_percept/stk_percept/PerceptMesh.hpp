@@ -524,6 +524,7 @@ namespace stk {
       bool match(stk::mesh::Entity node_0, stk::mesh::Entity node_1, bool use_coordinate_compare,
                  double ave_edge_length, double tol=1.e-5);
 
+      // ====================================================================================================================================
       /**
        * A family tree relation holds the parent/child relations for a refined mesh.
        *
@@ -575,8 +576,11 @@ namespace stk {
 
       // return false if we couldn't get the children
       bool getChildren( const stk::mesh::Entity element, std::vector<stk::mesh::Entity>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
+      stk::mesh::Entity getParent(stk::mesh::Entity element, bool check_for_family_tree);
 
       void printParentChildInfo(const stk::mesh::Entity element, bool check_for_family_tree=true);
+
+      // ====================================================================================================================================
 
       static inline
       stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {

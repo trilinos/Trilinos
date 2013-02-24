@@ -523,6 +523,40 @@ namespace stk {
         } // ineed_ent
     }
 
+    void checkPolarity(stk::percept::PerceptMesh& eMesh)
+    {
+      for (unsigned rank_iter=1; rank_iter < eMesh.element_rank(); rank_iter++)
+        {
+          const vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( rank_iter );
+          for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              const unsigned num_elements_in_bucket = bucket.size();
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                {
+                  stk::mesh::Entity side = bucket[iElement];
+                  stk::mesh::PairIterRelation side_to_elem = side.relations(eMesh.element_rank());
+                  for (unsigned ie=0; ie < side_to_elem.size(); ie++)
+                    {
+                      int permIndex = -1;
+                      int permPolarity = 1;
+
+                      unsigned k_element_side = side_to_elem[ie].relation_ordinal();
+                      stk::mesh::Entity element = side_to_elem[ie].entity();
+
+                      eMesh.element_side_permutation(element, side, k_element_side, permIndex, permPolarity, false, false);
+                      //std::cout << "element= " << element.identifier() << std::endl;
+                      if (permIndex < 0 || permPolarity < 0)
+                        {
+                          std::cout << "element/side polarity problem: permIndex = " << permIndex << " permPolarity= " << permPolarity << std::endl;
+                          throw std::runtime_error( "element/side polarity problem:");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     void Refiner::
     doBreak()
     {
@@ -537,6 +571,7 @@ namespace stk {
       if (0) doPrintSizes();
 
       get_side_part_relations(false, m_side_part_map);
+      checkPolarity(m_eMesh);
 
       CommDataType buffer_entry;
 
@@ -1033,6 +1068,8 @@ namespace stk {
 
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
+
+      checkPolarity(m_eMesh);
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
       snapAndSmooth(m_geomSnap, m_geomFile);
@@ -2964,6 +3001,12 @@ namespace stk {
             }
         }
 
+      if (DEBUG_GSPR && permPolarity < 0)
+        {
+          std::cout << "permPolarity < 0" << std::endl;
+        }
+      if (!isShell && ( permPolarity < 0))
+        return false;
       if (permIndex >= 0)
         {
           mesh::PairIterRelation rels = side_elem.relations(m_eMesh.element_rank());
