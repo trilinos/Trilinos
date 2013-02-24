@@ -87,8 +87,8 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
 template <class SC, class LO, class GO, class NO>
 Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> >
 CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > const &Ain, Teuchos::ParameterList &paramList,
-                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inCoords = Teuchos::null,
-                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inNullspace = Teuchos::null);
+                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inCoords,
+                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inNullspace);
 
 
 /*! \fn CreateTpetraPreconditioner
