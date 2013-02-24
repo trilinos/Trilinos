@@ -24,7 +24,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
-
+#ifndef HAVE_MUELU_INST_COMPLEX_INT_INT // TODO remove this -> check scalar = std::complex
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
       Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
@@ -271,6 +271,10 @@ namespace MueLu {
 
     GetOStream(Statistics0, 0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
     GetOStream(Statistics0, 0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
+
+#else
+#warning PermutationFactory not compiling/working for Scalar==complex.
+#endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
