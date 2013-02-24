@@ -2290,9 +2290,14 @@ namespace Tpetra {
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
     const size_t numVectors = X_in.getNumVectors ();
-    // because of Views, it is difficult to determine if X and Y point to the same data.
-    // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
-    // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
+
+    // We don't allow X_in and Y_in to alias one another.  It's hard
+    // to check this, because advanced users could create views from
+    // raw pointers.  However, if X_in and Y_in reference the same
+    // object, we will do the user a favor by copying X into new
+    // storage (with a warning).  We only need to do this if we have
+    // trivial importers; otherwise, we don't actually apply the
+    // operator from X into Y.
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
     // access X indirectly, in case we need to create temporary storage
@@ -2305,15 +2310,14 @@ namespace Tpetra {
       beta = STS::zero ();
     }
 
-    // currently, cannot multiply from multivector of non-constant stride
+    // The kernels do not allow input or output with nonconstant stride.
     if (! X_in.isConstantStride () && importer.is_null ()) {
-      // generate a strided copy of X_in
-      X = rcp (new MV (X_in));
-    } else { // just temporary, so this non-owning RCP is okay
-      X = rcpFromRef (X_in);
+      X = rcp (new MV (X_in)); // Constant-stride copy of X_in
+    } else { 
+      X = rcpFromRef (X_in); // Reference to X_in
     }
 
-    // set up import/export temporary multivectors
+    // Set up temporary multivectors for Import and/or Export.
     if (importer != null) {
       if (importMV_ != null && importMV_->getNumVectors() != numVectors) {
 	importMV_ = null;
@@ -2333,22 +2337,21 @@ namespace Tpetra {
 
     // If we have a non-trivial exporter, we must import elements that
     // are permuted or are on other processors.
-    if (exporter != null) {
+    if (! exporter.is_null ()) {
       {
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
 	//        Teuchos::TimeMonitor lcltimer(*importTimer_);
 #endif
-        exportMV_->doImport(X_in,*exporter,INSERT);
+        exportMV_->doImport (X_in, *exporter, INSERT);
       }
-      // multiply out of exportMV_
-      X = exportMV_;
+      X = exportMV_; // multiply out of exportMV_
     }
 
     // If we have a non-trivial importer, we must export elements that
     // are permuted or belong to other processors.  We will compute
     // solution into the to-be-exported MV; get a view.
     if (importer != null) {
-      // Do actual computation
+      // Do the local computation.
       this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode, alpha, STS::zero ());
       if (Y_is_overwritten) {
 	Y_in.putScalar (STS::zero ());
@@ -2376,8 +2379,9 @@ namespace Tpetra {
       }
     }
 
-    // Handle case of rangemap being a local replicated map: in this
-    // case, sum contributions from each processor
+    // If the range Map is a locally replicated map, sum the
+    // contributions from each process.  (That's why we set beta=0
+    // above for all processes but Proc 0.)
     if (Y_is_replicated) {
       Y_in.reduce ();
     }
@@ -2407,7 +2411,6 @@ namespace Tpetra {
     } else {
       applyTranspose (X, Y, mode, alpha, beta);
     }
-    //sameScalarMultiplyOp_->apply (X, Y, mode, alpha, beta);
   }
 
   /////////////////////////////////////////////////////////////////////////////
