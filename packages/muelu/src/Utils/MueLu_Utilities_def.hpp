@@ -1136,6 +1136,32 @@ namespace MueLu {
     return fancy;
   }
 
+  //! @brief Detect Dirichlet rows
+  template <class SC, class LO, class GO, class NO, class LMO>
+  ArrayRCP<const bool>
+  Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol) {
+
+    const RCP<const Map> rowMap = A.getRowMap();
+    ArrayRCP<bool> boundaryNodes(A.getNodeNumRows(),true);
+
+    for(LO row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
+
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      A.getLocalRowView(row, indices, vals);
+      size_t nnz = A.getNumEntriesInLocalRow(row);
+      if (nnz > 1) {
+        for(size_t col=0; col<nnz; ++col) {
+          if ( (indices[col] != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
+            boundaryNodes[row] = false;
+            break;
+          }
+        }
+      }
+    }
+    return boundaryNodes;
+  } //DetectDirichletRows
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
     size_t numVectors = v.getNumVectors();

@@ -153,13 +153,13 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
-        const Scalar dirichletThreshold = pL.get<Scalar>("Dirichlet detection threshold");
+        const typename STS::magnitudeType dirichletThreshold = pL.get<Scalar>("Dirichlet detection threshold");
 
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           //Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = Utils<SC,LO,GO,NO>::DetectDirichletRows(*A,dirichletThreshold);
+          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A,dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
@@ -296,12 +296,10 @@ namespace MueLu {
               numDropped++;
     
           }
-          if (realnnz == 1) boundaryNodes[row] = true;
           rows[row+1] = realnnz;
         }
 
         RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
-        graph->SetBoundaryNodeMap(boundaryNodes);
         Set(currentLevel, "Graph", graph);
         Set(currentLevel, "DofsPerNode", 1);
       }
