@@ -85,6 +85,9 @@
 #undef STK_PERCEPT_HAS_GEOMETRY
 #endif
 
+#define STK_ADAPT_USE_YAML_CPP 1
+#define STK_ADAPT_HAVE_YAML_CPP (STK_ADAPT_USE_YAML_CPP && defined(STK_BUILT_IN_SIERRA))
+
 #include <stk_percept/ExceptionWatch.hpp>
 
 

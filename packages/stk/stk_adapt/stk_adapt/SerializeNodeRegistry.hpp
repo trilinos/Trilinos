@@ -20,6 +20,7 @@
 #include <mpi.h>
 #endif
 
+#include <stk_percept/Percept.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
@@ -45,8 +46,6 @@
 
 #define DEBUG_YAML 0
 
-#define STK_ADAPT_USE_YAML_CPP 1
-#define STK_ADAPT_HAVE_YAML_CPP (STK_ADAPT_USE_YAML_CPP && STK_BUILT_IN_SIERRA)
 #if STK_ADAPT_HAVE_YAML_CPP
 #include <yaml-cpp/yaml.h>
 

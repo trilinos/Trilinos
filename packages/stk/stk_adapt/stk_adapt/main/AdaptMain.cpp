@@ -25,7 +25,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
 #include <stk_percept/ProgressMeter.hpp>
-#include <stk_percept/Histogram.hpp>
+#include <stk_percept/Histograms.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
@@ -567,6 +567,10 @@ namespace stk {
 
       double hmesh_factor = 0.0;
       double hmesh_min_max_ave_factor[3] = {0,0,0};
+      //std::string histograms_root="histograms_root";
+      std::string histograms_root="cout";
+      //std::string histogram_options = "{mesh_fields: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
+      std::string histogram_options = "{mesh_fields: [edge_length, quality_edge]}";
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc =
@@ -1012,27 +1016,30 @@ namespace stk {
                         if (compute_hmesh.size() != 0)
                           {
                             double hmesh=0.0;
-                            Histogram<double> histogram(50), quality_histogram(50);
+                            //Histograms<double> histograms(histograms_root);
+                            Histograms<double> histograms;
+#if STK_ADAPT_HAVE_YAML_CPP
+                            HistogramsParser<double> hparser(histogram_options);
+                            hparser.create(histograms);
+#endif
                             if (compute_hmesh == "eigens")
                               {
-                                hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor, &histogram, &quality_histogram);
+                                hmesh = eMesh.hmesh_stretch_eigens(hmesh_min_max_ave_factor, &histograms["stretch_eigens"], &histograms["quality_edge_eigens"]);
+                                histograms["stretch_eigens"].set_titles("Stretch Eigens Histogram");
+                                histograms["quality_edge_eigens"].set_titles("Stretch Eigens Max/Min Quality Histogram");
                               }
                             else if (compute_hmesh == "edges")
                               {
-                                hmesh = eMesh.hmesh_edge_lengths(hmesh_min_max_ave_factor, &histogram, &quality_histogram);
+                                hmesh = eMesh.hmesh_edge_lengths(hmesh_min_max_ave_factor, &histograms["edge_length"], &histograms["quality_edge"]);
+                                histograms["edge_length"].set_titles("Edge Length Histogram");
+                                histograms["quality_edge_eigens"].set_titles("Edge Max/Min Quality Histogram");
                               }
                             else
                               {
                                 throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
                               }
-                            if (histogram.size())
-                              {
-                                histogram.compute_uniform_bins(10);
-                              }
-                            if (quality_histogram.size())
-                              {
-                                quality_histogram.compute_uniform_bins(10);
-                              }
+                            histograms.compute_uniform_bins(10);
+
                             if (!p_rank) {
                               std::cout << "Before refine, Mesh size (h-parameter) = " << hmesh
                                         << " (min = " << hmesh_min_max_ave_factor[0]
@@ -1045,20 +1052,8 @@ namespace stk {
                                                    << " max = " << hmesh_min_max_ave_factor[1]
                                                    << " ave = " << hmesh_min_max_ave_factor[2]
                                                    << ")\n " ;
-                              if (histogram.size())
-                                {
-                                  histogram.print_simple_table(std::cout, "Edge Length Histogram");
-                                  histogram.print_simple_table(stk::percept::pout(), "Edge Length Histogram");
-                                  histogram.print_table(std::cout, true, "Edge Length Histogram");
-                                  histogram.print_table(stk::percept::pout(), true, "Edge Length Histogram");
-                                }
-                              if (quality_histogram.size())
-                                {
-                                  quality_histogram.print_simple_table(std::cout, "Edge max/min Quality Histogram");
-                                  quality_histogram.print_simple_table(stk::percept::pout(), "Edge max/min Quality Histogram");
-                                  quality_histogram.print_table(std::cout, true, "Edge max/min Quality Histogram");
-                                  quality_histogram.print_table(stk::percept::pout(), true, "Edge max/min Quality Histogram");
-                                }
+                              histograms.print();
+                              //histograms.print(stk::percept::pout());
                             }
                             hmesh_factor = hmesh;
                           }
@@ -1259,27 +1254,30 @@ namespace stk {
                               {
                                 double hmesh=0.0;
                                 double min_max_ave[3];
-                                Histogram<double> histogram(50), quality_histogram(50);
+                                //Histograms<double> histograms(histograms_root);
+                                Histograms<double> histograms;
+#if STK_ADAPT_HAVE_YAML_CPP
+                                HistogramsParser<double> hparser(histogram_options);
+                                hparser.create(histograms);
+#endif
+
                                 if (compute_hmesh == "eigens")
                                   {
-                                    hmesh = eMesh.hmesh_stretch_eigens(min_max_ave, &histogram, &quality_histogram);
+                                    hmesh = eMesh.hmesh_stretch_eigens(min_max_ave, &histograms["stretch_eigens"], &histograms["quality_edge_eigens"]);
+                                    histograms["stretch_eigens"].set_titles("Stretch Eigens Histogram");
+                                    histograms["quality_edge_eigens"].set_titles("Stretch Eigens Max/Min Quality Histogram");
                                   }
                                 else if (compute_hmesh == "edges")
                                   {
-                                    hmesh = eMesh.hmesh_edge_lengths(min_max_ave, &histogram, &quality_histogram);
+                                    hmesh = eMesh.hmesh_edge_lengths(min_max_ave, &histograms["edge_length"], &histograms["quality_edge"]);
+                                    histograms["edge_length"].set_titles("Edge Length Histogram");
+                                    histograms["quality_edge_eigens"].set_titles("Edge Max/Min Quality Histogram");
                                   }
                                 else
                                   {
                                     throw std::runtime_error("unknown option for compute_hmesh: "+compute_hmesh);
                                   }
-                                if (histogram.size())
-                                  {
-                                    histogram.compute_uniform_bins(10);
-                                  }
-                                if (quality_histogram.size())
-                                  {
-                                    quality_histogram.compute_uniform_bins(10);
-                                  }
+                                histograms.compute_uniform_bins(10);
 
                                 hmesh_factor /= hmesh;
                                 hmesh_min_max_ave_factor[0] /= min_max_ave[0];
@@ -1305,20 +1303,8 @@ namespace stk {
                                             << " max = " << hmesh_min_max_ave_factor[1]
                                             << " ave = " << hmesh_min_max_ave_factor[2]
                                                        << ")\n";
-                                  if (histogram.size())
-                                    {
-                                      histogram.print_simple_table(std::cout, "Edge Length Histogram");
-                                      histogram.print_simple_table(stk::percept::pout(), "Edge Length Histogram");
-                                      histogram.print_table(std::cout, true, "Edge Length Histogram");
-                                      histogram.print_table(stk::percept::pout(), true, "Edge Length Histogram");
-                                    }
-                                  if (quality_histogram.size())
-                                    {
-                                      quality_histogram.print_simple_table(std::cout, "Edge max/min Quality Histogram");
-                                      quality_histogram.print_simple_table(stk::percept::pout(), "Edge max/min Quality Histogram");
-                                      quality_histogram.print_table(std::cout, true, "Edge max/min Quality Histogram");
-                                      quality_histogram.print_table(stk::percept::pout(), true, "Edge max/min Quality Histogram");
-                                    }
+                                  histograms.print();
+                                  //histograms.print(stk::percept::pout());
                                 }
                               }
                             if (print_hmesh_surface_normal)

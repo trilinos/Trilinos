@@ -6,7 +6,10 @@
 #include <map>
 #include <stdio.h>
 
+
+
 #include <stk_percept/Percept.hpp>
+#include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <stk_percept/GeometryVerifier.hpp>
@@ -19,8 +22,6 @@
 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 //#include "Intrepid_Basis.hpp"
-
-#include <stk_percept/PerceptMesh.hpp>
 
 //#include <Intrepid_Basis.hpp>
 

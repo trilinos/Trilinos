@@ -95,16 +95,26 @@ namespace stk {
       std::vector<CountsType> m_counts;
       unsigned m_max_column_width;
       const char m_bar_symbol;
-
+      std::string m_titles[4];
     public:
       typedef std::vector<T> RangesType;
 
-      Histogram(unsigned max_column_width=40, const char bar_symbol = '=') : 
+      Histogram(unsigned max_column_width=40, const char bar_symbol = '=') :
         m_max_column_width(max_column_width), m_bar_symbol(bar_symbol)
       {
         reset();
+        set_titles();
       }
+
       ~Histogram() {}
+      void set_titles(std::string title="Histogram",
+                      std::string title1="Ranges / Mid-Point", std::string title2="Counts", std::string title3="Percentage")
+      {
+        m_titles[0]=title;
+        m_titles[1]=title1;
+        m_titles[2]=title2;
+        m_titles[3]=title3;
+      }
 
     private:
       /** resets values computed from the data */
@@ -232,23 +242,26 @@ namespace stk {
         stream << std::endl;
       }
 
-      void print_simple_table(std::ostream& stream, std::string title="Histogram", 
-                              std::string title1="Ranges", std::string title2="Counts", std::string title3="Percentage")
+      void print_simple_table(std::ostream& stream)
       {
         std::pair<unsigned,unsigned> max_tot_count = m_count_stats;
-        size_t width1 = title1.length()+2; // for "# "
-        size_t width2 = title2.length();
-        size_t width3 = title3.length();
-        size_t width10 = title1.length()+2; // for "# "
-        size_t width20 = title2.length();
-        size_t width30 = title3.length();
+        size_t width1 = m_titles[1].length()+2; // for "# "
+        size_t width2 = m_titles[2].length();
+        size_t width3 = m_titles[3].length();
+        size_t width10 = width1;
+        size_t width20 = width2;
+        size_t width30 = width3;
+        size_t w0=0, w1=0, w11=0;
 
         for (unsigned i=0; i < m_counts.size(); ++i)
           {
-            std::ostringstream ostr0, ostr1, ostr2, ostr3;
+            std::ostringstream ostr0, ostr1, ostr11, ostr2, ostr3;
             ostr0 << m_ranges[i];
             ostr1 << m_ranges[i+1];
-            width1 = std::max(width1, ostr0.str().length()+ostr1.str().length()+1);
+            ostr11 << (m_ranges[i]+m_ranges[i+1])/2.;
+            w0 = std::max(w0, ostr0.str().length());
+            w1 = std::max(w1, ostr1.str().length());
+            w11 = std::max(w11, ostr11.str().length());
 
             unsigned count = m_counts[i];
             double percent = 100.0*double(count)/double(max_tot_count.second);
@@ -258,30 +271,43 @@ namespace stk {
             width2 = std::max(width2, ostr2.str().length());
             width3 = std::max(width3, ostr3.str().length());
           }
+        size_t w012=w0+w1+w11+3;
+        if (w012 < width1)
+          {
+            if (width1 % 3) ++width1;
+            if (width1 % 3) ++width1;
+            if (width1 % 3) ++width1;
+            w0=width1/3;
+            w1=width1/3;
+            w11=width1/3;
+          }
+        else
+          {
+            width1 = w012;
+          }
 
-        std::string title1_filled = "# "+title1+ (width10<width1?std::string(width1-width10,' '):"");
-        std::string title2_filled = title2 + (width20<width2?std::string(width2-width20,' '):"");
-        std::string title3_filled = title3 + (width30<width3?std::string(width3-width30,' '):"");
-        stream << title << std::endl;
-        stream << std::setw(width1) << std::left << title1_filled << " " << std::setw(width2) <<  title2_filled << " " << std::setw(width3) << title3_filled << std::endl;
+        std::string title1_filled = "# "+m_titles[1]+ (width10<width1?std::string(width1-width10,' '):"");
+        std::string title2_filled = m_titles[2] + (width20<width2?std::string(width2-width20,' '):"");
+        std::string title3_filled = m_titles[3] + (width30<width3?std::string(width3-width30,' '):"");
+        stream << "# Histogram: " << m_titles[0] << std::endl;
+        stream << std::setw(width1) << std::right << title1_filled << " " << std::setw(width2) <<  title2_filled << " " << std::setw(width3) << title3_filled << std::endl;
         std::string line(width1+width2+width3+2,'-');
         line = "# "+line;
         stream << line << std::endl;
         for (unsigned i=0; i < m_counts.size(); ++i)
           {
-            std::ostringstream ostr, ostr0, ostr1, ostr2, ostr3;
-            ostr0 << m_ranges[i];
-            ostr1 << m_ranges[i+1];
-            ostr << ostr0.str() << " " << ostr1.str();
-            stream << std::setw(width1) << ostr.str();
+            stream << std::setw(w0) << m_ranges[i] << " ";
+            stream << std::setw(w1) << m_ranges[i+1] << " ";
+            stream << std::setw(w11) << (m_ranges[i]+m_ranges[i+1])/2.;
             unsigned count = m_counts[i];
             double percent = 100.0*double(count)/double(max_tot_count.second);
             stream << " " << std::setw(width2) << count << " " << std::setw(width3) << percent << std::endl;
           }
       }
 
-      void print_table(std::ostream& os, bool use_percentage=false, const std::string title="Histogram")
+      void print_table(std::ostream& os, bool use_percentage=false)
       {
+        std::string title=m_titles[0];
         std::pair<unsigned,unsigned> max_tot_count = m_count_stats;
         if (!use_percentage && max_tot_count.first > m_max_column_width)
           {

@@ -10,7 +10,6 @@
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/Name.hpp>
-#include <stk_percept/Histogram.hpp>
 
 #include "ShardsInterfaceTable.hpp"
 
@@ -65,6 +64,8 @@ namespace Intrepid {
 
 namespace stk {
   namespace percept {
+
+    template<typename T> class Histogram;
 
     typedef mesh::Field<double>                          ScalarFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
