@@ -72,9 +72,10 @@ namespace Galeri {
 
       Scalar delta_x, delta_y, delta_z;
 
-      Scalar lx = list.get<Scalar>("lx", 1.0);
-      Scalar ly = list.get<Scalar>("ly", 1.0);
-      Scalar lz = list.get<Scalar>("lz", 1.0);
+      double one = 1.0;
+      Scalar lx = list.get<Scalar>("lx", one) * list.get<Scalar>("stretchx", one);
+      Scalar ly = list.get<Scalar>("ly", one) * list.get<Scalar>("stretchy", one);
+      Scalar lz = list.get<Scalar>("lz", one) * list.get<Scalar>("stretchz", one);
 
       GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
       GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
