@@ -544,11 +544,22 @@ namespace stk {
                       unsigned k_element_side = side_to_elem[ie].relation_ordinal();
                       stk::mesh::Entity element = side_to_elem[ie].entity();
 
+                      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+                      int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
+
+                      bool isShell = false;
+                      if (topoDim < (int)element.entity_rank())
+                        {
+                          isShell = true;
+                        }
+
                       eMesh.element_side_permutation(element, side, k_element_side, permIndex, permPolarity, false, false);
                       //std::cout << "element= " << element.identifier() << std::endl;
-                      if (permIndex < 0 || permPolarity < 0)
+                      if (!isShell && (permIndex < 0 || permPolarity < 0))
                         {
                           std::cout << "element/side polarity problem: permIndex = " << permIndex << " permPolarity= " << permPolarity << std::endl;
+                          std::cout << "tmp srk element= "; eMesh.print(element, true, true);
+                          std::cout << " side= "; eMesh.print(side, true, true);
                           throw std::runtime_error( "element/side polarity problem:");
                         }
                     }
@@ -1805,13 +1816,20 @@ namespace stk {
               new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(num_new_nodes_needed);
               if (num_new_nodes_needed > nodeIds_onSE.size())
                 {
+
                   std::cout << "Refiner::createNewNeededNodeIds logic err #3:  num_new_nodes_needed= " << num_new_nodes_needed
                             << " nodeIds_onSE.size() = " << nodeIds_onSE.size()
                             << " needed_entity_ranks.first= " << needed_entity_ranks[ineed_ent].first
                             << " needed_entity_ranks.second= " << needed_entity_ranks[ineed_ent].second
+                            << " numSubDimNeededEntities= " << numSubDimNeededEntities
+                            << " iSubDimOrd = " << iSubDimOrd
                             << std::endl;
                   std::cout << "P[" << m_eMesh.get_rank() << "] element= ";
                   m_eMesh.print(element);
+                  for (unsigned kn=0; kn < elem_nodes.size(); kn++)
+                    {
+                      m_eMesh.dump_vtk(elem_nodes[kn].entity(), std::string("node_dump_")+toString(kn)+".vtk");
+                    }
 
                   throw std::logic_error("Refiner::createNewNeededNodeIds logic err #3");
                 }
@@ -2799,7 +2817,7 @@ namespace stk {
                               bool csf = connectSidesForced(element, side, valid_side_part_map, true);
                               if (DEBUG_GSPR) {
                                 std::cout << "tmp srk f2: csf= " << csf << " elem= "; m_eMesh.print(element, true, true);
-                                std::cout << " side= "; m_eMesh.print(side, true, true); 
+                                std::cout << " side= "; m_eMesh.print(side, true, true);
                               }
                               if (csf)
                                 {

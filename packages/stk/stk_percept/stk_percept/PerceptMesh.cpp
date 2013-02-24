@@ -4109,65 +4109,71 @@ namespace stk {
 #endif
     }
 
-    static int vtk_type(stk::mesh::Entity element)
+    static std::string vtk_type(stk::mesh::Entity element)
     {
       const CellTopologyData * topology_data = PerceptMesh::get_cell_topology(element);
       switch(topology_data->key)
         {
         case shards::Triangle<3>::key:
-          return 5;
+          return "5";
         case shards::Quadrilateral<4>::key:
-          return 9;
+          return "9";
         case shards::Tetrahedron<4>::key:
-          return 10;
+          return "10";
         case shards::Pyramid<5>::key:
-          return 14;
+          return "14";
         case shards::Wedge<6>::key:
-          return 13;
+          return "13";
         case shards::Hexahedron<8>::key:
-          return 12;
+          return "12";
+
+        case shards::Triangle<6>::key:
+          return "22";
 
         case shards::Quadrilateral<8>::key:
-          return 23;
+          return "23";
 
-          // unimplemented
-        case shards::Node::key:
-        case shards::Particle::key:
-        case shards::Line<2>::key:
-        case shards::Line<3>::key:
-        case shards::ShellLine<2>::key:
-        case shards::ShellLine<3>::key:
-        case shards::Beam<2>::key:
-        case shards::Beam<3>::key:
-
-        case shards::Triangle<4>::key:
-        case shards::Triangle<6>::key:
-        case shards::ShellTriangle<3>::key:
-        case shards::ShellTriangle<6>::key:
-
-        case shards::Quadrilateral<9>::key:
-        case shards::ShellQuadrilateral<4>::key:
-        case shards::ShellQuadrilateral<8>::key:
-        case shards::ShellQuadrilateral<9>::key:
-
-        case shards::Tetrahedron<8>::key:
         case shards::Tetrahedron<10>::key:
-        case shards::Tetrahedron<11>::key:
+          return "24";
 
         case shards::Hexahedron<20>::key:
-        case shards::Hexahedron<27>::key:
+          return "25";
 
-        case shards::Pyramid<13>::key:
-        case shards::Pyramid<14>::key:
+          // unimplemented
+        case shards::Node::key: return "Node";
+        case shards::Particle::key: return "Particle";
+        case shards::Line<2>::key: return "Line<2>";
+        case shards::Line<3>::key: return "Line<3>";
+        case shards::ShellLine<2>::key: return "ShellLine<2>";
+        case shards::ShellLine<3>::key: return "ShellLine<3>";
+        case shards::Beam<2>::key: return "Beam<2>";
+        case shards::Beam<3>::key: return "Beam<3>";
 
-        case shards::Wedge<15>::key:
-        case shards::Wedge<18>::key:
+        case shards::Triangle<4>::key: return "Triangle<4>";
+        case shards::ShellTriangle<3>::key: return "ShellTriangle<3>";
+        case shards::ShellTriangle<6>::key: return "ShellTriangle<6>";
 
-        case shards::Pentagon<5>::key:
-        case shards::Hexagon<6>::key:
+        case shards::Quadrilateral<9>::key: return "Quadrilateral<9>";
+        case shards::ShellQuadrilateral<4>::key: return "ShellQuadrilateral<4>";
+        case shards::ShellQuadrilateral<8>::key: return "ShellQuadrilateral<8>";
+        case shards::ShellQuadrilateral<9>::key: return "ShellQuadrilateral<9>";
+
+        case shards::Tetrahedron<8>::key: return "Tetrahedron<8>";
+        case shards::Tetrahedron<11>::key: return "Tetrahedron<11>";
+
+        case shards::Hexahedron<27>::key: return "Hexahedron<27>";
+
+        case shards::Pyramid<13>::key: return "Pyramid<13>";
+        case shards::Pyramid<14>::key: return "Pyramid<14>";
+
+        case shards::Wedge<15>::key: return "Wedge<15>";
+        case shards::Wedge<18>::key: return "Wedge<18>";
+
+        case shards::Pentagon<5>::key: return "Pentagon<5>";
+        case shards::Hexagon<6>::key: return "Hexagon<6>";
           break;
         }
-      return 0;
+      return "0";
     }
 
     void PerceptMesh::dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector)
@@ -4177,20 +4183,26 @@ namespace stk {
       unsigned nnode_per_elem=0, nelem_node_size=0;
       unsigned num_elem=0;
 
-      stk::mesh::PairIterRelation node_elems = node.relations(element_rank());
-      for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
+      std::vector<stk::mesh::Entity> node_elems;
+
+      for (unsigned irank=side_rank(); irank <= element_rank(); irank++)
         {
-          stk::mesh::Entity element = node_elems[ielem].entity();
-          if (!selector || (*selector)(element))
+          stk::mesh::PairIterRelation node_elems_1 = node.relations(irank);
+          for (unsigned ielem = 0; ielem < node_elems_1.size(); ielem++)
             {
-              ++num_elem;
-              stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
-              nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
-              nelem_node_size += nnode_per_elem + 1;
-              for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+              stk::mesh::Entity element = node_elems_1[ielem].entity();
+              if (!selector || (*selector)(element))
                 {
-                  stk::mesh::Entity node_i = elem_nodes[inode].entity();
-                  node_map[node_i] = 0;  // just add to the list
+                  ++num_elem;
+                  node_elems.push_back(element);
+                  stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                  nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
+                  nelem_node_size += nnode_per_elem + 1;
+                  for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+                    {
+                      stk::mesh::Entity node_i = elem_nodes[inode].entity();
+                      node_map[node_i] = 0;  // just add to the list
+                    }
                 }
             }
         }
@@ -4216,7 +4228,7 @@ namespace stk {
       file << "CELLS " << num_elem << " " << nelem_node_size << "\n";
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
-          stk::mesh::Entity element = node_elems[ielem].entity();
+          stk::mesh::Entity element = node_elems[ielem];
           if (!selector || (*selector)(element))
             {
               stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
@@ -4233,7 +4245,7 @@ namespace stk {
       file << "CELL_TYPES " << num_elem << "\n";
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
-          stk::mesh::Entity element = node_elems[ielem].entity();
+          stk::mesh::Entity element = node_elems[ielem];
           if (!selector || (*selector)(element))
             {
               file << vtk_type(element) << "\n";
