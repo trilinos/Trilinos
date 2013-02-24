@@ -189,9 +189,6 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t i=0;i<GIDs.size();i++)
          LIDs[i] = r->Map().LID(GIDs[i]);
 
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
-
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
@@ -354,9 +351,6 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t i=0;i<GIDs.size();i++)
             LIDs[i] = Jac->RowMap().LID(GIDs[i]);
       }
-
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
