@@ -85,7 +85,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
     validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
     validParamList->set< Scalar >                ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection"); 
-    validParamList->set< double >                ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
+    validParamList->set< Scalar >                ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
     validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
 
     return validParamList;
@@ -153,7 +153,7 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
-        const typename STS::magnitudeType dirichletThreshold = pL.get<Scalar>("Dirichlet detection threshold");
+        const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<Scalar>("Dirichlet detection threshold"));
 
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
