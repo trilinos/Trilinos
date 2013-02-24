@@ -132,8 +132,6 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
   MueLu::ParameterListInterpreter<SC, LO, GO, NO> mueLuFactory(paramList);
   H = mueLuFactory.CreateHierarchy();
 
-  H->SetDefaultVerbLevel(MueLu::High);
-
   //Wrap A
   RCP<Xpetra::Matrix <SC, LO, GO, NO> > Amuelu  = TpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(Ain);
   H->GetLevel(0)->Set("A", Amuelu);
