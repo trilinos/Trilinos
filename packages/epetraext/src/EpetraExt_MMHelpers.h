@@ -62,12 +62,8 @@ class LightweightCrsMatrix;
 // Turn on to enable the special MMM timers
 #define ENABLE_MMM_TIMINGS
 
-#define USE_MANUAL_BOUNDARY_EXCHANGE
-
 // Only turn this on of you don't have the "no globals" map constructor.
 //#define USE_DELAYED_MAP_CONSTRUCTION
-
-#define USE_REVERSE_COMM
 
 //#define HAVE_EPETRAEXT_DEBUG // for extra sanity checks
 

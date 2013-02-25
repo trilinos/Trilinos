@@ -571,7 +571,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   // Do a fast build of C's importer
   Epetra_Import * Cimport=0; 
   int *RemotePIDs = Cremotepids.size()?&Cremotepids[0]:0;
-#ifdef USE_REVERSE_COMM
   int NumExports=0;
   int *ExportLIDs=0, *ExportPIDs=0;
   if(Bview.importMatrix) { 
@@ -581,9 +580,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   }
 
   Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
-#else
-  Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs);
-#endif
 
 
 #ifdef ENABLE_MMM_TIMINGS

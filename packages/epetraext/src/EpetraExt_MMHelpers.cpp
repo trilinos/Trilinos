@@ -1449,7 +1449,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   Epetra_Util util;
   int MyPID = SourceMatrix.Comm().MyPID();
 
-#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+#ifdef HAVE_MPI
   std::vector<int> ReverseSendSizes, ReverseSendBuffer;
   std::vector<int> ReverseRecvSizes;
   int * ReverseRecvBuffer=0;
@@ -1511,9 +1511,8 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if(rv) throw "LightweightCrsMatrix: Fused copy constructor failed in PackAndPrepare()";
 
   if (communication_needed) {
+#ifdef HAVE_MPI 
     // Do the exchange of remote data
-#if defined(USE_MANUAL_BOUNDARY_EXCHANGE) && defined(HAVE_MPI)
-
     int curr_pid;
     const int * ExportPIDs = RowImporter.ExportPIDs();
 
@@ -1534,14 +1533,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
     int msg_tag=MpiComm->GetMpiTag();
     boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),&SendSizes[0],Exports_,
 				    MDistor->NumReceives(),MDistor->ProcsFrom(),&RecvSizes[0],Imports_,SizeOfPacket,msg_tag);
-#else
-    if( VarSizes ) 
-      rv=Distor.Do(Exports_, SizeOfPacket, Sizes_, LenImports_, Imports_);
-    else
-      rv=Distor.Do(Exports_, SizeOfPacket, LenImports_, Imports_);
-#endif
 
-#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
     // If the  source matrix doesn't have an importer, then nobody sent data belonging to me in the forward round.
     if(SourceMatrix.Importer()) {
       Epetra_Import* SourceImporter=const_cast<Epetra_Import*>(SourceMatrix.Importer());
@@ -1752,8 +1744,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /********************************************/
   /**** 4) Make Export Lists for Import    ****/
   /********************************************/
-
-#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+#ifdef HAVE_MPI
   MakeExportLists<ImportType>(SourceMatrix,RowImporter,ReverseRecvSizes,ReverseRecvBuffer,ExportPIDs_,ExportLIDs_);
 #endif 
 
@@ -1777,7 +1768,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   mtime->start();
 #endif
 
-#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+#ifdef HAVE_MPI
   delete [] ReverseRecvBuffer;
 #endif
 
