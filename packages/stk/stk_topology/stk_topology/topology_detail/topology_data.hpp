@@ -6,28 +6,36 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/vector_c.hpp>
 #include <boost/mpl/vector/vector30_c.hpp>
+#include <boost/utility.hpp>
 
 //TODO implement permutations for tets, pyramids, wedges and hexes
 //TODO implement permutations polarity
 
 namespace stk { namespace topology_detail {
 
-template <topology::topology_t Topology>
-struct topology_data
+template <topology::topology_t Topology, typename Enable = void>
+struct topology_data;
+
+
+//***************************************************************************
+// topology::INVALID -- topology::INVALID_TOPOLOGY
+//***************************************************************************
+
+template <>
+struct topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = Topology;
-
+  static const topology::topology_t value = topology::INVALID_TOPOLOGY;
   static const topology::topology_t base = topology::INVALID_TOPOLOGY;
 
   static const bool is_valid = false;
-  static const topology::rank_t rank= (Topology > topology::SUPERELEMENT_START) ? topology::ELEMENT_RANK : topology::INVALID_RANK;
+  static const topology::rank_t rank = topology::INVALID_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
   static const unsigned dimension = 0;
-  static const unsigned num_nodes = (Topology > topology::SUPERELEMENT_START) ? Topology - topology::SUPERELEMENT_START : 0;
+  static const unsigned num_nodes = 0;
   static const unsigned num_vertices = 0;
   static const unsigned num_edges = 0;
   static const unsigned num_faces = 0;
@@ -47,9 +55,99 @@ struct topology_data
   typedef boost::mpl::vector<> face_node_ordinals_vector;
 
   typedef boost::mpl::vector<> permutation_node_ordinals_vector;
+};
+
+//***************************************************************************
+// topology::HETEROGENEOUS_EDGE -- topology::HETEROGENEOUS_EDGE
+//***************************************************************************
+
+template <>
+struct topology_data<topology::HETEROGENEOUS_EDGE>
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = topology::HETEROGENEOUS_EDGE;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::EDGE_RANK;
+  static const topology::rank_t side_rank = topology::NODE_RANK;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , false // 1d
+                                , true // 2d
+                                , true // 3d
+                              > spatial_dimension_vector;
 
 };
 
+//***************************************************************************
+// topology::HETEROGENEOUS_FACE -- topology::HETEROGENEOUS_FACE
+//***************************************************************************
+
+template <>
+struct topology_data<topology::HETEROGENEOUS_FACE>
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = topology::HETEROGENEOUS_FACE;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::FACE_RANK;
+  static const topology::rank_t side_rank = topology::EDGE_RANK;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , false // 1d
+                                , false // 2d
+                                , true // 3d
+                              > spatial_dimension_vector;
+
+};
+
+//***************************************************************************
+// topology::HETEROGENEOUS_ELEMENT_2D -- topology::HETEROGENEOUS_ELEMENT_2D
+//***************************************************************************
+
+template <>
+struct topology_data<topology::HETEROGENEOUS_ELEMENT_2D>
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT_2D;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static const topology::rank_t side_rank = topology::EDGE_RANK;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , false // 1d
+                                , true // 2d
+                                , false // 3d
+                              > spatial_dimension_vector;
+
+};
+
+//***************************************************************************
+// topology::HETEROGENEOUS_ELEMENT -- topology::HETEROGENEOUS_ELEMENT
+//***************************************************************************
+
+template <>
+struct topology_data<topology::HETEROGENEOUS_ELEMENT>
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static const topology::rank_t side_rank = topology::FACE_RANK;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , false // 1d
+                                , false // 2d
+                                , true // 3d
+                              > spatial_dimension_vector;
+
+};
 
 //***************************************************************************
 // topology::NODE -- topology::NODE_RANK
@@ -1641,6 +1739,30 @@ struct topology_data<topology::HEX_27>
   typedef boost::mpl::vector<
       boost::mpl::vector27_c<unsigned, 0, 1, 2, 3, 4, 5, 6, 7,  8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  20, 21, 22, 23, 24, 25, 26>
                             > permutation_node_ordinals_vector;
+
+};
+
+//***************************************************************************
+// topology::SUPERELEMENT -- topology::SUPERELEMENT
+//***************************************************************************
+
+template <topology::topology_t Topology>
+struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERELEMENT_START) >::type >
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = Topology;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static const topology::rank_t side_rank = topology::INVALID_RANK;
+  static const unsigned num_nodes = Topology - topology::SUPERELEMENT_START;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , true // 1d
+                                , true // 2d
+                                , true // 3d
+                              > spatial_dimension_vector;
 
 };
 
