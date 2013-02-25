@@ -458,11 +458,11 @@ static gni_work_request *first_incomplete_wr(
 static int8_t is_wr_complete(
         const gni_work_request *wr);
 static int8_t is_any_wr_complete(
-        const gni_work_request **wr_list,
+        gni_work_request **wr_list,
         const uint32_t           wr_count,
         int32_t                 *which_wr);
 static int8_t is_all_wr_complete(
-        const gni_work_request **wr_list,
+        gni_work_request **wr_list,
         const uint32_t           wr_count);
 static int8_t is_buf_op_complete(
         const NNTI_buffer_t *reg_buf);
@@ -3902,7 +3902,7 @@ static int8_t is_wr_complete(
 }
 
 static int8_t is_any_wr_complete(
-        const gni_work_request **wr_list,
+        gni_work_request **wr_list,
         const uint32_t           wr_count,
         int32_t                 *which_wr)
 {
@@ -3926,7 +3926,7 @@ static int8_t is_any_wr_complete(
 }
 
 static int8_t is_all_wr_complete(
-        const gni_work_request **wr_list,
+        gni_work_request **wr_list,
         const uint32_t           wr_count)
 {
     int8_t rc=TRUE;
