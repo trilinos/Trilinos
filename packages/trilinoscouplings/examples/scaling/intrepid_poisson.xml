@@ -21,6 +21,12 @@
       <!-- Non-permuted factories -->
       <!-- -->
       
+      <ParameterList name="CoalesceDropFact">
+        <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
+        <Parameter name="lightweight wrap" type="bool" value="true"/>
+      </ParameterList>
+
+      
       <ParameterList name="myTentativePFact">
         <Parameter name="factory" type="string" value="TentativePFactory"/>
       </ParameterList>
@@ -164,6 +170,7 @@
         <Parameter name="startLevel"  type="int"    value="0"/>
         <Parameter name="Smoother"    type="string" value="Chebyshev"/>
         <Parameter name="Aggregates"  type="string" value="UncoupledAggregationFact"/>
+        <Parameter name="Graph"  type="string"      value="CoalesceDropFact"/>
     <!-- uncomment this block when coordinates are available -->
     <!--
         <Parameter name="Nullspace"   type="string" value="myRebalanceRestrictionFact"/>
