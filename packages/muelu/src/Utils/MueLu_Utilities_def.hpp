@@ -1137,7 +1137,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
     size_t numVectors = v.getNumVectors();
 
     Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
