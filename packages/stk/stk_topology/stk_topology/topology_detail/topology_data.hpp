@@ -149,7 +149,7 @@ struct topology_data<topology::HETEROGENEOUS_ELEMENT>
                                 , false // 0d
                                 , false // 1d
                                 , false // 2d
-                                , true // 3d
+                                , true  // 3d
                               > spatial_dimension_vector;
 
 };

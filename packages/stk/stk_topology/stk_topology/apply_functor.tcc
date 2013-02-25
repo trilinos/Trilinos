@@ -38,11 +38,11 @@ struct topology::apply_functor
   {
     switch(t)
     {
-    case INVALID_TOPOLOGY: return m_functor( topology_type< INVALID_TOPOLOGY >() );
-    case HETEROGENEOUS_EDGE: return m_functor( topology_type< HETEROGENEOUS_EDGE >() );
-    case HETEROGENEOUS_FACE: return m_functor( topology_type< HETEROGENEOUS_FACE >() );
+    case INVALID_TOPOLOGY:         return m_functor( topology_type< INVALID_TOPOLOGY >() );
+    case HETEROGENEOUS_EDGE:       return m_functor( topology_type< HETEROGENEOUS_EDGE >() );
+    case HETEROGENEOUS_FACE:       return m_functor( topology_type< HETEROGENEOUS_FACE >() );
     case HETEROGENEOUS_ELEMENT_2D: return m_functor( topology_type< HETEROGENEOUS_ELEMENT_2D >() );
-    case HETEROGENEOUS_ELEMENT: return m_functor( topology_type< HETEROGENEOUS_ELEMENT >() );
+    case HETEROGENEOUS_ELEMENT:    return m_functor( topology_type< HETEROGENEOUS_ELEMENT >() );
     case NODE:         return m_functor( topology_type< NODE         >() );
     case LINE_2:       return m_functor( topology_type< LINE_2       >() );
     case LINE_3:       return m_functor( topology_type< LINE_3       >() );
@@ -94,6 +94,11 @@ struct topology::apply_functor
   {
     switch(t)
     {
+    case INVALID_TOPOLOGY:         return m_functor( topology_type< INVALID_TOPOLOGY >() );
+    case HETEROGENEOUS_EDGE:       return m_functor( topology_type< HETEROGENEOUS_EDGE >() );
+    case HETEROGENEOUS_FACE:       return m_functor( topology_type< HETEROGENEOUS_FACE >() );
+    case HETEROGENEOUS_ELEMENT_2D: return m_functor( topology_type< HETEROGENEOUS_ELEMENT_2D >() );
+    case HETEROGENEOUS_ELEMENT:    return m_functor( topology_type< HETEROGENEOUS_ELEMENT >() );
     case NODE:         return m_functor( topology_type< NODE         >() );
     case LINE_2:       return m_functor( topology_type< LINE_2       >() );
     case LINE_3:       return m_functor( topology_type< LINE_3       >() );

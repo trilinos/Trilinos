@@ -56,8 +56,74 @@ STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
 
 };
 
+STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
+{
 
-STKUNIT_UNIT_TEST( stk_topology, arbitrary_topology )
+  using stk::topology;
+  using namespace stk::topology_detail;
+
+  topology t = topology::HETEROGENEOUS_ELEMENT;
+
+  EXPECT_TRUE(t.is_valid() );
+  EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
+  EXPECT_EQ(t.side_rank(), topology::FACE_RANK );
+  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  {
+    std::ostringstream name;
+    name << t ;
+    std::string goldName("HETEROGENEOUS_ELEMENT");
+    STKUNIT_EXPECT_EQ( goldName, name.str() );
+  }
+
+  t = topology::HETEROGENEOUS_ELEMENT_2D;
+
+  EXPECT_TRUE(t.is_valid() );
+  EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
+  EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
+  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(2));
+  EXPECT_FALSE(t.defined_on_spatial_dimension(3));
+  {
+    std::ostringstream name;
+    name << t ;
+    std::string goldName("HETEROGENEOUS_ELEMENT_2D");
+    STKUNIT_EXPECT_EQ( goldName, name.str() );
+  }
+
+  t = topology::HETEROGENEOUS_FACE;
+
+  EXPECT_TRUE(t.is_valid() );
+  EXPECT_EQ(t.rank(), topology::FACE_RANK );
+  EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
+  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  {
+    std::ostringstream name;
+    name << t ;
+    std::string goldName("HETEROGENEOUS_FACE");
+    STKUNIT_EXPECT_EQ( goldName, name.str() );
+  }
+
+  t = topology::HETEROGENEOUS_EDGE;
+
+  EXPECT_TRUE(t.is_valid() );
+  EXPECT_EQ(t.rank(), topology::EDGE_RANK );
+  EXPECT_EQ(t.side_rank(), topology::NODE_RANK );
+  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(2));
+  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  {
+    std::ostringstream name;
+    name << t ;
+    std::string goldName("HETEROGENEOUS_EDGE");
+    STKUNIT_EXPECT_EQ( goldName, name.str() );
+  }
+}
+
+STKUNIT_UNIT_TEST( stk_topology, superelement_topology )
 {
   using stk::topology;
 
