@@ -103,6 +103,10 @@ struct topology
   BOOST_GPU_ENABLED
   bool has_homogeneous_faces() const;
 
+  /// is this a heterogenuous topology
+  BOOST_GPU_ENABLED
+  bool is_heterogenuous() const;
+
   /// is this topology a shell topology (i.e. an element with only two sides)
   BOOST_GPU_ENABLED
   bool is_shell() const;

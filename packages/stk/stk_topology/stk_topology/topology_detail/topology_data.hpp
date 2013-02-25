@@ -29,6 +29,7 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   static const topology::topology_t base = topology::INVALID_TOPOLOGY;
 
   static const bool is_valid = false;
+  static const bool is_heterogenuous = false;
   static const topology::rank_t rank = topology::INVALID_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
@@ -68,6 +69,7 @@ struct topology_data<topology::HETEROGENEOUS_EDGE>
   static const topology::topology_t value = topology::HETEROGENEOUS_EDGE;
   static const topology::topology_t base = value;
   static const bool is_valid = true;
+  static const bool is_heterogenuous = true;
   static const topology::rank_t rank = topology::EDGE_RANK;
   static const topology::rank_t side_rank = topology::NODE_RANK;
 
@@ -91,6 +93,7 @@ struct topology_data<topology::HETEROGENEOUS_FACE>
   static const topology::topology_t value = topology::HETEROGENEOUS_FACE;
   static const topology::topology_t base = value;
   static const bool is_valid = true;
+  static const bool is_heterogenuous = true;
   static const topology::rank_t rank = topology::FACE_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
 
@@ -114,6 +117,7 @@ struct topology_data<topology::HETEROGENEOUS_ELEMENT_2D>
   static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT_2D;
   static const topology::topology_t base = value;
   static const bool is_valid = true;
+  static const bool is_heterogenuous = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::EDGE_RANK;
 
@@ -137,6 +141,7 @@ struct topology_data<topology::HETEROGENEOUS_ELEMENT>
   static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT;
   static const topology::topology_t base = value;
   static const bool is_valid = true;
+  static const bool is_heterogenuous = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
 
@@ -155,6 +160,7 @@ struct topology_data<topology::HETEROGENEOUS_ELEMENT>
 
 template <>
 struct topology_data<topology::NODE>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::NODE;
@@ -197,6 +203,7 @@ struct topology_data<topology::NODE>
 
 template <>
 struct topology_data<topology::PARTICLE>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::PARTICLE;
@@ -246,6 +253,7 @@ struct topology_data<topology::PARTICLE>
 
 template <>
 struct topology_data<topology::LINE_2>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::LINE_2;
@@ -503,6 +511,7 @@ struct topology_data<topology::SHELL_LINE_3>
 
 template <>
 struct topology_data<topology::TRI_3>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::TRI_3;
@@ -827,6 +836,7 @@ struct topology_data<topology::SHELL_TRI_6>
 
 template <>
 struct topology_data<topology::QUAD_4>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::QUAD_4;
@@ -1105,6 +1115,7 @@ struct topology_data<topology::SHELL_QUAD_9>
 
 template <>
 struct topology_data<topology::TET_4>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::TET_4;
@@ -1243,6 +1254,7 @@ struct topology_data<topology::TET_11>
 //***************************************************************************
 template <>
 struct topology_data<topology::PYRAMID_5>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::PYRAMID_5;
@@ -1381,6 +1393,7 @@ struct topology_data<topology::PYRAMID_14>
 //***************************************************************************
 template <>
 struct topology_data<topology::WEDGE_6>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::WEDGE_6;
@@ -1594,6 +1607,7 @@ struct topology_data<topology::WEDGE_18>
 //***************************************************************************
 template <>
 struct topology_data<topology::HEX_8>
+  : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
   static const topology::topology_t value = topology::HEX_8;

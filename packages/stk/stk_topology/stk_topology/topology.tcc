@@ -111,6 +111,7 @@
 
 STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
+STKTOPOLOGY_SIMPLE_MEMBER(is_heterogenuous,bool)
 STKTOPOLOGY_SIMPLE_MEMBER(side_rank,stk::topology::rank_t)
 STKTOPOLOGY_SIMPLE_MEMBER(dimension,unsigned)
 STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,unsigned)

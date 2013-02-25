@@ -78,6 +78,7 @@ struct topology::topology_type
   static const topology_t value               = Topology;
   static const topology_t base                = data::base;
   static const bool is_valid                  = data::is_valid;
+  static const bool is_heterogenuous          = data::is_heterogenuous;
   static const rank_t rank                    = data::rank;
   static const rank_t side_rank               = data::side_rank;
   static const topology_t edge_topology       = data::edge_topology;
