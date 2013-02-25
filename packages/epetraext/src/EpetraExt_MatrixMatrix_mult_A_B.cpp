@@ -97,11 +97,6 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-
-//#define CMS_DEBUG
-#define THE_NEW_HOTNESS
-
-
 #ifdef USE_DELAYED_MAP_CONSTRUCTION
 int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, LightweightMap*& unionmap, std::vector<int>& Cremotepids,
 					std::vector<int> &Bcols2Ccols, std::vector<int> &Icols2Ccols)
@@ -141,12 +136,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   if((int)Bcols2Ccols.size() != Nb) Bcols2Ccols.resize(Nb);
   if((int)Icols2Ccols.size() != Ni) Icols2Ccols.resize(Ni);
 
-
-  // CMS - DUMMY
-  for(i=0; i<Nb; i++) Bcols2Ccols[i]=-1;
-  for(i=0; i<Ni; i++) Icols2Ccols[i]=-1;
-
-
   // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  
   // Which means we should have an MpiDistributor for both B and Bimport.  
   // Unless all of B's columns are owned by the calling proc (e.g. MueLu for A*Ptent w/ uncoupled aggregation)
@@ -184,21 +173,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   mtime=M.getNewTimer("M5 CMap 2");
   mtime->start();
 #endif
-
-#ifdef CMS_DEBUG
-  printf("[%d] B     WHOLE  = ",B.Comm().MyPID());
-  for(i=0; i<Nb; i++)
-    printf("(xx,%2d,%2d) ",Bgids[i],Bpids[i]);
-  printf("\n");
-  fflush(stdout);
-  printf("[%d] I     WHOLE  = ",B.Comm().MyPID());
-  for(i=0; i<Ni; i++)
-    printf("(xx,%2d,%2d) ",Igids[i],Ipids[i]);
-  printf("\n");
-  fflush(stdout);
-#endif
-  
-
 
   // **********************
   // Stage 3: Local Unknowns
@@ -277,28 +251,14 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
     Cproc = (Bproc < Iproc)?Bproc:Iproc;
     
     if(Bproc == Cproc && Iproc != Cproc) {
-
-#ifdef THE_NEW_HOTNESS
       // Only B has this processor.  Copy the data.
       // B: Find the beginning of the next processor
       for(i=Bstart; i<Nb && Bpids[i]==Bproc; i++) {}
       int Bnext=i;
-
-      //      printf("[%d] Cstart,tCsize,Csize = %2d,%2d,%2d"
-
-#ifdef CMS_DEBUG
-      printf("[%d] Bonly START  = ",B.Comm().MyPID());
-      for(i=Bstart; i<Bnext; i++)
-	printf("(%2d,%2d,%2d) ",i-Istart+Cstart,Bgids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
       
       // Copy data to C
       int tCsize = Bnext-Bstart;
       if(Btemp.size() < (size_t)tCsize) {Btemp2.resize(tCsize);}
-      //      if(Cstart+tCsize > Csize)  throw std::runtime_error("Csize isn't big enough"); //Csize=auto_resize(Cgids      ,Csize+tCsize-Cstart+1);
-      //      if(Pstart+tCsize > Psize)  Psize=auto_resize(Cremotepids,Psize+tCsize-Pstart+1);
 
       for(i=Bstart; i<Bnext; i++) {
 	Cremotepids[i-Bstart+Pstart] = Cproc;
@@ -314,56 +274,19 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 	while(Cgids[j] != Bgids[Btemp2[i]]) j++;
 	Bcols2Ccols[Btemp2[i]] =  j;	
       }
-#ifdef CMS_DEBUG
-      printf("[%d] Bonly Results= ",B.Comm().MyPID());
-      for(i=Cstart; i<tCsize + Cstart; i++)
-	printf("(%2d,%2d,%2d) ",i,Cgids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
-
       Cstart+=tCsize;
       Pstart+=tCsize;
       Bstart=Bnext;
-
-#else
-      // Only B has this processor.  Copy the data.
-      // NOTE: We keep B's sorted (or not) ordering
-      for(i=Bstart; i<Nb && Bpids[i]==Bproc; i++) {
-	// Resize C if needed
-	//	if(Cstart > Csize)   throw std::runtime_error("Csize isn't big enough");//Csize=auto_resize(Cgids,1);
-	//	if(Pstart > Psize)   Psize=auto_resize(Cremotepids,1);
-	Bcols2Ccols[i]      = Cstart;
-	Cgids[Cstart]       = Bgids[i];
-	Cremotepids[Pstart] = Cproc;
-	Cstart++;
-	Pstart++;
-      }
-      Bstart=i;
-#endif
-
-
     }
     else if(Bproc != Cproc && Iproc == Cproc) {
-#ifdef THE_NEW_HOTNESS
       // Only I has this processor.  Copy the data.
       // I: Find the beginning of the next processor
       for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {}
       int Inext=i;
 
-#ifdef CMS_DEBUG
-      printf("[%d] Ionly START  = ",B.Comm().MyPID());
-      for(i=Istart; i<Inext; i++)
-	printf("(%2d,%2d,%2d) ",i-Istart+Cstart,Igids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
-
       // Copy data to C
       int tCsize = Inext-Istart;
       if(Itemp.size() < (size_t)tCsize) {Itemp2.resize(tCsize);}
-      //      if(Cstart+tCsize > Csize)   throw std::runtime_error("Csize isn't big enough");//Csize=auto_resize(Cgids      ,Csize+tCsize-Cstart+1);
-      //      if(Pstart+tCsize > Psize)  Psize=auto_resize(Cremotepids,Psize+tCsize-Pstart+1);
 
       for(i=Istart; i<Inext; i++) {
 	Cremotepids[i-Istart+Pstart] = Cproc;
@@ -379,37 +302,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 	while(Cgids[j] != Igids[Itemp2[i]]) j++;
 	Icols2Ccols[Itemp2[i]] =  j;	
       }
-
-#ifdef CMS_DEBUG
-      printf("[%d] Ionly Results= ",B.Comm().MyPID());
-      for(i=Cstart; i<tCsize + Cstart; i++)
-	printf("(%2d,%2d,%2d) ",i,Cgids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
-
       Cstart+=tCsize;
       Pstart+=tCsize;
       Istart=Inext;
-#else
-
-    // Only I has this processor.  Copy the data.
-      // NOTE: We keep I's sorted (or not) ordering
-      for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {
-	// Resize C if needed
-	//	if(Cstart >= Csize)   throw std::runtime_error("Csize isn't big enough");//Csize=auto_resize(Cgids,1);
-	//	if(Pstart >= Psize)  Psize=auto_resize(Cremotepids,1);
-	Icols2Ccols[i]      = Cstart;
-
-	//	printf("[%d] @I2C[%2d] <= %2d\n",B.Comm().MyPID(),i,Cstart);
-	Cgids[Cstart]       = Igids[i];
-	Cremotepids[Pstart] = Cproc;
-	Cstart++;
-	Pstart++;
-      }      
-      Istart=i;
-#endif
-
     }
     else {
       // Both B and I have this processor, so we need to do a set_union.  So we need to sort.
@@ -422,31 +317,12 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {}
       Inext=i;
 
-#ifdef CMS_DEBUG
-      printf("[%d] Bmerg START  = ",B.Comm().MyPID());
-      for(i=Bstart; i<Bnext; i++)
-	printf("(xx,%2d,%2d) ",Bgids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-      printf("[%d] Imerg START  = ",B.Comm().MyPID());
-      for(i=Istart; i<Inext; i++)
-	printf("(xx,%2d,%2d) ",Igids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
-      
-      
-
-
       // Copy data to temp
       int tBsize = Bnext-Bstart;
       int tIsize = Inext-Istart;
       //      int tCsize = tBsize+tIsize;
       if(Btemp.size() < (size_t)tBsize) {Btemp.resize(tBsize); Btemp2.resize(tBsize);}
       if(Itemp.size() < (size_t)tIsize) {Itemp.resize(tIsize); Itemp2.resize(tIsize);}
-
-      //      if(Cstart+tCsize > Csize)   throw std::runtime_error("Csize isn't big enough");//Csize=auto_resize(Cgids      ,Csize+tCsize-Cstart+1);
-      //      if(Pstart+tCsize > Psize)  Psize=auto_resize(Cremotepids,Psize+tCsize-Pstart+1);
 
       for(i=Bstart; i<Bnext; i++) {Btemp[i-Bstart]=Bgids[i]; Btemp2[i-Bstart]=i;}
       for(i=Istart; i<Inext; i++) {Itemp[i-Istart]=Igids[i]; Itemp2[i-Istart]=i;}
@@ -458,15 +334,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       std::vector<int>::iterator mycstart = Cgids.begin()+Cstart;
       std::vector<int>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
 
-#ifdef CMS_DEBUG
-      printf("[%d] Merge Results= ",B.Comm().MyPID());
-      for(i=Cstart; i<(last_el - mycstart) + Cstart; i++)
-	printf("(%2d,%2d,%2d) ",i,Cgids[i],Cproc);
-      printf("\n");
-      fflush(stdout);
-#endif
-
-      //      int Cnext=(last_el - mycstart) + Cstart;
       for(i=0, j=Cstart; i<tBsize; i++){
 	while(Cgids[j] != Bgids[Btemp2[i]]) j++;
 	Bcols2Ccols[Btemp2[i]] =  j;	
@@ -495,48 +362,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 
   // Resize the RemotePIDs down
   Cremotepids.resize(Pstart);
-
-  //DEBUG
-#ifdef CMS_DEBUG
-  printf("[%d] Final ColMap = ",B.Comm().MyPID());
-  for(i=0; i<Cstart; i++) {
-    if(i < Cstart-Pstart) printf("(%2d,%2d,--) ",i,Cgids[i]);
-    else printf("(%2d,%2d,%2d) ",i,Cgids[i],Cremotepids[i- Cstart + Pstart]);
-  }
-  printf("\n");
-
-  
-  printf("[%d] CGIDs = ",B.Comm().MyPID());
-  for(i=0; i<Cstart; i++) 
-    printf("%2d ",Cgids[i]);   
-  printf("\n");
-
-  printf("[%d] RemotePIDs = ",B.Comm().MyPID());
-  for(i=0; i<Pstart; i++) 
-    printf("%2d ",Cremotepids[i]);   
-  printf("\n");
-
-
-  printf("[%d] Bcols2Ccols = ",B.Comm().MyPID());
-  for(i=0; i<(int)Bcols2Ccols.size(); i++) 
-    printf("%2d ",Bcols2Ccols[i]);   
-  printf("\n");
-
-  printf("[%d] Icols2Ccols = ",B.Comm().MyPID());
-  for(i=0; i<(int)Icols2Ccols.size(); i++) 
-    printf("%2d ",Icols2Ccols[i]);   
-  printf("\n");
-
-  fflush(stdout);
-  B.Comm().Barrier();
-  B.Comm().Barrier();
-  B.Comm().Barrier();
-
-  //  static int cms_call=0;
-  //  if(cms_call==1) exit(1); 
-  //  cms_call++;
-  //  exit(1);
-#endif
 
   // **********************
   // Stage 5: Call constructor
@@ -820,9 +645,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   Epetra_Import * Cimport=0; 
   int *RemotePIDs = Cremotepids.size()?&Cremotepids[0]:0;
 #ifdef USE_REVERSE_COMM
-  Epetra_Import *Testimport=0;
-  
-
   int NumExports=0;
   int *ExportLIDs=0, *ExportPIDs=0;
   if(Bview.importMatrix) { 
@@ -851,19 +673,15 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   mtime->stop();
 #endif
 
-  // Cleanup 
-  //  delete Cimport;
-
   return 0;
 }
 
 
 
 
-
-
-
-
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 		   const Epetra_CrsMatrix & B,
 		   CrsMatrixStruct& Bview,
@@ -1024,6 +842,9 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 
 
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 //kernel method for computing the local portion of C = A*B
   int mult_A_B_general(const Epetra_CrsMatrix & A,
 		       CrsMatrixStruct & Aview,
@@ -1225,7 +1046,9 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 
 
 
-
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   CrsMatrixStruct & Aview,
 			   const Epetra_CrsMatrix & B,
@@ -1248,53 +1071,6 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   std::vector<int> Bimportcol2Ccol;
   if(Bview.importMatrix) Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
 
-#ifdef CMS_DEBUG
-  // DEBUG
-  printf("[%d] Arows = ",A.Comm().MyPID());
-  for(i=0; i<A.NumMyRows(); i++) 
-    printf("%2d ",A.GRID(i));
-  printf("\n");
-  printf("[%d] Acols = ",A.Comm().MyPID());
-  for(i=0; i<A.NumMyCols(); i++) 
-    printf("%2d ",A.GCID(i));
-  printf("\n");
-  printf("[%d] Adomn = ",A.Comm().MyPID());
-  for(i=0; i<A.DomainMap().NumMyElements(); i++) 
-    printf("%2d ",A.DomainMap().GID(i));
-  printf("\n");
-  printf("[%d] Brows = ",A.Comm().MyPID());
-  for(i=0; i<B.NumMyRows(); i++) 
-    printf("%2d ",B.GRID(i));
-  printf("\n");
-  printf("[%d] Bcols = ",A.Comm().MyPID());
-  for(i=0; i<B.NumMyCols(); i++) 
-    printf("%2d ",B.GCID(i));
-  printf("\n");
-  printf("[%d] Bdomn = ",A.Comm().MyPID());
-  for(i=0; i<B.DomainMap().NumMyElements(); i++) 
-    printf("%2d ",B.DomainMap().GID(i));
-  printf("\n");
-  if(Bview.importMatrix) {
-    printf("[%d] Irows = ",A.Comm().MyPID());
-    if(Bview.importMatrix->RowMapLW_){
-      for(i=0; i<Bview.importMatrix->RowMapLW_->NumMyElements(); i++) 
-	printf("%2d ",Bview.importMatrix->RowMapLW_->GID(i));
-    }
-    else {
-      for(i=0; i<Bview.importMatrix->RowMapEP_->NumMyElements(); i++) 
-	printf("%2d ",Bview.importMatrix->RowMapEP_->GID(i));
-    }
-    printf("\n");
-    printf("[%d] Icols = ",A.Comm().MyPID());
-    for(i=0; i<Bview.importMatrix->ColMap_.NumMyElements(); i++) 
-      printf("%2d ",Bview.importMatrix->ColMap_.GID(i));
-    printf("\n");
-  }  
-  fflush(stdout);
-#endif
-
-
-  // DEBUG
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);

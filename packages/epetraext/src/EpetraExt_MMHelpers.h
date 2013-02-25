@@ -72,8 +72,6 @@ class LightweightCrsMatrix;
 
 #define USE_REVERSE_COMM
 
-//#define CMS_DEBUG
-
 //#define HAVE_EPETRAEXT_DEBUG // for extra sanity checks
 
 // ==============================================================
