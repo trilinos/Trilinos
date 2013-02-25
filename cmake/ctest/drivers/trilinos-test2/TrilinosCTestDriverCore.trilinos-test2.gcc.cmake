@@ -102,6 +102,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
