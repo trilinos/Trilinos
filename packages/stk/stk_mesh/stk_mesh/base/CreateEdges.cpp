@@ -95,7 +95,8 @@ struct create_edge_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
+  operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
 
@@ -127,8 +128,7 @@ struct create_edge_impl
         edge_exist[elem_edges->relation_ordinal()] = true;
       }
 
-      const int num_edges = Topology::num_edges;
-      for (int e=0; e < num_edges; ++e) {
+      for (unsigned e=0; e < Topology::num_edges; ++e) {
 
         if (edge_exist[e]) continue;
 
@@ -170,9 +170,13 @@ struct create_edge_impl
         mesh.declare_relation(elem,edge,e);
       }
     }
-
-
   }
+
+  template <typename Topology>
+  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
+  operator()(Topology t)
+  {}
+
 
   //members
   size_t                & m_next_edge;
@@ -194,7 +198,8 @@ struct connect_face_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
+  operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
 
@@ -221,8 +226,7 @@ struct connect_face_impl
         edge_exist[face_edges->relation_ordinal()] = true;
       }
 
-      const int num_edges = Topology::num_edges;
-      for (int e=0; e < num_edges; ++e) {
+      for (unsigned e=0; e < Topology::num_edges; ++e) {
 
         if (edge_exist[e]) continue;
 
@@ -242,9 +246,12 @@ struct connect_face_impl
         mesh.declare_relation(face,edge,e);
       }
     }
-
-
   }
+
+  template <typename Topology>
+  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
+  operator()(Topology t)
+  {}
 
   //members
   edge_map_type         & m_edge_map;
