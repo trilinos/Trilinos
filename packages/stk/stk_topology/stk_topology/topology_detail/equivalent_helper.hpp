@@ -3,11 +3,14 @@
 
 #include <algorithm>
 
+#include <boost/utility.hpp>
+
 namespace stk { namespace topology_detail {
 
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
 BOOST_GPU_ENABLED inline
-std::pair<bool,unsigned> equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
+typename boost::enable_if_c< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
+equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
   Node permutation[Topology::num_nodes];
 
@@ -17,13 +20,23 @@ std::pair<bool,unsigned> equivalent_helper(Topology, const NodeArrayA &a, const 
     if ( std::equal(permutation, permutation + Topology::num_nodes, &b[0]) )
       return std::make_pair(true,i);
   }
+  return std::make_pair(false, 0);
+}
 
-  return std::make_pair(false, -1);
+template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
+BOOST_GPU_ENABLED inline
+typename boost::enable_if_c< (Topology::num_permutations == 0u), std::pair<bool,unsigned> >::type
+equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
+{
+  if ( std::equal(&a[0], &a[0] + Topology::num_nodes, &b[0]) )
+      return std::make_pair(true,0);
+  return std::make_pair(false, 0);
 }
 
 template <typename Topology, typename NodeArray, typename Node>
 BOOST_GPU_ENABLED inline
-unsigned lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
+typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
+lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
   Node permutation[Topology::num_nodes];
 
@@ -64,6 +77,11 @@ unsigned lexicographical_smallest_permutation_helper(Topology, const NodeArray &
 
 }
 
+template <typename Topology, typename NodeArray, typename Node>
+BOOST_GPU_ENABLED inline
+typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
+lexicographical_smallest_permutation_helper(Topology, const NodeArray &, bool , Node)
+{ return 0; }
 
 }} // namespace stk::topology_detail
 
