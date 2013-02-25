@@ -120,13 +120,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   int i,j,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
   int Bstart=0, Istart=0, Cstart=0,Pstart=0;
 
-  const Epetra_Map & BColMap   = B.ColMap();
-  const Epetra_Map & DomainMap = B.DomainMap();
-#ifdef USE_LIGHTWEIGHT_MAP
+  const Epetra_Map & BColMap       = B.ColMap();
+  const Epetra_Map & DomainMap     = B.DomainMap();
   const LightweightMap & IColMap   = Bimport.ColMap_;
-#else
-  const Epetra_BlockMap & IColMap  = Bimport.ColMap_;
-#endif
 
   int Nb         = BColMap.NumMyElements();
   int * Bgids    = BColMap.MyGlobalElements();
@@ -442,7 +438,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   double *Avals;
   EPETRA_CHK_ERR(A.ExtractCrsDataPointers(Arowptr,Acolind,Avals));
 
-#ifdef USE_IMPORT_ONLY
   // DataPointers for B, Bimport
   int *Browptr, *Bcolind;
   double *Bvals;
@@ -455,7 +450,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     Icolind = &Bview.importMatrix->colind_[0];
     Ivals   = &Bview.importMatrix->vals_[0];
   }
-#endif
 
   // MemorySetup: If somebody else is sharing this C's graphdata, make a new one.
   // This is needed because I'm about to walk all over the CrsGrapData...
@@ -481,7 +475,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   // Static Profile stuff
   std::vector<int> NumEntriesPerRow(m);
 
-#ifdef USE_IMPORT_ONLY
   // For each row of A/C
   for(i=0; i<m; i++){			       
     bool found_diagonal=false;
@@ -541,72 +534,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     }
     OLD_ip=CSR_ip;
   }
-
-#else
-  // For each row of A/C
-  for(i=0; i<m; i++){			       
-    bool found_diagonal=false;
-    CSR_rowptr[i]=CSR_ip;
-
-    for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
-      int Ak=Acolind[k];
-      double Aval = Avals[k];
-      if(Aval==0) continue;
-
-      if(!Bview.remote[Ak]){
-	// Local matrix
-	int* Bcol_inds = Bview.indices[Ak];
-	double* Bvals_k= Bview.values[Ak];
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int Cj=Bcol2Ccol[Bcol_inds[j]];
-
-	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
-
-	  if(c_status[Cj]<OLD_ip){
-	    // New entry
-	    c_status[Cj]=CSR_ip;
-	    CSR_colind[CSR_ip]=Cj;
-	    CSR_vals[CSR_ip]=Aval*Bvals_k[j];
-	    CSR_ip++;
-	  }
-	  else
-	    CSR_vals[c_status[Cj]]+=Aval*Bvals_k[j];
-	}
-      }
-      else{
-	// Remote matrix
-	int* Bcol_inds = Bview.indices[Ak];
-	double* Bvals_k= Bview.values[Ak];
-	
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int Cj=Bimportcol2Ccol[Bcol_inds[j]];
-	  
-	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
-
-	  if(c_status[Cj]<OLD_ip){
-	    // New entry
-	    c_status[Cj]=CSR_ip;
-	    CSR_colind[CSR_ip]=Cj;
-	    CSR_vals[CSR_ip]=Aval*Bvals_k[j];
-	    CSR_ip++;
-	  }
-	  else
-	    CSR_vals[c_status[Cj]]+=Aval*Bvals_k[j];
-	}
-      }
-    }
-    NumEntriesPerRow[i]=CSR_ip-CSR_rowptr[i];
-
-    // Resize for next pass if needed
-    if(CSR_ip + n > CSR_alloc){
-      resize_doubles(CSR_alloc,2*CSR_alloc,CSR_vals);
-      CSR_alloc*=2;
-      CSR_colind.Resize(CSR_alloc);
-    }
-    OLD_ip=CSR_ip;
-  }
-#endif
-
 
   CSR_rowptr[m]=CSR_ip;
 
@@ -703,7 +630,6 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
   double *Avals;
   EPETRA_CHK_ERR(A.ExtractCrsDataPointers(Arowptr,Acolind,Avals));
 
-#ifdef USE_IMPORT_ONLY
   // DataPointers for B, Bimport
   int *Browptr, *Bcolind;
   double *Bvals;
@@ -716,7 +642,6 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
     Icolind = &Bview.importMatrix->colind_[0];
     Ivals   = &Bview.importMatrix->vals_[0];
   }
-#endif
 
   // DataPointers for C
   int *CSR_rowptr, *CSR_colind;
@@ -734,7 +659,6 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
   int CSR_alloc=CSR_rowptr[m] - CSR_rowptr[0];
   int CSR_ip=0,OLD_ip=0;
 
-#ifdef USE_IMPORT_ONLY
  // For each row of A/C
   for(i=0; i<m; i++){			       
     for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
@@ -781,58 +705,6 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
     }
     OLD_ip=CSR_ip;
   }
-#else
-  // For each row of A/C
-  for(i=0; i<m; i++){			       
-    for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
-      int Ak=Acolind[k];
-
-      double Aval = Avals[k];
-      if(Aval==0) continue;
-
-      if(!Bview.remote[Ak]){
-	// Local matrix
-	int* Bcol_inds = Bview.indices[Ak];
-	double* Bvals_k= Bview.values[Ak];
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int Cj=Bcol2Ccol[Bcol_inds[j]];
-
-	  if(c_status[Cj]<OLD_ip){
-	    // New entry
-	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-13);
-	    c_status[Cj]=CSR_ip;
-	    CSR_colind[CSR_ip]=Cj;
-	    CSR_vals[CSR_ip]=Aval*Bvals_k[j];
-	    CSR_ip++;
-	  }
-	  else
-	    CSR_vals[c_status[Cj]]+=Aval*Bvals_k[j];
-	}
-      }
-      else{
-	// Remote matrix
-	int* Bcol_inds = Bview.indices[Ak];
-	double* Bvals_k= Bview.values[Ak];
-	
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int Cj=Bimportcol2Ccol[Bcol_inds[j]];
-
-	  if(c_status[Cj]<OLD_ip){
-	    // New entry
-	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-14);
-	    c_status[Cj]=CSR_ip;
-	    CSR_colind[CSR_ip]=Cj;
-	    CSR_vals[CSR_ip]=Aval*Bvals_k[j];
-	    CSR_ip++;
-	  }
-	  else
-	    CSR_vals[c_status[Cj]]+=Aval*Bvals_k[j];
-	}
-      }
-    }
-    OLD_ip=CSR_ip;
-  }
-#endif
 
   // Sort the entries
   sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);

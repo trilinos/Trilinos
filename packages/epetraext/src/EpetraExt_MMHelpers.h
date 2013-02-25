@@ -59,12 +59,9 @@ class Epetra_Distributor;
 namespace EpetraExt {
 class LightweightCrsMatrix;
 
+// Turn on to enable the special MMM timers
 #define ENABLE_MMM_TIMINGS
 
-#define USE_IMPORT_ONLY
-
-#define USE_LIGHTWEIGHT_MAP
- 
 #define USE_MANUAL_BOUNDARY_EXCHANGE
 
 // Only turn this on of you don't have the "no globals" map constructor.
@@ -224,11 +221,7 @@ class LightweightMap {
 // ==============================================================
 class RemoteOnlyImport {
  public:
-#ifdef USE_LIGHTWEIGHT_MAP
   RemoteOnlyImport(const Epetra_Import & Importer, LightweightMap & RemoteOnlyTargetMap);
-#else
-  RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & RemoteOnlyTargetMap);
-#endif
   ~RemoteOnlyImport();
 
   int NumSameIDs() {return 0;}
@@ -254,11 +247,7 @@ class RemoteOnlyImport {
   Epetra_Distributor & Distributor() {return *Distor_;}  
 
   const Epetra_BlockMap & SourceMap() const {return *SourceMap_;}
-#ifdef USE_LIGHTWEIGHT_MAP
   const LightweightMap & TargetMap() const {return *TargetMap_;}
-#else
-  const Epetra_BlockMap & TargetMap() const {return *TargetMap_;}
-#endif
 
  private:
   int NumSend_;
@@ -269,11 +258,7 @@ class RemoteOnlyImport {
   int * RemoteLIDs_;
   Epetra_Distributor* Distor_;
   const Epetra_BlockMap* SourceMap_;
-#ifdef USE_LIGHTWEIGHT_MAP
   const LightweightMap  *TargetMap_;
-#else  
-  const Epetra_BlockMap *TargetMap_;
-#endif
 };
    
 // ==============================================================
@@ -292,15 +277,10 @@ class LightweightCrsMatrix {
   std::vector<long long>   colind_LL_;
 
   // Epetra Maps
-#ifdef USE_LIGHTWEIGHT_MAP
   bool                     use_lw;
   LightweightMap           *RowMapLW_;
   Epetra_BlockMap          *RowMapEP_;
   LightweightMap           ColMap_;
-#else
-  Epetra_BlockMap          RowMap_;
-  Epetra_BlockMap          ColMap_;
-#endif
   Epetra_Map               DomainMap_;
 
 

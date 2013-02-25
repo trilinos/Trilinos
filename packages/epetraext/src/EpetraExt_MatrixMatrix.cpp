@@ -734,11 +734,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       }
     }
 
-#ifdef USE_LIGHTWEIGHT_MAP
   LightweightMap MremoteRowMap(-1, Mview.numRemote, MremoteRows,Mrowmap.IndexBase());
-#else
-  Epetra_Map MremoteRowMap(-1, Mview.numRemote, MremoteRows,Mrowmap.IndexBase(), Mrowmap.Comm());
-#endif
 
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
@@ -753,12 +749,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
     }
     else if(!prototypeImporter) {
-#ifdef USE_LIGHTWEIGHT_MAP
       Epetra_Map MremoteRowMap2(-1, Mview.numRemote, MremoteRows,Mrowmap.IndexBase(), Mrowmap.Comm());
       importer=new Epetra_Import(MremoteRowMap2, Mrowmap);
-#else
-      importer=new Epetra_Import(MremoteRowMap, Mrowmap);
-#endif
     }
     else
       throw std::runtime_error("prototypeImporter->SourceMap() does not match M.RowMap()!");
@@ -781,13 +773,10 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
 
     //Finally, use the freshly imported data to fill in the gaps in our views
-#ifdef USE_LIGHTWEIGHT_MAP
     int N;
     if(Mview.importMatrix->use_lw) N = Mview.importMatrix->RowMapLW_->NumMyElements();
     else N = Mview.importMatrix->RowMapEP_->NumMyElements();
-#else
-    int N = Mview.importMatrix->RowMap_.NumMyElements();
-#endif
+
     if(N > 0) {
       rowptr = &Mview.importMatrix->rowptr_[0];
       colind = &Mview.importMatrix->colind_[0];
@@ -804,12 +793,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       }
     }
 
-#ifdef USE_LIGHTWEIGHT_MAP
-    // THIS IS A HACK
     Mview.importColMap = new Epetra_Map(-1,Mview.importMatrix->ColMap_.NumMyElements(),Mview.importMatrix->ColMap_.MyGlobalElements(),Mview.importMatrix->ColMap_.IndexBase(),M.Comm());
-#else
-    Mview.importColMap = &(Mview.importMatrix->ColMap_);
-#endif
     delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
@@ -926,13 +910,7 @@ int import_only(const Epetra_CrsMatrix& M,
   for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
     MremoteRows[i] = targetMap.GID(RemoteLIDs[i]);
   
-
-#ifdef USE_LIGHTWEIGHT_MAP
   LightweightMap MremoteRowMap(-1, numRemote, MremoteRows,Mrowmap.IndexBase());
-#else
-  Epetra_Map MremoteRowMap(-1, numRemote, MremoteRows,Mrowmap.IndexBase(), Mrowmap.Comm());
-#endif
-
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -957,10 +935,6 @@ int import_only(const Epetra_CrsMatrix& M,
   mtime=MM.getNewTimer("Ionly Import-4");
   mtime->start();
 #endif
-
-#ifndef USE_LIGHTWEIGHT_MAP
-  Mview.importColMap = &(Mview.importMatrix->ColMap_);
-#endif  
 
   // Cleanup
   delete Rimporter;
@@ -1244,15 +1218,12 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   }
 
   //Now import any needed remote rows and populate the Aview struct.
-#ifdef USE_IMPORT_ONLY
   if(scenario==1) {
     EPETRA_CHK_ERR(import_only(A,*targetMap_A,Aview));
   }
-  else  
-#endif
-    {
-      EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview));
-    }
+  else  {
+    EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview));
+  }
 
 
   // NOTE:  Next up is to switch to import_only for B as well, and then modify the THREE SerialCores
@@ -1285,11 +1256,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 
   //Now import any needed remote rows and populate the Bview struct.  
   if(scenario==1) {
-#ifdef USE_IMPORT_ONLY
     EPETRA_CHK_ERR(import_only(B,*targetMap_B,Bview,A.Importer()));
-#else
-    EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview, A.Importer() ));
-#endif
   }
   else {
     EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );

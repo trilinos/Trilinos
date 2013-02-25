@@ -541,11 +541,7 @@ int LightweightMap::MaxLID() const {
 //=========================================================================
 //=========================================================================
 //=========================================================================
-#ifdef USE_LIGHTWEIGHT_MAP
 RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import & Importer, LightweightMap & RemoteOnlyTargetMap)
-#else
-RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & RemoteOnlyTargetMap)
-#endif
 {
   int i;
 
@@ -624,13 +620,10 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   // In principle it is good to have RemoteGIDs and RemoteGIDList be as long as the number of remote GIDs
   // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
   // and the number of block rows.
-#ifdef USE_LIGHTWEIGHT_MAP
   int numMyBlockRows;
   if(use_lw) numMyBlockRows = RowMapLW_->NumMyElements();
   else numMyBlockRows = RowMapEP_->NumMyElements();
-#else
-  const int numMyBlockRows = RowMap_.NumMyElements();
-#endif
+
   int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
   Epetra_HashTable<GO> RemoteGIDs(hashsize); 
   std::vector<GO>  RemoteGIDList;     RemoteGIDList.reserve(hashsize);
@@ -778,12 +771,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 #endif
 
   // Make Column map with same element sizes as Domain map 
-
-#ifdef USE_LIGHTWEIGHT_MAP
   LightweightMap temp(-1, numMyBlockCols, Colindices.Values(), DomainMap_.IndexBase());
-#else
-  Epetra_Map temp(-1, numMyBlockCols, Colindices.Values(), DomainMap_.IndexBase(), DomainMap_.Comm());
-#endif
   ColMap_ = temp;
 
 
@@ -807,11 +795,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     }
   }
 
-#ifdef USE_LIGHTWEIGHT_MAP
   assert((size_t)ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
-#else
-  assert((size_t)ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
-#endif
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -1458,13 +1442,10 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
   // Fused constructor, import & FillComplete
   int i,j,rv=0;
-#ifdef USE_LIGHTWEIGHT_MAP
   int N;
   if(use_lw) N = RowMapLW_->NumMyElements();
   else N = RowMapEP_->NumMyElements();
-#else
-  int N = RowMap_.NumMyElements();
-#endif
+
   Epetra_Util util;
   int MyPID = SourceMatrix.Comm().MyPID();
 
@@ -1483,10 +1464,8 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   //    reindexes to LIDs.
 
   // Sanity Check
-#ifndef USE_LIGHTWEIGHT_MAP
   if (!SourceMatrix.RowMap().SameAs(RowImporter.SourceMap())) 
     throw "LightweightCrsMatrix: Fused copy constructor requires Importer.SourceMap() to match SourceMatrix.RowMap()";
-#endif  
 
   // Get information from the Importer
   int NumSameIDs             = RowImporter.NumSameIDs();
@@ -1816,14 +1795,9 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
 //=========================================================================
 LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter):
-#ifdef USE_LIGHTWEIGHT_MAP
   use_lw(true),
   RowMapLW_(0),
   RowMapEP_(0),
-#else
-  RowMap_(RowImporter.TargetMap()),
-  ColMap_(RowImporter.TargetMap()),
-#endif
   DomainMap_(SourceMatrix.DomainMap())
 { 
 #ifdef ENABLE_MMM_TIMINGS
@@ -1833,9 +1807,7 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   mtime=MM.getNewTimer("LWCRS Total");
   mtime->start();
 #endif
-#ifdef USE_LIGHTWEIGHT_MAP
   RowMapLW_= new LightweightMap(RowImporter.TargetMap());
-#endif 
    
   Construct<RemoteOnlyImport>(SourceMatrix,RowImporter);
 #ifdef ENABLE_MMM_TIMINGS
@@ -1847,28 +1819,19 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
 
 //=========================================================================
 LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & RowImporter):
-#ifdef USE_LIGHTWEIGHT_MAP
   use_lw(false),
   RowMapLW_(0),
   RowMapEP_(0),
-#else
-  RowMap_(RowImporter.TargetMap()),
-  ColMap_(RowImporter.TargetMap()),
-#endif
   DomainMap_(SourceMatrix.DomainMap())
 {
-#ifdef USE_LIGHTWEIGHT_MAP
   RowMapEP_= new Epetra_BlockMap(RowImporter.TargetMap());
-#endif
   Construct<Epetra_Import>(SourceMatrix,RowImporter);
 }
 
 
 LightweightCrsMatrix::~LightweightCrsMatrix(){
-#ifdef USE_LIGHTWEIGHT_MAP
   delete RowMapLW_;
   delete RowMapEP_;
-#endif
 }
 
 
