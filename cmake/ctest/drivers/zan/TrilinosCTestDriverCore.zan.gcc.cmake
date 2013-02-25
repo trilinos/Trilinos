@@ -82,7 +82,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DTPL_ENABLE_BinUtils=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
