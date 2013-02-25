@@ -64,11 +64,17 @@ class LightweightCrsMatrix;
 #define USE_IMPORT_ONLY
 
 #define USE_LIGHTWEIGHT_MAP
-
+ 
 #define USE_MANUAL_BOUNDARY_EXCHANGE
 
 // Only turn this on of you don't have the "no globals" map constructor.
 //#define USE_DELAYED_MAP_CONSTRUCTION
+
+#define USE_REVERSE_COMM
+
+//#define CMS_DEBUG
+
+//#define HAVE_EPETRAEXT_DEBUG // for extra sanity checks
 
 // ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
@@ -244,6 +250,8 @@ class RemoteOnlyImport {
   int* PermuteToLIDs() {return 0;}
 
   int* PermuteFromLIDs() {return 0;}
+
+  int NumSend() {return NumSend_;}
   
   Epetra_Distributor & Distributor() {return *Distor_;}  
 
@@ -255,6 +263,7 @@ class RemoteOnlyImport {
 #endif
 
  private:
+  int NumSend_;
   int NumRemoteIDs_;
   int NumExportIDs_;
   int * ExportLIDs_;
@@ -300,9 +309,9 @@ class LightweightCrsMatrix {
   // List of owning PIDs (from the DomainMap) as ordered by entries in the column map.
   std::vector<int>    ColMapOwningPIDs_;
 
-  // ExportLID/PIDs for creating the final Exports w/o additional commo.
-  std::vector<int> ExportLIDs_;
-  std::vector<int> ExportPIDs_;
+  // For building the final importer for C
+  std::vector<int>    ExportLIDs_;
+  std::vector<int>    ExportPIDs_;
 
  private: 
 
@@ -318,6 +327,16 @@ class LightweightCrsMatrix {
 
   template <long long>
   int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<long long> Gcolind);
+
+
+  template<typename ImportType>
+  int PackAndPrepareReverseComm(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,
+				std::vector<int> &ReverseSendSizes, std::vector<int> &ReverseSendBuffer);
+
+  template<typename ImportType>
+  int MakeExportLists(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,
+		      std::vector<int> &ReverseRecvSizes, const int *ReverseRecvBuffer,
+		      std::vector<int> & ExportPIDs, std::vector<int> & ExportLIDs);
 
 
   int PackAndPrepareWithOwningPIDs(const Epetra_DistObject & Source, 

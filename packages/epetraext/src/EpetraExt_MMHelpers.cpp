@@ -54,6 +54,8 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_MpiDistributor.h"
 #endif
+#define MIN(x,y)    ((x)<(y)?(x):(y))
+#define MIN3(x,y,z) ((x)<(y)?(MIN(x,z)):(MIN(y,z)))
 
 namespace EpetraExt {
 
@@ -380,6 +382,11 @@ void boundary_exchange_varsize(const Epetra_MpiComm Comm, MPI_Datatype DataType,
   for(i=0; i<NumRecvs; i++) rbuffersize+=RecvSizes[i]*SizeOfPacket;
   RecvBuffer = new MyType[rbuffersize];
 
+  
+  //DEBUG
+  //  for(i=0; i<NumRecvs; i++) 
+  //    printf("[%d] Recv size %d from proc %d\n",Comm.MyPID(),RecvSizes[i],RecvProcs[i]);
+
   // Do a second round of boundary exchange to trade the actual values
   boundary_exchange<MyType>(Comm,DataType,NumSends,SendProcs,SendSizes,SendBuffer,NumRecvs,RecvProcs,RecvSizes,RecvBuffer,SizeOfPacket,msg_tag+100);
 }
@@ -552,6 +559,7 @@ RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & 
   TargetMap_=&RemoteOnlyTargetMap;
 
   // Pull data from the Importer
+  NumSend_            = Importer.NumSend();
   NumRemoteIDs_       = Importer.NumRemoteIDs();
   NumExportIDs_       = Importer.NumExportIDs();
   Distor_             = &Importer.Distributor();
@@ -973,6 +981,570 @@ int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject &
   return(0);
 }
 
+
+//=========================================================================
+// Template params are <PID,GID>
+static inline bool lessthan12(std::pair<int,int> i, std::pair<int,int> j){
+  return ((i.first<j.first) || (i.first==j.first && i.second <j.second));
+}
+
+
+template<typename ImportType>
+int LightweightCrsMatrix::PackAndPrepareReverseComm(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,
+						    std::vector<int> &ReverseSendSizes, std::vector<int> &ReverseSendBuffer) {
+#ifdef HAVE_MPI
+  // Buffer pairs are in (PID,GID) order
+  int i,j,k;
+  const Epetra_Import *MyImporter= SourceMatrix.Importer();
+  if(MyImporter == 0) return -1;
+  const Epetra_MpiComm * MpiComm        = dynamic_cast<const Epetra_MpiComm*>(&SourceMatrix.Comm());
+  int MyPID                             = MpiComm->MyPID();
+
+  // Things related to messages I and sending in forward mode (RowImporter)
+  int NumExportIDs                      = RowImporter.NumExportIDs();
+  int* ExportLIDs                       = RowImporter.ExportLIDs();
+  int* ExportPIDs                       = RowImporter.ExportPIDs();
+
+  // Things related to messages I am sending in reverse mode (MyImporter)
+  Epetra_Distributor& Distor            = MyImporter->Distributor();
+  const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);
+  int NumRecvs                          = MDistor->NumReceives();
+  int* RemoteLIDs                       = MyImporter->RemoteLIDs();
+  const int * ProcsFrom                 = MDistor->ProcsFrom();
+  const int * LengthsFrom               = MDistor->LengthsFrom();
+
+  
+  // Get the owning pids in a special way, s.t. ProcsFrom[RemotePIDs[i]] is the guy who owns 
+  // RemoteLIDs[j]....
+  std::vector<int> RemotePIDOrder(SourceMatrix.NumMyCols(),-1);
+
+  // Now, for each remote ID, record which processor (in ProcsFrom ordering) owns it.
+  for(i=0,j=0;i<NumRecvs;i++){
+    for(k=0;k<LengthsFrom[i];k++){
+      int pid=ProcsFrom[i];
+      if(pid!=MyPID) RemotePIDOrder[RemoteLIDs[j]]=i;
+      j++;
+    }    
+  }
+
+  // Step One: Start tacking the (GID,PID) pairs on the std sets
+  std::vector<std::set<std::pair<int,int> > > ReversePGIDs(NumRecvs);
+  int    *rowptr, *colind;
+  double *vals;
+  EPETRA_CHK_ERR(SourceMatrix.ExtractCrsDataPointers(rowptr,colind,vals));
+  
+
+  // Loop over each exported row and add to the temp list
+  for(i=0; i < NumExportIDs; i++) {
+    int lid = ExportLIDs[i];
+    int exp_pid = ExportPIDs[i];    
+    for(j=rowptr[lid]; j<rowptr[lid+1]; j++){
+      int pid_order = RemotePIDOrder[colind[j]];
+      if(pid_order!=-1) {
+	int gid = SourceMatrix.GCID(colind[j]);
+	// This GID is getting shipped off somewhere
+	//	printf("[%d] GID %d gets sent to PID %d\n",MyPID,gid,exp_pid);
+	ReversePGIDs[pid_order].insert(std::pair<int,int>(exp_pid,gid));
+      }
+    }
+  }
+
+  // Step 2: Count sizes (one too large to avoid std::vector errors)
+  ReverseSendSizes.resize(NumRecvs+1);
+  int totalsize=0;
+  for(i=0; i<NumRecvs; i++) {
+    ReverseSendSizes[i] = 2*ReversePGIDs[i].size();
+    totalsize += ReverseSendSizes[i];
+  }
+
+
+  // Step 3: Alloc and fill the send buffer (one too large to avoid std::vector errors)
+  ReverseSendBuffer.resize(totalsize+1);
+  for(i=0, j=0; i<NumRecvs; i++) {
+    for(std::set<std::pair<int,int> >::iterator it=ReversePGIDs[i].begin(); it!=ReversePGIDs[i].end(); it++) {
+      ReverseSendBuffer[j]   =  it->first;
+      ReverseSendBuffer[j+1] =  it->second;
+      j+=2;
+    }
+  }
+#endif
+
+  
+
+
+
+  return 0;
+}
+
+//=========================================================================
+int build_type3_exports(int MyPID,int Nrecv, Epetra_BlockMap &DomainMap, std::vector<int> &ReverseRecvSizes, const int *ReverseRecvBuffer,  std::vector<int> &ExportLID3, std::vector<int> &ExportPID3){
+  int i,j;
+
+  // DEBUG
+  Epetra_MpiComm MyComm(MPI_COMM_WORLD);
+
+  // Estimate total length of procs_to for Type 3
+  int total_length3=0;
+  for(i=0; i<Nrecv; i++)
+    total_length3+=ReverseRecvSizes[i]/2;
+
+
+  if(total_length3==0) return 0;
+  std::vector<int> ExportGID3(total_length3);
+  ExportLID3.resize(total_length3);
+  ExportPID3.resize(total_length3);
+
+
+  // Build a sorted colmap-style list for Type3 (removing any self-sends)    
+  for(i=0,j=0; i<2*total_length3; i+=2) {
+    if(ReverseRecvBuffer[i] != MyPID){
+      ExportPID3[j]=ReverseRecvBuffer[i];
+      ExportGID3[j]=ReverseRecvBuffer[i+1];
+      j++;
+    }    
+  }
+  total_length3=j;
+
+
+  if(total_length3==0) return 0;
+#ifdef CMS_DEBUG
+  printf("[%d] Type 3 INIT  = ",MyComm.MyPID());
+  for(i=0; i<total_length3; i++)
+    printf("(--,%2d,%2d) ",ExportGID3[i],ExportPID3[i]);
+  printf("\n");
+  fflush(stdout);
+#endif
+
+  // Sort (ala Epetra_CrsGraph)
+  int * companion = &ExportGID3[0];
+  Epetra_Util::Sort(true,total_length3,&ExportPID3[0],0,0,1,&companion,0,0);
+  int StartCurrent, StartNext;
+  StartCurrent = 0; StartNext = 1;
+  while ( StartNext < total_length3 ) {
+    if(ExportPID3[StartNext] == ExportPID3[StartNext-1]) StartNext++;
+    else {
+      Epetra_Util::Sort(true,StartNext-StartCurrent, &(ExportGID3[StartCurrent]),0,0,0,0, 0, 0);
+      StartCurrent = StartNext; StartNext++;
+    }
+  }
+  Epetra_Util::Sort(true,StartNext-StartCurrent, &(ExportGID3[StartCurrent]),0,0,0,0, 0, 0);
+  
+
+  /*  printf("[%d] Type 3 Sorted= ",MyComm.MyPID());
+  for(i=0; i<total_length3; i++)
+    printf("(--,%2d,%2d) ",ExportGID3[i],ExportPID3[i]);
+  printf("\n");
+  fflush(stdout);*/
+
+
+  // Uniq & resize
+  for(i=1,j=1; i<total_length3; i++){
+    if(ExportPID3[i]!=ExportPID3[i-1] || ExportGID3[i]!=ExportGID3[i-1]){
+      ExportPID3[j] = ExportPID3[i];
+      ExportGID3[j] = ExportGID3[i];
+      j++;
+    }
+  }
+  ExportPID3.resize(j);
+  ExportLID3.resize(j);
+  total_length3=j;
+
+  /*  printf("[%d] Type 3 UNIQ  = ",MyComm.MyPID());
+  for(i=0; i<total_length3; i++)
+    printf("(--,%2d,%2d) ",ExportGID3[i],ExportPID3[i]);
+  printf("\n");
+  fflush(stdout);*/
+
+
+  
+  // Now index down to LIDs   
+  for(i=0; i<total_length3; i++) {
+    ExportLID3[i]=DomainMap.LID(ExportGID3[i]);
+    if(ExportLID3[i] < 0) throw std::runtime_error("LightweightCrsMatrix:MakeExportLists invalid LID");    
+  }
+    
+  /*  printf("[%d] Type 3 FINAL = ",MyComm.MyPID());
+  for(i=0; i<total_length3; i++)
+    printf("(%2d,%2d,%2d) ",ExportLID3[i],ExportGID3[i],ExportPID3[i]);
+  printf("\n");
+  fflush(stdout);*/
+ 
+  return total_length3;
+}
+
+//=========================================================================
+template<typename ImportType>
+int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyImporter, std::vector<int> &ExportLID2, std::vector<int> &ExportPID2){
+  int total_length2=0;
+#ifdef HAVE_MPI
+  int i,j;
+  const Epetra_Import *SourceImporter= SourceMatrix.Importer();
+
+  int    *rowptr, *colind;
+  double *vals;
+  EPETRA_CHK_ERR(SourceMatrix.ExtractCrsDataPointers(rowptr,colind,vals));
+
+  // Things related to messages I am sending in forward mode (MyImporter)
+  int NumExportIDs                      = MyImporter.NumExportIDs();
+  const int* ExportLIDs                 = MyImporter.ExportLIDs();
+  const int* ExportPIDs                 = MyImporter.ExportPIDs();
+
+#ifdef CMS_DEBUG
+  printf("[%d] Type2: Num ExportIDs %d\n",SourceMatrix.Comm().MyPID(),NumExportIDs);
+#endif
+  if(NumExportIDs==0) return 0;
+
+  // Assume I own all the cols, then flag any cols I don't own
+  // This allows us to avoid LID calls later...
+  std::vector<bool> IsOwned(SourceMatrix.NumMyCols(),true);
+  if(SourceImporter) {
+    const int * RemoteLIDs = SourceImporter->RemoteLIDs();
+    // Now flag the cols I don't own
+    for(i=0; i<SourceImporter->NumRemoteIDs(); i++) 
+      IsOwned[RemoteLIDs[i]]=false;
+  }
+
+  // Status vector 
+  std::vector<int> SentTo(SourceMatrix.NumMyCols(),-1);
+
+  /*  printf("[%d] Type 2 ExportPIDs = ",SourceMatrix.Comm().MyPID());
+  for(i=0; i<NumExportIDs; i++) printf("%2d ",ExportPIDs[i]);
+  printf("\n");
+  fflush(stdout);*/
+
+
+  // Initial allocation: Too large (assume send involves a max size row)
+  total_length2 = MyImporter.NumSend() * SourceMatrix.MaxNumEntries() + 1;
+  std::vector<int> ExportGID2(total_length2);
+
+  ExportLID2.resize(total_length2);
+  ExportPID2.resize(total_length2);
+
+  int current=0, last_start=0, last_pid=ExportPIDs[0];
+  for(i=0; i<NumExportIDs; i++){
+    // For each row I have to send via MyImporter...
+    int row=ExportLIDs[i];
+    int pid=ExportPIDs[i];
+#ifdef CMS_DEBUG
+    //    printf("[%d] Type2: Processing PID %d\n",SourceMatrix.Comm().MyPID(),pid);
+#endif
+    if(i!=0 && pid>last_pid) {
+      // We have a new PID, so lets finish up the current one      
+      if(current!=last_start){
+       	int *lids = &ExportLID2[last_start];
+	Epetra_Util::Sort<int>(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
+	//	printf("[%d] Sorting range: [%2d,%2d]\n",SourceMatrix.Comm().MyPID(),last_start,current); 
+	// Note: we don't need to sort the ExportPIDs since they're the same since last_start
+      }
+      // Reset the list
+      last_pid=pid;
+      last_start=current;		      
+    }
+    else if(pid < last_pid) {
+      /*printf("[%d] Type 2 ExportPIDs crashing NOW!!!!!\n",SourceMatrix.Comm().MyPID());
+	fflush(stdout);*/
+      throw std::runtime_error("build_type2_exports: ExportPIDs are not sorted!");
+    }
+
+    for(j=rowptr[row]; j<rowptr[row+1]; j++) {
+      // For each column in that row...      
+      int col=colind[j];
+      //	printf("[%d] Type2: PID %d <= Col %2d (maybe)\n",SourceMatrix.Comm().MyPID(),pid,SourceMatrix.GCID(col));
+      if(IsOwned[col] && SentTo[col]!=pid){
+	// We haven't added this guy to the list yet.
+#ifdef CMS_DEBUG
+	printf("[%d] Type2: PID %d <= Col %2d (for real) Row=%d\n",SourceMatrix.Comm().MyPID(),pid,SourceMatrix.GCID(col),SourceMatrix.GRID(row));
+#endif
+	SentTo[col]         = pid;
+	ExportGID2[current] = SourceMatrix.GCID(col);
+	ExportLID2[current] = SourceMatrix.DomainMap().LID(ExportGID2[current]);
+	ExportPID2[current] = pid;
+	current++;
+      }
+    }
+  }//end main loop
+
+  // Final Sort
+  int *lids = &ExportLID2[last_start];
+  Epetra_Util::Sort<int>(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
+  //    printf("[%d] Sorting range: [%2d,%2d]\n",SourceMatrix.Comm().MyPID(),last_start,current); 
+  // Note: we don't need to sort the ExportPIDs since they're the same since last_start
+
+  total_length2=current;
+
+  ExportLID2.resize(total_length2);
+  ExportPID2.resize(total_length2);
+
+
+#endif
+  return total_length2;
+}
+
+//=========================================================================
+int build_type1_exports(const Epetra_Import * Importer1, std::vector<int> &ExportLID1, std::vector<int> &ExportPID1){
+  int i, total_length1=0;
+  if(!Importer1) return 0;
+  total_length1 = Importer1->NumSend();
+
+  std::vector<int> ExportGID1(total_length1);
+  ExportLID1.resize(total_length1);
+  ExportPID1.resize(total_length1);
+  const int * ExportLID1Base = Importer1->ExportLIDs();
+  const int * ExportPID1Base = Importer1->ExportPIDs();
+
+  for(i=0; i<total_length1; i++){
+    ExportLID1[i] = ExportLID1Base[i];
+    ExportPID1[i] = ExportPID1Base[i];
+    ExportGID1[i] = Importer1->SourceMap().GID(ExportLID1Base[i]);
+  }
+
+  // Sort (ala Epetra_CrsGraph)
+  int * companion[2] = {&ExportLID1[0],&ExportGID1[0]};
+  Epetra_Util::Sort(true,total_length1,&ExportPID1[0],0,0,2,&companion[0],0,0);
+
+  int StartCurrent, StartNext;
+  StartCurrent = 0; StartNext = 1;
+  while ( StartNext < total_length1 ) {
+    if(ExportPID1[StartNext] == ExportPID1[StartNext-1]) StartNext++;
+    else {
+      int *new_companion = {&ExportLID1[StartCurrent]};
+      Epetra_Util::Sort(true,StartNext-StartCurrent, &(ExportGID1[StartCurrent]),0,0,1,&new_companion, 0, 0);
+      StartCurrent = StartNext; StartNext++;
+    }
+  }
+  int *new_companion = {&ExportLID1[StartCurrent]};
+  Epetra_Util::Sort(true,StartNext-StartCurrent, &(ExportGID1[StartCurrent]),0,0,1,&new_companion, 0, 0);
+  return total_length1;
+}
+
+//=========================================================================
+template<typename ImportType>
+int LightweightCrsMatrix::MakeExportLists(const Epetra_CrsMatrix & SourceMatrix, ImportType & Importer2,
+					  std::vector<int> &ReverseRecvSizes, const int *ReverseRecvBuffer,
+					  std::vector<int> & ExportPIDs, std::vector<int> & ExportLIDs) {
+#ifdef HAVE_MPI
+  int MyPID = SourceMatrix.Comm().MyPID();
+
+  // This could (legitimately) be zero, in which case we don't have any ReverseRecvs either.
+  const Epetra_Import *Importer1= SourceMatrix.Importer();
+
+  // So for each entry in the DomainMap, I have to answer the question: Do I need to send this to anybody?  And if so, to whom?
+  //
+  // This information comes from three sources:
+  // 1) IDs in my DomainMap that are in someone else's ColMap (e.g. SourceMatrix.Importer()).
+  // 2) IDs that I own that I sent to another proc in the Forward communication round (e.g. RowImporter).
+  // 3) IDs that someone else sent on during the Forward round (and they told me about duing the reverse round).
+  //
+  // Any of these could legitimately be null.
+  Epetra_MpiDistributor * Distor1 = (Importer1)?(dynamic_cast<Epetra_MpiDistributor*>(&Importer1->Distributor())):0;
+  //  Epetra_MpiDistributor * Distor2 = dynamic_cast<Epetra_MpiDistributor*>(&Importer2.Distributor());
+
+  //  int Nrecv1 = (Distor1)?(Distor1->NumReceives()):0; // Also the number of messages we'll need to parse through in build_type3_exports
+  int Nsend1 = (Distor1)?(Distor1->NumSends()):0; // Also the number of messages we'll need to parse through in build_type3_exports
+
+  std::vector<int> ExportPID3;
+  std::vector<int> ExportLID3;
+
+  std::vector<int> ExportPID2;
+  std::vector<int> ExportLID2;
+
+  std::vector<int> ExportPID1;
+  std::vector<int> ExportLID1;
+
+  // Build (sorted) ExportLID / ExportGID list for Type
+  int Len1=build_type1_exports(Importer1, ExportLID1, ExportPID1);
+  int Len2=build_type2_exports<ImportType>(SourceMatrix, Importer2, ExportLID2, ExportPID2);
+  int Len3=build_type3_exports(MyPID,Nsend1,DomainMap_,ReverseRecvSizes, ReverseRecvBuffer, ExportLID3, ExportPID3);
+
+
+  // Since everything should be sorted correctly, we can do a streaming merge of the three Export lists...
+  //  const int * ExportLID1 = (Importer1)?Importer1->ExportLIDs():0;
+  //  const int * ExportPID1 = (Importer1)?Importer1->ExportPIDs():0;
+  //  const int * ExportLID2 = Importer2.ExportLIDs();
+  //  const int * ExportPID2 = Importer2.ExportPIDs();
+
+  // NTS: Need to add pre-sorting of Importer1 list, since some people are, you know, haters...
+
+#ifdef HAVE_EPETRAEXT_DEBUG
+  {
+    int i;
+    // Now we sanity check the 1 & 2 lists
+    bool test_passed=true;
+    for(i=1; i<Len1; i++) {
+      if(ExportPID1[i] < ExportPID1[i-1] || (ExportPID1[i] == ExportPID1[i-1] && DomainMap_.GID(ExportLID1[i]) < DomainMap_.GID(ExportLID1[i-1])))
+	test_passed=false;
+    }
+    SourceMatrix.Comm().Barrier();
+    if(!test_passed) {
+      printf("[%d] Type1 ERRORS  = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<Len1; i++)
+	printf("(%2d,%2d,%2d) ",ExportLID1[i],DomainMap_.GID(ExportLID1[i]),ExportPID1[i]);
+      printf("\n");
+      fflush(stdout);      
+      throw std::runtime_error("Importer1 fails the sanity test");      
+    }
+
+    for(i=1; i<Len2; i++) {
+      if(ExportPID2[i] < ExportPID2[i-1]  || (ExportPID2[i] == ExportPID2[i-1] && DomainMap_.GID(ExportLID2[i]) < DomainMap_.GID(ExportLID2[i-1])))
+	test_passed=false;
+    }
+
+    SourceMatrix.Comm().Barrier();
+    if(!test_passed) {
+      printf("[%d] Type2 ERRORS  = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<Len2; i++)
+	printf("(%2d,%2d,%2d) ",ExportLID2[i],DomainMap_.GID(ExportLID2[i]),ExportPID2[i]);
+      printf("\n");
+      fflush(stdout);      
+      throw std::runtime_error("Importer2 fails the sanity test");      
+    }
+
+    for(i=1; i<Len3; i++) {
+      if(ExportPID3[i] < ExportPID3[i-1]  || (ExportPID3[i] == ExportPID3[i-1] && DomainMap_.GID(ExportLID3[i]) < DomainMap_.GID(ExportLID3[i-1])))
+	test_passed=false;
+    }
+
+    SourceMatrix.Comm().Barrier();
+    if(!test_passed) {
+      printf("[%d] Type3 ERRORS  = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<Len3; i++)
+	printf("(%2d,%2d,%2d) ",ExportLID3[i],DomainMap_.GID(ExportLID3[i]),ExportPID3[i]);
+      printf("\n");
+      fflush(stdout);      
+      throw std::runtime_error("Importer3 fails the sanity test");      
+    }
+
+
+  }
+#endif
+
+  if(Importer1 && !Importer1->SourceMap().SameAs(DomainMap_))
+    throw std::runtime_error("ERROR: Map Mismatch Importer1");
+
+  if(!Importer2.SourceMap().SameAs(SourceMatrix.RowMap()))
+    throw std::runtime_error("ERROR: Map Mismatch Importer2");
+
+
+  int InfGID = INT_MAX;
+  int InfPID = INT_MAX;
+
+  int i1=0, i2=0, i3=0, current=0;
+
+  int MyLen=Len1+Len2+Len3;  
+  ExportLIDs.resize(MyLen);
+  ExportPIDs.resize(MyLen);
+
+  while(i1 < Len1 || i2 < Len2 || i3 < Len3){
+    int PID1 = (i1<Len1)?(ExportPID1[i1]):InfPID;
+    int PID2 = (i2<Len2)?(ExportPID2[i2]):InfPID;
+    int PID3 = (i3<Len3)?(ExportPID3[i3]):InfPID;
+
+    int GID1 = (i1<Len1)?(DomainMap_.GID(ExportLID1[i1])):InfGID;
+    int GID2 = (i2<Len2)?(DomainMap_.GID(ExportLID2[i2])):InfGID;
+    int GID3 = (i3<Len3)?(DomainMap_.GID(ExportLID3[i3])):InfGID;
+
+    int MIN_PID = MIN3(PID1,PID2,PID3);
+
+    //    printf("[%d] TGIDs = (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+
+    int MIN_GID = MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+
+#ifdef CMS_DEBUG
+    // For debugging only
+    int LID1 = (i1<Len1)?(ExportLID1[i1]):InfGID;
+    int LID2 = (i2<Len2)?(ExportLID2[i2]):InfGID;
+    int LID3 = (i3<Len3)?(ExportLID3[i3]):InfGID;
+#define ZM(x)((x)==INT_MAX?-1:(x)) //debug
+#endif
+
+
+
+    bool added_entry=false;
+    //    printf("[%d] Merge State i=(%2d/%2d,%2d/%2d,%2d/%2d) pid=(%2d,%2d,%2d) lid=(%2d,%2d,%2d) gid=(%2d,%2d,%2d) mpgid=(%2d,%2d)\n",SourceMatrix.Comm().MyPID(),i1,Len1,i2,Len2,i3,Len3,ZM(PID1),ZM(PID2),ZM(PID3),ZM(LID1),ZM(LID2),ZM(LID3),ZM(GID1),ZM(GID2),ZM(GID3),MIN_PID,MIN_GID);
+
+    // Case 1: Add off list 1   
+    if(PID1 == MIN_PID && GID1 == MIN_GID){
+      //      printf("[%d] Adding1[%d] <= (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),current,ExportLID1[i1],GID1,ExportPID1[i1]);
+      ExportLIDs[current] = ExportLID1[i1];
+      ExportPIDs[current] = ExportPID1[i1];
+      current++;
+      i1++;
+      added_entry=true;
+    }
+
+    // Case 2: Add off list 2
+    if(PID2 == MIN_PID && GID2 == MIN_GID){
+      if(!added_entry) {
+	//	printf("[%d] Adding2[%d] <= (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),current,ExportLID2[i2],GID2,ExportPID2[i2]);
+	ExportLIDs[current] = ExportLID2[i2];
+	ExportPIDs[current] = ExportPID2[i2];
+	current++;
+	added_entry=true;
+      }
+      //      else printf("[%d] SKIPPN2[%d] <= (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),current,ExportLID2[i2],GID2,ExportPID2[i2]);
+      i2++; 
+    }
+
+    // Case 3: Add off list 3
+    if(PID3 == MIN_PID && GID3 == MIN_GID){
+      if(!added_entry) {
+	//	printf("[%d] Adding3[%d] <= (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),current,ExportLID3[i3],GID3,ExportPID3[i3]);
+	ExportLIDs[current] = ExportLID3[i3];
+	ExportPIDs[current] = ExportPID3[i3];
+	current++;
+      }
+      //      else printf("[%d] SKIPPN3[%d] <= (%2d,%2d,%2d)\n",SourceMatrix.Comm().MyPID(),current,ExportLID2[i3],GID3,ExportPID3[i3]);
+      i3++; 
+    }
+    //    printf("[%d] ------------------------------------\n",SourceMatrix.Comm().MyPID());
+  }// end while
+  //  printf("[%d] current = %d lensum = %d\n",SourceMatrix.Comm().MyPID(),current,MyLen);
+  if(current!=MyLen) {
+    ExportLIDs.resize(current);
+    ExportPIDs.resize(current);
+  }
+
+
+
+  //DEBUG  
+  //#define CMS_DEBUG
+#ifdef CMS_DEBUG
+    printf("[%d] Type1 Exports = ",SourceMatrix.Comm().MyPID());
+  for(int i=0; i<Len1; i++)
+    printf("(%2d,%2d,%2d) ",ExportLID1[i],DomainMap_.GID(ExportLID1[i]),ExportPID1[i]);
+  printf("\n");
+  fflush(stdout);
+
+  printf("[%d] Type2 Exports = ",SourceMatrix.Comm().MyPID());
+  for(int i=0; i<Len2; i++)
+    printf("(%2d,%2d,%2d) ",ExportLID2[i],DomainMap_.GID(ExportLID2[i]),ExportPID2[i]);
+  printf("\n");
+  fflush(stdout);
+
+  printf("[%d] Type3 Exports = ",SourceMatrix.Comm().MyPID());
+  for(int i=0; i<Len3; i++)
+    printf("(%2d,%2d,%2d) ",ExportLID3[i],DomainMap_.GID(ExportLID3[i]),ExportPID3[i]);
+  printf("\n");
+  fflush(stdout);
+
+  printf("[%d] Final Exports = ",SourceMatrix.Comm().MyPID());
+  for(int i=0; i<current; i++)
+    printf("(%2d,%2d,%2d) ",ExportLIDs[i],DomainMap_.GID(ExportLIDs[i]),ExportPIDs[i]);
+  printf("\n");
+  fflush(stdout);
+
+  SourceMatrix.Comm().Barrier();
+  SourceMatrix.Comm().Barrier();
+#endif
+  /*static int CMS_callnum=0;
+  if(CMS_callnum==1) exit(1);
+  CMS_callnum++;*/
+  //  exit(1);
+
+#endif
+  return 0;
+}
+
 //=========================================================================
 template<typename ImportType>
 void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter)
@@ -993,6 +1565,21 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   else
     throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type");
 
+
+  //DEBUG
+  /*  printf("[%d] RowMap = ",SourceMatrix.Comm().MyPID());
+  for(int i=0;i<SourceMatrix.NumMyRows(); i++)
+    printf("%2d ",SourceMatrix.GRID(i));
+  printf("\n");
+  fflush(stdout);
+
+  printf("[%d] ColMap = ",SourceMatrix.Comm().MyPID());
+  for(int i=0;i<SourceMatrix.NumMyCols(); i++)
+    printf("%2d ",SourceMatrix.GCID(i));
+  printf("\n");
+  fflush(stdout);
+  */
+
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
@@ -1000,6 +1587,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   mtime=MM.getNewTimer("LWCRS C-1");
   mtime->start();
 #endif
+
 
   // Fused constructor, import & FillComplete
   int i,j,rv=0;
@@ -1012,6 +1600,12 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #endif
   Epetra_Util util;
   int MyPID = SourceMatrix.Comm().MyPID();
+
+#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+  std::vector<int> ReverseSendSizes, ReverseSendBuffer;
+  std::vector<int> ReverseRecvSizes;
+  int * ReverseRecvBuffer=0;
+#endif
 
   bool communication_needed = RowImporter.SourceMap().DistributedGlobal();
 
@@ -1037,6 +1631,11 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   int* PermuteToLIDs         = RowImporter.PermuteToLIDs();
   int* PermuteFromLIDs       = RowImporter.PermuteFromLIDs();
   Epetra_Distributor& Distor = RowImporter.Distributor();
+
+#ifdef HAVE_MPI
+  const Epetra_MpiComm * MpiComm        = dynamic_cast<const Epetra_MpiComm*>(&SourceMatrix.Comm());
+  const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);
+#endif
 
   // Allocate memory
   rowptr_.resize(N+1);
@@ -1068,16 +1667,14 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if (communication_needed) {
     // Do the exchange of remote data
 #if defined(USE_MANUAL_BOUNDARY_EXCHANGE) && defined(HAVE_MPI)
-    const Epetra_MpiComm * MpiComm        = dynamic_cast<const Epetra_MpiComm*>(&SourceMatrix.Comm());
-    const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);;    
 
+    int curr_pid;
     const int * ExportPIDs = RowImporter.ExportPIDs();
 
-    // FIXME: Procs w/o a send or recv will lead to a std::vector error.
-
     // Use the fact that the export procs are sorted to avoid building a hash table.
-    std::vector<int> SendSizes(MDistor->NumSends(),0);
-    for(int i=0, curr_pid=0; i<NumExportIDs; i++) { 
+    // NOTE: The +1's on the message size lists are to avoid std::vector problems if a proc has no sends or recvs. 
+    std::vector<int> SendSizes(MDistor->NumSends()+1,0);
+    for(i=0, curr_pid=0; i<NumExportIDs; i++) { 
       if(i>0 &&  ExportPIDs[i] > ExportPIDs[i-1]) curr_pid++;
       SendSizes[curr_pid] +=Sizes_[i];
 
@@ -1087,7 +1684,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
     LenImports_=0; // remove compiler warning.
 
-    std::vector<int> RecvSizes(MDistor->NumReceives());
+    std::vector<int> RecvSizes(MDistor->NumReceives()+1);
     int msg_tag=MpiComm->GetMpiTag();
     boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),&SendSizes[0],Exports_,
 				    MDistor->NumReceives(),MDistor->ProcsFrom(),&RecvSizes[0],Imports_,SizeOfPacket,msg_tag);
@@ -1097,7 +1694,58 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
     else
       rv=Distor.Do(Exports_, SizeOfPacket, LenImports_, Imports_);
 #endif
+
+#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+    // If the  source matrix doesn't have an importer, then nobody sent data belonging to me in the forward round.
+    if(SourceMatrix.Importer()) {
+      Epetra_Import* SourceImporter=const_cast<Epetra_Import*>(SourceMatrix.Importer());
+      const Epetra_MpiDistributor * MyDistor = dynamic_cast<Epetra_MpiDistributor*>(&SourceImporter->Distributor());
+
+      // Setup the reverse communication
+      // Note: Buffer pairs are in (PID,GID) order
+      PackAndPrepareReverseComm<ImportType>(SourceMatrix,RowImporter,ReverseSendSizes,ReverseSendBuffer);
+      
+#ifdef CMS_DEBUG
+      //DEBUG
+      printf("[%d] RSS = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<(int)ReverseSendSizes.size()-1; i++)
+	printf("%2d[%2d] ",ReverseSendSizes[i],MyDistor->ProcsFrom()[i]);
+      printf("\n");
+      printf("[%d] RSB = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<(int)ReverseSendBuffer.size()-1; i+=2)
+	printf("%2d[%2d] ",ReverseSendBuffer[i],ReverseSendBuffer[i+1]);
+      printf("\n");
+      fflush(stdout);
+#endif      
+
+      // Do the reverse communication
+      // NOTE: Make the vector one too large to avoid std::vector errors
+      ReverseRecvSizes.resize(MyDistor->NumSends()+1);
+      int msg_tag=MpiComm->GetMpiTag();
+      boundary_exchange_varsize<int>(*MpiComm,MPI_INT,MyDistor->NumReceives(),MyDistor->ProcsFrom(),&ReverseSendSizes[0],&ReverseSendBuffer[0],
+				      MyDistor->NumSends(),MyDistor->ProcsTo(),&ReverseRecvSizes[0],ReverseRecvBuffer,1,msg_tag);
+
+
+#ifdef CMS_DEBUG
+      int  rrv_size=0;
+      printf("[%d] RRS = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<MyDistor->NumSends(); i++) {
+	printf("%2d[%2d] ",ReverseRecvSizes[i],MyDistor->ProcsTo()[i]);
+	rrv_size+=ReverseRecvSizes[i];
+      }
+      printf("\n");
+
+      printf("[%d] RRV = ",SourceMatrix.Comm().MyPID());
+      for(int i=0; i<rrv_size; i+=2)
+	printf("%2d[%2d] ",ReverseRecvBuffer[i],ReverseRecvBuffer[i+1]);
+      printf("\n");
+      fflush(stdout);
+#endif
+
+    }
+#endif
   }
+
   if(rv) throw "LightweightCrsMatrix: Fused copy constructor failed in Distor.Do";
 
   /*********************************************************************/
@@ -1287,7 +1935,15 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   else MakeColMapAndReindex<int>(pids,colind_);
 
   /********************************************/
-  /**** 4) Call sort the entries           ****/
+  /**** 4) Make Export Lists for Import    ****/
+  /********************************************/
+
+#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+  MakeExportLists<ImportType>(SourceMatrix,RowImporter,ReverseRecvSizes,ReverseRecvBuffer,ExportPIDs_,ExportLIDs_);
+#endif 
+
+  /********************************************/
+  /**** 5) Call sort the entries           ****/
   /********************************************/
   // NOTE: If we have no entries the &blah[0] will cause the STL to die in debug mode
 #ifdef ENABLE_MMM_TIMINGS
@@ -1298,12 +1954,16 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if(N>0) sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
 
   /********************************************/
-  /**** 5) Cleanup                         ****/
+  /**** 6) Cleanup                         ****/
   /********************************************/
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-5");
   mtime->start();
+#endif
+
+#if defined(USE_REVERSE_COMM) && defined(HAVE_MPI)
+  delete [] ReverseRecvBuffer;
 #endif
 
   delete [] Exports_;
