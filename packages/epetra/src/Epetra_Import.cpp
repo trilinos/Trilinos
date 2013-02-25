@@ -45,16 +45,15 @@
 #include "Epetra_Import.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
-#include "Epetra_MpiDistributor.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
 
 #include <algorithm>
 #include <vector>
 
-#ifdef HAVE_EPETRA_TEUCHOS
-#include <Teuchos_TimeMonitor.hpp>
-#define ENABLE_MMM_TIMINGS
+
+#ifdef HAVE_MPI
+#include "Epetra_MpiDistributor.h"
 #endif
 
 #ifdef EPETRA_ENABLE_DEBUG
@@ -213,7 +212,6 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     // Build distributor & Export lists
     Distor_ = sourceMap.Comm().CreateDistributor();    
     
-    bool Deterministic = true;
     NumExportIDs_=UserNumExportIDs;
     ExportLIDs_ = new int[NumExportIDs_];
     ExportPIDs_ = new int[NumExportIDs_];
@@ -224,6 +222,7 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
 
 #ifdef HAVE_MPI
     Epetra_MpiDistributor* MpiDistor = dynamic_cast< Epetra_MpiDistributor*>(Distor_);
+    bool Deterministic = true;
     if(MpiDistor)
       ierr=MpiDistor->CreateFromSendsAndRecvs(NumExportIDs_,ExportPIDs_,					      
 					      NumRemoteIDs_, RemoteGIDs, RemotePIDs,Deterministic);
