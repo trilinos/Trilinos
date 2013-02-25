@@ -87,7 +87,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
