@@ -793,7 +793,9 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       }
     }
 
-    Mview.importColMap = new Epetra_Map(-1,Mview.importMatrix->ColMap_.NumMyElements(),Mview.importMatrix->ColMap_.MyGlobalElements(),Mview.importMatrix->ColMap_.IndexBase(),M.Comm());
+
+    int * MyColGIDs = (Mview.importMatrix->ColMap_.NumMyElements()>0)?Mview.importMatrix->ColMap_.MyGlobalElements():0;
+    Mview.importColMap = new Epetra_Map(-1,Mview.importMatrix->ColMap_.NumMyElements(),MyColGIDs,Mview.importMatrix->ColMap_.IndexBase(),M.Comm());
     delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();

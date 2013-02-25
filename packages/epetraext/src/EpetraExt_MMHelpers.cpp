@@ -1222,6 +1222,7 @@ int build_type1_exports(const Epetra_Import * Importer1, std::vector<int> &Expor
   int i, total_length1=0;
   if(!Importer1) return 0;
   total_length1 = Importer1->NumSend();
+  if(total_length1==0) return 0;
 
   std::vector<int> ExportGID1(total_length1);
   ExportLID1.resize(total_length1);

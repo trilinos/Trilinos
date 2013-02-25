@@ -122,7 +122,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   int Nb         = BColMap.NumMyElements();
   int * Bgids    = BColMap.MyGlobalElements();
   int Ni         = IColMap.NumMyElements();
-  int * Igids    = IColMap.MyGlobalElements();  
+  int * Igids    = (Ni>0)?(IColMap.MyGlobalElements()):0;
 
   if((int)Bcols2Ccols.size() != Nb) Bcols2Ccols.resize(Nb);
   if((int)Icols2Ccols.size() != Ni) Icols2Ccols.resize(Ni);
@@ -428,8 +428,8 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   double *Ivals=0;
   if(Bview.importMatrix){
     Irowptr = &Bview.importMatrix->rowptr_[0];
-    Icolind = &Bview.importMatrix->colind_[0];
-    Ivals   = &Bview.importMatrix->vals_[0];
+    Icolind = (Bview.importMatrix->colind_.size()>0)?(&Bview.importMatrix->colind_[0]):0;
+    Ivals   = (Bview.importMatrix->vals_.size()>0)?(&Bview.importMatrix->vals_[0]):0;
   }
 
   // MemorySetup: If somebody else is sharing this C's graphdata, make a new one.
