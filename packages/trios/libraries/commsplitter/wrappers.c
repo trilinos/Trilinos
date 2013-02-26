@@ -47,12 +47,18 @@
 #include <stdarg.h>
 #include <limits.h>
 #include <string.h>
+#include <strings.h>
+#include <unistd.h>
 
 #include <zlib.h>
 
 #include <mpi.h>
 
 #include "commsplitter.h"
+
+void commsplitter_init(char *app_name);
+void commsplitter_fini(void);
+
 
 #ifdef HAVE_TRIOS_HPCTOOLKIT
 #include <hpctoolkit.h>
@@ -278,7 +284,7 @@ static int commsplitter_MPI_Finalize()
 {
     int rc = 0;
 
-    commsplitter_finalize();
+    commsplitter_fini();
     commsplitter_data.enabled = 0;
     commsplitter_log("calling PMPI_Finalize\n");
 
