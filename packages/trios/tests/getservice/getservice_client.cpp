@@ -141,7 +141,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
         goto out;
     }
     switch (service1.svc_host.peer.transport_id) {
-        case NSSI_RPC_PTL:
+        case NNTI_TRANSPORT_PORTALS:
             if (service1.svc_host.peer.NNTI_remote_process_t_u.portals.nid != service2.svc_host.peer.NNTI_remote_process_t_u.portals.nid) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -153,7 +153,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_IB:
+        case NNTI_TRANSPORT_IB:
             if (service1.svc_host.peer.NNTI_remote_process_t_u.ib.addr != service2.svc_host.peer.NNTI_remote_process_t_u.ib.addr) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -170,7 +170,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_GEMINI:
+        case NNTI_TRANSPORT_GEMINI:
             if (service1.svc_host.peer.NNTI_remote_process_t_u.gni.addr    != service2.svc_host.peer.NNTI_remote_process_t_u.gni.addr) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -187,12 +187,16 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_MPI:
+        case NNTI_TRANSPORT_MPI:
             if (service1.svc_host.peer.NNTI_remote_process_t_u.mpi.rank != service2.svc_host.peer.NNTI_remote_process_t_u.mpi.rank) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
+            break;
+        case NNTI_TRANSPORT_LUC:
+        case NNTI_TRANSPORT_LOCAL:
+        case NNTI_TRANSPORT_NULL:
             break;
     }
 
@@ -202,7 +206,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
         goto out;
     }
     switch (service1.req_addr.buffer_owner.peer.transport_id) {
-        case NSSI_RPC_PTL:
+        case NNTI_TRANSPORT_PORTALS:
             if (service1.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.portals.nid != service2.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.portals.nid) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -214,7 +218,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_IB:
+        case NNTI_TRANSPORT_IB:
             if (service1.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.ib.addr != service2.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.ib.addr) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -231,7 +235,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_GEMINI:
+        case NNTI_TRANSPORT_GEMINI:
             if (service1.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.gni.addr    != service2.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.gni.addr) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -248,12 +252,16 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_MPI:
+        case NNTI_TRANSPORT_MPI:
             if (service1.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank != service2.req_addr.buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
+            break;
+        case NNTI_TRANSPORT_LUC:
+        case NNTI_TRANSPORT_LOCAL:
+        case NNTI_TRANSPORT_NULL:
             break;
     }
 
@@ -263,7 +271,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
         goto out;
     }
     switch (service1.req_addr.buffer_addr.transport_id) {
-        case NSSI_RPC_PTL:
+        case NNTI_TRANSPORT_PORTALS:
             if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -280,7 +288,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_IB:
+        case NNTI_TRANSPORT_IB:
             if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.buf      != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.buf) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -307,7 +315,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_GEMINI:
+        case NNTI_TRANSPORT_GEMINI:
             if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.type              != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.type) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -349,7 +357,7 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NSSI_RPC_MPI:
+        case NNTI_TRANSPORT_MPI:
             if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
@@ -370,6 +378,10 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 rc=NSSI_EINVAL;
                 goto out;
             }
+            break;
+        case NNTI_TRANSPORT_LUC:
+        case NNTI_TRANSPORT_LOCAL:
+        case NNTI_TRANSPORT_NULL:
             break;
     }
 
@@ -524,9 +536,6 @@ getservice_client_main (struct getservice_args &args, nssi_service &getservice_s
 
 
     return 0;
-
-abort:
-    exit(2);
 }
 
 /**
