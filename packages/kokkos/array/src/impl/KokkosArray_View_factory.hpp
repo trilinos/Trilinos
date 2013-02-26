@@ -52,68 +52,6 @@
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-namespace Impl {
-
-template< class > struct ViewCreateMirror ;
-
-template< class DataType , class LayoutType , class DeviceType , class ManageType >
-struct ViewCreateMirror< View< DataType , LayoutType , DeviceType , ManageType > >
-{
-  typedef View< DataType , LayoutType , DeviceType , ManageType > output_type ;
-
-  inline static
-  output_type create( const output_type & src ) { return src ; }
-
-  template< class DeviceSrc , class ManageSrc >
-  inline static
-  output_type create( const View< DataType , LayoutType , DeviceSrc , ManageSrc > & src )
-  {
-    return output_type( "mirror" , src.shape() );
-  }
-};
-
-} // namespace Impl
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
-          class ManageType >
-typename View< DataType , LayoutType , DeviceType , ManageType >::HostMirror
-create_mirror_view(
-  const View<DataType,LayoutType,DeviceType,ManageType > & input )
-{
-  typedef View< DataType , LayoutType , DeviceType > input_type ;
-  typedef typename input_type::HostMirror            output_type ;
-
-  return Impl::ViewCreateMirror< output_type >::create( input );
-}
-
-template< class DataType , class LayoutType , class DeviceType >
-typename View< DataType , LayoutType , DeviceType >::HostMirror
-create_mirror( const View<DataType,LayoutType,DeviceType> & input )
-{
-  typedef View< DataType , LayoutType , DeviceType > input_type ;
-  typedef typename input_type::HostMirror            output_type ;
-
-#if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
-  return Impl::ViewCreateMirror< output_type >::create( input );
-#else
-  return output_type( "mirror" , input.shape() );
-#endif
-}
-
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 /** \brief  Deep copy compatible arrays */
 
 namespace KokkosArray {

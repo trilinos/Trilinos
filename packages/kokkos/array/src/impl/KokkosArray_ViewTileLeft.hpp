@@ -84,8 +84,6 @@ private:
 
     ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    dst.m_stride = 1 ;
-
     const size_t allocation_count = 
        layout::N0 * layout::N1 * 
        ( ( dst.m_shape.N0 + layout::N0 - 1 ) / layout::N0 ) *
@@ -100,9 +98,21 @@ private:
 
 public:
 
+  // Same data type, same layout, different device; used to create a mirror.
+  template< class D , class M >
+  ViewAssignment( DstViewType & dst , const View< typename DstViewType::data_type ,
+                                                  typename DstViewType::layout_type ,
+                                                  D , M > & src )
+  {
+    dst.m_shape  = src.m_shape ;
+    dst.m_stride = src.m_stride ;
+    allocate( dst , "mirror" );
+  }
+
   ViewAssignment( DstViewType & dst , const std::string & label , const shape_type shape )
   {
     dst.m_shape = shape ;
+    dst.m_stride = 1 ;
 
     allocate( dst , label );
   }
@@ -118,6 +128,7 @@ public:
                   const size_t n7 = 0 )
   {
     shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+    dst.m_stride = 1 ;
 
     allocate( dst , label );
   }

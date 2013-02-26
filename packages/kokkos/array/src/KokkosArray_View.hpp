@@ -566,12 +566,44 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
-          class ManagedType >
-typename View< DataType , LayoutType , DeviceType , ManagedType >::HostMirror
-create_mirror( const View<DataType,LayoutType,DeviceType,ManagedType > & );
+template< class T , class L , class D , class M >
+typename View<T,L,D,M>::HostMirror
+create_mirror_view( const View<T,L,D,M> & view ,
+                    typename Impl::enable_if<
+                      Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
+                                     HostSpace >::value
+                    >::type * = 0 )
+{
+  return view ;
+}
+
+template< class T , class L , class D , class M >
+typename View<T,L,D,M>::HostMirror
+create_mirror_view( const View<T,L,D,M> & view ,
+                    typename Impl::enable_if<
+                      ! Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
+                                       HostSpace >::value
+                    >::type * = 0 )
+{
+  typedef typename View<T,L,D,M>::HostMirror host_view ;
+  host_view tmp ;
+  Impl::ViewAssignment< host_view , HostSpace , void >( tmp , view );
+  return tmp ;
+}
+
+template< class T , class L , class D , class M >
+typename View<T,L,D,M>::HostMirror
+create_mirror( const View<T,L,D,M> & view )
+{
+#if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
+  return create_mirror_view( view );
+#else
+  typedef typename View<T,L,D,M>::HostMirror host_view ;
+  host_view tmp ;
+  Impl::ViewAssignment< host_view , HostSpace , void >( tmp , view );
+  return tmp ;
+#endif
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
