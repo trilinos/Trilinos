@@ -853,7 +853,7 @@ ifpackApplyImpl (const MAT& A,
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- dtemp1 = " << dtemp1 << endl
-	 << "- dtemp2 = " << dtemp1 << endl;
+	 << "- dtemp2 = " << dtemp2 << endl;
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -927,12 +927,12 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V1,
 		      Teuchos::RCP<MV>& W,
 		      const MV& X)
 {
-  // Don't fill the vectors with zeros.
   if (V_.is_null ()) {
     V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
   }
+  //W must be initialized to zero when it is used as a multigrid smoother.
   if (W_.is_null ()) {
-    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
+    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), true));
   }
   V1 = V_;
   W = W_;
