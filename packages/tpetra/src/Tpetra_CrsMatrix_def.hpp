@@ -1345,12 +1345,19 @@ namespace Tpetra {
                                 ArrayView<const GlobalOrdinal> &indices,
                                 ArrayView<const Scalar>        &values) const
   {
-    const std::string tfecfFuncName("getGlobalRowView()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() == true, std::runtime_error, ": global indices cannot be provided.");
+    using Teuchos::as;
+    const char tfecfFuncName[] = "getGlobalRowView";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed() == true, std::runtime_error, 
+      ": The matrix is locally indexed, so we cannot return a view of the row "
+      "with global column indices.  Use getGlobalRowCopy() instead.");
     indices = null;
     values  = null;
     const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
-    if (lrow != OrdinalTraits<LocalOrdinal>::invalid()) {
+    if (lrow != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+      // getRowInfo() requires a local row index, whether or not
+      // storage has been optimized.
       const RowInfo rowinfo = staticGraph_->getRowInfo(lrow);
       if (rowinfo.numEntries > 0) {
         indices = staticGraph_->getGlobalView(rowinfo);
@@ -1360,9 +1367,12 @@ namespace Tpetra {
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( (size_t)indices.size() != getNumEntriesInGlobalRow(globalRow) || indices.size() != values.size(),
-        std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      as<size_t> (indices.size ()) != getNumEntriesInGlobalRow (globalRow) || 
+      indices.size () != values.size (),
+      std::logic_error, 
+      ": Violated stated post-conditions. Please contact Tpetra team.");
+#endif // HAVE_TPETRA_DEBUG
     return;
   }
 
@@ -3273,20 +3283,23 @@ namespace Tpetra {
                   const ArrayView<const LocalOrdinal> &permuteToLIDs,
                   const ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
     using Teuchos::as;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Node NT;
 
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
-    const std::string tfecfFuncName("copyAndPermute()");
+    const char tfecfFuncName[] = "copyAndPermute";
 
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
     typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
     const this_type& sourceMatrix = dynamic_cast<const this_type&> (source);
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(permuteToLIDs.size() != permuteFromLIDs.size(),
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      permuteToLIDs.size() != permuteFromLIDs.size(),
       std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size()
       << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
 
@@ -3295,6 +3308,7 @@ namespace Tpetra {
     // Copy the first numSame row from source to target (this matrix).
     // This involves copying rows corresponding to LIDs [0, numSame-1].
     //
+    const map_type& srcRowMap = * (sourceMatrix.getMap ());
     Array<GO> rowInds;
     Array<Scalar> rowVals;
     LO sourceLID = 0;
@@ -3302,7 +3316,7 @@ namespace Tpetra {
       // Global ID for the current row index in the source matrix.
       // The first numSameIDs GIDs in the two input lists are the
       // same, so sourceGID == targetGID in this case.
-      const GO sourceGID = sourceMatrix.getMap()->getGlobalElement (sourceLID);
+      const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
       const GO targetGID = sourceGID;
 
       // Input views for the combineGlobalValues() call below.
@@ -3426,37 +3440,65 @@ namespace Tpetra {
                   size_t& constantNumPackets,
                   Distributor &distor)
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef Map<LO, GO, Node> map_type;
     typedef typename ArrayView<const LO>::size_type size_type;
-    const std::string tfecfFuncName ("packAndPrepare()");
+    const char tfecfFuncName[] = "packAndPrepare";
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(exportLIDs.size() != numPacketsPerLID.size(),
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      exportLIDs.size() != numPacketsPerLID.size(),
       std::invalid_argument, "exportLIDs.size() = " << exportLIDs.size()
       << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
-    // This dynamic cast should succeed.  The packAndPrepare() method
-    // is invoked by DistObject::doTransfer(), which calls
+    // This dynamic cast should always succeed.  The packAndPrepare()
+    // method is invoked by DistObject::doTransfer(), which calls
     // checkSizes() and copyAndPermute() first.  At least one of the
     // latter two methods must have successfully done the cast in
     // order for doTransfer() to get to this point.
+    //
+    // It would be possible to implement this method if the source
+    // object is any RowMatrix or CrsMatrix with the same first
+    // three template parameters.  However, it's more efficient if we
+    // can get row views, so we require for now that this be a
+    // CrsMatrix of the same type as *this.
     typedef CrsMatrix<Scalar, LO, GO, Node, LocalMatOps> this_type;
     const this_type& src_mat = dynamic_cast<const this_type&> (source);
     const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
     constantNumPackets = 0;
 
-    // first, set the contents of numPacketsPerLID, and accumulate a total-num-packets:
-    // grab the max row size, while we're at it. may need it below.
-    // Subtle: numPacketsPerLID is for byte-packets, so it needs to be multiplied
-    const size_t SizeOfOrdValPair = sizeof(GO) + sizeof(Scalar);
+    // Row Map of the source matrix.
+    const map_type& srcRowMap = * (src_mat.getMap ());
+    // We always need the GIDs of the rows we want to pack.
+    Array<GO> exportGIDs (exportLIDs.size ());
+    const size_type numExportGIDs = exportGIDs.size ();
+    for (size_type i = 0; i < numExportGIDs; ++i) {
+      exportGIDs[i] = srcRowMap.getGlobalElement (exportLIDs[i]);
+    }
+
+    // Compute the number of packets per export LID, and accumulate
+    // the total number of packages.  While doing so, find the max
+    // necessary row size.  We may need it below.  Note that
+    // numPacketsPerLID is for byte-packets, so it needs to be
+    // multiplied.
+    //
+    // FIXME (mfh 24 Feb 2013) This code is only correct if
+    // sizeof(Scalar) is a meaningful representation of the amount of
+    // data in a Scalar instance.  (GO is always a built-in integer
+    // type.)
+    const size_t SizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
     size_t totalNumEntries = 0;
     size_t maxExpRowLength = 0;
-    for (size_type i = 0; i < exportLIDs.size(); ++i) {
-      const GO expGID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-      const size_t row_length = src_mat.getNumEntriesInGlobalRow(expGID);
-      numPacketsPerLID[i] = row_length * SizeOfOrdValPair;
-      totalNumEntries += row_length;
-      maxExpRowLength = (row_length > maxExpRowLength) ? row_length : maxExpRowLength;
+    for (size_type i = 0; i < exportGIDs.size(); ++i) {
+      const size_t curNumEntries = 
+	src_mat.getNumEntriesInGlobalRow (exportGIDs[i]);
+      numPacketsPerLID[i] = curNumEntries * SizeOfOrdValPair;
+      totalNumEntries += curNumEntries;
+      maxExpRowLength = std::max (curNumEntries, maxExpRowLength);
     }
 
     // Pack export data by interleaving rows' indices and values in
@@ -3466,7 +3508,7 @@ namespace Tpetra {
     if (totalNumEntries > 0) {
       // exports is an array of char (bytes). it needs room for all of the indices and values
       const size_t totalNumBytes = totalNumEntries * SizeOfOrdValPair;
-      exports.resize(totalNumBytes);
+      exports.resize (totalNumBytes);
 
       ArrayView<char> avIndsC, avValsC;
       ArrayView<GO>   avInds;
@@ -3477,19 +3519,24 @@ namespace Tpetra {
       // otherwise, we are forced to use copy semantics (for the indices; for simplicity, we'll use them for values as well)
       size_t curOffsetInBytes = 0;
       if (src_is_locally_indexed) {
-        Array<GO> row_inds (maxExpRowLength);
-        Array<Scalar> row_vals (maxExpRowLength);
+	Array<GO> curGids;
+	ArrayView<const LO> curLids;
+	ArrayView<const Scalar> curVals;
+
+	// Locally indexed matrices always have a column Map.
+	const map_type& srcColMap = * (src_mat.getColMap ());
         for (size_type i = 0; i < exportLIDs.size(); ++i) {
-          // Get a copy of the current row's data.  We get a copy and
-          // not a view, because the indices are stored as local
-          // indices, not as global indices.
-          //
-          // TODO (mfh 14 Mar 2012) It might save some copying to add
-          // a method that gets a view of the values but a copy of the
-          // global indices.
-          const GO GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-          size_t rowSize;
-          src_mat.getGlobalRowCopy(GID, row_inds(), row_vals(), rowSize);
+          // Get a (locally indexed) view of the current row's data.
+	  const LO LID = exportLIDs[i];
+          const GO GID = exportGIDs[i];
+          src_mat.getLocalRowView (LID, curLids, curVals);
+
+	  // Convert local indices to global indices.
+	  curGids.resize (curLids.size ());
+	  const size_t curNumEntries = as<size_t> (curLids.size ());
+	  for (size_t k = 0; k < curNumEntries; ++k) {
+	    curGids[k] = srcColMap.getGlobalElement (curLids[k]);
+	  }
 
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  The type cast makes the
@@ -3500,39 +3547,40 @@ namespace Tpetra {
           // cast?  Why can't we just store pairs?  Is it because
           // there are no Comm functions for sending and receiving
           // pairs?  How hard can that be to implement?
-          avIndsC = exports(curOffsetInBytes, rowSize*sizeof(GO));
-          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(Scalar));
+          avIndsC = exports (curOffsetInBytes, curNumEntries * sizeof(GO));
+          avValsC = exports (curOffsetInBytes + curNumEntries * sizeof(GO), 
+			     curNumEntries * sizeof(Scalar));
           avInds = av_reinterpret_cast<GO> (avIndsC);
           avVals = av_reinterpret_cast<Scalar> (avValsC);
           // Copy the source matrix's row data into the views of the
           // exports array for indices resp. values.
-          std::copy (row_inds.begin(), row_inds.begin()+rowSize, avInds.begin());
-          std::copy (row_vals.begin(), row_vals.begin()+rowSize, avVals.begin());
+          std::copy (curGids.begin(), curGids.begin()+curNumEntries, avInds.begin());
+          std::copy (curVals.begin(), curVals.begin()+curNumEntries, avVals.begin());
           // Keep track of how many bytes we packed.
-          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+          curOffsetInBytes += SizeOfOrdValPair * curNumEntries;
         }
       }
-      else { // the source matrix's indices are stored as GIDs, not LIDs.
-        ArrayView<const GO> row_inds;
-        ArrayView<const Scalar> row_vals;
-        for (size_type i = 0; i < exportLIDs.size(); ++i) {
+      else { // the source matrix's column indices are stored as GIDs, not LIDs.
+        ArrayView<const GO> curColInds;
+        ArrayView<const Scalar> curVals;
+        for (size_type i = 0; i < exportGIDs.size(); ++i) {
           // Get a view of the current row's data.  We don't need to
           // get a copy, since the source matrix's indices are stored
           // as GIDs.
-          const GO GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-          src_mat.getGlobalRowView(GID, row_inds, row_vals);
-          const size_t rowSize = static_cast<size_t> (row_inds.size());
+          src_mat.getGlobalRowView (exportGIDs[i], curColInds, curVals);
+          const size_t curNumEntries = as<size_t> (curColInds.size ());
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  See notes and FIXME above.
-          avIndsC = exports(curOffsetInBytes, rowSize*sizeof(GO));
-          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(Scalar));
+          avIndsC = exports (curOffsetInBytes, curNumEntries * sizeof (GO));
+          avValsC = exports (curOffsetInBytes + curNumEntries * sizeof (GO), 
+			     curNumEntries * sizeof (Scalar));
           avInds = av_reinterpret_cast<GO> (avIndsC);
           avVals = av_reinterpret_cast<Scalar> (avValsC);
           // Copy the source matrix's row data into the views of the
           // exports array for indices resp. values.
-          std::copy (row_inds.begin(), row_inds.end(), avInds.begin());
-          std::copy (row_vals.begin(), row_vals.end(), avVals.begin());
-          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+          std::copy (curColInds.begin(), curColInds.end(), avInds.begin());
+          std::copy (curVals.begin(), curVals.end(), avVals.begin());
+          curOffsetInBytes += SizeOfOrdValPair * curNumEntries;
         }
       }
 #ifdef HAVE_TPETRA_DEBUG
@@ -3562,10 +3610,10 @@ namespace Tpetra {
       // aren't allowed to change the structure of the graph.
       // However, all the other combine modes work.
       if (combineMode == ADD) {
-        sumIntoGlobalValues (globalRowIndex, columnIndices(), values());
+        sumIntoGlobalValues (globalRowIndex, columnIndices, values);
       }
       else if (combineMode == REPLACE) {
-        replaceGlobalValues (globalRowIndex, columnIndices(), values());
+        replaceGlobalValues (globalRowIndex, columnIndices, values);
       }
       else if (combineMode == ABSMAX) {
         using Details::AbsMax;
@@ -3595,7 +3643,7 @@ namespace Tpetra {
         // are equivalent.  We need to call insertGlobalValues()
         // anyway if the column indices don't yet exist in this row,
         // so we just call insertGlobalValues() for both cases.
-        insertGlobalValues (globalRowIndex, columnIndices(), values());
+        insertGlobalValues (globalRowIndex, columnIndices, values);
       }
       // FIXME (mfh 14 Mar 2012):
       //
@@ -3640,7 +3688,15 @@ namespace Tpetra {
                     Distributor & /* distor */,
                     CombineMode combineMode)
   {
-    const std::string tfecfFuncName("unpackAndCombine()");
+    using Teuchos::ArrayView;
+    using Teuchos::av_reinterpret_cast;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Map<LO, GO, Node> map_type;
+    typedef typename ArrayView<const LO>::size_type size_type;
+    const char tfecfFuncName[] = "unpackAndCombine";
+
+#ifdef HAVE_TPETRA_DEBUG
     const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
     const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
     const int numValidModes = 4;
@@ -3658,7 +3714,9 @@ namespace Tpetra {
       os << "}.";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::invalid_argument, os.str());
     }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(importLIDs.size() != numPacketsPerLID.size(),
+#endif // HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      importLIDs.size() != numPacketsPerLID.size(),
       std::invalid_argument, "importLIDs.size() = " << importLIDs.size()
       << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
@@ -3676,23 +3734,21 @@ namespace Tpetra {
     //    typically a built-in integer type, so this is generally true
     //    for GlobalOrdinal.)
     //
-    const size_t SizeOfOrdValPair = sizeof(GlobalOrdinal)+sizeof(Scalar);
-    const size_t totalNumBytes = imports.size(); // * sizeof(char), which is one.
+    const size_t SizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
+    const size_t totalNumBytes = imports.size (); // * sizeof(char), i.e., 1.
     const size_t totalNumEntries = totalNumBytes / SizeOfOrdValPair;
 
     if (totalNumEntries > 0) {
+      const map_type& rowMap = * (this->getMap ());
+
       // data packed as follows:
       // [inds_row0 vals_row0 inds_row1 vals_row1 ...]
       ArrayView<const char> avIndsC, avValsC;
-      ArrayView<const GlobalOrdinal> avInds;
-      ArrayView<const Scalar>        avVals;
+      ArrayView<const GO> avInds;
+      ArrayView<const Scalar> avVals;
 
       size_t curOffsetInBytes = 0;
-      typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
-      for (size_type i = 0; i < importLIDs.size(); ++i) {
-        // get row info
-        const LocalOrdinal LID = importLIDs[i];
-        const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
+      for (size_type i = 0; i < importLIDs.size (); ++i) {
         const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
         // Needs to be in here in case of zero length rows.  If not,
         // the lines following the if statement error out if the row
@@ -3705,18 +3761,21 @@ namespace Tpetra {
         if (rowSize == 0) {
           continue;
         }
+        const LO LID = importLIDs[i];
+        const GO myGID = rowMap.getGlobalElement (LID);
+
         // Get views of the import (incoming data) buffers.  Again,
         // this code assumes that sizeof(Scalar) is the number of
         // bytes used by each Scalar.  It also assumes that
         // Teuchos::Comm has correctly deserialized Scalar in place in
         // avValsC.
-        avIndsC = imports(curOffsetInBytes, rowSize * sizeof(GlobalOrdinal));
-        avValsC = imports(curOffsetInBytes + rowSize * sizeof(GlobalOrdinal),
-                          rowSize * sizeof(Scalar));
-        avInds = av_reinterpret_cast<const GlobalOrdinal> (avIndsC);
-        avVals = av_reinterpret_cast<const Scalar       > (avValsC);
+        avIndsC = imports (curOffsetInBytes, rowSize * sizeof (GO));
+        avValsC = imports (curOffsetInBytes + rowSize * sizeof (GO),
+			   rowSize * sizeof (Scalar));
+        avInds = av_reinterpret_cast<const GO> (avIndsC);
+        avVals = av_reinterpret_cast<const Scalar> (avValsC);
 
-        combineGlobalValues (myGID, avInds(), avVals(), combineMode);
+        combineGlobalValues (myGID, avInds (), avVals (), combineMode);
         curOffsetInBytes += rowSize * SizeOfOrdValPair;
       }
 #ifdef HAVE_TPETRA_DEBUG
