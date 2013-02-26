@@ -397,7 +397,7 @@ namespace Tpetra {
     RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
     clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
     {
-      std::string tfecfFuncName("clone()");
+      const char tfecfFuncName[] = "clone()";
       bool fillCompleteClone  = true;
       bool useLocalIndices    = hasColMap();
       ProfileType pftype = StaticProfile;

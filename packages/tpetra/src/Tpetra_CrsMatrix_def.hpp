@@ -211,7 +211,7 @@ namespace Tpetra {
   , insertGlobalValuesWarnedEfficiency_ (false)
   , insertLocalValuesWarnedEfficiency_ (false)
   {
-    const std::string tfecfFuncName("CrsMatrix(graph)");
+    const char tfecfFuncName[] = "CrsMatrix(graph)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null (),
       std::runtime_error, ": When calling the CrsMatrix constructor that "
       "accepts a static graph, the pointer to the graph must not be null.");
@@ -893,7 +893,7 @@ namespace Tpetra {
                      const ArrayView<const LocalOrdinal> &indices,
                      const ArrayView<const Scalar>       &values)
   {
-    const std::string tfecfFuncName("insertLocalValues()");
+    const char tfecfFuncName[] = "insertLocalValues()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive (), std::runtime_error,
       " requires that fill is active.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isStaticGraph (),  std::runtime_error,
@@ -973,7 +973,7 @@ namespace Tpetra {
                       const ArrayView<const GlobalOrdinal> &indices,
                       const ArrayView<const Scalar>        &values)
   {
-    const std::string tfecfFuncName("insertGlobalValues()");
+    const char tfecfFuncName[] = "insertGlobalValues()";
 
     // mfh 14 Dec 2012: Defer test for static graph until we know that
     // globalRow is in the row Map.  If it's not in the row Map, it
@@ -1277,7 +1277,7 @@ namespace Tpetra {
                                 size_t &numEntries) const
   {
     // Only locally owned rows can be queried, otherwise complain
-    const std::string tfecfFuncName("getGlobalRowCopy()");
+    const char tfecfFuncName[] = "getGlobalRowCopy()";
     const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(lrow == LOT::invalid(), std::runtime_error, ": globalRow does not belong to this node.");
     const RowInfo rowinfo = staticGraph_->getRowInfo(lrow);
@@ -1316,7 +1316,7 @@ namespace Tpetra {
                                 ArrayView<const LocalOrdinal> &indices,
                                 ArrayView<const Scalar>       &values) const
   {
-    const std::string tfecfFuncName("getLocalRowView()");
+    const char tfecfFuncName[] = "getLocalRowView()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true, std::runtime_error, ": local indices cannot be provided.");
     indices = null;
     values  = null;
@@ -1382,7 +1382,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::scale(const Scalar &alpha)
   {
-    const std::string tfecfFuncName("scale()");
+    const char tfecfFuncName[] = "scale()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
     // scale all values in the matrix
     // it is easiest to scale all allocated values, instead of scaling only the ones with valid entries
@@ -1420,7 +1420,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllToScalar(const Scalar &alpha)
   {
-    const std::string tfecfFuncName("setAllToScalar()");
+    const char tfecfFuncName[] = "setAllToScalar()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
     // replace all values in the matrix
     // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
@@ -1450,7 +1450,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dvec) const
   {
-    const std::string tfecfFuncName("getLocalDiagCopy()");
+    const char tfecfFuncName[] = "getLocalDiagCopy()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, " until fillComplete() has been called.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(dvec.getMap()->isSameAs(*getRowMap()) == false, std::runtime_error, ": dvec must have the same map as the CrsMatrix.");
     const size_t STINV = OrdinalTraits<size_t>::invalid();
@@ -1488,7 +1488,7 @@ namespace Tpetra {
   void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::leftScale(
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
   {
-    const std::string tfecfFuncName("leftScale()");
+    const char tfecfFuncName[] = "leftScale()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
     RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
     if(getRangeMap()->isSameAs(*(x.getMap()))){
@@ -1531,7 +1531,7 @@ namespace Tpetra {
   void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::rightScale(
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
   {
-    const std::string tfecfFuncName("rightScale()");
+    const char tfecfFuncName[] = "rightScale()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
     RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
     if(getDomainMap()->isSameAs(*(x.getMap()))){
@@ -1663,7 +1663,7 @@ namespace Tpetra {
 
     const int numImages = getComm()->getSize();
     const int myImageID = getComm()->getRank();
-    const std::string tfecfFuncName("globalAssemble()");
+    const char tfecfFuncName[] = "globalAssemble()";
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
 #endif // HAVE_TPETRA_DEBUG
@@ -1910,9 +1910,9 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   resumeFill (const RCP<ParameterList> &params)
   {
-    const std::string tfecfFuncName("resumeFill");
 #ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier( *getRowMap()->getComm() );
+    const char tfecfFuncName[] = "resumeFill";
+    getRowMap ()->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
 
     if (! isStaticGraph()) { // Don't resume fill of a nonowned graph.
@@ -1968,7 +1968,7 @@ namespace Tpetra {
                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
                 const RCP<ParameterList> &params)
   {
-    const std::string tfecfFuncName("fillComplete()");
+    const char tfecfFuncName[] = "fillComplete()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -2884,7 +2884,9 @@ namespace Tpetra {
                                               Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const
   {
     using Teuchos::NO_TRANS;
-    const std::string tfecfFuncName("localMultiply()");
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "localMultiply()";
+#endif // HAVE_TPETRA_DEBUG
     typedef ScalarTraits<RangeScalar> RST;
     const Kokkos::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     Kokkos::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
@@ -2941,7 +2943,10 @@ namespace Tpetra {
                                           Teuchos::ETransp mode) const
   {
     using Teuchos::NO_TRANS;
-    const std::string tfecfFuncName("localSolve()");
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "localSolve()";
+#endif // HAVE_TPETRA_DEBUG
+
     const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
     Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
@@ -2969,7 +2974,7 @@ namespace Tpetra {
   RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::convert() const
   {
-    const std::string tfecfFuncName("convert()");
+    const char tfecfFuncName[] = "convert()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getCrsGraph()->getLocalGraph() == null, std::runtime_error,
         ": local graph data was deleted during fillComplete().\n"
@@ -3000,8 +3005,8 @@ namespace Tpetra {
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::checkInternalState() const
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const std::string tfecfFuncName("checkInternalState()");
-    const std::string err(": Likely internal logic error. Please contact Tpetra team.");
+    const char tfecfFuncName[] = "checkInternalState()";
+    const char err[] = ": Likely internal logic error. Please contact Tpetra team.";
     RCP<Node> node = getNode();
     // check the internal state of this data structure
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object
@@ -3044,16 +3049,16 @@ namespace Tpetra {
     std::ostringstream oss;
     oss << DistObject<char, LocalOrdinal,GlobalOrdinal,Node>::description();
     if (isFillComplete()) {
-      oss << "{status = fill complete"
-          << ", global rows = " << getGlobalNumRows()
-          << ", global cols = " << getGlobalNumCols()
-          << ", global num entries = " << getGlobalNumEntries()
-          << "}";
+      oss << "{ isFillComplete: true"
+          << ", global rows: " << getGlobalNumRows()
+          << ", global columns: " << getGlobalNumCols()
+          << ", global entries: " << getGlobalNumEntries()
+          << " }";
     }
     else {
-      oss << "{status = fill not complete"
-          << ", global rows = " << getGlobalNumRows()
-          << "}";
+      oss << "{ isFillComplete: false"
+          << ", global rows: " << getGlobalNumRows()
+          << " }";
     }
     return oss.str();
   }

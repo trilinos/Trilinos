@@ -211,7 +211,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
-    const std::string tfecfFuncName("MultiVector(view,LDA,NumVector)");
+    const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
       ": NumVectors must be strictly positive, but you specified NumVectors = "
       << NumVectors << ".");
@@ -242,7 +242,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
-    const std::string tfecfFuncName("MultiVector(data,LDA,NumVector)");
+    const char tfecfFuncName[] = "MultiVector(data,LDA,NumVector)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
       ": NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
@@ -273,7 +273,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
-    const std::string tfecfFuncName("MultiVector(data,LDA,WhichVectors)");
+    const char tfecfFuncName[] = "MultiVector(data,LDA,WhichVectors)";
     const size_t myLen = getLocalLength();
     size_t maxVector = *std::max_element(WhichVectors.begin(), WhichVectors.end());
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::runtime_error,
@@ -355,7 +355,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::RCP;
 
-    const std::string tfecfFuncName("MultiVector(A,LDA)");
+    const char tfecfFuncName[] = "MultiVector(A,LDA)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
       ": NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
@@ -409,7 +409,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::RCP;
 
-    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
+    const char tfecfFuncName[] = "MultiVector(ArrayOfPtrs)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       NumVectors < 1 || NumVectors != as<size_t>(ArrayOfPtrs.size()),
       std::runtime_error,
@@ -668,7 +668,7 @@ namespace Tpetra {
     using Teuchos::as;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
 
-    const std::string tfecfFuncName("unpackAndCombine()");
+    const char tfecfFuncName[] = "unpackAndCombine()";
     /* The layout in the export for MultiVectors is as follows:
        imports = { all of the data from row exportLIDs.front() ;
                    ....
@@ -782,7 +782,7 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::arcp_const_cast;
 
-    const std::string tfecfFuncName("dot()");
+    const char tfecfFuncName[] = "dot()";
     const size_t myLen   = getLocalLength();
     const size_t numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
@@ -883,7 +883,7 @@ namespace Tpetra {
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
 
-    const std::string tfecfFuncName("normWeighted()");
+    const char tfecfFuncName[] = "normWeighted()";
 
     const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
     bool OneW = false;
@@ -1184,7 +1184,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
-    const std::string tfecfFuncName("scale(alpha,A)");
+    const char tfecfFuncName[] = "scale(alpha,A)";
 
     const size_t numVecs = getNumVectors(),
                  myLen   = getLocalLength();
@@ -1227,7 +1227,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
-    const std::string tfecfFuncName("reciprocal()");
+    const char tfecfFuncName[] = "reciprocal()";
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
@@ -1273,7 +1273,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
-    const std::string tfecfFuncName("abs()");
+    const char tfecfFuncName[] = "abs()";
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
         ": MultiVectors do not have compatible Maps:" << std::endl
@@ -1314,7 +1314,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
-    const std::string tfecfFuncName("update()");
+    const char tfecfFuncName[] = "update()";
     // this = beta*this + alpha*A
     // must support case where &this == &A
     // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
@@ -1359,7 +1359,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
-    const std::string tfecfFuncName("update()");
+    const char tfecfFuncName[] = "update()";
     // this = alpha*A + beta*B + gamma*this
     // must support case where &this == &A or &this == &B
     // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
@@ -1426,7 +1426,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
   {
-    const std::string tfecfFuncName("operator=()");
+    const char tfecfFuncName[] = "operator=()";
     // Check for special case of this=Source, in which case we do nothing.
     if (this != &source) {
 #ifdef HAVE_TPETRA_DEBUG
@@ -1796,7 +1796,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    const std::string tfecfFuncName("get1dCopy(A,LDA)");
+    const char tfecfFuncName[] = "get1dCopy(A,LDA)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < getLocalLength(), std::runtime_error,
       ": specified stride is not large enough for local vector length.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(getNumVectors()-1)+getLocalLength(), std::runtime_error,
@@ -1832,7 +1832,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    const std::string tfecfFuncName("get2dCopy(ArrayOfPtrs)");
+    const char tfecfFuncName[] = "get2dCopy(ArrayOfPtrs)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs.size()) != getNumVectors(), std::runtime_error,
         ": Array of pointers must contain as many pointers as the MultiVector has rows.");
     RCP<Node> node = MVT::getNode(lclMV_);
@@ -2004,7 +2004,7 @@ namespace Tpetra {
     //
     // Total of 32 case (2^5).
 
-    const std::string errPrefix("Tpetra::MultiVector::multiply(transOpA,transOpB,alpha,A,B,beta): ");
+    const char errPrefix[] = "Tpetra::MultiVector::multiply(transOpA,transOpB,alpha,A,B,beta): ";
 
     TEUCHOS_TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::isComplex && (transA == TRANS || transB == TRANS), std::invalid_argument,
         errPrefix << "non-conjugate transpose not supported for complex types.");
@@ -2101,7 +2101,7 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
 
-    const std::string tfecfFuncName("elementWiseMultiply()");
+    const char tfecfFuncName[] = "elementWiseMultiply()";
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
