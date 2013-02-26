@@ -674,9 +674,6 @@ int test_import_gid(const char * name,Epetra_IntVector & Source, Epetra_IntVecto
     printf("\n");
     fflush(stdout);
   }
-  else {
-    printf("[%d] test_import_gid %s OK\n",Source.Map().Comm().MyPID(),name);
-  }
 
   return !test_passed;
 }
