@@ -156,7 +156,7 @@ namespace MueLu {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
     }
     else if (type_ == "SCHWARZ") {
-      int overlap;
+      int overlap=0;
       Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
       if (InitialGuessIsZero == false && overlap > 0) {
         if (this->IsPrint(Warnings0, 0)) {
