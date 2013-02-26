@@ -4463,10 +4463,6 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================    
-#ifdef HAVE_EPETRA_TEUCHOS
-#include <Teuchos_TimeMonitor.hpp>
-#define ENABLE_MMM_TIMINGS
-#endif
 int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
@@ -4483,27 +4479,16 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   // Maps, import export
   D.DomainMap_ = DomainMap;
   D.RangeMap_  = RangeMap;
-#ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=M.getNewTimer("ESFC: IE");
-  mtime->start();
-#endif
 
-  //  D.MakeImportExport();
-  // HAQ to enable timings
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
     if (D.Importer_ != 0) {
       delete D.Importer_;
       D.Importer_ = 0;
     }
     if(Importer && Importer->SourceMap().SameAs(D.DomainMap_) && Importer->TargetMap().SameAs(D.ColMap_)){
-      //      if(!Comm().MyPID()) printf("CMS: Using user-provided importer\n");fflush(stdout);
       D.Importer_=Importer;
     }
     else {
-      //      if(!Comm().MyPID()) printf("CMS: Generating fresh importer\n");
       delete Importer;
       D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);fflush(stdout);
     }
@@ -4516,19 +4501,6 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     }
     D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
   }
-  // end HAQ
-  
-
-
-
-
-
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("ESFC: Constants");
-  mtime->start();
-#endif
 
   // Matrix constants
   Allocated_                  = true;
@@ -4580,12 +4552,6 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   D.GlobalMaxRowDim_ = 1;
   D.GlobalMaxColDim_ = 1;
 
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("ESFC: Index Loop");
-  mtime->start();
-#endif
-
   // Compute max NZ per row, indices, diagonals, triangular
   D.MaxNumIndices_=0;
   for(int i=0; i<m; i++){
@@ -4630,13 +4596,6 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 
   D.MaxNumNonzeros_=D.MaxNumIndices_;
 
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("ESFC: Constants");
-  mtime->start();
-#endif
-
-
   // Compute global constants - Code copied from Epetra_CrsGraph.ComputeGlobalConstants()
   Epetra_IntSerialDenseVector tempvec(8); // Temp space
   tempvec[0] = D.NumMyEntries_;
@@ -4670,11 +4629,6 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     D.NumGlobalRows_ = (int) D.RangeMap_.NumGlobalPoints64();
     D.NumGlobalCols_ = (int) D.DomainMap_.NumGlobalPoints64();
   }
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
-
   return 0;
 }
 
