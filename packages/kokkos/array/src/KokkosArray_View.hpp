@@ -323,48 +323,6 @@ public:
   bool is_null() const
   { return 0 == oper_type::m_ptr_on_device ; }
 
-  /** \brief  Query if view to same memory */
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool operator == ( const View & rhs ) const
-  {
-    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
-           oper_type::m_shape == rhs.m_shape ;
-  }
-
-  /** \brief  Query if not view to same memory */
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool operator != ( const View & rhs ) const
-  {
-    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
-           oper_type::m_shape != rhs.m_shape ;
-  }
-
-  /** \brief  Query if view to same memory */
-  template< class rhsDataType ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement >
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool operator ==
-    ( const View<rhsDataType,rhsLayout,rhsMemory,rhsManagement> & rhs ) const
-  {
-    return oper_type::m_ptr_on_device == rhs.m_ptr_on_device &&
-           oper_type::m_shape == rhs.m_shape ;
-  }
-
-  /** \brief  Query if not view to same memory */
-  template< class rhsDataType ,
-            class rhsLayout ,
-            class rhsMemory ,
-            class rhsManagement >
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool operator !=
-    ( const View<rhsDataType,rhsLayout,rhsMemory,rhsManagement> & rhs ) const
-  {
-    return oper_type::m_ptr_on_device != rhs.m_ptr_on_device ||
-           oper_type::m_shape != rhs.m_shape ;
-  }
-
   /*------------------------------------------------------------------*/
 
   /** \brief  Construct a NULL view */
@@ -563,6 +521,47 @@ public:
   }
 #endif
 };
+
+//----------------------------------------------------------------------------
+
+template< class LT , class LL , class LD , class LM ,
+          class RT , class RL , class RD , class RM >
+KOKKOSARRAY_INLINE_FUNCTION
+bool operator == ( const View<LT,LL,LD,LM> & lhs ,
+                   const View<RT,RL,RD,RM> & rhs )
+{
+  // Same data, layout, dimensions
+  typedef ViewTraits<LT,LL,LD,LM> lhs_traits ;
+  typedef ViewTraits<RT,RL,RD,RM> rhs_traits ;
+
+  const bool equal_traits =
+    Impl::is_same< typename lhs_traits::const_data_type ,
+                   typename rhs_traits::const_data_type >::value &&
+    Impl::is_same< typename lhs_traits::array_layout ,
+                   typename rhs_traits::array_layout >::value &&
+    Impl::is_same< typename lhs_traits::memory_space ,
+                   typename rhs_traits::memory_space >::value ;
+
+  return equal_traits &&
+         lhs.ptr_on_device() == rhs.ptr_on_device() &&
+         lhs.dimension_0() == rhs.dimension_0() &&
+         lhs.dimension_1() == rhs.dimension_1() &&
+         lhs.dimension_2() == rhs.dimension_2() &&
+         lhs.dimension_3() == rhs.dimension_3() &&
+         lhs.dimension_4() == rhs.dimension_4() &&
+         lhs.dimension_5() == rhs.dimension_5() &&
+         lhs.dimension_6() == rhs.dimension_6() &&
+         lhs.dimension_7() == rhs.dimension_7();
+}
+
+template< class LT , class LL , class LD , class LM ,
+          class RT , class RL , class RD , class RM >
+KOKKOSARRAY_INLINE_FUNCTION
+bool operator != ( const View<LT,LL,LD,LM> & lhs ,
+                   const View<RT,RL,RD,RM> & rhs )
+{
+  return ! operator==( lhs , rhs );
+}
 
 //----------------------------------------------------------------------------
 
