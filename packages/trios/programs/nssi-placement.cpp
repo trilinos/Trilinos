@@ -53,8 +53,6 @@
 
 #include <mpi.h>
 #include <libtopomap.hpp>
-//#include <rca_lib.h>
-//#include <gpcd_lib.h>
 
 #include <time.h>
 #include <unistd.h>
@@ -81,8 +79,8 @@ void construct_graph(
         int clients_per_node,
         int passthru)
 {
-    int npes, me, i, j, status;
-    int num_neighs, nb;
+    int npes, me, i, status;
+    int num_neighs;
     std::vector<int> neighbors;
     std::vector<int> weights;
 
@@ -254,13 +252,11 @@ void construct_graph(
 int
 main (int argc, char *argv[])
 {
-    int rc;
-
     // command-line arguments
     log_level debug_level = LOG_ERROR;
     string logfile("");
 
-    int npes, me, i, j, status;
+    int npes, me, i;
 
     int num_servers=1;
     int num_clients=1;
