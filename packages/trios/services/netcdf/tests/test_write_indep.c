@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
   MPI_Offset time_start[1], time_count[1] = {25};
   int square_id, cube_id, xytime_id, time_id;
   static char title[] = "example netCDF dataset";
-  static char description[] = "2-D integer array";
+/*  static char description[] = "2-D integer array"; */
   int data[100][50][50], buffer[100];
 
   int rank;
