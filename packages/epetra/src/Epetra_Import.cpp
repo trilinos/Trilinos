@@ -398,7 +398,7 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
           RemoteGIDs = NewRemoteGIDs;
           RemotePIDs = NewRemotePIDs;
           RemoteLIDs_ = NewRemoteLIDs;
-          throw ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
+          ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
         }
         else { //valid RemoteIDs empty
           NumRemoteIDs_ = 0;
