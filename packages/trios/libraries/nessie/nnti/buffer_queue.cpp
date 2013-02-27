@@ -116,7 +116,6 @@ int trios_buffer_queue_init(
         uint32_t              buffer_size)
 {
     NNTI_result_t nnti_rc=NNTI_OK;
-    int i;
     NNTI_buffer_t *buffer=NULL;
 
     log_debug(bq_debug_level, "enter");
@@ -133,7 +132,7 @@ int trios_buffer_queue_init(
     bq->op=op;
     bq->buffer_size=buffer_size;
 
-    for (i=0;i<bq->initial_size;i++) {
+    for (uint32_t i=0;i<bq->initial_size;i++) {
         log_debug(bq_debug_level, "creating queue buffer");
         nnti_rc=create_buffer(
                 bq->trans_hdl,
