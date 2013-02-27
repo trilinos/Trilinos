@@ -89,7 +89,7 @@ using namespace std;
 
 #include "create_subchunks.h"
 
-#include "io_timer.h"
+#include "Trios_timer.h"
 
 
 
@@ -148,48 +148,8 @@ map<int, nc_file_state *> file_state_map;
 /* ************************ Private functions ******************* */
 
 
-static int calc_my_svc(const int ndims, const size_t *dimlens, const int num_servers, const nc_size_t *start)
-{
-    int svc_index;
-
-    if (ndims < 1) {
-        log_debug(netcdf_debug_level, "scalar variable.  use default_svc");
-        return(default_svc);
-    }
-    if (start == NULL) {
-        log_debug(netcdf_debug_level, "start==NULL.  use service 0.");
-        return 0;
-    }
-
-    unsigned long dim_product=1;
-    unsigned long bytes_per_server=0;
-    unsigned long my_file_offset=0;
-    unsigned long lower_dim_product=1;
-    for (unsigned long i=0;i<ndims;i++) {
-        dim_product *= dimlens[i];
-
-        lower_dim_product=1;
-        for (unsigned long j=i+1;j<ndims;j++) {
-            lower_dim_product *= dimlens[j];
-        }
-        my_file_offset += start[i]*lower_dim_product;
-    }
-    bytes_per_server=dim_product/num_servers;
-    if (bytes_per_server == 0) {
-        return(default_svc);
-    }
-    svc_index=(my_file_offset/bytes_per_server);
-
-    log_debug(netcdf_debug_level, "my_file_offset(%lu) bytes_per_server(%lu) svc_index(%d)",
-            my_file_offset, bytes_per_server, svc_index);
-
-    return(svc_index);
-}
-
-
 static int get_config_from_env(struct netcdf_config *netcdf_cfg)
 {
-    int rc=0;
     char *env_contact_file=getenv("NETCDF_CONTACT_INFO");
     char *env_write_mode=getenv("NSSI_WRITE_MODE");
     char *env_use_subchunking=getenv("NSSI_USE_SUBCHUNKING");
@@ -213,8 +173,8 @@ static int get_config_from_env(struct netcdf_config *netcdf_cfg)
         log_debug(netcdf_debug_level, "using %s", env_write_mode);
     }
 
-    sscanf(env_use_subchunking, "%ld", &netcdf_cfg->use_subchunking);
-    log_debug(netcdf_debug_level, "use_subchunking %ld", netcdf_cfg->use_subchunking);
+    sscanf(env_use_subchunking, "%lu", &netcdf_cfg->use_subchunking);
+    log_debug(netcdf_debug_level, "use_subchunking %lu", netcdf_cfg->use_subchunking);
 
     if (env_contact_file != NULL) {
         int i;
@@ -302,7 +262,6 @@ extern "C"
 void netcdf_client_fini(void)
 {
     int rc=NSSI_OK;
-    nssi_request *req=NULL;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -331,7 +290,6 @@ int netcdf_client_init(void)
 {
     static int initialized = 0;
     int rc;
-    NNTI_peer_t server;
 
     nssi_size i;
 
@@ -348,8 +306,8 @@ int netcdf_client_init(void)
         return 0;
     }
 
-    double InitTime;
-    Start_Timer(InitTime);
+    trios_declare_timer(InitTime);
+    trios_start_timer(InitTime);
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -370,8 +328,8 @@ int netcdf_client_init(void)
     logfile_base=getenv("NSSI_LOG_FILE");
     log_file_per_client=getenv("NSSI_LOG_FILE_PER_NODE");
 
-    double LogInitTime;
-    Start_Timer(LogInitTime);
+    trios_declare_timer(LogInitTime);
+    trios_start_timer(LogInitTime);
     if (logfile_base != NULL) {
         if (log_file_per_client != NULL) {
             sprintf(logfile, "%s.%04d", logfile_base, global_rank);
@@ -380,7 +338,7 @@ int netcdf_client_init(void)
         }
     }
     if (log_level_str != NULL) {
-        sscanf(log_level_str, "%d", &debug_level);
+        sscanf(log_level_str, "%d", (int*)&debug_level);
     }
     if (logfile_base != NULL) {
         logger_init(debug_level, logfile);
@@ -388,10 +346,8 @@ int netcdf_client_init(void)
         logger_init(debug_level, NULL);
     }
     netcdf_debug_level=debug_level;
-    Stop_Timer("log init", LogInitTime);
+    trios_stop_timer("log init", LogInitTime);
 
-
-//    debug_level=LOG_ALL;
 
     nssi_rpc_init(NSSI_DEFAULT_TRANSPORT, NSSI_DEFAULT_ENCODE, NULL);
 
@@ -412,36 +368,23 @@ int netcdf_client_init(void)
     NSSI_REGISTER_CLIENT_STUB(NETCDF_END_INDEP_OP, int, void, void);
     NSSI_REGISTER_CLIENT_STUB(NETCDF_SET_FILL_OP, nc_set_fill_args, void, nc_set_fill_res);
 
-    double ContactFileTime;
-    Start_Timer(ContactFileTime);
+    trios_declare_timer(ContactFileTime);
+    trios_start_timer(ContactFileTime);
     get_config_from_env(&nc_cfg);
-//    parse_netcdf_config_file(getenv("NETCDF_CONFIG_FILE"), &nc_cfg);
-    Stop_Timer("contact file", ContactFileTime);
+    trios_stop_timer("contact file", ContactFileTime);
     /* all ranks connect to all services */
-//    svcs=(nssi_service *)calloc(nc_cfg.num_servers, sizeof(nssi_service));
-//    for (i=0;i<nc_cfg.num_servers;i++) {
-//        double GetSvcTime;
-//        Start_Timer(GetSvcTime);
-//        rc = nssi_get_service(nc_cfg.netcdf_server_ids[i], -1, &svcs[i]);
-//        if (rc != NSSI_OK) {
-//            log_error(debug_level, "Couldn't connect to netcdf master: %s", nssi_err_str(rc));
-//            return rc;
-//        }
-//        Stop_Timer("get svc", GetSvcTime);
-//    }
 
     if (np <= nc_cfg.num_servers) {
         default_svc = global_rank;
     } else {
         uint32_t extra_clients = np%nc_cfg.num_servers;
         if ((extra_clients) > 0) {
-//            default_svc = global_rank%nc_cfg.num_servers;
             uint32_t num_big_groups   = extra_clients;
             uint32_t num_small_groups = nc_cfg.num_servers - num_big_groups;
             uint32_t small_group_size = np/nc_cfg.num_servers;
             uint32_t big_group_size   = small_group_size+1;
-            uint32_t max_bg_rank      = (big_group_size * num_big_groups) - 1;
-            log_debug(debug_level, "nbg(%u) nsg(%u) sgs(%u) bgs(%u) mbgr(%u)",
+            int32_t  max_bg_rank      = (big_group_size * num_big_groups) - 1;
+            log_debug(debug_level, "nbg(%u) nsg(%u) sgs(%u) bgs(%u) mbgr(%d)",
                     num_big_groups, num_small_groups, small_group_size, big_group_size, max_bg_rank);
             if (global_rank <= max_bg_rank) {
                 default_svc = global_rank/big_group_size;
@@ -463,38 +406,12 @@ int netcdf_client_init(void)
     log_debug(debug_level, "global_rank(%d) collective_op_rank(%d) default_service(%d)", global_rank, collective_op_rank, default_svc);
 
 
-//    svcs=(nssi_service *)calloc(nc_cfg.num_servers, sizeof(nssi_service));
-//    if (global_rank == 0) {
-//        /* global_rank0 must multicast to all servers for collective ops.  connect to all servers now. */
-//        for (i=0;i<nc_cfg.num_servers;i++) {
-//            double GetSvcTime=MPI_Wtime();
-//            rc = nssi_get_service(nc_cfg.netcdf_server_ids[i], -1, &svcs[i]);
-//            if (rc != NSSI_OK) {
-//                log_error(debug_level, "Couldn't connect to netcdf master: %s", nssi_err_str(rc));
-//                return rc;
-//            }
-//            GetSvcTime=MPI_Wtime() - GetSvcTime;
-//            log_debug(LOG_ALL, "get svc[%d] Time = %10.8f", i, GetSvcTime);
-//        }
-//    } else {
-//        /* !global_rank0 has a preferred server for data transfers.  connect to preferred server.
-//         * connect to other servers on-demand.
-//         */
-//        double GetSvcTime=MPI_Wtime();
-//        rc = nssi_get_service(nc_cfg.netcdf_server_ids[default_svc], -1, &svcs[default_svc]);
-//        if (rc != NSSI_OK) {
-//            log_error(debug_level, "Couldn't connect to netcdf master: %s", nssi_err_str(rc));
-//            return rc;
-//        }
-//        GetSvcTime=MPI_Wtime() - GetSvcTime;
-//        log_debug(LOG_ALL, "get svc[%d] Time = %10.8f", i, GetSvcTime);
-//    }
-
     svcs=(nssi_service *)calloc(nc_cfg.num_servers, sizeof(nssi_service));
     /* !global_rank0 has a preferred server for data transfers.  connect to preferred server.
      * connect to other servers on-demand.
      */
-    double GetSvcTime=MPI_Wtime();
+    trios_declare_timer(GetSvcTime);
+    trios_start_timer(GetSvcTime);
     rc = nssi_get_service(
             NSSI_DEFAULT_TRANSPORT,
             nc_cfg.netcdf_server_urls[default_svc],
@@ -504,10 +421,9 @@ int netcdf_client_init(void)
         log_error(debug_level, "Couldn't connect to netcdf master: %s", nssi_err_str(rc));
         return rc;
     }
-    GetSvcTime=MPI_Wtime() - GetSvcTime;
-    log_debug(debug_level, "get svc[%d] Time = %10.8f", default_svc, GetSvcTime);
+    trios_stop_timer("get svc[default_svc]", GetSvcTime);
 
-    Stop_Timer("netcdf client init", InitTime);
+    trios_stop_timer("netcdf client init", InitTime);
 
     NC_coord_zero = (size_t*)malloc(sizeof(size_t)*NC_MAX_VAR_DIMS);
     if(NC_coord_zero == NULL) abort();
@@ -523,11 +439,6 @@ int netcdf_client_init(void)
     return 0;
 }
 
-
-static int check_var_type(const int ncid, const int varid, nc_type xtype)
-{
-    return 0;
-}
 
 /* ************************ NETCDF LIBRARY STUBS ******************* */
 
@@ -556,27 +467,19 @@ nc_file_state *new_file_state(nc_data_mode new_mode)
  */
 extern "C"
 int _nc_create(
-                const char *path,
-                int cmode,
-                size_t initialsz,
-                size_t *chunksizehintp,
-                int *ncidp)
+        const char *path,
+        int cmode,
+        size_t initialsz,
+        size_t *chunksizehintp,
+        int *ncidp)
 {
     int rc = NSSI_OK;
-    int rc2 = NSSI_OK;
-    nssi_size i;
     nc_create_args args;
     log_level debug_level = netcdf_debug_level;
-//    nc_create_res *res=NULL;
     nc_create_res res;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
 
     rc = netcdf_client_init();
     if (rc != 0) {
@@ -599,7 +502,7 @@ int _nc_create(
     log_debug(debug_level, "calling _nc_create(%s, %d)", path, cmode);
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_CREATE_OP,
@@ -607,52 +510,13 @@ int _nc_create(
                 NULL,
                 0,
                 &res);
-        Stop_Timer("create Multicast", MulticastTime);
+        trios_stop_timer("create Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
 
-
-//    Start_Timer(MulticastTime);
-//    reqs.reserve(nc_cfg.num_servers);
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        req = (nssi_request *)calloc(1,sizeof(nssi_request));
-//        reqs.insert(reqs.end(), req);
-//    }
-//
-//    res=(nc_create_res *)calloc(nc_cfg.num_servers, sizeof(nc_create_res));
-//    rc = nssi_multicast_rpc(svcs[default_svc],
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_CREATE_OP,
-//                                 &args,
-//                                 NULL,
-//                                 0,
-//                                 res,
-//                                 sizeof(nc_create_res),
-//                                 &reqs[0]);
-//    if (rc != NSSI_OK) {
-//        log_error(debug_level, "unable to call remote nc_create: %s",
-//                nssi_err_str(rc));
-//        goto cleanup;
-//    }
-//    Stop_Timer("create Multicast", MulticastTime);
-//    while (reqs.size() > 0) {
-//        Start_Timer(WaitAnyTime);
-//        nssi_waitany(&reqs[0], reqs.size(), -1, &which, &remote_rc);
-//        if (reqs[which]->status == NSSI_REQUEST_ERROR) {
-//            error_rc = reqs[which]->error_code;
-//        }
-//        free(reqs[which]);
-//        reqs.erase(reqs.begin() + which);
-//        Stop_Timer("create WaitAny", WaitAnyTime);
-//    }
-//
-//    if (error_rc != NSSI_OK) {
-//        rc = error_rc;
-//        goto cleanup;
-//    }
 
     *ncidp = res.ncid;
 
@@ -680,12 +544,6 @@ int _nc_create(
     }
 
 cleanup:
-    /* cleanup result data structure allocated by XDR encoding */
-//    for (i=0;i<nc_cfg.num_servers;i++) {
-//        xdr_free((xdrproc_t)xdr_nc_create_res, (char *)&res[i]);
-//    }
-//    if (res != NULL) free(res);
-
     xdr_free((xdrproc_t)xdr_nc_create_res, (char *)&res);
 
     log_debug(debug_level, "Finished creating dataset ncid=%d, rc=%d", *ncidp, rc);
@@ -724,18 +582,12 @@ int _nc_open(
         int *ncidp)
 {
     int rc = NSSI_OK;
-    nssi_size i;
     nc_open_args args;
     log_level debug_level = netcdf_debug_level;
     nc_open_res res;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
 
     rc = netcdf_client_init();
     if (rc != 0) {
@@ -758,7 +610,7 @@ int _nc_open(
     log_debug(debug_level, "calling _nc_open(%s, %d)", path, mode);
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_OPEN_OP,
@@ -766,52 +618,12 @@ int _nc_open(
                 NULL,
                 0,
                 &res);
-        Stop_Timer("create Multicast", MulticastTime);
+        trios_stop_timer("create Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-
-//    Start_Timer(MulticastTime);
-//    reqs.reserve(nc_cfg.num_servers);
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        req = (nssi_request *)calloc(1,sizeof(nssi_request));
-//        reqs.insert(reqs.end(), req);
-//    }
-//
-//    res=(nc_open_res *)calloc(nc_cfg.num_servers, sizeof(nc_open_res));
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_OPEN_OP,
-//                                 &args,
-//                                 NULL,
-//                                 0,
-//                                 res,
-//                                 sizeof(nc_open_res),
-//                                 &reqs[0]);
-//    if (rc != NSSI_OK) {
-//        log_error(debug_level, "unable to call remote nc_open: %s",
-//                nssi_err_str(rc));
-//        goto cleanup;
-//    }
-//    Stop_Timer("open Multicast", MulticastTime);
-//    while (reqs.size() > 0) {
-//        Start_Timer(WaitAnyTime);
-//        nssi_waitany(&reqs[0], reqs.size(), -1, &which, &remote_rc);
-//        if (reqs[which]->status == NSSI_REQUEST_ERROR) {
-//            error_rc = reqs[which]->error_code;
-//        }
-//        free(reqs[which]);
-//        reqs.erase(reqs.begin() + which);
-//        Stop_Timer("open WaitAny", WaitAnyTime);
-//    }
-//
-//    if (error_rc != NSSI_OK) {
-//        rc = error_rc;
-//        goto cleanup;
-//    }
 
     *ncidp = res.root_group.ncid;
 
@@ -837,14 +649,7 @@ int _nc_open(
         }
     }
 
-
 cleanup:
-    /* cleanup result data structure allocated by XDR encoding */
-//    for (i=0;i<nc_cfg.num_servers;i++) {
-//        xdr_free((xdrproc_t)xdr_nc_open_res, (char *)&res[i]);
-//    }
-//    free(res);
-
     xdr_free((xdrproc_t)xdr_nc_open_res, (char *)&res);
 
     log_debug(debug_level, "Finished opening dataset ncid=%d, rc=%d", *ncidp, rc);
@@ -862,7 +667,6 @@ int nc_open(
 {
     int rc=NC_NOERR;
 
-    size_t initialsz = 0;
     size_t chunksizehint = NC_SIZEHINT_DEFAULT;
 
     log_debug(netcdf_debug_level, "enter");
@@ -895,15 +699,9 @@ int _nc_set_fill(int ncid, int fillmode, int *old_modep)
 {
     *old_modep = fillmode;
     int rc = NC_NOERR;
-    int dimid;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -918,7 +716,7 @@ int _nc_set_fill(int ncid, int fillmode, int *old_modep)
     memset(&res, 0, sizeof(res));
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_SET_FILL_OP,
@@ -926,7 +724,7 @@ int _nc_set_fill(int ncid, int fillmode, int *old_modep)
                 NULL,
                 0,
                 &res);
-        Stop_Timer("_nc_set_fill Multicast", MulticastTime);
+        trios_stop_timer("_nc_set_fill Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
@@ -978,23 +776,6 @@ int _nc_begin_indep_data(int ncid)
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    if (global_rank == 0) {
-//        /* call the remote method */
-//        rc = nssi_multicast_rpc_sync(svcs,
-//                nc_cfg.num_servers,
-//                NETCDF_BEGIN_INDEP_OP,
-//                &ncid,
-//                NULL,
-//                0,
-//                NULL,
-//                0);
-//        if (rc != NSSI_OK) {
-//            log_error(netcdf_debug_level, "unable to call remote nc_begin_indep: %s",
-//                    nssi_err_str(rc));
-//            goto cleanup;
-//        }
-//        file_state_map[ncid]->mode = NC_INDEP_DATA_MODE;
-//    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1039,23 +820,6 @@ int _nc_end_indep_data(int ncid)
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    if (global_rank == 0) {
-//        /* call the remote method */
-//        rc = nssi_multicast_rpc_sync(svcs,
-//                nc_cfg.num_servers,
-//                NETCDF_END_INDEP_OP,
-//                &ncid,
-//                NULL,
-//                0,
-//                NULL,
-//                0);
-//        if (rc != NSSI_OK) {
-//            log_error(netcdf_debug_level, "unable to call remote nc_end_indep: %s",
-//                    nssi_err_str(rc));
-//            goto cleanup;
-//        }
-//        file_state_map[ncid]->mode = NC_COLL_DATA_MODE;
-//    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1085,14 +849,9 @@ int _nc_def_dim(
 {
     int rc = NC_NOERR;
     int dimid;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1107,7 +866,7 @@ int _nc_def_dim(
     args.len = len;
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_DEF_DIM_OP,
@@ -1115,52 +874,12 @@ int _nc_def_dim(
                 NULL,
                 0,
                 &dimid);
-        Stop_Timer("create Multicast", MulticastTime);
+        trios_stop_timer("create Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-
-//    Start_Timer(MulticastTime);
-//    reqs.reserve(nc_cfg.num_servers);
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        req = (nssi_request *)calloc(1,sizeof(nssi_request));
-//        reqs.insert(reqs.end(), req);
-//    }
-//
-//    dimids=(int *)calloc(nc_cfg.num_servers, sizeof(int));
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_DEF_DIM_OP,
-//                                 &args,
-//                                 NULL,
-//                                 0,
-//                                 dimids,
-//                                 sizeof(int),
-//                                 &reqs[0]);
-//    if (rc != NSSI_OK) {
-//        log_error(netcdf_debug_level, "unable to call remote nc_enddef: %s",
-//                nssi_err_str(rc));
-//        goto cleanup;
-//    }
-//    Stop_Timer("defdim Multicast", MulticastTime);
-//    while (reqs.size() > 0) {
-//        Start_Timer(WaitAnyTime);
-//        nssi_waitany(&reqs[0], reqs.size(), -1, &which, &remote_rc);
-//        if (reqs[which]->status == NSSI_REQUEST_ERROR) {
-//            error_rc = reqs[which]->error_code;
-//        }
-//        free(reqs[which]);
-//        reqs.erase(reqs.begin() + which);
-//        Stop_Timer("defdim WaitAny", WaitAnyTime);
-//    }
-//
-//    if (error_rc != NSSI_OK) {
-//        rc = error_rc;
-//        goto cleanup;
-//    }
 
     *dimidp=dimid;
 
@@ -1182,8 +901,6 @@ int _nc_def_dim(
     }
 
 cleanup:
-//    if (dimids) free(dimids);
-
     log_debug(netcdf_debug_level, "exit");
 
     return rc;
@@ -1217,15 +934,10 @@ int _nc_def_var(
 {
     int rc = NC_NOERR;
     int varid;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
 
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1243,7 +955,7 @@ int _nc_def_var(
             " ndims=%d, dimids[0]=%d", ncid, name, xtype, ndims, args.dimids.dimids_val[0]);
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_DEF_VAR_OP,
@@ -1251,52 +963,12 @@ int _nc_def_var(
                 NULL,
                 0,
                 &varid);
-        Stop_Timer("create Multicast", MulticastTime);
+        trios_stop_timer("create Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-
-//    Start_Timer(MulticastTime);
-//    reqs.reserve(nc_cfg.num_servers);
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        req = (nssi_request *)calloc(1,sizeof(nssi_request));
-//        reqs.insert(reqs.end(), req);
-//    }
-//
-//    varids=(int *)calloc(nc_cfg.num_servers, sizeof(int));
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_DEF_VAR_OP,
-//                                 &args,
-//                                 NULL,
-//                                 0,
-//                                 varids,
-//                                 sizeof(int),
-//                                 &reqs[0]);
-//    if (rc != NSSI_OK) {
-//        log_error(netcdf_debug_level, "unable to call remote nc_enddef: %s",
-//                nssi_err_str(rc));
-//        goto cleanup;
-//    }
-//    Stop_Timer("defvar Multicast", MulticastTime);
-//    while (reqs.size() > 0) {
-//        Start_Timer(WaitAnyTime);
-//        nssi_waitany(&reqs[0], reqs.size(), -1, &which, &remote_rc);
-//        if (reqs[which]->status == NSSI_REQUEST_ERROR) {
-//            error_rc = reqs[which]->error_code;
-//        }
-//        free(reqs[which]);
-//        reqs.erase(reqs.begin() + which);
-//        Stop_Timer("defvar WaitAny", WaitAnyTime);
-//    }
-//
-//    if (error_rc != NSSI_OK) {
-//        rc = error_rc;
-//        goto cleanup;
-//    }
 
     *varidp=varid;
 
@@ -1318,8 +990,6 @@ int _nc_def_var(
     }
 
 cleanup:
-//    if (varids != NULL) free(varids);
-
     log_debug(netcdf_debug_level, "exit");
 
     return rc;
@@ -1382,7 +1052,6 @@ int _nc_inq_attlen(
         size_t *lenp)
 {
     int rc = NC_NOERR;
-    size_t len;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1532,7 +1201,6 @@ int _nc_inq_dim(
         size_t *lenp)
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1569,7 +1237,6 @@ int _nc_inq_dimlen(
         size_t *lenp)
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1605,7 +1272,6 @@ int _nc_inq_dimid(
         int *dimidp)
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
     log_debug(netcdf_debug_level, "looking for dim named '%s'", name);
@@ -1642,7 +1308,6 @@ int _nc_inq_unlimdim(
         int *unlimdimidp)
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1836,7 +1501,6 @@ int _nc_inq_vardimid(
         int dimids[])
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1907,7 +1571,6 @@ int _nc_inq_vartype(
         nc_type *xtypep)
 {
     int rc = NC_NOERR;
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -1984,15 +1647,6 @@ int _nc_put_att_type(
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
 
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc_sync(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_PUT_ATT_OP,
-//                                 &args,
-//                                 NULL,
-//                                 0,
-//                                 NULL,
-//                                 0);
     if (rc != NSSI_OK) {
         log_error(netcdf_debug_level, "unable to call remote _nc_put_att: %s",
                 nssi_err_str(rc));
@@ -2319,15 +1973,6 @@ int _nc_get_att(
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc_sync(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_GET_ATT_OP,
-//                                 &args,
-//                                 data,
-//                                 nbytes,
-//                                 NULL,
-//                                 0);
     if (rc != NSSI_OK) {
         log_error(netcdf_debug_level, "unable to call remote _nc_get_att: %s",
                 nssi_err_str(rc));
@@ -2775,7 +2420,7 @@ static int update_unlimdim_dimlen(const int ncid, const size_t dimlen)
         rc = NC_EBADID;
     }
 
-    return(NC_NOERR);
+    return(rc);
 }
 
 
@@ -2814,8 +2459,8 @@ int _nc_put_vars(
     nc_put_vars_args args;
     int ndims;
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -2916,13 +2561,13 @@ int _nc_put_vars(
             chunk.count=count_copy;
             chunk.stride=stride_copy;
 
-            double subchunkingTime;
-            Start_Timer(subchunkingTime);
+            trios_declare_timer(subchunkingTime);
+            trios_start_timer(subchunkingTime);
             consolidated_subchunks_map_t *map=netcdf_create_subchunks(&chunk, dimids, dimlens, nc_cfg.bytes_per_server);
-            Stop_Timer("subchunking", subchunkingTime);
+            trios_stop_timer("subchunking", subchunkingTime);
 
-            double totalPutTime;
-            Start_Timer(totalPutTime);
+            trios_declare_timer(totalPutTime);
+            trios_start_timer(totalPutTime);
             consolidated_subchunks_map_iterator_t map_iter = map->begin();
             for (;map_iter != map->end(); map_iter++) {
                 consolidated_subchunks_vector_iterator_t vector_iter = (*map_iter).second->begin();
@@ -2978,8 +2623,8 @@ int _nc_put_vars(
                     int svc_index=(*map_iter).first;
                     log_debug(debug_level, "svc_index(%d)", svc_index);
 
-                    double putTime;
-                    Start_Timer(putTime);
+                    trios_declare_timer(putTime);
+                    trios_start_timer(putTime);
                     if (((nc_cfg.write_type != WRITE_AGGREGATE_COLLECTIVE) &&
                          (nc_cfg.write_type != WRITE_CACHING_COLLECTIVE)) &&
                             (file_state_map[ncid]->mode != NC_INDEP_DATA_MODE)) {
@@ -3001,10 +2646,10 @@ int _nc_put_vars(
                             goto cleanup;
                         }
                     }
-                    Stop_Timer("subchunk put", putTime);
+                    trios_stop_timer("subchunk put", putTime);
                 }
             }
-            Stop_Timer("total subchunk put", totalPutTime);
+            trios_stop_timer("total subchunk put", totalPutTime);
         } else {
 //            log_debug(LOG_ALL, "NOT subchunking");
             /* initialize remote arguments */
@@ -3025,7 +2670,6 @@ int _nc_put_vars(
             log_debug(debug_level, "sending start_len=%d, count_len=%d, stride_len=%d",
                     args.start.start_len, args.count.count_len, args.stride.stride_len);
 
-//            int svc_index=calc_my_svc(ndims, dimlens, nc_cfg.num_servers, start_copy);
             int svc_index=default_svc;
             log_debug(debug_level, "svc_index(%d)", svc_index);
 
@@ -3036,8 +2680,8 @@ int _nc_put_vars(
 //                    count_copy[0], count_copy[1], count_copy[2], count_copy[3]);
 
 
-            double putTime;
-            Start_Timer(putTime);
+            trios_declare_timer(putTime);
+            trios_start_timer(putTime);
             if (((nc_cfg.write_type != WRITE_AGGREGATE_COLLECTIVE) &&
                  (nc_cfg.write_type != WRITE_CACHING_COLLECTIVE)) &&
                     (file_state_map[ncid]->mode != NC_INDEP_DATA_MODE)) {
@@ -3057,7 +2701,7 @@ int _nc_put_vars(
                     goto cleanup;
                 }
             }
-            Stop_Timer("put", putTime);
+            trios_stop_timer("put", putTime);
         }
 
         if (unlimdimid != -1) {
@@ -3077,7 +2721,7 @@ cleanup:
     if (stride_copy) free(stride_copy);
     if (dimids) free(dimids);
 
-    Stop_Timer("_nc_put_vars", callTime);
+    trios_stop_timer("_nc_put_vars", callTime);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -3492,7 +3136,6 @@ int _nc_get_vars(
         log_debug(debug_level, "getting start_len=%d, count_len=%d, stride_len=%d",
                 args.start.start_len, args.count.count_len, args.stride.stride_len);
 
-//        int svc_index=calc_my_svc(ndims, dimlens, nc_cfg.num_servers, start_copy);
         int svc_index=default_svc;
         log_debug(netcdf_debug_level, "svc_index(%d)", svc_index);
 
@@ -3601,8 +3244,6 @@ int nc_get_var(
         void *data)
 {
     int rc = NC_NOERR;
-    nc_type vartype;
-    size_t varsize;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -3965,15 +3606,6 @@ int _nc_redef(int ncid)
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc_sync(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_REDEF_OP,
-//                                 &ncid,
-//                                 NULL,
-//                                 0,
-//                                 NULL,
-//                                 0);
     if (rc != NSSI_OK) {
         log_error(netcdf_debug_level, "unable to call remote _nc_redef: %s",
                 nssi_err_str(rc));
@@ -4000,21 +3632,14 @@ extern "C"
 int _nc_enddef(int ncid)
 {
     int rc = NC_NOERR;
-    double MulticastTime;
-    double WaitAnyTime;
+    trios_declare_timer(MulticastTime);
+    trios_declare_timer(WaitAnyTime);
     vector<nssi_request *>reqs;
-    nssi_request *req;
-
-    int which=-1;
-    int remote_rc=NSSI_OK;
-    int error_rc=NSSI_OK;
-
-//    nssi_request **reqs;
 
     log_debug(netcdf_debug_level, "enter");
 
     if (collective_op_rank == 0) {
-        Start_Timer(MulticastTime);
+        trios_start_timer(MulticastTime);
         /* call the remote method */
         rc = nssi_call_rpc_sync(&svcs[default_svc],
                 NETCDF_ENDDEF_OP,
@@ -4023,50 +3648,12 @@ int _nc_enddef(int ncid)
                 0,
                 NULL);
 
-        Stop_Timer("enddef Multicast", MulticastTime);
+        trios_stop_timer("enddef Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    Start_Timer(MulticastTime);
-//    reqs.reserve(nc_cfg.num_servers);
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        req = (nssi_request *)calloc(1,sizeof(nssi_request));
-//        reqs.insert(reqs.end(), req);
-//    }
-//
-//    log_debug(netcdf_debug_level, "Calling nc_enddef");
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                                 nc_cfg.num_servers,
-//                                 NETCDF_ENDDEF_OP,
-//                                 &ncid,
-//                                 NULL,
-//                                 0,
-//                                 NULL,
-//                                 0,
-//                                 &reqs[0]);
-//    if (rc != NSSI_OK) {
-//        log_error(netcdf_debug_level, "unable to call remote nc_enddef: %s",
-//                nssi_err_str(rc));
-//        goto cleanup;
-//    }
-//    Stop_Timer("enddef Multicast", MulticastTime);
-//    while (reqs.size() > 0) {
-//        Start_Timer(WaitAnyTime);
-//        nssi_waitany(&reqs[0], reqs.size(), -1, &which, &remote_rc);
-//        if (reqs[which]->status == NSSI_REQUEST_ERROR) {
-//            error_rc = reqs[which]->error_code;
-//        }
-//        free(reqs[which]);
-//        reqs.erase(reqs.begin() + which);
-//        Stop_Timer("enddef WaitAny", WaitAnyTime);
-//    }
-//    if (error_rc != NSSI_OK) {
-//        rc = error_rc;
-//        goto cleanup;
-//    }
 
     file_state_map[ncid]->mode = NC_COLL_DATA_MODE;
 
@@ -4106,12 +3693,6 @@ int _nc_sync_wait(int ncid)
         }
     }
     file_state_map[ncid]->outstanding_sync_requests.clear();
-
-//    /* remove data structures associated with ncid */
-//    if (group_map.find(ncid) != group_map.end()) {
-//        delete group_map[ncid];
-//        group_map.erase(ncid);
-//    }
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -4153,22 +3734,6 @@ int _nc_sync(int ncid)
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    reqs=(nssi_request **)calloc(nc_cfg.num_servers, sizeof(nssi_request *));
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        reqs[i] = (nssi_request *)calloc(1,sizeof(nssi_request));
-//    }
-//
-//    log_debug(netcdf_debug_level, "Calling nc_sync");
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                            nc_cfg.num_servers,
-//                            NETCDF_SYNC_OP,
-//                            &ncid,
-//                            NULL,
-//                            0,
-//                            NULL,
-//                            0,
-//                            reqs);
     if (rc != NSSI_OK) {
         log_error(netcdf_debug_level, "unable to call remote nc_sync: %s",
                 nssi_err_str(rc));
@@ -4266,22 +3831,6 @@ int _nc_close(int ncid)
     } else {
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     }
-//    reqs=(nssi_request **)calloc(nc_cfg.num_servers, sizeof(nssi_request *));
-//    for (int i=0;i<nc_cfg.num_servers;i++) {
-//        reqs[i] = (nssi_request *)calloc(1,sizeof(nssi_request));
-//    }
-//
-//    log_debug(netcdf_debug_level, "Calling nc_close");
-//    /* call the remote method */
-//    rc = nssi_multicast_rpc(svcs,
-//                            nc_cfg.num_servers,
-//                            NETCDF_CLOSE_OP,
-//                            &ncid,
-//                            NULL,
-//                            0,
-//                            NULL,
-//                            0,
-//                            reqs);
     if (rc != NSSI_OK) {
         log_error(netcdf_debug_level, "unable to call remote nc_close: %s",
                 nssi_err_str(rc));

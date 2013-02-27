@@ -84,7 +84,7 @@ using namespace std;
 
 #include "aggregation.h"
 
-#include "io_timer.h"
+#include "Trios_timer.h"
 
 
 typedef char NNTI_url[NNTI_URL_LEN];
@@ -124,11 +124,11 @@ static int do_put_vars(int ncid, int varid,
 static int do_put_vars(aggregation_chunk_details_t **chunks, const int chunk_count)
 {
     int rc=NC_NOERR;
-    double call_time;
+    trios_declare_timer(call_time);
 
     for (int i=0;i<chunk_count;i++) {
         log_debug(netcdf_debug_level, "calling ncmpi_put_vars with agg data");
-        Start_Timer(call_time);
+        trios_start_timer(call_time);
         rc = ncmpi_put_vars(chunks[i]->ncid,
                             chunks[i]->varid,
                             chunks[i]->start,
@@ -137,7 +137,7 @@ static int do_put_vars(aggregation_chunk_details_t **chunks, const int chunk_cou
                             chunks[i]->buf,
                             chunks[i]->num_elements,
                             chunks[i]->datatype);
-        Stop_Timer("ncmpi_put_vars", call_time);
+        trios_stop_timer("ncmpi_put_vars", call_time);
         if (rc != NC_NOERR) {
             log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
             goto cleanup;
@@ -229,11 +229,11 @@ static int flush_aggregated_chunks(
 {
     int rc=NC_NOERR;
     int chunk_count=0;
-    double callTime;
+    trios_declare_timer(callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     try_aggregation(ncid, varid);
-    Stop_Timer("agg", callTime);
+    trios_stop_timer("agg", callTime);
 
     aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
     if (chunk_count == 0) {
@@ -241,20 +241,14 @@ static int flush_aggregated_chunks(
     } else {
         log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
     }
-//    log_level old_log=netcdf_debug_level;
-//    netcdf_debug_level = netcdf_debug_level;
-//    for (int i=0;i<chunk_count;i++) {
-//    	print_chunk(chunks[i]);
-//    }
-//    netcdf_debug_level = old_log;
 
     if (use_collective(ncid)) {
-        Start_Timer(callTime);
+        trios_start_timer(callTime);
         rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
         if (rc == NC_EINDEP) {
             rc = do_put_vars(chunks, chunk_count);
         }
-        Stop_Timer("put_vars_all", callTime);
+        trios_stop_timer("put_vars_all", callTime);
 
         free(chunks);
         cleanup_aggregation_chunks(ncid, varid);
@@ -264,12 +258,12 @@ static int flush_aggregated_chunks(
             log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
         }
     } else {
-        Start_Timer(callTime);
+        trios_start_timer(callTime);
         rc = do_put_vars(chunks, chunk_count);
         if (rc == NC_ENOTINDEP) {
             rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
         }
-        Stop_Timer("put_vars", callTime);
+        trios_stop_timer("put_vars", callTime);
 
         free(chunks);
         cleanup_aggregation_chunks(ncid, varid);
@@ -286,7 +280,7 @@ static int flush_aggregated_chunks(const int ncid)
 {
     int rc=NC_NOERR;
     int chunk_count=0;
-    double callTime;
+    trios_declare_timer(callTime);
 
     if (use_aggregation(ncid)) {
         log_debug(netcdf_debug_level, "flushing aggregation chunks");
@@ -301,7 +295,6 @@ static int flush_aggregated_chunks(const int ncid)
 
             int var_count=0;
             int varid=0;
-            int chunk_count=0;
 
             /* get varids for this group */
             if ((rc = ncmpi_inq_nvars(ncid, &var_count)) != NC_NOERR) {
@@ -318,9 +311,9 @@ static int flush_aggregated_chunks(const int ncid)
             log_debug(netcdf_debug_level, "using independent");
             /* this is the easy one.  use independent mode. */
 
-            Start_Timer(callTime);
+            trios_start_timer(callTime);
             try_aggregation(ncid);  // aggregate all varids in this file
-            Stop_Timer("agg", callTime);
+            trios_stop_timer("agg", callTime);
 
             aggregation_chunk_details_t **chunks = get_chunks(ncid, &chunk_count);
             if (chunk_count == 0) {
@@ -329,16 +322,10 @@ static int flush_aggregated_chunks(const int ncid)
             } else {
                 log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
             }
-//            log_level old_log=netcdf_debug_level;
-//            netcdf_debug_level = netcdf_debug_level;
-//            for (int i=0;i<chunk_count;i++) {
-//                print_chunk(chunks[i]);
-//            }
-//            netcdf_debug_level = old_log;
 
-            Start_Timer(callTime);
+            trios_start_timer(callTime);
             rc = do_put_vars(chunks, chunk_count);
-            Stop_Timer("put_vars", callTime);
+            trios_stop_timer("put_vars", callTime);
 
             free(chunks);
             cleanup_aggregation_chunks(ncid);
@@ -360,7 +347,7 @@ static int flush_cached_chunks(
 {
     int rc=NC_NOERR;
     int chunk_count=0;
-    double callTime;
+    trios_declare_timer(callTime);
 
     aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
     if (chunk_count == 0) {
@@ -368,20 +355,14 @@ static int flush_cached_chunks(
     } else {
         log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
     }
-//    log_level old_log=netcdf_debug_level;
-//    netcdf_debug_level = netcdf_debug_level;
-//    for (int i=0;i<chunk_count;i++) {
-//    	print_chunk(chunks[i]);
-//    }
-//    netcdf_debug_level = old_log;
 
     if (use_collective(ncid)) {
-        Start_Timer(callTime);
+        trios_start_timer(callTime);
         rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
         if (rc == NC_EINDEP) {
             rc = do_put_vars(chunks, chunk_count);
         }
-        Stop_Timer("put_vars_all", callTime);
+        trios_stop_timer("put_vars_all", callTime);
 
         free(chunks);
         cleanup_aggregation_chunks(ncid, varid);
@@ -390,12 +371,12 @@ static int flush_cached_chunks(
             log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
         }
     } else {
-        Start_Timer(callTime);
+        trios_start_timer(callTime);
         rc = do_put_vars(chunks, chunk_count);
         if (rc == NC_ENOTINDEP) {
             rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
         }
-        Stop_Timer("put_vars", callTime);
+        trios_stop_timer("put_vars", callTime);
 
         free(chunks);
         cleanup_aggregation_chunks(ncid, varid);
@@ -411,7 +392,7 @@ static int flush_cached_chunks(const int ncid)
 {
     int rc=NC_NOERR;
     int chunk_count=0;
-    double callTime;
+    trios_declare_timer(callTime);
 
     if (use_caching(ncid)) {
         log_debug(netcdf_debug_level, "flushing cached chunks");
@@ -426,7 +407,6 @@ static int flush_cached_chunks(const int ncid)
 
             int var_count=0;
             int varid=0;
-            int chunk_count=0;
 
             /* get varids for this group */
             if ((rc = ncmpi_inq_nvars(ncid, &var_count)) != NC_NOERR) {
@@ -450,16 +430,10 @@ static int flush_cached_chunks(const int ncid)
             } else {
                 log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
             }
-//            log_level old_log=netcdf_debug_level;
-//            netcdf_debug_level = netcdf_debug_level;
-//            for (int i=0;i<chunk_count;i++) {
-//                print_chunk(chunks[i]);
-//            }
-//            netcdf_debug_level = old_log;
 
-            Start_Timer(callTime);
+            trios_start_timer(callTime);
             rc = do_put_vars(chunks, chunk_count);
-            Stop_Timer("put_vars", callTime);
+            trios_stop_timer("put_vars", callTime);
 
             free(chunks);
             cleanup_aggregation_chunks(ncid);
@@ -619,20 +593,17 @@ int nc_create_stub(
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    SetHints(&mpiHints, "");
+    SetHints(&mpiHints, (char*)"");
     ShowHints(&mpiHints);
 
-    /* call the netcdf function */
-    //rc = nc__create(path, cmode, initialsz, &chunksizehint, &ncid);
-
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     rc = ncmpi_create(MPI_COMM_WORLD, path, cmode, mpiHints, &ncid);
     if (rc != NC_NOERR) {
         log_error(debug_level, "Could not create file(%s): %s", path, ncmpi_strerror(rc));
         goto cleanup;
     }
-    Stop_Timer("create", callTime);
+    trios_stop_timer("create", callTime);
 
     /* set the result structure */
     memset(&res, 0, sizeof(res));
@@ -666,7 +637,7 @@ int get_group_metadata(
         const int ncid,
         struct nc_group *group)
 {
-    int rc = NC_NOERR, i, j, natts;
+    int rc = NC_NOERR, natts;
     log_level debug_level = netcdf_debug_level;
 
     int *dimids=NULL;
@@ -735,7 +706,7 @@ int get_group_metadata(
     }
 
     /* in netcdf3, dimids range from 0 -- (ndims-1) */
-    for (i=0; i<group->dims.dims_len; i++) {
+    for (uint32_t i=0; i<group->dims.dims_len; i++) {
         dimids[i] = i;
     }
 #endif
@@ -744,7 +715,7 @@ int get_group_metadata(
 
     /* get metadata for each dimension */
     group->dims.dims_val = (nc_dim *)calloc(group->dims.dims_len, sizeof(nc_dim));
-    for (i=0; i<group->dims.dims_len; i++) {
+    for (uint32_t i=0; i<group->dims.dims_len; i++) {
 
         /* set current dimension */
         struct nc_dim *dim = &group->dims.dims_val[i];
@@ -770,7 +741,7 @@ int get_group_metadata(
     group->atts.atts_len = natts;
     group->atts.atts_val = (nc_att *)calloc(natts, sizeof(nc_att));
 
-    for (i=0; i< natts; i++) {
+    for (int32_t i=0; i< natts; i++) {
         nc_att *att = &group->atts.atts_val[i];
         att->name = (char *)calloc(NC_MAX_NAME, sizeof(char));
         rc = ncmpi_inq_attname(ncid, NC_GLOBAL, i, att->name);
@@ -805,7 +776,7 @@ int get_group_metadata(
     }
 
     /* in netcdf3, varids ranged from 0 to (nids-1) */
-    for (i=0; i<group->vars.vars_len; i++) {
+    for (uint32_t i=0; i<group->vars.vars_len; i++) {
         varids[i] = i;
     }
 #endif
@@ -816,7 +787,7 @@ int get_group_metadata(
     log_debug(debug_level, "Got varids (%d vars)", (int)group->vars.vars_len);
 
     /* get metadata about each variable */
-    for (i=0; i<group->vars.vars_len; i++) {
+    for (uint32_t i=0; i<group->vars.vars_len; i++) {
 
         /* Variable structure for this ID */
         struct nc_var *var = &group->vars.vars_val[i];
@@ -840,7 +811,7 @@ int get_group_metadata(
 
         /* Get the attributes */
         var->atts.atts_val = (nc_att *)calloc(var->atts.atts_len, sizeof(nc_att));
-        for (j = 0; j<var->atts.atts_len; j++) {
+        for (uint32_t j = 0; j<var->atts.atts_len; j++) {
 
             struct nc_att *att = &var->atts.atts_val[j];
 
@@ -886,7 +857,7 @@ int get_group_metadata(
 
         /* Recursively get subgroup metadata */
         group->groups.groups_val = (nc_group *)calloc(group->groups.groups_len, sizeof(nc_group));
-        for (i=0; i<group->groups.groups_len; i++) {
+        for (int32_t i=0; i<group->groups.groups_len; i++) {
             if ((rc = get_group_metadata(groupids[i], &group->groups.groups_val[i])) != NC_NOERR) {
                 log_error(debug_level, "Unable to get subgroup metadata: %s", ncmpi_strerror(rc));
                 goto cleanup;
@@ -933,35 +904,25 @@ int nc_open_stub(
 
     log_debug(debug_level, "calling nc__open(%s, %d)", path, omode);
 
-    /* call the netcdf function */
-    /*
-    if ((rc = nc__open(path, omode, &chunksizehint, &ncid)) != NC_NOERR) {
-        log_error(debug_level, "Error opening file \"%s\": %s", path, ncmpi_strerror(rc));
-        goto cleanup;
-    }
-    */
-
     open_time=MPI_Wtime();
 
-    SetHints(&mpiHints, "");
+    SetHints(&mpiHints, (char*)"");
     ShowHints(&mpiHints);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     if ((rc = ncmpi_open(MPI_COMM_WORLD, path, omode, mpiHints, &ncid)) != NC_NOERR) {
         log_error(debug_level, "Error opening file \"%s\": %s", path, ncmpi_strerror(rc));
         res.root_group.ncid = -1;
         goto cleanup;
     }
-    Stop_Timer("open", callTime);
+    trios_stop_timer("open", callTime);
 
     log_debug(debug_level, "dataset open (ncid=%d)", ncid);
 
     /* set the result structure */
     res.chunksizehint = chunksizehint;
     res.root_group.ncid = ncid;
-
-    //root_group = (struct nc_group *)calloc(1, sizeof(struct nc_group));
 
     rc = get_group_metadata(ncid, &res.root_group);
     if (rc != NC_NOERR) {
@@ -1005,11 +966,11 @@ int nc_def_dim_stub(
 
     log_debug(netcdf_debug_level, "enter");
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     /* call actual netcdf function */
     rc = ncmpi_def_dim(ncid, name, len, &dimid);
-    Stop_Timer("def dim", callTime);
+    trios_stop_timer("def dim", callTime);
 
     log_debug(netcdf_debug_level, "nc_def_dim: rc=%s", ncmpi_strerror(rc));
 
@@ -1053,14 +1014,14 @@ int nc_def_var_stub(
             "ndims=%d, dimids[0]=%d)", ncid, name, xtype, ndims, dimids[0]);
 
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     /* call real netcdf function */
     rc = ncmpi_def_var(ncid, name, xtype, ndims, dimids, &varid);
     if (rc != NC_NOERR) {
         log_error(netcdf_debug_level, "%s", ncmpi_strerror(rc));
     }
-    Stop_Timer("def var", callTime);
+    trios_stop_timer("def var", callTime);
 
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, &varid, res_addr);
@@ -1406,7 +1367,7 @@ int nc_put_vars_stub(
 
     MPI_Datatype datatype;
 
-    int ccount = 1;
+    size_t ccount = 1;
 
     void *buf=NULL;
 
@@ -1415,13 +1376,13 @@ int nc_put_vars_stub(
 
     log_debug(debug_level, "calling nc_put_vars_stub(ncid=%d, varid=%d, atype=%d, len=%d)", ncid, varid, atype, len);
 
-    double callTime;
+    trios_declare_timer(callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     buf = malloc(len);
-    Stop_Timer("buf malloc", callTime);
+    trios_stop_timer("buf malloc", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
 
     rc = ncmpi_inq_varndims(ncid, varid, &ndims);
     if (rc != NC_NOERR) {
@@ -1430,8 +1391,6 @@ int nc_put_vars_stub(
     }
 
     if (ndims) {
-        size_t nbytes = 0;
-
         /* Treat each arg type differently */
         switch (buftype) {
             case NC_BYTE:
@@ -1523,17 +1482,17 @@ int nc_put_vars_stub(
         if (logging_debug(debug_level)) {
             fprintf(logger_get_file(), "start_copy = (");
             for (i=0;i<ndims; i++) {
-                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", start_copy[i]);
+                fprintf(logger_get_file(), "%s%lld", !i ? "" : ", ", start_copy[i]);
             }
             fprintf(logger_get_file(), ")\n");
             fprintf(logger_get_file(), "count_copy = (");
             for (i=0;i<ndims; i++) {
-                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", count_copy[i]);
+                fprintf(logger_get_file(), "%s%lld", !i ? "" : ", ", count_copy[i]);
             }
             fprintf(logger_get_file(), ")\n");
             fprintf(logger_get_file(), "stride_copy = (");
             for (i=0;i<ndims; i++) {
-                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", stride_copy[i]);
+                fprintf(logger_get_file(), "%s%lld", !i ? "" : ", ", stride_copy[i]);
             }
             fprintf(logger_get_file(), ")\n");
         }
@@ -1583,10 +1542,10 @@ int nc_put_vars_stub(
                 log_debug(netcdf_debug_level, "ready to agg");
                 int chunk_count=0;
 
-                double aggTime;
-                Start_Timer(aggTime);
+                trios_declare_timer(aggTime);
+                trios_start_timer(aggTime);
                 while(try_aggregation(ncid, varid) == TRUE);
-                Stop_Timer("agg", aggTime);
+                trios_stop_timer("agg", aggTime);
 
                 aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
                 if (chunk_count == 0) {
@@ -1596,10 +1555,10 @@ int nc_put_vars_stub(
 
                 if (use_collective(ncid)) {
                     log_debug(netcdf_debug_level, "using collective");
-                    double collPutTime;
-                    Start_Timer(collPutTime);
+                    trios_declare_timer(collPutTime);
+                    trios_start_timer(collPutTime);
                     rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
-                    Stop_Timer("coll put", collPutTime);
+                    trios_stop_timer("coll put", collPutTime);
                     if (rc != NC_NOERR) {
                         log_error(debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
                         free(chunks);
@@ -1607,10 +1566,10 @@ int nc_put_vars_stub(
                     }
                 } else {
                     log_debug(netcdf_debug_level, "using independent");
-                    double indepPutTime;
-                    Start_Timer(indepPutTime);
+                    trios_declare_timer(indepPutTime);
+                    trios_start_timer(indepPutTime);
                     rc = do_put_vars(chunks, chunk_count);
-                    Stop_Timer("indep put", indepPutTime);
+                    trios_stop_timer("indep put", indepPutTime);
                     if (rc != NC_NOERR) {
                         log_error(debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
                         free(chunks);
@@ -1655,10 +1614,10 @@ int nc_put_vars_stub(
 
                 if (use_collective(ncid)) {
                     log_debug(netcdf_debug_level, "using collective");
-                    double collPutTime;
-                    Start_Timer(collPutTime);
+                    trios_declare_timer(collPutTime);
+                    trios_start_timer(collPutTime);
                     rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
-                    Stop_Timer("coll put", collPutTime);
+                    trios_stop_timer("coll put", collPutTime);
                     if (rc != NC_NOERR) {
                         log_error(debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
                         free(chunks);
@@ -1666,10 +1625,10 @@ int nc_put_vars_stub(
                     }
                 } else {
                     log_debug(netcdf_debug_level, "using independent");
-                    double indepPutTime;
-                    Start_Timer(indepPutTime);
+                    trios_declare_timer(indepPutTime);
+                    trios_start_timer(indepPutTime);
                     rc = do_put_vars(chunks, chunk_count);
-                    Stop_Timer("indep put", indepPutTime);
+                    trios_stop_timer("indep put", indepPutTime);
                     if (rc != NC_NOERR) {
                         log_error(debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
                         free(chunks);
@@ -1707,7 +1666,7 @@ cleanup:
         free(buf);
     }
 
-    Stop_Timer("put var", callTime);
+    trios_stop_timer("put var", callTime);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -1750,7 +1709,6 @@ int nc_get_vars_stub(
     log_level debug_level = netcdf_debug_level;
 
     MPI_Datatype datatype;
-    int count = 1, ccount=0;
     void *buf = malloc(len);
 
 
@@ -1758,14 +1716,14 @@ int nc_get_vars_stub(
 
     log_debug(debug_level, "calling nc_get_vars_stub(ncid=%d, varid=%d, atype=%d, len=%d)", ncid, varid, atype, len);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     if (use_aggregation(ncid)) {
         flush_aggregated_chunks(ncid, varid);
     } else if (use_caching(ncid)) {
         flush_cached_chunks(ncid, varid);
     }
-    Stop_Timer("flush on sync", callTime);
+    trios_stop_timer("flush on sync", callTime);
 
 
     rc = ncmpi_inq_varndims(ncid, varid, &ndims);
@@ -1775,8 +1733,7 @@ int nc_get_vars_stub(
     }
 
     if (ndims) {
-        size_t count = 1;
-        size_t nbytes = 0;
+        size_t count = 1, ccount=0;
 
         /* find out the right type for this variable */
         rc = ncmpi_inq_vartype(ncid, varid, &vartype);
@@ -1953,11 +1910,11 @@ int nc_redef_stub(
 
     flush_aggregated_chunks(*ncidp);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     /* call real netcdf function */
     rc = ncmpi_redef(*ncidp);
-    Stop_Timer("redef", callTime);
+    trios_stop_timer("redef", callTime);
 
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -1985,16 +1942,16 @@ int nc_enddef_stub(
 
     enddef_time=MPI_Wtime();
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     /* call real netcdf function */
     rc = ncmpi_enddef(*ncidp);
-    Stop_Timer("enddef", callTime);
+    trios_stop_timer("enddef", callTime);
 
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2016,22 +1973,22 @@ int nc_close_stub(
 
     close1_time=MPI_Wtime();
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     if (use_aggregation(*ncidp)) {
         flush_aggregated_chunks(*ncidp);
     } else if (use_caching(*ncidp)) {
         flush_cached_chunks(*ncidp);
     }
-    Stop_Timer("flush on close", callTime);
+    trios_stop_timer("flush on close", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     /* call real netcdf function */
     rc = ncmpi_close(*ncidp);
     if (rc != NC_NOERR) {
         log_error(netcdf_debug_level, "%s", ncmpi_strerror(rc));
     }
-    Stop_Timer("close", callTime);
+    trios_stop_timer("close", callTime);
 
     remove_participant_for_file(*ncidp, caller);
 
@@ -2069,22 +2026,22 @@ int nc_sync_stub(
 
     log_debug(netcdf_debug_level, "calling nc_sync(%d)", *ncidp);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     if (use_aggregation(*ncidp)) {
         flush_aggregated_chunks(*ncidp);
     } else if (use_caching(*ncidp)) {
         flush_cached_chunks(*ncidp);
     }
-    Stop_Timer("flush on sync", callTime);
+    trios_stop_timer("flush on sync", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     /* call real netcdf function */
     rc = ncmpi_sync(*ncidp);
     if (rc != NC_NOERR) {
         log_error(netcdf_debug_level, "%s", ncmpi_strerror(rc));
     }
-    Stop_Timer("sync", callTime);
+    trios_stop_timer("sync", callTime);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -2107,10 +2064,10 @@ int nc_begin_indep_stub(
 
     log_debug(netcdf_debug_level, "calling nc_begin_indep_data(%d)", *ncidp);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     rc = ncmpi_begin_indep_data(*ncidp);
-    Stop_Timer("begin indep", callTime);
+    trios_stop_timer("begin indep", callTime);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -2133,18 +2090,18 @@ int nc_end_indep_stub(
 
     log_debug(netcdf_debug_level, "calling nc_end_indep_data(%d)", *ncidp);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     if (use_aggregation(*ncidp)) {
         flush_aggregated_chunks(*ncidp);
     } else if (use_caching(*ncidp)) {
         flush_cached_chunks(*ncidp);
     }
-    Stop_Timer("flush on end indep", callTime);
+    trios_stop_timer("flush on end indep", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     rc = ncmpi_end_indep_data(*ncidp);
-    Stop_Timer("end indep", callTime);
+    trios_stop_timer("end indep", callTime);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -2168,12 +2125,9 @@ int nc_set_fill_stub(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NC_NOERR;
-    int rank, np;
     const int ncid     = args->ncid;
     const int new_mode = args->new_fill_mode;
     nc_set_fill_res res;  /* this is what we send back to the client */
-
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
@@ -2257,7 +2211,6 @@ static void generate_contact_info(char *myid)
             free(all_urls);
             return;
         }
-//        sprintf(contact_path, "%s.%04d", contact_file, rank);
         sprintf(contact_path, "%s.tmp", contact_file);
         log_debug(debug_level, "creating contact file (%s)", contact_path);
         FILE *f=fopen(contact_path, "w");
@@ -2268,9 +2221,6 @@ static void generate_contact_info(char *myid)
             fprintf(f, "%s\n",
                     all_urls[i]);
         }
-//        fprintf(f, "%u@%u@%s@%u\n",
-//                myid->nid, myid->pid,
-//                myid->hostname, (unsigned int)ntohs(myid->port));
         fclose(f);
         rename(contact_path, contact_file);
         free(all_urls);
