@@ -569,8 +569,8 @@ namespace stk {
       double hmesh_min_max_ave_factor[3] = {0,0,0};
       //std::string histograms_root="histograms_root";
       std::string histograms_root="cout";
-      //std::string histogram_options = "{mesh_fields: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
-      std::string histogram_options = "{mesh_fields: [edge_length, quality_edge]}";
+      //std::string histogram_options = "{mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
+      std::string histogram_options = "";
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc =
@@ -633,6 +633,27 @@ namespace stk {
       run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
+
+      run_environment.clp.setOption("histogram_file_root"      , &histograms_root          , " if cout, use screen, else use this as the root name of histogram files");
+#if STK_ADAPT_HAVE_YAML_CPP
+
+      run_environment.clp.setOption("histogram"  , &histogram_options  ,
+                                    "  either a single filename, which reads further commands from that file, or\n"
+                                    "  a string of the form \"{ fields: [field_1,...,field_n], file_root: my_histograms, mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }\" \n"
+                                    "  where field_i are field names to get stats for, file_root is a root filename, and mesh: gives options for mesh quality histograms.\n"
+                                    "  If read from a file, file format is like this: \n"
+                                    "    fields:\n"
+                                    "      - pressure\n"
+                                    "      - velocity\n"
+                                    "      - temperature\n"
+                                    "    file_root: my_histograms\n"
+                                    "    mesh:\n"
+                                    "      - edge_length\n"
+                                    "      - quality_edge\n"
+                                    "      - quality_vol_edge_ratio\n"
+                                    "      - volume\n");
+#endif
+
       run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
                                     "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200\n"
                                     "  If not set, use internal estimates for memory multipliers.");
@@ -669,6 +690,7 @@ namespace stk {
       int err_clp = run_environment.processCommandLine();
       if (err_clp) return err_clp;
 
+      std::string histogram_basic_options = "{file_root: "+histograms_root + " mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
       int result = 0;
       unsigned failed_proc_rank = 0u;
 
@@ -1002,6 +1024,11 @@ namespace stk {
 #endif
                         eMesh.commit();
 
+                        if (print_info)
+                          {
+                            eMesh.print_info("convert", print_info);
+                          }
+
                         if (verify_meshes)
                           {
                             bool print_table=true;
@@ -1013,13 +1040,36 @@ namespace stk {
                                 throw std::runtime_error("ERROR: verify_meshes shows a bad input mesh");
                               }
                           }
+
+#if STK_ADAPT_HAVE_YAML_CPP
+                        if (histogram_options.size() != 0)
+                          {
+                            double current_time= eMesh.get_current_database_time();
+                            double hopt_time = 0.2;
+                            eMesh.read_database_at_time(hopt_time);
+                            Histograms<double> histograms;
+                            HistogramsParser<double> hparser(histogram_options);
+                            hparser.create(histograms);
+
+                            eMesh.field_stats(&histograms);
+                            histograms.compute_uniform_bins(10);
+
+                            if (!p_rank) {
+                              std::cout << "Before refine, user-requested histograms= " << std::endl;
+                              histograms.print();
+                              //histograms.print(stk::percept::pout());
+                            }
+                            if (0) eMesh.read_database_at_time(current_time);
+                          }
+#endif
+
                         if (compute_hmesh.size() != 0)
                           {
                             double hmesh=0.0;
-                            //Histograms<double> histograms(histograms_root);
-                            Histograms<double> histograms;
+                            Histograms<double> histograms(histograms_root);
+                            //Histograms<double> histograms;
 #if STK_ADAPT_HAVE_YAML_CPP
-                            HistogramsParser<double> hparser(histogram_options);
+                            HistogramsParser<double> hparser(histogram_basic_options);
                             hparser.create(histograms);
 #endif
                             if (compute_hmesh == "eigens")
@@ -1115,11 +1165,6 @@ namespace stk {
                           {
                             eMesh.save_as("outtmp.e");
                             exit(1);
-                          }
-
-                        if (print_info)
-                          {
-                            eMesh.print_info("convert", print_info);
                           }
 
                         // FIXME
@@ -1254,10 +1299,10 @@ namespace stk {
                               {
                                 double hmesh=0.0;
                                 double min_max_ave[3];
-                                //Histograms<double> histograms(histograms_root);
-                                Histograms<double> histograms;
+                                Histograms<double> histograms(histograms_root);
+                                //Histograms<double> histograms;
 #if STK_ADAPT_HAVE_YAML_CPP
-                                HistogramsParser<double> hparser(histogram_options);
+                                HistogramsParser<double> hparser(histogram_basic_options);
                                 hparser.create(histograms);
 #endif
 

@@ -66,6 +66,7 @@ namespace stk {
   namespace percept {
 
     template<typename T> class Histogram;
+    template<typename T> class Histograms;
 
     typedef mesh::Field<double>                          ScalarFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
@@ -220,7 +221,7 @@ namespace stk {
       /// get the low-level meta data pointer from stk_mesh
       stk::mesh::MetaData * get_fem_meta_data();
 
-      /// get a pointer to a stk_mesh Part with the given name - if @param partial_string_match_ok, allow a 
+      /// get a pointer to a stk_mesh Part with the given name - if @param partial_string_match_ok, allow a
       ///   partial match of the part_name with any part found, in the sense that @param part_name can
       ///   be a substring of the actual part name.
       mesh::Part* get_part(const std::string& part_name, bool partial_string_match_ok=false) { return get_non_const_part(part_name, partial_string_match_ok); }
@@ -391,7 +392,7 @@ namespace stk {
       /// check if an bucket belongs to the geometry parts
       bool is_in_geometry_parts(const std::string& geometry_file_name, stk::mesh::Bucket& bucket);
 
-      /// dump a vtk file for the mesh surrounding the given node 
+      /// dump a vtk file for the mesh surrounding the given node
       void dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector=0);
       void dump_vtk(std::string filename);
 
@@ -432,10 +433,25 @@ namespace stk {
 
       /// check if element volumes are positive
       bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, int dump_all_elements=0);
-      
+
+      /// get field statistics - either pass in a string (see AdaptMain.cpp) with options to build
+      ///   a Histograms database, or pass in a pre-computed Histograms
+      /// Warning: can modify the input histograms to account for vector fields - usage should be like
+      ///    Histograms<double> *my_hist = ...;
+      ///    my_hist = eMesh.field_stats(my_hist);
+      /// or,
+      ///    Histograms<double> *my_hist = eMesh.field_stats(0, "options...");
+      Histograms<double> * field_stats(Histograms<double> *histograms = 0, std::string options="");
+
+
 #ifndef SWIG
+
       //========================================================================================================================
       // low-level interfaces
+
+      void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
+
+
       struct MinMaxAve {
         MinMaxAve() { val[0]=0; val[1]=0; val[2]=0; count = 0.0; }
         double val[3]; // min, max, ave
@@ -652,7 +668,7 @@ namespace stk {
       element_side_nodes( const mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity>& side_node_entities );
 
       void
-      element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd, 
+      element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd,
                                int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare=false, bool debug=false);
 
       // FIXME

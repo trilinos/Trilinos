@@ -13,7 +13,7 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <stk_percept/GeometryVerifier.hpp>
-#include <stk_percept/Histogram.hpp>
+#include <stk_percept/Histograms.hpp>
 
 
 #include <Ioss_NullEntity.h>
@@ -885,7 +885,7 @@ namespace stk {
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
           stk::mesh::Part& part = *parts[ipart];
-          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos) 
+          if (stk::mesh::is_auto_declared_part(part) || (part.name().find("oldElem") != std::string::npos)
             || part.subsets().size() == 0)
             continue;
 
@@ -1864,8 +1864,15 @@ namespace stk {
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      mesh_data.populate_bulk_data();
-      m_bulkData = &mesh_data.bulk_data();
+      if (m_bulkData)
+        {
+          // skip - already got bulk data
+        }
+      else
+        {
+          mesh_data.populate_bulk_data();
+          m_bulkData = &mesh_data.bulk_data();
+        }
 
       int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
@@ -2849,7 +2856,7 @@ namespace stk {
      *
      */
     void PerceptMesh::
-    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal, 
+    element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal,
                              int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare, bool debug)
     {
       //if (side.identifier() == 5 && element.identifier() == 473) debug = true;
@@ -2904,7 +2911,7 @@ namespace stk {
       int nside_verts = side_topo_data->vertex_count;
       if ((int)n_elem_side_nodes != nside_verts)
         {
-          if (debug) std::cout << "tmp srk esp: element_side_permutation:: found wedge/pyr or shell/beam: n_elem_side_nodes= " 
+          if (debug) std::cout << "tmp srk esp: element_side_permutation:: found wedge/pyr or shell/beam: n_elem_side_nodes= "
                                << n_elem_side_nodes << " nside_verts= " << nside_verts << std::endl;
           returnedIndex = -1;
           returnedPolarity = 1;
@@ -4505,6 +4512,144 @@ namespace stk {
     {
       GeometryVerifier gv(dump_all_elements, badJac);
       return gv.isGeometryBad(*get_bulk_data(), print_table);
+    }
+
+    void PerceptMesh::field_stats(Histogram<double>& histogram, std::string field_name, int index)
+    {
+      stk::mesh::FieldBase *field = get_field(field_name);
+      if (!field) return;
+
+      unsigned nfr = field->restrictions().size();
+      VERIFY_OP_ON(nfr, <=, 1, "field_stats mutiple field restrictions");
+      unsigned stride = 0;
+      stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;
+      for (unsigned ifr = 0; ifr < nfr; ifr++)
+        {
+          const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+          //stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
+          stride = fr.dimension();
+          field_rank = fr.entity_rank();
+
+          //stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
+          stk::mesh::Selector locally_owned = get_fem_meta_data()->locally_owned_part();
+
+          const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( field_rank );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                if (locally_owned(bucket))
+                  {
+                    const unsigned num_elements_in_bucket = bucket.size();
+                    for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                      {
+                        stk::mesh::Entity element = bucket[iElement];
+                        unsigned stride;
+                        double *fdata = field_data(field, element, &stride);
+                        if (index == -2)
+                          histogram.push_back(fdata[0]);
+                        else if (index == -1)
+                          {
+                            double sum=0.0;
+                            for (unsigned is=0; is < stride; is++)
+                              {
+                                sum += fdata[is]*fdata[is];
+                              }
+                            sum = std::sqrt(sum);
+                            histogram.push_back(sum);
+                          }
+                        else
+                          {
+                            histogram.push_back(fdata[index]);
+                          }
+                      }
+                  }
+              }
+          }
+        }
+    }
+
+    Histograms<double> * PerceptMesh::field_stats(Histograms<double> *histograms, std::string options)
+    {
+      bool do_delete = false;
+      if (!histograms)
+        {
+#if STK_ADAPT_HAVE_YAML_CPP
+          do_delete = true;
+          histograms = new Histograms<double>;
+          HistogramsParser<double> hparser(options);
+          hparser.create(*histograms);
+#else
+          return;
+#endif
+        }
+      // check for vector fields
+      //Histograms<double> h_copy = *histograms;
+
+      typedef std::map<std::string, std::string> SMap;
+      SMap h_copy;
+      for (Histograms<double>::HistogramMap::iterator iter=histograms->begin(); iter != histograms->end(); ++iter)
+        {
+          std::string hname = iter->first;
+          std::string efname = "field.";
+          size_t pos = hname.find(efname);
+          if (pos == 0)
+            {
+              std::string fname = hname.substr(efname.length());
+              stk::mesh::FieldBase *field = get_field(fname);
+              if (!field) std::cout << "field = 0 " << fname << std::endl;
+              VERIFY_OP_ON(field, !=, 0, "hmmm");
+              if (!field)
+                continue;
+
+              unsigned nfr = field->restrictions().size();
+              unsigned stride = 0;
+              //stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;
+              for (unsigned ifr = 0; ifr < nfr; ifr++)
+                {
+                  const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+                  //stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
+                  stride = fr.dimension();
+                  if (stride > 1)
+                    {
+                      h_copy[efname+fname+"#mag"] = fname+"_mag";
+                      for (unsigned is=0; is < stride; is++)
+                        {
+                          h_copy[efname+fname+"#"+toString(is)] =fname+"_"+toString(is);
+                        }
+                    }
+                }
+            }
+        }
+      for (SMap::iterator iter=h_copy.begin(); iter != h_copy.end(); ++iter)
+        {
+          (*histograms)[iter->first].set_titles(iter->second);
+        }
+
+      for (Histograms<double>::HistogramMap::iterator iter=histograms->begin(); iter != histograms->end(); ++iter)
+        {
+          std::string hname = iter->first;
+          std::string efname = "field.";
+          size_t pos = hname.find(efname);
+          if (pos == 0)
+            {
+              std::string fname = hname.substr(efname.length());
+              std::cout << "PerceptMesh::field_stats looking for efname= " << fname << std::endl;
+              pos = fname.find("#");
+              int index = -2;
+              if (pos != std::string::npos)
+                {
+                  std::string end_bit = fname.substr(pos+1);
+                  if (end_bit == "mag")
+                    index = -1;
+                  else
+                    index = boost::lexical_cast<int>(end_bit);
+                  fname = fname.substr(0,pos-1);
+                }
+              field_stats(iter->second, fname, index);
+            }
+        }
+      return histograms;
     }
 
     bool PerceptMesh::is_in_geometry_parts(const std::string& geometry_file_name, stk::mesh::Bucket& bucket)

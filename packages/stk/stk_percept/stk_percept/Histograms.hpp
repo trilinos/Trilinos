@@ -114,10 +114,10 @@ namespace stk {
         try {
           while(parser.GetNextDocument(node)) {
             //std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
-            if (node.FindValue("from_file"))
+            if (node.Type() == YAML::NodeType::Scalar)
               {
                 std::string file_name;
-                node["from_file"] >> file_name;
+                node >> file_name;
                 std::cout << "HistogramsParser:: redirecting input from "<< file_name << std::endl;
                 std::ifstream file(file_name.c_str());
                 YAML::Parser parser1(file);
@@ -140,26 +140,15 @@ namespace stk {
 
       void parse(const YAML::Node& node, Histograms<T>& histograms)
       {
-        const YAML::Node *y_element_fields = node.FindValue("element_fields");
+        const YAML::Node *y_element_fields = node.FindValue("fields");
         if (y_element_fields)
           {
             for (size_t iter = 0; iter < y_element_fields->size(); iter++)
               {
                 std::string element_field_name;
                 (*y_element_fields)[iter] >> element_field_name;
-                std::string title="Element Field "+element_field_name;
-                histograms["element_field."+element_field_name].set_titles(title);
-              }
-          }
-        const YAML::Node *y_node_fields = node.FindValue("node_fields");
-        if (y_node_fields)
-          {
-            for (size_t iter = 0; iter < y_node_fields->size(); iter++)
-              {
-                std::string node_field_name;
-                (*y_node_fields)[iter] >> node_field_name;
-                std::string title="Node Field "+node_field_name;
-                histograms["node_field."+node_field_name].set_titles(title);
+                std::string title="Field "+element_field_name;
+                histograms["field."+element_field_name].set_titles(title);
               }
           }
         std::string file_root;
@@ -170,7 +159,7 @@ namespace stk {
           std::string mesh_fields[4] =  {"edge_length", "quality_edge", "quality_vol_edge_ratio", "volume"};
           std::set<std::string> valid_values(mesh_fields, mesh_fields+4);
 
-          const YAML::Node *y_mesh_fields = node.FindValue("mesh_fields");
+          const YAML::Node *y_mesh_fields = node.FindValue("mesh");
           if (y_mesh_fields)
             {
               for (size_t iter = 0; iter < y_mesh_fields->size(); iter++)
@@ -180,7 +169,7 @@ namespace stk {
                   if (valid_values.find(mesh_field_name) == valid_values.end())
                     throw std::runtime_error("HistogramsParser:: unrecognized option: " + mesh_field_name);
                   std::string title="Mesh Field "+mesh_field_name;
-                  histograms["mesh_field."+mesh_field_name].set_titles(title);
+                  histograms["mesh."+mesh_field_name].set_titles(title);
                 }
             }
         }
