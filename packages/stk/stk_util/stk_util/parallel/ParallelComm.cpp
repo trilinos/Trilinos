@@ -13,6 +13,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {
 
@@ -484,10 +485,10 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
   enum { NPSum  = 7 };
   enum { Length = 2 + 2 * NPSum };
 
-  int local_result[ Length ];
-  int global_result[ Length ];
+  int64_t local_result[ Length ];
+  int64_t global_result[ Length ];
 
-  Copy<Length>( local_result , 0 );
+  std::fill( local_result , local_result+Length, 0 );
 
   local_result[ Length - 2 ] = error_alloc ;
   local_result[ Length - 1 ] = local_flag ;
@@ -514,7 +515,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     all_reduce_sum( m_comm , local_result , global_result , Length );
   }
   else {
-    Copy<Length>(global_result, local_result);
+    std::copy(local_result, local_result+Length, global_result);
   }
 
   bool global_flag ; 
@@ -822,8 +823,8 @@ void sum_np_max_2_op(
   void * inv , void * outv , int * len , ParallelDatatype * )
 {
   const int np = *len - 2 ;
-  unsigned * ind  = (unsigned *) inv ;
-  unsigned * outd = (unsigned *) outv ;
+  size_t * ind  = (size_t *) inv ;
+  size_t * outd = (size_t *) outv ;
 
   // Sum all but the last two
   // the last two are maximum
@@ -849,7 +850,7 @@ bool comm_sizes( ParallelMachine comm ,
                  bool local_flag )
 {
   static const char method[] = "stk::comm_unknown_sizes" ;
-  const unsigned uzero = 0 ;
+  const size_t uzero = 0 ;
 
   static MPI_Op mpi_op = MPI_OP_NULL ;
 
@@ -867,16 +868,16 @@ bool comm_sizes( ParallelMachine comm ,
 
   num_msg_maximum = 0 ;
 
-  unsigned num_recv = 0 ;
-  unsigned max_msg  = 0 ;
+  size_t num_recv = 0 ;
+  size_t max_msg  = 0 ;
   bool     global_flag = false ;
 
   {
-    std::vector<unsigned> send_buf( p_size + 2 , uzero );
-    std::vector<unsigned> recv_buf( p_size + 2 , uzero );
+    std::vector<size_t> send_buf( p_size + 2 , uzero );
+    std::vector<size_t> recv_buf( p_size + 2 , uzero );
 
-    unsigned * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
-    unsigned * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
+    size_t * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
+    size_t * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
 
     for ( unsigned i = 0 ; i < p_size ; ++i ) {
       recv_size[i] = 0 ; // Zero output
@@ -888,7 +889,8 @@ bool comm_sizes( ParallelMachine comm ,
     send_buf[p_size]   = max_msg ;
     send_buf[p_size+1] = local_flag ;
 
-    result = MPI_Allreduce(p_send,p_recv,p_size+2,MPI_UNSIGNED,mpi_op,comm);
+    ThrowRequire(sizeof(size_t) == sizeof(long long));
+    result = MPI_Allreduce(p_send,p_recv,p_size,MPI_LONG_LONG,MPI_SUM,comm);
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
@@ -896,10 +898,22 @@ bool comm_sizes( ParallelMachine comm ,
       throw std::runtime_error( msg.str() );
     }
 
+    result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,MPI_LONG_LONG,MPI_MAX,comm);
+
+    if ( result != MPI_SUCCESS ) {
+      // PARALLEL ERROR
+      msg << method << " ERROR: " << result << " == 2nd MPI_AllReduce" ;
+      throw std::runtime_error( msg.str() );
+    }
     num_recv    = recv_buf[ p_rank ] ;
     max_msg     = recv_buf[ p_size ] ;
     global_flag = recv_buf[ p_size + 1 ] ;
 
+//    size_t max_num_recv = 0;
+//    result = MPI_Allreduce(&num_recv,&max_num_recv,1,MPI_LONG_LONG,MPI_MAX,comm);
+//    if (p_rank==0) {
+//    std::cout<<"max_num_recv: "<<max_num_recv<<std::endl;
+//    }
     // max_msg is now the maximum send count,
     // Loop over receive counts to determine
     // if a receive count is larger.
@@ -910,12 +924,12 @@ bool comm_sizes( ParallelMachine comm ,
   }
 
   num_msg_maximum = max_msg ;
-
-  if ( num_msg_bound < max_msg ) {
+//std::cout<<"proc "<<p_rank<<", num_msg_bound: "<<num_msg_bound<<", max_msg: "<<max_msg<<std::endl;
+  if ( false /*num_msg_bound < max_msg && p_size < 1024*/ ) {
     // Dense, pay for an all-to-all
-
+//std::cout<<"doing all-to-all"<<std::endl;
     result =
-       MPI_Alltoall( (void*) send_size , 1 , MPI_UNSIGNED ,
+       MPI_Alltoall( (void*) send_size , 1 , MPI_LONG_LONG ,
                      recv_size , 1 , MPI_UNSIGNED , comm );
 
     if ( MPI_SUCCESS != result ) {
@@ -927,19 +941,20 @@ bool comm_sizes( ParallelMachine comm ,
   else if ( max_msg ) {
     // Sparse, just do point-to-point
 
+//std::cout<<"doing point-to-point"<<std::endl;
     const int mpi_tag = STK_MPI_TAG_SIZING ;
  
     MPI_Request request_null = MPI_REQUEST_NULL ;
     std::vector<MPI_Request> request( num_recv , request_null );
     std::vector<MPI_Status>  status(  num_recv );
-    std::vector<unsigned>    buf( num_recv );
+    std::vector<size_t>    buf( num_recv );
 
     // Post receives for point-to-point message sizes
 
     for ( unsigned i = 0 ; i < num_recv ; ++i ) {
-      unsigned    * const p_buf     = & buf[i] ;
+      size_t    * const p_buf     = & buf[i] ;
       MPI_Request * const p_request = & request[i] ;
-      result = MPI_Irecv( p_buf , 1 , MPI_UNSIGNED ,
+      result = MPI_Irecv( p_buf , 1 , MPI_LONG_LONG ,
                           MPI_ANY_SOURCE , mpi_tag , comm , p_request );
       if ( MPI_SUCCESS != result ) {
         // LOCAL ERROR
@@ -953,9 +968,9 @@ bool comm_sizes( ParallelMachine comm ,
 
     for ( unsigned i = 0 ; i < p_size ; ++i ) {
       int      dst = ( i + p_rank ) % p_size ;
-      unsigned value = send_size[dst] ;
+      size_t value = send_size[dst] ;
       if ( value ) {
-        result = MPI_Send( & value , 1 , MPI_UNSIGNED , dst , mpi_tag , comm );
+        result = MPI_Send( & value , 1 , MPI_LONG_LONG , dst , mpi_tag , comm );
         if ( MPI_SUCCESS != result ) {
           // LOCAL ERROR
           msg << method << " ERROR: " << result << " == MPI_Send" ;
@@ -985,7 +1000,7 @@ bool comm_sizes( ParallelMachine comm ,
       const int recv_tag  = recv_status->MPI_TAG ;
       int recv_count  = 0 ;
 
-      MPI_Get_count( recv_status , MPI_UNSIGNED , & recv_count );
+      MPI_Get_count( recv_status , MPI_LONG_LONG , & recv_count );
 
       if ( recv_tag != mpi_tag || recv_count != 1 ) {
         msg << method << " ERROR: Received buffer mismatch " ;
@@ -994,7 +1009,8 @@ bool comm_sizes( ParallelMachine comm ,
         throw std::runtime_error( msg.str() );
       }
 
-      const unsigned r_size = buf[i] ;
+      const size_t r_size = buf[i] ;
+      ThrowRequireMsg(r_size < 2140000000, "r_size > 2.1B");
       recv_size[ recv_proc ] = r_size ;
     }
   }

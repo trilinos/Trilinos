@@ -45,4 +45,16 @@ STKUNIT_UNIT_TEST(UnitTestParallel, testCommAll)
 
   STKUNIT_ASSERT_EQ(comm_all.parallel_size(), mpi_size);
   STKUNIT_ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);
+
+  for(unsigned p=0; p<mpi_size; ++p) {
+    if (p - mpi_rank <= 10 || mpi_rank - p <= 10) {
+      stk::CommBuffer& buf = comm_all.send_buffer(p);
+      buf.skip<unsigned long>(1);
+    }
+  }
+
+  bool symmetric = false;
+  bool local_error = false;
+  bool global_bad_input = comm_all.allocate_buffers(mpi_size / 4, symmetric, local_error);
+  STKUNIT_ASSERT_EQ(global_bad_input, false);
 }

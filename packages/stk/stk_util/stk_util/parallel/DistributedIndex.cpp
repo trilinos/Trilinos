@@ -485,14 +485,18 @@ void DistributedIndex::update_keys(
   // For each process, we are going to send the number of removed keys,
   // the removed keys, and the added keys. It will be assumed that any keys
   // beyond the number of removed keys will be added keys.
+//  unsigned max_add = 0;
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     if ( count_remove[p] || count_add[p] ) {
       CommBuffer & buf = all.send_buffer( p );
       buf.skip<unsigned long>( 1 );
       buf.skip<KeyType>( count_remove[p] );
       buf.skip<KeyType>( count_add[p] );
+//      if (count_add[p] > max_add) max_add = count_add[p];
     }
   }
+
+//  std::cout<<"max_add proc "<<m_comm_rank<<", max_add: "<<max_add<<std::endl;
 
   // Allocate buffers and perform a global OR of error_flag
   const bool symmetry_flag = false ;

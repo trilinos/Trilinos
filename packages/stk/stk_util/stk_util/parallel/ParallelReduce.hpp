@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
+#include <inttypes.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/SimpleArrayOps.hpp>
 
@@ -43,6 +44,10 @@ void all_reduce_sum( ParallelMachine ,
 /** \brief  Parallel summation to all processors */
 void all_reduce_sum( ParallelMachine ,
                      const int * local , int * global , unsigned count );
+
+/** \brief  Parallel summation to all processors */
+void all_reduce_sum( ParallelMachine comm ,
+                     const int64_t * local , int64_t * global , unsigned count );
 
 /** \brief  Parallel summation to all processors */
 void all_reduce_sum( ParallelMachine ,
