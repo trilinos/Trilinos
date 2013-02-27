@@ -544,7 +544,8 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     ExportPIDs = Bview.importMatrix->ExportPIDs_.size()?&Bview.importMatrix->ExportPIDs_[0]:0;
   }
 
-  Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
+  if(!C.ColMap().SameAs(B.DomainMap()))
+    Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
 
 
 #ifdef ENABLE_MMM_TIMINGS
@@ -554,7 +555,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 #endif
 
   // Update the CrsGraphData
-  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),&*Cimport,NumMyDiagonals);
+  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,NumMyDiagonals);
 
 
 #ifdef ENABLE_MMM_TIMINGS
