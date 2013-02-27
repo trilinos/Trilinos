@@ -33,7 +33,7 @@ Section C: Configuring Trilinos
   --  Viewing configure options and documentation
   --  Enabling extra external repositories with add-on packages
   --  Enabling extra external repositories through a file
-  --  Reconfiguring from scratch
+  --  Reconfiguring completely from scratch
   --  Viewing configure errors
   --  Adding configure timers
 Section D: Building
@@ -117,11 +117,11 @@ C) Configuring (Makefile Generator)
   can be a sub-directory of the Trilinos base source directory or anywhere
   else.
 
-  NOTE: If you mistakenly try to configure for an in-source build
-  (e.g. with 'cmake .') you will get an error message and instructions
-  on how to resolve the problem by deleting the generated
-  CMakeCache.txt file (and other generated files) and then directions
-  on how to create a different build directory as shown above.
+  NOTE: If you mistakenly try to configure for an in-source build (e.g. with
+  'cmake .') you will get an error message and instructions on how to resolve
+  the problem by deleting the generated CMakeCache.txt file (and other
+  generated files) and then follow directions on how to create a different
+  build directory as shown above.
 
 
 (*) Basic configuration of Trilinos:
@@ -830,7 +830,7 @@ C) Configuring (Makefile Generator)
   a) Viewing available configure-time options with documentation
   
     $ cd $BUILD_DIR
-    $ rm CMakeCache.txt
+    $ rm -rf CMakeCache.txt CMakeFiles/
     $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
       $TRILINOS_HOME
   
@@ -842,7 +842,7 @@ C) Configuring (Makefile Generator)
   b) Viewing available configure-time options without documentation
   
     $ cd $BUILD_DIR
-    $ rm CMakeCache.txt
+    $ rm -rf CMakeCache.txt CMakeFiles/
     $ cmake -LA SAME_AS_ABOVE $TRILINOS_HOME
   
   
@@ -894,15 +894,22 @@ C) Configuring (Makefile Generator)
   extra repositories selected who's directory is missing will be ignored.
 
   
-(*) Reconfiguring from scratch
+(*) Reconfiguring completely from scratch
   
-      $ rm CMakeCache.txt ; find . -name CMakeFiles -exec rm -rf {} \;
+      $ rm -rf CMakeCache.txt CMakeFiles/
+      $ find . -name CMakeFiles -exec rm -rf {} \;
       $ ./do-configure
   
     NOTE: Removing the CMakeCache.txt file is often needed when removing
-    variables from the configure line.  Removing the CMakeFiles directories is
+    variables from the configure line.  Removing the CMakeFiles/ directories is
     needed if there are changes in some CMake modules or the CMake version
-    itself.
+    itself.  However, usually removing just the top-level CMakeCache.txt and
+    CMakeFiles/ directory is enough to guarantee a clean reconfigure from a
+    dirty build directory.
+
+    WARNING: Later versions of CMake (2.8.10.2+) require that
+    you remove the top-level CMakeFiles/ directory whenever you remove the
+    CMakeCache.txt file.
 
 
 (*) Viewing configure errors:
