@@ -4490,7 +4490,7 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     }
     else {
       delete Importer;
-      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);fflush(stdout);
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);
     }
   }
   
