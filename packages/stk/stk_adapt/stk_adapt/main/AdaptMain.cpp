@@ -1044,9 +1044,12 @@ namespace stk {
 #if STK_ADAPT_HAVE_YAML_CPP
                         if (histogram_options.size() != 0)
                           {
-                            double current_time= eMesh.get_current_database_time();
-                            double hopt_time = 0.2;
-                            eMesh.read_database_at_time(hopt_time);
+                            //double current_time= eMesh.get_current_database_time();
+                            //double hopt_time = 0.2;
+                            int current_step = eMesh.get_current_database_step();
+                            //eMesh.read_database_at_time(hopt_time);
+                            int step = eMesh.get_database_time_step_count();
+                            eMesh.read_database_at_step(step?step:1);
                             Histograms<double> histograms;
                             HistogramsParser<double> hparser(histogram_options);
                             hparser.create(histograms);
@@ -1059,7 +1062,8 @@ namespace stk {
                               histograms.print();
                               //histograms.print(stk::percept::pout());
                             }
-                            if (0) eMesh.read_database_at_time(current_time);
+                            //if (0) eMesh.read_database_at_time(current_time);
+                            eMesh.read_database_at_step(current_step);
                           }
 #endif
 

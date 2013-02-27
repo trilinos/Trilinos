@@ -81,6 +81,7 @@ namespace stk {
     PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
       m_metaData(NULL),
       m_bulkData(NULL),
+      m_iossMeshDataDidPopulate(false),
       m_sync_io_regions(true),
       m_coordinatesField(NULL),
       m_spatialDim(spatialDimension),
@@ -1125,6 +1126,7 @@ namespace stk {
     PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
       m_metaData(const_cast<mesh::MetaData *>(metaData)),
       m_bulkData(bulkData),
+      m_iossMeshDataDidPopulate(false),
         m_sync_io_regions(true),
         m_coordinatesField(NULL),
         m_spatialDim(metaData->spatial_dimension()),
@@ -1864,15 +1866,12 @@ namespace stk {
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      if (m_bulkData)
-        {
-          // skip - already got bulk data
-        }
-      else
+      if (!m_iossMeshDataDidPopulate)
         {
           mesh_data.populate_bulk_data();
-          m_bulkData = &mesh_data.bulk_data();
+          m_iossMeshDataDidPopulate = true;
         }
+      m_bulkData = &mesh_data.bulk_data();
 
       int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;

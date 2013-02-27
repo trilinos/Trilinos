@@ -747,6 +747,7 @@ namespace stk {
       stk::mesh::MetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
+      bool                                  m_iossMeshDataDidPopulate;
       bool                                  m_sync_io_regions;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;
