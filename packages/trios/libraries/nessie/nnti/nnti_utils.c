@@ -50,6 +50,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include "nnti_utils.h"
 
