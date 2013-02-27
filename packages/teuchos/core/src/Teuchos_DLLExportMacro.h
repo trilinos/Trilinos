@@ -39,4 +39,7 @@
 #  define TEUCHOSNUMERICS_LIB_DLL_EXPORT
 #endif
 
+/* Defining this to allow the backwards compatibility testing to work. This is not needed for library code */
+#define TEUCHOS_LIB_DLL_EXPORT
+
 /* There is not export stuff used in the remainder subpackage yet. */
