@@ -97,7 +97,7 @@ class NcGroupInfo {
 public:
 
     /** Create a new root group */
-    NcGroupInfo(const int ncid, const NcFileInfo &finfo);
+    NcGroupInfo(const int ncid, const NcFileInfo &fileInfo);
 
 
     /** Create a new child group. */
@@ -108,7 +108,7 @@ public:
 
 
     /** Create a root group from the struct nc_group. */
-    NcGroupInfo(const struct nc_group &group, const NcFileInfo &finfo);
+    NcGroupInfo(const struct nc_group &group, const NcFileInfo &fileInfo);
 
 
     virtual ~NcGroupInfo();
@@ -295,21 +295,21 @@ protected:
 
 
 private:
-    const int ncid;              /* id of this group */
-    const NcFileInfo fileInfo;   /* points to root group (null if we are the root) */
-    NcGroupInfo *parent;   /* pointer to parent (null if we are the root) */
-    std::string name;            /* name of this group "/" if root */
-    int unlimdimid;
+    const int        _ncid;              /* id of this group */
+    const NcFileInfo _fileInfo;   /* points to root group (null if we are the root) */
+    NcGroupInfo     *_parent;   /* pointer to parent (null if we are the root) */
+    std::string      _name;            /* name of this group "/" if root */
+    int              _unlimdimid;
 
 
 public:
-    std::map<int, NcVarInfo *> vars;          /* variables used by the group */
-    std::map<string, NcVarInfo *> varsByName; /* variables mapped by name */
-    std::map<int, NcDimInfo *> dims;          /* Dimensions used by this group */
+    std::map<int, NcVarInfo *>    _vars;          /* variables used by the group */
+    std::map<string, NcVarInfo *> _varsByName; /* variables mapped by name */
+    std::map<int, NcDimInfo *>    _dims;          /* Dimensions used by this group */
 
-    std::map<std::string, NcAttInfo *> atts;  /* global attributes for this group */
+    std::map<std::string, NcAttInfo *> _atts;  /* global attributes for this group */
 
-    std::map<int, NcGroupInfo *> children;    /* Subgroups of this group */
+    std::map<int, NcGroupInfo *> _children;    /* Subgroups of this group */
 };
 
 

@@ -64,12 +64,12 @@ NcDimInfo::NcDimInfo(
         const int dimid,
         const char *name,
         const size_t len) :
-            dimid(dimid), name(name), len(len)
+            _dimid(dimid), _name(name), _len(len)
 {
 }
 
 NcDimInfo::NcDimInfo(const nc_dim &dim) :
-    dimid(dim.dimid), name(dim.name), len(dim.len)
+    _dimid(dim.dimid), _name(dim.name), _len(dim.len)
 {
 }
 
@@ -82,9 +82,9 @@ NcDimInfo::~NcDimInfo() {
  */
 int NcDimInfo::copyTo(struct nc_dim &dim)
 {
-    dim.dimid = this->dimid;
-    dim.name = strdup(this->name.c_str());
-    dim.len = this->len;
+    dim.dimid = this->_dimid;
+    dim.name = strdup(this->_name.c_str());
+    dim.len = this->_len;
 
     return NC_NOERR;
 }
@@ -103,7 +103,7 @@ int NcDimInfo::inq_dim(char *name, size_t *lengthp)
 int NcDimInfo::inq_dimname(char *name)
 {
     int rc = NC_NOERR;
-    strcpy(name, this->name.c_str());
+    strcpy(name, this->_name.c_str());
     return rc;
 }
 
@@ -111,7 +111,7 @@ int NcDimInfo::inq_dimname(char *name)
 int NcDimInfo::inq_dimlen(size_t *lengthp)
 {
     int rc = NC_NOERR;
-    *lengthp = this->len;
+    *lengthp = this->_len;
     return rc;
 }
 
@@ -119,7 +119,7 @@ int NcDimInfo::inq_dimlen(size_t *lengthp)
 int NcDimInfo::inq_dimid(int *dimid)
 {
     int rc = NC_NOERR;
-    *dimid = this->dimid;
+    *dimid = this->_dimid;
     return rc;
 }
 
@@ -127,7 +127,7 @@ int NcDimInfo::inq_dimid(int *dimid)
 int NcDimInfo::rename_dim(const char *newname)
 {
     int rc = NC_NOERR;
-    this->name = string(newname);
+    this->_name = string(newname);
     return rc;
 }
 

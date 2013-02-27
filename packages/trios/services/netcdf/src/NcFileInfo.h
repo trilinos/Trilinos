@@ -77,11 +77,11 @@ public:
 
 private:
 
-    const string path;
-    const int mode;
-    const size_t initialsz;
-    const size_t chunksize;
-    int format;
+    const string _path;
+    const int    _mode;
+    const size_t _initialsz;
+    const size_t _chunksize;
+    int          _format;
 
     /** Constructor for netcdf Datasets.  Only members of this class
      *  can call the constructor.

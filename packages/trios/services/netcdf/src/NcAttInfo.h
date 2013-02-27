@@ -119,9 +119,9 @@ public:
 
 private:
 
-    int xtype;
-    string name;
-    size_t len;
+    int    _xtype;
+    string _name;
+    size_t _len;
 };
 
 #endif /* NCATTR_H_ */

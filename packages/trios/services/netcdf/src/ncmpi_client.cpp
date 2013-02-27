@@ -523,8 +523,8 @@ int _ncmpi_put_att_type(
 #endif
             }
             else {
-                if (info->vars.find(varid) != info->vars.end()) {
-                    info->vars[varid]->def_att(name, (nc_type)xtype, len);
+                if (info->_vars.find(varid) != info->_vars.end()) {
+                    info->_vars[varid]->def_att(name, (nc_type)xtype, len);
                 }
                 else {
                     log_error(netcdf_debug_level, "unable to find varid=%d", varid);
