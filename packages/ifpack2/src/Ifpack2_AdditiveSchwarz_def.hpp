@@ -245,7 +245,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
   UseReordering_ = List_.get("schwarz: use reordering",false);
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if !defined(HAVE_IFPACK2_XPETRA) && !defined(HAVE_IFPACK2_ZOLTAN2)
   // If we don't have Zoltan2, we just turn the reordering off completely...
   UseReordering_=false;
 #endif
