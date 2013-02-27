@@ -3533,7 +3533,6 @@ namespace Tpetra {
         for (size_type i = 0; i < exportLIDs.size(); ++i) {
           // Get a (locally indexed) view of the current row's data.
 	  const LO LID = exportLIDs[i];
-          const GO GID = exportGIDs[i];
           src_mat.getLocalRowView (LID, curLids, curVals);
 
 	  // Convert local indices to global indices.
