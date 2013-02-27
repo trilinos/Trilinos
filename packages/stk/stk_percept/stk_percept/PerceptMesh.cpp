@@ -1197,6 +1197,8 @@ namespace stk {
       //EXCEPTWATCH;
       m_coordinatesField = NULL;
       if (m_geometry_parts) delete m_geometry_parts;
+      m_iossMeshData = Teuchos::null;
+
     }
 
     PerceptMesh::~PerceptMesh()
@@ -1866,12 +1868,12 @@ namespace stk {
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
       stk::io::MeshData& mesh_data = *m_iossMeshData;
-      if (!m_iossMeshDataDidPopulate)
+      if (!mesh_data.bulk_data_is_set())
         {
           mesh_data.populate_bulk_data();
           m_iossMeshDataDidPopulate = true;
+          m_bulkData = &mesh_data.bulk_data();
         }
-      m_bulkData = &mesh_data.bulk_data();
 
       int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
