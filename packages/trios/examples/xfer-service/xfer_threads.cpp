@@ -115,6 +115,7 @@ void *process_pending_reqs(void *arg)
     pthread_mutex_unlock(&pending_mutex);
 
     log_info(debug_level, "%d: exiting process_pending_reqs thread", id);
+    return NULL;
 }
 
 
