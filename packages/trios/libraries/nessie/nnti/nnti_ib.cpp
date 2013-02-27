@@ -255,8 +255,8 @@ typedef struct {
     struct ibv_cq           *data_cq;
     struct ibv_srq          *data_srq;
 
-    int32_t req_srq_count;
-    int32_t data_srq_count;
+    uint32_t req_srq_count;
+    uint32_t data_srq_count;
 
     uint16_t nic_lid;
     int      nic_port;
@@ -333,11 +333,10 @@ static void create_peer(
         char *name,
         NNTI_ip_addr addr,
         NNTI_tcp_port port);
-static void copy_peer(
-        NNTI_peer_t *src,
-        NNTI_peer_t *dest);
+//static void copy_peer(
+//        NNTI_peer_t *src,
+//        NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
-static int start_connection_listener_thread(void);
 static NNTI_result_t check_listen_socket_for_new_connections();
 static struct ibv_device *get_ib_device(void);
 static int tcp_read(int sock, void *incoming, size_t len);
@@ -369,8 +368,8 @@ static NNTI_result_t poll_comp_channel(
         struct ibv_cq           *cq,
         int timeout);
 static void print_ib_conn(ib_connection *c);
-static void print_qpn_map(void);
-static void print_peer_map(void);
+//static void print_qpn_map(void);
+//static void print_peer_map(void);
 static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *conn);
 static NNTI_result_t insert_conn_qpn(const NNTI_qp_num qpn, ib_connection *conn);
 static ib_connection *get_conn_peer(const NNTI_peer_t *peer);
@@ -382,7 +381,7 @@ static ib_connection *del_conn_qpn(const NNTI_qp_num qpn);
 static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
 static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
 static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
-static void print_bufhash_map(void);
+//static void print_bufhash_map(void);
 
 static NNTI_result_t insert_wr_wrhash(ib_work_request *);
 static ib_work_request *get_wr_wrhash(const uint32_t bufhash);
@@ -514,8 +513,8 @@ NNTI_result_t NNTI_ib_init (
 
     struct ibv_device_attr dev_attr;
     struct ibv_port_attr   dev_port_attr;
-    uint32_t cqe_count;
-    uint32_t srq_count;
+//    uint32_t cqe_count;
+//    uint32_t srq_count;
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
@@ -654,7 +653,6 @@ NNTI_result_t NNTI_ib_init (
         }
 
         init_server_listen_socket();
-//        start_connection_listener_thread();
 
         if (logging_info(nnti_debug_level)) {
             fprintf(logger_get_file(), "InfiniBand Initialized: host(%s) port(%u)\n",
@@ -893,7 +891,7 @@ NNTI_result_t NNTI_ib_register_memory (
 
     uint32_t cqe_num;
 
-    struct ibv_recv_wr *bad_wr=NULL;
+//    struct ibv_recv_wr *bad_wr=NULL;
 
     NNTI_buffer_t     *old_buf=NULL;
     ib_memory_handle *ib_mem_hdl=NULL;
@@ -958,7 +956,7 @@ NNTI_result_t NNTI_ib_register_memory (
                     num_elements*element_size,
                     IBV_ACCESS_LOCAL_WRITE);
 
-            for (int i=0;i<cqe_num;i++) {
+            for (uint32_t i=0;i<cqe_num;i++) {
                 post_recv_work_request(
                         reg_buf,
                         i,
@@ -1546,7 +1544,7 @@ NNTI_result_t NNTI_ib_wait (
     ib_memory_handle        *ib_mem_hdl=NULL;
     ib_work_request         *wr=NULL;
     ib_request_queue_handle *q_hdl=NULL;
-    ib_connection           *conn=NULL;
+//    ib_connection           *conn=NULL;
 
     const NNTI_buffer_t  *wait_buf=NULL;
 
@@ -1807,8 +1805,8 @@ NNTI_result_t NNTI_ib_waitany (
     NNTI_result_t nnti_rc=NNTI_OK;
     ib_memory_handle        *ib_mem_hdl=NULL;
     ib_work_request         *wr=NULL;
-    ib_request_queue_handle *q_hdl=NULL;
-    ib_connection           *conn=NULL;
+//    ib_request_queue_handle *q_hdl=NULL;
+//    ib_connection           *conn=NULL;
     const NNTI_buffer_t     *wait_buf=NULL;
 
     int ibv_rc=0;
@@ -1844,7 +1842,7 @@ NNTI_result_t NNTI_ib_waitany (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((ib_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -2048,8 +2046,8 @@ NNTI_result_t NNTI_ib_waitall (
     NNTI_result_t nnti_rc=NNTI_OK;
     ib_memory_handle        *ib_mem_hdl=NULL;
     ib_work_request         *wr=NULL;
-    ib_request_queue_handle *q_hdl=NULL;
-    ib_connection           *conn=NULL;
+//    ib_request_queue_handle *q_hdl=NULL;
+//    ib_connection           *conn=NULL;
     const NNTI_buffer_t     *wait_buf=NULL;
 
     int ibv_rc=0;
@@ -2074,7 +2072,7 @@ NNTI_result_t NNTI_ib_waitall (
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
-            for (int i=0;i<buf_count;i++) {
+            for (uint32_t i=0;i<buf_count;i++) {
                 memset(status[i], 0, sizeof(NNTI_status_t));
                 status[i]->op     = remote_op;
                 status[i]->result = NNTI_EINVAL;
@@ -2087,7 +2085,7 @@ NNTI_result_t NNTI_ib_waitall (
     assert(buf_count > 0);
     if (buf_count > 1) {
         /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (int i=0;i<buf_count;i++) {
+        for (uint32_t i=0;i<buf_count;i++) {
             if (buf_list[i] != NULL) {
                 assert(((ib_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
             }
@@ -2218,7 +2216,7 @@ retry:
     }
 
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
 
         if (nnti_rc==NNTI_OK) {
@@ -2532,7 +2530,7 @@ static int register_ack(ib_work_request *wr)
 static int unregister_memory(ib_memory_handle *hdl)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
-    int i=0;
+//    int i=0;
     int ibv_rc=0;
     trios_declare_timer(callTime);
 
@@ -2871,6 +2869,9 @@ int process_event(
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
 //                print_ack_buf(&wr->ack);
 //            }
+        case UNKNOWN_BUFFER:
+        default:
+
             break;
     }
 
@@ -2943,7 +2944,8 @@ static NNTI_result_t post_recv_work_request(
     wr->rq_wr.num_sge=1;
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -2953,7 +2955,8 @@ static NNTI_result_t post_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3031,7 +3034,8 @@ static NNTI_result_t post_ack_recv_work_request(
     wr->rq_wr.num_sge=1;
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3041,7 +3045,8 @@ static NNTI_result_t post_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3097,7 +3102,8 @@ static NNTI_result_t repost_recv_work_request(
     }
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3107,7 +3113,8 @@ static NNTI_result_t repost_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3160,7 +3167,8 @@ static NNTI_result_t repost_ack_recv_work_request(
     }
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3170,7 +3178,8 @@ static NNTI_result_t repost_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        if (ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
             return (NNTI_result_t)errno;
@@ -3292,7 +3301,7 @@ static int8_t is_any_buf_op_complete(
 
     log_debug(nnti_debug_level, "enter");
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         if ((buf_list[i] != NULL) &&
             (is_wr_queue_empty(buf_list[i]) == FALSE) &&
             (is_buf_op_complete(buf_list[i]) == TRUE)) {
@@ -3316,7 +3325,7 @@ static int8_t is_all_buf_ops_complete(
 
     log_debug(nnti_debug_level, "enter");
 
-    for (int i=0;i<buf_count;i++) {
+    for (uint32_t i=0;i<buf_count;i++) {
         if ((buf_list[i] != NULL) &&
             (is_wr_queue_empty(buf_list[i]) == FALSE) &&
             (is_buf_op_complete(buf_list[i]) == FALSE)) {
@@ -3423,19 +3432,19 @@ static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_t
     log_debug(nnti_debug_level, "exit");
 }
 
-static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
-{
-    log_debug(nnti_debug_level, "enter");
-
-    strncpy(dest->url, src->url, NNTI_URL_LEN);
-    dest->url[NNTI_URL_LEN-1]='\0';
-
-    src->peer.transport_id                    =NNTI_TRANSPORT_IB;
-    dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
-    dest->peer.NNTI_remote_process_t_u.ib.port=src->peer.NNTI_remote_process_t_u.ib.port;
-
-    log_debug(nnti_debug_level, "exit");
-}
+//static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
+//{
+//    log_debug(nnti_debug_level, "enter");
+//
+//    strncpy(dest->url, src->url, NNTI_URL_LEN);
+//    dest->url[NNTI_URL_LEN-1]='\0';
+//
+//    src->peer.transport_id                    =NNTI_TRANSPORT_IB;
+//    dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
+//    dest->peer.NNTI_remote_process_t_u.ib.port=src->peer.NNTI_remote_process_t_u.ib.port;
+//
+//    log_debug(nnti_debug_level, "exit");
+//}
 
 static int init_server_listen_socket()
 {
@@ -3502,7 +3511,7 @@ static void transition_connection_to_ready(
         int sock,
         ib_connection *conn)
 {
-    int i;
+//    int i;
     int rc=NNTI_OK;
     trios_declare_timer(callTime);
 
@@ -3588,7 +3597,7 @@ static void transition_qp_to_ready(
 static void transition_connection_to_error(
         ib_connection *conn)
 {
-    int i;
+//    int i;
     trios_declare_timer(callTime);
 
     /* bring the two QPs up to RTR */
@@ -3729,8 +3738,8 @@ static int new_client_connection(
         ib_connection *c,
         int sock)
 {
-    int i, rc;
-    int flags=0;
+    int rc;
+//    int flags=0;
     struct ibv_qp_init_attr att;
 
     /*
@@ -3821,8 +3830,8 @@ static int new_server_connection(
         ib_connection *c,
         int sock)
 {
-    int i, rc;
-    int flags=0;
+    int rc;
+//    int flags=0;
     struct ibv_qp_init_attr att;
 
     /*
@@ -4084,27 +4093,27 @@ static ib_connection *del_conn_qpn(const NNTI_qp_num qpn)
 
     return(conn);
 }
-static void print_qpn_map()
-{
-    ib_connection     *conn=NULL;
-    conn_by_qpn_iter_t i;
-    for (i=connections_by_qpn.begin(); i != connections_by_qpn.end(); i++) {
-        conn=i->second;
-        log_debug(nnti_debug_level, "qpn_map key=%llu conn=%p (name=%s, addr=%llu, port=%llu)",
-                i->first, conn, conn->peer_name, (uint64_t)conn->peer_addr, (uint64_t)conn->peer_port);
-    }
-}
-static void print_peer_map()
-{
-    ib_connection      *conn=NULL;
-    conn_by_peer_iter_t i;
-    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
-        addrport_key key=i->first;
-        conn=i->second;
-        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p (name=%s, addr=%llu, port=%llu)",
-                (uint64_t)key.addr, (uint64_t)key.port, conn, conn->peer_name, (uint64_t)conn->peer_addr, (uint64_t)conn->peer_port);
-    }
-}
+//static void print_qpn_map()
+//{
+//    ib_connection     *conn=NULL;
+//    conn_by_qpn_iter_t i;
+//    for (i=connections_by_qpn.begin(); i != connections_by_qpn.end(); i++) {
+//        conn=i->second;
+//        log_debug(nnti_debug_level, "qpn_map key=%llu conn=%p (name=%s, addr=%llu, port=%llu)",
+//                i->first, conn, conn->peer_name, (uint64_t)conn->peer_addr, (uint64_t)conn->peer_port);
+//    }
+//}
+//static void print_peer_map()
+//{
+//    ib_connection      *conn=NULL;
+//    conn_by_peer_iter_t i;
+//    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+//        addrport_key key=i->first;
+//        conn=i->second;
+//        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p (name=%s, addr=%llu, port=%llu)",
+//                (uint64_t)key.addr, (uint64_t)key.port, conn, conn->peer_name, (uint64_t)conn->peer_addr, (uint64_t)conn->peer_port);
+//    }
+//}
 
 static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
 {
@@ -4161,22 +4170,22 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
 
     return(buf);
 }
-static void print_bufhash_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (buffers_by_bufhash.empty()) {
-        log_debug(nnti_debug_level, "bufhash_map is empty");
-        return;
-    }
-
-    buf_by_bufhash_iter_t i;
-    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
-        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
-    }
-}
+//static void print_bufhash_map()
+//{
+//    if (!logging_debug(nnti_debug_level)) {
+//        return;
+//    }
+//
+//    if (buffers_by_bufhash.empty()) {
+//        log_debug(nnti_debug_level, "bufhash_map is empty");
+//        return;
+//    }
+//
+//    buf_by_bufhash_iter_t i;
+//    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
+//        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
+//    }
+//}
 
 static NNTI_result_t insert_wr_wrhash(ib_work_request *wr)
 {
@@ -4292,8 +4301,8 @@ static NNTI_result_t wr_pool_register(
 static NNTI_result_t wr_pool_deregister(
         ib_work_request *wr)
 {
-    NNTI_result_t rc=NNTI_OK; /* return code */
-    int i=0;
+//    NNTI_result_t rc=NNTI_OK; /* return code */
+//    int i=0;
     int ibv_rc=0;
     trios_declare_timer(callTime);
 
@@ -4348,8 +4357,8 @@ cleanup:
 }
 static ib_work_request *wr_pool_rdma_pop(void)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t i;
+//    NNTI_result_t  rc=NNTI_OK;
+//    uint32_t i;
     ib_work_request *wr=NULL;
 
     log_debug(nnti_debug_level, "enter");
@@ -4367,8 +4376,8 @@ static ib_work_request *wr_pool_rdma_pop(void)
 }
 static ib_work_request *wr_pool_sendrecv_pop(void)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t i;
+//    NNTI_result_t  rc=NNTI_OK;
+//    uint32_t i;
     ib_work_request *wr=NULL;
 
     log_debug(nnti_debug_level, "enter");
@@ -4386,8 +4395,8 @@ static ib_work_request *wr_pool_sendrecv_pop(void)
 }
 static void wr_pool_rdma_push(ib_work_request *wr)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t i;
+//    NNTI_result_t  rc=NNTI_OK;
+//    uint32_t i;
 
     log_debug(nnti_debug_level, "enter");
 
@@ -4405,8 +4414,8 @@ static void wr_pool_rdma_push(ib_work_request *wr)
 }
 static void wr_pool_sendrecv_push(ib_work_request *wr)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t i;
+//    NNTI_result_t  rc=NNTI_OK;
+//    uint32_t i;
 
     log_debug(nnti_debug_level, "enter");
 
@@ -4425,7 +4434,7 @@ static void wr_pool_sendrecv_push(ib_work_request *wr)
 static NNTI_result_t wr_pool_fini(void)
 {
     NNTI_result_t  rc=NNTI_OK;
-    uint32_t i;
+//    uint32_t i;
     ib_work_request *wr=NULL;
 
     log_debug(nnti_debug_level, "enter");
@@ -4533,7 +4542,7 @@ out:
 static void close_connection(ib_connection *c)
 {
     int rc;
-    int i;
+//    int i;
 
     if (c==NULL) return;
 
@@ -4589,7 +4598,7 @@ static NNTI_result_t check_for_waiting_connection()
     } else {
         static int connection_count = 0;
         char         *peer_hostname = strdup(inet_ntoa(ssin.sin_addr));
-        NNTI_ip_addr  peer_addr  = ssin.sin_addr.s_addr;
+//        NNTI_ip_addr  peer_addr  = ssin.sin_addr.s_addr;
         NNTI_tcp_port peer_port  = ntohs(ssin.sin_port);
 
         conn = (ib_connection *)calloc(1, sizeof(ib_connection));    // TODO: FIND OUT WHERE THIS IS FREED
@@ -4803,7 +4812,7 @@ cleanup:
 
 static void print_ib_conn(ib_connection *c)
 {
-    int i=0;
+//    int i=0;
     log_level debug_level=nnti_debug_level;
 
     log_debug(debug_level, "c->peer_name       =%s", c->peer_name);

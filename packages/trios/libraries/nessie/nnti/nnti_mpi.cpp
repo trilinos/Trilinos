@@ -254,19 +254,19 @@ static int8_t is_all_buf_ops_complete(
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count);
 
-static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
-static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
-static void print_bufhash_map(void);
+//static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
+//static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
+//static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
+//static void print_bufhash_map(void);
 
 static NNTI_result_t insert_wr_wrhash(mpi_work_request *);
-static mpi_work_request *get_wr_wrhash(const uint32_t bufhash);
+//static mpi_work_request *get_wr_wrhash(const uint32_t bufhash);
 static mpi_work_request *del_wr_wrhash(mpi_work_request *);
-static void print_wrhash_map(void);
+//static void print_wrhash_map(void);
 
 static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf);
 static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf);
-static void print_target_buffer_deque();
+//static void print_target_buffer_deque();
 
 static void create_status(
         const NNTI_buffer_t  *reg_buf,
@@ -276,9 +276,9 @@ static void create_status(
 static void create_peer(
         NNTI_peer_t *peer,
         int          rank);
-static void copy_peer(
-        NNTI_peer_t *src,
-        NNTI_peer_t *dest);
+//static void copy_peer(
+//        NNTI_peer_t *src,
+//        NNTI_peer_t *dest);
 
 
 /* Thomas Wang's 64 bit to 32 bit Hash Function (http://www.concentric.net/~ttwang/tech/inthash.htm) */
@@ -1035,7 +1035,7 @@ NNTI_result_t NNTI_mpi_wait (
     mpi_work_request  *wr=NULL;
 
     long elapsed_time=0;
-    long timeout_per_call;
+//    long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
 
@@ -1066,7 +1066,7 @@ NNTI_result_t NNTI_mpi_wait (
     } else {
         log_debug(debug_level, "buffer op NOT complete");
 
-        timeout_per_call = MIN_TIMEOUT;
+//        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1232,7 +1232,7 @@ NNTI_result_t NNTI_mpi_waitany (
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
     long elapsed_time=0;
-    long timeout_per_call;
+//    long timeout_per_call;
 
     long entry_time=trios_get_time_ms();
 
@@ -1282,7 +1282,7 @@ NNTI_result_t NNTI_mpi_waitany (
             }
         }
 
-        timeout_per_call = MIN_TIMEOUT;
+//        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1410,7 +1410,7 @@ NNTI_result_t NNTI_mpi_waitall (
 //    int i=0;
 
     long elapsed_time=0;
-    long timeout_per_call;
+//    long timeout_per_call;
 
     long entry_time=trios_get_time_ms();
 
@@ -1460,7 +1460,7 @@ NNTI_result_t NNTI_mpi_waitall (
             }
         }
 
-        timeout_per_call = MIN_TIMEOUT;
+//        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -2421,77 +2421,77 @@ static int8_t is_all_buf_ops_complete(
     return(rc);
 }
 
-static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
-{
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t h=hash6432shift((uint64_t)buf->payload);
-
-    nthread_lock(&nnti_buf_bufhash_lock);
-    assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
-    buffers_by_bufhash[h] = buf;
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p bufhash=%lx)", buf, h);
-
-    return(rc);
-}
-static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
-{
-    NNTI_buffer_t *buf=NULL;
-
-    log_debug(nnti_debug_level, "looking for bufhash=%x", (uint64_t)bufhash);
-    nthread_lock(&nnti_buf_bufhash_lock);
-    if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
-        buf = buffers_by_bufhash[bufhash];
-    }
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    if (buf != NULL) {
-        log_debug(nnti_debug_level, "buffer found (buf=%p)", buf);
-        return buf;
-    }
-
-    log_debug(nnti_debug_level, "buffer NOT found");
-//    print_bufhash_map();
-
-    return(NULL);
-}
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
-{
-    uint32_t h=hash6432shift((uint64_t)buf->payload);
-    log_level debug_level = nnti_debug_level;
-
-    nthread_lock(&nnti_buf_bufhash_lock);
-    if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
-        buf = buffers_by_bufhash[h];
-    }
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    if (buf != NULL) {
-        log_debug(debug_level, "buffer found");
-        buffers_by_bufhash.erase(h);
-    } else {
-        log_debug(debug_level, "buffer NOT found");
-    }
-
-    return(buf);
-}
-static void print_bufhash_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (buffers_by_bufhash.empty()) {
-        log_debug(nnti_debug_level, "bufhash_map is empty");
-        return;
-    }
-
-    buf_by_bufhash_iter_t i;
-    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
-        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
-    }
-}
+//static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
+//{
+//    NNTI_result_t  rc=NNTI_OK;
+//    uint32_t h=hash6432shift((uint64_t)buf->payload);
+//
+//    nthread_lock(&nnti_buf_bufhash_lock);
+//    assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
+//    buffers_by_bufhash[h] = buf;
+//    nthread_unlock(&nnti_buf_bufhash_lock);
+//
+//    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p bufhash=%lx)", buf, h);
+//
+//    return(rc);
+//}
+//static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
+//{
+//    NNTI_buffer_t *buf=NULL;
+//
+//    log_debug(nnti_debug_level, "looking for bufhash=%x", (uint64_t)bufhash);
+//    nthread_lock(&nnti_buf_bufhash_lock);
+//    if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
+//        buf = buffers_by_bufhash[bufhash];
+//    }
+//    nthread_unlock(&nnti_buf_bufhash_lock);
+//
+//    if (buf != NULL) {
+//        log_debug(nnti_debug_level, "buffer found (buf=%p)", buf);
+//        return buf;
+//    }
+//
+//    log_debug(nnti_debug_level, "buffer NOT found");
+////    print_bufhash_map();
+//
+//    return(NULL);
+//}
+//static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
+//{
+//    uint32_t h=hash6432shift((uint64_t)buf->payload);
+//    log_level debug_level = nnti_debug_level;
+//
+//    nthread_lock(&nnti_buf_bufhash_lock);
+//    if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
+//        buf = buffers_by_bufhash[h];
+//    }
+//    nthread_unlock(&nnti_buf_bufhash_lock);
+//
+//    if (buf != NULL) {
+//        log_debug(debug_level, "buffer found");
+//        buffers_by_bufhash.erase(h);
+//    } else {
+//        log_debug(debug_level, "buffer NOT found");
+//    }
+//
+//    return(buf);
+//}
+//static void print_bufhash_map()
+//{
+//    if (!logging_debug(nnti_debug_level)) {
+//        return;
+//    }
+//
+//    if (buffers_by_bufhash.empty()) {
+//        log_debug(nnti_debug_level, "bufhash_map is empty");
+//        return;
+//    }
+//
+//    buf_by_bufhash_iter_t i;
+//    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
+//        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
+//    }
+//}
 
 static NNTI_result_t insert_wr_wrhash(mpi_work_request *wr)
 {
@@ -2507,27 +2507,27 @@ static NNTI_result_t insert_wr_wrhash(mpi_work_request *wr)
 
     return(rc);
 }
-static mpi_work_request *get_wr_wrhash(const uint32_t wrhash)
-{
-    mpi_work_request *wr=NULL;
-
-    log_debug(nnti_debug_level, "looking for wrhash=%x", (uint64_t)wrhash);
-    nthread_lock(&nnti_wr_wrhash_lock);
-    if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
-        wr = wr_by_wrhash[wrhash];
-    }
-    nthread_unlock(&nnti_wr_wrhash_lock);
-
-    if (wr != NULL) {
-        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
-        return wr;
-    }
-
-    log_debug(nnti_debug_level, "work request NOT found");
-//    print_wrhash_map();
-
-    return(NULL);
-}
+//static mpi_work_request *get_wr_wrhash(const uint32_t wrhash)
+//{
+//    mpi_work_request *wr=NULL;
+//
+//    log_debug(nnti_debug_level, "looking for wrhash=%x", (uint64_t)wrhash);
+//    nthread_lock(&nnti_wr_wrhash_lock);
+//    if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
+//        wr = wr_by_wrhash[wrhash];
+//    }
+//    nthread_unlock(&nnti_wr_wrhash_lock);
+//
+//    if (wr != NULL) {
+//        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
+//        return wr;
+//    }
+//
+//    log_debug(nnti_debug_level, "work request NOT found");
+////    print_wrhash_map();
+//
+//    return(NULL);
+//}
 static mpi_work_request *del_wr_wrhash(mpi_work_request *wr)
 {
     uint32_t h=hash6432shift((uint64_t)wr);
@@ -2548,22 +2548,22 @@ static mpi_work_request *del_wr_wrhash(mpi_work_request *wr)
 
     return(wr);
 }
-static void print_wrhash_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (wr_by_wrhash.empty()) {
-        log_debug(nnti_debug_level, "wrhash_map is empty");
-        return;
-    }
-
-    wr_by_wrhash_iter_t i;
-    for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
-        log_debug(nnti_debug_level, "wrhash_map key=%lx wr=%p", i->first, i->second);
-    }
-}
+//static void print_wrhash_map()
+//{
+//    if (!logging_debug(nnti_debug_level)) {
+//        return;
+//    }
+//
+//    if (wr_by_wrhash.empty()) {
+//        log_debug(nnti_debug_level, "wrhash_map is empty");
+//        return;
+//    }
+//
+//    wr_by_wrhash_iter_t i;
+//    for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
+//        log_debug(nnti_debug_level, "wrhash_map key=%lx wr=%p", i->first, i->second);
+//    }
+//}
 
 static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf)
 {
@@ -2609,22 +2609,22 @@ static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf)
 
     return(buf);
 }
-static void print_target_buffer_deque()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (target_buffers.empty()) {
-        log_debug(nnti_debug_level, "target_buffers is empty");
-        return;
-    }
-
-    target_buffer_queue_iter_t i;
-    for (i=target_buffers.begin(); i != target_buffers.end(); i++) {
-        log_debug(nnti_debug_level, "target buffer (%p)", *i);
-    }
-}
+//static void print_target_buffer_deque()
+//{
+//    if (!logging_debug(nnti_debug_level)) {
+//        return;
+//    }
+//
+//    if (target_buffers.empty()) {
+//        log_debug(nnti_debug_level, "target_buffers is empty");
+//        return;
+//    }
+//
+//    target_buffer_queue_iter_t i;
+//    for (i=target_buffers.begin(); i != target_buffers.end(); i++) {
+//        log_debug(nnti_debug_level, "target buffer (%p)", *i);
+//    }
+//}
 
 static void create_status(
         const NNTI_buffer_t  *reg_buf,
@@ -2684,14 +2684,14 @@ static void create_peer(NNTI_peer_t *peer, int rank)
     log_debug(nnti_debug_level, "exit");
 }
 
-static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
-{
-    log_debug(nnti_debug_level, "enter");
-
-    strcpy(dest->url, src->url);
-
-    dest->peer.transport_id                     = NNTI_TRANSPORT_MPI;
-    dest->peer.NNTI_remote_process_t_u.mpi.rank = src->peer.NNTI_remote_process_t_u.mpi.rank;
-
-    log_debug(nnti_debug_level, "exit");
-}
+//static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
+//{
+//    log_debug(nnti_debug_level, "enter");
+//
+//    strcpy(dest->url, src->url);
+//
+//    dest->peer.transport_id                     = NNTI_TRANSPORT_MPI;
+//    dest->peer.NNTI_remote_process_t_u.mpi.rank = src->peer.NNTI_remote_process_t_u.mpi.rank;
+//
+//    log_debug(nnti_debug_level, "exit");
+//}
