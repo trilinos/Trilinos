@@ -52,8 +52,9 @@ SET(SOURCES ${SOURCES}
 IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/transform)
-  
+
   SET(HEADERS ${HEADERS}
+    transform/EpetraExt_SubCopy_CrsMatrix.h
     transform/EpetraExt_Transform.h
     transform/EpetraExt_Transform_Composite.h
     transform/EpetraExt_Permutation.h
@@ -74,10 +75,11 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_Reindex_LinearProblem2.h
     transform/EpetraExt_SolverMap_CrsMatrix.h
     transform/EpetraExt_SolverMap_LinearProblem.h
-    transform/EpetraExt_BlockAdjacencyGraph.h 
+    transform/EpetraExt_BlockAdjacencyGraph.h
     )
-  
+
   SET(SOURCES ${SOURCES}
+    transform/EpetraExt_SubCopy_CrsMatrix.cpp
     transform/EpetraExt_Permutation.cpp
     transform/EpetraExt_LPTrans_From_GraphTrans.cpp
     transform/EpetraExt_LPTrans_From_MatrixTrans.cpp
@@ -97,19 +99,19 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_SolverMap_LinearProblem.cpp
     transform/EpetraExt_BlockAdjacencyGraph.cpp
     )
-  
+
   IF (${PACKAGE_NAME}_BUILD_GRAPH_REORDERINGS AND ${PACKAGE_NAME}_BUILD_EXPERIMENTAL)
-  
+
     SET(HEADERS ${HEADERS}
       transform/EpetraExt_SymmRCM_CrsGraph.h
       transform/EpetraExt_AMD_CrsGraph.h
       )
-    
+
     SET(SOURCES ${SOURCES}
       transform/EpetraExt_SymmRCM_CrsGraph.cpp
       transform/EpetraExt_AMD_CrsGraph.cpp
       )
-  
+
   ENDIF()
 
 ENDIF()
@@ -128,7 +130,7 @@ IF (${PACKAGE_NAME}_BUILD_BTF)
     btf/EpetraExt_BTF_LinearProblem.h
     btf/EpetraExt_BlockJacobi_LinearProblem.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     btf/EpetraExt_BTF_CrsGraph.cpp
     btf/EpetraExt_BTF_CrsMatrix.cpp
@@ -157,7 +159,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_BUILD_INOUT)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/inout)
-  
+
   SET(HEADERS ${HEADERS}
     inout/EpetraExt_mmio.h
     inout/EpetraExt_OperatorOut.h
@@ -177,7 +179,7 @@ IF (${PACKAGE_NAME}_BUILD_INOUT)
     inout/EpetraExt_HDF5_Handle.h
     inout/EpetraExt_DistArray.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     inout/EpetraExt_mmio.cpp
     inout/EpetraExt_OperatorOut.cpp
@@ -197,15 +199,15 @@ IF (${PACKAGE_NAME}_BUILD_INOUT)
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Triutils)
-  
+
     SET(HEADERS ${HEADERS}
       inout/EpetraExt_readEpetraLinearSystem.h
       )
-    
+
     SET(SOURCES ${SOURCES}
       inout/EpetraExt_readEpetraLinearSystem.cpp
       )
-  
+
   ENDIF()
 
 ENDIF()
@@ -228,7 +230,7 @@ IF (${PACKAGE_NAME}_BUILD_Zoltan)
     zoltan/Zoltan_QueryFunctions.h
     zoltan/Zoltan_QueryObject.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     zoltan/EpetraExt_ZoltanQuery.cpp
     zoltan/Zoltan_LoadBalance.cpp
@@ -279,14 +281,14 @@ ENDIF()
 IF (${PACKAGE_NAME}_BUILD_MATLAB)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/matlab)
-  
+
   SET(HEADERS ${HEADERS}
     matlab/EpetraExt_MatlabEngine.h
     matlab/EpetraExt_PutMultiVector.h
     matlab/EpetraExt_PutRowMatrix.h
     matlab/EpetraExt_PutBlockMap.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     matlab/EpetraExt_MatlabEngine.cpp
     matlab/EpetraExt_PutMultiVector.cpp
@@ -303,13 +305,13 @@ ENDIF()
 IF (${PACKAGE_NAME}_BUILD_MODEL_EVALUATOR)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/model_evaluator)
-  
+
   SET(HEADERS ${HEADERS}
     model_evaluator/EpetraExt_ModelEvaluator.h
     model_evaluator/EpetraExt_ModelEvaluatorScalingTools.h
     model_evaluator/EpetraExt_PolynomialVectorTraits.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     model_evaluator/EpetraExt_ModelEvaluator.cpp
     model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp
@@ -324,7 +326,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_BUILD_BLOCK)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/block)
-  
+
   SET(HEADERS ${HEADERS}
     block/EpetraExt_BlockCrsMatrix.h
     block/EpetraExt_BlockMultiVector.h
@@ -336,7 +338,7 @@ IF (${PACKAGE_NAME}_BUILD_BLOCK)
     block/EpetraExt_BlockDiagMatrix.h
     block/EpetraExt_PointToBlockDiagPermute.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     block/EpetraExt_BlockCrsMatrix.cpp
     block/EpetraExt_BlockMultiVector.cpp
@@ -347,17 +349,17 @@ IF (${PACKAGE_NAME}_BUILD_BLOCK)
     block/EpetraExt_BlockDiagMatrix.cpp
     block/EpetraExt_PointToBlockDiagPermute.cpp
     )
-  
+
   IF(TPL_ENABLE_MPI)
-  
+
     SET(HEADERS ${HEADERS}
       block/EpetraExt_MultiMpiComm.h
       )
-    
+
     SET(SOURCES ${SOURCES}
       block/EpetraExt_MultiMpiComm.cpp
       )
-  
+
   ENDIF()
 
 ENDIF()
@@ -369,12 +371,12 @@ ENDIF()
 IF (${PACKAGE_NAME}_BUILD_RESTRICT)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/restrict)
-  
+
   SET(HEADERS ${HEADERS}
     restrict/EpetraExt_RestrictedMultiVectorWrapper.h
-    restrict/EpetraExt_RestrictedCrsMatrixWrapper.h 
+    restrict/EpetraExt_RestrictedCrsMatrixWrapper.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp
     restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
@@ -389,11 +391,11 @@ ENDIF()
 IF (${PACKAGE_NAME}_USING_PETSC)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/petsc)
-  
+
   SET(HEADERS ${HEADERS}
     petsc/EpetraExt_PETScAIJMatrix.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     petsc/EpetraExt_PETScAIJMatrix.cpp
     )
@@ -407,11 +409,11 @@ ENDIF()
 IF (TPL_ENABLE_HYPRE)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hypre)
-  
+
   SET(HEADERS ${HEADERS}
     hypre/EpetraExt_HypreIJMatrix.h
     )
-  
+
   SET(SOURCES ${SOURCES}
     hypre/EpetraExt_HypreIJMatrix.cpp
     )
