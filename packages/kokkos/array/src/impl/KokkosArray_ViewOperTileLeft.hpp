@@ -54,6 +54,54 @@ namespace Impl {
 #else
 
 #endif
+
+//----------------------------------------------------------------------------
+
+template< class SrcViewType >
+struct ViewAssignment< typename SrcViewType::tile_type , SrcViewType ,
+  typename enable_if< (
+    power_of_two< SrcViewType::TILE_DIMENSION_0 >::value &&
+    power_of_two< SrcViewType::TILE_DIMENSION_1 >::value
+  ) , unsigned_<2> >::type >
+{
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment( typename SrcViewType::tile_type & dst , const SrcViewType & src ,
+                  const unsigned itile0 , const unsigned itile1 )
+  {
+    enum { N0 = SrcViewType::TILE_DIMENSION_0 };
+    enum { N1 = SrcViewType::TILE_DIMENSION_1 };
+    enum { SHIFT_0 = power_of_two<N0>::value };
+    enum { MASK_0 = N0 - 1 };
+    enum { SHIFT_1 = power_of_two<N1>::value };
+
+    const unsigned NT0 = ( src.dimension_0() + MASK_0 ) >> SHIFT_0 ;
+
+    dst.m_ptr_on_device = src.m_ptr_on_device + (( itile0 + itile1 * NT0 ) << ( SHIFT_0 + SHIFT_1 ));
+    dst.m_stride        = N0 ;
+  }
+};
+
+template< class SrcViewType >
+struct ViewAssignment< typename SrcViewType::tile_type , SrcViewType ,
+  typename enable_if< (
+    ! power_of_two< SrcViewType::TILE_DIMENSION_0 >::value ||
+    ! power_of_two< SrcViewType::TILE_DIMENSION_1 >::value
+  ) , unsigned_<2> >::type >
+{
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment( typename SrcViewType::tile_type & dst , const SrcViewType & src ,
+                  const unsigned itile0 , const unsigned itile1 )
+  {
+    enum { N0 = SrcViewType::TILE_DIMENSION_0 };
+    enum { N1 = SrcViewType::TILE_DIMENSION_1 };
+
+    const unsigned NT0 = ( src.dimension_0() + N0 - 1 ) / N0 ;
+
+    dst.m_ptr_on_device = src.m_ptr_on_device + N0 * N1 * ( itile0 + itile1 * NT0 );
+    dst.m_stride        = N0 ;
+  }
+};
+
 //----------------------------------------------------------------------------
 
 template< class MemorySpace , typename ValueType , class ShapeType , unsigned M, unsigned N >
@@ -72,21 +120,6 @@ public:
   enum { TILE_DIMENSION_0 = M, TILE_DIMENSION_1 = N };
 
   typedef KokkosArray::View< ValueType[M][N], LayoutLeft, MemorySpace, MemoryUnmanaged > tile_type;
-
-  template< typename iType0, typename iType1 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  tile_type tile( const iType0 & itile , const iType1 & jtile ) const
-    {
-      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
-
-      //TODO: assert within tile bounds
-
-      // Generate this tile 'subview' with the proper shape (stride == M).
-
-      return tile_type( m_ptr_on_device + M*N * (itile + jtile * tiles_in_dimension_0()),
-                        Shape< ShapeType::scalar_size,2,M,N>() , M );
-    }
-
 
   KOKKOSARRAY_INLINE_FUNCTION
     size_t tiles_in_dimension_0() const
@@ -171,21 +204,6 @@ public:
   enum { TILE_DIMENSION_0 = M, TILE_DIMENSION_1 = N };
 
   typedef KokkosArray::View< ValueType[M][N], LayoutLeft, MemorySpace, MemoryUnmanaged > tile_type;
-
-  template< typename iType0, typename iType1 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  tile_type tile( const iType0 & itile , const iType1 & jtile ) const
-    {
-      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
-
-      //TODO: assert within tile bounds
-
-      // Generate this tile 'subview' with the proper shape (stride == M).
-
-      return tile_type( m_ptr_on_device
-                        + ( (itile + jtile * tiles_in_dimension_0() ) << ( M_SHIFT + N_SHIFT )),
-                        Shape< ShapeType::scalar_size,2,M,N>() , M );
-    }
 
   KOKKOSARRAY_INLINE_FUNCTION
     size_t tiles_in_dimension_0() const

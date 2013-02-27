@@ -277,7 +277,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
   ) , unsigned_<1> >::type >
 {
   template< typename iType >
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const std::pair<iType,iType> & range )
   {
@@ -319,7 +319,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 2 )
   ) , unsigned_<1> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i1 )
   {

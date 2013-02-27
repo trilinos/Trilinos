@@ -48,65 +48,74 @@
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
-namespace Impl {
-
-template< class > struct CrsArrayCreateMirror ;
-
-template< class DataType , class LayoutType , class DeviceType , typename SizeType >
-struct CrsArrayCreateMirror< CrsArray< DataType , LayoutType , DeviceType , SizeType > >
-{
-  typedef  CrsArray< DataType , LayoutType , DeviceType , SizeType > output_type ;
-
-  inline static
-  output_type create( const output_type & input ) { return input ; }
-
-  template< class DeviceSrc >
-  inline static
-  output_type create( const CrsArray< DataType , LayoutType , DeviceSrc , SizeType > & input )
-  {
-    typedef View< SizeType[] , LayoutType , DeviceType > work_type ;
-
-    work_type row_work( "mirror" , input.row_map.shape() );
-
-    output_type output ;
-
-    output.row_map = row_work ;
-    output.entries = typename output_type::entries_type( "mirror" , input.entries.shape() );
-
-    deep_copy( row_work ,       input.row_map );
-    deep_copy( output.entries , input.entries );
-
-    return output ;
-  }
-};
-
-} // namespace Impl
 
 template< class DataType , class LayoutType , class DeviceType , typename SizeType >
 inline
 typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input )
+create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view ,
+                    typename Impl::enable_if<
+                      Impl::is_same< typename DeviceType::memory_space , HostSpace >::value 
+                    >::type * = 0 )
 {
-  typedef CrsArray< DataType , LayoutType , DeviceType , SizeType > input_type ;
-  typedef typename input_type::HostMirror output_type ;
-
-  return Impl::CrsArrayCreateMirror< output_type >::create( input );
+  return view ;
 }
 
 template< class DataType , class LayoutType , class DeviceType , typename SizeType >
 inline
 typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input )
+create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view ,
+                    typename Impl::enable_if<
+                      ! Impl::is_same< typename DeviceType::memory_space , HostSpace >::value 
+                    >::type * = 0 )
 {
-  typedef CrsArray< DataType , LayoutType , DeviceType , SizeType > input_type ;
-  typedef typename input_type::HostMirror output_type ;
+  typedef typename
+    CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror host_view ;
+  
+  typedef View< SizeType[] , LayoutType , typename host_view::device_type > host_work_type ;
 
+  host_view tmp ;
+
+  host_work_type tmp_row_map ;
+
+  Impl::ViewAssignment< host_work_type , HostSpace , void >( tmp_row_map , view.row_map );
+  Impl::ViewAssignment< typename host_view::entries_type , HostSpace , void >( tmp.entries , view.entries );
+
+  tmp.row_map = tmp_row_map ;
+
+  deep_copy( tmp_row_map , view.row_map );
+  deep_copy( tmp.entries , view.entries );
+
+  return tmp ;
+}
+
+template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+inline
+typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
+create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view )
+{
 #if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
   // Allow choice via type:
-  return Impl::CrsArrayCreateMirror< output_type >::create( input );
+  return create_mirror_view( view );
 #else
   // Force copy:
-  return Impl::CrsArrayCreateMirror< output_type >::template create< DeviceType >( input );
+  typedef typename
+    CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror host_view ;
+
+  typedef typename host_view::row_map_type row_map_type ;
+  
+  host_view tmp ;
+
+  typename row_map_type::HostMirror tmp_row_map ;
+
+  Impl::ViewAssignment< typename row_map_type::HostMirror, HostSpace , void >( tmp_row_map , view.row_map );
+  Impl::ViewAssignment< typename host_view::entries_type , HostSpace , void >( tmp.entries , view.entries );
+
+  tmp.row_map = tmp_row_map ;
+
+  deep_copy( tmp_row_map , view.row_map );
+  deep_copy( tmp.entries , view.entries );
+
+  return tmp ;
 #endif
 }
 

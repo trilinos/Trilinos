@@ -65,6 +65,7 @@ struct ViewAssignment<
 private:
 
   typedef typename DstViewType::memory_space  memory_space ;
+  typedef typename DstViewType::layout_type   layout_type ;
 
   static inline
   size_t stride( const shape_type & shape )
@@ -94,16 +95,16 @@ private:
 public:
 
   // Same data type, same layout, different device; used to create a mirror.
-  template< class D , class M >
-  ViewAssignment( DstViewType & dst , const View< typename DstViewType::data_type ,
-                                                  typename DstViewType::layout_type ,
-                                                  D , M > & src )
+  template< class SrcViewType >
+  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
+                  typename enable_if<
+                    is_same< DstViewType , typename SrcViewType::HostMirror >::value
+                  >::type * = 0 )
   {
     dst.m_shape = src.m_shape ;
     dst.m_stride = src.m_stride ;
     allocate( dst , "mirror" );
   }
-
 
   ViewAssignment( DstViewType & dst , const std::string & label , const shape_type shape )
   {
@@ -154,7 +155,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 1 )
   ) , unsigned_<1> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 )
   {
@@ -182,7 +183,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 2 )
   ) , unsigned_<2> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 )
   {
@@ -210,7 +211,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 3 )
   ) , unsigned_<3> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 )
   {
@@ -241,7 +242,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 4 )
   ) , unsigned_<4> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 , const unsigned i3 )
   {
@@ -273,7 +274,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 5 )
   ) , unsigned_<5> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 , const unsigned i3 ,
                   const unsigned i4 )
@@ -307,7 +308,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 6 )
   ) , unsigned_<6> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 , const unsigned i3 ,
                   const unsigned i4 , const unsigned i5 )
@@ -342,7 +343,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 7 )
   ) , unsigned_<7> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 , const unsigned i3 ,
                   const unsigned i4 , const unsigned i5 , const unsigned i6 )
@@ -378,7 +379,7 @@ struct ViewAssignment< DstViewType , SrcViewType ,
     ( SrcViewType::Rank == 8 )
   ) , unsigned_<8> >::type >
 {
-  inline
+  KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src ,
                   const unsigned i0 , const unsigned i1 , const unsigned i2 , const unsigned i3 ,
                   const unsigned i4 , const unsigned i5 , const unsigned i6 , const unsigned i7 )

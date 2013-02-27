@@ -207,7 +207,7 @@ public:
   typedef View<     const_data_type, layout_type, device_type, void > view_const_type ;
   typedef View< non_const_data_type, layout_type, device_type, void > view_non_const_type ;
 
-  typedef View< data_type , layout_type , Host >  HostMirror ;
+  typedef View< non_const_data_type , layout_type , Host >  HostMirror ;
 };
 
 } // namespace KokkosArray
@@ -373,12 +373,6 @@ public:
   /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
 
-  View( const std::string & label , const shape_type shape )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment< View , memory_space , void >( *this , label , shape );
-    }
-
   explicit
   View( const std::string & label ,
         const size_t n0 = 0 ,
@@ -397,18 +391,6 @@ public:
     }
 
   /*------------------------------------------------------------------*/
-
-#if 1
-  KOKKOSARRAY_INLINE_FUNCTION
-  View( scalar_type * data_ptr , const shape_type shape , const unsigned stride )
-  {
-    oper_type::m_shape          = shape ;
-    oper_type::m_stride         = stride ;
-    oper_type::m_ptr_on_device  = data_ptr ;
-
-    Impl::ViewAssignment< View >::increment( oper_type::m_ptr_on_device );
-  }
-#endif
 };
 
 //----------------------------------------------------------------------------
@@ -457,6 +439,7 @@ bool operator != ( const View<LT,LL,LD,LM> & lhs ,
 template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -482,6 +465,7 @@ subview( const View<T,L,D,M> & src ,
 template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -508,6 +492,7 @@ subview( const View<T,L,D,M> & src ,
 template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -535,6 +520,7 @@ subview( const View<T,L,D,M> & src ,
 template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -564,6 +550,7 @@ template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -594,6 +581,7 @@ template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -625,6 +613,7 @@ template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
@@ -657,6 +646,7 @@ template< class DstViewType ,
           class T , class L , class D , class M ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
+KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,

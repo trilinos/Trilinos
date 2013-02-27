@@ -48,7 +48,10 @@ struct ReduceTileErrors
       size_t t1 = m_array.global_to_tile_index_1(global_j);
       size_t j = m_array.global_to_local_tile_index_1(global_j);
 
-      tile_type tile = m_array.tile(t0,t1);
+      // tile_type tile = m_array.tile(t0,t1);
+
+      tile_type tile = KokkosArray::subview< tile_type >( m_array , t0 , t1 );
+
       tile(i,j) = (tile.dimension_0() * tile.dimension_1()) * (t0 + m_array.tiles_in_dimension_0() * t1) + i + (j * tile.dimension_0());
 
       errors += (offset != m_array(global_i,global_j));
