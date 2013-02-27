@@ -697,12 +697,11 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   for(i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
 
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
-  Epetra_Util Util;
   int* SortLists[3]; // this array is allocated on the stack, and so we won't need to delete it.
   if(NumRemoteColGIDs > 0) {
     SortLists[0] = RemoteColindices;    
     SortLists[1] = &RemotePermuteIDs[0];
-    Util.Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, NLists, SortLists);
+    Epetra_Util::Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, NLists, SortLists);
   }
 
 
@@ -719,12 +718,12 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
       if (RemoteOwningPIDs[StartNext]==RemoteOwningPIDs[StartNext-1]) StartNext++;
       else {
 	SortLists[0] =  &RemotePermuteIDs[StartCurrent];
-        Util.Sort(true,StartNext-StartCurrent, &(RemoteColindices[StartCurrent]),0,0,NLists,SortLists);
+	Epetra_Util::Sort(true,StartNext-StartCurrent, &(RemoteColindices[StartCurrent]),0,0,NLists,SortLists);
         StartCurrent = StartNext; StartNext++;
       }
     }
     SortLists[0] =  &RemotePermuteIDs[StartCurrent];
-    Util.Sort(true, StartNext-StartCurrent, &(RemoteColindices[StartCurrent]), 0, 0, NLists, SortLists);
+    Epetra_Util::Sort(true, StartNext-StartCurrent, &(RemoteColindices[StartCurrent]), 0, 0, NLists, SortLists);
   }
 
   // Reverse the permutation to get the information we actually care about
@@ -1180,7 +1179,7 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
       // We have a new PID, so lets finish up the current one      
       if(current!=last_start){
        	int *lids = &ExportLID2[last_start];
-	Epetra_Util::Sort<int>(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
+	Epetra_Util::Sort(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
 	// Note: we don't need to sort the ExportPIDs since they're the same since last_start
       }
       // Reset the list
@@ -1207,7 +1206,7 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
 
   // Final Sort
   int *lids = &ExportLID2[last_start];
-  Epetra_Util::Sort<int>(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
+  Epetra_Util::Sort(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
   // Note: we don't need to sort the ExportPIDs since they're the same since last_start
 
   total_length2=current;
