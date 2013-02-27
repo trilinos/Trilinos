@@ -60,12 +60,25 @@ namespace Iovs {
     Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
-    dbState = Ioss::STATE_UNKNOWN; 
-
+    dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
+
+    std::string script_filename;
+    if(props.exists("VISUALIZATION_SCRIPT"))
+      {
+      script_filename = props.get("VISUALIZATION_SCRIPT").get_string();
+      }
+    else
+      {
+      std::ostringstream errmsg;
+      errmsg << "Property VISUALIZATION_SCRIPT not given in results output \n"
+             << "block, unable to initialize ParaView Catalyst";
+      IOSS_ERROR(errmsg);
+      }
+
     this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
     if(this->pvcsa)
-      this->pvcsa->InitializeParaViewCatalyst(filename.c_str());
+      this->pvcsa->InitializeParaViewCatalyst(script_filename.c_str());
   }
 
   DatabaseIO::~DatabaseIO() 
