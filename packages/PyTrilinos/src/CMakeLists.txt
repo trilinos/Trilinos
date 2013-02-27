@@ -230,7 +230,10 @@ ADD_SUBDIRECTORY(PyTrilinos)
 
 #
 # Add the STK subdirectory
-if (HAVE_STK AND TPL_ENABLE_MPI)
+# The STK subpackages stk_io, stk_percept, stk_adapt are needed, and since
+# those are activated in STK only under certain conditions, this conditional
+# becomes somewhat lengthy.
+if (HAVE_STK AND TPL_ENABLE_MPI AND STK_ENABLE_Intrepid AND STK_ENABLE_SEACASIoss AND STK_ENABLE_ThreadPool)
     ADD_SUBDIRECTORY(stk)
 endif ()
 #
