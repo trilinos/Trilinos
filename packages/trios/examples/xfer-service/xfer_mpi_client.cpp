@@ -259,7 +259,6 @@ int xfer_mpi_get(
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Win win;
-    MPI_Group comm_group, group;
 
     int req_buf[3];
     req_buf[0] = (int)len;

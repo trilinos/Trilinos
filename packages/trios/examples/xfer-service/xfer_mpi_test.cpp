@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
     int np=1, rank=0;
     int splitrank, splitsize;
     int rc = 0;
-    nssi_service xfer_svc;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -345,13 +344,10 @@ int main(int argc, char *argv[])
     // ------------------------------------------------------------------------------
      /**  The parallel client will execute this branch.  */
     else {
-        int i;
-        int client_rank;
-
-            log_debug(debug_level, "Starting client main");
-            // Start the client code
-            rc = xfer_mpi_client_main(args, server_rank, comm);
-            log_debug(debug_level, "Client is finished, rc=%d", rc);
+        log_debug(debug_level, "Starting client main");
+        // Start the client code
+        rc = xfer_mpi_client_main(args, server_rank, comm);
+        log_debug(debug_level, "Client is finished, rc=%d", rc);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);

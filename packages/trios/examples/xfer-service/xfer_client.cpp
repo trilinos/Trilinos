@@ -313,8 +313,6 @@ int xfer_read_encode(
     int rc = NSSI_OK;
     xfer_read_encode_args args;
 
-    int nbytes;
-
     /* initialize the arguments */
     memset(&args, 0, sizeof(xfer_read_encode_args));
     memset(res, 0, sizeof(xfer_read_encode_res));
@@ -323,10 +321,6 @@ int xfer_read_encode(
     args.len = len;
     args.seed = seed;
     args.validate = validate;
-
-    /* calculate the number of bytes in the buffer */
-    nbytes = args.len*sizeof(data_t);
-
 
     /* call the remote methods, array comes back in res */
     rc = nssi_call_rpc(svc, XFER_READ_ENCODE_OP, &args, NULL, 0, res, req);
