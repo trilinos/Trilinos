@@ -87,7 +87,7 @@ enum netcdf_opcode {
 };
 
 
-typedef int64_t nc_size_t;
+typedef uint64_t nc_size_t;
 
 enum arg_type {
     NC_ARG_NAT,
