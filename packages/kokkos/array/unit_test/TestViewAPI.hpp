@@ -920,11 +920,11 @@ public:
     dView3 d3( "d3" , N0 );
     dView4 d4( "d4" , N0 );
 
-    sView s0( d0 );
-    sView s1( d1 , 1 );
-    sView s2( d2 , 1 , 1 );
-    sView s3( d3 , 1 , 1 , 1 );
-    sView s4( d4 , 1 , 1 , 1 , 1 );
+    sView s0 = d0 ;
+    sView s1 = KokkosArray::subview< sView >( d1 , 1 );
+    sView s2 = KokkosArray::subview< sView >( d2 , 1 , 1 );
+    sView s3 = KokkosArray::subview< sView >( d3 , 1 , 1 , 1 );
+    sView s4 = KokkosArray::subview< sView >( d4 , 1 , 1 , 1 , 1 );
   }
 
   static void run_test_vector()
@@ -941,21 +941,21 @@ public:
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
 
-    vector_type v1( mv , 0 );
-    vector_type v2( mv , 1 );
-    vector_type v3( mv , 2 );
+    vector_type v1 = KokkosArray::subview< vector_type >( mv , 0 );
+    vector_type v2 = KokkosArray::subview< vector_type >( mv , 1 );
+    vector_type v3 = KokkosArray::subview< vector_type >( mv , 2 );
 
-    const_vector_type cv1( mv , 0 );
-    const_vector_type cv2( mv , 1 );
-    const_vector_type cv3( mv , 2 );
+    const_vector_type cv1 = KokkosArray::subview< const_vector_type >( mv , 0 );
+    const_vector_type cv2 = KokkosArray::subview< const_vector_type >( mv , 1 );
+    const_vector_type cv3 = KokkosArray::subview< const_vector_type >( mv , 2 );
 
-    vector_right_type vr1( mv , 0 );
-    vector_right_type vr2( mv , 1 );
-    vector_right_type vr3( mv , 2 );
+    vector_right_type vr1 = KokkosArray::subview< vector_right_type >( mv , 0 );
+    vector_right_type vr2 = KokkosArray::subview< vector_right_type >( mv , 1 );
+    vector_right_type vr3 = KokkosArray::subview< vector_right_type >( mv , 2 );
 
-    const_vector_right_type cvr1( mv , 0 );
-    const_vector_right_type cvr2( mv , 1 );
-    const_vector_right_type cvr3( mv , 2 );
+    const_vector_right_type cvr1 = KokkosArray::subview< const_vector_right_type >( mv , 0 );
+    const_vector_right_type cvr2 = KokkosArray::subview< const_vector_right_type >( mv , 1 );
+    const_vector_right_type cvr3 = KokkosArray::subview< const_vector_right_type >( mv , 2 );
 
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );

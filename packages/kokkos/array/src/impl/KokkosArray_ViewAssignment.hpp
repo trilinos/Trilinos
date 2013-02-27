@@ -116,7 +116,7 @@ namespace Impl {
 
 template< class DstShape , class SrcShape ,
           unsigned DstRankDynamic   = DstShape::rank_dynamic ,
-          bool     DstRankDynamicOK = DstShape::rank_dynamic >= SrcShape::rank_dynamic >
+          bool     DstRankDynamicOK = unsigned(DstShape::rank_dynamic) >= unsigned(SrcShape::rank_dynamic) >
 struct ShapeCompatible { enum { value = false }; };
 
 template< class DstShape , class SrcShape >

@@ -97,8 +97,14 @@ bool operator == ( const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x 
   enum { same_rank = xRank == yRank };
 
   return same_size && same_rank &&
-         x.N0 == y.N0 && x.N1 == y.N1 && x.N2 == y.N2 && x.N3 == y.N3 &&
-         x.N4 == y.N4 && x.N5 == y.N5 && x.N6 == y.N6 && x.N7 == y.N7 ;
+         unsigned( x.N0 ) == unsigned( y.N0 ) &&
+         unsigned( x.N1 ) == unsigned( y.N1 ) &&
+         unsigned( x.N2 ) == unsigned( y.N2 ) &&
+         unsigned( x.N3 ) == unsigned( y.N3 ) &&
+         unsigned( x.N4 ) == unsigned( y.N4 ) &&
+         unsigned( x.N5 ) == unsigned( y.N5 ) &&
+         unsigned( x.N6 ) == unsigned( y.N6 ) &&
+         unsigned( x.N7 ) == unsigned( y.N7 ) ;
 }
 
 template< unsigned xSize , unsigned xRank ,
@@ -166,9 +172,15 @@ void assert_shapes_equal_dimension(
   typedef Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> x_type ;
   typedef Shape<ySize,yRank,yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> y_type ;
 
-  if ( x.rank != y.rank ||
-       x.N0 != y.N0 || x.N1 != y.N1 || x.N2 != y.N2 || x.N3 != y.N3 ||
-       x.N4 != y.N4 || x.N5 != y.N5 || x.N6 != y.N6 || x.N7 != y.N7 ) {
+  if ( unsigned( x.rank ) != unsigned( y.rank ) ||
+       unsigned( x.N0 ) != unsigned( y.N0 ) || 
+       unsigned( x.N1 ) != unsigned( y.N1 ) || 
+       unsigned( x.N2 ) != unsigned( y.N2 ) || 
+       unsigned( x.N3 ) != unsigned( y.N3 ) ||
+       unsigned( x.N4 ) != unsigned( y.N4 ) || 
+       unsigned( x.N5 ) != unsigned( y.N5 ) || 
+       unsigned( x.N6 ) != unsigned( y.N6 ) || 
+       unsigned( x.N7 ) != unsigned( y.N7 ) ) {
     assert_shapes_are_equal_throw(
       x_type::scalar_size ,
       x_type::rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
@@ -289,18 +301,18 @@ void assert_shape_bounds( const ShapeType & shape ,
 template < unsigned ScalarSize >
 struct Shape< ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 0 ;
-  static const unsigned rank         = 0 ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 0 };
+  enum { rank         = 0 };
 
-  static const unsigned N0 = 1 ;
-  static const unsigned N1 = 1 ;
-  static const unsigned N2 = 1 ;
-  static const unsigned N3 = 1 ;
-  static const unsigned N4 = 1 ;
-  static const unsigned N5 = 1 ;
-  static const unsigned N6 = 1 ;
-  static const unsigned N7 = 1 ;
+  enum { N0 = 1 };
+  enum { N1 = 1 };
+  enum { N2 = 1 };
+  enum { N3 = 1 };
+  enum { N4 = 1 };
+  enum { N5 = 1 };
+  enum { N6 = 1 };
+  enum { N7 = 1 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -325,18 +337,18 @@ template < unsigned ScalarSize ,
            unsigned s7 >
 struct Shape {
 
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 0 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 0 };
+  enum { rank         = Rank };
 
-  static const unsigned N0 = s0 ;
-  static const unsigned N1 = s1 ;
-  static const unsigned N2 = s2 ;
-  static const unsigned N3 = s3 ;
-  static const unsigned N4 = s4 ;
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N0 = s0 };
+  enum { N1 = s1 };
+  enum { N2 = s2 };
+  enum { N3 = s3 };
+  enum { N4 = s4 };
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -358,19 +370,20 @@ template < unsigned ScalarSize ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 1 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 1 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
 
-  static const unsigned N1 = s1 ;
-  static const unsigned N2 = s2 ;
-  static const unsigned N3 = s3 ;
-  static const unsigned N4 = s4 ;
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  // enum { N1 = s1 };
+  enum { N1 = s1 };
+  enum { N2 = s2 };
+  enum { N3 = s3 };
+  enum { N4 = s4 };
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -390,19 +403,19 @@ template < unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 2 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 2 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
 
-  static const unsigned N2 = s2 ;
-  static const unsigned N3 = s3 ;
-  static const unsigned N4 = s4 ;
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N2 = s2 };
+  enum { N3 = s3 };
+  enum { N4 = s4 };
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -421,19 +434,19 @@ template < unsigned Rank , unsigned ScalarSize ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 3 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 3 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
 
-  static const unsigned N3 = s3 ;
-  static const unsigned N4 = s4 ;
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N3 = s3 };
+  enum { N4 = s4 };
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -451,19 +464,19 @@ template < unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 4 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 4 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
   unsigned N2 ;
   unsigned N3 ;
 
-  static const unsigned N4 = s4 ;
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N4 = s4 };
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -480,9 +493,9 @@ template < unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 5 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 5 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
@@ -490,9 +503,9 @@ struct Shape< ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
   unsigned N3 ;
   unsigned N4 ;
 
-  static const unsigned N5 = s5 ;
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N5 = s5 };
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -508,9 +521,9 @@ template < unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 6 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 6 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
@@ -519,8 +532,8 @@ struct Shape< ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
   unsigned N4 ;
   unsigned N5 ;
 
-  static const unsigned N6 = s6 ;
-  static const unsigned N7 = s7 ;
+  enum { N6 = s6 };
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -538,9 +551,9 @@ template < unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
 struct Shape< ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 7 ;
-  static const unsigned rank         = Rank ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 7 };
+  enum { rank         = Rank };
 
   unsigned N0 ;
   unsigned N1 ;
@@ -550,7 +563,7 @@ struct Shape< ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
   unsigned N5 ;
   unsigned N6 ;
 
-  static const unsigned N7 = s7 ;
+  enum { N7 = s7 };
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
@@ -567,9 +580,9 @@ struct Shape< ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
 template < unsigned ScalarSize >
 struct Shape< ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
 {
-  static const unsigned scalar_size   = ScalarSize ;
-  static const unsigned rank_dynamic = 8 ;
-  static const unsigned rank         = 8 ;
+  enum { scalar_size   = ScalarSize };
+  enum { rank_dynamic = 8 };
+  enum { rank         = 8 };
 
   unsigned N0 ;
   unsigned N1 ;

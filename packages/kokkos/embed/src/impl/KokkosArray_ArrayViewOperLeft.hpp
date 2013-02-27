@@ -63,6 +63,7 @@ class ViewOper< MemorySpace ,
 private:
 
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -107,6 +108,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -145,6 +147,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -186,6 +189,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -233,6 +237,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -285,6 +290,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -340,6 +346,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;
@@ -400,6 +407,7 @@ class ViewOper< MemorySpace ,
 {
 private:
   template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class > friend class KokkosArray::Impl::ViewAssignment ;
 
   ScalarType * m_ptr_on_device ;
   ShapeType    m_shape ;

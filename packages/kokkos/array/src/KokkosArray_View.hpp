@@ -371,117 +371,6 @@ public:
     { Impl::ViewAssignment<View,View<T,L,D,M> >( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
-  /** \brief  Construct a subview */
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 >
-  View( const View<T,L,D,M> & rhs , const ArgType0 & arg0 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<1> >( *this , rhs , arg0 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<2> >( *this, rhs, arg0, arg1 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<3> >( *this, rhs, arg0, arg1, arg2 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 ,
-        const ArgType3 & arg3 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<4> >( *this, rhs, arg0, arg1, arg2, arg3 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
-            class ArgType4 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 ,
-        const ArgType3 & arg3 ,
-        const ArgType4 & arg4 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<5> >
-        ( *this, rhs, arg0, arg1, arg2, arg3, arg4 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
-            class ArgType4 , class ArgType5 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 ,
-        const ArgType3 & arg3 ,
-        const ArgType4 & arg4 ,
-        const ArgType5 & arg5 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<6> >
-        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
-            class ArgType4 , class ArgType5 , class ArgType6 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 ,
-        const ArgType3 & arg3 ,
-        const ArgType4 & arg4 ,
-        const ArgType5 & arg5 ,
-        const ArgType6 & arg6 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<7> >
-        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
-    }
-
-  template< class T , class L , class D , class M ,
-            class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
-            class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
-  View( const View<T,L,D,M> & rhs ,
-        const ArgType0 & arg0 ,
-        const ArgType1 & arg1 ,
-        const ArgType2 & arg2 ,
-        const ArgType3 & arg3 ,
-        const ArgType4 & arg4 ,
-        const ArgType5 & arg5 ,
-        const ArgType6 & arg6 ,
-        const ArgType7 & arg7 )
-    {
-      oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<8> >
-        ( *this, rhs, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
-    }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
 
   View( const std::string & label , const shape_type shape )
@@ -564,6 +453,241 @@ bool operator != ( const View<LT,LL,LD,LM> & lhs ,
 }
 
 //----------------------------------------------------------------------------
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<1> >
+    ( dst, src, arg0 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<2> >
+    ( dst, src, arg0, arg1 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<3> >
+    ( dst, src, arg0, arg1, arg2 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<4> >
+    ( dst, src, arg0, arg1, arg2, arg3 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<5> >
+    ( dst, src, arg0, arg1, arg2, arg3, arg4 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<6> >
+    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 , class ArgType6 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 ,
+         const ArgType6 & arg6 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<7> >
+    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
+
+  return dst ;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
+View< typename DstViewType::data_type ,
+      typename DstViewType::layout_type ,
+      typename DstViewType::device_type ,
+      MemoryUnmanaged >
+subview( const View<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 ,
+         const ArgType6 & arg6 ,
+         const ArgType7 & arg7 )
+{
+  typedef View< typename DstViewType::data_type ,
+                typename DstViewType::layout_type ,
+                typename DstViewType::device_type ,
+                MemoryUnmanaged > dst_type ;
+
+  typedef View<T,L,D,M> src_type ;
+
+  dst_type dst ;
+
+  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<8> >
+    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+
+  return dst ;
+}
+
+//----------------------------------------------------------------------------
+
 
 template< class T , class L , class D , class M >
 typename View<T,L,D,M>::HostMirror

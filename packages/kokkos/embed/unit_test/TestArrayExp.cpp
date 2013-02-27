@@ -203,6 +203,7 @@ int testdyn< TEST_KOKKOSARRAY_SPACE >()
 
   for ( unsigned i = 0 ; i < 10 ; ++i ) a[i] = i + 1 ;
 
+  std::cout << a << std::endl ;
   std::cout << -a << std::endl ;
   std::cout << a + b << std::endl ;
   std::cout << b - a << std::endl ;
