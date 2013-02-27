@@ -129,8 +129,6 @@ client_init ()
     // Initialize the thread counter
     nthread_counter_init(&request_count);
 
-//    register_service_encodings();
-
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_TRACE_RESET, nssi_trace_reset_args, void, void);
@@ -197,7 +195,6 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
 
     char *buf=NULL;
     NNTI_buffer_t encoded_long_res_hdl;
-    NNTI_buffer_t incoming_hdl;
     NNTI_status_t status;
 
     int8_t        long_res_ack;
@@ -455,18 +452,14 @@ int nssi_get_service(
 {
     int rc = NSSI_OK;
     int cleanup_rc = NSSI_OK;
-    int rc2 = NSSI_OK;
-    nssi_service svc;
-    nssi_request req;
 
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, res_xdrs;
 
     NNTI_peer_t   peer_hdl;
-    NNTI_buffer_t request_hdl;
 
     nssi_request_header req_header;   /* the request header */
     nssi_result_header  res_header;   /* the request header */
@@ -862,10 +855,7 @@ static int cleanup_long_args(
         int timeout)
 {
     int rc = NSSI_OK;
-    int rc2=0;
-
     char *buf;
-    NNTI_status_t status;
 
     trios_declare_timer(call_time);
 
@@ -1499,7 +1489,6 @@ static int encode_args(
          *   "fetch" the arguments using the \ref nssi_ptl_get method.
          */
         else {
-            static nssi_size args_counter = 1;
 
             log_debug(rpc_debug_level,"putting args (len=%d) "
                     "in long request", args_size);
@@ -1604,10 +1593,8 @@ int nssi_call_rpc(
         void *result,
         nssi_request *request)
 {
-    long timeout = (10)*(DEFAULT_RPC_TIMEOUT);
-
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* local variables */
     int rc=NSSI_OK;  /* return code */
@@ -1940,7 +1927,6 @@ int nssi_multicast_rpc_sync(
 {
     int rc = NSSI_OK;
     int rc2 = NSSI_OK;
-    nssi_size i;
     std::vector <nssi_request> reqs(num_svcs);
 
     rc = nssi_multicast_rpc(svcs, num_svcs, opcode, args, data, data_size, results, result_size, &reqs[0]);

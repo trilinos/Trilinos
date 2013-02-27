@@ -124,8 +124,6 @@ int rpc_trace_reset(
 typedef void (*progress_callback)(bool is_idle);
 
 
-//static nthread_lock_t meminfo_mutex;
-
 static bool time_to_die = false;
 
 static nssi_service local_service;
@@ -184,23 +182,23 @@ typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t
 static nthread_lock_t request_args_map_mutex;
 
 
-static void print_raw_buf(void *buf, uint32_t size)
-{
-    if (logging_debug(rpc_debug_level)) {
-        FILE* f=logger_get_file();
-        u_int64_t print_limit=(size<96) ? size : 96;
-        fprintf(f, "\nbuf (%p)\n", buf);
-        fflush(f);
-        if (buf != NULL) {
-            int l=0;
-            for (l=0;l<print_limit;l++) {
-                if (l%32 == 0) fprintf(f, "\nbuf (%lu) (offset(%d)) => ", buf, l);
-                fprintf(f, "%02hhX", ((char *)buf)[l]);
-            }
-            fprintf(f, "\n");
-        }
-    }
-}
+//static void print_raw_buf(void *buf, uint32_t size)
+//{
+//    if (logging_debug(rpc_debug_level)) {
+//        FILE* f=logger_get_file();
+//        uint64_t print_limit=(size<96) ? size : 96;
+//        fprintf(f, "\nbuf (%p)\n", buf);
+//        fflush(f);
+//        if (buf != NULL) {
+//            uint64_t l=0;
+//            for (l=0;l<print_limit;l++) {
+//                if (l%32 == 0) fprintf(f, "\nbuf (%lu) (offset(%ld)) => ", (uint64_t)buf, l);
+//                fprintf(f, "%02hhX", ((char *)buf)[l]);
+//            }
+//            fprintf(f, "\n");
+//        }
+//    }
+//}
 
 
 
@@ -572,7 +570,6 @@ static int send_result(const NNTI_peer_t   *caller,
     NNTI_buffer_t long_res_ack_hdl;
     NNTI_status_t long_res_ack_status;
 
-    int i=0;
 
     request_args_t *args=request_args_get(caller, request_id);
     int opcode=args->opcode;
@@ -978,11 +975,9 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     int req_count = 0;
     log_level debug_level = rpc_debug_level;
 
-    NNTI_buffer_t incoming_hdl;
-
     request_args_t *req_args=NULL;
 
-    nssi_service *svc       = rpc_req->svc;
+//    nssi_service *svc       = rpc_req->svc;
     NNTI_peer_t caller      = rpc_req->caller;
     char *req_buf           = rpc_req->req_buf;
     nssi_size short_req_len = rpc_req->short_req_len;
@@ -1418,7 +1413,6 @@ int nssi_service_init(
 {
     int rc = NSSI_OK;
 
-//    nthread_lock_init(&meminfo_mutex);
     nthread_lock_init(&supported_ops_mutex);
     nthread_lock_init(&request_args_map_mutex);
 
@@ -1498,7 +1492,6 @@ int nssi_service_add_op(
  */
 int nssi_service_fini(const nssi_service *service)
 {
-//	nthread_lock_fini(&meminfo_mutex);
     nthread_lock_fini(&supported_ops_mutex);
     nthread_lock_fini(&request_args_map_mutex);
 
@@ -1583,10 +1576,8 @@ int nssi_service_start_wfn(
         nssi_service *svc,
         int (*process_req)(nssi_svc_rpc_request *))
 {
-    int rc = NSSI_OK, rc2;
+    int rc = NSSI_OK;
     int req_count = 0;
-    int index = 0;
-    int offset = 0;
     double t1;
     double idle_time = 0;
     double processing_time = 0;
@@ -1606,13 +1597,12 @@ int nssi_service_start_wfn(
     /* each md can recv reqs_per_queue messages */
     int reqs_per_queue = 10000;
 
-//    NNTI_peer_t   caller;
     NNTI_buffer_t req_queue;
     NNTI_status_t status;
 
     progress_callback progress_cb       =NULL;
-    int64_t           progress_timeout  = 2000; // needs to be reasonable (2 sec)
-    uint64_t          progress_last_time=0;
+    int64_t           progress_timeout  =2000; // needs to be reasonable (2 sec)
+    int64_t           progress_last_time=0;
     if (svc->progress_callback != 0) {
         progress_cb=(progress_callback)svc->progress_callback;
         progress_timeout=svc->progress_callback_timeout;
