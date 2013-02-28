@@ -102,7 +102,7 @@ namespace {
   }
 
   template <typename INT>
-  void calc_bounding_box(size_t node_count, size_t elem_count,
+  void calc_bounding_box(size_t ndim, size_t node_count, size_t elem_count,
 			 std::vector<double> coordinates, std::vector<INT> connectivity,
 			 double &xmin, double &ymin, double &zmin,
 			 double &xmax, double &ymax, double &zmax)
@@ -122,14 +122,25 @@ namespace {
 
     for (size_t i=0; i < node_count; i++) {
       if (elem_block_nodes[i] == 1) {
-	xmin = my_min(xmin,coordinates[3*i+0]);
-	ymin = my_min(ymin,coordinates[3*i+1]);
-	zmin = my_min(zmin,coordinates[3*i+2]);
+	xmin = my_min(xmin,coordinates[ndim*i+0]);
+	xmax = my_max(xmax,coordinates[ndim*i+0]);
 
-	xmax = my_max(xmax,coordinates[3*i+0]);
-	ymax = my_max(ymax,coordinates[3*i+1]);
-	zmax = my_max(zmax,coordinates[3*i+2]);
+	if (ndim > 1) {
+	  ymin = my_min(ymin,coordinates[ndim*i+1]);
+	  ymax = my_max(ymax,coordinates[ndim*i+1]);
+	}
+
+	if (ndim > 2) {
+	  zmin = my_min(zmin,coordinates[ndim*i+2]);
+	  zmax = my_max(zmax,coordinates[ndim*i+2]);
+	}
       }
+    }
+    if (ndim < 3) {
+      zmin = zmax = 0.0;
+    }
+    if (ndim < 2) {
+      ymin = ymax = 0.0;
     }
   }
 }
@@ -510,6 +521,7 @@ namespace Ioss {
       Ioss::NodeBlock *nb = get_region()->get_node_blocks()[0];
       nb->get_field_data("mesh_model_coordinates", coordinates);
       ssize_t nnode = nb->get_property("entity_count").get_int();
+      ssize_t ndim  = nb->get_property("component_degree").get_int();
       
       Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
       size_t nblock = element_blocks.size();
@@ -523,12 +535,12 @@ namespace Ioss {
 	if (block->get_database()->int_byte_size_api() == 8) {
 	  std::vector<int64_t> connectivity;
 	  block->get_field_data("connectivity_raw", connectivity);
-	  calc_bounding_box(nnode, nelem, coordinates, connectivity,
+	  calc_bounding_box(ndim, nnode, nelem, coordinates, connectivity,
 			    xmin, ymin, zmin, xmax, ymax, zmax);
 	} else {
 	  std::vector<int> connectivity;
 	  block->get_field_data("connectivity_raw", connectivity);
-	  calc_bounding_box(nnode, nelem, coordinates, connectivity,
+	  calc_bounding_box(ndim, nnode, nelem, coordinates, connectivity,
 			    xmin, ymin, zmin, xmax, ymax, zmax);
 	}
 
