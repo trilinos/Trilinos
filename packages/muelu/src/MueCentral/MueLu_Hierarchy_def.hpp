@@ -638,6 +638,8 @@ namespace MueLu {
 
     std::ofstream out(dumpFile_.c_str());
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
+#else
+    GetOStream(Errors,0) <<  "Dependency graph output requires boost" << std::endl;
 #endif
   }
 
