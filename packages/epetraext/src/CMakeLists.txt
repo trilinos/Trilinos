@@ -213,48 +213,6 @@ IF (${PACKAGE_NAME}_BUILD_INOUT)
 ENDIF()
 
 #
-# src/zoltan
-#
-
-IF (${PACKAGE_NAME}_BUILD_Zoltan)
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoltan)
-
-  SET(HEADERS ${HEADERS}
-    zoltan/EpetraExt_ZoltanQuery.h
-    zoltan/Zoltan_LoadBalance.h
-    zoltan/Zoltan_MigrationContainer.h
-    zoltan/Zoltan_MigrationFunctions.h
-    zoltan/Zoltan_MigrationObject.h
-    zoltan/Zoltan_QueryContainer.h
-    zoltan/Zoltan_QueryFunctions.h
-    zoltan/Zoltan_QueryObject.h
-    )
-
-  SET(SOURCES ${SOURCES}
-    zoltan/EpetraExt_ZoltanQuery.cpp
-    zoltan/Zoltan_LoadBalance.cpp
-    zoltan/Zoltan_MigrationContainer.cpp
-    zoltan/Zoltan_MigrationFunctions.cpp
-    zoltan/Zoltan_MigrationObject.cpp
-    zoltan/Zoltan_QueryContainer.cpp
-    zoltan/Zoltan_QueryFunctions.cpp
-    zoltan/Zoltan_QueryObject.cpp
-    )
-
-  IF(TPL_ENABLE_MPI)
-    SET(HEADERS ${HEADERS}
-      zoltan/EpetraExt_Zoltan_CrsGraph.h
-      zoltan/EpetraExt_ZoltanOrder_CrsGraph.h
-      )
-    SET(SOURCES ${SOURCES}
-      zoltan/EpetraExt_Zoltan_CrsGraph.cpp
-      zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp
-      )
-  ENDIF()
-ENDIF()
-
-#
 # src/coloring
 #
 
