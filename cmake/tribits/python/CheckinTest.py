@@ -1491,8 +1491,7 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
     if inOptions.wipeClean:
 
       print "\nRemoving the existing build directory "+buildTestCaseName+" (--wipe-clean) ..."
-      if os.path.exists(buildTestCaseName):
-        echoRunSysCmnd("rm -rf "+buildTestCaseName)
+      removeDirIfExists(buildTestCaseName)
 
     elif doRemoveOutputFiles(inOptions):
 
