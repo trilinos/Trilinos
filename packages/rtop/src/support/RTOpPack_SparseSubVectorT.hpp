@@ -185,16 +185,19 @@ public:
     ptrdiff_t localOffset_in, bool isSorted_in
     )
     {
+      using Teuchos::as;
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT(globalOffset_in >= 0);
       TEUCHOS_ASSERT(subDim_in > 0);
       TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(subNz_in, 0, subDim_in+1);
       TEUCHOS_ASSERT_EQUALITY(values_in.lowerOffset(), 0);
       TEUCHOS_ASSERT(valuesStride_in != 0);
-      TEUCHOS_ASSERT_EQUALITY(values_in.size(), subNz_in*std::abs(valuesStride_in));
+      TEUCHOS_ASSERT_EQUALITY(values_in.size(),
+        subNz_in*as<Teuchos_Ordinal>(std::abs(as<int>(valuesStride_in))));
       if (!is_null(indices_in)) {
         TEUCHOS_ASSERT(indicesStride_in != 0);
-        TEUCHOS_ASSERT_EQUALITY(indices_in.size(), subNz_in*std::abs(indicesStride_in));
+        TEUCHOS_ASSERT_EQUALITY(indices_in.size(),
+          subNz_in*as<Teuchos_Ordinal>(std::abs(as<int>(indicesStride_in))));
         // Note: localOffset can be +, -, or 0 so there is nothing to assert!
         if (isSorted_in) {
           for (int k = 0; k < subNz_in-1; ++k) {
