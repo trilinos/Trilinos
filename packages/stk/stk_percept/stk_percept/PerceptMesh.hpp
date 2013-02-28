@@ -434,14 +434,14 @@ namespace stk {
       /// check if element volumes are positive
       bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, int dump_all_elements=0);
 
-      /// get field statistics - either pass in a string (see AdaptMain.cpp) with options to build
+      /// get field and/or mesh statistics - either pass in a string (see AdaptMain.cpp) with options to build
       ///   a Histograms database, or pass in a pre-computed Histograms
       /// Warning: can modify the input histograms to account for vector fields - usage should be like
       ///    Histograms<double> *my_hist = ...;
       ///    my_hist = eMesh.field_stats(my_hist);
       /// or,
       ///    Histograms<double> *my_hist = eMesh.field_stats(0, "options...");
-      Histograms<double> * field_stats(Histograms<double> *histograms = 0, std::string options="");
+      Histograms<double> * mesh_field_stats(Histograms<double> *histograms = 0, std::string options="");
 
 
 #ifndef SWIG

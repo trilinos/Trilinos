@@ -1044,25 +1044,37 @@ namespace stk {
 #if STK_ADAPT_HAVE_YAML_CPP
                         if (histogram_options.size() != 0)
                           {
-                            //double current_time= eMesh.get_current_database_time();
-                            //double hopt_time = 0.2;
-                            int current_step = eMesh.get_current_database_step();
-                            //eMesh.read_database_at_time(hopt_time);
-                            int step = eMesh.get_database_time_step_count();
-                            eMesh.read_database_at_step(step?step:1);
                             Histograms<double> histograms;
                             HistogramsParser<double> hparser(histogram_options);
                             hparser.create(histograms);
 
-                            eMesh.field_stats(&histograms);
+                            double hopt_time = histograms.m_database_time;
+                            int hopt_step = histograms.m_database_step;
+                            int current_step = eMesh.get_current_database_step();
+                            if (hopt_time >= 0.0)
+                              {
+                                eMesh.read_database_at_time(hopt_time);
+                              }
+                            else if (hopt_step >= 0)
+                              {
+                                eMesh.read_database_at_step(hopt_step);
+                              }
+                            else
+                              {
+                                // get last step
+                                int step = eMesh.get_database_time_step_count();
+                                eMesh.read_database_at_step(step?step:1);
+                              }
+
+                            eMesh.mesh_field_stats(&histograms);
                             histograms.compute_uniform_bins(10);
 
                             if (!p_rank) {
                               std::cout << "Before refine, user-requested histograms= " << std::endl;
-                              histograms.print();
+                              histograms.print(true);
                               //histograms.print(stk::percept::pout());
                             }
-                            //if (0) eMesh.read_database_at_time(current_time);
+                            // reset
                             eMesh.read_database_at_step(current_step);
                           }
 #endif
@@ -1106,7 +1118,7 @@ namespace stk {
                                                    << " max = " << hmesh_min_max_ave_factor[1]
                                                    << " ave = " << hmesh_min_max_ave_factor[2]
                                                    << ")\n " ;
-                              histograms.print();
+                              histograms.print(true);
                               //histograms.print(stk::percept::pout());
                             }
                             hmesh_factor = hmesh;
@@ -1352,7 +1364,7 @@ namespace stk {
                                             << " max = " << hmesh_min_max_ave_factor[1]
                                             << " ave = " << hmesh_min_max_ave_factor[2]
                                                        << ")\n";
-                                  histograms.print();
+                                  histograms.print(true);
                                   //histograms.print(stk::percept::pout());
                                 }
                               }

@@ -4570,7 +4570,7 @@ namespace stk {
         }
     }
 
-    Histograms<double> * PerceptMesh::field_stats(Histograms<double> *histograms, std::string options)
+    Histograms<double> * PerceptMesh::mesh_field_stats(Histograms<double> *histograms, std::string options)
     {
       bool do_delete = false;
       if (!histograms)
@@ -4635,7 +4635,7 @@ namespace stk {
           if (pos == 0)
             {
               std::string fname = hname.substr(efname.length());
-              std::cout << "PerceptMesh::field_stats looking for efname= " << fname << std::endl;
+              std::cout << "PerceptMesh::mesh_field_stats looking for field= " << fname << std::endl;
               pos = fname.find("#");
               int index = -2;
               if (pos != std::string::npos)
@@ -4648,6 +4648,33 @@ namespace stk {
                   fname = fname.substr(0,pos-1);
                 }
               field_stats(iter->second, fname, index);
+            }
+          std::string mname = "mesh.";
+          pos = hname.find(mname);
+          if (pos == 0)
+            {
+              std::string name = hname.substr(mname.length());
+              std::cout << "PerceptMesh::mesh_field_stats looking for mesh option= " << name << std::endl;
+              if (name == "edge_length")
+                {
+                  double min_max_ave[3];
+                  hmesh_edge_lengths(min_max_ave, &iter->second, 0);
+                }
+              else if (name == "quality_edge")
+                {
+                  double min_max_ave[3];
+                  hmesh_edge_lengths(min_max_ave, 0, &iter->second);
+                }
+              else if (name == "quality_vol_edge_ratio")
+                {
+                  throw std::runtime_error("quality_vol_edge_ratio not implemented yet");
+                }
+              else if (name == "volume")
+                {
+                  double badJac = 1.e-10;
+                  GeometryVerifier gv(false, badJac);
+                  gv.isGeometryBad(*get_bulk_data(), false, &iter->second);
+                }
             }
         }
       return histograms;

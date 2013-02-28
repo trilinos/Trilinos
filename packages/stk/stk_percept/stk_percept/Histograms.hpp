@@ -31,9 +31,11 @@ namespace stk {
     {
     public:
       std::string m_file_root;
+      double m_database_time;
+      int m_database_step;
       typedef std::map<std::string, Histogram<T> > HistogramMap;
 
-      Histograms(std::string file_root="cout") : m_file_root(file_root) {}
+      Histograms(std::string file_root="cout") : m_file_root(file_root), m_database_time(-1.0), m_database_step(-1) {}
       ~Histograms()
       {
       }
@@ -67,7 +69,11 @@ namespace stk {
                     iter->second.set_titles(iter->first);
                     iter->second.print_simple_table(fout);
                     if (print_bar_chart)
-                      iter->second.print_table(fout, true);
+                      {
+                        file_name = m_file_root+"."+iter->first+".bar.hist";
+                        std::ofstream fout1(file_name.c_str());
+                        iter->second.print_table(fout1, true);
+                      }
                   }
               }
           }
@@ -102,6 +108,8 @@ namespace stk {
     {
       std::string m_root_string;
     public:
+
+
       HistogramsParser(std::string root_string) : m_root_string(root_string) {}
 
       void create(Histograms<T>& histograms)
@@ -140,6 +148,12 @@ namespace stk {
 
       void parse(const YAML::Node& node, Histograms<T>& histograms)
       {
+        set_if_present(node, "time", histograms.m_database_time, double(-1.0));
+        std::cout << "m_database_time = " << histograms.m_database_time << std::endl;
+
+        set_if_present(node, "step", histograms.m_database_step, int(-1));
+        std::cout << "m_database_step = " << histograms.m_database_step << std::endl;
+
         const YAML::Node *y_element_fields = node.FindValue("fields");
         if (y_element_fields)
           {
@@ -169,6 +183,7 @@ namespace stk {
                   if (valid_values.find(mesh_field_name) == valid_values.end())
                     throw std::runtime_error("HistogramsParser:: unrecognized option: " + mesh_field_name);
                   std::string title="Mesh Field "+mesh_field_name;
+                  std::cout << "HistogramsParser::parse: adding " << mesh_field_name << std::endl;
                   histograms["mesh."+mesh_field_name].set_titles(title);
                 }
             }

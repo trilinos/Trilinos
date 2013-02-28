@@ -23,6 +23,7 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 
 #include "GeometryVerifier.hpp"
+#include "Histogram.hpp"
 
 // FIXME
 #include <stk_percept/fixtures/Fixture.hpp>
@@ -230,7 +231,7 @@ namespace stk
     /**
      * Check for nonpositive Jacobian
      */
-    bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable) //, stk::mesh::Part& mesh_part )
+    bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable, Histogram<double> *volume_histogram) //, stk::mesh::Part& mesh_part )
     {
       const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
       const unsigned p_rank = bulk.parallel_rank();
@@ -382,6 +383,8 @@ namespace stk
                   double max_edge_lengthNotZero = (fabs(max_edge_length) < 1.e-20? 1.e-20 : max_edge_length);
 
                   double cellVolActual = volume(iCell);
+                  if (volume_histogram) volume_histogram->push_back(cellVolActual);
+
                   double cellVol = cellVolActual/volEqui; // scaled so that equilateral cell has vol=1.0
                   if (m_dump > 0)
                     {

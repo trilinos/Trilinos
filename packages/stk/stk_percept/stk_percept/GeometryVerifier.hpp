@@ -26,6 +26,7 @@ namespace stk
   namespace percept
   {
 
+    template<typename T> class Histogram;
 
     class GeometryVerifier
     {
@@ -35,7 +36,7 @@ namespace stk
       double getEquiVol(CellTopology& cell_topo);
     public:
       GeometryVerifier(int dump=0, double badJac=1.e-10);
-      bool isGeometryBad(stk::mesh::BulkData& bulk, bool printTable=false);
+      bool isGeometryBad(stk::mesh::BulkData& bulk, bool printTable=false, Histogram<double> *volume_histogram=0);
     };
 
   }//namespace percept
