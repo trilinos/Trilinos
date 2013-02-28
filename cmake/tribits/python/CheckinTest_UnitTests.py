@@ -1806,6 +1806,47 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_remove_existing_configure_files(self):
+
+    testName = "remove_existing_configure_files"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+    os.mkdir(testBaseDir+"/MPI_DEBUG")
+    os.mkdir(testBaseDir+"/MPI_DEBUG/CMakeFiles")
+    cmakeCacheFile = testBaseDir+"/MPI_DEBUG/CMakeCache.txt"
+    runSysCmnd("touch "+cmakeCacheFile)
+    cmakeFilesDir = testBaseDir+"/MPI_DEBUG/CMakeFiles"
+    cmakeFilesDummyFile = cmakeFilesDir+"/dummy.txt"
+    runSysCmnd("touch "+cmakeFilesDummyFile)
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --allow-no-pull --default-builds=MPI_DEBUG" \
+      " --enable-packages=Teuchos --configure", \
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +"FT: rm CMakeCache.txt\n" \
+      +"FT: rm -rf CMakeFiles\n" \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Enabled Packages: Teuchos\n" \
+      )
+
+    self.assertEqual(os.path.exists(cmakeCacheFile), False)
+    self.assertEqual(os.path.exists(cmakeFilesDir), False)
+    self.assertEqual(os.path.exists(cmakeFilesDummyFile), False)
+
+
   def test_send_email_only_on_failure_do_all_push_pass(self):
     checkin_test_run_case(
       \

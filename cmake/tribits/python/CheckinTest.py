@@ -1356,6 +1356,7 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     elif inOptions.doConfigure:
   
       removeIfExists("CMakeCache.txt")
+      removeDirIfExists("CMakeFiles")
 
       cmnd = "./do-configure"
 
