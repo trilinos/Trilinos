@@ -206,7 +206,7 @@ namespace MueLu {
             rows[row+1] = realnnz;
           }
 
-          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", 1);
@@ -299,9 +299,11 @@ namespace MueLu {
           rows[row+1] = realnnz;
         }
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
-        Set(currentLevel, "Graph", graph);
-        Set(currentLevel, "DofsPerNode", 1);
+          // FIXME: why do we use original graph here?
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "DofsPerNode", blkSize);
+        }
       }
 
       GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;

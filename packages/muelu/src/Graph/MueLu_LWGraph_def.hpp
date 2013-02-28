@@ -46,8 +46,6 @@
 #ifndef MUELU_LWGRAPH_DEF_HPP
 #define MUELU_LWGRAPH_DEF_HPP
 
-#include <Xpetra_MapFactory.hpp>  // TODO: can go away?
-
 #include "MueLu_LWGraph_decl.hpp"
 
 namespace MueLu {
@@ -62,7 +60,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return graph_->getDomainMap()->isNodeLocalElement(v);
+    return domainMap_->isNodeLocalElement(v);
   }
 
   /// Return a simple one-line description of this object.
@@ -90,7 +88,7 @@ namespace MueLu {
     }
 
     if (verbLevel & Debug) {
-      graph_->describe(out0, Teuchos::VERB_EXTREME);
+      // graph_->describe(out0, Teuchos::VERB_EXTREME);
     }
   }
 
