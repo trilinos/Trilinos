@@ -157,6 +157,9 @@ namespace MueLu {
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
       }
 
+      if (hieraList.isParameter("dependencyOutputLevel"))
+        this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
+
 
       // Get level configuration
       for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
