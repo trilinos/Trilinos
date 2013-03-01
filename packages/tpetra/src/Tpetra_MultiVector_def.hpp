@@ -56,6 +56,13 @@
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  vectorIndexOutOfRange(size_t VectorIndex) const {
+    return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                size_t NumVectors,
