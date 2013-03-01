@@ -311,7 +311,7 @@ target_buffer_queue_t target_buffers;
 
 
 static mpi_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 0;  /* in milliseconds */
+//static const int MIN_TIMEOUT = 0;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
