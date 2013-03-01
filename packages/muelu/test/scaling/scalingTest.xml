@@ -28,7 +28,7 @@
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="Phase3AggCreation"                   type="double" value="0.5"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="5"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
     </ParameterList>
 
     <ParameterList name="UncoupledAggregationFact">
@@ -37,7 +37,7 @@
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="5"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
     </ParameterList>
 
     <ParameterList name="myAggExportFact">
@@ -135,7 +135,6 @@
       <ParameterList name="ParameterList">
         <Parameter name="chebyshev: degree"                 type="int"     value="2"/>>
         <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="7"/>
-        <Parameter name="chebyshev: max eigenvalue"         type="double"  value="-1.0"/>
         <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
       </ParameterList>
