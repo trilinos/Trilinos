@@ -1149,6 +1149,9 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
   const int* ExportPIDs                 = MyImporter.ExportPIDs();
   if(NumExportIDs==0) return 0;
 
+  Epetra_Distributor& Distor            = MyImporter.Distributor();
+  const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);
+
   // Assume I own all the cols, then flag any cols I don't own
   // This allows us to avoid LID calls later...
   std::vector<bool> IsOwned(SourceMatrix.NumMyCols(),true);
@@ -1162,8 +1165,8 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
   // Status vector 
   std::vector<int> SentTo(SourceMatrix.NumMyCols(),-1);
 
-  // Initial allocation: Too large (assume send involves a max size row)
-  total_length2 = MyImporter.NumSend() * SourceMatrix.MaxNumEntries() + 1;
+  // Initial allocation: NumUnknowsSent * Max row size (guaranteed to be too large)
+  for(i=0,total_length2=0; i<MDistor->NumSends(); i++) total_length2+= MDistor->LengthsTo()[i] * SourceMatrix.MaxNumEntries();
   std::vector<int> ExportGID2(total_length2);
 
   ExportLID2.resize(total_length2);
@@ -1200,6 +1203,7 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
 	ExportLID2[current] = SourceMatrix.DomainMap().LID(ExportGID2[current]);
 	ExportPID2[current] = pid;
 	current++;
+	if(current>= total_length2) throw std::runtime_error("build_type2_exports: More export ids than I thought!");
       }
     }
   }//end main loop
