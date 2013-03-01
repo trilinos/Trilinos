@@ -38,6 +38,44 @@
 #include <Ioss_Utils.h>
 #include <string>
 
+namespace {
+  template <typename INT>
+    void map_global_to_local(const Ioss::Map &map, size_t count, size_t stride, INT *data)
+  {
+    for (size_t i=0; i < count; i+=stride) {
+      int64_t local = map.global_to_local(data[i], true);
+      data[i] = local;
+    }
+  }
+
+  template <typename INT>
+  void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data, INT /*dummy*/) {
+    std::vector<INT> ids;
+    entity->get_field_data("ids", ids);
+
+    double *rdata = static_cast<double*>(data);
+    if (component_count == 1) {
+      for (size_t i=0; i < ids.size(); i++) {
+        rdata[i] = sqrt(ids[i]);
+      }
+    } else {
+      for (size_t i=0; i < ids.size(); i++) {
+        for (size_t j=0; j < component_count; j++) {
+          rdata[i*component_count + j] = j+sqrt(ids[i]);
+        }
+      }
+    }
+  }
+
+  void fill_transient_data(const Ioss::GroupingEntity *entity, const Ioss::Field &field, void *data) {
+    const Ioss::Field &ids = entity->get_fieldref("ids");
+    if (ids.is_type(Ioss::Field::INTEGER)) {
+      fill_transient_data(entity, field.raw_storage()->component_count(), (double*)data, (int)0);
+    } else {
+      fill_transient_data(entity, field.raw_storage()->component_count(), (double*)data, (int64_t)0);
+    }
+  }
+}
 namespace Iogn {
 
   // ========================================================================
@@ -140,38 +178,36 @@ namespace Iogn {
                                          void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
 
-      Ioss::Field::RoleType role = field.get_role();
-      if (role == Ioss::Field::MESH) {
-        if (field.get_name() == "mesh_model_coordinates") {
-          // Cast 'data' to correct size -- double
-          double *rdata = static_cast<double*>(data);
-          m_generatedMesh->coordinates(rdata);
-        }
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::MESH) {
+      if (field.get_name() == "mesh_model_coordinates") {
+        // Cast 'data' to correct size -- double
+        double *rdata = static_cast<double*>(data);
+        m_generatedMesh->coordinates(rdata);
+      }
 
-        else if (field.get_name() == "ids") {
-          // Map the local ids in this node block
-          // (1...node_count) to global node ids.
-          get_node_map().map_implicit_data(data, field, num_to_get, 0);
-        }
-        else if (field.get_name() == "owning_processor") {
-          int *owner = static_cast<int*>(data);
-          m_generatedMesh->owning_processor(owner, num_to_get);
-        }
-        else if (field.get_name() == "connectivity") {
-          // Do nothing, just handles an idiosyncracy of the GroupingEntity
-        }
-        else if (field.get_name() == "connectivity_raw") {
-          // Do nothing, just handles an idiosyncracy of the GroupingEntity
-        }
-        else {
-          num_to_get = Ioss::Utils::field_warning(nb, field, "input");
-        }
-        return num_to_get;
-      } else {
+      else if (field.get_name() == "ids") {
+        // Map the local ids in this node block
+        // (1...node_count) to global node ids.
+        get_node_map().map_implicit_data(data, field, num_to_get, 0);
+      }
+      else if (field.get_name() == "owning_processor") {
+        int *owner = static_cast<int*>(data);
+        m_generatedMesh->owning_processor(owner, num_to_get);
+      }
+      else if (field.get_name() == "connectivity") {
+        // Do nothing, just handles an idiosyncracy of the GroupingEntity
+      }
+      else if (field.get_name() == "connectivity_raw") {
+        // Do nothing, just handles an idiosyncracy of the GroupingEntity
+      }
+      else {
         num_to_get = Ioss::Utils::field_warning(nb, field, "input");
       }
+      return num_to_get;
+    } else {
+      fill_transient_data(nb, field, data);
     }
     return num_to_get;
   }
@@ -186,63 +222,60 @@ namespace Iogn {
                                          void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
 
-      int64_t id = eb->get_property("id").get_int();
-      int64_t element_count = eb->get_property("entity_count").get_int();
-      Ioss::Field::RoleType role = field.get_role();
+    int64_t id = eb->get_property("id").get_int();
+    int64_t element_count = eb->get_property("entity_count").get_int();
+    Ioss::Field::RoleType role = field.get_role();
 
-      if (role == Ioss::Field::MESH) {
-        // Handle the MESH fields required for an ExodusII file model.
-        // (The 'genesis' portion)
+    if (role == Ioss::Field::MESH) {
+      // Handle the MESH fields required for an ExodusII file model.
+      // (The 'genesis' portion)
 
-        if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
-          assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
+      if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
+        assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
 
-          // The generated mesh connectivity is returned in a vector.  Ids are global
-          if (field.is_type(Ioss::Field::INTEGER)) {
-            int *connect = static_cast<int*>(data);
-            m_generatedMesh->connectivity(id, connect);
-          } else {
-            int64_t *connect = static_cast<int64_t*>(data);
-            m_generatedMesh->connectivity(id, connect);
+        // The generated mesh connectivity is returned in a vector.  Ids are global
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *connect = static_cast<int*>(data);
+          m_generatedMesh->connectivity(id, connect);
+          if (field.get_name() == "connectivity_raw") {
+            map_global_to_local(get_node_map(), element_count * field.raw_storage()->component_count(), 1, connect);
           }
-        }
-        else if (field.get_name() == "ids") {
-          // Map the local ids in this element block
-          // (eb_offset+1...eb_offset+1+element_count) to global element ids.
-          get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
-        }
-        else {
-          num_to_get = Ioss::Utils::field_warning(eb, field, "input");
-        }
-      }
-
-      else if (role == Ioss::Field::ATTRIBUTE) {
-        if (element_count > 0) {
-          int attribute_count = eb->get_property("attribute_count").get_int();
-          if (attribute_count > 0) {
-            double *attr = static_cast<double*>(data);
-            for (size_t i=0; i < num_to_get; i++) {
-              attr[i] = 1.0;
-            }
+        } else {
+          int64_t *connect = static_cast<int64_t*>(data);
+          m_generatedMesh->connectivity(id, connect);
+          if (field.get_name() == "connectivity_raw") {
+            map_global_to_local(get_node_map(), element_count * field.raw_storage()->component_count(), 1, connect);
           }
         }
       }
-
-      else if (role == Ioss::Field::TRANSIENT) {
-        // Check if the specified field exists on this element block.
-        // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-        // exist on the database as scalars with the appropriate
-        // extensions.
-
-        // Read in each component of the variable and transfer into
-        // 'data'.  Need temporary storage area of size 'number of
-        // elements in this block.
-        num_to_get = Ioss::Utils::field_warning(eb, field, "transient");
-      } else if (role == Ioss::Field::REDUCTION) {
-        num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+      else if (field.get_name() == "ids") {
+        // Map the local ids in this element block
+        // (eb_offset+1...eb_offset+1+element_count) to global element ids.
+        get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
       }
+      else {
+        num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+      }
+    }
+
+    else if (role == Ioss::Field::ATTRIBUTE) {
+      if (element_count > 0) {
+        int attribute_count = eb->get_property("attribute_count").get_int();
+        if (attribute_count > 0) {
+          double *attr = static_cast<double*>(data);
+          for (size_t i=0; i < num_to_get; i++) {
+            attr[i] = 1.0;
+          }
+        }
+      }
+    }
+
+    else if (role == Ioss::Field::TRANSIENT) {
+      // Fill the field with arbitrary data...
+      fill_transient_data(eb, field, data);
+    } else if (role == Ioss::Field::REDUCTION) {
+      num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
     }
     return num_to_get;
   }
@@ -252,79 +285,76 @@ namespace Iogn {
                                          void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
 
-      int64_t id = ef_blk->get_property("id").get_int();
-      size_t entity_count = ef_blk->get_property("entity_count").get_int();
-      if (num_to_get != entity_count) {
-        std::ostringstream errmsg;
-        errmsg << "Partial field input not implemented for side blocks";
-        IOSS_ERROR(errmsg);
+    int64_t id = ef_blk->get_property("id").get_int();
+    size_t entity_count = ef_blk->get_property("entity_count").get_int();
+    if (num_to_get != entity_count) {
+      std::ostringstream errmsg;
+      errmsg << "Partial field input not implemented for side blocks";
+      IOSS_ERROR(errmsg);
+    }
+
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::MESH) {
+
+      if (field.get_name() == "ids") {
+        // A sideset' is basically an exodus sideset.  A
+        // sideset has a list of elements and a corresponding local
+        // element side (1-based) The side id is: side_id =
+        // 10*element_id + local_side_number This assumes that all
+        // sides in a sideset are boundary sides.
+        std::vector<int64_t> elem_side;
+        m_generatedMesh->sideset_elem_sides(id, elem_side);
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *ids = static_cast<int*>(data);
+          for (size_t i=0; i < num_to_get; i++) {
+            ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+          }
+        } else {
+          int64_t *ids = static_cast<int64_t*>(data);
+          for (size_t i=0; i < num_to_get; i++) {
+            ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+          }
+        }
       }
 
-      Ioss::Field::RoleType role = field.get_role();
-      if (role == Ioss::Field::MESH) {
+      else if (field.get_name() == "element_side" ||
+          field.get_name() == "element_side_raw") {
+        // Since we only have a single array, we need to allocate an extra
+        // array to store all of the data.  Note also that the element_id
+        // is the global id but only the local id is stored so we need to
+        // map from local_to_global prior to generating the side id...
 
-        if (field.get_name() == "ids") {
-          // A sideset' is basically an exodus sideset.  A
-          // sideset has a list of elements and a corresponding local
-          // element side (1-based) The side id is: side_id =
-          // 10*element_id + local_side_number This assumes that all
-          // sides in a sideset are boundary sides.
-          std::vector<int64_t> elem_side;
-          m_generatedMesh->sideset_elem_sides(id, elem_side);
-          if (field.is_type(Ioss::Field::INTEGER)) {
-            int *ids = static_cast<int*>(data);
-            for (size_t i=0; i < num_to_get; i++) {
-              ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
-            }
-          } else {
-            int64_t *ids = static_cast<int64_t*>(data);
-            for (size_t i=0; i < num_to_get; i++) {
-              ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
-            }
+        std::vector<int64_t> elem_side;
+        m_generatedMesh->sideset_elem_sides(id, elem_side);
+        if (field.get_name() == "element_side_raw") {
+          map_global_to_local(get_element_map(), elem_side.size(), 2, &elem_side[0]);
+        }
+
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *element_side = static_cast<int*>(data);
+          for (size_t i=0; i < num_to_get; i++) {
+            element_side[2*i+0] = elem_side[2*i+0];
+            element_side[2*i+1] = elem_side[2*i+1] + 1;
+          }
+        } else {
+          int64_t *element_side = static_cast<int64_t*>(data);
+          for (size_t i=0; i < num_to_get; i++) {
+            element_side[2*i+0] = elem_side[2*i+0];
+            element_side[2*i+1] = elem_side[2*i+1] + 1;
           }
         }
-
-        else if (field.get_name() == "element_side" ||
-            field.get_name() == "element_side_raw") {
-          // Since we only have a single array, we need to allocate an extra
-          // array to store all of the data.  Note also that the element_id
-          // is the global id but only the local id is stored so we need to
-          // map from local_to_global prior to generating the side id...
-
-          std::vector<int64_t> elem_side;
-          m_generatedMesh->sideset_elem_sides(id, elem_side);
-
-          if (field.is_type(Ioss::Field::INTEGER)) {
-            int *element_side = static_cast<int*>(data);
-            for (size_t i=0; i < num_to_get; i++) {
-              element_side[2*i+0] = elem_side[2*i+0];
-              element_side[2*i+1] = elem_side[2*i+1] + 1;
-            }
-          } else {
-            int64_t *element_side = static_cast<int64_t*>(data);
-            for (size_t i=0; i < num_to_get; i++) {
-              element_side[2*i+0] = elem_side[2*i+0];
-              element_side[2*i+1] = elem_side[2*i+1] + 1;
-            }
-          }
-        }
-
-        else if (field.get_name() == "distribution_factors") {
-          double *dist_fact = static_cast<double*>(data);
-          size_t comp_count = ef_blk->get_field("distribution_factors").transformed_storage()->component_count();
-          for (size_t i=0; i < num_to_get * comp_count; i++) {
-            dist_fact[i] = 1.0;
-          }
-        }
-
-        else {
-          num_to_get = Ioss::Utils::field_warning(ef_blk, field, "input");
-        }
-      } else if (role == Ioss::Field::TRANSIENT) {
-        num_to_get = Ioss::Utils::field_warning(ef_blk, field, "transient");
       }
+
+      else if (field.get_name() == "distribution_factors") {
+        fill_transient_data(ef_blk, field, data);
+      }
+
+      else {
+        num_to_get = Ioss::Utils::field_warning(ef_blk, field, "input");
+      }
+    } else if (role == Ioss::Field::TRANSIENT) {
+      fill_transient_data(ef_blk, field, data);
     }
     return num_to_get;
   }
@@ -334,33 +364,33 @@ namespace Iogn {
                                          void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
 
-      int64_t id = ns->get_property("id").get_int();
-      Ioss::Field::RoleType role = field.get_role();
-      if (role == Ioss::Field::MESH) {
+    int64_t id = ns->get_property("id").get_int();
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::MESH) {
 
-        if (field.get_name() == "ids" ||
-            field.get_name() == "ids_raw") {
-          std::vector<int64_t> nodes;
-          m_generatedMesh->nodeset_nodes(id, nodes);
-          if (field.is_type(Ioss::Field::INTEGER)) {
-            int *ids = static_cast<int*>(data);
-            std::copy(nodes.begin(), nodes.end(), ids);
-          } else {
-            int64_t *ids = static_cast<int64_t*>(data);
-            std::copy(nodes.begin(), nodes.end(), ids);
-          }
-        } else if (field.get_name() == "distribution_factors") {
-          double *rdata = static_cast<double*>(data);
-          for (size_t i=0; i < num_to_get; i++)
-            rdata[i] = 1.0;
-        } else {
-          num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+      if (field.get_name() == "ids" ||
+          field.get_name() == "ids_raw") {
+        std::vector<int64_t> nodes;
+        m_generatedMesh->nodeset_nodes(id, nodes);
+        if (field.get_name() == "ids_raw") {
+          map_global_to_local(get_node_map(), nodes.size(), 1, &nodes[0]);
         }
-      } else if (role == Ioss::Field::TRANSIENT) {
-        num_to_get = Ioss::Utils::field_warning(ns, field, "transient");
+
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *ids = static_cast<int*>(data);
+          std::copy(nodes.begin(), nodes.end(), ids);
+        } else {
+          int64_t *ids = static_cast<int64_t*>(data);
+          std::copy(nodes.begin(), nodes.end(), ids);
+        }
+      } else if (field.get_name() == "distribution_factors") {
+        fill_transient_data(ns, field, data);
+      } else {
+        num_to_get = Ioss::Utils::field_warning(ns, field, "input");
       }
+    } else if (role == Ioss::Field::TRANSIENT) {
+      fill_transient_data(ns, field, data);
     }
     return num_to_get;
   }
@@ -401,50 +431,48 @@ namespace Iogn {
   {
     size_t num_to_get = field.verify(data_size);
 
-    if (num_to_get > 0) {
-      size_t entity_count = cs->get_property("entity_count").get_int();
+    size_t entity_count = cs->get_property("entity_count").get_int();
 
-      // Return the <entity (node or face), processor> pair
-      if (field.get_name() == "entity_processor") {
+    // Return the <entity (node or face), processor> pair
+    if (field.get_name() == "entity_processor") {
 
-        // Check type -- node or face
-        std::string type = cs->get_property("entity_type").get_string();
+      // Check type -- node or face
+      std::string type = cs->get_property("entity_type").get_string();
 
-        if (type == "node") {
-          // Allocate temporary storage space
-          Ioss::Int64Vector entities(num_to_get);
-          Ioss::IntVector procs(num_to_get);
-          m_generatedMesh->node_communication_map(entities, procs);
+      if (type == "node") {
+        // Allocate temporary storage space
+        Ioss::Int64Vector entities(num_to_get);
+        Ioss::IntVector procs(num_to_get);
+        m_generatedMesh->node_communication_map(entities, procs);
 
-          // and store in 'data' ...
-          if (field.is_type(Ioss::Field::INTEGER)) {
-            int* entity_proc = static_cast<int*>(data);
+        // and store in 'data' ...
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int* entity_proc = static_cast<int*>(data);
 
-            size_t j=0;
-            for (size_t i=0; i < entity_count; i++) {
-              entity_proc[j++] = entities[i];
-              entity_proc[j++] = procs[i];
-            }
-          } else {
-            int64_t* entity_proc = static_cast<int64_t*>(data);
-
-            size_t j=0;
-            for (size_t i=0; i < entity_count; i++) {
-              entity_proc[j++] = entities[i];
-              entity_proc[j++] = procs[i];
-            }
+          size_t j=0;
+          for (size_t i=0; i < entity_count; i++) {
+            entity_proc[j++] = entities[i];
+            entity_proc[j++] = procs[i];
           }
         } else {
-          std::ostringstream errmsg;
-          errmsg << "Invalid commset type " << type;
-          IOSS_ERROR(errmsg);
-        }
+          int64_t* entity_proc = static_cast<int64_t*>(data);
 
-      } else if (field.get_name() == "ids") {
-        // Do nothing, just handles an idiosyncracy of the GroupingEntity
+          size_t j=0;
+          for (size_t i=0; i < entity_count; i++) {
+            entity_proc[j++] = entities[i];
+            entity_proc[j++] = procs[i];
+          }
+        }
       } else {
-        num_to_get = Ioss::Utils::field_warning(cs, field, "input");
+        std::ostringstream errmsg;
+        errmsg << "Invalid commset type " << type;
+        IOSS_ERROR(errmsg);
       }
+
+    } else if (field.get_name() == "ids") {
+      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+    } else {
+      num_to_get = Ioss::Utils::field_warning(cs, field, "input");
     }
     return num_to_get;
   }
@@ -549,6 +577,7 @@ namespace Iogn {
                                                  m_generatedMesh->node_count_proc(), 3);
     block->property_add(Ioss::Property("id", 1));
     get_region()->add(block);
+    add_transient_fields(block);
   }
 
   void DatabaseIO::get_step_times()
@@ -591,6 +620,7 @@ namespace Iogn {
       }
 
       get_region()->add(block);
+      add_transient_fields(block);
     }
   }
 
@@ -616,6 +646,7 @@ namespace Iogn {
       Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, name, number_nodes);
       nodeset->property_add(Ioss::Property("id", ins+1));
       get_region()->add(nodeset);
+      add_transient_fields(nodeset);
     }
   }
 
@@ -668,4 +699,15 @@ namespace Iogn {
     return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION;
   }
 
+  void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)
+  {
+    Ioss::EntityType type = entity->type();
+    size_t entity_count = entity->get_property("entity_count").get_int();
+    size_t var_count = m_generatedMesh->get_variable_count(type);
+    for (size_t i=0; i < var_count; i++) {
+      std::string var_name = entity->type_string() + "_" + Ioss::Utils::to_string(i+1);
+      entity->field_add(Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT, entity_count));
+      std::cerr << "Adding field '" << var_name << "' to '" << entity->name() << "'.\n";
+    }
+  }
 }

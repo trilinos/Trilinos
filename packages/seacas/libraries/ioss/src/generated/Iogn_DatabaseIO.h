@@ -109,6 +109,7 @@ namespace Iogn {
     const std::vector<std::string>& get_sideset_names() const
       { return m_sideset_names; }
   private:
+    void get_step_times();
     void get_nodeblocks();
     void get_elemblocks();
     void get_nodesets();
@@ -167,6 +168,8 @@ namespace Iogn {
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
+
+    void add_transient_fields(Ioss::GroupingEntity *entity);
 
     // Private member functions
     DatabaseIO(const DatabaseIO& from); // do not implement

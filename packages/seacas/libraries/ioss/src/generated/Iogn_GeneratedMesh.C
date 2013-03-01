@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_GeneratedMesh.h>
+#include <Ioss_EntityType.h>
 #include <tokenize.h>
 
 #include <cmath>
@@ -48,6 +49,7 @@ namespace Iogn {
                                int proc_count, int my_proc) :
         numX(num_x), numY(num_y), numZ(num_z), myNumZ(num_z), myStartZ(0),
         processorCount(proc_count), myProcessor(my_proc),
+        timestepCount(0),
         offX(0), offY(0), offZ(0),
         sclX(1), sclY(1), sclZ(1),
         doRotation(false)
@@ -59,6 +61,7 @@ namespace Iogn {
                                int proc_count, int my_proc) :
         numX(0), numY(0), numZ(0), myNumZ(0), myStartZ(0),
         processorCount(proc_count), myProcessor(my_proc),
+        timestepCount(0),
         offX(0), offY(0), offZ(0),
         sclX(1), sclY(1), sclZ(1),
         doRotation(false)
@@ -345,6 +348,24 @@ namespace Iogn {
         }
       }
 
+      else if (option[0] == "times") {
+        timestepCount = std::strtol(option[1].c_str(), NULL, 10);
+      }
+
+      else if (option[0] == "variables") {
+        // Variables Option of the form  "variables:global,10,element,100,..."
+        std::vector<std::string> tokens;
+        Ioss::tokenize(option[1], ",", tokens);
+        assert(tokens.size() %2 == 0);
+        for (size_t ir=0; ir < tokens.size();) {
+          std::string type = tokens[ir++];
+          int count = std::strtol(tokens[ir++].c_str(), NULL, 10);
+          set_variable_count(type, count);
+        }
+        if (timestepCount == 0)
+          timestepCount = 1;
+      }
+
       else if (option[0] == "help") {
         std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
             << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
@@ -356,6 +377,8 @@ namespace Iogn {
             << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
             << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
             << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
+            << "\tvariables:type,count,...  type=element|nodal|nodeset"
+            << "\ttimes:count (number of timesteps to generate)"
             << "\tshow -- show mesh parameters\n"
             << "\thelp -- show this list\n\n";
       }
@@ -386,7 +409,8 @@ namespace Iogn {
           << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
           << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
           << "\tNodeset Count         = " << std::setw(9) << nodeset_count() << "\n"
-          << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n";
+          << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n"
+          << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific ;
         for (int ii=0; ii < 3; ii++) {
@@ -1388,6 +1412,30 @@ namespace Iogn {
       }
     } else {
       element_surface_map(loc, elem_sides);
+    }
+  }
+
+  void GeneratedMesh::set_variable_count(const std::string &type, size_t count)
+  {
+    if (type == "global") {
+      variableCount[Ioss::REGION] = count;
+    }
+    else if (type == "element") {
+      variableCount[Ioss::ELEMENTBLOCK] = count;
+    }
+    else if (type == "nodal") {
+      variableCount[Ioss::NODEBLOCK] = count;
+    }
+    else if (type == "nodeset") {
+      variableCount[Ioss::NODESET] = count;
+    }
+    else if (type == "surface" || type == "sideset") {
+      variableCount[Ioss::SURFACE] = count;
+    }
+    else {
+      std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
+          << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
+          << "       global, element, nodal, nodeset, surface, sideset.\n";
     }
   }
 

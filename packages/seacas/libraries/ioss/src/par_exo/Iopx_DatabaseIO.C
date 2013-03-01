@@ -4618,7 +4618,6 @@ namespace Iopx {
     {
       size_t entity_count = ns->get_property("entity_count").get_int();
       size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
 
 	int64_t id = get_id(ns, type, &ids_);
 	Ioss::Field::RoleType role = field.get_role();
@@ -4706,7 +4705,6 @@ namespace Iopx {
 	} else if (role == Ioss::Field::REDUCTION) {
 	  store_reduction_field(type, field, ns, data);
 	}
-      }
       return num_to_get;
     }
 
