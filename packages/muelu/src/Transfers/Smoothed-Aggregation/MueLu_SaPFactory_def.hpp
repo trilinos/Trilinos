@@ -138,16 +138,6 @@ namespace MueLu {
           optimizeStorage=false;
         }
 
-        //FIXME Improved Epetra MM returns error code -1 optimizeStorage==true.
-#if !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_EPETRAEXT) || !defined(HAVE_MUELU_ML)
-        if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-          optimizeStorage=false;
-        }
-#endif
-        //
-
-        //FIXME but once fixed, reenable the next line.
-        //if (A->getRowMap()->lib() == Xpetra::UseTpetra) optimizeStorage=false;
         AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
       }
 
