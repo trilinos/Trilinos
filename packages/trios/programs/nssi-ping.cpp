@@ -62,6 +62,7 @@
 #include <string>
 #include <iostream>
 
+int admin_debug_level = LOG_UNDEFINED;
 
 #define USE_CONTACT_INFO_FILE
 #undef USE_CONTACT_INFO_FILE
@@ -86,7 +87,9 @@ static void read_contact_info(const char *fname, char *url, int maxlen)
         url[0]='\0';
         return;
     }
-    fgets(url, maxlen, cf);
+    if (fgets(url, maxlen, cf) == NULL) {
+        log_error(admin_debug_level, "failed to read URL from %s", fname);
+    }
     fclose(cf);
 }
 
