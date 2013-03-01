@@ -62,7 +62,7 @@ NNTI_result_t nnti_url_get_memdesc(const char *url, char *outstr, const int maxl
 NNTI_result_t nnti_url_get_params(const char *url, char *outstr, const int maxlen);
 
 
-NNTI_result_t nnti_sleep(const uint64_t msec);
+int nnti_sleep(const uint64_t msec);
 
 #ifdef __cplusplus
 }

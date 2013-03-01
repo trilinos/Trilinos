@@ -198,7 +198,7 @@ NNTI_result_t nnti_url_get_params(const char *url, char *outstr, const int maxle
     return(NNTI_OK);
 }
 
-NNTI_result_t nnti_sleep(const uint64_t msec)
+int nnti_sleep(const uint64_t msec)
 {
     int rc=0;
     struct timespec ts, rmtp;
