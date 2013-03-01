@@ -92,22 +92,21 @@ namespace MueLu {
     RCP<MultiVector> coarseVector = MultiVectorFactory::Build(transferOp->getRangeMap(), fineVector->getNumVectors());
     GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
 
+    RCP<MultiVector> onesVector = MultiVectorFactory::Build(transferOp->getDomainMap(), 1);
+    onesVector->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+    RCP<MultiVector> rowSumVector = MultiVectorFactory::Build(transferOp->getRangeMap(), 1);
+    transferOp->apply(*onesVector, *rowSumVector);
     transferOp->apply(*fineVector, *coarseVector);
 
     if (vectorName == "Coordinates") {
       GetOStream(Runtime0, 0) << "Averaging coordinates" << std::endl;
       size_t numLocalRows = transferOp->getNodeNumRows();
-      Array<size_t> numEntriesPerRow(numLocalRows);
-      for (size_t i=0; i<numLocalRows; ++i) {
-        numEntriesPerRow.push_back(transferOp->getNumEntriesInLocalRow(i));
-        if (numEntriesPerRow[i] == 0) numEntriesPerRow[i] = 1;
-      }
-
+      ArrayRCP<Scalar> sums = rowSumVector->getDataNonConst(0);
       assert(numLocalRows == coarseVector->getLocalLength());
       for (size_t i=0; i<coarseVector->getNumVectors(); ++i) {
         ArrayRCP<Scalar> vals = coarseVector->getDataNonConst(i);
         for (size_t j=0; j<numLocalRows; ++j) {
-          vals[j] /= numEntriesPerRow[j];
+          vals[j] /= (sums[j] != Teuchos::ScalarTraits<Scalar>::zero())?(sums[j]):(Teuchos::ScalarTraits<Scalar>::one());
         }
       }
     }
