@@ -48,8 +48,6 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
 
 namespace Tpetra {
 
@@ -143,17 +141,17 @@ namespace Tpetra {
   /// \section Tpetra_DistObject_ImplSubclass How to implement a subclass
   ///
   /// If you want to implement your own DistObject subclass, you
-  /// should start by implementing the four pure virtual methods: 
-  /// \c checkSizes(), \c copyAndPermute(), \c packAndPrepare(), and 
-  /// \c unpackAndCombine().  The implementation of \c doTransfer()
-  /// includes documentation that explains how DistObject uses
-  /// those methods to do data redistribution.
+  /// should start by implementing the four pure virtual methods:
+  /// checkSizes(), copyAndPermute(), packAndPrepare(), and
+  /// unpackAndCombine().  The implementation of doTransfer() includes
+  /// documentation that explains how DistObject uses those methods to
+  /// do data redistribution.
   ///
   /// If you are writing a DistObject class that uses Kokkos compute
   /// buffers and aims to work for any Kokkos Node type, you should
-  /// also implement the three hooks that create and release views: 
-  /// \c createViews(), \c createViewsNonConst(), and \c releaseViews().
-  /// The default implementation of these hooks does nothing.  The
+  /// also implement the three hooks that create and release views:
+  /// createViews(), createViewsNonConst(), and releaseViews().  The
+  /// default implementation of these hooks does nothing.  The
   /// documentation of these methods explains different ways you might
   /// choose to implement them.
   template <class Packet, 
@@ -181,14 +179,13 @@ namespace Tpetra {
     /// \brief Import data into this object using an Import object ("forward mode").
     ///
     /// The input DistObject is always the source of the data
-    /// redistribution operation, and the \c *this object is always
-    /// the target.
+    /// redistribution operation, and the <tt>*this</tt> object is
+    /// always the target.
     ///
     /// If you don't know the difference between forward and reverse
     /// mode, then you probably want forward mode.  Use this method
     /// with your precomputed Import object if you want to do an
-    /// Import, else use \c doExport() with a precomputed Export
-    /// object.
+    /// Import, else use doExport() with a precomputed Export object.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
@@ -204,14 +201,13 @@ namespace Tpetra {
     /// \brief Export data into this object using an Export object ("forward mode").
     ///
     /// The input DistObject is always the source of the data
-    /// redistribution operation, and the \c *this object is always
-    /// the target.
+    /// redistribution operation, and the <tt>*this</tt> object is
+    /// always the target.
     ///
     /// If you don't know the difference between forward and reverse
     /// mode, then you probably want forward mode.  Use this method
     /// with your precomputed Export object if you want to do an
-    /// Export, else use \c doImport() with a precomputed Import
-    /// object.
+    /// Export, else use doImport() with a precomputed Import object.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
@@ -227,12 +223,12 @@ namespace Tpetra {
     /// \brief Import data into this object using an Export object ("reverse mode").
     ///
     /// The input DistObject is always the source of the data
-    /// redistribution operation, and the \c *this object is always
-    /// the target.
+    /// redistribution operation, and the <tt>*this</tt> object is
+    /// always the target.
     ///
     /// If you don't know the difference between forward and reverse
     /// mode, then you probably want forward mode.  Use the version of
-    /// \c doImport() that takes a precomputed Import object in that
+    /// doImport() that takes a precomputed Import object in that
     /// case.
     ///
     /// \param source [in] The "source" object for redistribution.
@@ -250,12 +246,12 @@ namespace Tpetra {
     /// \brief Export data into this object using an Import object ("reverse mode").
     ///
     /// The input DistObject is always the source of the data
-    /// redistribution operation, and the \c *this object is always
-    /// the target.
+    /// redistribution operation, and the <tt>*this</tt> object is
+    /// always the target.
     ///
     /// If you don't know the difference between forward and reverse
     /// mode, then you probably want forward mode.  Use the version of
-    /// \c doExport() that takes a precomputed Export object in that
+    /// doExport() that takes a precomputed Export object in that
     /// case.
     ///
     /// \param source [in] The "source" object for redistribution.
@@ -277,7 +273,7 @@ namespace Tpetra {
     /// \brief Whether this is a globally distributed object.
     ///
     /// For a definition of "globally distributed" (and its opposite,
-    /// "locally replicated"), see the documentation of Map's \c
+    /// "locally replicated"), see the documentation of Map's
     /// isDistributed() method.
     inline bool isDistributed () const;
 
@@ -302,20 +298,20 @@ namespace Tpetra {
     void print (std::ostream &os) const;
 
     //@}
-    //! @name Implementation of \c Teuchos::Describable
+    //! @name Implementation of Teuchos::Describable
     //@{ 
 
     /// \brief One-line descriptiion of this object.
     ///
     /// We declare this method virtual so that subclasses of
-    /// \c DistObject may override it.
+    /// DistObject may override it.
     virtual std::string description () const;
 
 
     /// \brief Print a descriptiion of this object to the given output stream.
     ///
     /// We declare this method virtual so that subclasses of
-    /// \c DistObject may override it.
+    /// DistObject may override it.
     virtual void 
     describe (Teuchos::FancyOStream &out, 
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
@@ -326,10 +322,10 @@ namespace Tpetra {
     /// \enum ReverseOption
     /// \brief Whether the data transfer should be performed in forward or reverse mode.
     ///
-    /// "Reverse mode" means calling \c doExport() with an \c Import
-    /// object, or calling \c doImport() with an \c Export object.
-    /// "Forward mode" means calling \c doExport() with an \c Export
-    /// object, or calling \c doImport() with an \c Import object.
+    /// "Reverse mode" means calling doExport() with an Import object,
+    /// or calling doImport() with an Export object.  "Forward mode"
+    /// means calling doExport() with an Export object, or calling
+    /// doImport() with an Import object.
     enum ReverseOption {
       DoForward, //*!< Perform the transfer in forward mode.
       DoReverse  //*!< Perform the transfer in reverse mode.
@@ -338,19 +334,19 @@ namespace Tpetra {
     /// \brief Redistribute data across memory images.
     ///
     /// \param source [in] The source object, to redistribute into
-    ///   the destination object, which is \c *this object.
+    ///   the destination object, which is <tt>*this</tt> object.
     ///
     /// \param CM [in] The combine mode that describes how to combine
     ///   values that map to the same global ID on the same process.
     ///
-    /// \param permuteToLIDs [in] See \c copyAndPermute().
+    /// \param permuteToLIDs [in] See copyAndPermute().
     ///
-    /// \param permuteFromLIDs [in] See \c copyAndPermute().
+    /// \param permuteFromLIDs [in] See copyAndPermute().
     ///
     /// \param remoteLIDs [in] List of entries (as local IDs) in the
     ///   destination object to receive from other processes.
     ///
-    /// \param exportLIDs [in] See \c packAndPrepare().
+    /// \param exportLIDs [in] See packAndPrepare().
     ///
     /// \param distor [in/out] The Distributor object that knows how
     ///   to redistribute data.
@@ -368,10 +364,10 @@ namespace Tpetra {
                 Distributor &distor,
                 ReverseOption revOp);
 
-    /// \name Methods implemented by subclasses and used by \c doTransfer().
+    /// \name Methods implemented by subclasses and used by doTransfer().
     /// 
-    /// The \c doTransfer() method uses the subclass' implementations
-    /// of these methods to implement data transfer.  Subclasses of
+    /// The doTransfer() method uses the subclass' implementations of
+    /// these methods to implement data transfer.  Subclasses of
     /// DistObject must implement these methods.  This is an instance
     /// of the <a
     /// href="http://en.wikipedia.org/wiki/Template_method_pattern">Template
@@ -390,7 +386,7 @@ namespace Tpetra {
     ///
     /// \param source [in] On entry, the source object, from which we
     ///   are distributing.  We distribute to the destination object,
-    ///   which is \c *this object.
+    ///   which is <tt>*this</tt> object.
     /// \param numSameIDs [in] The umber of elements that
     ///   are the same on the source and destination (this) objects.
     ///   These elements are owned by the same process in both the
@@ -468,15 +464,15 @@ namespace Tpetra {
     
     /// \brief Hook for creating a const view.
     ///
-    /// \c doTransfer() calls this on the source object.  By default,
+    /// doTransfer() calls this on the source object.  By default,
     /// it does nothing, but the source object can use this as a hint
     /// to fetch data from a compute buffer on an off-CPU device (such
     /// as a GPU) into host memory.
-    virtual void createViews () const {}
+    virtual void createViews () const;
 
     /// \brief Hook for creating a nonconst view.
     ///
-    /// \c doTransfer() calls this on the destination (\c *this)
+    /// doTransfer() calls this on the destination (<tt>*this</tt>)
     /// object.  By default, it does nothing, but the destination
     /// object can use this as a hint to fetch data from a compute
     /// buffer on an off-CPU device (such as a GPU) into host memory.
@@ -489,19 +485,19 @@ namespace Tpetra {
     ///   buffer, whereas a read-and-write view requires copying both
     ///   ways (once to read, from the compute buffer to host memory,
     ///   and once to write, back to the compute buffer).
-    virtual void createViewsNonConst (Kokkos::ReadWriteOption rwo) {}
+    virtual void createViewsNonConst (Kokkos::ReadWriteOption rwo);
 
     /// \brief Hook for releasing views.
     ///
-    /// \c doTransfer() calls this on both the source and destination
+    /// doTransfer() calls this on both the source and destination
     /// objects, once it no longer needs to access that object's data.
     /// By default, this method does nothing.  Implementations may use
     /// this as a hint to free host memory which is a view of a
     /// compute buffer, once the host memory view is no longer needed.
     /// Some implementations may prefer to mirror compute buffers in
-    /// host memory; for these implementations, \c releaseViews() may
-    /// do nothing.
-    virtual void releaseViews () const {}
+    /// host memory; for these implementations, releaseViews() may do
+    /// nothing.
+    virtual void releaseViews () const;
 
     //! The Map over which this object is distributed.
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
@@ -512,13 +508,13 @@ namespace Tpetra {
 
     /// \brief Number of packets to receive for each receive operation.
     /// 
-    /// This array is used in \c Distributor::doPosts() (and \c
-    /// doReversePosts()) when starting the ireceive operation.  
+    /// This array is used in Distributor::doPosts() (and
+    /// doReversePosts()) when starting the ireceive operation.
     ///
-    /// This may be ignored in \c doTransfer() if constantNumPackets
+    /// This may be ignored in doTransfer() if constantNumPackets
     /// is nonzero, indicating a constant number of packets per LID.
     /// (For example, MultiVector sets the constantNumPackets output
-    /// argument of \c packAndPrepare() to the number of columns in
+    /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
     Teuchos::Array<size_t> numImportPacketsPerLID_;
 
@@ -527,14 +523,14 @@ namespace Tpetra {
 
     /// \brief Number of packets to send for each send operation.
     ///
-    /// This array is used in \c Distributor::doPosts() (and \c
+    /// This array is used in Distributor::doPosts() (and
     /// doReversePosts()) for preparing for the send operation.
     ///
-    /// This may be ignored in \c doTransfer() if constantNumPackets
-    /// is nonzero, indicating a constant number of packets per LID.
+    /// This may be ignored in doTransfer() if constantNumPackets is
+    /// nonzero, indicating a constant number of packets per LID.
     /// (For example, MultiVector sets the constantNumPackets output
-    /// argument of \c packAndPrepare() to the number of columns in
-    /// the multivector.)
+    /// argument of packAndPrepare() to the number of columns in the
+    /// multivector.)
     Teuchos::Array<size_t> numExportPacketsPerLID_;
   }; // class DistObject
 
@@ -844,6 +840,23 @@ namespace Tpetra {
     RCP<FancyOStream> out = getFancyOStream (rcpFromRef (os));
     this->describe (*out, Teuchos::VERB_DEFAULT);
   }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::createViews () const 
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  createViewsNonConst (Kokkos::ReadWriteOption rwo) 
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  releaseViews () const 
+  {}
 
 } // namespace Tpetra
 
