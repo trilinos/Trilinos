@@ -72,9 +72,9 @@ IF (TPL_ENABLE_Gemini   AND
   )
 ENDIF()
 
-# SPI means BG/P.
+# BGPDMA means SPI/DCMF which means BG/P.
 # On BG/P, libtopomap only requires METIS and ParMETIS.
-IF (TPL_ENABLE_SPI      AND
+IF (TPL_ENABLE_BGPDMA   AND
     TPL_ENABLE_METIS    AND
     TPL_ENABLE_ParMETIS AND
     TPL_ENABLE_LibTopoMap)
