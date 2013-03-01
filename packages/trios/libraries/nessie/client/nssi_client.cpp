@@ -1244,7 +1244,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     case NSSI_REQUEST_COMPLETE:
         log_debug(rpc_debug_level,"timedwait finished");
@@ -1252,7 +1252,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     default:
         log_debug(debug_level, "calling NNTI_wait for result");
