@@ -70,7 +70,6 @@ case ${TARGET_COMPILER} in
   pgi)
     ;;
   gnu)
-    module swap gcc/4.6.2
     ;;
   cray)
     ;;
