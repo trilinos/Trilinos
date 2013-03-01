@@ -106,7 +106,8 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
       const size_t n =
-        sizeof(typename dst_type::scalar_type) * dst.allocation_count();
+        sizeof(typename dst_type::scalar_type) *
+        ViewAssignment< dst_type , typename dst_type::memory_space , void >::allocation_count( dst );
 
         KokkosArray::DeepCopy< typename DeviceDst::memory_space ,
                                typename DeviceSrc::memory_space >(

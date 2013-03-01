@@ -55,13 +55,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class LayoutType , class ManageType >
-struct ViewInitialize< View< DataType , LayoutType , Cuda , ManageType > >
-{
-  typedef View< DataType , LayoutType , Cuda , ManageType > view_type ;
-  inline static void apply( const view_type & ) {}
-};
-
 template<>
 struct AssertShapeBoundsAbort< CudaSpace >
 {

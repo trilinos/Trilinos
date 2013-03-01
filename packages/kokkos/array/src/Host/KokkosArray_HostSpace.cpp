@@ -155,7 +155,10 @@ void * HostSpace::allocate(
 {
   assert_master_thread( "KokkosArray::HostSpace::allocate" );
 
-  return Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
+  void * const ptr =
+    Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
+
+  return ptr ;
 }
 
 void HostSpace::increment( const void * ptr )

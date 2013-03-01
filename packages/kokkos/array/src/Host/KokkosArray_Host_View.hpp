@@ -64,11 +64,11 @@ struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType > >
 {
   typedef View< DataType , LayoutType , Host , ManagedType > view_type ;
   typedef typename view_type::scalar_type scalar_type ;
-  typedef typename view_type::shape_type  shape_type ;
 
-  inline static void apply( const view_type & view )
+  static void apply( const view_type & view )
   {
-    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , view.allocation_count() );
+    const size_t count = ViewAssignment< view_type , HostSpace , void >::allocation_count( view );
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
   }
 };
 

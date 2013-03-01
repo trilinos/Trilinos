@@ -56,6 +56,20 @@
 namespace KokkosArray {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
+template< class DstViewType >
+struct ViewInitialize { static void apply( const DstViewType & ) {} };
+
+template< class T , class L , class D , class M >
+size_t allocation_count( const View<T,L,D,M> & view )
+{
+  return ViewAssignment< View<T,L,D,M> , typename View<T,L,D,M>::memory_space , void >
+    ::allocation_count( view );
+}
+
+//----------------------------------------------------------------------------
+
 template< class MemorySpace , class MemoryTraits , class = KokkosArray::ExecutionSpace >
 struct ViewTracking {
   KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ) {}
@@ -72,8 +86,10 @@ struct ViewTracking< MemorySpace , MemoryManaged , HostSpace >
     { MemorySpace::decrement( ptr ); }
 };
 
+//----------------------------------------------------------------------------
+
 template< class DstViewType >
-struct ViewAssignment< DstViewType , void , unsigned_<0> >
+struct ViewAssignment< DstViewType , void , void >
 {
   typedef ViewTracking< typename DstViewType::memory_space ,
                         typename DstViewType::memory_traits > tracking ;

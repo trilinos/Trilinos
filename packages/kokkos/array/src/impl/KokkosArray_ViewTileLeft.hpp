@@ -74,6 +74,17 @@ struct ViewAssignment<
 {
   typedef typename DstViewType::shape_type shape_type ;
 
+  KOKKOSARRAY_INLINE_FUNCTION static
+  size_t allocation_count( const DstViewType & dst )
+  {
+    typedef is_LayoutTileLeft< typename DstViewType::array_layout > layout ;
+
+    return
+       layout::N0 * layout::N1 * 
+       ( ( dst.m_shape.N0 + layout::N0 - 1 ) / layout::N0 ) *
+       ( ( dst.m_shape.N1 + layout::N1 - 1 ) / layout::N1 );
+  }
+
 private:
 
   static inline
@@ -84,16 +95,15 @@ private:
 
     ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    const size_t allocation_count = 
-       layout::N0 * layout::N1 * 
-       ( ( dst.m_shape.N0 + layout::N0 - 1 ) / layout::N0 ) *
-       ( ( dst.m_shape.N1 + layout::N1 - 1 ) / layout::N1 );
+    const size_t count = allocation_count( dst );
 
     dst.m_ptr_on_device = (typename DstViewType::scalar_type *)
       memory_space::allocate( label ,
                               typeid(typename DstViewType::scalar_type) ,
                               sizeof(typename DstViewType::scalar_type) ,
-                              allocation_count );
+                              count );
+
+    ViewInitialize< DstViewType >::apply( dst );
   }
 
 public:

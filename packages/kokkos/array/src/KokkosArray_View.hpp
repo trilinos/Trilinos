@@ -67,11 +67,8 @@ template< class MemorySpace ,
           unsigned Rank = Shape::rank >
 class ViewOper ;
 
-template< class DstViewType , class SrcViewType = void , class ArgCount = unsigned_<0> >
+template< class DstViewType , class SrcViewType = void , class ArgCount = void >
 struct ViewAssignment {};
-
-template< class >
-struct ViewInitialize ;
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -313,10 +310,6 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   shape_type shape() const { return oper_type::m_shape ; }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  size_t allocation_count() const
-  { return Impl::ShapeMap<shape_type,array_layout>::allocation_count( oper_type::m_shape , oper_type::m_stride ); }
-
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
   KOKKOSARRAY_INLINE_FUNCTION
@@ -361,14 +354,14 @@ public:
   View( const View<T,L,D,M> & rhs )
     {
       oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M> >( *this , rhs );
+      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<0> >( *this , rhs );
     }
 
   // Assign from a compatible view:
 
   template< class T , class L , class D , class M >
   View & operator = ( const View<T,L,D,M> & rhs )
-    { Impl::ViewAssignment<View,View<T,L,D,M> >( *this , rhs ); return *this ; }
+    { Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<0> >( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
@@ -385,9 +378,7 @@ public:
         const size_t n7 = 0 )
     {
       oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment< View , memory_space , void >( *this , label , n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      Impl::ViewInitialize< View >::apply( *this );
+      Impl::ViewAssignment< View , memory_space >( *this , label , n0, n1, n2, n3, n4, n5, n6, n7 );
     }
 
   /*------------------------------------------------------------------*/

@@ -156,8 +156,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -251,8 +251,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -344,8 +344,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -435,8 +435,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -524,8 +524,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -611,8 +611,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
@@ -696,8 +696,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc(  left.allocation_count() )
-    , right_alloc( right.allocation_count() )
+    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
+    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
     {}
 
   static void apply()
