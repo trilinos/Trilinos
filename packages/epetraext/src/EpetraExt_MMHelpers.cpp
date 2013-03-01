@@ -1198,12 +1198,12 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
       int col=colind[j];
       if(IsOwned[col] && SentTo[col]!=pid){
 	// We haven't added this guy to the list yet.
+	if(current>= total_length2) throw std::runtime_error("build_type2_exports: More export ids than I thought!");
 	SentTo[col]         = pid;
 	ExportGID2[current] = SourceMatrix.GCID(col);
 	ExportLID2[current] = SourceMatrix.DomainMap().LID(ExportGID2[current]);
 	ExportPID2[current] = pid;
 	current++;
-	if(current>= total_length2) throw std::runtime_error("build_type2_exports: More export ids than I thought!");
       }
     }
   }//end main loop
