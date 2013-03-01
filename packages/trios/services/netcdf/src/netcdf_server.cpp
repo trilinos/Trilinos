@@ -1098,8 +1098,8 @@ int nc_get_att_stub(
     const char *name = args->name;
 
     nc_type xtype;
-    MPI_Offset len, nbytes, typesize;
-    void *attbuf = NULL;
+    MPI_Offset len=0, nbytes=0, typesize=0;
+    void *attbuf=NULL;
 
     log_debug(netcdf_debug_level, "enter");
 
