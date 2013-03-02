@@ -50,10 +50,11 @@
 
 namespace Tpetra {
 
-  namespace {
-    // This is an implementation detail of Distributor.  Please do not
-    // rely on these values in your code.  We use this to pick the
-    // type of send operation that Distributor uses.
+  namespace Details {
+    /// \brief The type of MPI send that Distributor should use.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on these values in your code.
     enum EDistributorSendType {
       DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
       DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
@@ -61,29 +62,14 @@ namespace Tpetra {
       DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
     };
 
-    // Convert an EDistributorSendType enum value to a string.
+    /// \brief Convert an EDistributorSendType enum value to a string.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on this function values in your code.
     std::string
-    DistributorSendTypeEnumToString (EDistributorSendType sendType)
-    {
-      if (sendType == DISTRIBUTOR_ISEND) {
-        return "Isend";
-      }
-      else if (sendType == DISTRIBUTOR_RSEND) {
-        return "Rsend";
-      }
-      else if (sendType == DISTRIBUTOR_SEND) {
-        return "Send";
-      }
-      else if (sendType == DISTRIBUTOR_SSEND) {
-        return "Ssend";
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
-          "EDistributorSendType enum value " << sendType << ".");
-      }
-    }
+    DistributorSendTypeEnumToString (EDistributorSendType sendType);
 
-  } // namespace (anonymous)
+  } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
   ///
@@ -523,7 +509,7 @@ namespace Tpetra {
     //@{
 
     //! The variant of send to use in do[Reverse]Posts().
-    EDistributorSendType sendType_;
+    Details::EDistributorSendType sendType_;
 
     //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
     bool barrierBetween_;
@@ -785,7 +771,7 @@ namespace Tpetra {
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const EDistributorSendType sendType = sendType_;
+    const Details::EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -808,7 +794,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier,
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
@@ -914,23 +900,23 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend =
             exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	  if (sendType == DISTRIBUTOR_SEND) { // the default, so put it first
+	  if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             // FIXME (mfh 23 Mar 2012) Implement a three-argument
             // version of send() that takes an ArrayView instead of a
             // raw array.
             send<int, Packet> (*comm_, tmpSend.size(),
                                tmpSend.getRawPtr(), imagesTo_[p]);
 	  } 
-	  else if (sendType == DISTRIBUTOR_RSEND) {
+	  else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (*comm_, tmpSend, imagesTo_[p]);
           }
-          else if (sendType == DISTRIBUTOR_ISEND) {
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (startsTo_[p] * numPackets,
                                       lengthsTo_[p] * numPackets);
             requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
           }
-          else if (sendType == DISTRIBUTOR_SSEND) {
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
 	    // "ssend" means "synchronous send."
             ssend<int, Packet> (*comm_, tmpSend.size(),
                                 tmpSend.getRawPtr(), imagesTo_[p]);
@@ -979,21 +965,21 @@ namespace Tpetra {
           }
           ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
-          if (sendType == DISTRIBUTOR_RSEND) {
+          if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
           }
-          else if (sendType == DISTRIBUTOR_ISEND) {
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               sendArray.persistingView (0, lengthsTo_[p] * numPackets);
             requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
           }
-          else if (sendType == DISTRIBUTOR_SSEND) {
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int,Packet> (*comm_, tmpSend.size(),
                                tmpSend.getRawPtr(), imagesTo_[p]);
           }
-          else { // if (sendType == DISTRIBUTOR_SEND)
+          else { // if (sendType == Details::DISTRIBUTOR_SEND)
             // We've already validated sendType, so it has to be
-            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // Details::DISTRIBUTOR_SEND.  If it's not, well, this is a
             // reasonable fallback.
             send<int,Packet> (*comm_, tmpSend.size(),
                               tmpSend.getRawPtr(), imagesTo_[p]);
@@ -1036,7 +1022,7 @@ namespace Tpetra {
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const EDistributorSendType sendType = sendType_;
+    const Details::EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1059,7 +1045,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier,
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
@@ -1179,21 +1165,21 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
           ArrayView<const Packet> tmpSend =
             exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-          if (sendType == DISTRIBUTOR_RSEND) {
+          if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
           }
-          else if (sendType == DISTRIBUTOR_ISEND) {
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
             requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
           }
-          else if (sendType == DISTRIBUTOR_SSEND) {
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (*comm_, tmpSend.size(),
                                 tmpSend.getRawPtr(), imagesTo_[p]);
           }
-          else { // if (sendType == DISTRIBUTOR_SEND)
+          else { // if (sendType == Details::DISTRIBUTOR_SEND)
             // We've already validated sendType, so it has to be
-            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // Details::DISTRIBUTOR_SEND.  If it's not, well, this is a
             // reasonable fallback.
             send<int, Packet> (*comm_, tmpSend.size(),
                                tmpSend.getRawPtr(), imagesTo_[p]);
@@ -1241,19 +1227,19 @@ namespace Tpetra {
           if (numPacketsTo_p > 0) {
             ArrayView<const Packet> tmpSend = sendArray.view (0, numPacketsTo_p);
 
-            if (sendType == DISTRIBUTOR_RSEND) {
+            if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
             }
-            else if (sendType == DISTRIBUTOR_ISEND) {
+            else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
                 sendArray.persistingView (0, numPacketsTo_p);
               requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
                                                        imagesTo_[p]));
             }
-            else if (sendType == DISTRIBUTOR_SSEND) {
+            else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
             }
-            else { // if (sendType == DISTRIBUTOR_SSEND)
+            else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
             }
           }

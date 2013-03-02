@@ -44,6 +44,28 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Tpetra {
+  namespace Details {
+    std::string
+    DistributorSendTypeEnumToString (EDistributorSendType sendType)
+    {
+      if (sendType == DISTRIBUTOR_ISEND) {
+        return "Isend";
+      }
+      else if (sendType == DISTRIBUTOR_RSEND) {
+        return "Rsend";
+      }
+      else if (sendType == DISTRIBUTOR_SEND) {
+        return "Send";
+      }
+      else if (sendType == DISTRIBUTOR_SSEND) {
+        return "Ssend";
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
+          "EDistributorSendType enum value " << sendType << ".");
+      }
+    }
+  } // namespace Details
 
   Array<std::string>
   distributorSendTypes ()
@@ -58,7 +80,7 @@ namespace Tpetra {
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
-    , sendType_ (DISTRIBUTOR_SEND)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
@@ -79,7 +101,7 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
-    , sendType_ (DISTRIBUTOR_SEND)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
@@ -168,14 +190,15 @@ namespace Tpetra {
 
     const bool barrierBetween =
       plist->get<bool> ("Barrier between receives and sends");
-    const EDistributorSendType sendType =
-      getIntegralValue<EDistributorSendType> (*plist, "Send type");
+    const Details::EDistributorSendType sendType =
+      getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
     // Later, turn this into a validator so that it can be embedded in
     // the valid ParameterList and used in Optika.
-    TEUCHOS_TEST_FOR_EXCEPTION(! barrierBetween && sendType == DISTRIBUTOR_RSEND,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
       std::invalid_argument, "If you use ready sends, you must include a "
       "barrier between receives and sends.  Ready sends require that their "
       "corresponding receives have already been posted, and the only way to "
@@ -227,18 +250,18 @@ namespace Tpetra {
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
-    Array<EDistributorSendType> sendTypeEnums;
-    sendTypeEnums.push_back (DISTRIBUTOR_ISEND);
-    sendTypeEnums.push_back (DISTRIBUTOR_RSEND);
-    sendTypeEnums.push_back (DISTRIBUTOR_SEND);
-    sendTypeEnums.push_back (DISTRIBUTOR_SSEND);
+    Array<Details::EDistributorSendType> sendTypeEnums;
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     plist->set ("Barrier between receives and sends", barrierBetween,
                 "Whether to execute a barrier between receives and sends in do"
                 "[Reverse]Posts().  Required for correctness when \"Send type\""
                 "=\"Rsend\", otherwise correct but not recommended.");
-    setStringToIntegralParameter<EDistributorSendType> ("Send type",
+    setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of MPI_Send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
 
@@ -284,14 +307,16 @@ namespace Tpetra {
   }
 
 
-  void Distributor::createReverseDistributor() const {
-
-    reverseDistributor_ = Teuchos::rcp(new Distributor(comm_));
+  void 
+  Distributor::createReverseDistributor() const 
+  {
+    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_));
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
     // of the reverse Distributor.
-    size_t totalSendLength = std::accumulate(lengthsTo_.begin(),lengthsTo_.end(),0);
+    size_t totalSendLength = 
+      std::accumulate (lengthsTo_.begin(), lengthsTo_.end(), 0);
 
     // The maximum length of any of the receives of this Distributor.
     // We calculate it because it's the maximum length of any of the
@@ -331,6 +356,8 @@ namespace Tpetra {
 
 
   void Distributor::doWaits() {
+    using Teuchos::Array;
+    using Teuchos::CommRequest;
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
     using Teuchos::is_null;
@@ -363,9 +390,6 @@ namespace Tpetra {
       }
 
       // Make sure that waitAll() nulled out all the requests.
-      using Teuchos::Array;
-      using Teuchos::CommRequest;
-      using Teuchos::RCP;
       for (Array<RCP<CommRequest<int> > >::const_iterator it = requests_.begin();
            it != requests_.end(); ++it)
       {
@@ -381,23 +405,22 @@ namespace Tpetra {
     }
   }
 
-
-  void Distributor::doReverseWaits()
-  {
+  void Distributor::doReverseWaits() {
     // call doWaits() on the reverse Distributor, if it exists
     if (! reverseDistributor_.is_null()) {
       reverseDistributor_->doWaits();
     }
   }
 
-  std::string Distributor::description() const
-  {
+  std::string Distributor::description() const {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
     return oss.str();
   }
 
-  void Distributor::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  void 
+  Distributor::describe (Teuchos::FancyOStream &out, 
+			 const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
     using std::setw;
@@ -671,7 +694,7 @@ namespace Tpetra {
   {
     using Teuchos::outArg;
     numExports_ = exportNodeIDs.size();
-
+    
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
 
