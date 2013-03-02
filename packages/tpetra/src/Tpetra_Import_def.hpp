@@ -44,12 +44,12 @@
 
 #ifdef DOXYGEN_USE_ONLY
 #  include <Tpetra_Import_decl.hpp>
-#endif
+#endif // DOXYGEN_USE_ONLY
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Util.hpp>
-#include <Tpetra_ImportExportData.hpp>
 #include <Tpetra_Distributor.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_ImportExportData.hpp>
+#include <Tpetra_Util.hpp>
 #include <Teuchos_as.hpp>
 
 namespace Tpetra {
@@ -79,18 +79,17 @@ namespace Tpetra {
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
     ImportData_ = rcp (new data_type (source, target, plist));
-    setupSamePermuteRemote();
-    if (source->isDistributed()) {
-      setupExport();
+    setupSamePermuteRemote ();
+    if (source->isDistributed ()) {
+      setupExport ();
     }
     remoteGIDs_ = null; // Don't need this anymore.
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Import<LocalOrdinal,GlobalOrdinal,Node> & import)
-    : ImportData_ (import.ImportData_)
+  Import (const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs)
+    : ImportData_ (rhs.ImportData_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -167,8 +166,11 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>&
-  Import<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Import<LocalOrdinal,GlobalOrdinal,Node> & source) {
-    ImportData_ = source.ImportData_;
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs) {
+    if (&rhs != this) {
+      ImportData_ = rhs.ImportData_;
+    }
     return *this;
   }
 
@@ -176,49 +178,36 @@ namespace Tpetra {
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
   print (std::ostream& os) const 
   {
+    using Teuchos::Comm;
     using Teuchos::getFancyOStream;
+    using Teuchos::RCP;
     using Teuchos::rcpFromRef;
+    using Teuchos::toString;
     using std::endl;
 
-    ArrayView<const LocalOrdinal> av;
-    ArrayView<const int> avi;
-    const RCP<const Comm<int> > & comm = getSourceMap()->getComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
+    RCP<const Comm<int> > comm = getSourceMap ()->getComm ();
+    const int myImageID = comm->getRank ();
+    const int numImages = comm->getSize ();
     for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
       if (myImageID == imageCtr) {
         os << endl;
-        if (myImageID == 0) { // this is the root node (only output this info once)
+        if (myImageID == 0) { // I'm the root node (only output this info once)
           os << "Import Data Members:" << endl;
         }
         os << "Image ID       : " << myImageID << endl;
 
-        os << "permuteFromLIDs: "; os << toString (getPermuteFromLIDs()) << endl;
-        //av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << "permuteFromLIDs: " << toString (getPermuteFromLIDs ()) << endl;
+        os << "permuteToLIDs  : " << toString (getPermuteToLIDs ()) << endl;
+        os << "remoteLIDs     : " << toString (getRemoteLIDs ()) << endl;
+        os << "exportLIDs     : " << toString (getExportLIDs ()) << endl;
+        os << "exportImageIDs : " << toString (getExportImageIDs ()) << endl;
 
-        os << "permuteToLIDs  : ";
-        os << toString (getPermuteToLIDs()) << endl;
-        //av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-
-        os << "remoteLIDs     : ";
-        os << toString (getRemoteLIDs()) << endl;
-        //av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-
-        os << "exportLIDs     : ";
-        os << toString (getExportLIDs()) << endl;
-        //av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-
-        os << "exportImageIDs : ";
-        os << toString (getExportImageIDs()) << endl;
-        //avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
-
-        os << "numSameIDs     : " << getNumSameIDs() << endl;
-        os << "numPermuteIDs  : " << getNumPermuteIDs() << endl;
-        os << "numRemoteIDs   : " << getNumRemoteIDs() << endl;
-        os << "numExportIDs   : " << getNumExportIDs() << endl;
+        os << "numSameIDs     : " << getNumSameIDs () << endl;
+        os << "numPermuteIDs  : " << getNumPermuteIDs () << endl;
+        os << "numRemoteIDs   : " << getNumRemoteIDs () << endl;
+        os << "numExportIDs   : " << getNumExportIDs () << endl;
       }
-
-      // A few global barriers give I/O a chance to complete.
+      // A few global barriers give output a chance to complete.
       comm->barrier();
       comm->barrier();
       comm->barrier();
@@ -254,7 +243,10 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Import<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteRemote() {
+  void 
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  setupSamePermuteRemote() 
+  {
     const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
     const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
     ArrayView<const GlobalOrdinal> sourceGIDs = source.getNodeElementList();
@@ -377,8 +369,11 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::setupExport() {
+    using Teuchos::arcp;
     using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
+    using Teuchos::null;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Array<int>::difference_type size_type;
