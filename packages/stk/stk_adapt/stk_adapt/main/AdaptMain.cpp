@@ -527,6 +527,15 @@ namespace stk {
       std::string output_mesh="";
       std::string block_name_inc = "";
       std::string block_name_exc = "";
+
+      // for Salinas 
+#if defined(STK_BUILT_IN_SIERRA) 
+      std::string rbar_blocks= "";
+#endif
+      // for Salinas and other codes
+      //std::string ignore_blocks = "";
+      // just use block_name_inc to exclude....
+
       std::string convert="";
       std::string refine="";
       //std::string refine="";
@@ -629,6 +638,9 @@ namespace stk {
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
+#if defined(STK_BUILT_IN_SIERRA) 
+      run_environment.clp.setOption("rbar_blocks"              , &rbar_blocks              , "list of blocks to treat in special Salinas fashion for RBARs - see block_name description for format.");
+#endif
       //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
       run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
@@ -1212,6 +1224,18 @@ namespace stk {
                             breaker.setQueryPassOnly(query_only == 1);
                             breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
                             //breaker.setIgnoreSideSets(true);
+#if defined(STK_BUILT_IN_SIERRA) 
+                            if (rbar_blocks.length())
+                              {
+                                BlockNamesType rbar_names(stk::percept::EntityRankEnd+1u);
+                                if (rbar_blocks.length())
+                                  {
+                                    rbar_names = RefinerUtil::getBlockNames(rbar_blocks, eMesh.get_rank(), eMesh);
+                                    std::cout << "rbar_blocks= " << rbar_blocks << " rbar_names= " << rbar_names << std::endl;
+                                  }
+                                //breaker.set_rbar_special_treatment(rbar_names);
+                              }
+#endif
 
                             for (int iBreak = 0; iBreak < number_refines; iBreak++)
                               {

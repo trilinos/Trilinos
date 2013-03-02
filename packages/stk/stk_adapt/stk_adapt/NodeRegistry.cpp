@@ -2,6 +2,8 @@
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
+#include <set>
+
 #if 0 && NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
 namespace Teuchos
 {
@@ -744,6 +746,232 @@ namespace stk {
           }
       } // makeCentroid(stk::mesh::FieldBase *)
 
+
+    static void get_rbar_parts(stk::percept::PerceptMesh& eMesh, std::vector<std::string>& block_names_include, std::set<stk::mesh::Part *>& rbar_parts)
+    {
+      rbar_parts.clear();
+
+      stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+      bool found_include_only_block = false;
+      for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+        {
+          bool foundPart = false;
+          for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+            {
+              stk::mesh::Part * part = *i_part ;
+
+              std::string bname = block_names_include[ib];
+              if ('+' == bname[0])
+                found_include_only_block = true;
+              bname = bname.substr(1, bname.length()-1);
+              if (part->name() == bname)
+                {
+                  foundPart = true;
+                  break;
+                }
+            }
+          if (!foundPart)
+            {
+              std::string msg = "UniformRefinerPattern::setNeededParts unknown block name: " + block_names_include[ib];
+              throw std::runtime_error(msg.c_str());
+            }
+        }
+
+      VERIFY_OP_ON(found_include_only_block, ==, true, "have to specify with +");
+      for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
+        {
+          stk::mesh::Part *  part = *i_part ;
+          if ( stk::mesh::is_auto_declared_part(*part) )
+            continue;
+
+          //bool doThisPart = (block_names_ranks[stk::mesh::MetaData::ELEMENT_RANK].size() == 0);
+          bool doThisPart = false;
+
+          if (!doThisPart)
+            {
+              // we found one block with a "+", so this means include only the actual specified list of blocks, except for those excluded with "-"
+              if (found_include_only_block)
+                {
+                  doThisPart = false;
+                  for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                    {
+                      std::string bname = block_names_include[ib];
+                      if ('+' == bname[0])
+                        {
+                          bname = bname.substr(1, bname.length()-1);
+                          if (part->name() == bname)
+                            {
+                              doThisPart = true;
+                              break;
+                            }
+                        }
+                    }
+                }
+              else
+                // do them all, except for excludes
+                {
+                  doThisPart = true;
+                }
+
+              // check for excludes
+              if (doThisPart)
+                {
+                  for (unsigned ib = 0; ib < block_names_include.size(); ib++)
+                    {
+                      std::string bname = block_names_include[ib];
+                      if ('-' == bname[0])
+                        {
+                          bname = bname.substr(1, bname.length()-1);
+                          if (part->name() == bname)
+                            {
+                              doThisPart = false;
+                              break;
+                            }
+                        }
+                    }
+                }
+            }
+          if (doThisPart) 
+            {
+              std::cout << "tmp srk rbar part = " << part->name() << std::endl;
+              rbar_parts.insert(part);
+            }
+        }
+    }
+
+    /// Check for adding new rbars - these are used for joint modeling in Salinas
+    /// This version does it in bulk and thus avoids repeats on shared sub-dim entities.
+
+    void NodeRegistry::add_rbars(std::vector<std::vector<std::string> >& rbar_types )
+    {
+      static std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part*>(0));
+      static std::vector<stk::mesh::Part*> remove_parts;
+
+      std::vector<std::string>& vstr = rbar_types[m_eMesh.element_rank()];
+      std::set< stk::mesh::Part * > parts_set;
+      get_rbar_parts(m_eMesh, vstr, parts_set);
+      stk::mesh::PartVector parts(parts_set.begin(), parts_set.end());
+
+      unsigned nparts = parts.size();
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *parts[ipart];
+
+          std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::add_rbars Part[" << ipart << "]= " << part.name() << std::endl;
+          //std::string part_name = part.name();
+
+          if (stk::mesh::is_auto_declared_part(part)) 
+            continue;
+
+          const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
+          (void)topology;
+          stk::mesh::Selector selector(part);
+
+          add_parts[0] = &part;
+
+          SubDimCellToDataMap::iterator iter;
+          //std::cout << "tmp m_cell_2_data_map.size() = " << m_cell_2_data_map.size() << std::endl;
+          for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
+            {
+              const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+              SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+
+              NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+              //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
+              //              << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
+              //              << std::endl;
+
+              bool found = false;
+              stk::mesh::EntityRank needed_entity_rank = stk::mesh::MetaData::NODE_RANK;
+              //
+              // SPECIAL CASE
+              // SPECIAL CASE
+              // SPECIAL CASE
+              //
+              if( subDimEntity.size() == 1)
+                {
+                  needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
+                  continue;
+                }
+
+              stk::mesh::Entity master_node;
+
+              for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+                {
+                  SDSEntityType nodeId = *ids;
+                  stk::mesh::Entity node = nodeId;
+                  found = false;
+                  stk::mesh::PairIterRelation beams = node.relations(m_eMesh.element_rank());
+                  for (unsigned ii=0; ii < beams.size(); ii++)
+                    {
+                      if (selector(beams[ii].entity()))
+                        {
+                          found = true;
+                          stk::mesh::PairIterRelation beam_nodes = beams[ii].entity().relations(m_eMesh.node_rank());
+                          VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
+                          for (unsigned jj=0; jj < beam_nodes.size(); jj++)
+                            {
+                              if (beam_nodes[jj].entity() != node)
+                                {
+                                  if (master_node.is_valid())
+                                    {
+                                      VERIFY_OP_ON(master_node.identifier(), ==, beam_nodes[jj].entity().identifier(), "beam issue2 ");
+                                    }
+                                  else
+                                    {
+                                      master_node = beam_nodes[jj].entity();
+                                    }
+                                }
+                            }
+                          break;
+                        }
+                    }
+                  if (!found)
+                    break;
+                }
+
+              if (found)
+                {
+                  // create new beam elements, add to part
+                  unsigned nidsz = nodeIds_onSE.size();
+                  for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
+                    {
+                      stk::mesh::Entity c_node = nodeIds_onSE[i_nid];
+
+                      if (!c_node.is_valid())
+                        {
+                          continue;
+                        }
+
+                      // only try to add element if I am the owner
+                      if (c_node.owner_rank() == m_eMesh.get_parallel_rank())
+                        {
+                          vector<stk::mesh::Entity> new_elements;
+                          m_eMesh.createEntities( m_eMesh.element_rank(), 1, new_elements);
+                          stk::mesh::Entity newElement = new_elements[0];
+                          m_eMesh.get_bulk_data()->declare_relation(newElement, c_node, 0);
+                          m_eMesh.get_bulk_data()->declare_relation(newElement, master_node, 1);
+
+                          m_eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
+
+                          if (1)
+                            {
+                              std::cout << "P[" << m_eMesh.get_rank() << "] adding rbar<" << c_node.identifier() << ", " << master_node.identifier() << "> to   Part[" << ipart << "]= " << part.name()
+                                //<< " topology = " << (topology ? shards::CellTopology(topology).getName() : "null")
+                                        << std::endl;
+                            }
+
+                        }
+
+
+                    }
+
+                }
+            }
+        }
+      std::cout << "tmp add_rbars " << std::endl;
+
+    }
 
   }
 }

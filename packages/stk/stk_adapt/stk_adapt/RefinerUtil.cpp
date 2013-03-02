@@ -16,7 +16,7 @@ using namespace std;
 using namespace percept;
 
 #define EXTRA_PRINT_UR_GETBLOCKS 0
- 
+
 // FIXME move this to a utils class
 BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh)
 {
@@ -40,7 +40,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         else if (block.substr(0,8) == "surface_")
           blocks[eMesh.face_rank()].push_back(block);
       }
-                  
+
     }
   }
   else
@@ -57,12 +57,12 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         break;
       size_t ipos = names.find(',');
       bool last_one =  (ipos == std::string::npos);
-                  
+
       {
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
         bool inc = true;
         //bool exc = false;
-        if ('-' == n1[0]) 
+        if ('-' == n1[0])
         {
           //exc = true;
           inc = false;
@@ -79,7 +79,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         std::string id_string_start = "";
         std::string id_string_end = "";
         // leave open the possibility for other identifiers for range
-        std::string dotdot = ".."; 
+        std::string dotdot = "..";
         int dotdot_len = dotdot.length();
         size_t pos_dotdot = n1.find(dotdot);
         if (pos_dotdot != std::string::npos)
@@ -116,22 +116,22 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
           catch (std::exception& X)
           {
             std::cout << "RefinerUtil::getBlockNames: exception: " << X.what() << std::endl;
-            std::cout << "RefinerUtil::getBlockNames: invalid range syntax in block_name: with .., id_string_start= " 
+            std::cout << "RefinerUtil::getBlockNames: invalid range syntax in block_name: with .., id_string_start= "
                       << id_string_start << " id_string_end= " << id_string_end << std::endl;
             throw std::runtime_error("invalid input syntax");
           }
-          catch ( const std::exception * X ) 
+          catch ( const std::exception * X )
           {
             std::cout << "RefinerUtil::getBlockNames: exception: " << X->what() << std::endl;
-            std::cout << "RefinerUtil::getBlockNames: invalid range syntax in block_name: with .., id_string_start= " 
+            std::cout << "RefinerUtil::getBlockNames: invalid range syntax in block_name: with .., id_string_start= "
                       << id_string_start << " id_string_end= " << id_string_end << std::endl;
             throw std::runtime_error("invalid input syntax");
           }
-          catch( ... ) 
+          catch( ... )
           {
             throw std::runtime_error("invalid input syntax");
           }
-          if (EXTRA_PRINT_UR_GETBLOCKS) 
+          if (EXTRA_PRINT_UR_GETBLOCKS)
           {
             std::cout << "tmp with .., id_string_start= " << id_string_start << " id_string_end= " << id_string_end << std::endl;
             std::cout << "tmp with .., id_start= " << id_start << " id_end= " << id_end << std::endl;
@@ -143,16 +143,16 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
           }
           if (!last_one)
             new_names += ",";
-          if (EXTRA_PRINT_UR_GETBLOCKS) 
+          if (EXTRA_PRINT_UR_GETBLOCKS)
             std::cout << "tmp new_names with .. = " << new_names << std::endl;
         }
         else
         {
           new_names += n1 + (last_one? "":",");
-          if (EXTRA_PRINT_UR_GETBLOCKS)                    
+          if (EXTRA_PRINT_UR_GETBLOCKS)
             std::cout << "tmp new_names without .. = " << new_names << std::endl;
         }
-        if (last_one) 
+        if (last_one)
         {
           break;
         }
@@ -176,12 +176,12 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         break;
       size_t ipos = names.find(',');
       bool last_one =  (ipos == std::string::npos);
-                  
+
       std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
       bool inc = true;
       //bool exc = false;
-      if ('-' == n1[0]) 
+      if ('-' == n1[0])
       {
         //exc = true;
         inc = false;
@@ -207,12 +207,12 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
           new_names += n1 + (last_one? "":",");
         }
       }
-      else 
+      else
       {
         new_names += n1 + (last_one? "":",");
       }
 
-      if (last_one) 
+      if (last_one)
       {
         break;
       }
@@ -222,7 +222,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       }
     }
 
-          
+
     if (EXTRA_PRINT_UR_GETBLOCKS)
       std::cout << "tmp new_names after post-proc to remove +name if -name exists= " << new_names << std::endl;
     if (new_names.length() && !proc_rank)
@@ -238,13 +238,13 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         break;
       size_t ipos = names.find(',');
       bool last_one =  (ipos == std::string::npos);
-                  
+
       {
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
         bool inc = true;
         //bool exc = false;
-        if ('-' == n1[0]) 
+        if ('-' == n1[0])
         {
           //exc = true;
           inc = false;
@@ -257,7 +257,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
           n1 = "+" + n1;
         }
         std::string n2 = n1.substr(1, n1.length()-1);
-                
+
         //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
         if (n1.length() > 6 && n1.substr(1,6) == "block_")
           blocks[stk::mesh::MetaData::ELEMENT_RANK].push_back(n1);
@@ -268,7 +268,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
           std::string pm = (inc?"+":"-");
           blocks[stk::mesh::MetaData::ELEMENT_RANK].push_back(pm+"block_"+n2);
         }
-        if (last_one) 
+        if (last_one)
         {
           break;
         }
@@ -288,7 +288,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
 // FIXME move this to a utils class
 /**
  * This method looks for surfaces that share nodes with the blocks specified in @param blocks and if it finds
- * any surfaces (sidesets), they are added to the blocks so they get refined properly.  
+ * any surfaces (sidesets), they are added to the blocks so they get refined properly.
  * TODO: If a surface is shared by more than one block, an error is thrown.
  */
 
@@ -335,7 +335,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
           continue;
         }
         bool isBoundarySurface= eMesh.isBoundarySurface(*part, *surfacePart);
-        
+
         if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk isBoundarySurface for part/surf= " << part->name() << " / " << surfacePart->name() << " = " << isBoundarySurface << std::endl;
         if (isBoundarySurface)
         {
@@ -351,7 +351,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
   }
   if (0) std::cout << "tmp RefinerUtil::correctBlockNamesForPartPartConsistency: blocks = " << blocks << std::endl;
   return blocks;
-}  
+}
 
 }
 }

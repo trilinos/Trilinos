@@ -1403,6 +1403,8 @@ namespace stk {
           }
       }
 
+      void add_rbars(std::vector<std::vector<std::string> >& rbar_types );
+
       /// Check for adding new nodes to existing parts based on sub-entity part ownership.
       /// This version does it in bulk and thus avoids repeats on shared sub-dim entities.
 
