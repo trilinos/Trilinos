@@ -42,7 +42,6 @@
 #ifndef TPETRA_IMPORTEXPORTDATA_HPP
 #define TPETRA_IMPORTEXPORTDATA_HPP
 
-#include <Teuchos_Object.hpp>
 #include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
@@ -53,8 +52,23 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
 #endif
 
+  /// \class ImportExportData
+  /// \brief Implementation detail of Import and Export.
+  /// \tparam LocalOrdinal Same as the first template parameter of Map.
+  /// \tparam GlobalOrdinal Same as the second template parameter of Map.
+  /// \tparam Node Same as the third template parameter of Map.
+  ///
+  /// \warning This class is an implementation detail of Import and
+  ///   Export.  It may change or disappear at any time.  Tpetra users
+  ///   must not depend on this class.
+  /// 
+  /// Import and Export both require the same data.  We use this class
+  /// as a container for those data.  They include incoming ("remote")
+  /// and outgoing ("export") local indices (LIDs), LIDs to permute on
+  /// the source and target of the Import or Export, and process ranks
+  /// ("image IDs") to which to send.
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportExportData : public Teuchos::Object {
+  class ImportExportData {
     friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
@@ -91,10 +105,18 @@ namespace Tpetra {
     Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
     Teuchos::ArrayRCP<int> exportImageIDs_;
 
-    /// \brief Number of initial identical IDs.
+    /// \brief Number of initial identical indices.
     ///
-    /// The number of IDs that are identical between the source and
-    /// target Maps, up to the first different ID.
+    /// The number of initial indices (IDs) that are identical between
+    /// the source and target Maps.  This count stops at the first
+    /// different ID.
+    ///
+    /// Note that we didn't specify whether the IDs are global (GID)
+    /// or local (LID).  That is because if the two Maps start with
+    /// the same sequence of GIDs on the calling process, then those
+    /// GIDs map to the same LIDs on the calling process.  Thus, when
+    /// we say "ID" in the previous paragraph, we include both GID and
+    /// LID.
     size_t numSameIDs_;
 
     //! Source Map of the Import or Export
@@ -103,10 +125,15 @@ namespace Tpetra {
     //! Target Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
-    //! Communicator over which to distribute data.
+    //! Communicator over which the source and target objects are distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    //! Distributor that does the work of distributing data.
+    /// \brief Object that actually distributes (sends and receives) data.
+    ///
+    /// The Import or Export object that controls this
+    /// ImportExportData container is responsible for initializing the
+    /// Distributor.  The Distributor's constructor just gives it the
+    /// communicator; it does not complete initialization.
     Distributor distributor_;
 
   private:
