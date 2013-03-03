@@ -42,23 +42,6 @@
 #include <Tpetra_HybridPlatform.hpp>
 #include <cstdio> // for std::sscanf
 
-#include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include <Kokkos_TBBNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include <Kokkos_TPINode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include <Kokkos_OpenMPNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include <Kokkos_ThrustGPUNode.hpp>
-#endif
-
-#define TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(N) \
-  template <> bool HybridPlatform::isNodeSupported<N>() {return true;}
-
 namespace Tpetra {
   HybridPlatform::
   HybridPlatform (const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
