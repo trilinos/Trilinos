@@ -182,12 +182,12 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<short>(myRank,numProc));
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
 
    // build parameter lists for gather and scatters
    //////////////////////////////////////////////////////////////////
@@ -290,8 +290,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> > gatherSolutionEval 
-               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval 
+               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
    
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
@@ -313,8 +313,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
-               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -339,8 +339,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
-               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -369,8 +369,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> > gatherSolutionEval 
-               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval 
+               = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
    
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
@@ -391,8 +391,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildScatter<EvalType>(scatterParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
-               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -417,8 +417,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> > scatterResidual 
-               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,short,int> >(evaluator);
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+               = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
@@ -458,12 +458,12 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
  
    typedef EpetraLinearObjContainer ELOC;
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<short>(myRank,numProc));
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
 
    // setup factory
-   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -572,16 +572,16 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
  
    typedef EpetraLinearObjContainer ELOC;
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<short>(myRank,numProc));
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);
    indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
  
    // setup factory
-   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
 
    RCP<LinearObjContainer> container = la_factory->buildLinearObjContainer();
    RCP<LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer();
