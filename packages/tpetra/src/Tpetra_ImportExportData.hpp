@@ -68,10 +68,7 @@ namespace Tpetra {
   /// the source and target of the Import or Export, and process ranks
   /// ("image IDs") to which to send.
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportExportData {
-    friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
-    friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
-  public:
+  struct ImportExportData {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
@@ -95,14 +92,56 @@ namespace Tpetra {
 
     ~ImportExportData();
 
-  protected:
-    // OT vectors
+    /// \brief Index of target Map LIDs to which to permute.
+    ///
+    /// After the initial numSameIDs_ indices which are the same in
+    /// both the source and target Map, zero or more global indices
+    /// (GIDs) remain.  They exist in both the source and target Maps,
+    /// but are in a different order.  Therefore, they may have
+    /// different local indices (LIDs), and require permutation.
+    ///
+    /// For each remaining GIDs g in the target Map, if the source Map
+    /// also owns g, then permuteToLIDs_ gets the corresponding LID in
+    /// the target Map.
     Teuchos::Array<LocalOrdinal> permuteToLIDs_;
+
+    /// \brief Index of source Map LIDs from which to permute.
+    ///
+    /// After the initial numSameIDs_ indices which are the same in
+    /// both the source and target Map, zero or more global indices
+    /// (GIDs) remain.  They exist in both the source and target Maps,
+    /// but are in a different order.  Therefore, they may have
+    /// different local indices (LIDs), and require permutation.
+    ///
+    /// For each remaining GID g in the target Map, if the source Map
+    /// also owns g, then permuteFromLIDs_ gets the corresponding LID
+    /// in the source Map.
     Teuchos::Array<LocalOrdinal> permuteFromLIDs_;
+
+    /// \brief "Incoming" indices.
+    ///
+    /// This array holds the LIDs of the GIDs that are owned by the
+    /// target Map, but not by the source Map.  The target object of
+    /// the Import or Export will receive data for these LIDs from
+    /// other processes.
     Teuchos::Array<LocalOrdinal> remoteLIDs_;
+
+    /// \brief "Outgoing" global indices.
+    ///
+    /// This is only used by Export, not by Import.  There is some
+    /// question whether this array can be deallocated or resized to
+    /// zero after use during Export construction.
     Teuchos::Array<GlobalOrdinal> exportGIDs_;
-    // These are ArrayRCP because in the construction of an Import object, they are allocated and returned by a call to 
+
+    /// \brief "Outgoing" local indices.
+    ///
+    /// This array holds the LIDs of the GIDs that are owned by the
+    /// source Map, but not by the target Map.  The source object of
+    /// the Import or Export will send data from these LIDs to other
+    /// processes.
     Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
+
+    //! Ranks of the processes to which the source object sends data.
     Teuchos::ArrayRCP<int> exportImageIDs_;
 
     /// \brief Number of initial identical indices.

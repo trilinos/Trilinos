@@ -241,8 +241,8 @@ namespace Tpetra {
     ///     and permuteFromLIDs_ gets the corresponding LID in the
     ///     source)
     ///   - permuteFromLIDs_ (see permuteToLIDs_)
-    ///   - remoteLIDs_ (the LID of each GID that are owned by the
-    ///     target Map but not by the source Map)
+    ///   - remoteLIDs_ (the LIDs of the GIDs that are owned by the
+    ///     target Map, but not by the source Map)
     ///
     /// It also fills in the temporary remoteGIDs_ array with the GIDs
     /// that are owned by the target Map but not by the source Map.
