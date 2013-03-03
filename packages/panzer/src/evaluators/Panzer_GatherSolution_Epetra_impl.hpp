@@ -128,7 +128,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
@@ -150,12 +149,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
  
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
- 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = x->Map().LID(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
  
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -257,7 +251,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
    std::vector<int> LIDs;
 
    // for convenience pull out some objects from workset
@@ -290,12 +283,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-        LIDs[i] = x->Map().LID(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over the fields to be gathered
       for(std::size_t fieldIndex=0;
@@ -309,7 +297,7 @@ evaluateFields(typename Traits::EvalData workset)
             int lid = LIDs[offset];
 
             // set the value and seed the FAD object
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(GIDs.size(), (*x)[lid]);
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(LIDs.size(), (*x)[lid]);
             (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
          }
       }
