@@ -382,7 +382,10 @@ void ExodusMesh::coordinates(std::vector<double> &x, std::vector<double> &y, std
 
 void ExodusMesh::connectivity(int64_t blockNumber, int* connectivityForBlock) const
 {
-    std::copy(mExodusData.elementBlockConnectivity[blockNumber-1].begin(), mExodusData.elementBlockConnectivity[blockNumber-1].end(), connectivityForBlock);
+  if (mExodusData.localNumberOfElementsInBlock[blockNumber-1] > 0) {
+    std::copy(mExodusData.elementBlockConnectivity[blockNumber-1].begin(),
+	      mExodusData.elementBlockConnectivity[blockNumber-1].end(), connectivityForBlock);
+  }
 }
 
 std::pair<std::string, int> ExodusMesh::topology_type(int64_t blockNumber) const
