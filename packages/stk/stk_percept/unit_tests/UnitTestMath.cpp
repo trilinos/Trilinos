@@ -39,6 +39,8 @@ namespace unit_tests {
 
 static void test_eigen(double A[3][3], double eig_expected[3])
 {
+#if !defined(__IBMCPP__)
+#else
   double eig[3];
   DenseMatrix<3,3> M(A);
   eigen_3x3(M, eig);
@@ -48,6 +50,7 @@ static void test_eigen(double A[3][3], double eig_expected[3])
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eig[0], eig_expected[0], tol);
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eig[1], eig_expected[1], tol);
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eig[2], eig_expected[2], tol);
+#endif
 }
 
 /// Code generated from Mathematica notebook @see eigen3x3.1.nb 

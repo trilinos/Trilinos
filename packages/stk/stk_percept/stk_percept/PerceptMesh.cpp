@@ -4572,11 +4572,11 @@ namespace stk {
 
     Histograms<double> * PerceptMesh::mesh_field_stats(Histograms<double> *histograms, std::string options)
     {
-      bool do_delete = false;
+      //bool do_delete = false;
       if (!histograms)
         {
 #if STK_ADAPT_HAVE_YAML_CPP
-          do_delete = true;
+          //do_delete = true;
           histograms = new Histograms<double>;
           HistogramsParser<double> hparser(options);
           hparser.create(*histograms);
