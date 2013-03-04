@@ -282,7 +282,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 25"
     "Final set of non-enabled packages:  Stokhos 1"
-    "CTEST_NOTES_FILES=.*/Updates.txt"
+    "CTEST_NOTES_FILES_WO_CACHE=.*/Updates.txt"
     "Processing current package Phalanx: libs='ON', tests='ON'"
     "Processing current package Stalix: libs='ON', tests='ON'"
   )

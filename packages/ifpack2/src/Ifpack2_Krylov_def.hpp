@@ -202,7 +202,7 @@ void Krylov<MatrixType,PrecType>::initialize() {
     ifpack2_prec_=Teuchos::rcp( new ILUT<MatrixType>(A_) );
   }
   else if(PreconditionerType_==3) {
-    int overlaplevel;
+    int overlaplevel=0;
     Ifpack2::getParameter(params_, "schwarz: overlap level",overlaplevel);
     ifpack2_prec_=Teuchos::rcp( new AdditiveSchwarz< MatrixType,ILUT<MatrixType> >(A_,overlaplevel) );
   }

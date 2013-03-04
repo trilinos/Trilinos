@@ -1268,9 +1268,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     )
 
   IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
-    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+  ELSE()
+    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_NOTES_FILES}")
   ENDIF()
-  PRINT_VAR(CTEST_NOTES_FILES)
+  PRINT_VAR(CTEST_NOTES_FILES_WO_CACHE)
 
   # Note: We must only do the submit after we have decided if there are any
   # packages to enable or not and otherwise exit the script!
@@ -1412,7 +1414,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         ENDIF()
 
         IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
-          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE};${CMAKE_CACHE_CLEAN_FILE}")
+        ELSE()
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
         ENDIF()
         PRINT_VAR(CTEST_NOTES_FILES)
       
@@ -1421,13 +1425,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           MESSAGE("\nSubmitting configure and notes ...")
           CTEST_SUBMIT( PARTS configure notes )
         ENDIF()
-      
-        #
-        # C) If configure passed then try the build.  Otherwise, move on to
-        # to the next package.
-        #
 
       ENDIF()
+      
+      #
+      # C) If configure passed then try the build.  Otherwise, move on to
+      # to the next package.
+      #
     
       IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
     
