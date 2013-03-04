@@ -659,13 +659,9 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
-    // allocate a larger space for row "lrow"
-    // copy any existing data from previous allocation to new allocation
-    // update sizes
-    ArrayRCP<LocalOrdinal> old_alloc = lclInds2D_[rowinfo.localRow];
-    lclInds2D_[rowinfo.localRow] = arcp<LocalOrdinal> (newAllocSize);
-    std::copy (old_alloc.begin(), old_alloc.begin() + rowinfo.numEntries, 
-	       lclInds2D_[rowinfo.localRow].begin());
+    // If this reallocates, it does copy over into new storage.
+    // It's also nice because it doesn't change the reference count.
+    lclInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
     return rowinfo;
@@ -685,13 +681,9 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
-    // allocate a larger space for row "lrow"
-    // copy any existing data from previous allocation to new allocation
-    // update sizes
-    ArrayRCP<GlobalOrdinal> old_alloc = gblInds2D_[rowinfo.localRow];
-    gblInds2D_[rowinfo.localRow] = arcp<GlobalOrdinal> (newAllocSize);
-    std::copy (old_alloc.begin(), old_alloc.begin() + rowinfo.numEntries, 
-	       gblInds2D_[rowinfo.localRow].begin());
+    // If this reallocates, it does copy over into new storage.
+    // It's also nice because it doesn't change the reference count.
+    gblInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
     return rowinfo;
@@ -701,32 +693,28 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, class T>
-  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateAllocAndValues(RowInfo rowinfo, size_t newAllocSize, ArrayRCP<T> &rowVals)
+  RowInfo 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  updateAllocAndValues (RowInfo rowinfo, 
+			size_t newAllocSize, 
+			ArrayRCP<T> &rowVals)
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) || (lg == GlobalIndices && ! isGloballyIndexed()) );
+    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) || 
+			     (lg == GlobalIndices && ! isGloballyIndexed()) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
 #endif
-    // allocate a larger space for row "lrow"
-    // copy any existing data from previous allocation to new allocation
-    // update sizes
+    // ArrayRCP::resize automatically copies over values on reallocation.
     if (lg == LocalIndices) {
-      ArrayRCP<LocalOrdinal> old_alloc = lclInds2D_[rowinfo.localRow];
-      lclInds2D_[rowinfo.localRow] = arcp<LocalOrdinal>(newAllocSize);
-      std::copy(old_alloc.begin(), old_alloc.begin() + rowinfo.numEntries, lclInds2D_[rowinfo.localRow].begin());
+      lclInds2D_[rowinfo.localRow].resize (newAllocSize);
+    } 
+    else { // lg == GlobalIndices
+      gblInds2D_[rowinfo.localRow].resize (newAllocSize);
     }
-    else /* if lg == GlobalIndices */ {
-      ArrayRCP<GlobalOrdinal> old_alloc = gblInds2D_[rowinfo.localRow];
-      gblInds2D_[rowinfo.localRow] = arcp<GlobalOrdinal>(newAllocSize);
-      std::copy(old_alloc.begin(), old_alloc.begin() + rowinfo.numEntries, gblInds2D_[rowinfo.localRow].begin());
-    }
-    ArrayRCP<const T> oldVals = rowVals;
-    rowVals = arcp<T>(newAllocSize);
-    std::copy(oldVals.begin(), oldVals.begin() + rowinfo.numEntries, rowVals.begin());
-    //
+    rowVals.resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
     return rowinfo;
@@ -736,15 +724,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalView(RowInfo rowinfo) const
+  ArrayView<const LocalOrdinal> 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalView (RowInfo rowinfo) const
   {
     ArrayView<const LocalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (lclInds1D_ != null) {
-        view = lclInds1D_(rowinfo.offset1D,rowinfo.allocSize);
+        view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
       else if (lclInds2D_[rowinfo.localRow] != null) {
-        view = lclInds2D_[rowinfo.localRow]();
+        view = lclInds2D_[rowinfo.localRow] ();
       }
     }
     return view;
@@ -754,15 +744,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalViewNonConst(RowInfo rowinfo)
+  ArrayView<LocalOrdinal> 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<LocalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (lclInds1D_ != null) {
-        view = lclInds1D_(rowinfo.offset1D,rowinfo.allocSize);
+        view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
       else if (lclInds2D_[rowinfo.localRow] != null) {
-        view = lclInds2D_[rowinfo.localRow]();
+        view = lclInds2D_[rowinfo.localRow] ();
       }
     }
     return view;
@@ -772,15 +764,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<const GlobalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalView(RowInfo rowinfo) const
+  ArrayView<const GlobalOrdinal> 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getGlobalView (RowInfo rowinfo) const
   {
     ArrayView<const GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (gblInds1D_ != null) {
-        view = gblInds1D_(rowinfo.offset1D,rowinfo.allocSize);
+        view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
       else if (gblInds2D_[rowinfo.localRow] != null) {
-        view = gblInds2D_[rowinfo.localRow]();
+        view = gblInds2D_[rowinfo.localRow] ();
       }
     }
     return view;
@@ -790,15 +784,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<GlobalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalViewNonConst(RowInfo rowinfo)
+  ArrayView<GlobalOrdinal> 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getGlobalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (gblInds1D_ != null) {
-        view = gblInds1D_(rowinfo.offset1D,rowinfo.allocSize);
+        view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
       else if (gblInds2D_[rowinfo.localRow] != null) {
-        view = gblInds2D_[rowinfo.localRow]();
+        view = gblInds2D_[rowinfo.localRow] ();
       }
     }
     return view;
@@ -813,19 +809,18 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getRowInfo()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        rowMap_->isNodeLocalElement(myRow) == false,
+        rowMap_->isNodeLocalElement (myRow) == false,
         std::logic_error,
         ": The given (local) row index myRow = " << myRow
         << " does not belong to the graph's row Map.  "
         "This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
-        "Please report this to the Tpetra developers."
-    )
+        "Please report this to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        hasRowInfo() == false,
-        std::logic_error, ": Late catch! Graph does not have row info anymore. Error should have been caught earlier. Please contact Tpetra team."
-    )
-#endif
-    const size_t STINV = OrdinalTraits<size_t>::invalid();
+      hasRowInfo() == false, std::logic_error, 
+      ": Late catch! Graph does not have row info anymore.  "
+      "Error should have been caught earlier.  Please contact Tpetra team.");
+#endif // HAVE_TPETRA_DEBUG
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
     ret.localRow = myRow;
     if (nodeNumAllocated_ != 0 && nodeNumAllocated_ != STINV) {
@@ -833,14 +828,18 @@ namespace Tpetra {
       //
       // if static graph, offsets tell us the allocation size
       if (getProfileType() == StaticProfile) {
-        ret.offset1D   = rowPtrs_[myRow];
-        ret.allocSize  = rowPtrs_[myRow+1] - rowPtrs_[myRow];
-        if (numRowEntries_ == null) ret.numEntries = ret.allocSize;
-        else                        ret.numEntries = numRowEntries_[myRow];
+        ret.offset1D  = rowPtrs_[myRow];
+        ret.allocSize = rowPtrs_[myRow+1] - rowPtrs_[myRow];
+        if (numRowEntries_ == null) {
+	  ret.numEntries = ret.allocSize;
+	}
+	else {
+	  ret.numEntries = numRowEntries_[myRow];
+	}
       }
       else {
         ret.offset1D = STINV;
-        if (isLocallyIndexed()) {
+        if (isLocallyIndexed ()) {
           ret.allocSize = lclInds2D_[myRow].size();
         }
         else {
@@ -855,7 +854,7 @@ namespace Tpetra {
       ret.numEntries = 0;
       ret.offset1D = STINV;
     }
-    else if (indicesAreAllocated() == false) {
+    else if (indicesAreAllocated () == false) {
       // haven't performed allocation yet; probably won't hit this code
       if (numAllocPerRow_ == null) {
         ret.allocSize = numAllocForAllRows_;
@@ -879,10 +878,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::staticAssertions() const
   {
-    // Assumption: sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal)
-    //    This is so that we can store LocalOrdinals in the memory formerly occupied by GlobalOrdinals
-    // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal)  and  max(size_t) >= max(LocalOrdinal)
-    //    This is so that we can represent any LocalOrdinal as a size_t, and any LocalOrdinal as a GlobalOrdinal
+    // Assumption: sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal):
+    //     This is so that we can store local indices in the memory
+    //     formerly occupied by global indices.
+    //
+    // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal) and 
+    //   max(size_t) >= max(LocalOrdinal)
+    //     This is so that we can represent any LocalOrdinal as a
+    //     size_t, and any LocalOrdinal as a GlobalOrdinal
     Teuchos::CompileTimeAssert<sizeof(GlobalOrdinal) < sizeof(LocalOrdinal)> cta_size1; (void)cta_size1;
     Teuchos::CompileTimeAssert<sizeof(global_size_t) < sizeof(size_t)      > cta_size2; (void)cta_size2;
     // can't call max() with CompileTimeAssert, because it isn't a constant expression; will need to make this a runtime check
@@ -948,7 +951,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, class T>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::filterIndicesAndValues(const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *colMap_;
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
@@ -1010,14 +1014,14 @@ namespace Tpetra {
   {
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;
     size_t numNewInds = 0;
-    if (lg == GlobalIndices) {
+    if (lg == GlobalIndices) { // input indices are global
       ArrayView<const GlobalOrdinal> new_ginds = newInds.ginds;
       numNewInds = new_ginds.size();
-      if (I == GlobalIndices) {
+      if (I == GlobalIndices) { // store global indices
         ArrayView<GlobalOrdinal> gind_view = getGlobalViewNonConst(rowinfo);
         std::copy(new_ginds.begin(), new_ginds.end(), gind_view.begin()+rowinfo.numEntries);
       }
-      else if (I == LocalIndices) {
+      else if (I == LocalIndices) { // store local indices
         ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
         typename ArrayView<const GlobalOrdinal>::iterator         in = new_ginds.begin();
         const typename ArrayView<const GlobalOrdinal>::iterator stop = new_ginds.end();
@@ -1027,10 +1031,10 @@ namespace Tpetra {
         }
       }
     }
-    else if (lg == LocalIndices) {
+    else if (lg == LocalIndices) { // input indices are local
       ArrayView<const LocalOrdinal> new_linds = newInds.linds;
       numNewInds = new_linds.size();
-      if (I == LocalIndices) {
+      if (I == LocalIndices) { // store local indices
         ArrayView<LocalOrdinal> lind_view = getLocalViewNonConst(rowinfo);
         std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
       }
@@ -1049,17 +1053,17 @@ namespace Tpetra {
     return numNewInds;
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndicesAndValues(RowInfo rowinfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertIndicesAndValues (RowInfo rowinfo, const SLocalGlobalViews &newInds, 
+			  IterO rowVals, IterN newVals)
   {
-    size_t numNewInds = insertIndices<lg,I>(rowinfo,newInds);
-    std::copy( newVals, newVals + numNewInds, rowVals + rowinfo.numEntries );
+    size_t numNewInds = insertIndices<lg,I> (rowinfo, newInds);
+    std::copy (newVals, newVals + numNewInds, rowVals + rowinfo.numEntries);
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

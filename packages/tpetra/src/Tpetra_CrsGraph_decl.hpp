@@ -836,7 +836,9 @@ namespace Tpetra {
       template <class T>
       ArrayRCP<ArrayRCP<T> > allocateValues2D () const;
 
+      //! Update allocation size of the given row, for local indices.
       RowInfo updateLocalAlloc (RowInfo rowinfo, size_t newAllocSize);
+      //! Update allocation size of the given row, for global indices.
       RowInfo updateGlobalAlloc (RowInfo rowinfo, size_t newAllocSize);
 
       template <ELocalGlobal lg, class T>
