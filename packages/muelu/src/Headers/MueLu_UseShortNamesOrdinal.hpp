@@ -34,6 +34,10 @@ typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GraphBase;
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
 #endif
 
+#ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
+typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsolatedNodeAggregationAlgorithm;
+#endif
+
 #ifdef MUELU_LWGRAPH_SHORT
 typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LWGraph;
 #endif

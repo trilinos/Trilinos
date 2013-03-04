@@ -64,7 +64,7 @@
 #include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
-//#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
 #include "MueLu_Level.hpp"
@@ -86,7 +86,7 @@ UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Unc
   algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bMaxLinkAggregation)   algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  //algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bEmergencyAggregation) algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
 }
 
