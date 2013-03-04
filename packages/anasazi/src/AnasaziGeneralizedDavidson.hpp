@@ -1729,27 +1729,42 @@ void GeneralizedDavidson<ScalarType,MV,OP>::currentStatus( std::ostream &myout )
             //  first...in that case the following will not give the usual expected behavior
             //  and an extra value will be printed.  This is only an issue with the output
             //  format because the actually sorting of Schur forms is guaranteed to be stable.
-            if( d_ritzIndex[permvec[numToPrint-1]] == 1 )
+            if( d_ritzIndex[permvec[numToPrint-1]] != 0 )
                 numToPrint++;
 
-            for( int i=0; i<numToPrint; ++i )
+            int i=0;
+            while( i<numToPrint )
             {
-                myout << std::setw(15) << realRitz[i];
-                if( imagRitz[i] < ST::zero() )
+                if( imagRitz[i] == ST::zero() )
                 {
-                    myout << " - i" << std::setw(15) << ST::magnitude( imagRitz[i] );
-                }
-                else
-                {
+                    myout << std::setw(15) << realRitz[i];
                     myout << " + i" << std::setw(15) << ST::magnitude( imagRitz[i] );
-                }
-                if( i<d_residualSize)
-                {
-                    myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
+                    if( i < d_residualSize )
+                        myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
+                    else
+                        myout << "        Not Computed" << endl;
+
+                    i++;
                 }
                 else
                 {
-                    myout << "        Not Computed" << endl;
+                    // Positive imaginary part
+                    myout << std::setw(15) << realRitz[i];
+                    myout << " + i" << std::setw(15) << ST::magnitude( std::abs(imagRitz[i]) );
+                    if( i < d_residualSize )
+                        myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
+                    else
+                        myout << "        Not Computed" << endl;
+
+                    // Negative imaginary part
+                    myout << std::setw(15) << realRitz[i];
+                    myout << " - i" << std::setw(15) << ST::magnitude( std::abs(imagRitz[i]) );
+                    if( i < d_residualSize )
+                        myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
+                    else
+                        myout << "        Not Computed" << endl;
+
+                    i+=2;
                 }
             }
         }
