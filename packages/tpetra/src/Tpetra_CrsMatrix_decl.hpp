@@ -680,6 +680,16 @@ namespace Tpetra {
 
       \post <tt>isFillActive() == false<tt>
       \post <tt>isFillComplete() == true<tt>
+
+      Parameters:
+
+      - "No Nonlocal Changes" (\c bool): Default is false.  If true,
+        the caller promises that no modifications to nonowned rows
+        have happened on any process since the last call to
+        fillComplete.  This saves a global all-reduce to check whether
+        any process did a nonlocal insert.  Nonlocal changes include
+        any sumIntoGlobalValues or insertGlobalValues call with a row
+        index that is not in the row Map of the calling process.
     */
     void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,

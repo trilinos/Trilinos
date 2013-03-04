@@ -2170,13 +2170,14 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(
-                                    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                                    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                                    const RCP<ParameterList> &params)
+  void 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
+		const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
+		const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier( *rowMap_->getComm() );
+    rowMap_->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillComplete()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
@@ -2196,8 +2197,9 @@ namespace Tpetra {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          nonlocals_.size() > 0,
-          std::runtime_error, ": cannot have non-local entries on a serial run. Invalid entries were submitted to the CrsMatrix.");
+        nonlocals_.size() > 0, std::runtime_error, 
+	": cannot have non-local entries on a serial run. Invalid entries were "
+	"submitted to the CrsGraph (or CrsMatrix).");
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);

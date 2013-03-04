@@ -1653,29 +1653,39 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemble()
   {
+    using Teuchos::Array;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::reduceAll;
     using Teuchos::SerialDenseMatrix;
-    using std::pair;
     using std::make_pair;
+    using std::pair;
+    typedef GlobalOrdinal GO;
     // Iterator over nonlocals_, the nonlocal data stored by previous
     // calls to insertGlobalValues() for nonowned rows.
-    typedef typename std::map<GlobalOrdinal,Array<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
-    typedef typename Array<pair<GlobalOrdinal,Scalar> >::const_iterator NLRITER;
+    typedef typename std::map<GO, Array<pair<GO, Scalar> > >::const_iterator NLITER;
+    typedef typename Array<pair<GO, Scalar> >::const_iterator NLRITER;
+    const char tfecfFuncName[] = "globalAssemble()";
 
     const int numImages = getComm()->getSize();
     const int myImageID = getComm()->getRank();
-    const char tfecfFuncName[] = "globalAssemble()";
+
 #ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier( *getRowMap()->getComm() );
+    getRowMap ()->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
 
     // Determine (via a global all-reduce) if any processes have
-    // global entries to share.
+    // nonlocal entries to share.  This is necessary even if the
+    // matrix has a static graph, because insertGlobalValues allows
+    // nonlocal entries in that case.
     size_t MyNonlocals = nonlocals_.size(),
            MaxGlobalNonlocals;
-    Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,
-      outArg(MaxGlobalNonlocals));
-    if (MaxGlobalNonlocals == 0) return;  // no entries to share
+    reduceAll<int, size_t> (*getComm (), REDUCE_MAX, MyNonlocals,
+      outArg (MaxGlobalNonlocals));
+    if (MaxGlobalNonlocals == 0) {
+      return;  // no entries to share
+    }
 
     // FIXME (mfh 14 Dec 2012) The code below reimplements an Export
     // operation.  It would be better just to use an Export.  See
@@ -1947,15 +1957,15 @@ namespace Tpetra {
     frobNorm_ = -Teuchos::ScalarTraits<Magnitude>::one();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const RCP<ParameterList> &params) {
+  template <class Scalar, 
+	    class LocalOrdinal, 
+	    class GlobalOrdinal, 
+	    class Node, 
+	    class LocalMatOps>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillComplete (const RCP<ParameterList> &params) {
     fillComplete(getRowMap(),getRowMap(),params);
   }
-
-
 
   template<class Scalar,
            class LocalOrdinal,
@@ -1973,23 +1983,33 @@ namespace Tpetra {
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
 #ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier( *getRowMap()->getComm() );
+    getRowMap ()->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
 
-    // allocate if unallocated
-    if (! getCrsGraph()->indicesAreAllocated()) {
-      // allocate global, in case we do not have a column map
-      allocateValues( GlobalIndices, GraphNotYetAllocated );
+    // If true, the caller promises that no process did nonlocal
+    // changes since the last call to fillComplete.
+    bool assertNoNonlocalInserts = false;
+    if (! params.is_null ()) {
+      assertNoNonlocalInserts = params->get ("No Nonlocal Changes", 
+					     assertNoNonlocalInserts);
     }
-    // Global assemble, if we need to (we certainly don't need to if
-    // there's only one process).  This call only costs a single
-    // all-reduce if we don't need global assembly.
-    if (getComm()->getSize() > 1) {
-      // this calls insertGlobalValues(), one entry at a time.
+    const int numProcs = getComm ()->getSize ();
+    // We also don't need to do global assembly if there is only one
+    // process in the communicator.
+    const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+      
+    if (! getCrsGraph()->indicesAreAllocated()) {
+      // Allocate global, in case we do not have a column Map yet.
+      allocateValues (GlobalIndices, GraphNotYetAllocated);
+    }
+    // Global assemble, if we need to.  This call only costs a single
+    // all-reduce if we didn't need global assembly after all.
+    if (needGlobalAssemble) {
       globalAssemble ();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(nonlocals_.size() > 0,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numProcs == 1 && nonlocals_.size() > 0,
         std::runtime_error, ": cannot have nonlocal entries on a serial run.  "
         "An invalid entry (i.e., with row index not in the row Map) must have "
         "been submitted to the CrsMatrix.");

@@ -527,16 +527,25 @@ namespace Tpetra {
 
       /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
-          Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
+          Off-process indices are distributed (via globalAssemble()),
+          indices are sorted, redundant indices are eliminated, and
+          global indices are transformed to local indices.
 
-          \pre  <tt>isFillActive() == true<tt>
+          \pre <tt>isFillActive() == true<tt>
           \pre <tt>isFillComplete()() == false<tt>
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if parameter "Optimize Storage" was \c true, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
+
+	  Parameters:
+          - "Optimize Storage" (\c bool): Default is false.  If true,
+            then isStorageOptimized() returns true after fillComplete
+            finishes.  See isStorageOptimized() for consequences.
        */
-      void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, const RCP<ParameterList> &params = null);
+      void 
+      fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
+		    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
+		    const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete.
 
@@ -544,7 +553,7 @@ namespace Tpetra {
 
           \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
        */
-      void fillComplete(const RCP<ParameterList> &params = null);
+      void fillComplete (const RCP<ParameterList> &params = null);
 
       //@}
 
