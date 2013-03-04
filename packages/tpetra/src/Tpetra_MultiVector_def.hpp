@@ -476,7 +476,6 @@ namespace Tpetra {
 
     // We've already called checkSizes(), so we know this will succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
-    typename ArrayView<const LocalOrdinal>::iterator pTo, pFrom;
     TEUCHOS_TEST_FOR_EXCEPTION(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
       "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs"
