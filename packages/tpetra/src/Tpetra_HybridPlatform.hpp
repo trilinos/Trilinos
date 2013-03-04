@@ -45,7 +45,6 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <cstdio> // for std::sscanf
 
 #include <Kokkos_SerialNode.hpp>
 #ifdef HAVE_KOKKOSCLASSIC_TBB
@@ -61,8 +60,11 @@
 #include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
-#define TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(N) \
-  template <> bool HybridPlatform::isNodeSupported<N>() {return true;}
+// This macro is only for use by Tpetra developers.
+// It should only be invoked in the Tpetra namespace,
+// outside of the HybridPlatform class declaration.
+#define TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(N) \
+  template <> bool HybridPlatform::isNodeSupported<N> ();
 
 namespace Tpetra {
 
@@ -89,7 +91,7 @@ namespace Tpetra {
     //! List of supported nodes and their valid parameters.
     static Teuchos::RCP<Teuchos::ParameterList> listSupportedNodes ();
 
-    //! Query support for a specific node type.
+    //! Whether HybridPlatform supports the given \c Node type.
     template <class Node>
     static bool isNodeSupported ();
 
@@ -178,19 +180,6 @@ namespace Tpetra {
   {
     return false;
   }
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::SerialNode)
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::TBBNode)
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::OpenMPNode)
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::TPINode)
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::ThrustGPUNode)
-#endif
   
   template <class UserCode>
   void HybridPlatform::runUserCode (UserCode& codeobj) {
@@ -257,6 +246,20 @@ namespace Tpetra {
             Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
     } // end of switch
   }
+
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::SerialNode)
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::TBBNode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::OpenMPNode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::TPINode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::ThrustGPUNode)
+#endif
 
 } // namespace Tpetra
 
