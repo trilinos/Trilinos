@@ -88,6 +88,17 @@ namespace Iogn {
 
   }
 
+  GeneratedMesh::GeneratedMesh() : numX(0), numY(0), numZ(0), myNumZ(0), myStartZ(0),
+				   processorCount(0), myProcessor(0),
+				   timestepCount(0),
+				   offX(0), offY(0), offZ(0),
+				   sclX(1), sclY(1), sclZ(1),
+				   doRotation(false)
+  {
+    initialize();
+  }
+
+
   GeneratedMesh::~GeneratedMesh() {}
 
   void GeneratedMesh::initialize()
@@ -122,6 +133,21 @@ namespace Iogn {
       }
       rotmat[i][i] = 1.0;
     }
+
+    variableCount[Ioss::COMMSET] = 0;
+    variableCount[Ioss::EDGEBLOCK] = 0;
+    variableCount[Ioss::EDGESET] = 0;
+    variableCount[Ioss::ELEMENTBLOCK] = 0;
+    variableCount[Ioss::ELEMENTSET] = 0;
+    variableCount[Ioss::FACEBLOCK] = 0;
+    variableCount[Ioss::FACESET] = 0;
+    variableCount[Ioss::INVALID_TYPE] = 0;
+    variableCount[Ioss::NODEBLOCK] = 0;
+    variableCount[Ioss::NODESET] = 0;
+    variableCount[Ioss::REGION] = 0;
+    variableCount[Ioss::SIDEBLOCK] = 0;
+    variableCount[Ioss::SIDESET] = 0;
+    variableCount[Ioss::SUPERELEMENT] = 0;
   }
 
   int64_t GeneratedMesh::add_shell_block(ShellLocation loc)

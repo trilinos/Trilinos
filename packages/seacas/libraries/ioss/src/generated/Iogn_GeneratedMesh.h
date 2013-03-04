@@ -188,7 +188,7 @@ namespace Iogn {
     */
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
     GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count = 1, int my_proc = 0);
-    GeneratedMesh() { };
+    GeneratedMesh();
     virtual ~GeneratedMesh();
 
     /**
@@ -459,7 +459,7 @@ namespace Iogn {
     int64_t get_num_z() const {return numZ;}
 
     size_t get_variable_count(Ioss::EntityType type) const
-    { return variableCount.find(type)->second; }
+    { return variableCount.find(type) != variableCount.end() ? variableCount.find(type)->second : 0; }
 
   private:
     
