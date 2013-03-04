@@ -69,6 +69,7 @@
 #include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
+//#include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -95,6 +96,8 @@ public:
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
 
+  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
   //@}
 
   //! @name Set/get methods.
@@ -102,20 +105,17 @@ public:
 
   // Options shared by all aggregation algorithms
 
+  // deprecated
   void SetOrdering(AggOptions::Ordering ordering) {
-    for(size_t a = 0; a < algos_.size(); a++) {
-      algos_[a]->SetOrdering(ordering);
-    }
+    SetParameter("Ordering", ParameterEntry(ordering)); // revalidate
   }
+  // deprecated
   void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
-    for(size_t a = 0; a < algos_.size(); a++) {
-      algos_[a]->SetMaxNeighAlreadySelected(maxNeighAlreadySelected);
-    }
+    SetParameter("MaxNeighAlreadySelected", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
   }
+  // deprecated
   void SetMinNodesPerAggregate(int minNodesPerAggregate) {
-    for(size_t a = 0; a < algos_.size(); a++) {
-      algos_[a]->SetMinNodesPerAggregate(minNodesPerAggregate);
-    }
+    SetParameter("MinNodesPerAggregate", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
@@ -128,17 +128,21 @@ public:
     mapSmallAggFact_ = mapFact;
   }
 
+  // deprecated
   AggOptions::Ordering GetOrdering() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
-    return algos_[0]->GetOrdering();
+    const ParameterList & pL = GetParameterList();
+    AggOptions::Ordering ordering = pL.get<AggOptions::Ordering>("Ordering");
+    return ordering;
   }
+  // deprecated
   int GetMaxNeighAlreadySelected() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
-    return algos_[0]->GetMaxNeighAlreadySelected();
+    const ParameterList & pL = GetParameterList();
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("MaxNeighAlreadySelected"));
   }
+  // deprecated
   int GetMinNodesPerAggregate() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
-    return algos_[0]->GetMinNodesPerAggregate();
+    const ParameterList & pL = GetParameterList();
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("MinNodesPerAggregate"));
   }
 
   //@}

@@ -64,6 +64,7 @@
 #include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
+//#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
 #include "MueLu_Level.hpp"
@@ -85,7 +86,26 @@ UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Unc
   algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bMaxLinkAggregation)   algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  //algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bEmergencyAggregation) algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+  // aggregate parameters (used in aggregation algorithms)
+  // TODO introduce local member function for each aggregation algorithm
+  //      such that each aggregation algorithm can define its own parameters
+  validParamList->set<AggOptions::Ordering>("Ordering", AggOptions::NATURAL, "Ordering strategy (NATURAL|GRAPH|RANDOM)");
+  validParamList->set<LocalOrdinal> ("MaxNeighAlreadySelected", 0, "Number of maximum neighbour nodes that are already aggregated already. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.");
+  validParamList->set<LocalOrdinal> ("MinNodesPerAggregate", 2, "Minimum number of nodes for aggregate");
+
+  // input parameters
+  validParamList->set< RCP<const FactoryBase> >("Graph", Teuchos::null, "Generating factory of the graph");
+  validParamList->set< RCP<const FactoryBase> >("DofsPerNode", Teuchos::null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+
+  return validParamList;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -169,9 +189,14 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
     // TODO: check return values of functions
     LocalOrdinal nonAggregatedNodes = -1;
+
+    const ParameterList & pL = GetParameterList();
+
+    //Teuchos::ParameterList params;
     for(size_t a = 0; a < algos_.size(); a++) {
-      nonAggregatedNodes = algos_[a]->BuildAggregates(*graph,*aggregates,aggStat);
+      nonAggregatedNodes = algos_[a]->BuildAggregates(pL,*graph,*aggregates,aggStat);
     }
+
     TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
   }
 
