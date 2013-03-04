@@ -82,7 +82,7 @@ class GeneralizedDavidsonSolMgr : public SolverManager<ScalarType,MV,OP>
          * - "Which" -- a string specifying the desired eigenvalues: SM, LM, SR, LR, SI, or LI. Default: "LM."
          * - "Block Size" -- block size used by algorithm.  Default: 1.
          * - "Maximum Subspace Dimension" -- maximum number of basis vectors for subspace.  Two
-         *  for standard eigenvalue problem) or three (for generalized eigenvalue problem) sets of basis
+         *  (for standard eigenvalue problems) or three (for generalized eigenvalue problems) sets of basis
          *  vectors of this size will be required. Default: 3*problem->getNEV()*"Block Size"
          * - "Restart Dimension" -- Number of vectors retained after a restart.  Default: NEV
          * - "Maximum Restarts" -- an int specifying the maximum number of restarts the underlying solver
@@ -107,11 +107,6 @@ class GeneralizedDavidsonSolMgr : public SolverManager<ScalarType,MV,OP>
          * \brief Return the eigenvalue problem.
          */
         const Eigenproblem<ScalarType,MV,OP> & getProblem() const { return *d_problem; }
-
-        /*!
-         * \brief Return the solver
-         */
-        RCP<GeneralizedDavidson<ScalarType,MV,OP> > getSolver() { return d_solver; }
 
         /*!
          * \brief Get the iteration count for the most recent call to solve()

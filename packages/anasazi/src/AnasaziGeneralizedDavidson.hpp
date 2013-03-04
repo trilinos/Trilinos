@@ -118,7 +118,7 @@ struct GeneralizedDavidsonState {
  * is close to the target eigenvalue.  When searching for largest magnitude
  * eigenvalues, selecting a preconditioner \f$P^{-1} \approx B^{-1}\f$
  * usually works well and when searching for smallest magnitude eigenvalues
- * selecting \f$P^{-1} \approx A^{-1}\f$ is common.
+ * selecting \f$P^{-1} \approx A^{-1}\f$ is usually appropriate.
  *
  * This class is currently only implemented for real scalar types
  * (i.e. float, double).
@@ -172,10 +172,10 @@ class GeneralizedDavidson : public Eigensolver<ScalarType,MV,OP>
      * \brief Initialize the eigenvalue problem
      *
      * Anything on the state that is not null is assumed to be valid.
-     * Anything not present on the state will be generated
+     * Anything not present on the state will be generated.
      * Very limited error checking can be performed to ensure the validity of
-     * state components (e.g. we cannot verify that state.AV actually corresponds
-     * to A*state.V), so this function should be used carefully.
+     * state components (e.g. we cannot verify that <tt> state.AV </tt>actually corresponds
+     * to <tt>A*state.V</tt>), so this function should be used carefully.
      */
     void initialize();
 
