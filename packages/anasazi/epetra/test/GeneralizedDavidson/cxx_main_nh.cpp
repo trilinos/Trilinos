@@ -78,12 +78,12 @@ int main(int argc, char *argv[]) {
   }
 
   typedef double ScalarType;
-  typedef Teuchos::ScalarTraits<ScalarType>          SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+  typedef Teuchos::ScalarTraits<ScalarType>          ScalarTypeTraits;
+  typedef ScalarTypeTraits::magnitudeType            MagnitudeType;
+  typedef Epetra_MultiVector                         MV;
+  typedef Epetra_Operator                            OP;
+  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVTraits;
+  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OpTraits;
 
   //  Dimension of the matrix
   int nx = 10;        // Discretization points in any one direction.
@@ -301,8 +301,6 @@ int main(int argc, char *argv[]) {
   // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
 
-  std::cout << "About to set problem" << std::endl;
-
   // Inform the eigenproblem that you are finishing passing it information
   boolret = MyProblem->setProblem();
   if (boolret != true) {
@@ -315,7 +313,6 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  std::cout << "Building solver manager" << std::endl;
   // Initialize the Block Arnoldi solver
   Anasazi::GeneralizedDavidsonSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
 
@@ -364,54 +361,54 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector Aevec(Map,numev);
 
     // Compute A*evecs
-    OPT::Apply( *A, *evecs, Aevec );
+    OpTraits::Apply( *A, *evecs, Aevec );
 
     Teuchos::SerialDenseMatrix<int,double> Breal(1,1), Bimag(1,1);
     while (i<numev) {
       if (index[i]==0) {
         // Get a view of the current eigenvector (evecr)
         curind[0] = i;
-        evecr = MVT::CloneView( *evecs, curind );
+        evecr = MVTraits::CloneView( *evecs, curind );
 
         // Get a copy of A*evecr
-        tempAevec = MVT::CloneCopy( Aevec, curind );
+        tempAevec = MVTraits::CloneCopy( Aevec, curind );
 
         // Compute A*evecr - lambda*evecr
         Breal(0,0) = evals[i].realpart;
-        MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+        MVTraits::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
 
         // Compute the norm of the residual and increment counter
-        MVT::MvNorm( *tempAevec, resnorm );
+        MVTraits::MvNorm( *tempAevec, resnorm );
         normA[i] = resnorm[0] / Teuchos::ScalarTraits<MagnitudeType>::magnitude( evals[i].realpart );
         i++;
       } else {
         // Get a view of the real part of the eigenvector (evecr)
         curind[0] = i;
-        evecr = MVT::CloneView( *evecs, curind );
+        evecr = MVTraits::CloneView( *evecs, curind );
 
         // Get a copy of A*evecr
-        tempAevec = MVT::CloneCopy( Aevec, curind );
+        tempAevec = MVTraits::CloneCopy( Aevec, curind );
 
         // Get a view of the imaginary part of the eigenvector (eveci)
         curind[0] = i+1;
-        eveci = MVT::CloneView( *evecs, curind );
+        eveci = MVTraits::CloneView( *evecs, curind );
 
         // Set the eigenvalue into Breal and Bimag
         Breal(0,0) = evals[i].realpart;
         Bimag(0,0) = evals[i].imagpart;
 
         // Compute A*evecr - evecr*lambdar + eveci*lambdai
-        MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-        MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
-        MVT::MvNorm( *tempAevec, tempnrm );
+        MVTraits::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+        MVTraits::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
+        MVTraits::MvNorm( *tempAevec, tempnrm );
 
         // Get a copy of A*eveci
-        tempAevec = MVT::CloneCopy( Aevec, curind );
+        tempAevec = MVTraits::CloneCopy( Aevec, curind );
 
         // Compute A*eveci - eveci*lambdar - evecr*lambdai
-        MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
-        MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
-        MVT::MvNorm( *tempAevec, resnorm );
+        MVTraits::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
+        MVTraits::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
+        MVTraits::MvNorm( *tempAevec, resnorm );
 
         // Compute the norms and scale by magnitude of eigenvalue
         normA[i] = lapack.LAPY2( tempnrm[0], resnorm[0] ) /

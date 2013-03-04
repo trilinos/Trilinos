@@ -58,13 +58,13 @@
 using namespace Teuchos;
 using namespace Anasazi;
 
-typedef double                              ScalarType;
-typedef ScalarTraits<ScalarType>                   SCT;
-typedef SCT::magnitudeType               MagnitudeType;
-typedef Epetra_MultiVector                 MV;
-typedef Epetra_Operator                    OP;
-typedef MultiVecTraits<ScalarType,MV>     MVT;
-typedef OperatorTraits<ScalarType,MV,OP>  OPT;
+typedef double                            ScalarType;
+typedef ScalarTraits<ScalarType>          ScalarTypeTraits;
+typedef ScalarTypeTraits::magnitudeType   MagnitudeType;
+typedef Epetra_MultiVector                MV;
+typedef Epetra_Operator                   OP;
+typedef MultiVecTraits<ScalarType,MV>     MVTraits;
+typedef OperatorTraits<ScalarType,MV,OP>  OpTraits;
 
 class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
@@ -75,7 +75,7 @@ void checks( RCP<GeneralizedDavidson<ScalarType,MV,OP> > solver, int blocksize, 
              RCP<MatOrthoManager<ScalarType,MV,OP> > ortho) {
   GeneralizedDavidsonState<ScalarType,MV> state = solver->getState();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V) != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVTraits::GetNumberVecs(*state.V) != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
 
   TEUCHOS_TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
 
@@ -96,38 +96,38 @@ void checks( RCP<GeneralizedDavidson<ScalarType,MV,OP> > solver, int blocksize, 
     // get Ritz vector
     RCP<const MV> ritzVectors = solver->getRitzVectors();
 
-    int numRitzVecs = MVT::GetNumberVecs(*ritzVectors);
+    int numRitzVecs = MVTraits::GetNumberVecs(*ritzVectors);
 
-    RCP<MV> tmpVecs = MVT::Clone( *ritzVectors, numRitzVecs );
+    RCP<MV> tmpVecs = MVTraits::Clone( *ritzVectors, numRitzVecs );
 
     // Compute Ritz residuals like R = A*X - B*X*T
     Teuchos::SerialDenseMatrix<int,ScalarType> T(numRitzVecs,numRitzVecs);
-    Teuchos::RCP<MV> ritzResiduals = MVT::Clone( *ritzVectors, numRitzVecs );
+    Teuchos::RCP<MV> ritzResiduals = MVTraits::Clone( *ritzVectors, numRitzVecs );
     for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i].realpart;
-    OPT::Apply( *(problem->getA()), *ritzVectors, *ritzResiduals );
+    OpTraits::Apply( *(problem->getA()), *ritzVectors, *ritzResiduals );
     if( problem->getM() != Teuchos::null )
     {
-        OPT::Apply( *(problem->getM()), *ritzVectors, *tmpVecs );
+        OpTraits::Apply( *(problem->getM()), *ritzVectors, *tmpVecs );
     }
     else
     {
         std::vector<int> inds(numRitzVecs);
         for( int i=0; i<numRitzVecs; ++i ) inds[i]=i;
-        MVT::SetBlock( *ritzVectors, inds, *tmpVecs );
+        MVTraits::SetBlock( *ritzVectors, inds, *tmpVecs );
     }
-    MVT::MvTimesMatAddMv(-1.0,*tmpVecs,T,1.0,*ritzResiduals);
+    MVTraits::MvTimesMatAddMv(-1.0,*tmpVecs,T,1.0,*ritzResiduals);
 
     // Compute the norm of the Ritz residual vectors
     std::vector<MagnitudeType> ritzVecNrm( numRitzVecs );
-    MVT::MvNorm( *ritzVectors, ritzVecNrm );
+    MVTraits::MvNorm( *ritzVectors, ritzVecNrm );
     MagnitudeType error;
     for (int i=0; i<numRitzVecs; i++) {
       error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
       TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
     }
 
-    std::vector<MagnitudeType> ritzResNrm( MVT::GetNumberVecs( *ritzResiduals ) );
-    MVT::MvNorm( *ritzResiduals, ritzResNrm );
+    std::vector<MagnitudeType> ritzResNrm( MVTraits::GetNumberVecs( *ritzResiduals ) );
+    MVTraits::MvNorm( *ritzResiduals, ritzResNrm );
     for (int i=0; i<(int)ritzResNrm.size(); i++) {
       error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
       TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-12,get_out,"Ritz residuals from iteration do not compare to those computed.");
@@ -167,7 +167,6 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   const int  blocksize = pls.get<int>("Block Size");
   const int  maxdim = pls.get<int>("Maximum Subspace Dimension");
-  const int  numritzvecs = pls.get<int>("Number of Ritz Vectors");
 
   SolverUtils<ScalarType,MV,OP> msutils;
 
@@ -191,7 +190,6 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  //TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after init, getCurSubspaceDim() should be equal to block size.");
   checks(solver,blocksize,maxdim,problem,ortho);
 
@@ -201,7 +199,6 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be one.")
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  //TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after one step, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,maxdim,problem,ortho);
 
@@ -213,7 +210,6 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  //TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,maxdim,problem,ortho);
 }
@@ -271,10 +267,6 @@ int main(int argc, char *argv[])
   RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
   RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
-  std::cout << "K" << std::endl;
-  K->Print(std::cout);
-  std::cout << "M" << std::endl;
-  M->Print(std::cout);
   //
   // Create the initial vectors
   const int nev = 5;
