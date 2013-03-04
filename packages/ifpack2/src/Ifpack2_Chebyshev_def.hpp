@@ -496,6 +496,12 @@ applyImpl (const MV& X,
   }
 }
 
+//==========================================================================
+template<class MatrixType>
+double Chebyshev<MatrixType>::getLambdaMaxForApply() const {
+  return impl_.getLambdaMaxForApply();
+}
+
 
 }//namespace Ifpack2
 

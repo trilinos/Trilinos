@@ -47,6 +47,7 @@
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
 #include <Ifpack.h>
+#include <Ifpack_Chebyshev.h>
 #include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_IfpackSmoother.hpp"
@@ -88,14 +89,25 @@ namespace MueLu {
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
+    double lambdaMax = -1.0;
     if (type_ == "Chebyshev") {
-      Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
-      if (maxEigenValue == -1.0) {
-        maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
-        paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
-
-        GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
+      if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
+        lambdaMax = A_->GetMaxEigenvalueEstimate();
+        if (lambdaMax != -1.0) {
+          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
+          paramList_.set("chebyshev: max eigenvalue", lambdaMax);
+        }
+      } else {
+        lambdaMax = paramList_.get<double>("chebyshev: max eigenvalue");
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
       }
+//      Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
+//      if (maxEigenValue == -1.0) {
+//        maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
+//        paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
+//
+//        GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
+//      }
     }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
@@ -103,6 +115,18 @@ namespace MueLu {
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
     prec_->SetParameters(paramList_);
     prec_->Compute();
+
+    if (type_ == "Chebyshev" && lambdaMax == -1.0) {
+      typedef Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> MatrixType;
+      Teuchos::RCP<Ifpack_Chebyshev> chebyPrec;
+      chebyPrec = rcp_dynamic_cast<Ifpack_Chebyshev>(prec_);
+      if (chebyPrec != Teuchos::null) {
+        lambdaMax = chebyPrec->GetLambdaMax();
+        A_->SetMaxEigenvalueEstimate(lambdaMax);
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
+    }
 
     SmootherPrototype::IsSetup(true);
   }
