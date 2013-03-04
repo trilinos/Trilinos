@@ -135,6 +135,9 @@ namespace panzer {
     //! Returns a parameter list with user defined parameters for bc.
     Teuchos::RCP<const Teuchos::ParameterList> params() const;
 
+    //! Returns a nonconst parameter list with user defined parameters for bc.  Nonconst is meant to be used for parameter list validation.
+    Teuchos::RCP<Teuchos::ParameterList> nonconstParams() const;
+
     //! A unique string identifier for this boundary condition.
     std::string identifier() const;
 
@@ -143,7 +146,7 @@ namespace panzer {
 
   private:
 
-    void validateParameters(const Teuchos::ParameterList& p) const;
+    void validateParameters(Teuchos::ParameterList& p) const;
 
   private:
 
