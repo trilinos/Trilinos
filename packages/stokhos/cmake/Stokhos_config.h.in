@@ -77,3 +77,6 @@
 
 /* Define if MATLAB is enabled */
 #cmakedefine HAVE_STOKHOS_MATLABLIB
+
+/* Define if MKL is enabled */
+#cmakedefine HAVE_STOKHOS_MKL
