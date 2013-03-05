@@ -37,13 +37,15 @@
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
 
+#include "Stokhos_ConfigDefs.h"
+
 namespace unit_test {
 
 template<typename Scalar>
 struct performance_test_driver<Scalar,KokkosArray::Host> {
 
   static void run(bool test_flat, bool test_orig, bool test_block, 
-		  bool symmetric) {
+		  bool symmetric, bool mkl) {
     typedef KokkosArray::Host Device;
 
     int nGrid;
@@ -63,10 +65,22 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
     if (test_orig) {
       nGrid = 64 ;
       nIter = 1 ; 
-      performance_test_driver_poly<Scalar,Device>( 
-      	3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
-      performance_test_driver_poly<Scalar,Device>( 
-	5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
+      if (mkl) {
+#ifdef HAVE_STOKHOS_MKL
+	performance_test_driver_poly<Scalar,Device,Stokhos::MKLSparseMatOps>( 
+	  3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+	performance_test_driver_poly<Scalar,Device,Stokhos::MKLSparseMatOps>( 
+	  5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
+#else
+	std::cout << "MKL support not enabled!" << std::endl;
+#endif
+      }
+      else {
+	performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
+	  3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+	performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
+	  5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
+      }
     }
     
     //------------------------------
@@ -77,7 +91,8 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
 }
 
 template <typename Scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric)
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric,
+	     bool mkl)
 {
   const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
   const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
@@ -87,12 +102,12 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric)
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
   unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
-    test_flat, test_orig, test_block, symmetric);
+    test_flat, test_orig, test_block, symmetric, mkl);
 
   KokkosArray::Host::finalize();
 
   return 0 ;
 }
 
-template int mainHost<float>(bool, bool, bool, bool);
-template int mainHost<double>(bool, bool, bool, bool);
+template int mainHost<float>(bool, bool, bool, bool, bool);
+template int mainHost<double>(bool, bool, bool, bool, bool);

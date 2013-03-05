@@ -49,7 +49,8 @@ class Multiply<
                      KokkosArray::Cuda > ,
   KokkosArray::View< VectorValue** ,
                      KokkosArray::LayoutLeft ,
-                     KokkosArray::Cuda > >
+                     KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
 
