@@ -457,13 +457,13 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), useNodesetForPartNodesFields(false)
+    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     MeshData::MeshData(MPI_Comm comm)
-    : m_communicator_(comm), m_anded_selector(NULL), useNodesetForPartNodesFields(false)
+    : m_communicator_(comm), m_anded_selector(NULL), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }

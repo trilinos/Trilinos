@@ -226,13 +226,10 @@ void internal_field_data_to_ioss(const Ioss::Field &io_field,
   for (size_t i=0; i < entity_count; ++i) {
     if (entities[i].is_valid()) {
       T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
-      assert(fld_data != NULL);
-      for(size_t j=0; j<field_component_count; ++j) {
-        io_field_data[i*field_component_count+j] = fld_data[j];
-      }
-    } else {
-      for(size_t j=0; j<field_component_count; ++j) {
-        io_field_data[i*field_component_count+j] = 0;
+      if (fld_data != NULL) {
+        for(size_t j=0; j<field_component_count; ++j) {
+          io_field_data[i*field_component_count+j] = fld_data[j];
+        }
       }
     }
   }
