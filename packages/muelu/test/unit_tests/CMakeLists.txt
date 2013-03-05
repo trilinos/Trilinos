@@ -130,6 +130,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
+      SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
       SOURCE_FILES test.xml 
       )
 
