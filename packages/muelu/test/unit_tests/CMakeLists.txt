@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
@@ -65,6 +66,7 @@ ASSERT_DEFINED(
   )
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
+  APPEND_SET(SOURCES Adapters/CreateTpetraPreconditioner.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -126,6 +128,10 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
+      SOURCE_FILES test.xml 
+      )
 
     TRIBITS_ADD_TEST(
       UnitTests
