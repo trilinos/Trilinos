@@ -122,6 +122,10 @@ typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MultiVectorTransferFactory;
 #endif
 
+#ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoordinatesTransferFactory;
+#endif
+
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> NullspaceFactory;
 #endif
