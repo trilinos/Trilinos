@@ -457,13 +457,13 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL)
+    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), useNodesetForPartNodesFields(false)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     MeshData::MeshData(MPI_Comm comm)
-    : m_communicator_(comm), m_anded_selector(NULL)
+    : m_communicator_(comm), m_anded_selector(NULL), useNodesetForPartNodesFields(false)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -736,7 +736,7 @@ namespace stk {
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
           // (should probably do edges and faces also...)
           // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK) {
+          if (rank != stk::mesh::MetaData::NODE_RANK && use_nodeset_for_part_nodes_fields()) {
             std::string nodes_name = part->name() + "_nodes";
             Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
             if (node_entity != NULL) {
@@ -951,8 +951,13 @@ namespace stk {
             // (should probably do edges and faces also...)
             // Get Ioss::GroupingEntity corresponding to the nodes on this part...
             if (rank != stk::mesh::MetaData::NODE_RANK) {
-              std::string nodes_name = part->name() + "_nodes";
-              Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+              Ioss::GroupingEntity *node_entity = NULL;
+              if (use_nodeset_for_part_nodes_fields()) {
+                std::string nodes_name = part->name() + "_nodes";
+                node_entity = region->get_entity(nodes_name);
+              } else {
+                node_entity = region->get_entity("nodeblock_1");
+              }
               if (node_entity != NULL) {
                 stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK,
                                          node_entity, Ioss::Field::TRANSIENT, add_all_fields);

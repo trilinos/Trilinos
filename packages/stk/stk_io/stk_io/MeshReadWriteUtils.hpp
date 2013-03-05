@@ -325,6 +325,28 @@ namespace stk {
         }
 
         /*!
+         * If there are nodal fields defined on parts with higher-rank. For example, a nodal
+         * field on all the nodes of the elements in an element block, then there are two
+         * ways to output that field:
+         * 1. Create a nodeset of those nodes and output the field on that nodeset
+         * 2. Output the fields as nodal fields (on all nodes in the model; zero-fill if not defined on a node)
+         *
+         * The first method is the most efficient; however, many visualization packages
+         * do not handle nodeset fields as well as they handle nodal field.  This function
+         * specifies how the user application wants the fields output.  Set it via a call
+         * to use_nodeset_for_part_nodes_fields(true_false);
+         * @return
+         */
+        bool use_nodeset_for_part_nodes_fields() const
+        {
+          return useNodesetForPartNodesFields;
+        }
+        void use_nodeset_for_part_nodes_fields(bool true_false)
+        {
+          useNodesetForPartNodesFields = true_false;
+        }
+
+        /*!
          * The `m_property_manager` member data contains properties that
          * can be used to set database-specific options in the
          * Ioss::DatabaseIO class.  Examples include compression, name
@@ -368,6 +390,7 @@ namespace stk {
 
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement
+        bool useNodesetForPartNodesFields;
     };
   }
 }
