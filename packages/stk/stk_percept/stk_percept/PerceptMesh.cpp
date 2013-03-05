@@ -4545,7 +4545,7 @@ namespace stk {
                     for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                       {
                         stk::mesh::Entity element = bucket[iElement];
-                        unsigned stride;
+                        //unsigned stride;
                         double *fdata = field_data(field, element, &stride);
                         if (index == -2)
                           histogram.push_back(fdata[0]);

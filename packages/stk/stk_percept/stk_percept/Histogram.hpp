@@ -106,7 +106,7 @@ namespace stk {
         set_titles();
       }
 
-      ~Histogram() {}
+      virtual ~Histogram() {}
       void set_titles(std::string title="Histogram",
                       std::string title1="Ranges / Mid-Point", std::string title2="Counts", std::string title3="Percentage")
       {
