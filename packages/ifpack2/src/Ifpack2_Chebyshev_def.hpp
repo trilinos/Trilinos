@@ -498,7 +498,7 @@ applyImpl (const MV& X,
 
 //==========================================================================
 template<class MatrixType>
-double Chebyshev<MatrixType>::getLambdaMaxForApply() const {
+typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply() const {
   return impl_.getLambdaMaxForApply();
 }
 

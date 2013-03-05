@@ -600,7 +600,7 @@ public:
   double getApplyTime() const;
 
   //! The estimate of the maximum eigenvalue used in the apply().
-  double getLambdaMaxForApply() const;
+  typename MatrixType::scalar_type getLambdaMaxForApply() const;
 
   //@}
   //! @name Implementation of Teuchos::Describable 
