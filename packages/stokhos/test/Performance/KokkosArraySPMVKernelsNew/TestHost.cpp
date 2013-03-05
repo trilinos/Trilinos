@@ -27,6 +27,9 @@
 // @HEADER
 
 #include <iostream>
+#ifdef HAVE_STOKHOS_OPENMP && HAVE_STOKHOS_MKL
+#include <omp.h>
+#endif
 
 #include "TestStochastic.hpp"
 
@@ -97,10 +100,23 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric,
   const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
   const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
 
+#ifdef HAVE_STOKHOS_OPENMP && HAVE_STOKHOS_MKL
+  // Call a little OpenMP parallel region so that MKL will get the right
+  // number of threads.  This isn't perfect in that the thread binding 
+  // doesn't seem right, and only works at all when using GNU threads with MKL.
+#pragma omp parallel 
+  {
+    int numThreads = omp_get_num_threads();
+#pragma omp single
+    std::cout << " num_omp_threads = " << numThreads << std::endl;
+  }
+#endif
+
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
+
   unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
     test_flat, test_orig, test_block, symmetric, mkl);
 
