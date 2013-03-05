@@ -173,10 +173,6 @@ class AggregationAlgorithmBase
   //@}
 
   private:
-    //! Aggregation options (TODO: Teuchos::ParameterList?)
-    //AggOptions::Ordering ordering_;                /**<  natural, random, graph           */
-    //int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    //int      maxNeighAlreadySelected_; /**<  complexity control               */
 
   }; // class AggregationAlgorithmBase
 

@@ -170,7 +170,9 @@ int main(int argc, char *argv[]) {
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // aggregation factory
-  Teuchos::RCP<UncoupledAggregationFactory> UnCoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
+  Teuchos::RCP<UncoupledAggregationFactory> UnCoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(/*dropFact*/));
+  UnCoupledAggFact->SetFactory("Graph", dropFact);
+  UnCoupledAggFact->SetFactory("DofsPerNode", dropFact);
   //UnCoupledAggFact->SetFactory("Graph", dropFact); // UnCoupledAggFact not changed to new factory handling
   //UnCoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
   //UnCoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);

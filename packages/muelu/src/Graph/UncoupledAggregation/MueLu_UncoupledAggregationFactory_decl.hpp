@@ -91,7 +91,7 @@ public:
   //@{
 
   //! Constructor.
-  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = true, bool bEmergencyAggregation = true);
+  UncoupledAggregationFactory();
 
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
@@ -119,13 +119,13 @@ public:
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    mapOnePtName_ = name;
-    mapOnePtFact_ = mapFact;
+    SetParameter("OnePt aggregate map name", ParameterEntry(name)); // revalidate
+    SetFactory("OnePt aggregate map factory",mapFact);
   }
   // set information about small aggregates
   void SetSmallAggMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    mapSmallAggName_ = name;
-    mapSmallAggFact_ = mapFact;
+    SetParameter("SmallAgg aggregate map name", ParameterEntry(name)); // revalidate
+    SetFactory("SmallAgg aggregate map factory",mapFact);
   }
 
   // deprecated
@@ -166,29 +166,22 @@ public:
   //@{
 
   /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
-  void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg);
+  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg);
 
   /*! @brief Remove all aggregation algorithms from list */
-  void ClearAggregationAlgorithms() { algos_.clear(); }
+  //void ClearAggregationAlgorithms() { algos_.clear(); }
   //@}
 
 private:
 
   //! aggregation algorithms
-  std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
+  // will be filled in Build routine
+  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
 
   //! boolean flag: definition phase
   //! if true, the aggregation algorithms still can be set and changed.
   //! if false, no change in aggregation algorithms is possible any more
   mutable bool bDefinitionPhase_;
-
-  //! string für map, that defines DOFs which shall not be aggregated (so-called 1-point aggregates)
-  std::string mapOnePtName_;
-  Teuchos::RCP<const FactoryBase> mapOnePtFact_;
-
-  //! string für map, that defines DOFs which shall not be aggregated (small aggregates)
-  std::string mapSmallAggName_;
-  Teuchos::RCP<const FactoryBase> mapSmallAggFact_;
 
 }; // class UncoupledAggregationFactory
 
