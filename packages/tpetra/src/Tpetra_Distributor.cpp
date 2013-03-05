@@ -81,7 +81,7 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
     , sendType_ (Details::DISTRIBUTOR_ISEND)
-    , barrierBetween_ (false)
+    , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -102,7 +102,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (Details::DISTRIBUTOR_ISEND)
-    , barrierBetween_ (false)
+    , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -199,10 +199,12 @@ namespace Tpetra {
     // the valid ParameterList and used in Optika.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-      std::invalid_argument, "If you use ready sends, you must include a "
-      "barrier between receives and sends.  Ready sends require that their "
-      "corresponding receives have already been posted, and the only way to "
-      "guarantee that in general is with a barrier.");
+      std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
+      << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
+      "between receives and sends." << endl << "This is invalid; you must "
+      "include the barrier if you use ready sends." << endl << "Ready sends "
+      "require that their corresponding receives have already been posted, "
+      "and the only way to guarantee that in general is with a barrier.");
 
     if (plist->isSublist ("VerboseObject")) {
       // Read the "VerboseObject" sublist for (optional) verbosity
@@ -227,8 +229,8 @@ namespace Tpetra {
     if (doPrint) {
       *out << "Distributor::setParameterList" << endl;
       OSTab tab = this->getOSTab(); // Add one tab level
-      *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_)
-           << ", barrierBetween_=" << barrierBetween_ << endl;
+      *out << "sendType_: " << DistributorSendTypeEnumToString (sendType_)
+           << "barrierBetween_: " << barrierBetween_ << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -246,7 +248,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = false;
+    const bool barrierBetween = true;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Isend");
