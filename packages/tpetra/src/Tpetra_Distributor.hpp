@@ -789,12 +789,17 @@ namespace Tpetra {
     // so that the tab persists until the end of this method.
     OSTab tab = this->getOSTab();
     if (doPrint) {
-      *out << "sendType=" << DistributorSendTypeEnumToString (sendType)
-           << ", barrierBetween=" << doBarrier << endl;
+      *out << "Parameters:" << endl;
+      {
+	OSTab tab2 (out);
+	*out << "sendType: " << DistributorSendTypeEnumToString (sendType)
+	     << endl << "barrierBetween: " << doBarrier << endl;
+      }
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
