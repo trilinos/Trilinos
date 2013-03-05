@@ -105,6 +105,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner)
     tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
+    xmlFileName="testWithRebalance.xml";
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",Op->getRowMap(),galeriList);

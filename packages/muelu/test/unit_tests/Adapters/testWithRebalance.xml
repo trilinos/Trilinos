@@ -187,7 +187,6 @@
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <!--
       <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
@@ -195,7 +194,6 @@
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
-      -->
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">
