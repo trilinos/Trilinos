@@ -1750,7 +1750,7 @@ void GeneralizedDavidson<ScalarType,MV,OP>::currentStatus( std::ostream &myout )
                 {
                     // Positive imaginary part
                     myout << std::setw(15) << realRitz[i];
-                    myout << " + i" << std::setw(15) << ST::magnitude( std::abs(imagRitz[i]) );
+                    myout << " + i" << std::setw(15) << ST::magnitude( imagRitz[i] );
                     if( i < d_residualSize )
                         myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
                     else
@@ -1758,7 +1758,7 @@ void GeneralizedDavidson<ScalarType,MV,OP>::currentStatus( std::ostream &myout )
 
                     // Negative imaginary part
                     myout << std::setw(15) << realRitz[i];
-                    myout << " - i" << std::setw(15) << ST::magnitude( std::abs(imagRitz[i]) );
+                    myout << " - i" << std::setw(15) << ST::magnitude( imagRitz[i] );
                     if( i < d_residualSize )
                         myout << std::setw(20) << d_resNorms[permvec[i]] << endl;
                     else
