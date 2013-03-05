@@ -201,8 +201,6 @@ void internal_field_data_from_ioss(const Ioss::Field &io_field,
   }
 
   for (size_t i=0; i < entity_count; ++i) {
-    /// \todo REFACTOR Is there a way to get the data from a
-    /// "FieldBase*" field as a T* without the cast?
     if (entities[i].is_valid()) {
       T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
       assert(fld_data != NULL);
@@ -226,8 +224,6 @@ void internal_field_data_to_ioss(const Ioss::Field &io_field,
   std::vector<T> io_field_data(entity_count*field_component_count);
 
   for (size_t i=0; i < entity_count; ++i) {
-    /// \todo REFACTOR Is there a way to get the data from a
-    /// "FieldBase*" field as a T* without the cast?
     if (entities[i].is_valid()) {
       T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
       assert(fld_data != NULL);
@@ -739,7 +735,7 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name)
 {
-  /// \todo REFACTOR Need some additional compatability checks between
+  /// \todo REFACTOR Need some additional compatibility checks between
   /// Ioss field and stk::mesh::Field; better error messages...
 
   if (field != NULL && io_entity->field_exists(io_fld_name)) {
@@ -775,7 +771,7 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
                         const std::string &io_fld_name,
                         Ioss::Field::RoleType filter_role)
 {
-  /// \todo REFACTOR Need some additional compatability checks between
+  /// \todo REFACTOR Need some additional compatibility checks between
   /// Ioss field and stk::mesh::Field; better error messages...
 
   if (field != NULL && io_entity->field_exists(io_fld_name)) {
@@ -922,9 +918,6 @@ void define_node_block(stk::mesh::Part &part,
   assert(coord_field != NULL);
   const mesh::FieldBase::Restriction &res = coord_field->restriction(stk::mesh::MetaData::NODE_RANK, part);
 
-  /** \todo REFACTOR  Need a clear way to query dimensions
-   *                  from the field restriction.
-   */
   const int spatial_dim = res.dimension() ;
   io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
@@ -1328,10 +1321,7 @@ void output_node_block(Ioss::NodeBlock &nb,
     nb.put_field_data("owning_processor", owning_processor);
   }
 
-  /// \todo REFACTOR The coordinate field would typically be
-  /// stored by the app and wouldn't need to be accessed via
-  /// string lookup.  App infrastructure is not shown here, so
-  /// lookup by string for the example.
+  /// \todo REFACTOR Need a better way to indicate which field is the coordinate field.
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   mesh::Field<double, mesh::Cartesian> *coord_field =
     meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
