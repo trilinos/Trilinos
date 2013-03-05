@@ -68,9 +68,13 @@ Ioss::Super::~Super()
 void Ioss::Super::make_super(const std::string &type)
 {
   // Decode name to determine number of nodes...
-  std::string node_count_str = type.substr(5);
-  int node_count = std::atoi(node_count_str.c_str());
-  new Ioss::Super(type, node_count);
+  // Assume that digits at end specify number of nodes.
+  size_t digits = type.find_last_not_of("0123456789");
+  if (digits != std::string::npos) {
+    std::string node_count_str = type.substr(digits+1);
+    int node_count = std::atoi(node_count_str.c_str());
+    new Ioss::Super(type, node_count);
+  }
 }
 
 int Ioss::Super::parametric_dimension() const {return  3;}

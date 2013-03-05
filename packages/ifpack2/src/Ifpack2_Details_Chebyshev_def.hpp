@@ -47,6 +47,19 @@
 namespace Ifpack2 {
 namespace Details {
 
+namespace {
+  // We use this text a lot in error messages.
+  const char computeBeforeApplyReminder[] = 
+    "This means one of the following:\n"
+    "  - you have not yet called compute() on this instance, or \n"
+    "  - you didn't call compute() after calling setParameters().\n\n" 
+    "After creating an Ifpack2::Chebyshev instance,\n"
+    "you must _always_ call compute() at least once before calling apply().\n"
+    "After calling compute() once, you do not need to call it again,\n"
+    "unless the matrix has changed or you have changed parameters\n"
+    "(by calling setParameters()).";
+}
+
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
@@ -88,27 +101,6 @@ checkConstructorInput () const
      "must be the same (in the sense of isSameAs()).  We only check for this "
      "if Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
      "DEBUG set to ON.");
-
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  // mfh 30 Jan 2013: Make sure that A is not bogus.
-  const MT frobNormA = A_->getFrobeniusNorm ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
-    std::invalid_argument,
-    "Ifpack2::Details::Chebyshev: Frobenius norm of A is " 
-    << frobNormA << ", which is Inf or NaN.");
-
-  V X (domainMap);
-  V Y (rangeMap);
-  X.putScalar (STS::one ());
-  A_->apply (X, Y);
-  const MT infNorm = Y.normInf ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
-    std::invalid_argument,
-    "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
-    << infNorm << ", which is Inf or NaN.");
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 }
 
@@ -118,13 +110,17 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   A_ (A),
   computedLambdaMax_ (STS::nan ()),
   computedLambdaMin_ (STS::nan ()),
-  lambdaMax_ (STS::nan ()),
-  lambdaMin_ (STS::nan ()),
-  eigRatio_ (Teuchos::as<ST> (30)),
+  lambdaMaxForApply_ (STS::nan ()),
+  lambdaMinForApply_ (STS::nan ()),
+  eigRatioForApply_ (STS::nan ()),
+  userLambdaMax_ (STS::nan ()),
+  userLambdaMin_ (STS::nan ()),
+  userEigRatio_ (Teuchos::as<ST> (30)),
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
+  assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false)
 {
@@ -137,13 +133,17 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   A_ (A), 
   computedLambdaMax_ (STS::nan ()),
   computedLambdaMin_ (STS::nan ()),
-  lambdaMax_ (STS::nan ()),
-  lambdaMin_ (STS::nan ()),
-  eigRatio_ (Teuchos::as<ST> (30)),
+  lambdaMaxForApply_ (STS::nan ()),
+  lambdaMinForApply_ (STS::nan ()),
+  eigRatioForApply_ (STS::nan ()),
+  userLambdaMax_ (STS::nan ()),
+  userLambdaMin_ (STS::nan ()),
+  userEigRatio_ (Teuchos::as<ST> (30)),
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
   zeroStartingSolution_ (true),
+  assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false)
 {
@@ -183,6 +183,7 @@ setParameters (Teuchos::ParameterList& plist) {
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
+  const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
 
@@ -198,6 +199,7 @@ setParameters (Teuchos::ParameterList& plist) {
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
   bool zeroStartingSolution = defaultZeroStartingSolution;
+  bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
 
@@ -209,9 +211,9 @@ setParameters (Teuchos::ParameterList& plist) {
   // Get the user-supplied inverse diagonal.
   //
   // Check for a raw pointer (const V* or V*), for Ifpack
-  // compatibility, as well as for an RCP<const V> or RCP<V>.  We'll
-  // copy the vector anyway, so it doesn't matter whether it's const
-  // or nonconst.
+  // compatibility, as well as for RCP<const V>, RCP<V>, const V, or
+  // V.  We'll copy the vector anyway, so it doesn't matter whether
+  // it's const or nonconst.
   if (plist.isParameter ("chebyshev: operator inv diagonal")) {
     try { // Could the type be const V*?
       const V* rawUserInvDiag = plist.get<const V*> ("chebyshev: operator inv diagonal");
@@ -234,9 +236,23 @@ setParameters (Teuchos::ParameterList& plist) {
       }
     }
     if (userInvDiag.is_null ()) {
-      try { // Could the type be RCP<const V>?
+      try { // Could the type be RCP<V>?
 	RCP<V> userInvDiagNonconst = plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
 	userInvDiag = rcp_const_cast<const V> (userInvDiagNonconst);
+      } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      }
+    }
+    if (userInvDiag.is_null ()) {
+      try { // Could the type be const V?
+	// The line below does a deep copy (V::operator=).
+	userInvDiag = rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
+      } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      }
+    }
+    if (userInvDiag.is_null ()) {
+      try { // Could the type be V?
+	V userInvDiagNonconst = plist.get<V> ("chebyshev: operator inv diagonal");
+	userInvDiag = rcp (new V (userInvDiagNonconst)); // deep copy
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
@@ -252,9 +268,19 @@ setParameters (Teuchos::ParameterList& plist) {
   // whether it should do eigenanalysis.
   if (plist.isParameter ("chebyshev: max eigenvalue")) {
     lambdaMax = plist.get<ST> ("chebyshev: max eigenvalue");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (lambdaMax), std::invalid_argument,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: max eigenvalue\" "
+      "parameter is NaN or Inf.  This parameter is optional, but if you "
+      "choose to supply it, it must have a finite value.");
   }
   if (plist.isParameter ("chebyshev: min eigenvalue")) {
     lambdaMin = plist.get<ST> ("chebyshev: min eigenvalue");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (lambdaMin), std::invalid_argument,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: min eigenvalue\" "
+      "parameter is NaN or Inf.  This parameter is optional, but if you "
+      "choose to supply it, it must have a finite value.");
   }
 
   // Only fill in Ifpack2's name for the default parameter, not ML's.
@@ -263,9 +289,31 @@ setParameters (Teuchos::ParameterList& plist) {
   }
   // Ifpack2's name overrides ML's name.
   eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isnaninf (eigRatio), std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: ratio eigenvalue\" "
+    "parameter (also called \"smoother: Chebyshev alpha\") is NaN or Inf.  "
+    "This parameter is optional, but if you choose to supply it, it must have "
+    "a finite value.");
+  // mfh 11 Feb 2013: This class is currently only correct for real
+  // Scalar types, but we still want it to build for complex Scalar
+  // type so that users of Ifpack2::Factory can build their
+  // executables for real or complex Scalar type.  Thus, we take the
+  // real parts here, which are always less-than comparable.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::real (eigRatio) < STS::real (STS::one ()),
+    std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: ratio eigenvalue\""
+    "parameter (also called \"smoother: Chebyshev alpha\") must be >= 1, "
+    "but you supplied the value " << eigRatio << ".");
 
   // Same name in Ifpack2 and Ifpack.
   minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isnaninf (minDiagVal), std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: min diagonal value\" "
+    "parameter is NaN or Inf.  This parameter is optional, but if you choose "
+    "to supply it, it must have a finite value.");
 
   // Only fill in Ifpack2's name, not ML's or Ifpack's.
   if (plist.isParameter ("smoother: sweeps")) { // ML compatibility
@@ -275,14 +323,27 @@ setParameters (Teuchos::ParameterList& plist) {
     numIters = plist.get<int> ("relaxation: sweeps");
   } // Ifpack2's name overrides Ifpack's name.
   numIters = plist.get ("chebyshev: degree", numIters);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numIters < 0, std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: degree\" parameter (also "
+    "called \"smoother: sweeps\" or \"relaxation: sweeps\") must be a "
+    "nonnegative integer.  You gave a value of " << numIters << ".");
 
   // The last parameter name overrides the first.
   if (plist.isParameter ("eigen-analysis: iterations")) { // ML compatibility
     eigMaxIters = plist.get<int> ("eigen-analysis: iterations");
   } // Ifpack2's name overrides ML's name.
   eigMaxIters = plist.get ("chebyshev: eigenvalue max iterations", eigMaxIters);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    eigMaxIters < 0, std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: eigenvalue max iterations"
+    "\" parameter (also called \"eigen-analysis: iterations\") must be a "
+    "nonnegative integer.  You gave a value of " << eigMaxIters << ".");
 
-  zeroStartingSolution = plist.get ("chebyshev: zero starting solution", zeroStartingSolution);
+  zeroStartingSolution = plist.get ("chebyshev: zero starting solution", 
+				    zeroStartingSolution);
+  assumeMatrixUnchanged = plist.get ("chebyshev: assume matrix does not change", 
+				     assumeMatrixUnchanged);
 
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
@@ -332,14 +393,16 @@ setParameters (Teuchos::ParameterList& plist) {
       "method for eigenanalysis.");
   }
 
+  // We've validated all the parameters, so it's safe now to "commit" them.
   userInvDiag_ = userInvDiag;
-  lambdaMax_ = lambdaMax;
-  lambdaMin_ = lambdaMin;
-  eigRatio_ = eigRatio;
+  userLambdaMax_ = lambdaMax;
+  userLambdaMin_ = lambdaMin;
+  userEigRatio_ = eigRatio;
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
   zeroStartingSolution_ = zeroStartingSolution;
+  assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
 }
@@ -347,126 +410,103 @@ setParameters (Teuchos::ParameterList& plist) {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-compute (const bool assumeMatrixUnchanged) {
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  {
-    // mfh 30 Jan 2013: Make sure that A is not bogus.
-    const MT frobNormA = A_->getFrobeniusNorm ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      Teuchos::ScalarTraits<MT>::isnaninf (frobNormA),
-      std::runtime_error,
-      "Ifpack2::Details::Chebyshev::compute: Frobenius norm of A is " 
-      << frobNormA << ", which is Inf or NaN.");
-    V X (A_->getDomainMap ());
-    V Y (A_->getRangeMap ());
-    X.putScalar (STS::one ());
-    A_->apply (X, Y);
-    const MT infNorm = Y.normInf ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      Teuchos::ScalarTraits<MT>::isnaninf (infNorm),
-      std::runtime_error,
-      "Ifpack2::Details::Chebyshev: inf-norm of A*[1,...,1]^T is " 
-      << infNorm << ", which is Inf or NaN.");
-  }
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+compute () {
+  using std::endl;
+  // FIXME (mfh 22 Jan 2013, 10 Feb 2013) In all cases when we use
+  // isnaninf() in this method, we really only want to check if the
+  // number is NaN.  Inf means something different.  However,
+  // Teuchos::ScalarTraits doesn't distinguish the two cases.
 
-  if (!assumeMatrixUnchanged) {
-    if (userInvDiag_.is_null ()) {
-      // The matrix may have changed, and the parameters also affect
-      // this process, so recompute the inverse diagonal.
+  if (userInvDiag_.is_null ()) {
+    if (! assumeMatrixUnchanged_ || D_.is_null ()) {
+      // If we haven't computed the inverse diagonal D_ before,
+      // or if the the user says that the matrix may have changed,
+      // then (re)compute the inverse diagonal.
       D_ = makeInverseDiagonal (*A_);
     } else {
-      D_ = userInvDiag_;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        D_.is_null (), std::logic_error,
+	"Ifpack2::Chebyshev::compute: The inverse diagonal vector D_ is null.  "
+	"We should never reach this point.  "
+	"Please report this bug to the Ifpack2 developers.");
     }
+  } else {
+    D_ = userInvDiag_;
+  }
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  {
-    // mfh 30 Jan 2013: Make sure that D_ contains no Inf or Nan entries.
-    const MT infNormD = D_->normInf ();
+  // Have we estimated eigenvalues before?
+  const bool computedEigenvalueEstimates = 
+    STS::isnaninf (computedLambdaMax_) || STS::isnaninf (computedLambdaMin_);
+
+  // Only recompute the eigenvalue estimates if
+  // - we are supposed to assume that the matrix may have changed, or
+  // - they haven't been computed before, and the user hasn't given
+  //   us at least an estimate of the max eigenvalue.
+  //
+  // We at least need an estimate of the max eigenvalue.  This is the
+  // most important one if using Chebyshev as a smoother.
+  if (! assumeMatrixUnchanged_ || 
+      (! computedEigenvalueEstimates && STS::isnaninf (userLambdaMax_))) {
+    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Teuchos::ScalarTraits<MT>::isnaninf (infNormD),
+      STS::isnaninf (computedLambdaMax),
       std::runtime_error,
-      "Ifpack2::Details::Chebyshev::compute: Infinity norm of the "
-      "vector of inverse diagonal entries of A is " << infNormD 
-      << ", which is Inf or NaN.");
+      "Ifpack2::Chebyshev::compute: Estimation of the max eigenvalue "
+      "of D^{-1} A failed, by producing Inf or NaN.  This probably means that "
+      "the matrix contains Inf or NaN values, or that it is badly scaled.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (userEigRatio_),
+      std::logic_error,
+      "Ifpack2::Chebyshev::compute: userEigRatio_ is Inf or NaN." 
+      << endl << "This should be impossible." << endl << 
+      "Please report this bug to the Ifpack2 developers.");
+
+    // The power method doesn't estimate the min eigenvalue, so we
+    // do our best to provide an estimate.  userEigRatio_ has a
+    // reasonable default value, and if the user provided it, we
+    // have already checked that its value is finite and >= 1.
+    const ST computedLambdaMin = computedLambdaMax / userEigRatio_;
+
+    // Defer "committing" results until all computations succeeded.
+    computedLambdaMax_ = computedLambdaMax;
+    computedLambdaMin_ = computedLambdaMin;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isnaninf (userLambdaMax_) && STS::isnaninf (computedLambdaMax_),
+      std::logic_error, 
+      "Ifpack2::Chebyshev::compute: " << endl <<
+      "Both userLambdaMax_ and computedLambdaMax_ are Inf or NaN." 
+      << endl << "This should be impossible." << endl << 
+      "Please report this bug to the Ifpack2 developers.");
   }
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
 
-    // The matrix may have changed, so we always compute the
-    // eigenvalue estimates, even if we computed them before.
-    // However, if the user gave us lambdaMax already (if it's not
-    // NaN), then don't (re)compute it.
-    if (STS::isnaninf (lambdaMax_)) {
-      const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
-      const ST computedLambdaMin = computedLambdaMax / eigRatio_;
+  ////////////////////////////////////////////////////////////////////
+  // Figure out the eigenvalue estimates that apply() will use.
+  ////////////////////////////////////////////////////////////////////
 
-      // Defer "committing" results until all computations succeeded.
-      computedLambdaMax_ = computedLambdaMax;
-      computedLambdaMin_ = computedLambdaMin;
-    }
-  }
-
-  eigRatioForApply_ = eigRatio_;
-  lambdaMaxForApply_ = lambdaMax_;
-  lambdaMinForApply_ = lambdaMaxForApply_ / eigRatio_; // lambdaMin_; (???)
-
-  // FIXME (mfh 22 Jan 2013) We really only want to check if it's
-  // NaN.  Inf means something different.  However,
-  // Teuchos::ScalarTraits doesn't distinguish the two cases.
-  if (STS::isnaninf (lambdaMaxForApply_)) {
+  // Always favor the user's max eigenvalue estimate, if provided.
+  if (STS::isnaninf (userLambdaMax_)) {
     lambdaMaxForApply_ = computedLambdaMax_;
+  } else {
+    lambdaMaxForApply_ = userLambdaMax_;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMaxForApply_), 
-    std::runtime_error, 
-    "Chebyshev::apply: Both lambdaMax_ and computedLambdaMax_ are NaN or Inf.  "
-    "This means one of the following: (a) you didn't call compute() before "
-    "calling apply(), "
-    "(b) you didn't call compute() after calling setParameters(), or "
-    "(c) there is a bug in this class (compute() has not done the "
-    "eigenanalysis that it should have done).");
-  if (STS::isnaninf (lambdaMinForApply_)) {
-    lambdaMinForApply_ = computedLambdaMin_;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMinForApply_), 
-    std::runtime_error, 
-    "Chebyshev::apply: Both lambdaMin_ and computedLambdaMin_ are NaN or Inf.  "
-    "This means one of the following: (a) you didn't call compute() before "
-    "calling apply(), "
-    "(b) you didn't call compute() after calling setParameters(), or "
-    "(c) there is a bug in this class (compute() has not done the "
-    "eigenanalysis that it should have done).");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (eigRatioForApply_), 
-    std::logic_error, 
-    "Chebyshev::apply: eigRatio is NaN or Inf.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    D_.is_null (),
-    std::runtime_error, 
-    "Chebyshev::apply: The vector of inverse diagonal entries of the matrix is null.  "
-    "This means either that you didn't call compute() before calling apply(), "
-    "or that you didn't call compute() after calling setParameters().");
-
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  {
-    const MT infNormD = D_->normInf ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      STS::isnaninf (infNormD),
-      std::runtime_error,
-      "Chebyshev::apply: The vector of inverse diagonal entries of the matrix "
-      "has infinity norm " << infNormD << ", which is Inf or NaN.  This will "
-      "make left-scaled Chebyshev iteration produce invalid results.");
-  }
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  // mfh 11 Feb 2013: For now, we imitate Ifpack by ignoring the
+  // user's min eigenvalue estimate, and using the given eigenvalue
+  // ratio to estimate the min eigenvalue.  We could instead do this:
+  // favor the user's eigenvalue ratio estimate, but if it's not
+  // provided, use lambdaMax / lambdaMin.  However, we want Chebyshev
+  // to have sensible smoother behavior if the user did not provide
+  // eigenvalue estimates.  Ifpack's behavior attempts to push down
+  // the error terms associated with the largest eigenvalues, while
+  // expecting that users will only want a small number of iterations,
+  // so that error terms associated with the smallest eigenvalues
+  // won't grow too much.  This is sensible behavior for a smoother.
+  lambdaMinForApply_ = lambdaMaxForApply_ / userEigRatio_;
+  eigRatioForApply_ = userEigRatio_;
 
   if (! textbookAlgorithm_) {
+    // Ifpack has a special-case modification of the eigenvalue bounds
+    // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
     if (STS::magnitude (lambdaMaxForApply_ - one) < Teuchos::as<MT> (1.0e-6)) {
       lambdaMinForApply_ = one;
@@ -480,53 +520,50 @@ template<class ScalarType, class MV, class MAT>
 typename Chebyshev<ScalarType, MV, MAT>::MT
 Chebyshev<ScalarType, MV, MAT>::
 apply (const MV& B, MV& X) {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isnaninf (lambdaMaxForApply_), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply: There is no estimate for the max eigenvalue."
+    << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isnaninf (lambdaMinForApply_), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply: There is no estimate for the min eigenvalue."
+    << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isnaninf (eigRatioForApply_), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply: There is no estimate for the ratio of the max "
+    "eigenvalue to the min eigenvalue." 
+    << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_.is_null (), std::runtime_error, 
+    "Ifpack2::Chebyshev::apply: "
+    "The vector of inverse diagonal entries of the matrix has not yet been "
+    "computed." << std::endl << computeBeforeApplyReminder);
 
   if (textbookAlgorithm_) {
-    textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, lambdaMinForApply_, eigRatioForApply_, *D_);
+    textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, 
+		       lambdaMinForApply_, eigRatioForApply_, *D_);
   } else {
-    ifpackApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, lambdaMinForApply_, eigRatioForApply_, *D_);
+    ifpackApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, 
+		     lambdaMinForApply_, eigRatioForApply_, *D_);
   }
 
-  if (computeMaxResNorm_) {
+  if (computeMaxResNorm_ && B.getNumVectors () > 0) {
     MV R (B.getMap (), B.getNumVectors ());
     computeResidual (R, B, *A_, X);
     Teuchos::Array<MT> norms (B.getNumVectors ());
     R.norm2 (norms ());
     return *std::max_element (norms.begin (), norms.end ());
   } else {
-    return Teuchos::as<MT> (0);
+    return Teuchos::ScalarTraits<MT>::zero ();
   }
-} //apply()
+}
 
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 print (std::ostream& out) {
-  using std::endl;
-  // YAML 1.2 (see http://www.yaml.org/spec/1.2/spec.html) block
-  // mapping (see Section 8.2.2).  It should parse as follows:
-  // { 
-  //   Chebyshev: { 
-  //     computedLambdaMax_: <value>,
-  //     computedLambdaMin_: <value>,
-  //     ...
-  //     computeMaxResNorm_: <value>
-  //   }
-  // }
-  // The spec says that the first line ("Chebyshev:") is limited to
-  // 1024 characters, because this particular format requires
-  // lookahead.
-  out << "Chebyshev:" << endl
-      << "  computedLambdaMax_: " << computedLambdaMax_ << endl
-      << "  computedLambdaMin_: " << computedLambdaMin_ << endl
-      << "  lambdaMax_: " << lambdaMax_ << endl
-      << "  lambdaMin_: " << lambdaMin_ << endl
-      << "  eigRatio_: " << eigRatio_ << endl
-      << "  numIters_: " << numIters_ << endl
-      << "  eigMaxIters_: " << eigMaxIters_ << endl
-      << "  zeroStartingSolution_: " << zeroStartingSolution_ << endl
-      << "  textbookAlgorithm_: " << textbookAlgorithm_ << endl
-      << "  computeMaxResNorm_: " << computeMaxResNorm_ << endl;
+  this->describe (* (Teuchos::getFancyOStream (Teuchos::rcpFromRef (out))), 
+		  Teuchos::VERB_MEDIUM);
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -535,24 +572,8 @@ Chebyshev<ScalarType, MV, MAT>::
 computeResidual (MV& R, const MV& B, const MAT& A, const MV& X, 
 		 const Teuchos::ETransp mode) 
 {
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  using std::cerr;
-  using std::endl;
-  cerr << "- computeResidual:" << endl
-       << "--- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl
-       << "--- \\|B\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
-
   R = B;
   A.apply (X, R, mode, -STS::one(), STS::one());
-
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "--- \\|B - A*X\\|_{\\infty} = " << maxNormInf (R) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -579,8 +600,8 @@ makeInverseDiagonal (const MAT& A) const {
   A.getLocalDiagCopy (*D_rowMap);
   RCP<V> D_rangeMap = makeRangeMapVector (*D_rowMap);
 
-  // Invert the diagonal entries, replacing entries less than
-  // machine precision with machine precision.
+  // Invert the diagonal entries, replacing entries less (in
+  // magnitude) than the user-specified value with that value.
   typedef Kokkos::MultiVector<ST, typename MAT::node_type> KMV;
   KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
   typedef Kokkos::DefaultArithmetic<KMV> KMVT;
@@ -832,7 +853,7 @@ ifpackApplyImpl (const MAT& A,
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
     cerr << "- dtemp1 = " << dtemp1 << endl
-	 << "- dtemp2 = " << dtemp1 << endl;
+	 << "- dtemp2 = " << dtemp2 << endl;
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -863,8 +884,10 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters) {
   x.randomize ();
   norm = x.norm2 ();
   TEUCHOS_TEST_FOR_EXCEPTION(norm == zero, std::runtime_error, 
-    "Chebyshev::powerMethod: Tpetra::Vector::randomize filled the vector "
-    "with zeros.  This is not impossible, but is unlikely.");
+    "Ifpack2::Chebyshev::powerMethod: "
+    "Tpetra::Vector's randomize() method filled the vector "
+    "with zeros.  This is not impossible, but is unlikely.  "
+    "It's far more likely that there is a bug in Tpetra.");
 
   x.scale (one / norm);
   for (int iter = 0; iter < numIters; ++iter) {
@@ -904,12 +927,12 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V1,
 		      Teuchos::RCP<MV>& W,
 		      const MV& X)
 {
-  // Don't fill the vectors with zeros.
   if (V_.is_null ()) {
     V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
   }
+  //W must be initialized to zero when it is used as a multigrid smoother.
   if (W_.is_null ()) {
-    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
+    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), true));
   }
   V1 = V_;
   W = W_;
@@ -920,10 +943,11 @@ std::string
 Chebyshev<ScalarType, MV, MAT>::
 description() const {
   std::ostringstream oss;
-  oss << "degree = " << numIters_;
-  oss << ", lambdaMax = " << lambdaMaxForApply_;
-  oss << ", alpha = " << eigRatio_;
-  oss << ", lambdaMin = " << lambdaMinForApply_;
+  oss << "Ifpack2::Details::Chebyshev : "
+      << "degree = " << numIters_
+      << ", lambdaMax = " << lambdaMaxForApply_
+      << ", alpha = " << eigRatioForApply_
+      << ", lambdaMin = " << lambdaMinForApply_;
 
   return oss.str();
 }
@@ -931,10 +955,90 @@ description() const {
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-describe(Teuchos::FancyOStream &out_arg, const Teuchos::EVerbosityLevel verbLevel) const {
-   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
-   Teuchos::OSTab tab(out);
-   *out << this->description() << std::endl;
+describe (Teuchos::FancyOStream& out, 
+	  const Teuchos::EVerbosityLevel verbLevel) const 
+{
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+
+  const Teuchos::EVerbosityLevel vl = 
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+  if (vl > Teuchos::VERB_NONE) {
+    if (vl == Teuchos::VERB_LOW) {
+      out << "Ifpack2::Details::Chebyshev" << endl;
+    } else { // vl > Teuchos::VERB_LOW
+      // YAML flow mapping style (with curly braces) lets the key (the
+      // above "description") be arbitrarily long.  Simple indenting
+      // limits the key length to 1024 characters.  It's not an issue
+      // right now, but it's better to be more general.
+      out << "Ifpack2::Details::Chebyshev {" << endl;
+      Teuchos::OSTab tab1 (Teuchos::rcpFromRef (out));
+      out << "Template parameters: {" << endl;
+      {
+	Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
+	out << "ScalarType: \"" << TypeNameTraits<ScalarType>::name () << "\"" << endl
+	    << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl
+	    << "MAT: \"" << TypeNameTraits<MAT>::name () << "\"" << endl;
+      }
+      // "Computed parameters" literally means "parameters whose
+      // values were computed by compute()."
+      out << "}" << endl << "Computed parameters: {" << endl;
+      {
+	Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
+	// Users might want to see the values in the computed inverse
+	// diagonal, so we print them out at the highest verbosity.
+	out << "D_: ";
+	if (D_.is_null ()) {
+	  out << "unset" << endl;
+	} else if (vl <= Teuchos::VERB_HIGH) {
+	  out << "set" << endl;
+	} else { // D_ not null and vl > Teuchos::VERB_HIGH
+	  out << "{" << endl;
+	  {
+	    Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
+	    D_->describe (out, vl);
+	  }
+	  out << "}" << endl;
+	}
+	// V_ and W_ are scratch space; their values are irrelevant.
+	// All that matters is whether or not they have been set.
+	out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
+	    << "W_: " << (W_.is_null () ? "unset" : "set") << endl
+	    << "computedLambdaMax_: " << computedLambdaMax_ << endl
+	    << "computedLambdaMin_: " << computedLambdaMin_ << endl
+	    << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
+	    << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
+	    << "eigRatioForApply_: " << eigRatioForApply_ << endl;
+      }
+      out << "}" << endl << "User parameters: {" << endl;
+      {
+	Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
+	out << "userInvDiag_: ";
+	if (userInvDiag_.is_null ()) {
+	  out << "unset" << endl;
+	} else if (vl <= Teuchos::VERB_HIGH) {
+	  out << "set" << endl;
+	} else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
+	  out << "{" << endl;
+	  {
+	    Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
+	    userInvDiag_->describe (out, vl);
+	  }
+	  out << "}" << endl;
+	}
+	out << "userLambdaMax_: " << userLambdaMax_ << endl
+	    << "userLambdaMin_: " << userLambdaMin_ << endl
+	    << "userEigRatio_: " << userEigRatio_ << endl
+	    << "numIters_: " << numIters_ << endl
+	    << "eigMaxIters_: " << eigMaxIters_ << endl
+	    << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
+	    << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
+	    << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
+	    << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
+      }
+      out << "}" << endl;
+    }
+  }
 }
 
 } // namespace Details

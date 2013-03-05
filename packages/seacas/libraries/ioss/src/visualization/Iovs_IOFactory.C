@@ -20,9 +20,9 @@ namespace Iovs {
   }
 
   IOFactory::IOFactory()
-    : Ioss::IOFactory("visualization")
+    : Ioss::IOFactory("paraview_catalyst")
   {
-    Ioss::IOFactory::alias("visualization", "visualization_output");
+    Ioss::IOFactory::alias("paraview_catalyst", "paraview");
 
     // Tell the database to register itself with sierra's product registry.
     // XXX exodus doesn't do this, do we need to?

@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Skeleton implementation for Bison LALR(1) parsers in C++
    
-      Copyright (C) 2002-2012 Free Software Foundation, Inc.
+      Copyright (C) 2002-2010 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@
 #define yylex   SEAMSlex
 
 /* First part of user declarations.  */
-/* Line 279 of lalr1.cc  */
+
+/* Line 310 of lalr1.cc  */
 #line 1 "aprepro.yy"
 
 #include "aprepro.h"
@@ -47,19 +48,20 @@
 #include <cstdio>
 
 namespace SEAMS {
-  int   echo = true;
-}
+   extern int echo;
+ }
+ 
 
-
-/* Line 279 of lalr1.cc  */
-#line 56 "apr_parser.cc"
+/* Line 310 of lalr1.cc  */
+#line 57 "apr_parser.cc"
 
 
 #include "aprepro_parser.h"
 
 /* User implementation prologue.  */
-/* Line 285 of lalr1.cc  */
-#line 80 "aprepro.yy"
+
+/* Line 316 of lalr1.cc  */
+#line 79 "aprepro.yy"
 
 
 #include "aprepro.h"
@@ -72,17 +74,9 @@ namespace SEAMS {
 #define yylex aprepro.lexer->lex
 
 
-/* Line 285 of lalr1.cc  */
-#line 77 "apr_parser.cc"
 
-
-# ifndef YY_NULL
-#  if defined __cplusplus && 201103L <= __cplusplus
-#   define YY_NULL nullptr
-#  else
-#   define YY_NULL 0
-#  endif
-# endif
+/* Line 316 of lalr1.cc  */
+#line 80 "apr_parser.cc"
 
 #ifndef YY_
 # if defined YYENABLE_NLS && YYENABLE_NLS
@@ -95,27 +89,6 @@ namespace SEAMS {
 #  define YY_(msgid) msgid
 # endif
 #endif
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-# ifndef YYLLOC_DEFAULT
-#  define YYLLOC_DEFAULT(Current, Rhs, N)                               \
-    do                                                                  \
-      if (N)                                                            \
-        {                                                               \
-          (Current).begin  = YYRHSLOC (Rhs, 1).begin;                   \
-          (Current).end    = YYRHSLOC (Rhs, N).end;                     \
-        }                                                               \
-      else                                                              \
-        {                                                               \
-          (Current).begin = (Current).end = YYRHSLOC (Rhs, 0).end;      \
-        }                                                               \
-    while (/*CONSTCOND*/ false)
-# endif
-
 
 /* Suppress unused-variable warnings by "using" E.  */
 #define YYUSE(e) ((void) (e))
@@ -151,9 +124,9 @@ do {					\
 #else /* !YYDEBUG */
 
 # define YYCDEBUG if (false) std::cerr
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location) YYUSE(Type)
-# define YY_REDUCE_PRINT(Rule)        static_cast<void>(0)
-# define YY_STACK_PRINT()             static_cast<void>(0)
+# define YY_SYMBOL_PRINT(Title, Type, Value, Location)
+# define YY_REDUCE_PRINT(Rule)
+# define YY_STACK_PRINT()
 
 #endif /* !YYDEBUG */
 
@@ -167,8 +140,10 @@ do {					\
 
 
 namespace SEAMS {
-/* Line 353 of lalr1.cc  */
-#line 172 "apr_parser.cc"
+
+/* Line 379 of lalr1.cc  */
+#line 146 "apr_parser.cc"
+#if YYERROR_VERBOSE
 
   /* Return YYSTR after stripping away unnecessary quotes and
      backslashes, so that it's suitable for yyerror.  The heuristic is
@@ -207,6 +182,7 @@ namespace SEAMS {
     return yystr;
   }
 
+#endif
 
   /// Build a parser object.
   Parser::Parser (class Aprepro& aprepro_yyarg)
@@ -234,9 +210,6 @@ namespace SEAMS {
   {
     YYUSE (yylocationp);
     YYUSE (yyvaluep);
-    std::ostream& yyo = debug_stream ();
-    std::ostream& yyoutput = yyo;
-    YYUSE (yyoutput);
     switch (yytype)
       {
          default:
@@ -265,8 +238,7 @@ namespace SEAMS {
     YYUSE (yymsg);
     YYUSE (yyvaluep);
 
-    if (yymsg)
-      YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
+    YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
     switch (yytype)
       {
@@ -311,18 +283,6 @@ namespace SEAMS {
   }
 #endif
 
-  inline bool
-  Parser::yy_pact_value_is_default_ (int yyvalue)
-  {
-    return yyvalue == yypact_ninf_;
-  }
-
-  inline bool
-  Parser::yy_table_value_is_error_ (int yyvalue)
-  {
-    return yyvalue == yytable_ninf_;
-  }
-
   int
   Parser::parse ()
   {
@@ -330,22 +290,21 @@ namespace SEAMS {
     int yychar = yyempty_;
     int yytoken = 0;
 
-    // State.
+    /* State.  */
     int yyn;
     int yylen = 0;
     int yystate = 0;
 
-    // Error handling.
+    /* Error handling.  */
     int yynerrs_ = 0;
     int yyerrstatus_ = 0;
 
     /// Semantic value of the lookahead.
-    static semantic_type yyval_default;
-    semantic_type yylval = yyval_default;
+    semantic_type yylval;
     /// Location of the lookahead.
     location_type yylloc;
     /// The locations where the error started and ended.
-    location_type yyerror_range[3];
+    location_type yyerror_range[2];
 
     /// $$.
     semantic_type yyval;
@@ -354,10 +313,6 @@ namespace SEAMS {
 
     int yyresult;
 
-    // FIXME: This shoud be completely indented.  It is not yet to
-    // avoid gratuitous conflicts when merging into the master branch.
-    try
-      {
     YYCDEBUG << "Starting parse" << std::endl;
 
 
@@ -387,15 +342,16 @@ namespace SEAMS {
 
     /* Try to take a decision without lookahead.  */
     yyn = yypact_[yystate];
-    if (yy_pact_value_is_default_ (yyn))
+    if (yyn == yypact_ninf_)
       goto yydefault;
 
     /* Read a lookahead token.  */
     if (yychar == yyempty_)
       {
-        YYCDEBUG << "Reading a token: ";
-        yychar = yylex (&yylval);
+	YYCDEBUG << "Reading a token: ";
+	yychar = yylex (&yylval);
       }
+
 
     /* Convert token to internal form.  */
     if (yychar <= yyeof_)
@@ -419,8 +375,8 @@ namespace SEAMS {
     yyn = yytable_[yyn];
     if (yyn <= 0)
       {
-	if (yy_table_value_is_error_ (yyn))
-	  goto yyerrlab;
+	if (yyn == 0 || yyn == yytable_ninf_)
+	goto yyerrlab;
 	yyn = -yyn;
 	goto yyreduce;
       }
@@ -467,25 +423,24 @@ namespace SEAMS {
     else
       yyval = yysemantic_stack_[0];
 
-    // Compute the default @$.
     {
       slice<location_type, location_stack_type> slice (yylocation_stack_, yylen);
       YYLLOC_DEFAULT (yyloc, slice, yylen);
     }
-
-    // Perform the reduction.
     YY_REDUCE_PRINT (yyn);
     switch (yyn)
       {
-          case 4:
-/* Line 670 of lalr1.cc  */
-#line 99 "aprepro.yy"
+	  case 4:
+
+/* Line 677 of lalr1.cc  */
+#line 98 "aprepro.yy"
     { if (echo) aprepro.lexer->LexerOutput("\n", 1); }
     break;
 
   case 5:
-/* Line 670 of lalr1.cc  */
-#line 100 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 99 "aprepro.yy"
     { if (echo) {
 	                             static char tmpstr[512];
 				     SEAMS::symrec *format = aprepro.getsym("_FORMAT");
@@ -496,8 +451,9 @@ namespace SEAMS {
     break;
 
   case 6:
-/* Line 670 of lalr1.cc  */
-#line 107 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 106 "aprepro.yy"
     { if (echo && (yysemantic_stack_[(3) - (2)].string) != NULL) {
 				    aprepro.lexer->LexerOutput((yysemantic_stack_[(3) - (2)].string), strlen((yysemantic_stack_[(3) - (2)].string)));
                                   }
@@ -505,161 +461,187 @@ namespace SEAMS {
     break;
 
   case 7:
-/* Line 670 of lalr1.cc  */
-#line 111 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 110 "aprepro.yy"
     {                                       }
     break;
 
   case 8:
-/* Line 670 of lalr1.cc  */
-#line 112 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 111 "aprepro.yy"
     { yyerrok;				}
     break;
 
   case 9:
-/* Line 670 of lalr1.cc  */
-#line 115 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 114 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) < (yysemantic_stack_[(3) - (3)].val);                         }
     break;
 
   case 10:
-/* Line 670 of lalr1.cc  */
-#line 116 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 115 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) > (yysemantic_stack_[(3) - (3)].val);                         }
     break;
 
   case 11:
-/* Line 670 of lalr1.cc  */
-#line 117 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 116 "aprepro.yy"
     { (yyval.val) = !((yysemantic_stack_[(2) - (2)].val));                           }
     break;
 
   case 12:
-/* Line 670 of lalr1.cc  */
-#line 118 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 117 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) <= (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 13:
-/* Line 670 of lalr1.cc  */
-#line 119 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 118 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) >= (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 14:
-/* Line 670 of lalr1.cc  */
-#line 120 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 119 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) == (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 15:
-/* Line 670 of lalr1.cc  */
-#line 121 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 120 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) != (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 16:
-/* Line 670 of lalr1.cc  */
-#line 122 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 121 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) || (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 17:
-/* Line 670 of lalr1.cc  */
-#line 123 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 122 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) && (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 18:
-/* Line 670 of lalr1.cc  */
-#line 124 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 123 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) || (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 19:
-/* Line 670 of lalr1.cc  */
-#line 125 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 124 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) && (yysemantic_stack_[(3) - (3)].val);                        }
     break;
 
   case 20:
-/* Line 670 of lalr1.cc  */
-#line 126 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 125 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (2)].val);                              }
     break;
 
   case 21:
-/* Line 670 of lalr1.cc  */
-#line 129 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 128 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) <  0 ? 1 : 0);	}
     break;
 
   case 22:
-/* Line 670 of lalr1.cc  */
-#line 130 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 129 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) >  0 ? 1 : 0);	}
     break;
 
   case 23:
-/* Line 670 of lalr1.cc  */
-#line 131 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 130 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) <= 0 ? 1 : 0);	}
     break;
 
   case 24:
-/* Line 670 of lalr1.cc  */
-#line 132 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 131 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) >= 0 ? 1 : 0);	}
     break;
 
   case 25:
-/* Line 670 of lalr1.cc  */
-#line 133 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 132 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) == 0 ? 1 : 0);	}
     break;
 
   case 26:
-/* Line 670 of lalr1.cc  */
-#line 134 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 133 "aprepro.yy"
     { (yyval.val) = (strcmp((yysemantic_stack_[(3) - (1)].string),(yysemantic_stack_[(3) - (3)].string)) != 0 ? 1 : 0);	}
     break;
 
   case 27:
-/* Line 670 of lalr1.cc  */
-#line 136 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 135 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(1) - (1)].string);				}
     break;
 
   case 28:
-/* Line 670 of lalr1.cc  */
-#line 137 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 136 "aprepro.yy"
     { (yyval.string) = (char*)(yysemantic_stack_[(1) - (1)].tptr)->value.svar;			}
     break;
 
   case 29:
-/* Line 670 of lalr1.cc  */
-#line 138 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 137 "aprepro.yy"
     { (yyval.string) = (char*)(yysemantic_stack_[(1) - (1)].tptr)->value.svar;			}
     break;
 
   case 30:
-/* Line 670 of lalr1.cc  */
-#line 139 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 138 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(3) - (3)].string); (yysemantic_stack_[(3) - (1)].tptr)->value.svar = (yysemantic_stack_[(3) - (3)].string);
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), Parser::token::SVAR);	}
     break;
 
   case 31:
-/* Line 670 of lalr1.cc  */
-#line 141 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 140 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(3) - (3)].string); 
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.svar = (yysemantic_stack_[(3) - (3)].string);
 				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 32:
-/* Line 670 of lalr1.cc  */
-#line 144 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 143 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(3) - (3)].string); 
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.svar= (yysemantic_stack_[(3) - (3)].string);
 				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          
@@ -667,161 +649,187 @@ namespace SEAMS {
     break;
 
   case 33:
-/* Line 670 of lalr1.cc  */
-#line 148 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 147 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 34:
-/* Line 670 of lalr1.cc  */
-#line 149 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 148 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 35:
-/* Line 670 of lalr1.cc  */
-#line 150 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 149 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(4) - (1)].tptr)->value.strfnct_c))((yysemantic_stack_[(4) - (3)].string));	}
     break;
 
   case 36:
-/* Line 670 of lalr1.cc  */
-#line 151 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 150 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(3) - (1)].tptr)->value.strfnct))();	}
     break;
 
   case 37:
-/* Line 670 of lalr1.cc  */
-#line 152 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 151 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(4) - (1)].tptr)->value.strfnct_d))((yysemantic_stack_[(4) - (3)].val));	}
     break;
 
   case 38:
-/* Line 670 of lalr1.cc  */
-#line 153 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 152 "aprepro.yy"
     { concat_string((yysemantic_stack_[(3) - (1)].string), (yysemantic_stack_[(3) - (3)].string), &(yyval.string)); }
     break;
 
   case 39:
-/* Line 670 of lalr1.cc  */
-#line 155 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 154 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(12) - (1)].tptr)->value.strfnct_dcccc))((yysemantic_stack_[(12) - (3)].val), (yysemantic_stack_[(12) - (5)].string), (yysemantic_stack_[(12) - (7)].string), (yysemantic_stack_[(12) - (9)].string), (yysemantic_stack_[(12) - (11)].string)); }
     break;
 
   case 40:
-/* Line 670 of lalr1.cc  */
-#line 157 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 156 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(8) - (1)].tptr)->value.strfnct_dcc))((yysemantic_stack_[(8) - (3)].val), (yysemantic_stack_[(8) - (5)].string), (yysemantic_stack_[(8) - (7)].string)); }
     break;
 
   case 41:
-/* Line 670 of lalr1.cc  */
-#line 159 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 158 "aprepro.yy"
     { (yyval.string) = (char*)(*((yysemantic_stack_[(8) - (1)].tptr)->value.strfnct_ccc))((yysemantic_stack_[(8) - (3)].string), (yysemantic_stack_[(8) - (5)].string), (yysemantic_stack_[(8) - (7)].string)); }
     break;
 
   case 42:
-/* Line 670 of lalr1.cc  */
-#line 160 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 159 "aprepro.yy"
     { (yyval.string) = ((yysemantic_stack_[(5) - (1)].val)) ? ((yysemantic_stack_[(5) - (3)].string)) : ((yysemantic_stack_[(5) - (5)].string));              }
     break;
 
   case 43:
-/* Line 670 of lalr1.cc  */
-#line 162 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 161 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(1) - (1)].val); 				}
     break;
 
   case 44:
-/* Line 670 of lalr1.cc  */
-#line 163 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 162 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(2) - (2)].val) + 1;				}
     break;
 
   case 45:
-/* Line 670 of lalr1.cc  */
-#line 164 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 163 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(2) - (2)].val) - 1;				}
     break;
 
   case 46:
-/* Line 670 of lalr1.cc  */
-#line 165 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 164 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(1) - (1)].tptr)->value.var;			}
     break;
 
   case 47:
-/* Line 670 of lalr1.cc  */
-#line 166 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 165 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(1) - (1)].tptr)->value.var;			}
     break;
 
   case 48:
-/* Line 670 of lalr1.cc  */
-#line 167 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 166 "aprepro.yy"
     { (yyval.val) = ++((yysemantic_stack_[(2) - (2)].tptr)->value.var);		}
     break;
 
   case 49:
-/* Line 670 of lalr1.cc  */
-#line 168 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 167 "aprepro.yy"
     { (yyval.val) = --((yysemantic_stack_[(2) - (2)].tptr)->value.var);		}
     break;
 
   case 50:
-/* Line 670 of lalr1.cc  */
-#line 169 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 168 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(2) - (1)].tptr)->value.var)++;		}
     break;
 
   case 51:
-/* Line 670 of lalr1.cc  */
-#line 170 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 169 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(2) - (1)].tptr)->value.var)--;		}
     break;
 
   case 52:
-/* Line 670 of lalr1.cc  */
-#line 171 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 170 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (3)].val); (yysemantic_stack_[(3) - (1)].tptr)->value.var = (yysemantic_stack_[(3) - (3)].val);
 				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 53:
-/* Line 670 of lalr1.cc  */
-#line 173 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 172 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (3)].val); (yysemantic_stack_[(3) - (1)].tptr)->value.var = (yysemantic_stack_[(3) - (3)].val);
 				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);			}
     break;
 
   case 54:
-/* Line 670 of lalr1.cc  */
-#line 176 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 175 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var += (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; }
     break;
 
   case 55:
-/* Line 670 of lalr1.cc  */
-#line 177 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 176 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var -= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; }
     break;
 
   case 56:
-/* Line 670 of lalr1.cc  */
-#line 178 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 177 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var *= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; }
     break;
 
   case 57:
-/* Line 670 of lalr1.cc  */
-#line 179 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 178 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var /= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; }
     break;
 
   case 58:
-/* Line 670 of lalr1.cc  */
-#line 180 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 179 "aprepro.yy"
     { errno = 0;
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.var = std::pow((yysemantic_stack_[(3) - (1)].tptr)->value.var,(yysemantic_stack_[(3) - (3)].val)); 
 				  (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
@@ -830,152 +838,174 @@ namespace SEAMS {
     break;
 
   case 59:
-/* Line 670 of lalr1.cc  */
-#line 185 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 184 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(2) - (2)].tptr)); YYERROR; }
     break;
 
   case 60:
-/* Line 670 of lalr1.cc  */
-#line 186 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 185 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(2) - (2)].tptr)); YYERROR; }
     break;
 
   case 61:
-/* Line 670 of lalr1.cc  */
-#line 187 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 186 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(2) - (1)].tptr)); YYERROR; }
     break;
 
   case 62:
-/* Line 670 of lalr1.cc  */
-#line 188 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 187 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(2) - (1)].tptr)); YYERROR; }
     break;
 
   case 63:
-/* Line 670 of lalr1.cc  */
-#line 189 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 188 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 64:
-/* Line 670 of lalr1.cc  */
-#line 190 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 189 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 65:
-/* Line 670 of lalr1.cc  */
-#line 191 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 190 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 66:
-/* Line 670 of lalr1.cc  */
-#line 192 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 191 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 67:
-/* Line 670 of lalr1.cc  */
-#line 193 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 192 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 68:
-/* Line 670 of lalr1.cc  */
-#line 194 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 193 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 69:
-/* Line 670 of lalr1.cc  */
-#line 195 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 194 "aprepro.yy"
     { immutable_modify(aprepro, (yysemantic_stack_[(3) - (1)].tptr)); YYERROR; }
     break;
 
   case 70:
-/* Line 670 of lalr1.cc  */
-#line 197 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 196 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(1) - (1)].tptr)->value.var;
 				  undefined_warning(aprepro, (yysemantic_stack_[(1) - (1)].tptr)->name);          }
     break;
 
   case 71:
-/* Line 670 of lalr1.cc  */
-#line 199 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 198 "aprepro.yy"
     { (yyval.val) = ++((yysemantic_stack_[(2) - (2)].tptr)->value.var);		
 		                  set_type(aprepro, (yysemantic_stack_[(2) - (2)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(2) - (2)].tptr)->name);          }
     break;
 
   case 72:
-/* Line 670 of lalr1.cc  */
-#line 202 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 201 "aprepro.yy"
     { (yyval.val) = --((yysemantic_stack_[(2) - (2)].tptr)->value.var);		
 		                  set_type(aprepro, (yysemantic_stack_[(2) - (2)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(2) - (2)].tptr)->name);          }
     break;
 
   case 73:
-/* Line 670 of lalr1.cc  */
-#line 205 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 204 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(2) - (1)].tptr)->value.var)++;		
 		                  set_type(aprepro, (yysemantic_stack_[(2) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(2) - (1)].tptr)->name);          }
     break;
 
   case 74:
-/* Line 670 of lalr1.cc  */
-#line 208 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 207 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(2) - (1)].tptr)->value.var)--;		
 		                  set_type(aprepro, (yysemantic_stack_[(2) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(2) - (1)].tptr)->name);          }
     break;
 
   case 75:
-/* Line 670 of lalr1.cc  */
-#line 211 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 210 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (3)].val); (yysemantic_stack_[(3) - (1)].tptr)->value.var = (yysemantic_stack_[(3) - (3)].val);
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);                      }
     break;
 
   case 76:
-/* Line 670 of lalr1.cc  */
-#line 213 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 212 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var += (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 77:
-/* Line 670 of lalr1.cc  */
-#line 216 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 215 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var -= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 78:
-/* Line 670 of lalr1.cc  */
-#line 219 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 218 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var *= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 79:
-/* Line 670 of lalr1.cc  */
-#line 222 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 221 "aprepro.yy"
     { (yysemantic_stack_[(3) - (1)].tptr)->value.var /= (yysemantic_stack_[(3) - (3)].val); (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);
 				  undefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
     break;
 
   case 80:
-/* Line 670 of lalr1.cc  */
-#line 225 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 224 "aprepro.yy"
     { errno = 0;
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.var = std::pow((yysemantic_stack_[(3) - (1)].tptr)->value.var,(yysemantic_stack_[(3) - (3)].val)); 
 				  (yyval.val) = (yysemantic_stack_[(3) - (1)].tptr)->value.var; 
@@ -985,86 +1015,100 @@ namespace SEAMS {
     break;
 
   case 81:
-/* Line 670 of lalr1.cc  */
-#line 231 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 230 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(3) - (1)].tptr)->value.fnctptr))();	}
     break;
 
   case 82:
-/* Line 670 of lalr1.cc  */
-#line 232 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 231 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(4) - (1)].tptr)->value.fnctptr_d))((yysemantic_stack_[(4) - (3)].val)); 	}
     break;
 
   case 83:
-/* Line 670 of lalr1.cc  */
-#line 233 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 232 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(4) - (1)].tptr)->value.fnctptr_c))((yysemantic_stack_[(4) - (3)].string)); 	}
     break;
 
   case 84:
-/* Line 670 of lalr1.cc  */
-#line 235 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 234 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(6) - (1)].tptr)->value.fnctptr_cd))((yysemantic_stack_[(6) - (3)].string), (yysemantic_stack_[(6) - (5)].val)); 	}
     break;
 
   case 85:
-/* Line 670 of lalr1.cc  */
-#line 237 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 236 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(6) - (1)].tptr)->value.fnctptr_cc))((yysemantic_stack_[(6) - (3)].string), (yysemantic_stack_[(6) - (5)].string)); 	}
     break;
 
   case 86:
-/* Line 670 of lalr1.cc  */
-#line 239 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 238 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(6) - (1)].tptr)->value.fnctptr_dd))((yysemantic_stack_[(6) - (3)].val), (yysemantic_stack_[(6) - (5)].val));	}
     break;
 
   case 87:
-/* Line 670 of lalr1.cc  */
-#line 241 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 240 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(8) - (1)].tptr)->value.fnctptr_ddd))((yysemantic_stack_[(8) - (3)].val), (yysemantic_stack_[(8) - (5)].val), (yysemantic_stack_[(8) - (7)].val)); }
     break;
 
   case 88:
-/* Line 670 of lalr1.cc  */
-#line 243 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 242 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(10) - (1)].tptr)->value.fnctptr_dddd))((yysemantic_stack_[(10) - (3)].val), (yysemantic_stack_[(10) - (5)].val), (yysemantic_stack_[(10) - (7)].val), (yysemantic_stack_[(10) - (9)].val)); }
     break;
 
   case 89:
-/* Line 670 of lalr1.cc  */
-#line 245 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 244 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(10) - (1)].tptr)->value.fnctptr_dddd))((yysemantic_stack_[(10) - (3)].val), (yysemantic_stack_[(10) - (5)].val), (yysemantic_stack_[(10) - (7)].val), (yysemantic_stack_[(10) - (9)].val)); }
     break;
 
   case 90:
-/* Line 670 of lalr1.cc  */
-#line 247 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 246 "aprepro.yy"
     { (yyval.val) = (*((yysemantic_stack_[(14) - (1)].tptr)->value.fnctptr_dddddd))((yysemantic_stack_[(14) - (3)].val), (yysemantic_stack_[(14) - (5)].val), (yysemantic_stack_[(14) - (7)].val), (yysemantic_stack_[(14) - (9)].val), (yysemantic_stack_[(14) - (11)].val), (yysemantic_stack_[(14) - (13)].val)); }
     break;
 
   case 91:
-/* Line 670 of lalr1.cc  */
-#line 248 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 247 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) + (yysemantic_stack_[(3) - (3)].val); 			}
     break;
 
   case 92:
-/* Line 670 of lalr1.cc  */
-#line 249 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 248 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) - (yysemantic_stack_[(3) - (3)].val); 			}
     break;
 
   case 93:
-/* Line 670 of lalr1.cc  */
-#line 250 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 249 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (1)].val) * (yysemantic_stack_[(3) - (3)].val); 			}
     break;
 
   case 94:
-/* Line 670 of lalr1.cc  */
-#line 251 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 250 "aprepro.yy"
     { if ((yysemantic_stack_[(3) - (3)].val) == 0.)
 				    {
 				      yyerror(aprepro, "Zero divisor"); 
@@ -1075,8 +1119,9 @@ namespace SEAMS {
     break;
 
   case 95:
-/* Line 670 of lalr1.cc  */
-#line 258 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 257 "aprepro.yy"
     { if ((yysemantic_stack_[(3) - (3)].val) == 0.)
 				    {
 				      yyerror(aprepro, "Zero divisor");
@@ -1087,69 +1132,65 @@ namespace SEAMS {
     break;
 
   case 96:
-/* Line 670 of lalr1.cc  */
-#line 265 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 264 "aprepro.yy"
     { (yyval.val) = -(yysemantic_stack_[(2) - (2)].val);				}
     break;
 
   case 97:
-/* Line 670 of lalr1.cc  */
-#line 266 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 265 "aprepro.yy"
     { (yyval.val) =  (yysemantic_stack_[(2) - (2)].val);				}
     break;
 
   case 98:
-/* Line 670 of lalr1.cc  */
-#line 267 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 266 "aprepro.yy"
     { errno = 0;
 				  (yyval.val) = std::pow((yysemantic_stack_[(3) - (1)].val), (yysemantic_stack_[(3) - (3)].val)); 
 				  SEAMS::math_error(aprepro, "Power");			}
     break;
 
   case 99:
-/* Line 670 of lalr1.cc  */
-#line 270 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 269 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (2)].val);				}
     break;
 
   case 100:
-/* Line 670 of lalr1.cc  */
-#line 271 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 270 "aprepro.yy"
     { errno = 0;
 				  (yyval.val) = (double)((yysemantic_stack_[(3) - (2)].val) < 0 ? -floor(-((yysemantic_stack_[(3) - (2)].val))): floor((yysemantic_stack_[(3) - (2)].val)) );
 				  SEAMS::math_error(aprepro, "floor (int)");		}
     break;
 
   case 101:
-/* Line 670 of lalr1.cc  */
-#line 274 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 273 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(1) - (1)].val)) ? 1 : 0; }
     break;
 
   case 102:
-/* Line 670 of lalr1.cc  */
-#line 275 "aprepro.yy"
+
+/* Line 677 of lalr1.cc  */
+#line 274 "aprepro.yy"
     { (yyval.val) = ((yysemantic_stack_[(5) - (1)].val)) ? ((yysemantic_stack_[(5) - (3)].val)) : ((yysemantic_stack_[(5) - (5)].val));              }
     break;
 
 
-/* Line 670 of lalr1.cc  */
-#line 1138 "apr_parser.cc"
-      default:
-        break;
-      }
 
-    /* User semantic actions sometimes alter yychar, and that requires
-       that yytoken be updated with the new translation.  We take the
-       approach of translating immediately before every use of yytoken.
-       One alternative is translating here after every semantic action,
-       but that translation would be missed if the semantic action
-       invokes YYABORT, YYACCEPT, or YYERROR immediately after altering
-       yychar.  In the case of YYABORT or YYACCEPT, an incorrect
-       destructor might then be invoked immediately.  In the case of
-       YYERROR, subsequent parser actions might lead to an incorrect
-       destructor call or verbose syntax error message before the
-       lookahead is translated.  */
+/* Line 677 of lalr1.cc  */
+#line 1191 "apr_parser.cc"
+	default:
+          break;
+      }
     YY_SYMBOL_PRINT ("-> $$ =", yyr1_[yyn], &yyval, &yyloc);
 
     yypop_ (yylen);
@@ -1173,35 +1214,30 @@ namespace SEAMS {
   | yyerrlab -- here on detecting error |
   `------------------------------------*/
   yyerrlab:
-    /* Make sure we have latest lookahead translation.  See comments at
-       user semantic actions for why this is necessary.  */
-    yytoken = yytranslate_ (yychar);
-
     /* If not already recovering from an error, report this error.  */
     if (!yyerrstatus_)
       {
 	++yynerrs_;
-	if (yychar == yyempty_)
-	  yytoken = yyempty_;
 	error (yylloc, yysyntax_error_ (yystate, yytoken));
       }
 
-    yyerror_range[1] = yylloc;
+    yyerror_range[0] = yylloc;
     if (yyerrstatus_ == 3)
       {
-        /* If just tried and failed to reuse lookahead token after an
-           error, discard it.  */
-        if (yychar <= yyeof_)
-          {
-            /* Return failure if at end of input.  */
-            if (yychar == yyeof_)
-              YYABORT;
-          }
-        else
-          {
-            yydestruct_ ("Error: discarding", yytoken, &yylval, &yylloc);
-            yychar = yyempty_;
-          }
+	/* If just tried and failed to reuse lookahead token after an
+	 error, discard it.  */
+
+	if (yychar <= yyeof_)
+	  {
+	  /* Return failure if at end of input.  */
+	  if (yychar == yyeof_)
+	    YYABORT;
+	  }
+	else
+	  {
+	    yydestruct_ ("Error: discarding", yytoken, &yylval, &yylloc);
+	    yychar = yyempty_;
+	  }
       }
 
     /* Else will try to reuse lookahead token after shifting the error
@@ -1220,7 +1256,7 @@ namespace SEAMS {
     if (false)
       goto yyerrorlab;
 
-    yyerror_range[1] = yylocation_stack_[yylen - 1];
+    yyerror_range[0] = yylocation_stack_[yylen - 1];
     /* Do not reclaim the symbols of the rule which action triggered
        this YYERROR.  */
     yypop_ (yylen);
@@ -1237,7 +1273,7 @@ namespace SEAMS {
     for (;;)
       {
 	yyn = yypact_[yystate];
-	if (!yy_pact_value_is_default_ (yyn))
+	if (yyn != yypact_ninf_)
 	{
 	  yyn += yyterror_;
 	  if (0 <= yyn && yyn <= yylast_ && yycheck_[yyn] == yyterror_)
@@ -1250,9 +1286,9 @@ namespace SEAMS {
 
 	/* Pop the current state because it cannot handle the error token.  */
 	if (yystate_stack_.height () == 1)
-	  YYABORT;
+	YYABORT;
 
-	yyerror_range[1] = yylocation_stack_[0];
+	yyerror_range[0] = yylocation_stack_[0];
 	yydestruct_ ("Error: popping",
 		     yystos_[yystate],
 		     &yysemantic_stack_[0], &yylocation_stack_[0]);
@@ -1261,10 +1297,10 @@ namespace SEAMS {
 	YY_STACK_PRINT ();
       }
 
-    yyerror_range[2] = yylloc;
+    yyerror_range[1] = yylloc;
     // Using YYLLOC is tempting, but would change the location of
     // the lookahead.  YYLOC is available though.
-    YYLLOC_DEFAULT (yyloc, yyerror_range, 2);
+    YYLLOC_DEFAULT (yyloc, (yyerror_range - 1), 2);
     yysemantic_stack_.push (yylval);
     yylocation_stack_.push (yyloc);
 
@@ -1287,148 +1323,70 @@ namespace SEAMS {
 
   yyreturn:
     if (yychar != yyempty_)
-      {
-        /* Make sure we have latest lookahead translation.  See comments
-           at user semantic actions for why this is necessary.  */
-        yytoken = yytranslate_ (yychar);
-        yydestruct_ ("Cleanup: discarding lookahead", yytoken, &yylval,
-                     &yylloc);
-      }
+      yydestruct_ ("Cleanup: discarding lookahead", yytoken, &yylval, &yylloc);
 
     /* Do not reclaim the symbols of the rule which action triggered
        this YYABORT or YYACCEPT.  */
     yypop_ (yylen);
-    while (1 < yystate_stack_.height ())
+    while (yystate_stack_.height () != 1)
       {
-        yydestruct_ ("Cleanup: popping",
-                     yystos_[yystate_stack_[0]],
-                     &yysemantic_stack_[0],
-                     &yylocation_stack_[0]);
-        yypop_ ();
+	yydestruct_ ("Cleanup: popping",
+		   yystos_[yystate_stack_[0]],
+		   &yysemantic_stack_[0],
+		   &yylocation_stack_[0]);
+	yypop_ ();
       }
 
     return yyresult;
-    }
-    catch (...)
-      {
-        YYCDEBUG << "Exception caught: cleaning lookahead and stack"
-                 << std::endl;
-        // Do not try to display the values of the reclaimed symbols,
-        // as their printer might throw an exception.
-        if (yychar != yyempty_)
-          {
-            /* Make sure we have latest lookahead translation.  See
-               comments at user semantic actions for why this is
-               necessary.  */
-            yytoken = yytranslate_ (yychar);
-            yydestruct_ (YY_NULL, yytoken, &yylval, &yylloc);
-          }
-
-        while (1 < yystate_stack_.height ())
-          {
-            yydestruct_ (YY_NULL,
-                         yystos_[yystate_stack_[0]],
-                         &yysemantic_stack_[0],
-                         &yylocation_stack_[0]);
-            yypop_ ();
-          }
-        throw;
-      }
   }
 
   // Generate an error message.
   std::string
-  Parser::yysyntax_error_ (int yystate, int yytoken)
+  Parser::yysyntax_error_ (int yystate, int tok)
   {
-    std::string yyres;
-    // Number of reported tokens (one for the "unexpected", one per
-    // "expected").
-    size_t yycount = 0;
-    // Its maximum.
-    enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
-    // Arguments of yyformat.
-    char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
-
-    /* There are many possibilities here to consider:
-       - If this state is a consistent state with a default action, then
-         the only way this function was invoked is if the default action
-         is an error action.  In that case, don't check for expected
-         tokens because there are none.
-       - The only way there can be no lookahead present (in yytoken) is
-         if this state is a consistent state with a default action.
-         Thus, detecting the absence of a lookahead is sufficient to
-         determine that there is no unexpected or expected token to
-         report.  In that case, just report a simple "syntax error".
-       - Don't assume there isn't a lookahead just because this state is
-         a consistent state with a default action.  There might have
-         been a previous inconsistent state, consistent state with a
-         non-default action, or user semantic action that manipulated
-         yychar.
-       - Of course, the expected token list depends on states to have
-         correct lookahead information, and it depends on the parser not
-         to perform extra reductions after fetching a lookahead from the
-         scanner and before detecting a syntax error.  Thus, state
-         merging (from LALR or IELR) and default reductions corrupt the
-         expected token list.  However, the list is correct for
-         canonical LR with one exception: it will still contain any
-         token that will not be accepted due to an error action in a
-         later state.
-    */
-    if (yytoken != yyempty_)
+    std::string res;
+    YYUSE (yystate);
+#if YYERROR_VERBOSE
+    int yyn = yypact_[yystate];
+    if (yypact_ninf_ < yyn && yyn <= yylast_)
       {
-        yyarg[yycount++] = yytname_[yytoken];
-        int yyn = yypact_[yystate];
-        if (!yy_pact_value_is_default_ (yyn))
-          {
-            /* Start YYX at -YYN if negative to avoid negative indexes in
-               YYCHECK.  In other words, skip the first -YYN actions for
-               this state because they are default actions.  */
-            int yyxbegin = yyn < 0 ? -yyn : 0;
-            /* Stay within bounds of both yycheck and yytname.  */
-            int yychecklim = yylast_ - yyn + 1;
-            int yyxend = yychecklim < yyntokens_ ? yychecklim : yyntokens_;
-            for (int yyx = yyxbegin; yyx < yyxend; ++yyx)
-              if (yycheck_[yyx + yyn] == yyx && yyx != yyterror_
-                  && !yy_table_value_is_error_ (yytable_[yyx + yyn]))
-                {
-                  if (yycount == YYERROR_VERBOSE_ARGS_MAXIMUM)
-                    {
-                      yycount = 1;
-                      break;
-                    }
-                  else
-                    yyarg[yycount++] = yytname_[yyx];
-                }
-          }
-      }
+	/* Start YYX at -YYN if negative to avoid negative indexes in
+	   YYCHECK.  */
+	int yyxbegin = yyn < 0 ? -yyn : 0;
 
-    char const* yyformat = YY_NULL;
-    switch (yycount)
-      {
-#define YYCASE_(N, S)                         \
-        case N:                               \
-          yyformat = S;                       \
-        break
-        YYCASE_(0, YY_("syntax error"));
-        YYCASE_(1, YY_("syntax error, unexpected %s"));
-        YYCASE_(2, YY_("syntax error, unexpected %s, expecting %s"));
-        YYCASE_(3, YY_("syntax error, unexpected %s, expecting %s or %s"));
-        YYCASE_(4, YY_("syntax error, unexpected %s, expecting %s or %s or %s"));
-        YYCASE_(5, YY_("syntax error, unexpected %s, expecting %s or %s or %s or %s"));
-#undef YYCASE_
-      }
+	/* Stay within bounds of both yycheck and yytname.  */
+	int yychecklim = yylast_ - yyn + 1;
+	int yyxend = yychecklim < yyntokens_ ? yychecklim : yyntokens_;
+	int count = 0;
+	for (int x = yyxbegin; x < yyxend; ++x)
+	  if (yycheck_[x + yyn] == x && x != yyterror_)
+	    ++count;
 
-    // Argument number.
-    size_t yyi = 0;
-    for (char const* yyp = yyformat; *yyp; ++yyp)
-      if (yyp[0] == '%' && yyp[1] == 's' && yyi < yycount)
-        {
-          yyres += yytnamerr_ (yyarg[yyi++]);
-          ++yyp;
-        }
-      else
-        yyres += *yyp;
-    return yyres;
+	// FIXME: This method of building the message is not compatible
+	// with internationalization.  It should work like yacc.c does it.
+	// That is, first build a string that looks like this:
+	// "syntax error, unexpected %s or %s or %s"
+	// Then, invoke YY_ on this string.
+	// Finally, use the string as a format to output
+	// yytname_[tok], etc.
+	// Until this gets fixed, this message appears in English only.
+	res = "syntax error, unexpected ";
+	res += yytnamerr_ (yytname_[tok]);
+	if (count < 5)
+	  {
+	    count = 0;
+	    for (int x = yyxbegin; x < yyxend; ++x)
+	      if (yycheck_[x + yyn] == x && x != yyterror_)
+		{
+		  res += (!count++) ? ", expecting " : " or ";
+		  res += yytnamerr_ (yytname_[x]);
+		}
+	  }
+      }
+    else
+#endif
+      res = YY_("syntax error");
+    return res;
   }
 
 
@@ -1461,9 +1419,9 @@ namespace SEAMS {
      558,   277,   -42,   731,   -42
   };
 
-  /* YYDEFACT[S] -- default reduction number in state S.  Performed when
-     YYTABLE doesn't specify something else to do.  Zero means the
-     default is an error.  */
+  /* YYDEFACT[S] -- default rule to reduce with in state S when YYTABLE
+     doesn't specify something else to do.  Zero means the default is an
+     error.  */
   const unsigned char
   Parser::yydefact_[] =
   {
@@ -1506,7 +1464,7 @@ namespace SEAMS {
 
   /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
      positive, shift that token.  If negative, reduce the rule which
-     number is the opposite.  If YYTABLE_NINF_, syntax error.  */
+     number is the opposite.  If zero, do what YYDEFACT says.  */
   const signed char Parser::yytable_ninf_ = -1;
   const unsigned char
   Parser::yytable_[] =
@@ -1766,7 +1724,7 @@ namespace SEAMS {
        3,     1,     5
   };
 
-
+#if YYDEBUG || YYERROR_VERBOSE || YYTOKEN_TABLE
   /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
      First, the terminals, then, starting at \a yyntokens_, nonterminals.  */
   const char*
@@ -1778,8 +1736,9 @@ namespace SEAMS {
   "EQ_MINUS", "EQ_PLUS", "EQ_DIV", "EQ_TIME", "EQ_POW", "COLON", "QUEST",
   "LOR", "LAND", "NE", "EQ", "GE", "LE", "GT", "LT", "SUB", "PLU", "MOD",
   "TIM", "DIV", "NOT", "UNARY", "POW", "DEC", "INC", "CONCAT", "'\\n'",
-  "'?'", "':'", "$accept", "input", "line", "bool", "sexp", "exp", YY_NULL
+  "'?'", "':'", "$accept", "input", "line", "bool", "sexp", "exp", 0
   };
+#endif
 
 #if YYDEBUG
   /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
@@ -1854,17 +1813,17 @@ namespace SEAMS {
   const unsigned short int
   Parser::yyrline_[] =
   {
-         0,    95,    95,    96,    99,   100,   107,   111,   112,   115,
-     116,   117,   118,   119,   120,   121,   122,   123,   124,   125,
-     126,   129,   130,   131,   132,   133,   134,   136,   137,   138,
-     139,   141,   144,   148,   149,   150,   151,   152,   153,   154,
-     156,   158,   160,   162,   163,   164,   165,   166,   167,   168,
-     169,   170,   171,   173,   176,   177,   178,   179,   180,   185,
-     186,   187,   188,   189,   190,   191,   192,   193,   194,   195,
-     197,   199,   202,   205,   208,   211,   213,   216,   219,   222,
-     225,   231,   232,   233,   234,   236,   238,   240,   242,   244,
-     246,   248,   249,   250,   251,   258,   265,   266,   267,   270,
-     271,   274,   275
+         0,    94,    94,    95,    98,    99,   106,   110,   111,   114,
+     115,   116,   117,   118,   119,   120,   121,   122,   123,   124,
+     125,   128,   129,   130,   131,   132,   133,   135,   136,   137,
+     138,   140,   143,   147,   148,   149,   150,   151,   152,   153,
+     155,   157,   159,   161,   162,   163,   164,   165,   166,   167,
+     168,   169,   170,   172,   175,   176,   177,   178,   179,   184,
+     185,   186,   187,   188,   189,   190,   191,   192,   193,   194,
+     196,   198,   201,   204,   207,   210,   212,   215,   218,   221,
+     224,   230,   231,   232,   233,   235,   237,   239,   241,   243,
+     245,   247,   248,   249,   250,   257,   264,   265,   266,   269,
+     270,   273,   274
   };
 
   // Print the state stack on the debug stream.
@@ -1956,14 +1915,18 @@ namespace SEAMS {
 
 
 } // SEAMS
-/* Line 1141 of lalr1.cc  */
-#line 1961 "apr_parser.cc"
-/* Line 1142 of lalr1.cc  */
-#line 279 "aprepro.yy"
+
+/* Line 1053 of lalr1.cc  */
+#line 1921 "apr_parser.cc"
+
+
+/* Line 1055 of lalr1.cc  */
+#line 278 "aprepro.yy"
 
 
 void SEAMS::Parser::error(const Parser::location_type&, const std::string& m)
 {
     aprepro.error(m);
 }
+
 

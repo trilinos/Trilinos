@@ -38,6 +38,7 @@
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Krylov.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
 
 /** Classes and functions for templated preconditioning.  */
 namespace Ifpack2 {
@@ -159,8 +160,11 @@ Factory::create(const std::string& prec_type,
   else if (prec_type == "DIAGONAL") {
     prec = Teuchos::rcp(new Ifpack2::Diagonal<MatrixType>(matrix));
   }
+  else if (prec_type == "SCHWARZ") {
+    prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix));
+  }
   else if (prec_type == "KRYLOV") {
-    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::ILUT<MatrixType> >(matrix));
+    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrix));
   }
   else {
     std::ostringstream os;

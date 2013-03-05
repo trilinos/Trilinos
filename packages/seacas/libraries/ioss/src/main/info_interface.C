@@ -56,7 +56,7 @@
 
 Info::Interface::Interface()
   : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false),ints64Bit_(false),
-    fieldSuffixSeparator_('_'), summary_(0),
+    computeBBox_(false), fieldSuffixSeparator_('_'), summary_(0),
     surfaceSplitScheme_(1), minimumTime_(0.0), maximumTime_(0.0),
     cwd_(""), filetype_("exodus")
 {
@@ -86,6 +86,9 @@ void Info::Interface::enroll_options()
 		  NULL);
   options_.enroll("compute_volume", Ioss::GetLongOption::NoValue,
 		  "Compute the volume of all hex elements in the mesh. Outputs min/max and count",
+		  NULL);
+  options_.enroll("compute_bbox", Ioss::GetLongOption::NoValue,
+		  "Compute the bounding box of all element blocks in the mesh.",
 		  NULL);
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
 		  "Character used to separate a field suffix from the field basename\n"
@@ -152,6 +155,10 @@ bool Info::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("compute_volume")) {
     computeVolume_ = true;
+  }
+
+  if (options_.retrieve("compute_bbox")) {
+    computeBBox_ = true;
   }
 
   if (options_.retrieve("summary")) {

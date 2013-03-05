@@ -67,7 +67,7 @@ struct aggregation_chunk_details_t {
     size_t len;   /* length of buf in bytes */
 
     MPI_Datatype datatype; /* MPI type of data in buf */
-    int num_elements;      /* number of datatype elements in buf (len/sizeof(datatype)) */
+    size_t num_elements;   /* number of datatype elements in buf (len/sizeof(datatype)) */
     int datatype_size;
 
     MPI_Offset *start;  /* starting corner (eg. 0,0,0 is the origin of a cube) */

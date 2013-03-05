@@ -135,7 +135,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
   Time_->start();
 
   Teuchos::RCP<MultiVectorType> OverlappingX,OverlappingY,Xtmp;
-  
+
   if(IsOverlapping_){
     // Setup if we're overlapping
     OverlappingX = Teuchos::rcp( new MultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );
@@ -235,12 +235,17 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
     // Make the default be a string to be consistent with the valid parameters!
     List_.get("schwarz: combine mode","Add");
   }
-  
+
+  Ifpack2::getParameter(List_, "schwarz: overlap level",OverlapLevel_);  
+  if(OverlapLevel_>0) {
+    IsOverlapping_=true;
+  }
+
   // Will we be doing reordering?
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
   UseReordering_ = List_.get("schwarz: use reordering",false);
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
   // If we don't have Zoltan2, we just turn the reordering off completely...
   UseReordering_=false;
 #endif

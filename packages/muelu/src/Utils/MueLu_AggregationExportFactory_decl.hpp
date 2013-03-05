@@ -83,7 +83,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out") : outputFileName_(outputFileName) { }
+    AggregationExportFactory() { }
 
     //! Destructor.
     virtual ~AggregationExportFactory() { }
@@ -110,9 +110,6 @@ namespace MueLu {
   private:
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-
-  private:
-    std::string outputFileName_;            ///< filename template for output
 
   }; // class AggregationExportFactory
 

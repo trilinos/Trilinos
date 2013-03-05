@@ -1119,7 +1119,14 @@ namespace Kokkos {
     //! One-line description of this instance.
     std::string description () const;
 
-    //! Write a possibly more verbose description of this instance to out.
+    /// Write a more verbose description of this instance to out.
+    ///
+    /// At verbosity levels greater than Teuchos::VERB_LOW, this
+    /// method will print the matrix's attributes in YAML 1.2 format.
+    /// Teuchos::VERB_MEDIUM (the default) will print a constant
+    /// amount of data, independent of the matrix's dimensions or
+    /// number of entries.  Teuchos::VERB_EXTREME will print all of
+    /// the matrix's entries as well.
     void
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
@@ -2654,7 +2661,7 @@ namespace Kokkos {
        << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
        << ", Node=" << TypeNameTraits<Node>::name()
        << ", Allocator=" << TypeNameTraits<Allocator>::name()
-       << ">";
+       << " >";
     return os.str();
   }
 
@@ -2668,6 +2675,7 @@ namespace Kokkos {
     using Teuchos::includesVerbLevel;
     using Teuchos::OSTab;
     using Teuchos::rcpFromRef;
+    using Teuchos::TypeNameTraits;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
@@ -2684,77 +2692,94 @@ namespace Kokkos {
     if (vl == VERB_NONE) {
       return;
     }
-    else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
-      out << this->description();
-
-      if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-        out << " {" << endl;
-        OSTab tab1 (rcpFromRef (out));
-
-        out << "matVecVariant_: " << matVecVariant_ << endl
-            << "unroll_: " << unroll_ << endl
-            << "isInitialized_: " << isInitialized_ << endl;
-        if (isInitialized_) {
-          std::string triUplo ("INVALID");
-          if (tri_uplo_ == Teuchos::UNDEF_TRI) {
-            triUplo = "UNDEF_TRI";
-          }
-          else if (tri_uplo_ == Teuchos::LOWER_TRI) {
-            triUplo = "LOWER_TRI";
-          }
-          else if (tri_uplo_ == Teuchos::UPPER_TRI) {
-            triUplo = "UPPER_TRI";
-          }
-          std::string unitDiag ("INVALID");
-          if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
-            unitDiag = "NON_UNIT_DIAG";
-          }
-          else if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            unitDiag = "UNIT_DIAG";
-          }
-
-          out << "numRows_: " << numRows_ << endl
-              << "numCols_: " << numCols_ << endl
-              << "isEmpty_: " << isEmpty_ << endl
-              << "hasEmptyRows_: " << hasEmptyRows_ << endl
-              << "tri_uplo_: " << triUplo << endl
-              << "unit_diag_: " << unitDiag << endl;
-          if (ptr_.size() > 0) {
-            out << "numEntries: " << ptr_[ptr_.size()-1] << endl;
-          }
-          else {
-            out << "numEntries: " << endl;
-          }
-
-          if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
-            // Only print out all the sparse matrix's data in
-            // extreme verbosity mode.
-            out << "ptr_: [";
+    else if (vl == VERB_LOW) {
+      out << this->description() << endl;
+      return;
+    } else { // vl > VERB_LOW
+      out << "Kokkos::AltSparseOps: {" << endl;
+      {
+	OSTab tab1 (rcpFromRef (out));
+	out << "Template parameters: {" << endl;
+	{
+	  OSTab tab2 (rcpFromRef (out));
+	  out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
+	      << "Ordinal: " << TypeNameTraits<Ordinal>::name() << endl
+	      << "Node: " << TypeNameTraits<Node>::name() << endl
+	      << "Allocator: " << TypeNameTraits<Allocator>::name() << endl;
+	}
+	out << "}" << endl << "User parameters: {" << endl;
+	{
+	  OSTab tab2 (rcpFromRef (out));
+	  out << "matVecVariant_: " << matVecVariant_ << endl
+	      << "unroll_: " << unroll_ << endl;
+	}
+	out << "}" << endl << "Matrix attributes: {" << endl;
+	{
+	  OSTab tab2 (rcpFromRef (out));
+	  out << "isInitialized_: " << isInitialized_ << endl;
+	  if (isInitialized_) {
+	    std::string triUplo ("INVALID");
+	    if (tri_uplo_ == Teuchos::UNDEF_TRI) {
+	      triUplo = "UNDEF_TRI";
+	    }
+	    else if (tri_uplo_ == Teuchos::LOWER_TRI) {
+	      triUplo = "LOWER_TRI";
+	    }
+	    else if (tri_uplo_ == Teuchos::UPPER_TRI) {
+	      triUplo = "UPPER_TRI";
+	    }
+	    std::string unitDiag ("INVALID");
+	    if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
+	      unitDiag = "NON_UNIT_DIAG";
+	    }
+	    else if (unit_diag_ == Teuchos::UNIT_DIAG) {
+	      unitDiag = "UNIT_DIAG";
+	    }
+	    out << "numRows_: " << numRows_ << endl
+		<< "numCols_: " << numCols_ << endl
+		<< "isEmpty_: " << isEmpty_ << endl
+		<< "hasEmptyRows_: " << hasEmptyRows_ << endl
+		<< "tri_uplo_: " << triUplo << endl
+		<< "unit_diag_: " << unitDiag << endl;
+	    const size_t numEntries = 
+	      (ptr_.size() == 0) ? 0 : ptr_[ptr_.size()-1];
+	    out << "numEntries: " << numEntries << endl;
+	  } // if matrix is initialized
+	} // print "Matrix attributes"
+	out << "}" << endl;
+	if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
+	  out << "Matrix data: {" << endl;
+	  {
+	    // Only print out all the sparse matrix's data in
+	    // extreme verbosity mode.
+	    out << "ptr_: [";
 	    for (size_type i = 0; i < ptr_.size (); ++i) {
 	      out << ptr_[i];
 	      if (i + 1 < ptr_.size ()) {
 		out << ", ";
 	      }
 	    }
-            out << "]" << endl << "ind_ : [";
+	    out << "]" << endl << "ind_ : [";
 	    for (size_type i = 0; i < ind_.size (); ++i) {
 	      out << ind_[i];
 	      if (i + 1 < ind_.size ()) {
 		out << ", ";
 	      }
 	    }
-            out << "]" << endl << "val_: [";
+	    out << "]" << endl << "val_: [";
 	    for (size_type i = 0; i < val_.size (); ++i) {
 	      out << val_[i];
 	      if (i + 1 < val_.size ()) {
 		out << ", ";
 	      }
 	    }
-            out << "]" << endl;
-          } // vl >= VERB_EXTREME
-        } // if is initialized
-      } // vl >= VERB_MEDIUM
-    } // vl >= VERB_LOW
+	    out << "]" << endl;
+	  } // Print "Matrix data"
+	  out << "}" << endl;
+	} // vl >= VERB_EXTREME
+      } // Print the matrix's parameters and data
+      out << "}" << endl;
+    } // if vl > VERB_LOW
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>

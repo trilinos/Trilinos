@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
       rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases, 1e-12));
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk = 
-      basis->computeTripleProductTensor(sz);
+      basis->computeTripleProductTensor();
     RCP<const Stokhos::Quadrature<int,double> > quad = 
       rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     RCP<ParameterList> expn_params = Teuchos::rcp(new ParameterList);

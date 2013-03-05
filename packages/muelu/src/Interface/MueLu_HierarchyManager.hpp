@@ -76,7 +76,7 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50)   // TODO: default values should be query from Hierarchy class to avoid duplication
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium)   // TODO: default values should be query from Hierarchy class to avoid duplication
     { }
 
     //!
@@ -140,6 +140,7 @@ namespace MueLu {
 
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
+      H.SetDefaultVerbLevel(verbosity_);
 
       // TODO: coarsestLevelManager
 
@@ -194,6 +195,7 @@ namespace MueLu {
     // Hierarchy parameters
     int                   numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
+    MsgType               verbosity_;
 
   private:
     // Levels

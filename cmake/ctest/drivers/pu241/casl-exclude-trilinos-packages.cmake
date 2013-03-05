@@ -9,6 +9,7 @@ IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
     Pliris
     Claps
     Galeri
+    Amesos2
     Pamgen
     Komplex
     RBGen

@@ -341,6 +341,13 @@ public:
   ///   with ML.
   ///
   /// Parameters that govern other algorithmic details:
+  /// - "chebyshev: assume matrix does not change": Whether compute()
+  ///   should always assume that the matrix has not changed since the
+  ///   last call to compute().  The default is false.  If true,
+  ///   compute() will not recompute the inverse diagonal or the
+  ///   estimates of the max and min eigenvalues.  compute() will
+  ///   always compute any quantity which the user did not provide and
+  ///   which we have not yet computed before.
   /// - "chebyshev: operator inv diagonal" (<tt>RCP<const V></tt> or
   ///   <tt>const V*</tt>): If nonnull, we will use a deep copy of
   ///   this vector for left scaling as the inverse diagonal of the
@@ -348,8 +355,8 @@ public:
   ///   We will make a copy every time you call setParameters().  If
   ///   you ever call setParameters() without this parameter, we will
   ///   clear our copy and compute the inverse diagonal ourselves
-  ///   again.  You are responsible for updating this if the matrix
-  ///   has changed.
+  ///   again.  If you choose to provide this parameter, you are
+  ///   responsible for updating this if the matrix has changed.
   /// - "chebyshev: min diagonal value" (\c ST): minDiagVal.  If any
   ///   entry of the diagonal of the matrix is less than this in
   ///   magnitude, it will be replaced with this value in the inverse
@@ -366,11 +373,10 @@ public:
   ///
   /// \section Ifpack2_Chebyshev_setParameters_compat Note on compatibility with Ifpack and ML
   ///
-  /// Both the Ifpack and ML
-  /// packages implement a Chebyshev smoother.  We accept Ifpack and
-  /// ML names for parameters whenever Ifpack2 has an equivalent
-  /// parameter.  Default settings for parameters relating to spectral
-  /// bounds come from Ifpack.
+  /// Both the Ifpack and ML packages implement a Chebyshev smoother.
+  /// We accept Ifpack and ML names for parameters whenever Ifpack2
+  /// has an equivalent parameter.  Default settings for parameters
+  /// relating to spectral bounds come from Ifpack.
   ///
   /// The following list maps from an ML parameter to its
   /// corresponding Ifpack2 parameter.
@@ -409,7 +415,8 @@ public:
   /// same.  If they are not the same, and if the vector is
   /// distributed according to the row Map, we will reuse the Export
   /// from the matrix.  Otherwise, we have to make a fresh Export
-  /// object, which is more expensive.
+  /// object, which is more expensive.  To avoid this cost, you should
+  /// always provide a row Map or range Map vector for this parameter.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief Initialize the preconditioner.
@@ -423,7 +430,7 @@ public:
   /// Whether the preconditioner has been successfully initialized
   /// (by calling initialize()).
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return IsInitialized_;
   }
 
   /// \brief (Re)compute the left scaling, and (if applicable)
@@ -434,21 +441,39 @@ public:
   /// - if the matrix (either its values or its structure) has changed, or
   /// - any time after you call setParameters().
   ///
-  /// Advanced users may omit calling compute() after calling
-  /// setParameters(), as long as none of the changed parameters
-  /// affect either computation of the inverse diagonal, or estimation
-  /// of the max or min eigenvalues.
+  /// Users have the option to supply the left scaling vector D_inv
+  /// and estimates of the min and max eigenvalues of D_inv * A as
+  /// parameters to setParameters().  If users did <i>not</i> supply a
+  /// left scaling, then this method will compute it by default (if
+  /// assumeMatrixUnchanged is false).  Likewise, if users did
+  /// <i>not</i> supply at least an estimate of the max eigenvalue,
+  /// this method will estimate it by default.  If estimation of the
+  /// eigenvalues is required, this method may take as long as several
+  /// Chebyshev iterations.
   ///
-  /// If estimation of the eigenvalues is required, this method may
-  /// take as long as several Chebyshev iterations.
+  /// Advanced users may avoid recomputing the left scaling vector and
+  /// eigenvalue estimates by setting the "chebyshev: assume matrix
+  /// does not change" parameter of setParameters() to \c true.  The
+  /// left scaling vector and eigenvalue estimates will always be
+  /// computed if the user did not provide them and we have not yet
+  /// computed them.  Any changes to parameters that affect
+  /// computation of the inverse diagonal or estimation of the
+  /// eigenvalue bounds will not affect subsequent apply() operations,
+  /// until the "chebyshev: assume matrix does not change" parameter
+  /// is set back to \c false (its default value).
   ///
   /// This method will call initialize() if it has not already been
   /// called.  However, you may call initialize() before calling this
   /// method if you wish.
   void compute ();
 
-  /// Whether the preconditioner has been successfully computed
-  /// (by calling compute()).
+  /// Whether compute() has been called at least once.
+  ///
+  /// Note that you must <i>always</i> call compute() if the matrix
+  /// has changed, if you have called setParameters(), or if you have
+  /// not yet called compute().  This method only tells you if
+  /// compute() has been called at least once, not if you need to call
+  /// compute().
   inline bool isComputed() const {
     return IsComputed_;
   }

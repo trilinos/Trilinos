@@ -211,14 +211,9 @@ int process_mpi_put(
         const int validate,
         const int source)
 {
-    int nbytes = len*sizeof(data_t);
-
     log_level debug_level = xfer_debug_level;
     int rc = 0;
-    MPI_Status status;
-    MPI_Request req;
     MPI_Win win;
-    MPI_Group comm_group, group;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -281,14 +276,9 @@ int process_mpi_get(
         const int validate,
         const int source)
 {
-    int nbytes = len*sizeof(data_t);
-
     log_level debug_level = xfer_debug_level;
     int rc = 0;
-    MPI_Status status;
-    MPI_Request req;
     MPI_Win win;
-    MPI_Group comm_group, group;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

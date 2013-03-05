@@ -107,6 +107,7 @@ Ioss::Wedge6::Wedge6()
 {
   Ioss::ElementTopology::alias("wedge6", "wedge");
   Ioss::ElementTopology::alias("wedge6", "Solid_Wedge_6_3D");
+  Ioss::ElementTopology::alias("wedge6", "WEDGE_6");
 }
 
 Ioss::Wedge6::~Wedge6() {}

@@ -203,7 +203,6 @@ void MockModelEval_B::evalModel( const InArgs& inArgs,
 
   RCP<const Epetra_Vector> x_dot_in = inArgs.get_x_dot();
   double alpha = inArgs.get_alpha();
-  double beta  = inArgs.get_beta();
 
   // Parse OutArgs
 
@@ -213,7 +212,6 @@ void MockModelEval_B::evalModel( const InArgs& inArgs,
 
   if (f_out != Teuchos::null) {
     for (int i=0; i<myVecLength; i++) {
-      int gid = x_in->Map().GID(i);
        (*f_out)[i] = -(*p_in)[0];
     }
     if (x_dot_in != Teuchos::null) {

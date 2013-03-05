@@ -109,7 +109,7 @@ struct GramSchmidt_PCE_Setup {
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor();
     
     // Quadrature expansion
     Teuchos::RCP<Teuchos::ParameterList> exp_params =
@@ -162,7 +162,7 @@ struct GramSchmidt_PCE_Setup {
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
-      gs_basis->computeTripleProductTensor(gs_basis->size());
+      gs_basis->computeTripleProductTensor();
 
     // Create quadrature for Gram-Schmidt basis using quad points and 
     // and weights from original basis mapped to Stieljtes basis

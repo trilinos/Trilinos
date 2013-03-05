@@ -311,6 +311,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
             RCP<MultiVector<Scalar,LO,GO> > &xexact,
             FancyOStream &out)
 {
+  typedef Tpetra::global_size_t global_size_t;
   Time timer("GenerateCrsProblem",false);
   RCP<const Comm<int> > comm = platform.getComm();
 
@@ -319,7 +320,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
 
   int numMyEquations = numNodesX*numNodesY;
 
-  map = rcp(new Map<LO,GO>(OrdinalTraits<GO>::invalid(), myGlobalElements(), 0, comm)); // Create map with 2D block partitioning.
+  map = rcp(new Map<LO,GO>(OrdinalTraits<global_size_t>::invalid(), myGlobalElements(), 0, comm)); // Create map with 2D block partitioning.
   myGlobalElements = null;
   GO numGlobalEquations = map->getNumGlobalEntries();
 

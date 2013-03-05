@@ -58,6 +58,8 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 
+#include <unistd.h>
+
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif

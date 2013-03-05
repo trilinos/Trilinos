@@ -1,6 +1,5 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="Rythmos"/>
-  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
+  <Parameter name="Solver Type" type="string" value="Rythmos"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
     <ParameterList name="Constraints"/>

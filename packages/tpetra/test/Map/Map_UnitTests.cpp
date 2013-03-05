@@ -130,7 +130,7 @@ namespace {
   }
 #endif
 
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor1, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -152,8 +152,7 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor2, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -175,8 +174,7 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor3, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -311,6 +309,7 @@ namespace {
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
+    const LO localIndexBase = 0;
     M map(numGlobalEntries,indexBase,comm);
 
     TEST_EQUALITY_CONST(map.isContiguous(), true);
@@ -318,7 +317,7 @@ namespace {
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
     TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
-    TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
+    TEST_EQUALITY_CONST(map.getMinLocalIndex(), localIndexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
     TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[0]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
@@ -459,8 +458,9 @@ namespace {
   // INSTANTIATIONS
   //
 
+#ifdef HAVE_TPETRA_DEBUG
   // all ordinals, default node
-#define UNIT_TEST_GROUP( LO, GO ) \
+#  define UNIT_TEST_GROUP( LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
@@ -469,6 +469,15 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
+#else
+  // all ordinals, default node
+#  define UNIT_TEST_GROUP( LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
+#endif // HAVE_TPETRA_DEBUG
 
 #define NC_TESTS(N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, NodeConversion, int, int, N )

@@ -371,6 +371,33 @@ IF (Stokhos_ENABLE_Sacado)
   ENDIF()
 ENDIF()
 
+IF (Stokhos_ENABLE_KokkosArray)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Host)
+  SET(HEADERS ${HEADERS}
+    kokkos/Stokhos_Multiply.hpp
+    kokkos/Stokhos_CrsMatrix.hpp
+    kokkos/Stokhos_BlockCrsMatrix.hpp
+    kokkos/Stokhos_StochasticProductTensor.hpp
+    kokkos/Stokhos_CrsProductTensor.hpp
+    kokkos/Stokhos_FlatSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_CrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
+    kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
+    )
+  IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
+    SET(HEADERS ${HEADERS}
+      kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+      )
+  ENDIF()
+ENDIF()
+
 # NOX
 IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     NOX_ENABLE_EpetraExt)

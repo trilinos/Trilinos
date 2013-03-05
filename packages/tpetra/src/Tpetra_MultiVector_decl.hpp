@@ -42,35 +42,21 @@
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
-#include <Teuchos_LabeledObject.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
-
-#include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_ViewAccepter.hpp"
 
-// TODO: add principal use case instructions for memory management interfaces (view/copy extraction)
-// TODO: expand user-visible documentation
 
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class Vector;
-
-  //template<class S, class LO, class GO, class N> class MultiVector;
-
-  //template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //RCP< MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  //createMultiVectorFromView(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-  //                          const ArrayRCP<Scalar> &view, size_t LDA, size_t numVectors);
-#endif
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class MultiVector
   /// \brief One or more distributed dense vectors.
@@ -830,9 +816,7 @@ namespace Tpetra {
                  size_t NumVectors,
                  EPrivateHostViewConstructor /* dummy */);
 
-    inline bool vectorIndexOutOfRange(size_t VectorIndex) const {
-      return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
-    }
+    bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
     /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.

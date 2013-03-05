@@ -145,12 +145,12 @@ namespace SmolyakBasisUtilsUnitTest {
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
       bases, coeff_index_set);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk1 = 
-      smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
+      smolyak_basis.computeTripleProductTensor();
     
     // Build isotropic total order basis of dimension d and order p
     Stokhos::TotalOrderBasis<ordinal_type,value_type> total_order_basis(bases);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk2 = 
-      total_order_basis.computeTripleProductTensor(total_order_basis.order());
+      total_order_basis.computeTripleProductTensor();
 
     // Compare Cijk tensors
     success = Stokhos::compareSparse3Tensor(*Cijk1, "Smolyak Cijk", 
@@ -158,9 +158,9 @@ namespace SmolyakBasisUtilsUnitTest {
 					    setup.rtol, setup.atol, out);
 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk1_lin= 
-      smolyak_basis.computeTripleProductTensor(1);
+      smolyak_basis.computeLinearTripleProductTensor();
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk2_lin= 
-      total_order_basis.computeTripleProductTensor(1);
+      total_order_basis.computeLinearTripleProductTensor();
 
     // Compare Cijk tensors
     success = success && 
@@ -187,17 +187,17 @@ namespace SmolyakBasisUtilsUnitTest {
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
       bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
+      smolyak_basis.computeTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis, 
+    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis,
 					 setup.sparse_tol, setup.rtol, 
 					 setup.atol, out);
 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk_lin = 
-      smolyak_basis.computeTripleProductTensor(1);
+      smolyak_basis.computeLinearTripleProductTensor();
 
     success = success && 
-      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis, 
+      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis,
 				 setup.sparse_tol, setup.rtol, 
 				 setup.atol, out, true);
 
@@ -220,17 +220,17 @@ namespace SmolyakBasisUtilsUnitTest {
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
       bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
+      smolyak_basis.computeTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis, 
+    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis,
 					 setup.sparse_tol, setup.rtol, 
 					 setup.atol, out);
 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk_lin = 
-      smolyak_basis.computeTripleProductTensor(1);
+      smolyak_basis.computeLinearTripleProductTensor();
 
     success = success && 
-      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis, 
+      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis,
 				 setup.sparse_tol, setup.rtol, 
 				 setup.atol, out, true);
     
@@ -255,17 +255,17 @@ namespace SmolyakBasisUtilsUnitTest {
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
       bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
+      smolyak_basis.computeTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis, 
+    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis,
 					 setup.sparse_tol, setup.rtol, 
 					 setup.atol, out);
 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk_lin = 
-      smolyak_basis.computeTripleProductTensor(1);
+      smolyak_basis.computeLinearTripleProductTensor();
 
     success = success && 
-      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis, 
+      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis,
 				 setup.sparse_tol, setup.rtol, 
 				 setup.atol, out, true);
     
@@ -288,17 +288,17 @@ namespace SmolyakBasisUtilsUnitTest {
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
       bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
+      smolyak_basis.computeTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis, 
+    success = Stokhos::testSparse3Tensor(*Cijk, smolyak_basis,
 					 setup.sparse_tol, setup.rtol, 
 					 setup.atol, out);
 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk_lin = 
-      smolyak_basis.computeTripleProductTensor(1);
+      smolyak_basis.computeLinearTripleProductTensor();
 
     success = success && 
-      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis, 
+      Stokhos::testSparse3Tensor(*Cijk_lin, smolyak_basis,
 				 setup.sparse_tol, setup.rtol, 
 				 setup.atol, out, true);
     

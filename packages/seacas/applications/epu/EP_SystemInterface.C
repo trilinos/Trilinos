@@ -505,13 +505,13 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       // in the form: "/directory/sub/basename.ext.#proc.34"
       bool success = decompose_filename(basename_);
       if (!success) {
-        std::cerr << "\nERROR: If the '-auto' option is specified, the basename must specify an existing filename.\n"
+        std::cerr << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an existing filename.\n"
                   << "       The entered basename does not contain an extension or processor count.\n";
         return false;
       }
     }
   } else {
-    std::cerr << "\nERROR: basename not specified\n\n";
+    std::cerr << "\nERROR: (EPU) basename not specified\n\n";
     return false;
   }
   return true;
@@ -620,7 +620,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   std::string tmp = s.substr(ind+1); // Skip the '.'
   processorCount_ = strtol(tmp.c_str(), NULL, 10);
   if (processorCount_ <= 0) {
-    std::cerr << "\nERROR: Invalid processor count specified: '"
+    std::cerr << "\nERROR: (EPU) Invalid processor count specified: '"
 	      << processorCount_ << "'. Must be greater than zero.\n";
     return false;
   }

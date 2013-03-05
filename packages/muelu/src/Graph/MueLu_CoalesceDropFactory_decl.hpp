@@ -117,7 +117,8 @@ namespace MueLu {
   private:
 
     // pre-drop function
-    RCP<PreDropFunctionBaseClass> predrop_;
+    mutable
+     RCP<PreDropFunctionBaseClass> predrop_;
 
   }; //class CoalesceDropFactory
 

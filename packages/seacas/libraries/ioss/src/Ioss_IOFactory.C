@@ -58,13 +58,20 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
   if (iter == registry()->end()) {
     if (registry()->size() == 0) {
       std::ostringstream errmsg;
-      errmsg << "FATAL: No database types have been registered.\n"
+      errmsg << "ERROR: No database types have been registered.\n"
 	     << "       Was Ioss::Init::Initializer() called?\n\n";
       IOSS_ERROR(errmsg);
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: The database type '" << type
+      errmsg << "ERROR: The database type '" << type
 	     << "' is not supported.\n";
+      NameList db_types;
+      describe(&db_types);
+      errmsg << "\nSupported database types:\n\t";
+      for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+        errmsg << *IF << "  ";
+      }
+      errmsg << "\n\n";
       IOSS_ERROR(errmsg);
     }
   } else {

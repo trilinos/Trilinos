@@ -1351,12 +1351,22 @@ C     to specify which node is removed.  If it is the lower-numbered node,
 C     simply replace the coordinates of the higher numbered node with the 
 C     coordinates of the lower-numbered node.              
           if (node1 .lt. node2) then
-            IEQUIV(node2) = -node1
-            xn(node1) = xn(node2)
-            if (ndim .ge. 2) yn(node1) = yn(node2)
-            if (ndim .eq. 3) zn(node1) = zn(node2)
+            if (IEQUIV(node2) .ne. node2) then
+                call prterr ('CMDERR',
+     *              'Node already merged, cannot specify twice')
+            else
+                IEQUIV(node2) = -node1
+                xn(node1) = xn(node2)
+                if (ndim .ge. 2) yn(node1) = yn(node2)
+                if (ndim .eq. 3) zn(node1) = zn(node2)
+            endif
           else
-            IEQUIV(node1) = -node2
+            if (IEQUIV(node1) .ne. node1) then
+                call prterr ('CMDERR',
+     *              'Node already merged, cannot specify twice')
+            else
+                IEQUIV(node1) = -node2
+            end if
           end if
           equiv = .TRUE.
           EQTOLER = -1.0

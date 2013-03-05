@@ -505,7 +505,7 @@ NNTI_result_t NNTI_waitany (
         NNTI_status_t        *status)
 {
     NNTI_result_t rc=NNTI_OK;
-    NNTI_transport_id_t id=-1;
+    NNTI_transport_id_t id=NNTI_TRANSPORT_NULL;
     uint32_t i=0;
 
     for (i=0;i<buf_count;i++) {
@@ -514,7 +514,7 @@ NNTI_result_t NNTI_waitany (
         }
     }
 
-    if (id == -1) {
+    if (id == NNTI_TRANSPORT_NULL) {
         rc=NNTI_EINVAL;
     } else {
         if (available_transports[id].initialized==0) {
@@ -554,7 +554,7 @@ NNTI_result_t NNTI_waitall (
         NNTI_status_t       **status)
 {
     NNTI_result_t rc=NNTI_OK;
-    NNTI_transport_id_t id=-1;
+    NNTI_transport_id_t id=NNTI_TRANSPORT_NULL;
     uint32_t i=0;
 
     for (i=0;i<buf_count;i++) {
@@ -563,7 +563,7 @@ NNTI_result_t NNTI_waitall (
         }
     }
 
-    if (id == -1) {
+    if (id == NNTI_TRANSPORT_NULL) {
         rc=NNTI_EINVAL;
     } else {
         if (available_transports[id].initialized==0) {

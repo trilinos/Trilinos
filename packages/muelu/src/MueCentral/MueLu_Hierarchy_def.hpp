@@ -355,22 +355,22 @@ namespace MueLu {
       }
 
       //If on the coarse level, do either smoothing (if defined) or a direct solve.
-      if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
-        {
-          bool emptySolve = true;
-          if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
-            RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
-            preSmoo->Apply(X, B, false);
-            emptySolve=false;
-          }
-          if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
-            RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-            postSmoo->Apply(X, B, false);
-            emptySolve=false;
-          }
-          if (emptySolve==true)
-            GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
-        } else {
+      if (startLevel == ((LO)Levels_.size())-1) { //FIXME is this right?
+        bool emptySolve = true;
+        if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+          preSmoo->Apply(X, B, false);
+          emptySolve=false;
+        }
+        if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+          postSmoo->Apply(X, B, false);
+          emptySolve=false;
+        }
+        if (emptySolve==true)
+          GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
+
+      } else {
         //on an intermediate level
         RCP<Level> Coarse = Levels_[startLevel+1];
 
@@ -518,10 +518,16 @@ namespace MueLu {
     double operatorComplexity;
 
     totalNnz = 0;
+    std::vector<Xpetra::global_size_t> nnzPerLevel;
+    std::vector<Xpetra::global_size_t> rowsPerLevel;
     for (int i=0; i<GetNumLevels(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
                                  "Operator complexity cannot be calculated because A is unavailable on level " << i);
-      totalNnz += Levels_[i]->template Get<RCP<Matrix> >("A")->getGlobalNumEntries();
+
+      Xpetra::global_size_t nnz = Levels_[i]->template Get<RCP<Matrix> >("A")->getGlobalNumEntries();
+      totalNnz += nnz;
+      nnzPerLevel.push_back(nnz);
+      rowsPerLevel.push_back(Levels_[i]->template Get<RCP<Matrix> >("A")->getGlobalNumRows());
     }
     operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
     status.set("complexity", operatorComplexity);
@@ -539,6 +545,18 @@ namespace MueLu {
     }
 
     if (verbLevel & Parameters1) {
+      Xpetra::global_size_t tt = rowsPerLevel[0];
+      int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
+      tt = nnzPerLevel[0];
+      int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
+      out0  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row " << std::endl;
+      for (size_t i=0; i<nnzPerLevel.size(); ++i) {
+        out0 << "A " << i << "  "
+             << std::setw(rowspacer) << rowsPerLevel[i]
+             << std::setw(nnzspacer) << nnzPerLevel[i]
+             << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i] << std::endl;
+      }
       for (int i=0; i<GetNumLevels(); ++i) {
         RCP<SmootherBase> preSmoo, postSmoo;
         if (Levels_[i]->IsAvailable("PreSmoother"))

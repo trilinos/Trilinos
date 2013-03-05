@@ -42,7 +42,6 @@
 
 #include "Piro_Epetra_LOCASolver.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"
 
 
@@ -59,8 +58,6 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   locaStatusTest(locaStatusTest_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
-  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
 

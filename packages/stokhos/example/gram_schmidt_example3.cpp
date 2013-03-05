@@ -225,7 +225,7 @@ void compute_pces(bool compute_z_red, int p, const MyOptions& options,
 
   // Triple product tensor
   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-    basis->computeTripleProductTensor(basis->size());
+    basis->computeTripleProductTensor();
     
   // Quadrature expansion
   Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > quad_exp = 
@@ -312,7 +312,7 @@ void compute_pces(bool compute_z_red, int p, const MyOptions& options,
   Teuchos::RCP< Teuchos::ParameterList > gs_exp_params = 
     Teuchos::rcp(new Teuchos::ParameterList);
   if (options.reduced_basis_method == LANCZOS)
-    gs_Cijk = gs_basis->computeTripleProductTensor(gs_basis->size());
+    gs_Cijk = gs_basis->computeTripleProductTensor();
   else {
     gs_Cijk = Teuchos::null;
     gs_exp_params->set("Use Quadrature for Times", true);

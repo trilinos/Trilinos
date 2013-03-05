@@ -36,4 +36,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+# This test should work for any number of MPI processes, as long as
+# Proc 0 has enough memory to handle all the Map data.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_Map_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_Map_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
   

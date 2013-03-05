@@ -138,6 +138,7 @@ char  *do_error(char *error_string);
 char  *do_help(void);
 char  *do_dumpsym(void);
 char  *do_get_date(void);
+char  *do_get_iso_date(void);
 char  *do_get_time(void);
 double do_option(char *option, double value);
 extern void dumpsym(int type, int doInternal);  /* in hash.c */
@@ -743,6 +744,21 @@ char *do_get_date(void)
   
   /* First  the date in the form CCYY/MM/DD */
   strftime(tmpstr, bufsize, "%Y/%m/%d", timeptr);
+  NEWSTR(tmpstr, tmp);
+  return(tmp);
+}
+
+char *do_get_iso_date(void)
+{
+  char *tmp;
+  const size_t bufsize = 32;
+  static char tmpstr[32];
+
+  time_t timer = time(NULL);
+  struct tm *timeptr = localtime(&timer);
+  
+  /* First  the date in the form CCYY/MM/DD */
+  strftime(tmpstr, bufsize, "%Y%m%d", timeptr);
   NEWSTR(tmpstr, tmp);
   return(tmp);
 }

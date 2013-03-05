@@ -100,10 +100,10 @@ namespace Galeri {
       }
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      Scalar east   = -stretchx;
-      Scalar west   = -stretchx;
-      Scalar north  = -stretchy;
-      Scalar south  = -stretchy;
+      Scalar east   = -one / (stretchx*stretchx);
+      Scalar west   = -one / (stretchx*stretchx);
+      Scalar north  = -one / (stretchy*stretchy);
+      Scalar south  = -one / (stretchy*stretchy);
       Scalar center = -(east + west + north + south);
 
       this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
@@ -137,12 +137,12 @@ namespace Galeri {
       }
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      Scalar right  = -stretchx;
-      Scalar left   = -stretchx;
-      Scalar front  = -stretchy;
-      Scalar back   = -stretchy;
-      Scalar up     = -stretchz;
-      Scalar down   = -stretchz;
+      Scalar right  = -one / (stretchx*stretchx);
+      Scalar left   = -one / (stretchx*stretchx);
+      Scalar front  = -one / (stretchy*stretchy);
+      Scalar back   = -one / (stretchy*stretchy);
+      Scalar up     = -one / (stretchz*stretchz);
+      Scalar down   = -one / (stretchz*stretchz);
       Scalar center = -(right + left + front + back + up + down);
 
       this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);

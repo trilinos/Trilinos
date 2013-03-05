@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2013/01/21",
-  "Revision: 2.29"
+  "Date: 2013/02/07",
+  "Revision: 2.30"
 };
 
 #include <stdlib.h>
@@ -64,6 +64,7 @@ static char *qainfo[] =
 aprepro_options ap_options;
 int state_immutable = False;
 int nfile = 0;
+int echo = True;
 
 void initialize_options(aprepro_options *ap_options)
 {
@@ -83,7 +84,6 @@ void initialize_options(aprepro_options *ap_options)
 }
 
 extern void add_input_file(char *filename);
-extern symrec *getsym(char *sym_name);
 extern void yyparse(void);
 static void usage(void);
 extern void dumpsym(int type, int doInternal);
@@ -277,12 +277,8 @@ int main (int argc, char *argv[])
       setbuf (yyout, (char *) NULL);
   }
 
-  if (include_file) {
-    nfile++;
-    add_input_file(include_file);
-  }
-  
   state_immutable = ap_options.immutable;
+
   
   time_val = time ((time_t*)NULL);
   time_structure = localtime (&time_val);
@@ -296,6 +292,16 @@ int main (int argc, char *argv[])
       fprintf (yyout, "%c Aprepro (%s) %s", ap_options.comment, qainfo[2], asc_time);
     }
   }
+
+  if (include_file) {
+      nfile++;
+      add_input_file(include_file);
+      /* Include file specified on command line is processed in immutable
+       * state. Reverts back to global immutable state at end of file.
+       */
+      state_immutable = True;
+      echo = False;
+    }
 
   srand((unsigned)time_val);
   

@@ -68,35 +68,10 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+#include "MueLu_AlgebraicPermutationStrategy_fwd.hpp"
+#include "MueLu_LocalPermutationStrategy_fwd.hpp"
+
 namespace MueLu {
-
-  // template struct for comparing pairs
-  template<class Scalar = double, class LocalOrdinal = int>
-  struct CompPairs {
-    CompPairs(const std::vector<Scalar> & v) : vinternal_(v) {}
-    std::vector<Scalar> vinternal_;
-    bool operator()(LocalOrdinal a, LocalOrdinal b) {
-      //return vinternal_[a] < vinternal_[b];
-      return std::abs(vinternal_[a]) > std::abs(vinternal_[b]);
-    }
-  };
-
-  // template function for comparison
-  template<class Scalar, class LocalOrdinal>
-  CompPairs<Scalar,LocalOrdinal> CreateCmpPairs(const std::vector<Scalar> & v) {
-    return CompPairs<Scalar,LocalOrdinal>(v);
-  }
-
-  // template function for sorting permutations
-  template<class Scalar, class LocalOrdinal>
-  void sortingPermutation(const std::vector<Scalar> & values, std::vector<LocalOrdinal> & v) {
-    size_t size = values.size();
-    v.clear(); v.reserve(size);
-    for(size_t i=0; i<size; ++i)
-      v.push_back(i);
-
-    std::sort(v.begin(),v.end(), MueLu::CreateCmpPairs<Scalar,LocalOrdinal>(values));
-  }
 
   /*!
     @class PermutationFactory class.
@@ -115,12 +90,14 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PermutationFactory(std::string const & mapName, const RCP<const FactoryBase> & mapFact);
+    PermutationFactory();
 
     //! Destructor.
     virtual ~PermutationFactory();
 
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! @name Input
     //@{
@@ -143,11 +120,6 @@ namespace MueLu {
     //@}
 
   private:
-    //! variable name for partial row map for rows where permutations shall be generated for
-    std::string mapName_;
-
-    //! Factory for partial row map for rows where permutations shall be generated for
-    RCP<const FactoryBase> mapFact_;
 
   }; // class PermutationFactory
 

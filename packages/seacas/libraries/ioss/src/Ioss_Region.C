@@ -88,6 +88,18 @@ namespace {
     std::vector<T>(container).swap(container);
   }
 
+  void check_for_duplicate_names(const Ioss::Region *region, const std::string &name)
+  {
+    const Ioss::GroupingEntity *old_ge = region->get_entity(name);
+
+    if (old_ge != NULL && !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
+      std::string filename = region->get_database()->get_filename();
+      std::ostringstream errmsg;
+      errmsg << "ERROR: There are multiple blocks or sets with the name '"
+          << name << "' defined in the exodus file '" << filename << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
 }
 
 namespace Ioss {
@@ -334,31 +346,31 @@ namespace Ioss {
     } else {
       switch (get_state()) {
       case STATE_CLOSED:
-	// Make sure we can go to the specified state.
-	switch (new_state) {
-	default:
-	  success = set_state(new_state);
-	}
-	break;
+        // Make sure we can go to the specified state.
+        switch (new_state) {
+        default:
+          success = set_state(new_state);
+        }
+        break;
 
-	// For the invalid transitions; provide a more meaningful
-	// message in certain cases...
-      case STATE_READONLY:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Cannot change state of an input (readonly) database in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        // For the invalid transitions; provide a more meaningful
+        // message in certain cases...
+        case STATE_READONLY:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Cannot change state of an input (readonly) database in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
 
-	break;
-      default:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Invalid nesting of begin/end pairs in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        break;
+        default:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Invalid nesting of begin/end pairs in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
       }
     }
     // Pass the 'begin state' message on to the database so it can do any
@@ -437,26 +449,26 @@ namespace Ioss {
   int Region::add_state(double time)
   {
     static bool warning_output = false;
-    
+
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
       if (!warning_output) {
-	std::ostringstream errmsg;
-	errmsg << "IOSS WARNING: Current time, " << time
-	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
-	       << " in\n"
-	       << get_database()->get_filename()
-	       << ". This may cause problems in applications that assume monotonically increasing time values.\n";
-	IOSS_WARNING << errmsg.str();
-	warning_output = true;
+        std::ostringstream errmsg;
+        errmsg << "IOSS WARNING: Current time, " << time
+            << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
+                                                                     << " in\n"
+                                                                     << get_database()->get_filename()
+                                                                     << ". This may cause problems in applications that assume monotonically increasing time values.\n";
+        IOSS_WARNING << errmsg.str();
+        warning_output = true;
       }
     }
 
     if (get_database()->is_input() ||
-	get_database()->usage() == WRITE_RESULTS ||
-	get_database()->usage() == WRITE_RESTART ) {
+        get_database()->usage() == WRITE_RESULTS ||
+        get_database()->usage() == WRITE_RESTART ) {
       stateTimes.push_back(time);
       assert((int)stateTimes.size() == stateCount+1);
 
@@ -467,9 +479,9 @@ namespace Ioss {
       // a list of times that have been written since they are just streamed out and never read
       // We do sometimes need the list of times written to restart or results files though...
       if (stateTimes.empty()) {
-	stateTimes.push_back(time);
+        stateTimes.push_back(time);
       } else {
-	stateTimes[0] = time;
+        stateTimes[0] = time;
       }
     }
     return ++stateCount;;
@@ -632,6 +644,8 @@ namespace Ioss {
 
   bool Region::add(NodeBlock    *node_block)
   {
+    check_for_duplicate_names(this, node_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -646,6 +660,8 @@ namespace Ioss {
 
   bool Region::add(ElementBlock *element_block)
   {
+    check_for_duplicate_names(this, element_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -691,6 +707,8 @@ namespace Ioss {
 
   bool Region::add(FaceBlock *face_block)
   {
+    check_for_duplicate_names(this, face_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -735,6 +753,8 @@ namespace Ioss {
 
   bool Region::add(EdgeBlock *edge_block)
   {
+    check_for_duplicate_names(this, edge_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -779,6 +799,7 @@ namespace Ioss {
 
   bool Region::add(SideSet      *sideset)
   {
+    check_for_duplicate_names(this, sideset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -792,6 +813,7 @@ namespace Ioss {
 
   bool Region::add(NodeSet      *nodeset)
   {
+    check_for_duplicate_names(this, nodeset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -805,6 +827,7 @@ namespace Ioss {
 
   bool Region::add(EdgeSet      *edgeset)
   {
+    check_for_duplicate_names(this, edgeset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -818,6 +841,7 @@ namespace Ioss {
 
   bool Region::add(FaceSet      *faceset)
   {
+    check_for_duplicate_names(this, faceset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -831,6 +855,7 @@ namespace Ioss {
 
   bool Region::add(ElementSet      *elementset)
   {
+    check_for_duplicate_names(this, elementset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -844,6 +869,7 @@ namespace Ioss {
 
   bool Region::add(CommSet      *commset)
   {
+    check_for_duplicate_names(this, commset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -887,12 +913,12 @@ namespace Ioss {
 
   bool Region::add_alias(const GroupingEntity *ge)
   {
-    // Seeif an entity with this name already exists...
+    // See if an entity with this name already exists...
     std::string db_name = ge->name();
     const GroupingEntity *old_ge = get_entity(db_name);
     if (old_ge != NULL && ge != old_ge) {
       if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
-	    (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
+      (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
 	ssize_t old_id = -1;
 	ssize_t new_id = -1;
 	if (old_ge->property_exists(id_str())) {

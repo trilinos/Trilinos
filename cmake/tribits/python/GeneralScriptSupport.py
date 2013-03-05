@@ -522,6 +522,11 @@ def removeIfExists(fileName):
     echoRunSysCmnd("rm "+fileName)
 
 
+def removeDirIfExists(dirName):
+  if os.path.exists(dirName):
+    echoRunSysCmnd("rm -rf "+dirName)
+
+
 def writeStrToFile(fileName, fileBodyStr):
   open(fileName, 'w').write(fileBodyStr)
 

@@ -344,6 +344,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 }
 #endif
 
+
 //==============================================================================
 // Epetra_BlockMap constructor function for a user-defined arbitrary distribution of variable size elements.
 template<typename int_type>
@@ -498,6 +499,134 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
     elementSizeList, indexBase, comm, IsLongLong);
 }
 #endif
+
+
+//==============================================================================
+// Epetra_BlockMap constructor function for a user-defined arbitrary distribution of variable size elements,
+// with all the information on globals provided by the user.
+template<typename int_type>
+void Epetra_BlockMap::ConstructUserConstantNoComm(int_type NumGlobal_Elements, int NumMy_Elements,
+						  const int_type * myGlobalElements, 
+						  int Element_Size, int indexBase,
+						  const Epetra_Comm& comm, bool IsLongLong,
+						  bool UserIsDistributedGlobal,
+						  int_type UserMinAllGID, int_type UserMaxAllGID)
+{
+
+
+  int i;
+  // Each processor gets NumMyElements points
+
+  if (NumGlobal_Elements < -1) 
+    throw ReportError("NumGlobal_Elements = " + toString(NumGlobal_Elements) + ".  Should be >= -1.", -1);
+  if (NumMy_Elements < 0) 
+    throw ReportError("NumMy_Elements = " + toString(NumMy_Elements) + ".  Should be >= 0.", -2);
+  if (Element_Size <= 0) 
+    throw ReportError("ElementSize = " + toString(Element_Size) + ". Should be > 0.", -3);
+
+  // Allocate storage for global index list information
+
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, indexBase, comm, IsLongLong);
+  if (NumMy_Elements > 0) {
+    int errorcode = SizeMyGlobalElement<int_type>(NumMy_Elements);
+    if(errorcode != 0)
+      throw ReportError("Error with MyGlobalElements allocation.", -99);
+  }
+
+  BlockMapData_->NumMyElements_ = NumMy_Elements;
+  BlockMapData_->MinMyElementSize_ = BlockMapData_->ElementSize_;
+  BlockMapData_->MaxMyElementSize_ = BlockMapData_->ElementSize_;
+  BlockMapData_->MinElementSize_ = BlockMapData_->ElementSize_;
+  BlockMapData_->MaxElementSize_ = BlockMapData_->ElementSize_;
+  BlockMapData_->ConstantElementSize_ = true;
+  BlockMapData_->LinearMap_ = false;
+  // Get processor information
+
+  int NumProc = comm.NumProc();
+  if (NumMy_Elements > 0) {
+    // Compute min/max GID on this processor
+    BlockMapData_->MinMyGID_ = myGlobalElements[0];
+    BlockMapData_->MaxMyGID_ = myGlobalElements[0];
+    for (i = 0; i < NumMy_Elements; i++) {
+      MyGlobalElementVal<int_type>(i) = myGlobalElements[i];
+      BlockMapData_->MinMyGID_ = EPETRA_MIN(BlockMapData_->MinMyGID_, (long long) myGlobalElements[i]);
+      BlockMapData_->MaxMyGID_ = EPETRA_MAX(BlockMapData_->MaxMyGID_, (long long) myGlobalElements[i]);
+    }
+  }
+  else {
+    BlockMapData_->MinMyGID_ = BlockMapData_->IndexBase_;
+    BlockMapData_->MaxMyGID_ = BlockMapData_->IndexBase_ - 1;
+  }
+  
+  BlockMapData_->DistributedGlobal_ = UserIsDistributedGlobal;
+
+  // Local Map and uniprocessor case:  Each processor gets a complete copy of all elements
+  if (!BlockMapData_->DistributedGlobal_ || NumProc==1) {
+    BlockMapData_->NumGlobalElements_ = BlockMapData_->NumMyElements_;
+    CheckValidNGE(NumGlobal_Elements);
+    BlockMapData_->NumGlobalPoints_ = BlockMapData_->NumGlobalElements_ * BlockMapData_->ElementSize_;
+    BlockMapData_->NumMyPoints_ = BlockMapData_->NumMyElements_ * BlockMapData_->ElementSize_;
+    
+    BlockMapData_->MinAllGID_ = BlockMapData_->MinMyGID_;
+    BlockMapData_->MaxAllGID_ = BlockMapData_->MaxMyGID_;
+  }
+  else if (NumProc > 1) {
+    // User provides this information
+    BlockMapData_->NumGlobalElements_ = NumGlobal_Elements;
+    CheckValidNGE(NumGlobal_Elements);
+    
+    BlockMapData_->NumGlobalPoints_ = BlockMapData_->NumGlobalElements_ * BlockMapData_->ElementSize_;
+    BlockMapData_->NumMyPoints_     = BlockMapData_->NumMyElements_ * BlockMapData_->ElementSize_;
+
+    BlockMapData_->MinAllGID_       = UserMinAllGID;
+    BlockMapData_->MaxAllGID_       = UserMaxAllGID;
+    if (BlockMapData_->MinAllGID_ < BlockMapData_->IndexBase_)
+      throw ReportError("Minimum global element index = " + toString(BlockMapData_->MinAllGID_) + 
+      " is less than index base = " + toString(BlockMapData_->IndexBase_) +".", -5);
+  }
+  else
+    throw ReportError("Internal Error.  Report to Epetra developer", -99);
+  
+
+  EndOfConstructorOps();
+}
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+                                 const long long * myGlobalElements, 
+				 int ElementSize, int indexBase,
+                                 const Epetra_Comm& comm,
+				 bool UserIsDistributedGlobal,
+				 long long UserMinAllGID, long long UserMaxAllGID)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructUserConstantNoComm(NumGlobal_Elements, NumMy_Elements, myGlobalElements,
+			      ElementSize, indexBase, comm, IsLongLong,
+			      UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID);
+}
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
+                                 const int * myGlobalElements, 
+				 int ElementSize, int indexBase,
+                                 const Epetra_Comm& comm,
+				 bool UserIsDistributedGlobal,
+				 int UserMinAllGID, int UserMaxAllGID)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = false;
+  ConstructUserConstantNoComm(NumGlobal_Elements, NumMy_Elements, myGlobalElements,
+			     ElementSize, indexBase, comm, IsLongLong,
+			     UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID);
+}
+#endif
+
+
+
 
 //==============================================================================
 Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)

@@ -76,7 +76,7 @@ namespace DerivExpansionUnitTest {
 
       // Triple product tensor
       Bij = basis->computeDerivDoubleProductTensor();
-      Cijk = basis->computeTripleProductTensor(basis->size());
+      Cijk = basis->computeTripleProductTensor();
       Dijk = basis->computeDerivTripleProductTensor(Bij, Cijk);
       
       // Quadrature expansion

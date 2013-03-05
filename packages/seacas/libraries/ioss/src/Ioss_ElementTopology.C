@@ -69,13 +69,21 @@ Ioss::ElementTopology::ElementTopology(const std::string &type, const std::strin
 				       bool delete_me)
   : name_(type), masterElementName_(master_elem_name)
 {
-  registry().insert(Ioss::ETM_VP(type, this), delete_me);
+  registry().insert(Ioss::ETM_VP(name_, this), delete_me);
+  std::string lname = Ioss::Utils::lowercase(name_);
+  if (lname != name_) {
+    alias(name_, lname);
+  }
   alias(name_, masterElementName_);
 }
 
 void Ioss::ElementTopology::alias(const std::string& base, const std::string& syn)
 {
   registry().insert(Ioss::ETM_VP(syn, factory(base)), false);
+  std::string lsyn = Ioss::Utils::lowercase(syn);
+  if (lsyn != syn) {
+    alias(base, lsyn);
+  }
 }
 
 Ioss::ETRegistry& Ioss::ElementTopology::registry()
@@ -92,22 +100,38 @@ bool Ioss::ElementTopology::faces_similar() const {return true;}
 
 Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, bool ok_to_fail)
 {
+  std::string ltype = Ioss::Utils::lowercase(type);
+  
   Ioss::ElementTopology* inst = NULL;
-  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
-  if (iter == registry().end() && std::strncmp(type.c_str(), "super", 5) == 0) {
-    // A super element can have a varying number of nodes.  Create
-    // an IO element type for this super element. The node count
-    // should be encoded in the 'type' as 'super42' for a 42-node
-    // superelement.
-    
-    Ioss::Super::make_super(type);
-    iter = registry().find(type);
+  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
+
+  if (iter == registry().end()) {
+    std::string base1 = "super";
+    if (ltype.find(base1) == 0) {
+      // A super element can have a varying number of nodes.  Create
+      // an IO element type for this super element. The node count
+      // should be encoded in the 'type' as 'super42' for a 42-node
+      // superelement.
+
+      Ioss::Super::make_super(ltype);
+      iter = registry().find(ltype);
+    }
+    else {
+      // See if 'type' contains a '-'.  Some codes create their
+      // own topologies by adding a "-something" onto the end of a
+      // standard topology.
+      size_t dash = ltype.find('-');
+      if (dash != std::string::npos) {
+        std::string sub_type = ltype.substr(0, dash);
+        iter = registry().find(sub_type);
+      }
+    }
   }
 
   if (iter == registry().end()) {
     if (!ok_to_fail) {
       std::ostringstream errmsg;
-      errmsg << "The topology type '" << type << "' is not supported.";
+      errmsg << "ERROR: The topology type '" << type << "' is not supported.";
       IOSS_ERROR(errmsg);
     }
   } else {
@@ -136,7 +160,8 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
   if (type == "unknown")
     return 0;
   unsigned int hash_val = 0;
-  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
+  std::string ltype = Ioss::Utils::lowercase(type);
+  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
   if (iter == registry().end()) {
     IOSS_WARNING << "WARNING: The topology type '" << type
 		 << "' is not supported.\n";
@@ -184,7 +209,8 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 
 bool Ioss::ElementTopology::is_alias(const std::string &my_alias) const
 {
-  Ioss::ElementTopologyMap::iterator iter = registry().find(my_alias);
+  std::string low_my_alias = Ioss::Utils::lowercase(my_alias);
+  Ioss::ElementTopologyMap::iterator iter = registry().find(low_my_alias);
   if (iter == registry().end()) {
     return false;
   } else {
@@ -210,6 +236,9 @@ int Ioss::ElementTopology::number_boundaries() const
   if (parametric_dimension() == 2 && spatial_dimension() == 2)
     return number_edges();
 
+  if (parametric_dimension() == 1 && !is_element())
+    return number_corner_nodes();
+  
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);

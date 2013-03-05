@@ -236,12 +236,7 @@ namespace Tpetra {
           const GO two = as<GO> (2);
           const GO nOverP_GID = as<GO> (nOverP);
           const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-          // It's probably not OK to cast this to int in general.  It
-          // works as long as |GID| <= the global number of entries
-          // and nOverP is appropriately sized for int.  Trouble may
-          // ensue if the index base has an exotic value.
-          const int lowerBound_int = as<int> (lowerBound);
-          curRank = std::min (lowerBound_int, numProcs - 1);
+          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
         }
         bool found = false;
         while (curRank >= 0 && curRank < numProcs) {
@@ -348,9 +343,9 @@ namespace Tpetra {
       // total number of GIDs is small (i.e., if the noncontiguous Map
       // is very "sparse").
       nodeIDs_ = arcp<int>(dir_numMyEntries);
-      std::fill( nodeIDs_.begin(), nodeIDs_.end(), -1 );
+      std::fill (nodeIDs_.getRawPtr (), nodeIDs_.getRawPtr () + dir_numMyEntries, -1);
       LIDs_ = arcp<LO>(dir_numMyEntries);
-      std::fill( LIDs_.begin(), LIDs_.end(), LINVALID );
+      std::fill (LIDs_.getRawPtr (), LIDs_.getRawPtr () + dir_numMyEntries, LINVALID);
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the

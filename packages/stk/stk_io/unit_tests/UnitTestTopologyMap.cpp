@@ -104,6 +104,9 @@ int testElement(const std::string &name)
   if (add_to == 1 && element->spatial_dimension() == 3 && element->parametric_dimension() == 2)
     add_boundary = cell.getEdgeCount();
 
+  if (element->name() == "edge2" || element->name() == "edge3")
+    add_boundary += 2;
+  
   errors += my_assert(cell.getSideCount() + add_boundary,
                       static_cast<unsigned>(element->number_boundaries()),
                       "boundary count");
@@ -182,7 +185,10 @@ STKUNIT_UNIT_TEST(UnitTestTopology, testUnit)
   int errors = 0;
   for (int i=0; i < element_count; i++) {
     // FIXME: Need to totally skip tetra7 for now
-    if (elements[i] == "tetra7") {
+    if (elements[i] == "tetra7" ||
+	elements[i] == "tetra11" ||
+	elements[i] == "trishell4" ||
+	elements[i] == "trishell7") {
       continue;
     }
 

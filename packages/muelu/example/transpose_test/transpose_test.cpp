@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
 
   // matrix-matrix multiply
   Teuchos::RCP<Epetra_CrsMatrix> AP = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->RangeMap(),1));
-  EpetraExt::MatrixMatrix::Multiply(*rcpA,false,*P,false,*AP,false);
-  AP->FillComplete(P->DomainMap(),rcpA->RangeMap());
+  EpetraExt::MatrixMatrix::Multiply(*rcpA,false,*P,false,*AP);
+  //  AP->FillComplete(P->DomainMap(),rcpA->RangeMap());
   //std::cout << *AP << std::endl;
   AP->Apply(*x,*b2);
   normx = 0.0;
@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
 
   // calculate A^T Px
   Teuchos::RCP<Epetra_CrsMatrix> APexpl = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->DomainMap(),20));
-  EpetraExt::MatrixMatrix::Multiply(*rcpAT,false,*P,false,*APexpl,false);
-  APexpl->FillComplete(P->DomainMap(),rcpA->DomainMap()); // check me
+  EpetraExt::MatrixMatrix::Multiply(*rcpAT,false,*P,false,*APexpl);
+  //  APexpl->FillComplete(P->DomainMap(),rcpA->DomainMap()); // check me
   APexpl->Apply(*x,*b2);
   normx = 0.0;
   b2->Norm1(&normx);
@@ -236,8 +236,8 @@ int main(int argc, char *argv[])
 
   // calculate A^T Px
   Teuchos::RCP<Epetra_CrsMatrix> APimpl = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->RangeMap(),20));
-  EpetraExt::MatrixMatrix::Multiply(*rcpA,true,*P,false,*APimpl,false);
-  APimpl->FillComplete(P->DomainMap(),APimpl->RangeMap()); // check me
+  EpetraExt::MatrixMatrix::Multiply(*rcpA,true,*P,false,*APimpl);
+  //  APimpl->FillComplete(P->DomainMap(),APimpl->RangeMap()); // check me
   APimpl->Apply(*x,*b2);
   normx = 0.0;
   b2->Norm1(&normx);

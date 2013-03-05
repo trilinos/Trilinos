@@ -344,6 +344,14 @@ public:
   {
     return Q.revealRank (R, tol);
   }
+
+  void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+    (void) params;
+  }
+  
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const {
+    return Teuchos::parameterList ();
+  }
 };
 } // namespace details
 
@@ -375,11 +383,44 @@ public:
     static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
     ///
-    static Teuchos::RCP<MultiVec<ScalarType> > CloneViewNonConst( MultiVec<ScalarType>& mv, const std::vector<int>& index )
-    { return Teuchos::rcp( mv.CloneViewNonConst(index) ); }
+    static Teuchos::RCP<MultiVec<ScalarType> > 
+    CloneViewNonConst (MultiVec<ScalarType>& mv, const std::vector<int>& index)
+    { 
+      return Teuchos::rcp( mv.CloneViewNonConst(index) ); 
+    }
+
+    static Teuchos::RCP<MultiVec<ScalarType> > 
+    CloneViewNonConst (MultiVec<ScalarType>& mv, const Teuchos::Range1D& index)
+    { 
+      // mfh 02 Mar 2013: For now, we'll just use the above index
+      // vector version of CloneViewNonConst to implement this, since
+      // that doesn't require adding to the MultiVec interface.
+      std::vector<int> indVec (index.size ());
+      for (int k = 0; k < index.size (); ++k) {
+	indVec[k] = k;
+      }
+      return CloneViewNonConst (mv, indVec);
+    }
+
     ///
-    static Teuchos::RCP<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }
+    static Teuchos::RCP<const MultiVec<ScalarType> > 
+    CloneView (const MultiVec<ScalarType>& mv, const std::vector<int>& index) {
+      return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); 
+    }
+
+    static Teuchos::RCP<const MultiVec<ScalarType> > 
+    CloneView (const MultiVec<ScalarType>& mv, const Teuchos::Range1D& index)
+    { 
+      // mfh 02 Mar 2013: For now, we'll just use the above index
+      // vector version of CloneView to implement this, since that
+      // doesn't require adding to the MultiVec interface.
+      std::vector<int> indVec (index.size ());
+      for (int k = 0; k < index.size (); ++k) {
+	indVec[k] = k;
+      }
+      return CloneView (mv, indVec);
+    }
+
     ///
     static int GetVecLength( const MultiVec<ScalarType>& mv )
     { return mv.GetVecLength(); }
@@ -412,6 +453,31 @@ public:
     ///
     static void SetBlock( const MultiVec<ScalarType>& A, const std::vector<int>& index, MultiVec<ScalarType>& mv )
     { mv.SetBlock(A, index); }
+
+    static void 
+    Assign (const MultiVec<ScalarType>& A, 
+	    MultiVec<ScalarType>& mv) 
+    {
+      // mfh 02 Mar 2013: For now, we'll just use SetBlock to implement this,
+      // since that doesn't require adding to the MultiVec interface.
+      const int numVecsRhs = GetNumberVecs (A);
+      const int numVecsLhs = GetNumberVecs (mv);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numVecsLhs != numVecsRhs, std::invalid_argument, 
+	"Belos::MultiVecTraits::Assign: Input multivector A has " << numVecsRhs
+	<< " columns, which differs from the number of columns " << numVecsLhs
+	<< " in the output multivector mv.");
+
+      // mfh 02 Mar 2013: It's pretty silly to build this each time.
+      // However, at least that makes the code correct.
+      std::vector<int> index (numVecsRhs);
+      for (int k = 0; k < numVecsRhs; ++k) {
+	index[k] = k;
+      }
+      SetBlock (A, index, mv);
+    }
+
     ///
     static void MvRandom( MultiVec<ScalarType>& mv )
     { mv.MvRandom(); }

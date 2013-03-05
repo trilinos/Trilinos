@@ -102,9 +102,9 @@ int main(int argc, char *argv[]) {
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk;
     if (nonlinear_expansion)
-      Cijk = basis->computeTripleProductTensor(sz);
+      Cijk = basis->computeTripleProductTensor();
     else
-      Cijk = basis->computeTripleProductTensor(num_KL+1);
+      Cijk = basis->computeLinearTripleProductTensor();
     RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion = 
       rcp(new Stokhos::AlgebraicOrthogPolyExpansion<LocalOrdinal,BasisScalar>(basis,
 									 Cijk));

@@ -71,7 +71,7 @@ main(int argc, char **argv)
     int test_chunk_count;
     int **chunk;
 
-    int i=0;
+    int i=0,j=0,k=0,l=0;
     int buf_len;
 
     MPI_Init(&argc, &argv);
@@ -82,7 +82,7 @@ main(int argc, char **argv)
 
     test_chunk_count=1;
     buf_len=1;
-    for (int i=0;i<ndims;i++) {
+    for (i=0;i<ndims;i++) {
         test_chunk_count *= dims[i];
         buf_len *= dims[i];
     }
@@ -95,10 +95,10 @@ main(int argc, char **argv)
     }
 
     int chunk_index=0;
-    for (int i=0;i<dims[0];i++) {
-        for (int j=0;j<dims[1];j++) {
-            for (int k=0;k<dims[2];k++) {
-                for (int l=0;l<dims[2];l++) {
+    for (i=0;i<dims[0];i++) {
+        for (j=0;j<dims[1];j++) {
+            for (k=0;k<dims[2];k++) {
+                for (l=0;l<dims[2];l++) {
                     new_chunk_start=(MPI_Offset *)malloc(ndims*sizeof(MPI_Offset));
                     new_chunk_start[0]=i*dims[0]; new_chunk_start[1]=j*dims[1]; new_chunk_start[2]=k*dims[2]; new_chunk_start[3]=l*dims[3];
                     add_chunk(chunk[chunk_index++]);
@@ -111,7 +111,7 @@ main(int argc, char **argv)
 
     int chunk_count;
     aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
-    for (int i=0;i<chunk_count;i++) {
+    for (i=0;i<chunk_count;i++) {
         print_chunk(chunks[i]);
     }
     free(chunks);

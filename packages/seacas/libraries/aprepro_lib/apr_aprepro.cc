@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.13 (2013/01/21)";
+  const char* version_string = "3.14 (2013/02/07)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -28,6 +28,7 @@ namespace {
 
 namespace SEAMS {
   Aprepro *aprepro;  // A global for use in the library.  Clean this up...
+  int   echo = true;
   
   Aprepro::Aprepro()
     : sym_table(HASHSIZE), stateImmutable(false)
@@ -65,6 +66,10 @@ namespace SEAMS {
     if (!ap_options.include_file.empty()) {
       file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
       ap_file_list.push(include_file);
+      // File included on command line will be processed as immutable and no-echo
+      // Will revert to global settings at end of file.
+      stateImmutable = true;
+      echo = false;
     }
 
     Scanner scanner(*this, &in, &parsingResults);

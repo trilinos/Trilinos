@@ -88,10 +88,7 @@ typedef struct {
 
 /* Treat the rpc-generated includes as system includes to avoid warnings */
 #include <Trios_nssi_types_xdr.h>
-#include "Trios_nssi_fprint_types.h"
-
 #include <Trios_nnti_xdr.h>
-#include "Trios_nnti_fprint_types.h"
 
 #ifdef __cplusplus
 extern "C" {

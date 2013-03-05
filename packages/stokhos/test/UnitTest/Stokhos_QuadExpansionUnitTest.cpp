@@ -73,8 +73,8 @@ namespace QuadExpansionUnitTest {
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
 
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(basis->size());
-      Cijk_linear = basis->computeTripleProductTensor(basis->dimension()+1);
+      Cijk = basis->computeTripleProductTensor();
+      Cijk_linear = basis->computeLinearTripleProductTensor();
       
       // Quadrature expansion
       exp = 

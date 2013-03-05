@@ -57,5 +57,5 @@ INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( SuperLU
   REQUIRED_HEADERS supermatrix.h slu_ddefs.h
-  REQUIRED_LIBS_NAMES "superlu superlu_3.0 superlu_4.0 superlu_4.1"
+  REQUIRED_LIBS_NAMES "superlu superlu_3.0 superlu_4.0 superlu_4.1 superlu_4.2 superlu_4.3"
   )

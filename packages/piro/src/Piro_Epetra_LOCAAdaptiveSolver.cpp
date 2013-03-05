@@ -55,8 +55,8 @@ Piro::Epetra::LOCAAdaptiveSolver::LOCAAdaptiveSolver(const Teuchos::RCP<Teuchos:
   piroParams(piroParams_),
   model(model_),
   observer(observer_),
-  solnManager(solnManager_),
   saveEigData(saveEigData_),
+  solnManager(solnManager_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
 

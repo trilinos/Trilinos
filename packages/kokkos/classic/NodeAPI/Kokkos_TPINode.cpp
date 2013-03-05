@@ -45,22 +45,32 @@
 
 namespace Kokkos {
 
+  TPINode::TPINode () {
+    ParameterList params = getDefaultParameters();
+    curNumThreads_ = params.get<int>("Num Threads");
+    int verbose = params.get<int>("Verbose");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      curNumThreads_ < 0, std::runtime_error, 
+      "TPINode: The \"Num Threads\" parameter must be a nonnegative integer.");
+    if (verbose) {
+      std::cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
+    }
+    init (curNumThreads_);
+  }
+
   TPINode::TPINode(ParameterList &plist) 
   {
-    using std::cout;
-    using std::cerr;
-    using std::endl;
-
     ParameterList params = getDefaultParameters();
     params.setParameters(plist);
     curNumThreads_ = params.get<int>("Num Threads");
     int verbose = params.get<int>("Verbose");
-    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error, 
-        "TPINode::TPINode(): invalid ""Num Threads"" specification.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      curNumThreads_ < 0, std::runtime_error, 
+      "TPINode: The \"Num Threads\" parameter must be a nonnegative integer.");
     if (verbose) {
-      cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
+      std::cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
     }
-    init(curNumThreads_);
+    init (curNumThreads_);
   }
 
   ParameterList TPINode::getDefaultParameters() 

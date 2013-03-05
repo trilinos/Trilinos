@@ -118,7 +118,8 @@ namespace MueLu {
     if ( (rv=zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK )
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv)));
 
-    zoltanObj_->Set_Param("debug_level", "0");
+    if (GetVerbLevel() & Statistics1) zoltanObj_->Set_Param("debug_level", "1");
+    else                              zoltanObj_->Set_Param("debug_level", "0");
 
     std::stringstream ss;
     ss << numPartitions;

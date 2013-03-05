@@ -203,41 +203,41 @@ public:
 
 
 private:
-    const int varid;
+    const int _varid;
 
-    string name;
+    string _name;
 #if USE_NC_TYPE
-    const nc_type xtype;
+    const nc_type _xtype;
 #else
-    const int xtype;
+    const int _xtype;
 #endif
 
 
     /* chunking parameters */
-    int contiguous;
-    int chunksize;
+    int _contiguous;
+    int _chunksize;
 
     /* fill parameters */
-    int no_fill;
-    void *fill_value;
+    int   _no_fill;
+    void *_fill_value;
 
     /* compression parameters */
-    int shuffle;
-    int deflate;
-    int deflate_level;
+    int _shuffle;
+    int _deflate;
+    int _deflate_level;
 
     /* fletcher32 parameters */
-    int fletcher32;
+    int _fletcher32;
 
 public:
 
     /* Map of attributes, indexed by name. */
-    map<string, NcAttInfo *> atts;
+    map<string, NcAttInfo *> _atts;
 
     /* Vector of dimension IDs used by this variable.  The actual
      * dimensions are stored in the NcDataset structure for this ncid.
      */
-    vector<int> dimids;   /* dimension IDS for this variable */
+    vector<int> _dimids;   /* dimension IDS for this variable */
 };
 
 #endif /* NCVAR_H_ */

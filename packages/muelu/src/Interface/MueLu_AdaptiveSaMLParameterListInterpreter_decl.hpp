@@ -89,7 +89,7 @@ namespace MueLu {
     //! The factories in factoryList allow the user to add user-specific factories to the MueLu Hierarchy.
     //! The idea is to be able to add some factories that write out some debug information etc. which are not handled by the ML
     //! Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
-    AdaptiveSaMLParameterListInterpreter(Teuchos::ParameterList & paramList,Teuchos::RCP<MultiVector> nspVector, std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
+    AdaptiveSaMLParameterListInterpreter(Teuchos::ParameterList & paramList,std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
 
     //! Constructor.
     //! @param xmlFileName: file name for XML file with ML parameters

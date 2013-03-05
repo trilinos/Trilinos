@@ -41,10 +41,8 @@ void undefined_warning(char* var);
 void redefined_warning(char* var);
 void set_type(symrec *var, int type);
 void yyerror(char* var);
-void warning(char *string);
 int  yylex(void);
-
-int   echo = True;
+extern int echo;
 extern int state_immutable;
 extern aprepro_options ap_options;
 

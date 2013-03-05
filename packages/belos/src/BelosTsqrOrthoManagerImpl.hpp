@@ -1786,7 +1786,7 @@ namespace Belos {
 	    ScalarTraits<mat_scalar_type>::magnitude (B_ref(i,j));
 	  sumOfSquares += B_ij*B_ij;
 	}
-	norms[j] = ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares);
+	norms[j] = ScalarTraits<mat_scalar_type>::magnitude (ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares));
       }
       using std::cerr;
       using std::endl;

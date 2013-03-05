@@ -71,7 +71,7 @@ struct UnitTestSetup {
       rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     
     // Triple product tensor
-    Cijk = basis->computeTripleProductTensor(basis->size());
+    Cijk = basis->computeTripleProductTensor();
       
     // Expansion
     exp = 

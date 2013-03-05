@@ -18,6 +18,10 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
+#ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
+typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AlgebraicPermutationStrategy;
+#endif
+
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedCoarseMapFactory;
 #endif
@@ -44,6 +48,10 @@ typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoarseMapFactory;
+#endif
+
+#ifdef MUELU_COUPLEDRBMFACTORY_SHORT
+typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoupledRBMFactory;
 #endif
 
 #ifdef MUELU_DEMOFACTORY_SHORT
@@ -92,6 +100,10 @@ typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ifpack2Smoother;
+#endif
+
+#ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
+typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LocalPermutationStrategy;
 #endif
 
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
@@ -156,6 +168,10 @@ typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionFactory;
+#endif
+
+#ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
+typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RigidBodyModeFactory;
 #endif
 
 #ifdef MUELU_SAPFACTORY_SHORT
@@ -241,8 +257,4 @@ typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loca
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
-#endif
-
-#ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
-typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RigidBodyModeFactory;
 #endif

@@ -337,27 +337,8 @@ using namespace NOX::Epetra;
   }
 }
 
-// Epetra includes.  This is a potential source of problems.  The
-// simple thing to do is to add an "%import 'Epetra.i'" here.  If I do
-// that, strange things start to happen: other, seemingly unrelated
-// wrappers start to seg fault.  I do not have a good explanation for
-// it.  By %include-ing the following, I bypass inserting an "import
-// PyTrilinos.Epetra" into the resulting .py file (because Epetra_*.i
-// files do not have a %module directive).  This seems to provide the
-// functionality I need without causing whatever confusion is at risk
-// here.
-%include "Epetra_config.h"
-%include "Epetra_Base.i"
-%teuchos_rcp_epetra_numpy(IntSerialDenseVector)
-%teuchos_rcp_epetra_numpy(SerialDenseVector)
-%teuchos_rcp_epetra_numpy(SerialDenseMatrix)
-%include "Epetra_Comm.i"
-%include "Epetra_Maps.i"
-%include "Epetra_Dist.i"
-%teuchos_rcp_epetra_numpy(MultiVector)
-%teuchos_rcp_epetra_numpy(Vector)
-%include "Epetra_Graphs.i"
-%include "Epetra_Operators.i"
+// Epetra import
+%import "Epetra.i"
 
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT
@@ -376,11 +357,10 @@ using namespace NOX::Epetra;
 // also have to update the sys.path list.
 %pythoncode
 %{
-import os
-import sys
-parentDir = os.path.dirname(os.path.abspath(__file__))
-parentDir = os.path.normpath(os.path.join(parentDir,".."))
-sys.path.append(parentDir)
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if parentDir not in sys.path: sys.path.append(parentDir)
+del sys, op
 %}
 %import "NOX.Abstract_RelPath.i"
 
@@ -612,10 +592,10 @@ def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Operator))
+        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Operator))
+        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
 
     # Extract parameter lists
     printParams = nonlinearParameters["Printing"     ]
@@ -779,10 +759,10 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Operator))
+        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Operator))
+        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
 
     # Get the communicator
     comm = initGuess.Comm()

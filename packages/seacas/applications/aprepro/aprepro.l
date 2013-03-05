@@ -48,6 +48,7 @@ int yywrap(void);
 YY_BUFFER_STATE file_pointer[MAX_INCLUDE_DEPTH];
 file_rec ap_file_list[MAX_INCLUDE_DEPTH];
 extern int nfile;
+
 int ifdef;
 int file_must_exist = 0; /* Global used by include/conditional include */
 #define LINENUM_INC	ap_file_list[nfile].lineno++
@@ -80,7 +81,6 @@ char  *temp_f, *tmpstr;
 
 /* Routines used by material database routines */
 extern char *get_temp_filename(void);
-extern void  conv_string(char *string);
 extern FILE *open_file(char *file, char *mode);
 extern FILE *check_open_file(char *file, char *mode);
  
@@ -482,6 +482,8 @@ int yywrap(void)
 	  yy_switch_to_buffer (file_pointer[--nfile]);
 	  /* Turn echoing back on at end of included files. */
 	  echo = True;
+	  /* Set immutability back to global immutable state */
+	  state_immutable = ap_options.immutable;	  
 	}
       return (0);
     }

@@ -980,7 +980,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 
   //now copy the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
-  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
+  set_array_values<Teuchos::ArrayRCP<Scalar>, const Scalar*, LocalOrdinal >(
+    internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
 }
 
 //-------------------------------------------------------------------
@@ -996,7 +997,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntr
 
   //now copy the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
-  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
+  set_array_values<Teuchos::ArrayRCP<Scalar>, const Scalar*, LocalOrdinal>(
+internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
 }
 
 //-------------------------------------------------------------------
@@ -1012,7 +1014,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
 
   //now sum (add) the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
-  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
+  set_array_values<Teuchos::ArrayRCP<Scalar>, const Scalar*, LocalOrdinal>(
+    internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
 }
 
 //-------------------------------------------------------------------
@@ -1028,7 +1031,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlock
 
   //now sum (add) the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
-  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
+  set_array_values<Teuchos::ArrayRCP<Scalar>, const Scalar*, LocalOrdinal>(
+    internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
 }
 
 //-------------------------------------------------------------------

@@ -717,12 +717,10 @@ std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
 	break ;
 
   case shards::Line<2>::key :
-	if (spatial_dimension == 2) extype = "edge2d2";
-	else                        extype = "edge2";
+        extype = "edge2";
 	break ;
   case shards::Line<3>::key :
-	if (spatial_dimension == 2) extype = "edge2d3";
-	else                        extype = "edge3";
+        extype = "edge3";
 	break ;
 
   case shards::ShellLine<2>::key : extype.assign( "shellline2d2" ); break ;

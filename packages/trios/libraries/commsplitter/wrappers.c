@@ -47,12 +47,18 @@
 #include <stdarg.h>
 #include <limits.h>
 #include <string.h>
+#include <strings.h>
+#include <unistd.h>
 
 #include <zlib.h>
 
 #include <mpi.h>
 
 #include "commsplitter.h"
+
+void commsplitter_init(char *app_name);
+void commsplitter_fini(void);
+
 
 #ifdef HAVE_TRIOS_HPCTOOLKIT
 #include <hpctoolkit.h>
@@ -181,7 +187,7 @@ static int commsplitter_MPI_Init(int *argc, char ***argv)
     enabled_save = commsplitter_data.enabled;
     commsplitter_data.enabled = 0;
 
-    // stop hpctoolkit sampling (sometimes causes faults)
+    /* stop hpctoolkit sampling (sometimes causes faults) */
     int sampling = SAMPLING_IS_ACTIVE();
     if (sampling) SAMPLING_STOP();
 
@@ -278,7 +284,7 @@ static int commsplitter_MPI_Finalize()
 {
     int rc = 0;
 
-    commsplitter_finalize();
+    commsplitter_fini();
     commsplitter_data.enabled = 0;
     commsplitter_log("calling PMPI_Finalize\n");
 

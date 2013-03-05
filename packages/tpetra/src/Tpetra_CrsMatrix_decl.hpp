@@ -56,7 +56,7 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
@@ -397,7 +397,7 @@ namespace Tpetra {
     RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
     clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
     {
-      std::string tfecfFuncName("clone()");
+      const char tfecfFuncName[] = "clone()";
       bool fillCompleteClone  = true;
       bool useLocalIndices    = hasColMap();
       ProfileType pftype = StaticProfile;
@@ -680,6 +680,16 @@ namespace Tpetra {
 
       \post <tt>isFillActive() == false<tt>
       \post <tt>isFillComplete() == true<tt>
+
+      Parameters:
+
+      - "No Nonlocal Changes" (\c bool): Default is false.  If true,
+        the caller promises that no modifications to nonowned rows
+        have happened on any process since the last call to
+        fillComplete.  This saves a global all-reduce to check whether
+        any process did a nonlocal insert.  Nonlocal changes include
+        any sumIntoGlobalValues or insertGlobalValues call with a row
+        index that is not in the row Map of the calling process.
     */
     void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
@@ -925,17 +935,54 @@ namespace Tpetra {
     //! @name Advanced templated methods
     //@{
 
-    //! Multiplies this matrix by a MultiVector.
-    /*! If \c trans is \c Teuchos::NO_TRANS, then  X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
-      Otherwise, then  X is should be described by the row map of the matrix and \c Y should be described by the column map of the matrix.
-
-      Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
-
-      This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
-
-      If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
-      will be accumulated into \c Y.
-    */
+    /// \brief Compute a sparse matrix-MultiVector product local to each process.
+    ///
+    /// This method computes the <i>local</i> part of <tt>Y := beta*Y
+    /// + alpha*Op(A)*X</tt>, where <tt>Op(A)</tt> is either \f$A\f$,
+    /// \f$A^T\f$ (the transpose), or \f$A^H\f$ (the conjugate
+    /// transpose).  "The local part" means that this method does no
+    /// communication between processes, even if this is necessary for
+    /// correctness of the matrix-vector multiply.  Use the apply()
+    /// method if you want to compute the mathematical sparse
+    /// matrix-vector multiply.  
+    ///
+    /// This method is mainly of use to Tpetra developers, though some
+    /// users may find it helpful if they plan to reuse the result of
+    /// doing an Import on the input MultiVector for several sparse
+    /// matrix-vector multiplies with matrices that have the same
+    /// column Map.
+    ///
+    /// When <tt>Op(A)</tt> is \f$A\f$ (<tt>trans ==
+    /// Teuchos::NO_TRANS</tt>), then X's Map must be the same as the
+    /// column Map of this matrix, and Y's Map must be the same as the
+    /// row Map of this matrix.  We say in this case that X is
+    /// "post-Imported," and Y is "pre-Exported."  When <tt>Op(A)</tt>
+    /// is \f$A^T\f$ or \f$A^H\f$ (\c trans is <tt>Teuchos::TRANS</tt>
+    /// or <tt>Teuchos::CONJ_TRANS</tt>, then X's Map must be the same
+    /// as the row Map of this matrix, and Y's Map must be the same as
+    /// the column Map of this matrix.
+    ///
+    /// Both X and Y must have constant stride, and they may not alias
+    /// one another (that is, occupy overlapping space in memory).  We
+    /// may not necessarily check for aliasing, and if we do, we will
+    /// only do this in a debug build.  Aliasing X and Y may cause
+    /// nondeterministically incorrect results.
+    ///
+    /// This method is templated on the type of entries in both the
+    /// input MultiVector (\c DomainScalar) and the output MultiVector
+    /// (\c RangeScalar).  Thus, this method works for MultiVector
+    /// objects of arbitrary type.  However, this method only performs
+    /// computation local to each MPI process.  Use
+    /// CrsMatrixMultiplyOp to handle global communication (the Import
+    /// and Export operations for the input resp. output MultiVector),
+    /// if you have a matrix with entries of a different type than the
+    /// input and output MultiVector objects.
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y will be overwritten with the result of the
+    /// multiplication, even if it contains <tt>NaN</tt>
+    /// (not-a-number) floating-point entries.  Otherwise, the
+    /// multiply result will be accumulated into \c Y.
     template <class DomainScalar, class RangeScalar>
     void
     localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -1006,14 +1053,22 @@ namespace Tpetra {
     //! @name Methods implementing Operator
     //@{
 
-    //! \brief Computes the sparse matrix-multivector multiplication.
-    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
-      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
-    */
-    void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = ScalarTraits<Scalar>::one(),
-               Scalar beta = ScalarTraits<Scalar>::zero()) const;
+    /// \brief Compute a sparse matrix-MultiVector multiply.
+    ///
+    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
+    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y's entries will be ignored, and Y will be
+    /// overwritten with the result of the multiplication, even if it
+    /// contains <tt>NaN</tt> (not-a-number) floating-point entries.
+    void 
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
+	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	   Scalar alpha = ScalarTraits<Scalar>::one(),
+	   Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
@@ -1454,6 +1509,97 @@ namespace Tpetra {
     /// This method is called in fillComplete().
     void computeGlobalConstants();
 
+    /// \brief Column Map MultiVector used in apply() and gaussSeidel().
+    ///
+    /// This is a column Map MultiVector.  It is used as the target of
+    /// the forward mode Import operation (if necessary) in apply()
+    /// and gaussSeidel(), and the source of the reverse mode Export
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> importMV_;
+
+    /// \brief Row Map MultiVector used in apply().
+    ///
+    /// This is a row Map MultiVector.  It is uses as the source of
+    /// the forward mode Export operation (if necessary) in apply()
+    /// and gaussSeidel(), and the target of the reverse mode Import
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> exportMV_;
+
+    /// \brief Create a (or fetch a cached) column Map MultiVector.
+    ///
+    /// \param X_domainMap [in] A domain Map Multivector.  The
+    ///   returned MultiVector, if nonnull, will have the same number
+    ///   of columns as Y_domainMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the domain Map and the
+    /// column Map are the same (so that normally we wouldn't need the
+    /// column Map MultiVector), but the following (for example)
+    /// holds:
+    ///
+    /// 1. The kernel needs a constant stride input MultiVector, but
+    ///    the given input MultiVector is not constant stride.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getColumnMapMultiVector (const MV& X_domainMap,
+                             const bool force = false) const;
+
+    /// \brief Create a (or fetch a cached) row Map MultiVector.
+    ///
+    /// \param Y_rangeMap [in] A range Map Multivector.  The returned
+    ///   MultiVector, if nonnull, will have the same number of
+    ///   columns as Y_rangeMap.
+    ///
+    /// \param force [in] Force creating the MultiVector if it hasn't
+    ///   been created already.
+    ///
+    /// The \c force parameter is helpful when the range Map and the
+    /// row Map are the same (so that normally we wouldn't need the
+    /// row Map MultiVector), but one of the following holds:
+    ///
+    /// 1. The kernel needs a constant stride output MultiVector,
+    ///    but the given output MultiVector is not constant stride.
+    ///
+    /// 2. The kernel does not permit aliasing of its input and output
+    ///    MultiVector arguments, but they do alias each other.
+    ///
+    /// We don't test for the above in this method, because it depends
+    /// on the specific kernel.
+    Teuchos::RCP<MV>
+    getRowMapMultiVector (const MV& Y_rangeMap,
+                          const bool force = false) const;
+
+    //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
+    void 
+    applyNonTranspose (const MV& X_in,
+		       MV& Y_in,
+		       Scalar alpha,
+		       Scalar beta) const;
+
+    //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
+    void
+    applyTranspose (const MV& X_in,
+		    MV& Y_in,
+		    const Teuchos::ETransp mode, 
+		    Scalar alpha, 
+		    Scalar beta) const;
+
     // matrix data accessors
     ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
     ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
@@ -1540,13 +1686,6 @@ namespace Tpetra {
     ///   process.  The globalAssemble() method redistributes these
     ///   to their owning processes.
     std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
-
-    /// \brief A wrapper around multiply(), for use in apply.
-    ///
-    /// This object contains a non-owning RCP to <tt>*this</tt>.
-    /// Therefore, it is not allowed to persist past the destruction
-    /// of *this.  As a result, WE MAY NOT SHARE THIS POINTER.
-    RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///

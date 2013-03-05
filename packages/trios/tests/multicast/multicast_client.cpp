@@ -349,7 +349,9 @@ int read_contact_info(const char *fname, char *url, int maxlen)
         url[0]='\0';
         return(1);
     }
-    fgets(url, maxlen, cf);
+    if (fgets(url, maxlen, cf) == NULL) {
+        log_error(client_debug_level, "failed to read URL from %s", fname);
+    }
     fclose(cf);
 
     return(0);

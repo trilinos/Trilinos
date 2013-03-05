@@ -72,6 +72,7 @@ Ioss::ShellLine2D3::ShellLine2D3()
   : Ioss::ElementTopology("shellline2d3", "ShellLine_3")
 {
   Ioss::ElementTopology::alias("shellline2d3", "Shell_Line_3_2D");
+  Ioss::ElementTopology::alias("shellline2d3", "SHELL_LINE_3");
 }
 
 Ioss::ShellLine2D3::~ShellLine2D3() {}
@@ -134,4 +135,4 @@ Ioss::ElementTopology* Ioss::ShellLine2D3::face_type(int /* face_number */) cons
 { return (Ioss::ElementTopology*)NULL; }
 
 Ioss::ElementTopology* Ioss::ShellLine2D3::edge_type(int /* edge_number */) const
-{ return Ioss::ElementTopology::factory("edge2d3"); }
+{ return Ioss::ElementTopology::factory("edge3"); }

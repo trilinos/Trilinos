@@ -26,6 +26,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson2D
+    SOURCES example_Poisson2D.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
@@ -38,7 +45,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Maxwell.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Maxwell.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
@@ -158,7 +165,9 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra)
+   Trilinos_ENABLE_Tpetra AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_MueLu)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Tpetra
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
@@ -181,7 +190,9 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra)
+   Trilinos_ENABLE_Epetra AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_MueLu)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Epetra
     SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp
@@ -190,6 +201,27 @@ IF(Trilinos_ENABLE_Belos AND
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
     COMM serial mpi
     DEPLIBS belos intrepid pamgen epetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
+
+# Copy over example xml file for [E|T]petraIntrepidPoisson example
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
+  DEST_FILES   intrepid_poisson.xml
+  )
+
+# mfh 14 Feb 2013
+#
+# Just build this executable; don't run it as a test.
+#
+# Tpetra has a required dependency on Teuchos and Kokkos,
+# so we don't have to name those packages explicitly here.
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    epetraTpetraImportBenchmark
+    SOURCES epetraTpetraImportBenchmark.cpp
+    COMM serial mpi
+    DEPLIBS tpetra epetra
     ADD_DIR_TO_NAME
     )
 ENDIF()

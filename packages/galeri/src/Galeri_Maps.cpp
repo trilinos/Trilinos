@@ -110,7 +110,10 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
         mx--;
         my = Comm.NumProc()/mx;
       }
+      List.set("mx", mx);
+      List.set("my", my);
     } 
+
 
     return(Maps::Cartesian2D(Comm, nx, ny, mx, my));
   }

@@ -2,6 +2,7 @@ AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+AlgebraicPermutationStrategy
 BlockedCoarseMapFactory
 BlockedGaussSeidelSmoother
 BlockedPFactory
@@ -9,6 +10,7 @@ BlockedRAPFactory
 BraessSarazinSmoother
 CoalesceDropFactory
 CoarseMapFactory
+CoupledRBMFactory
 DemoFactory
 DirectSolver
 DistanceLaplacianFactory
@@ -21,6 +23,7 @@ Hierarchy
 HierarchyManager
 HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+LocalPermutationStrategy
 MapTransferFactory
 MergedSmoother
 MLParameterListInterpreter

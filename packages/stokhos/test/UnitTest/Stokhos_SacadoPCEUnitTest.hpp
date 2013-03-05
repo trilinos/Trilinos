@@ -66,7 +66,7 @@ namespace SacadoPCEUnitTest {
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(basis->size());
+      Cijk = basis->computeTripleProductTensor();
       
       // Quadrature expansion
       exp = 

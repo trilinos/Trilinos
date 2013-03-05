@@ -92,6 +92,7 @@ Ioss::TriShell6::TriShell6()
   : Ioss::ElementTopology("trishell6", "ShellTriangle_6")
 {
   Ioss::ElementTopology::alias("trishell6", "Shell_Tri_6_3D");
+  Ioss::ElementTopology::alias("trishell6", "SHELL_TRIANGLE_6");
 }
 
 Ioss::TriShell6::~TriShell6() {}

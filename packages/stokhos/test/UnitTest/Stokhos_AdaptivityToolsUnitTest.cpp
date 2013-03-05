@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, test_interface)
    int porder = 3;
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
-   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
+   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
 
    std::vector<int> order(3);
    order[0] = 2; order[1] = 3; order[2] = 1;
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, sum_in_op_eq_order)
    Teuchos::RCP<Epetra_CrsMatrix> determOp = buildTridiagonalOp(*determGraph,stencil);
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
-   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
+   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
    Teuchos::RCP<Stokhos::EpetraSparse3Tensor> epetraCijk =
          Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis,Cijk,multiComm));
 
@@ -345,7 +345,7 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, sum_in_op_var_order)
    Teuchos::RCP<Epetra_CrsMatrix> determOp = buildTridiagonalOp(*determGraph,stencil);
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
-   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
+   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
    Teuchos::RCP<Stokhos::EpetraSparse3Tensor> epetraCijk =
          Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis,Cijk,multiComm));
 

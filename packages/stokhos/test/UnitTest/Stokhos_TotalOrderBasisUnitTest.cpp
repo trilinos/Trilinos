@@ -140,7 +140,7 @@ namespace TotalOrderBasisUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TotalOrderBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      basis->computeTripleProductTensor(basis->order());
+      basis->computeTripleProductTensor();
 
     success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
 					 setup.rtol, setup.atol, out);
@@ -156,7 +156,7 @@ namespace TotalOrderBasisUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TotalOrderBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      basis->computeTripleProductTensor(1);
+      basis->computeLinearTripleProductTensor();
 
     success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
 					 setup.rtol, setup.atol, out, true);

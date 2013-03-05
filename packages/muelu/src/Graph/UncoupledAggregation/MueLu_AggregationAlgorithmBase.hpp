@@ -91,7 +91,8 @@ enum NodeState {
   /* to an aggregate.                         */
 
   ONEPT    = 4,  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
-  SMALLAGG = 5   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
+  SMALLAGG = 5,   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
+  BOUNDARY = 6     // node is a Dirichlet node and should never be aggregated
 };
 } // namespace NodeStats
 
@@ -132,7 +133,7 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
   //@}
 
   //! @name Build routines
@@ -171,25 +172,7 @@ class AggregationAlgorithmBase
 
   //@}
 
-  //! @name Set/get methods.
-  //@{
-
-  void SetOrdering(AggOptions::Ordering ordering)                          { ordering_                = ordering;                }
-  void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
-  void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
-
-  AggOptions::Ordering GetOrdering()                const { return ordering_;                }
-  int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
-  int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
-
-  //@}
-
-
   private:
-    //! Aggregation options (TODO: Teuchos::ParameterList?)
-    AggOptions::Ordering ordering_;                /**<  natural, random, graph           */
-    int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    int      maxNeighAlreadySelected_; /**<  complexity control               */
 
   }; // class AggregationAlgorithmBase
 

@@ -177,9 +177,9 @@ void Piro::RythmosSolver<Scalar>::initialize(
   }
   else {
     // first (before failing) check to see if the user has added stepper factory
-    typename std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > >::const_iterator 
+    typename std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > >::const_iterator
         stepFactItr = stepperFactories.find(stepperType);
-    if(stepFactItr!=stepperFactories.end()) { 
+    if(stepFactItr!=stepperFactories.end()) {
       // the user has added it, hot dog lets build a new stepper!
       Teuchos::RCP<Teuchos::ParameterList> stepperParams = Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
 
@@ -261,10 +261,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   fwdTimeStepSolver(timeStepSolver),
   model(underlyingModel),
   initialConditionModel(icModel),
-  num_p(model->Np()),
-  num_g(model->Ng()),
   t_initial(0.0),
   t_final(finalTime),
+  num_p(model->Np()),
+  num_g(model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
@@ -289,10 +289,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   fwdTimeStepSolver(timeStepSolver),
   model(underlyingModel),
   initialConditionModel(icModel),
-  num_p(model->Np()),
-  num_g(model->Ng()),
   t_initial(initialTime),
   t_final(finalTime),
+  num_p(model->Np()),
+  num_g(model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
@@ -503,7 +503,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     if (num_g > 0) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
         outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-      if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+      if (!dgdp_support.none()) {
         dgdp_deriv_out = outArgs.get_DgDp(j, l);
       }
     }

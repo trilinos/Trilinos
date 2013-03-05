@@ -99,6 +99,7 @@ Ioss::TriShell3::TriShell3()
 {
   Ioss::ElementTopology::alias("trishell3", "trishell");
   Ioss::ElementTopology::alias("trishell3", "Shell_Tri_3_3D");
+  Ioss::ElementTopology::alias("trishell3", "SHELL_TRIANGLE_3");
 }
 
 Ioss::TriShell3::~TriShell3() {}

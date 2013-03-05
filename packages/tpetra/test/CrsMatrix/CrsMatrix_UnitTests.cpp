@@ -74,12 +74,27 @@ namespace Teuchos {
 namespace {
 
   // no ScalarTraits<>::eps() for integer types
+
+  template <class Scalar, bool hasMachineParameters> struct TestingTolGuts {};
+
   template <class Scalar>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol() { return Teuchos::ScalarTraits<Scalar>::eps(); }
-  template <>
-  int testingTol<int>() { return 0; }
-  template <>
-  long testingTol<long>() { return 0; }
+  struct TestingTolGuts<Scalar, true> {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
+      { return Teuchos::ScalarTraits<Scalar>::eps(); }
+  };
+
+  template <class Scalar>
+  struct TestingTolGuts<Scalar, false> {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
+      { return 0; }
+  };
+
+  template <class Scalar>
+  static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
+  {
+    return TestingTolGuts<Scalar, Teuchos::ScalarTraits<Scalar>::hasMachineParameters>::
+      testingTol();
+  }
 
   using Tpetra::TestingUtilities::getNode;
   using Tpetra::TestingUtilities::getDefaultComm;
@@ -2060,7 +2075,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   {
     RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create Map

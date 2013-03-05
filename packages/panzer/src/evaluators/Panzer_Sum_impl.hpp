@@ -47,6 +47,9 @@
 #include <string>
 #include <vector>
 
+#define PANZER_USE_FAST_SUM 1
+// #define PANZER_USE_FAST_SUM 0
+
 namespace panzer {
 
 //**********************************************************************
@@ -87,11 +90,22 @@ PHX_EVALUATE_FIELDS(Sum,workset)
 { 
   std::size_t length = workset.num_cells * cell_data_size;
 
+#if PANZER_USE_FAST_SUM 
+  for (std::size_t i = 0; i < length; ++i)
+    sum[i] = 0.0;
+
+  for (std::size_t j = 0; j < values.size(); ++j) {
+    for (std::size_t i = 0; i < length; ++i)
+      sum[i] += (values[j])[i];
+  }
+#else
+
   for (std::size_t i = 0; i < length; ++i) {
     sum[i] = 0.0;
     for (std::size_t j = 0; j < values.size(); ++j)
       sum[i] += (values[j])[i];
   }
+#endif
 
 }
 

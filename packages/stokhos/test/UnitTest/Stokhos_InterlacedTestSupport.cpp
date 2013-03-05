@@ -101,12 +101,11 @@ Teuchos::RCP<Stokhos::ParallelData> buildParallelData(bool full_expansion,int nu
     Teuchos::ParameterList parallelParams;
     parallelParams.set("Number of Spatial Processors", globalComm->NumProc());
 
-    int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
     if (full_expansion)
-      Cijk = basis->computeTripleProductTensor(sz);
+      Cijk = basis->computeTripleProductTensor();
     else
-      Cijk = basis->computeTripleProductTensor(num_KL+1);
+      Cijk = basis->computeLinearTripleProductTensor();
 
    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data 
       = Teuchos::rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,

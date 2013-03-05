@@ -74,7 +74,7 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
+    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) {
     }
 
     virtual ~Graph() {}
@@ -91,11 +91,11 @@ namespace MueLu {
     //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
 
-    //! Set map with global ids of boundary nodes.
-    void SetBoundaryNodeMap(const RCP<const Map> & gBoundaryNodeMap) { gBoundaryNodeMap_ = gBoundaryNodeMap; }
+    //! Set map with local ids of boundary nodes.
+    void SetBoundaryNodeMap(const ArrayRCP<const bool> & localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
 
-    //! Returns map with global ids of boundary nodes.
-    const RCP<const Map> GetBoundaryNodeMap() const { return gBoundaryNodeMap_; }
+    //! Returns map with local ids of boundary nodes.
+    const ArrayRCP<const bool> GetBoundaryNodeMap() const { return localDirichletNodes_; }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
@@ -119,9 +119,8 @@ namespace MueLu {
 
     RCP<const CrsGraph> graph_;
 
-    //RCP<std::map<GlobalOrdinal,bool> > gBoundaryNodes_;
-    //! Vector of global boundary node IDs on current process.
-    RCP<const Map> gBoundaryNodeMap_;
+    //! Vector of Dirichlet boundary node IDs on current process.
+    ArrayRCP<const bool> localDirichletNodes_;
 
   };
 

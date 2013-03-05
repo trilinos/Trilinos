@@ -20,6 +20,10 @@ APPEND_SET(HEADERS
   Galeri_VectorTraits.hpp
   Galeri_MatrixTraits.hpp
   Galeri_MapTraits.hpp
+  Galeri_MultiVectorTraits.hpp
+  
+  Galeri_XpetraUtils.hpp
+  Galeri_Problem.hpp
 
   Galeri_XpetraMaps.hpp
   Maps/Galeri_XpetraCartesian1D.hpp

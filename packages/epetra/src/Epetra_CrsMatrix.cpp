@@ -53,6 +53,9 @@
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
 
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_CrsGraphData.h"
+#include "Epetra_HashTable.h"
 
 #include <cstdlib>
 
@@ -2881,7 +2884,6 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
   os << endl;
       }
       for (i=0; i<NumMyRows1; i++) {
-
         if(RowMap().GlobalIndicesInt()) {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
            int Row = (int) GRID64(i); // Get global row number
@@ -2930,7 +2932,6 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       else if(RowMap().GlobalIndicesLongLong()) {
          delete [] Indices_LL;
       }
-
       delete [] values;
       
       os << flush;
@@ -4439,4 +4440,196 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   UpdateFlops(2 * NumVectors * NumGlobalNonzeros64());
   return(0);
 }
+
+
+
+//=============================================================================    
+Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndexOffset(){ 
+   return Graph_.CrsGraphData_->IndexOffset_;
+ }
+ 
+//=============================================================================    
+Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
+  return Graph_.CrsGraphData_->data->All_Indices_;
+ }
+
+//=============================================================================    
+int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
+   if(Graph_.CrsGraphData_->ReferenceCount() > 1){
+     Graph_.CrsGraphData_->DecrementReferenceCount();
+     Graph_.CrsGraphData_=new Epetra_CrsGraphData(Copy, RowMap(),ColMap(),true); // true is for StaticProfile
+   }
+   return (0);
+ }
+
+//=============================================================================    
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
+
+  Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
+  int m=D.RowMap_.NumMyElements();
+
+  bool UseLL=false;
+  if(D.RowMap_.GlobalIndicesLongLong()) UseLL=true;
+    
+  // This only works for constant element size matrices w/ size=1
+  if(!D.RowMap_.ConstantElementSize() || D.RowMap_.ElementSize()!=1 ||
+     !D.ColMap_.ConstantElementSize() || D.ColMap_.ElementSize()!=1)
+    EPETRA_CHK_ERR(-1);
+
+  // Maps, import export
+  D.DomainMap_ = DomainMap;
+  D.RangeMap_  = RangeMap;
+
+  if (!D.ColMap_.SameAs(D.DomainMap_)) {
+    if (D.Importer_ != 0) {
+      delete D.Importer_;
+      D.Importer_ = 0;
+    }
+    if(Importer && Importer->SourceMap().SameAs(D.DomainMap_) && Importer->TargetMap().SameAs(D.ColMap_)){
+      D.Importer_=Importer;
+    }
+    else {
+      delete Importer;
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);
+    }
+  }
+  
+  if (!D.RowMap_.SameAs(D.RangeMap_)) {
+    if (D.Exporter_ != 0) {
+      delete D.Exporter_;
+      D.Exporter_ = 0;
+    }
+    D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
+  }
+
+  // Matrix constants
+  Allocated_                  = true;
+  StaticGraph_                = true;
+  UseTranspose_               = false;
+  constructedWithFilledGraph_ = true;
+  matrixFillCompleteCalled_   = true;
+  StorageOptimized_           = true;
+  squareFillCompleteCalled_   = false; // Always false for the full FillComplete
+  // Note: Entries in D.Indices_ array point to memory we don't need to dealloc, but the D.Indices_
+  // array itself needs deallocation.
+
+  // Cleanup existing data
+  for(int i=0;i<m;i++){
+    if(Values_)            delete [] Values_[i];
+    D.data->SortedEntries_[i].entries_.resize(0);
+  }
+  delete [] Values_;                 Values_=0;
+  delete [] Values_alloc_lengths_;   Values_alloc_lengths_=0;
+  delete [] D.data->Indices_;        D.data->Indices_=0; 
+  D.NumAllocatedIndicesPerRow_.Resize(0);
+
+
+  // GraphData constants
+  D.Filled_                                = true;
+  D.Allocated_                             = true;
+  D.Sorted_                                = false;
+  D.StorageOptimized_                      = true;
+  D.NoRedundancies_                        = true;
+  D.IndicesAreGlobal_                      = false;
+  D.IndicesAreLocal_                       = true;
+  D.IndicesAreContiguous_                  = true;
+  D.GlobalConstantsComputed_               = true;
+  D.StaticProfile_                         = true;
+  D.SortGhostsAssociatedWithEachProcessor_ = true;
+  D.HaveColMap_                            = true;
+
+  // Don't change the index base
+
+  // Local quantities (no computing)
+  int nnz=D.IndexOffset_[m]-D.IndexOffset_[0];
+  D.NumMyRows_       = D.NumMyBlockRows_ = m;
+  D.NumMyCols_       = D.NumMyBlockCols_ = D.ColMap_.NumMyElements();
+  D.NumMyNonzeros_   = D.NumMyEntries_   = nnz;
+  D.MaxRowDim_       = 1;
+  D.MaxColDim_       = 1;
+
+  // A priori globals
+  D.GlobalMaxRowDim_ = 1;
+  D.GlobalMaxColDim_ = 1;
+
+  // Compute max NZ per row, indices, diagonals, triangular
+  D.MaxNumIndices_=0;
+  for(int i=0; i<m; i++){
+    int NumIndices=D.IndexOffset_[i+1]-D.IndexOffset_[i];
+    D.MaxNumIndices_=EPETRA_MAX(D.MaxNumIndices_,NumIndices);
+
+    // Code copied from Epetra_CrsGraph.Determine_Triangular()
+    if(NumIndices > 0) {
+      const int* col_indices = & D.data->All_Indices_[D.IndexOffset_[i]];
+
+      int jl_0 = col_indices[0];
+      int jl_n = col_indices[NumIndices-1];
+
+      if(jl_n > i) D.LowerTriangular_ = false;
+      if(jl_0 < i) D.UpperTriangular_ = false;
+
+
+      if(NumMyDiagonals == -1) {
+	// Binary search in GID space
+	// NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
+	// on the LIDs directly.
+	int insertPoint = -1;
+	if(UseLL)  {
+	  long long jg = D.RowMap_.GID64(i);
+	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
+	    D.NumMyBlockDiagonals_++;
+	    D.NumMyDiagonals_ ++; 
+	  }
+	}
+	else {
+	  int jg = D.RowMap_.GID(i);
+	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
+	    D.NumMyBlockDiagonals_++;
+	    D.NumMyDiagonals_ ++; 
+	  }
+	}
+      }
+    }
+  } // end DetermineTriangular
+
+  if(NumMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = NumMyDiagonals;
+
+  D.MaxNumNonzeros_=D.MaxNumIndices_;
+
+  // Compute global constants - Code copied from Epetra_CrsGraph.ComputeGlobalConstants()
+  Epetra_IntSerialDenseVector tempvec(8); // Temp space
+  tempvec[0] = D.NumMyEntries_;
+  tempvec[1] = D.NumMyBlockDiagonals_;
+  tempvec[2] = D.NumMyDiagonals_;
+  tempvec[3] = D.NumMyNonzeros_;
+  
+  Comm().SumAll(&tempvec[0], &tempvec[4], 4);
+    
+  D.NumGlobalEntries_        = tempvec[4];
+  D.NumGlobalBlockDiagonals_ = tempvec[5];
+  D.NumGlobalDiagonals_      = tempvec[6];
+  D.NumGlobalNonzeros_       = tempvec[7];
+
+  tempvec[0] = D.MaxNumIndices_;
+  tempvec[1] = D.MaxNumNonzeros_;
+
+  Comm().MaxAll(&tempvec[0], &tempvec[2], 2);
+  
+  D.GlobalMaxNumIndices_  = tempvec[2];
+  D.GlobalMaxNumNonzeros_ = tempvec[3];
+  //end  Epetra_CrsGraph.ComputeGlobalConstants()
+
+
+  // Global Info
+  if(UseLL) {
+    D.NumGlobalRows_ = D.RangeMap_.NumGlobalPoints64();
+    D.NumGlobalCols_ = D.DomainMap_.NumGlobalPoints64();
+  }
+  else {
+    D.NumGlobalRows_ = (int) D.RangeMap_.NumGlobalPoints64();
+    D.NumGlobalCols_ = (int) D.DomainMap_.NumGlobalPoints64();
+  }
+  return 0;
+}
+
 

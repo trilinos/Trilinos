@@ -86,11 +86,7 @@ Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDi
       bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(order));
    Teuchos::RCP<Stokhos::ProductBasis<int,double> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
-   // build Cijk and "expansion"
-   int kExpOrder = basis->size();
-   // if(!fullExpansion)
-   //    kExpOrder = numDim+1;
-   Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
+   Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
    Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
    return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));

@@ -31,7 +31,7 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_square)
    int porder = 3;
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
-   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
+   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data;
 
    {

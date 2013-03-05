@@ -246,16 +246,6 @@ static int8_t is_all_buf_ops_complete(
         const NNTI_buffer_t **buf_list,
         const uint32_t        buf_count);
 
-static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
-static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
-static void print_bufhash_map(void);
-
-static NNTI_result_t insert_wr_wrhash(portals_work_request *);
-static portals_work_request *get_wr_wrhash(const uint32_t bufhash);
-static portals_work_request *del_wr_wrhash(portals_work_request *);
-static void print_wrhash_map(void);
-
 static void create_status(
         const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
@@ -265,32 +255,7 @@ static void create_peer(
         NNTI_peer_t *peer,
         ptl_nid_t nid,
         ptl_pid_t pid);
-static void copy_peer(
-        NNTI_peer_t *src,
-        NNTI_peer_t *dest);
 
-
-/* Thomas Wang's 64 bit to 32 bit Hash Function (http://www.concentric.net/~ttwang/tech/inthash.htm) */
-static uint32_t hash6432shift(uint64_t key)
-{
-  key = (~key) + (key << 18); // key = (key << 18) - key - 1;
-  key = key ^ (key >> 31);
-  key = key * 21;             // key = (key + (key << 2)) + (key << 4);
-  key = key ^ (key >> 11);
-  key = key + (key << 6);
-  key = key ^ (key >> 22);
-  return (uint32_t)key;
-}
-
-static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
-typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
-typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_lock_t nnti_buf_bufhash_lock;
-
-static std::map<uint32_t, portals_work_request *> wr_by_wrhash;
-typedef std::map<uint32_t, portals_work_request *>::iterator wr_by_wrhash_iter_t;
-typedef std::pair<uint32_t, portals_work_request *> wr_by_wrhash_t;
-static nthread_lock_t nnti_wr_wrhash_lock;
 
 
 static bool ptl_initialized=false;
@@ -338,8 +303,6 @@ NNTI_result_t NNTI_ptl_init (
     if (!ptl_initialized) {
 
         nthread_lock_init(&nnti_ptl_lock);
-        nthread_lock_init(&nnti_buf_bufhash_lock);
-        nthread_lock_init(&nnti_wr_wrhash_lock);
 
         if (my_url != NULL) {
             if ((nnti_rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {
@@ -352,10 +315,6 @@ NNTI_result_t NNTI_ptl_init (
             if ((nnti_rc=nnti_url_get_address(my_url, address, NNTI_URL_LEN)) != NNTI_OK) {
                 return(nnti_rc);
             }
-
-//            if ((rc=nnti_url_get_memdesc(my_url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//                return(rc);
-//            }
 
             sep=strchr(address, ':');
 //            nid=strtol(address, NULL, 0);
@@ -528,10 +487,6 @@ NNTI_result_t NNTI_ptl_connect (
             return(nnti_rc);
         }
 
-//        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//            return(rc);
-//        }
-
         sep=strchr(address, ':');
         nid=strtol(address, NULL, 0);
         pid=strtol(sep+1, NULL, 0);
@@ -611,11 +566,6 @@ NNTI_result_t NNTI_ptl_register_memory (
     reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
     reg_buf->transport_private = (uint64_t)ptls_mem_hdl;
-//    if (peer != NULL) {
-//        reg_buf->peer = *peer;
-//    } else {
-//        PORTALS_SET_MATCH_ANY(&reg_buf->peer);
-//    }
 
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
@@ -914,7 +864,6 @@ cleanup:
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     PORTALS_SET_MATCH_ANY(&reg_buf->buffer_owner);
     reg_buf->ops               = (NNTI_buf_ops_t)0;
-//    PORTALS_SET_MATCH_ANY(&reg_buf->peer);
     reg_buf->payload_size      = 0;
     reg_buf->payload           = 0;
     reg_buf->transport_private = 0;
@@ -1008,7 +957,6 @@ NNTI_result_t NNTI_ptl_send (
     wr->last_op=PTL_OP_SEND;
 
     ptls_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -1090,7 +1038,6 @@ NNTI_result_t NNTI_ptl_put (
     wr->last_op=PTL_OP_PUT_INITIATOR;
 
     ptls_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -1180,7 +1127,6 @@ NNTI_result_t NNTI_ptl_get (
     wr->last_op=PTL_OP_GET_INITIATOR;
 
     ptls_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -1326,12 +1272,6 @@ NNTI_result_t NNTI_ptl_wait (
         }
     }
 
-//    if ((rc!=PTL_OK) && (wr->last_event.ni_fail_type != PTL_NI_OK)) {
-//        log_error(debug_level, "NI reported error: ni_fail_type=%s",
-//                PtlNIFailStr(transport_global_data.ni_h, wr->last_event.ni_fail_type));
-//        nnti_rc = NNTI_EIO;
-//    }
-
     create_status(reg_buf, remote_op, nnti_rc, status);
 
     if (logging_debug(debug_level)) {
@@ -1396,19 +1336,6 @@ NNTI_result_t NNTI_ptl_wait (
         }
     }
 
-//    if (nnti_rc == NNTI_OK) {
-//        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-//        assert(ptls_mem_hdl);
-//        wr=ptls_mem_hdl->wr_queue.front();
-//        assert(wr);
-//        ptls_mem_hdl->wr_queue.pop_front();
-//        del_wr_wrhash(wr);
-//        free(wr);
-//    }
-//
-//    if ((nnti_rc==NNTI_OK) && (ptls_mem_hdl->type == REQUEST_BUFFER)) {
-//        post_recv_work_request((NNTI_buffer_t *)reg_buf);
-//    }
     if (nnti_rc==NNTI_OK) {
         ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
         assert(ptls_mem_hdl);
@@ -1429,7 +1356,6 @@ NNTI_result_t NNTI_ptl_wait (
             case SEND_BUFFER:
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
-                del_wr_wrhash(wr);
                 free(wr);
                 break;
             case UNKNOWN_BUFFER:
@@ -1586,12 +1512,6 @@ NNTI_result_t NNTI_ptl_waitany (
     }
 
 
-//    if ((rc!=PTL_OK) && (wr->last_event.ni_fail_type != PTL_NI_OK)) {
-//        log_error(debug_level, "NI reported error: ni_fail_type=%s",
-//                PtlNIFailStr(transport_global_data.ni_h, wr->last_event.ni_fail_type));
-//        nnti_rc = NNTI_EIO;
-//    }
-
     create_status(buf_list[*which], remote_op, nnti_rc, status);
 
     if (logging_debug(debug_level)) {
@@ -1599,15 +1519,6 @@ NNTI_result_t NNTI_ptl_waitany (
                 "end of NNTI_ptl_wait", status);
     }
 
-//    if (nnti_rc == NNTI_OK) {
-//        ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
-//        assert(ptls_mem_hdl);
-//        wr=ptls_mem_hdl->wr_queue.front();
-//        assert(wr);
-//        ptls_mem_hdl->wr_queue.pop_front();
-//        del_wr_wrhash(wr);
-//        free(wr);
-//    }
     if (nnti_rc==NNTI_OK) {
         ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
         assert(ptls_mem_hdl);
@@ -1628,7 +1539,6 @@ NNTI_result_t NNTI_ptl_waitany (
             case SEND_BUFFER:
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
-                del_wr_wrhash(wr);
                 free(wr);
                 break;
             case UNKNOWN_BUFFER:
@@ -1781,14 +1691,6 @@ NNTI_result_t NNTI_ptl_waitall (
         }
     }
 
-//    ptls_mem_hdl=(portals_memory_handle *)buf_list[0]->transport_private;
-//    if ((rc!=PTL_OK) && (wr->last_event.ni_fail_type != PTL_NI_OK)) {
-//        log_error(debug_level, "NI reported error: ni_fail_type=%s",
-//                PtlNIFailStr(transport_global_data.ni_h, wr->last_event.ni_fail_type));
-//        nnti_rc = NNTI_EIO;
-//    }
-
-
 
     for (uint32_t i=0;i<buf_count;i++) {
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
@@ -1797,16 +1699,6 @@ NNTI_result_t NNTI_ptl_waitall (
             fprint_NNTI_status(logger_get_file(), "status[i]",
                     "end of NNTI_ptl_wait", status[i]);
         }
-
-//        if (nnti_rc == NNTI_OK) {
-//            ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
-//            assert(ptls_mem_hdl);
-//            wr=ptls_mem_hdl->wr_queue.front();
-//            assert(wr);
-//            ptls_mem_hdl->wr_queue.pop_front();
-//            del_wr_wrhash(wr);
-//            free(wr);
-//        }
 
         ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
         assert(ptls_mem_hdl);
@@ -1828,7 +1720,6 @@ NNTI_result_t NNTI_ptl_waitall (
                 case SEND_BUFFER:
                 case GET_DST_BUFFER:
                 case PUT_SRC_BUFFER:
-                    del_wr_wrhash(wr);
                     free(wr);
                     break;
                 case UNKNOWN_BUFFER:
@@ -1856,8 +1747,6 @@ NNTI_result_t NNTI_ptl_fini (
 {
 //    PtlFini();
     nthread_lock_fini(&nnti_ptl_lock);
-    nthread_lock_fini(&nnti_buf_bufhash_lock);
-    nthread_lock_fini(&nnti_wr_wrhash_lock);
 
     ptl_initialized=false;
 
@@ -1965,7 +1854,10 @@ static const NNTI_buffer_t *decode_event_buffer(
 
     log_debug(nnti_debug_level, "enter");
 
-    if ((wait_buf != NULL) && (wait_buf->transport_private != NULL) && (((portals_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
+    if ((wait_buf != NULL)                                               &&
+        (((portals_memory_handle *)wait_buf->transport_private) != NULL) &&
+        (((portals_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
+
         event_buf=wait_buf;
         ptls_mem_hdl=(portals_memory_handle *)event_buf->transport_private;
         assert(ptls_mem_hdl);
@@ -2430,150 +2322,6 @@ static int8_t is_all_buf_ops_complete(
     return(rc);
 }
 
-static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
-{
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t h=hash6432shift((uint64_t)buf->payload);
-
-    nthread_lock(&nnti_buf_bufhash_lock);
-    assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
-    buffers_by_bufhash[h] = buf;
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p bufhash=%lx)", buf, h);
-
-    return(rc);
-}
-static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
-{
-    NNTI_buffer_t *buf=NULL;
-
-    log_debug(nnti_debug_level, "looking for bufhash=%x", (uint64_t)bufhash);
-    nthread_lock(&nnti_buf_bufhash_lock);
-    if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
-        buf = buffers_by_bufhash[bufhash];
-    }
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    if (buf != NULL) {
-        log_debug(nnti_debug_level, "buffer found (buf=%p)", buf);
-        return buf;
-    }
-
-    log_debug(nnti_debug_level, "buffer NOT found");
-//    print_bufhash_map();
-
-    return(NULL);
-}
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
-{
-    uint32_t h=hash6432shift((uint64_t)buf->payload);
-    log_level debug_level = nnti_debug_level;
-
-    nthread_lock(&nnti_buf_bufhash_lock);
-    if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
-        buf = buffers_by_bufhash[h];
-    }
-    nthread_unlock(&nnti_buf_bufhash_lock);
-
-    if (buf != NULL) {
-        log_debug(debug_level, "buffer found");
-        buffers_by_bufhash.erase(h);
-    } else {
-        log_debug(debug_level, "buffer NOT found");
-    }
-
-    return(buf);
-}
-static void print_bufhash_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (buffers_by_bufhash.empty()) {
-        log_debug(nnti_debug_level, "bufhash_map is empty");
-        return;
-    }
-
-    buf_by_bufhash_iter_t i;
-    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
-        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
-    }
-}
-
-static NNTI_result_t insert_wr_wrhash(portals_work_request *wr)
-{
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t h=hash6432shift((uint64_t)wr);
-
-    nthread_lock(&nnti_wr_wrhash_lock);
-    assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
-    wr_by_wrhash[h] = wr;
-    nthread_unlock(&nnti_wr_wrhash_lock);
-
-    log_debug(nnti_debug_level, "wrhash work request added (wr=%p hash=%x)", wr, h);
-
-    return(rc);
-}
-static portals_work_request *get_wr_wrhash(const uint32_t wrhash)
-{
-    portals_work_request *wr=NULL;
-
-    log_debug(nnti_debug_level, "looking for wrhash=%x", (uint64_t)wrhash);
-    nthread_lock(&nnti_wr_wrhash_lock);
-    if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
-        wr = wr_by_wrhash[wrhash];
-    }
-    nthread_unlock(&nnti_wr_wrhash_lock);
-
-    if (wr != NULL) {
-        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
-        return wr;
-    }
-
-    log_debug(nnti_debug_level, "work request NOT found");
-//    print_wrhash_map();
-
-    return(NULL);
-}
-static portals_work_request *del_wr_wrhash(portals_work_request *wr)
-{
-    uint32_t h=hash6432shift((uint64_t)wr);
-    log_level debug_level = nnti_debug_level;
-
-    nthread_lock(&nnti_wr_wrhash_lock);
-    if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
-        wr = wr_by_wrhash[h];
-    }
-    nthread_unlock(&nnti_wr_wrhash_lock);
-
-    if (wr != NULL) {
-        log_debug(debug_level, "work request found");
-        wr_by_wrhash.erase(h);
-    } else {
-        log_debug(debug_level, "work request NOT found");
-    }
-
-    return(wr);
-}
-static void print_wrhash_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    if (wr_by_wrhash.empty()) {
-        log_debug(nnti_debug_level, "wrhash_map is empty");
-        return;
-    }
-
-    wr_by_wrhash_iter_t i;
-    for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
-        log_debug(nnti_debug_level, "wrhash_map key=%lx wr=%p", i->first, i->second);
-    }
-}
-
 static void create_status(
         const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
@@ -2623,19 +2371,6 @@ static void create_peer(NNTI_peer_t *peer, ptl_nid_t nid, ptl_pid_t pid)
     peer->peer.transport_id                        = NNTI_TRANSPORT_PORTALS;
     peer->peer.NNTI_remote_process_t_u.portals.nid = nid;
     peer->peer.NNTI_remote_process_t_u.portals.pid = pid;
-
-    log_debug(nnti_debug_level, "exit");
-}
-
-static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
-{
-    log_debug(nnti_debug_level, "enter");
-
-    strcpy(dest->url, src->url);
-
-    dest->peer.transport_id                        = NNTI_TRANSPORT_PORTALS;
-    dest->peer.NNTI_remote_process_t_u.portals.nid = src->peer.NNTI_remote_process_t_u.portals.nid;
-    dest->peer.NNTI_remote_process_t_u.portals.pid = src->peer.NNTI_remote_process_t_u.portals.nid;
 
     log_debug(nnti_debug_level, "exit");
 }

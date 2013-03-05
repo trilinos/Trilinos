@@ -503,9 +503,6 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
 
     /*parallel info*/
     long long num_internal_nodes;
@@ -1323,6 +1320,10 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
+
+    delete [] nodeCoordx;
+    delete [] nodeCoordy;
+    delete [] nodeCoordz;
 
    // delete mesh
    Delete_Pamgen_Mesh();

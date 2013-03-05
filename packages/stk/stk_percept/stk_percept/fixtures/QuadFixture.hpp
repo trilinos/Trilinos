@@ -296,7 +296,7 @@ namespace stk {
             {
               if (!debug_geom_side_sets_as_blocks)
                 {
-                  side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+                  side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
                   mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
                   //void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
 

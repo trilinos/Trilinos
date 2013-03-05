@@ -48,6 +48,9 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
+#define PANZER_USE_FAST_QUAD 1
+// #define PANZER_USE_FAST_QUAD 0
+
 namespace panzer {
 
 //**********************************************************************
@@ -124,6 +127,30 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
   for (int i=0; i < residual.size(); ++i)
     residual[i] = 0.0;
 
+#if PANZER_USE_FAST_QUAD
+  // do a scaled copy
+  for (int i=0; i < scalar.size(); ++i)
+    tmp[i] = multiplier * scalar[i];
+
+  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+	   field != field_multipliers.end(); ++field) {
+    PHX::MDField<ScalarT,Cell,IP> field_data = *field;
+
+    for (int i=0; i < field_data.size(); ++i)
+      tmp[i] *= field_data[i];
+  }
+
+  const Intrepid::FieldContainer<double> & weighted_basis = workset.bases[basis_index]->weighted_basis;
+
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (std::size_t basis = 0; basis < num_nodes; ++basis) {
+      for (std::size_t qp = 0; qp < num_qp; ++qp) {
+        residual(cell,basis) += tmp(cell,qp)*weighted_basis(cell,basis,qp);
+      }
+    }
+  }
+
+#else
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
@@ -138,6 +165,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
        integrate<ScalarT>(residual, tmp, 
    		          (workset.bases[basis_index])->weighted_basis, 
 		          Intrepid::COMP_BLAS);
+#endif
 }
 
 //**********************************************************************

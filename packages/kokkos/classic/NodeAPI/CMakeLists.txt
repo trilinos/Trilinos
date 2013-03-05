@@ -75,9 +75,11 @@ APPEND_SET(SOURCES
 
 SET(kokkos_enabled_nodes "")
 
-MESSAGE(STATUS "Enabling node: Serial")
-LIST(APPEND kokkos_enabled_nodes "Kokkos::SerialNode")
-set(kokkos_defaultnode_default "Kokkos::SerialNode")
+IF (KokkosClassic_ENABLE_Serial)
+  MESSAGE(STATUS "Enabling node: Serial")
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::SerialNode")
+  set(kokkos_defaultnode_default "Kokkos::SerialNode")
+ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_Thrust)
 IF (KokkosClassic_ENABLE_Thrust)
@@ -131,7 +133,7 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::SerialNode")
 ELSE()
   MESSAGE(WARNING "Unrecognized or disabled node type; setting default node to Kokkos::SerialNode.")
   SET(KokkosClassic_DefaultNode "Kokkos::SerialNode")
-  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE "")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
 ENDIF()
 SET(KokkosClassic_DefaultNode "${KokkosClassic_DefaultNode}" CACHE STRING "" FORCE)
 

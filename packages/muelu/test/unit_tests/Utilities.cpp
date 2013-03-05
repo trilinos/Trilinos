@@ -119,5 +119,47 @@ namespace MueLuTests {
   } //EpetraVersusTpetra
 #endif
 
+  TEUCHOS_UNIT_TEST(Utilities,DetectDirichletRows)
+  {
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(100);
+    Teuchos::ArrayView<const LO> indices;
+    Teuchos::ArrayView<const SC>  values;
+
+    LO localRowToZero = 5;
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<SC> newvalues(values.size(),Teuchos::ScalarTraits<SC>::zero());
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    A->fillComplete();
+
+    ArrayRCP<const bool> drows = Utils::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+      else newvalues[j] = Teuchos::as<SC>(0.25);
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    //row 5 should not be Dirichlet
+    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.24));
+    TEST_EQUALITY(drows[localRowToZero], false);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    //row 5 should be Dirichlet
+    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.26));
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+  } //DetectDirichletRows
+  
+
 }//namespace MueLuTests
 

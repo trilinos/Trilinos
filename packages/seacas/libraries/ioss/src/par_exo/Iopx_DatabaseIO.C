@@ -467,7 +467,7 @@ namespace Iopx {
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("elem"),
+    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("element"),
     timeLastFlush(0), fileExists(false),
     metaDataWritten(false), blockAdjacenciesCalculated(false),
     nodeConnectivityStatusCalculated(false)
@@ -541,13 +541,7 @@ namespace Iopx {
       int isize = properties.get("INTEGER_SIZE_API").get_int();
       if (isize == 8) {
 	exodusMode |= EX_ALL_INT64_API;
-	set_int_byte_size_api(Ioss::USE_INT64_API);
       }
-    }
-    
-    if (properties.exists("LOGGING")) {
-      int logging = properties.get("LOGGING").get_int();
-      set_logging(logging != 0);
     }
     
     // Don't open output files until they are actually going to be
@@ -688,7 +682,7 @@ namespace Iopx {
 	    dbState = Ioss::STATE_INVALID;
 	    // NOTE: Code will not continue past this call...
 	    std::ostringstream errmsg;
-	    errmsg << "Cannot create specified file '" << get_filename() << "'";
+	    errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
 	    IOSS_ERROR(errmsg);
 	  }
 	}
@@ -700,7 +694,7 @@ namespace Iopx {
 	fileExists = false;
 	// NOTE: Code will not continue past this call...
 	std::ostringstream errmsg;
-	errmsg << "Problem opening specified file '" << get_filename() << "'";
+	errmsg << "ERROR: Problem opening specified file '" << get_filename() << "'";
 	IOSS_ERROR(errmsg);
       }
 
@@ -890,7 +884,7 @@ namespace Iopx {
     } else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "Negative node count was found in the model\n"
+      errmsg << "ERROR: Negative node count was found in the model\n"
 	     << "       File: '" << get_filename() << "'.\n";
       IOSS_ERROR(errmsg);
     }
@@ -902,7 +896,7 @@ namespace Iopx {
     if (elementCount < 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "Negative element count was found in the model, file: '"
+      errmsg << "ERROR: Negative element count was found in the model, file: '"
 	     << get_filename() << "'";
       IOSS_ERROR(errmsg);
     }
@@ -910,7 +904,7 @@ namespace Iopx {
     if (elementCount > 0 && m_groupCount[EX_ELEM_BLOCK] <= 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
-      errmsg << "No element blocks were found in the model, file: '" << get_filename() << "'";
+      errmsg << "ERROR: No element blocks were found in the model, file: '" << get_filename() << "'";
       IOSS_ERROR(errmsg);
     }
 
@@ -1223,16 +1217,19 @@ namespace Iopx {
 	if (entity_type == EX_ELEM_BLOCK) {
 	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp->el_blocks[iblk].ioss_count());
 	  io_block = eblock;
+	  io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(eblock);
 #if 0
 	} else if (entity_type == EX_FACE_BLOCK) {
 	  Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, block.num_entry);
+    io_block = fblock;
+    io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(fblock);
-	  io_block = fblock;
 	} else if (entity_type == EX_EDGE_BLOCK) {
 	  Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, block.num_entry);
+    io_block = eblock;
+    io_block->property_add(Ioss::Property("id", id));
 	  get_region()->add(eblock);
-	  io_block = eblock;
 #endif
 	} else {
 	  std::ostringstream errmsg;
@@ -1258,7 +1255,6 @@ namespace Iopx {
 					  block.num_entry));
 	}
 #endif	
-	io_block->property_add(Ioss::Property("id", id));
 	
 	// Maintain block order on output database...
 	io_block->property_add(Ioss::Property("original_block_order", iblk));
@@ -1734,8 +1730,8 @@ namespace Iopx {
 	    check_non_null(side_set, "sideset", efs_name);
 	  } else {
 	    side_set = new Ioss::SideSet(this, side_set_name);
+      side_set->property_add(Ioss::Property("id", id));
 	    get_region()->add((Ioss::SideSet*)side_set);
-	    side_set->property_add(Ioss::Property("id", id));
 
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
 	    get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
@@ -1961,12 +1957,12 @@ namespace Iopx {
 								  side_topo->name(),
 								  elem_topo->name(),
 								  my_side_count);
+    assert(side_block != NULL);
+    side_block->property_add(Ioss::Property("id", id));
 		side_set->add(side_block);
 
 		// Note that all sideblocks within a specific
 		// sideset might have the same id.
-		assert(side_block != NULL);
-		side_block->property_add(Ioss::Property("id", id));
 
 		// If splitting by element block, need to set the
 		// element block member on this side block.
@@ -2002,7 +1998,6 @@ namespace Iopx {
 		get_region()->add_alias(side_block);
 
 		if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
-		    && (number_distribution_factors > 0 || isParallel)
 		    && side_set_name != "universal_sideset") {
 		  std::string storage = "Real[";
 		  storage += Ioss::Utils::to_string(side_topo->number_nodes());
@@ -2259,7 +2254,7 @@ namespace Iopx {
 	get_reduction_field(EX_GLOBAL, field, get_region(), data);
       } else {
 	std::ostringstream errmsg;
-	errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
+	errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
 	IOSS_ERROR(errmsg);
       }
       return num_to_get;
@@ -2758,7 +2753,7 @@ namespace Iopx {
 	    }
 	  } else {
 	    std::ostringstream errmsg;
-	    errmsg << "Invalid commset type " << type;
+	    errmsg << "ERROR: Invalid commset type " << type;
 	    IOSS_ERROR(errmsg);
 	  }
 
@@ -2782,7 +2777,7 @@ namespace Iopx {
       int64_t entity_count = fb->get_property("entity_count").get_int();
       if (num_to_get != entity_count) {
 	std::ostringstream errmsg;
-	errmsg << "Partial field input not yet implemented for side blocks";
+	errmsg << "ERROR: Partial field input not yet implemented for side blocks";
 	IOSS_ERROR(errmsg);
       }
 
@@ -3595,7 +3590,7 @@ namespace Iopx {
 	;
       } else {
 	std::ostringstream errmsg;
-	errmsg << "The variable named '" << field.get_name()
+	errmsg << "ERROR: The variable named '" << field.get_name()
 	       << "' is of the wrong type. A region variable must be of type"
 	       << " TRANSIENT or REDUCTION.\n"
 	       << "This is probably an internal error; please notify gdsjaar@sandia.gov";
@@ -5852,6 +5847,13 @@ namespace Iopx {
 	  std::vector<Ioss::Field>::const_iterator IF;
 	  for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
 	    Ioss::Field field = *IF;
+	    if (block->field_exists(field.get_name())) {
+	      std::ostringstream errmsg;
+	      errmsg << "ERROR: In block '" << block->name() << "', attribute '" << field.get_name()
+	                            << "' is defined multiple times which is not allowed.\n";
+	      IOSS_ERROR(errmsg);
+	    }
+
 	    block->field_add(field);
 	    const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
 	    tmp_field.set_index(offset);

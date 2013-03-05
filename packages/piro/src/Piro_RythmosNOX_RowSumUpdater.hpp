@@ -51,6 +51,8 @@
 #include "NOX_Thyra.H"
 #include "NOX_Solver_Generic.H"
 
+#include "Thyra_RowStatLinearOpBase.hpp"
+
 #include "Teuchos_RCP.hpp"
 
 namespace Piro {
@@ -172,6 +174,7 @@ void RythmosNOXRowSumUpdaterObserver<Scalar>::observeStartTimeStep(
     )
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
   //std::cout << "ROGER - computing a new RYTHMOS scaling" << std::endl;

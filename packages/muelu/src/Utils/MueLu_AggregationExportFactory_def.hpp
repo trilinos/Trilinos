@@ -75,6 +75,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null, "Generating factory for number of dofs per node");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null, "Generating factory for amalgamation");
 
+    validParamList->set< std::string >           ("Output filename", "", "Output filename template. default = aggs_level%LEVELID_proc%PROCID.out. %LEVELID will be replaced by the multigrid level id. %PROCID will be replaced by the processor id.");
+
     return validParamList;
   }
 
@@ -120,7 +122,9 @@ namespace MueLu {
     AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
 
     // write to file
-    std::string outFile = outputFileName_;
+    //std::string outFile = outputFileName_;
+    const ParameterList & pL = GetParameterList();
+    std::string outFile = pL.get<std::string> ("Output filename");
     std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();
     outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
     std::stringstream streamProc; streamProc << comm->getRank();

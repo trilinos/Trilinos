@@ -58,7 +58,7 @@ using namespace std;
 #include "netcdf_config_parser.h"
 
 #include <mpi.h>
-#include "io_timer.h"
+#include "Trios_timer.h"
 
 
 extern struct netcdf_config nc_cfg;
@@ -85,58 +85,6 @@ struct start_offset_length_service {
 typedef struct start_offset_length_service start_offset_length_service_t;
 
 
-/*
- * This is a special version of calc_offset_length() for the case where
- * there are 4 dimensions and highest_contig_dim==3.
- */
-static void calc_offset_length_4dims(const size_t    *dimlens,
-                                     const int        highest_contig_dim,
-                                     start_offset_length_service_t *sols,
-                                     int             *ol_index,
-                                     const nc_size_t *start,
-                                     const nc_size_t *count,
-                                     const size_t     datatype_size)
-{
-    nc_size_t file_offset=0;
-    nc_size_t lower_dim_products[4];
-
-
-    lower_dim_products[3]=1;
-    lower_dim_products[2]=dimlens[3];
-    lower_dim_products[1]=dimlens[2]*dimlens[3];
-    lower_dim_products[0]=dimlens[1]*dimlens[2]*dimlens[3];
-
-
-    for (int i=0;i<count[0];i++) {
-        for (int j=0;j<count[1];j++) {
-            for (int k=0;k<count[2];k++) {
-                // populate the sols for this subchunk
-                sols[*ol_index].start[0]=start[0]+i;
-                sols[*ol_index].start[1]=start[1]+j;
-                sols[*ol_index].start[2]=start[2]+k;
-                sols[*ol_index].start[3]=start[3];
-
-                sols[*ol_index].count[0]=1;
-                sols[*ol_index].count[1]=1;
-                sols[*ol_index].count[2]=1;
-                sols[*ol_index].count[3]=count[3];
-
-                sols[*ol_index].ndims=4;
-                sols[*ol_index].offset=(i*lower_dim_products[0]) +
-                                       (j*lower_dim_products[1]) +
-                                       (k*lower_dim_products[2]);
-                sols[*ol_index].length=count[3]*datatype_size;
-                sols[*ol_index].datatype_size=datatype_size;
-                (*ol_index)++;
-            }
-        }
-    }
-//    log_debug(LOG_ALL, "ndims=%d; start[0,1,2,3]=%d,%d,%d,%d; count[0,1,2,3]=%d,%d,%d,%d; highest_contig_dim=%d, "
-//            "current_dim=%d, file_offset=%d, current_start[0,1,2,3]=%d,%d,%d,%d; ol_index=%d",
-//            ndims, start[0], start[1], start[2], start[3], count[0], count[1], count[2], count[3], highest_contig_dim,
-//            current_dim, file_offset, current_start[0], current_start[1], current_start[2], current_start[3], *ol_index);
-}
-
 static void calc_offset_length(const int        ndims,
                                const size_t    *dimlens,
                                const int        highest_contig_dim,
@@ -155,7 +103,7 @@ static void calc_offset_length(const int        ndims,
 //            current_dim, file_offset, current_start[0], current_start[1], current_start[2], current_start[3], *ol_index);
     if (current_dim < highest_contig_dim) {
         current_start[current_dim]=start[current_dim];
-        for (int i=0;i<count[current_dim];i++) {
+        for (uint64_t i=0;i<count[current_dim];i++) {
             nc_size_t my_offset_adder = current_start[current_dim];
             for (int j=current_dim+1;j<ndims;j++) {
                 my_offset_adder *= dimlens[j];
@@ -516,8 +464,8 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
 
     log_debug(netcdf_debug_level,"ndims(%ld) highest_contig_dimension(%d) num_contig_subchunks(%d)", chunk->ndims, highest_contig_dimension, num_contig_subchunks);
 
-    double callTime;
-    Start_Timer(callTime);
+    trios_declare_timer(callTime);
+    trios_start_timer(callTime);
     current_start=(nc_size_t *)calloc(chunk->ndims, sizeof(nc_size_t));
     calc_offset_length(chunk->ndims,
                        dimlens,
@@ -530,7 +478,7 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
                        chunk->start,
                        chunk->count,
                        chunk->datatype_size);
-    Stop_Timer("1st calc_offset_length", callTime);
+    trios_stop_timer("1st calc_offset_length", callTime);
 //    for (int i=0;i<num_contig_subchunks;i++) {
 //        log_debug(LOG_ALL,
 //                "ncid(%d) varid(%d) start[%04ld,%04ld,%04ld,%04ld] count[%04ld,%04ld,%04ld,%04ld] file_offset(%07ld) length(%03ld)",
@@ -540,11 +488,11 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
 //                sols[i].offset, sols[i].length);
 //    }
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     assign_service(dim_product, bytes_per_server, sols, num_contig_subchunks);
-    Stop_Timer("assign_service", callTime);
+    trios_stop_timer("assign_service", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     map=consolidate_subchunks(num_contig_subchunks,
                               sols,
                               chunk->ndims,
@@ -552,8 +500,8 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
                               highest_contig_dimension,
                               chunk->start,
                               chunk->count);
-    Stop_Timer("consolidate_subchunks", callTime);
-    Start_Timer(callTime);
+    trios_stop_timer("consolidate_subchunks", callTime);
+    trios_start_timer(callTime);
     for (int i=0;i<num_contig_subchunks;i++) {
         log_debug(netcdf_debug_level,
                 "ncid(%d) varid(%d) start[%04ld,%04ld,%04ld,%04ld] count[%04ld,%04ld,%04ld,%04ld] file_offset(%07ld) length(%03ld) service(%02d)",
@@ -562,9 +510,9 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
                 sols[i].count[0], sols[i].count[1], sols[i].count[2], sols[i].count[3],
                 sols[i].offset, sols[i].length, sols[i].service);
     }
-    Stop_Timer("print consolidated subchunks", callTime);
+    trios_stop_timer("print consolidated subchunks", callTime);
 
-    Start_Timer(callTime);
+    trios_start_timer(callTime);
     map_iter = map->begin();
     for (;map_iter != map->end(); map_iter++) {
         consolidated_subchunks_vector_iterator_t vector_iter = (*map_iter).second->begin();
@@ -579,7 +527,7 @@ consolidated_subchunks_map_t *netcdf_create_subchunks(const superchunk_t *chunk,
                     (*vector_iter)->offset_into_superchunk);
         }
     }
-    Stop_Timer("print final subchunks", callTime);
+    trios_stop_timer("print final subchunks", callTime);
 
 cleanup:
     if (sols)          free(sols);

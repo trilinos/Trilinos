@@ -34,6 +34,7 @@
 #define IOSS_Ioss_ElementBlock_h
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_BoundingBox.h>
 #include <Ioss_Property.h>
 #include <Ioss_EntityBlock.h>
 #include <string>
@@ -59,6 +60,7 @@ namespace Ioss {
     Property get_implicit_property(const std::string& name) const;
 
     void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
+    AxisAlignedBoundingBox get_bounding_box() const;
 
   protected:
     int64_t internal_get_field_data(const Field& field,

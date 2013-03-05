@@ -193,9 +193,14 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   #
 
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME_IN})
+  
+  SET(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
+     CACHE BOOL
+     "If set to true, then strong warnings for package ${PACKAGE_NAME_IN} will be disabled."
+     )
 
   # Set up the compile flags for the package
-  TRIBITS_SETUP_COMPILER_FLASGS()
+  TRIBITS_SETUP_COMPILER_FLAGS(${PACKAGE_NAME_IN})
 
   # Set up circular reference detection test failure
   IF (PARSE_DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
