@@ -80,3 +80,6 @@
 
 /* Define if MKL is enabled */
 #cmakedefine HAVE_STOKHOS_MKL
+
+/* Define if OpenMP is enabled */
+#cmakedefine HAVE_STOKHOS_OPENMP

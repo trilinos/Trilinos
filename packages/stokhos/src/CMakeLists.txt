@@ -8,6 +8,19 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
 
+# OpenMP support -- Add our own option to turn it off
+# without turning it off globally
+SET(Stokhos_ENABLE_OpenMP_Default OFF)
+IF(Trilinos_ENABLE_OpenMP)
+  SET(Stokhos_ENABLE_OpenMP_Default ON)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Stokhos_ENABLE_OpenMP
+  HAVE_STOKHOS_OPENMP
+  "Enable OpenMP support in Stokhos."
+  ${Stokhos_ENABLE_OpenMP_Default}
+  )
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
