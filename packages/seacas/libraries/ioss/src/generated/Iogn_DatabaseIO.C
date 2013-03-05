@@ -75,6 +75,15 @@ namespace {
       fill_transient_data(entity, field.raw_storage()->component_count(), (double*)data, (int64_t)0);
     }
   }
+
+  void fill_constant_data(const Ioss::Field &field, void *data, double value) {
+    double *rdata = (double*)data;
+    size_t count = field.raw_count();
+    size_t component_count = field.raw_storage()->component_count();
+    for (size_t i=0; i < count*component_count; i++) {
+      rdata[i] = value;
+    }
+  }
 }
 namespace Iogn {
 
@@ -104,7 +113,7 @@ namespace Iogn {
         m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
         elementCount(0), nodeBlockCount(0),
         elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        nodeMap("node"), elemMap("elem")
+        nodeMap("node"), elemMap("elem"), m_useVariableDf(true)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -112,6 +121,9 @@ namespace Iogn {
       std::ostringstream errmsg;
       errmsg << "Generated mesh option is only valid for input mesh.";
       IOSS_ERROR(errmsg);
+    }
+    if (props.exists("USE_CONSTANT_DF")) {
+      m_useVariableDf = false;
     }
   }
 
@@ -347,7 +359,11 @@ namespace Iogn {
       }
 
       else if (field.get_name() == "distribution_factors") {
-        fill_transient_data(ef_blk, field, data);
+	if (m_useVariableDf) {
+	  fill_transient_data(ef_blk, field, data);
+	} else {
+	  fill_constant_data(field, data, 1.0);
+	}
       }
 
       else {
@@ -385,7 +401,11 @@ namespace Iogn {
           std::copy(nodes.begin(), nodes.end(), ids);
         }
       } else if (field.get_name() == "distribution_factors") {
-        fill_transient_data(ns, field, data);
+	if (m_useVariableDf) {
+	  fill_transient_data(ns, field, data);
+	} else {
+	  fill_constant_data(field, data, 1.0);
+	}
       } else {
         num_to_get = Ioss::Utils::field_warning(ns, field, "input");
       }

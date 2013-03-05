@@ -196,6 +196,8 @@ namespace Iogn {
     // if nonsequential
     mutable Ioss::Map nodeMap;
     mutable Ioss::Map elemMap;
+
+    bool m_useVariableDf;
   };
 }
 #endif // IOSS_Iogn_DatabaseIO_h
