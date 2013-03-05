@@ -140,11 +140,19 @@ namespace Iogn {
 
   void DatabaseIO::read_meta_data()
   {
-    if(m_generatedMesh == NULL)
-    {
-      m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size(), util().parallel_rank());
+    if(m_generatedMesh == NULL) {
+      if (get_filename() == "external") {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: (generated mesh) 'external' specified for mesh, but "
+       << "getGeneratedMesh was not called to set the external mesh.\n";
+	IOSS_ERROR(errmsg);
+      } else {
+	m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size(), util().parallel_rank());
+      }
     }
 
+    assert(m_generatedMesh != NULL);
+    
     spatialDimension = 3;
     nodeCount = m_generatedMesh->node_count_proc();
     elementCount = m_generatedMesh->element_count_proc();
