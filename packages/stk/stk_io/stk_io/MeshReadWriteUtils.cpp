@@ -687,14 +687,14 @@ namespace stk {
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
         int64_t zero = 0;
-        process_nodeblocks(*this, zero);
         process_elementblocks(*region, bulk_data(), zero);
+        process_nodeblocks(*this, zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       } else {
         int zero = 0;
-        process_nodeblocks(*this, zero);
         process_elementblocks(*region, bulk_data(), zero);
+        process_nodeblocks(*this, zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       }
