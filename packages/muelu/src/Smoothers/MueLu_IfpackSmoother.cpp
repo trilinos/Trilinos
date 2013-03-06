@@ -101,13 +101,6 @@ namespace MueLu {
         lambdaMax = paramList_.get<double>("chebyshev: max eigenvalue");
         this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
       }
-//      Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
-//      if (maxEigenValue == -1.0) {
-//        maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
-//        paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
-//
-//        GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
-//      }
     }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
@@ -117,7 +110,6 @@ namespace MueLu {
     prec_->Compute();
 
     if (type_ == "Chebyshev" && lambdaMax == -1.0) {
-      typedef Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> MatrixType;
       Teuchos::RCP<Ifpack_Chebyshev> chebyPrec;
       chebyPrec = rcp_dynamic_cast<Ifpack_Chebyshev>(prec_);
       if (chebyPrec != Teuchos::null) {
