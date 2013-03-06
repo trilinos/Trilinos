@@ -52,7 +52,6 @@
 #include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
-#include "RTOpPack_TOpAssignScalar.hpp"
 #include "RTOpPack_TOpAssignVectors.hpp"
 #include "RTOpPack_TOpAXPY.hpp"
 #include "RTOpPack_TOpLinearCombination.hpp"
@@ -185,13 +184,6 @@ void Thyra::scaleUpdate( const VectorBase<Scalar>& a,
 template<class Scalar>
 void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha )
 {
-  /*
-  using Teuchos::tuple; using Teuchos::null;
-  RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  applyOp<Scalar>(assign_scalar_op,
-    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
-    tuple(V), null);
-  */
   V->assign(alpha);
 }
 
