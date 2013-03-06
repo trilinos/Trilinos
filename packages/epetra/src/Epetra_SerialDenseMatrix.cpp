@@ -480,6 +480,12 @@ int  Epetra_SerialDenseMatrix::Multiply (bool transA,
   else {
     err = y.Multiply('N', 'N', scalar1, *this, x, scalar0);
   }
+  // FIXME (mfh 06 Mar 2013) Why aren't we returning err instead of 0?
+  // In any case, I'm going to silence the unused value compiler
+  // warning for now.  I'm not changing the return value because I
+  // don't want to break any downstream code that depends on this
+  // method always returning 0.
+  (void) err;
 
   return(0);
 }

@@ -451,7 +451,7 @@ public:
    * checked at runtime. When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
-   * \post [this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
    * \post [<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    */
   inline iterator begin() const;
@@ -1185,7 +1185,7 @@ template<class T1, class T2>
 bool operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief Returns difference of two ArrayRCP object</tt>.
+/** \brief Returns difference of two ArrayRCP objects.
  *
  * \relates ArrayRCP
  */

@@ -298,7 +298,7 @@ public:
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
    * <b>Postconditions:</b><ul>
-   * <li>[this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
+   * <li>[<tt>this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */

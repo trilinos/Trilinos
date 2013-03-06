@@ -229,9 +229,10 @@ namespace Tpetra {
       "rows and columns.");
     Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
     if (CM == INSERT || CM == REPLACE) {
-      const size_t numIDsToWrite = 
-        numSameIDs + permuteToLIDs.size() + remoteLIDs.size();
-      if (numIDsToWrite == this->getMap()->getNodeNumElements()) {
+      const size_t numIDsToWrite = numSameIDs + 
+	as<size_t> (permuteToLIDs.size ()) + 
+	as<size_t> (remoteLIDs.size ());
+      if (numIDsToWrite == this->getMap ()->getNodeNumElements ()) {
         // We're overwriting all of our local data in the destination
         // object, so a write-only view suffices.
         //

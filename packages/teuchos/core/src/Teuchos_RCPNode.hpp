@@ -122,6 +122,10 @@ public:
       return "";
       // 2009/06/30: rabartl: The above logic avoid a warning from the Intel
       // 10.1 compiler (remark #111) about the statement being unreachable.
+      //
+      // mfh (06 Mar 2013) This triggers a warning in Clang 3.2 with
+      // "-Weverything", because it's an unreachable statement.  Alas,
+      // we can't please _all_ the compilers equally...
     }
 };
 
@@ -653,7 +657,7 @@ private:
 
 namespace {
 // This static variable is delcared before all other static variables that
-// depend on RCP or other classes. Therefore, this static varaible will be
+// depend on RCP or other classes. Therefore, this static variable will be
 // deleted *after* all of these other static variables that depend on RCP or
 // created classes go away!  This ensures that the node tracing machinery is
 // setup and torn down correctly (this is the same trick used by the standard

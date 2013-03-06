@@ -757,6 +757,7 @@ namespace Tpetra {
            size_t numPackets,
            const ArrayRCP<Packet>& imports)
   {
+    using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
@@ -769,6 +770,7 @@ namespace Tpetra {
     using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
     using std::endl;
+    typedef Array<size_t>::size_type size_type;
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -838,7 +840,8 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
+    const size_type actualNumReceives = as<size_type> (numReceives_) + 
+      as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -848,7 +851,7 @@ namespace Tpetra {
     // with a receive).
     {
       size_t curBufferOffset = 0;
-      for (size_t i = 0; i < actualNumReceives; ++i) {
+      for (size_type i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive):
@@ -1024,6 +1027,7 @@ namespace Tpetra {
            const ArrayRCP<Packet>& imports,
            const ArrayView<size_t>& numImportPacketsPerLID)
   {
+    using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
@@ -1033,6 +1037,7 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     using std::endl;
 #endif // HAVE_TEUCHOS_DEBUG
+    typedef Array<size_t>::size_type size_type;
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -1093,7 +1098,8 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
+    const size_type actualNumReceives = as<size_type> (numReceives_) + 
+      as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -1104,7 +1110,7 @@ namespace Tpetra {
     {
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
-      for (size_t i = 0; i < actualNumReceives; ++i) {
+      for (size_type i = 0; i < actualNumReceives; ++i) {
         size_t totalPacketsFrom_i = 0;
         for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
