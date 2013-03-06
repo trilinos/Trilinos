@@ -211,11 +211,14 @@ void Thyra::set_ele( Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v 
 template<class Scalar>
 void Thyra::put_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_lhs )
 {
+/*
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
   applyOp<Scalar>(assign_scalar_op,
     ArrayView<Ptr<const VectorBase<Scalar> > >(null),
     tuple(v_lhs), null );
+*/
+  v_lhs->assign(alpha);
 }
 
 

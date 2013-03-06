@@ -185,11 +185,14 @@ void Thyra::scaleUpdate( const VectorBase<Scalar>& a,
 template<class Scalar>
 void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha )
 {
+  /*
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
   applyOp<Scalar>(assign_scalar_op,
     ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
     tuple(V), null);
+  */
+  V->assign(alpha);
 }
 
 
