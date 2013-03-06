@@ -146,7 +146,7 @@ namespace Tpetra {
     ///
     /// The number of IDs that are identical between the source and
     /// target Maps, up to the first different ID.
-    inline size_t getNumSameIDs() const;
+    size_t getNumSameIDs() const;
 
     /// \brief Number of IDs to permute but not to communicate.
     ///
@@ -154,40 +154,40 @@ namespace Tpetra {
     /// not part of the first getNumSameIDs() entries.  The Import
     /// will permute these entries locally (without distributed-memory
     /// communication).
-    inline size_t getNumPermuteIDs() const;
+    size_t getNumPermuteIDs() const;
 
     //! List of local IDs in the source Map that are permuted.
-    inline ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
+    ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
     //! List of local IDs in the target Map that are permuted.
-    inline ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
+    ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
-    inline size_t getNumRemoteIDs() const;
+    size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map to receive from other processes.
-    inline ArrayView<const LocalOrdinal> getRemoteLIDs() const;
+    ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
     //! Number of entries that must be sent by the calling process to other processes.
-    inline size_t getNumExportIDs() const;
+    size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other processes.
-    inline ArrayView<const LocalOrdinal> getExportLIDs() const;
+    ArrayView<const LocalOrdinal> getExportLIDs() const;
 
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
     /// sent to process <tt>getExportImageIDs()[i]</tt>.
-    inline ArrayView<const int> getExportImageIDs() const;
+    ArrayView<const int> getExportImageIDs() const;
 
     //! The Source Map used to construct this Import object.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
 
     //! The Target Map used to construct this Import object.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getTargetMap() const;
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getTargetMap() const;
 
     //! The Distributor that this Import object uses to move data.
-    inline Distributor & getDistributor() const;
+    Distributor & getDistributor() const;
 
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
