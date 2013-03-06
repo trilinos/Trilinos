@@ -466,6 +466,15 @@ void send(
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+//! Variant of send() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename Packet>
+void 
+send (const Packet sendBuffer[],
+      const Ordinal count, 
+      const int destRank,
+      const int tag,
+      const Comm<Ordinal>& comm);
+
 /** \brief Synchronously send objects that use values semantics to another process.
  *
  * \relates Comm
@@ -654,6 +663,13 @@ RCP<CommRequest<Ordinal> > ireceive(
   const int sourceRank
   );
 
+//! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> > 
+ireceive (const ArrayRCP<Packet> &recvBuffer,
+	  const int sourceRank,
+	  const int tag,
+	  const Comm<Ordinal>& comm);
 
 /// \brief Receive one object (that uses values semantics) from another process.
 /// \relates Comm
@@ -1846,6 +1862,23 @@ void Teuchos::send(
     charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,destRank
     );
+}
+
+template<typename Ordinal, typename Packet>
+void 
+Teuchos::send (const Packet sendBuffer[],
+	       const Ordinal count,
+	       const int destRank,
+	       const int tag,
+	       const Comm<Ordinal>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: send<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet> charSendBuffer (count, sendBuffer);
+  comm.send (charSendBuffer.getBytes (), charSendBuffer.getCharBuffer (), destRank, tag);
 }
 
 template<typename Ordinal, typename Packet>

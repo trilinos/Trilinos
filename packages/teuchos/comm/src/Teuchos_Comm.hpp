@@ -479,6 +479,13 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
+  //! Variant of send that takes a tag.
+  virtual void 
+  send (const Ordinal bytes, 
+	const char sendBuffer[], 
+	const int destRank, 
+	const int tag) const = 0;
+
   /** \brief Always blocking send of data from this process to another process.
    *
    * This routine blocks until the matching receive posts.  After it
@@ -588,6 +595,11 @@ public:
     const int sourceRank
     ) const = 0;
 
+  //! Variant of ireceive that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  ireceive (const ArrayView<char> &recvBuffer,
+	    const int sourceRank,
+	    const int tag) const = 0;
 
   /** \brief Wait on a set of communication requests.
    *

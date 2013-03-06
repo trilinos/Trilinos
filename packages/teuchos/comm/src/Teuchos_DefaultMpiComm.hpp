@@ -446,7 +446,7 @@ public:
     ,const Ordinal recvCounts[], char myGlobalReducts[]
     ) const;
   /** \brief . */
-        virtual void scan(
+  virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const;
@@ -454,6 +454,12 @@ public:
   virtual void send(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
+  /** \brief . */
+  virtual void 
+  send (const Ordinal bytes, 
+	const char sendBuffer[], 
+	const int destRank, 
+	const int tag) const;
   /** \brief . */
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
@@ -477,6 +483,11 @@ public:
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
+  /** \brief . */
+  virtual RCP<CommRequest<Ordinal> > 
+  ireceive (const ArrayView<char> &Buffer, 
+	    const int sourceRank, 
+	    const int tag) const;
   /** \brief . */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest<Ordinal> > > &requests
@@ -962,6 +973,22 @@ MpiComm<Ordinal>::send (const Ordinal bytes,
 
 template<typename Ordinal>
 void
+MpiComm<Ordinal>::send (const Ordinal bytes,
+                        const char sendBuffer[],
+                        const int destRank,
+			const int tag) const
+{
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::send(...)" );
+  const int err = MPI_Send (const_cast<char*> (sendBuffer), bytes, MPI_CHAR,
+                            destRank, tag, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::send: MPI_Send() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+}
+
+
+template<typename Ordinal>
+void
 MpiComm<Ordinal>::ssend (const Ordinal bytes,
                          const char sendBuffer[],
                          const int destRank) const
@@ -1085,6 +1112,29 @@ MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
   return mpiCommRequest<Ordinal> (rawMpiRequest, recvBuffer.size());
 }
 
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> >
+MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
+                            const int sourceRank,
+			    const int tag) const
+{
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::ireceive(...)" );
+
+  // A negative source rank indicates MPI_ANY_SOURCE, namely that we
+  // will take an incoming message from any process, as long as the
+  // tag matches.
+  const int theSrcRank = (sourceRank < 0) ? MPI_ANY_SOURCE : sourceRank;
+
+  MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
+  const int err =
+    MPI_Irecv (const_cast<char*> (recvBuffer.getRawPtr ()), recvBuffer.size (),
+               MPI_CHAR, theSrcRank, tag, *rawMpiComm_, &rawMpiRequest);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+
+  return mpiCommRequest<Ordinal> (rawMpiRequest, recvBuffer.size ());
+}
 
 namespace {
   // Called by both MpiComm::waitAll() implementations.

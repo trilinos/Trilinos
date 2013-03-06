@@ -123,6 +123,12 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
+  virtual void 
+  send (const Ordinal bytes, 
+	const char sendBuffer[], 
+	const int destRank, 
+	const int tag) const;
+  /** \brief . */
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
@@ -145,6 +151,11 @@ public:
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
+  /** \brief . */
+  virtual RCP<CommRequest<Ordinal> > 
+  ireceive (const ArrayView<char> &Buffer,
+	    const int sourceRank,
+	    const int tag) const;
   /** \brief . */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest<Ordinal> > > &requests
@@ -309,6 +320,19 @@ void SerialComm<Ordinal>::send(
     );
 }
 
+template<typename Ordinal>
+void SerialComm<Ordinal>::
+send (const Ordinal /*bytes*/, 
+      const char []/*sendBuffer*/, 
+      const int /*destRank*/, 
+      const int /*tag*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::send(...): Error, you can not call send(...) when you"
+    " only have one process!"
+    );
+}
 
 template<typename Ordinal>
 void SerialComm<Ordinal>::ssend(
@@ -368,6 +392,18 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::ireceive(
   const ArrayView<char> &/*Buffer*/,
   const int /*sourceRank*/
   ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> > 
+SerialComm<Ordinal>::
+ireceive (const ArrayView<char> &/*Buffer*/,
+	  const int /*sourceRank*/,
+	  const int /*tag*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;
