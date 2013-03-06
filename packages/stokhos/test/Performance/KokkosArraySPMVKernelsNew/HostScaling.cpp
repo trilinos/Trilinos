@@ -67,7 +67,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
       unit_test::test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(var_degree , nGrid , nIter , symmetric );
   else if (sg_alg == ORIG_MAT_FREE)
     perf =
-      unit_test::test_original_matrix_free_vec<Scalar,Device>( 
+      unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
 	var_degree , nGrid , nIter , true , symmetric );
 
   KokkosArray::Host::finalize();

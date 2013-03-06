@@ -87,7 +87,8 @@ template<>
 class Multiply<
   CrsMatrix< float , KokkosArray::Cuda > ,
   KokkosArray::View< float[] , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > >
+  KokkosArray::View< float[] , KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                        device_type ;
@@ -129,7 +130,8 @@ template<>
 class Multiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
   KokkosArray::View< double[] , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > >
+  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                         device_type ;
@@ -171,7 +173,8 @@ template<>
 class MMultiply<
   CrsMatrix< float , KokkosArray::Cuda > ,
   KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
-  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Cuda > >
+  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                           device_type ;
@@ -239,7 +242,8 @@ template<>
 class MMultiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
   KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
-  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Cuda > >
+  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                           device_type ;
@@ -307,7 +311,8 @@ template<>
 class MMultiply<
   CrsMatrix< float , KokkosArray::Cuda > ,
   KokkosArray::View< float[] , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > >
+  KokkosArray::View< float[] , KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                         device_type ;
@@ -370,7 +375,8 @@ template<>
 class MMultiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
   KokkosArray::View< double[] , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > >
+  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  DefaultSparseMatOps >
 {
 public:
   typedef KokkosArray::Cuda                         device_type ;

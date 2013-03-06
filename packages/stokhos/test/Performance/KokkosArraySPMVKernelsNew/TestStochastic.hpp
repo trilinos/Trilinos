@@ -220,7 +220,7 @@ test_product_tensor_matrix(
   return perf ;
 }
 
-template< typename ScalarType , class Device >
+template< typename ScalarType , class Device , class SparseMatOps >
 std::vector<double>
 test_original_matrix_free_vec(
   const std::vector<int> & var_degree ,
@@ -306,7 +306,7 @@ test_original_matrix_free_vec(
     KokkosArray::deep_copy( x[block] , hx );
   }
   
-
+  SparseMatOps smo;
   KokkosArray::Impl::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
@@ -332,7 +332,7 @@ test_original_matrix_free_vec(
 	  yy[jdx] = tmp[j];
 	  jdx++;
 	}
-        Stokhos::multiply( matrix[k] , xx , yy, test_block );
+        Stokhos::multiply( matrix[k] , xx , yy, test_block ,smo );
         n_apply += nj;
 	jdx = 0;
 	for (typename Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
@@ -370,7 +370,7 @@ test_original_matrix_free_vec(
   return perf;
 }
 
-template< class Scalar, class Device >
+template< class Scalar, class Device , class SparseMatOps >
 void performance_test_driver_poly( const int pdeg ,
 				   const int minvar ,
 				   const int maxvar ,
@@ -422,7 +422,7 @@ void performance_test_driver_poly( const int pdeg ,
     }
 
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_vec<Scalar,Device>( 
+      test_original_matrix_free_vec<Scalar,Device,SparseMatOps>( 
     	var_degree , nGrid , nIter , test_block , symmetric );
 
     std::cout << nGrid << " , "

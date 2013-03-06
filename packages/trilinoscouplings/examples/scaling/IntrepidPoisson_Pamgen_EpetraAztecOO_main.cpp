@@ -1,4 +1,4 @@
-/** \file  example_IntrepidPoisson_Pamgen_Tpetra.cpp
+/** \file  example_IntrepidPoisson_Pamgen_EpetraAztecOO.cpp
     \brief Example setup of a discretization of a Poisson equation on
            a hexahedral mesh using nodal (Hgrad) elements.  The
            system is assembled but not solved.
@@ -32,7 +32,8 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson,
             D. Hensinger, C. Siefert.  Converted to Tpetra by
             I. Kalashnikova (ikalash@sandia.gov).  Modified by Mark
-            Hoemmen (mhoemme@sandia.gov).
+            Hoemmen (mhoemme@sandia.gov) and back-ported to Epetra for
+            a fair comparison with Tpetra.
 
     \remark Use the "--help" command-line argument for usage info.
 
@@ -62,49 +63,65 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "Epetra_Comm.h"
+#ifdef EPETRA_MPI
+#  include "mpi.h"
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // EPETRA_MPI
+
+#include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+#include "TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.hpp"
+
+// ML
+#include "ml_include.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 // MueLu includes
-#include "MueLu_CreateTpetraPreconditioner.hpp"
+#include "MueLu.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_EpetraOperator.hpp"
 
 int
 main (int argc, char *argv[])
 {
   using namespace TrilinosCouplings; // Yes, this means I'm lazy.
 
-  using TpetraIntrepidPoissonExample::exactResidualNorm;
-  using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
-  using TpetraIntrepidPoissonExample::solveWithBelos;
+  using EpetraIntrepidPoissonExample::exactResidualNorm;
+  using EpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
+  using EpetraIntrepidPoissonExample::solveWithAztecOO;
   using IntrepidPoissonExample::makeMeshInput;
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
-  using Tpetra::DefaultPlatform;
-  using Teuchos::Comm;
+  //using Tpetra::DefaultPlatform;
+  //using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_implicit_cast;
   using Teuchos::rcpFromRef;
   using Teuchos::getFancyOStream;
   using Teuchos::FancyOStream;
   using std::endl;
   // Pull in typedefs from the example's namespace.
-  typedef TpetraIntrepidPoissonExample::ST ST;
-  typedef TpetraIntrepidPoissonExample::LO LO;
-  typedef TpetraIntrepidPoissonExample::GO GO;
-  typedef TpetraIntrepidPoissonExample::Node Node;
+  typedef EpetraIntrepidPoissonExample::ST ST;
+  //typedef EpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
   typedef Teuchos::ScalarTraits<MT> STM;
-  typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
-  typedef TpetraIntrepidPoissonExample::vector_type vector_type;
-  typedef TpetraIntrepidPoissonExample::operator_type operator_type;
+  typedef EpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
+  typedef EpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef EpetraIntrepidPoissonExample::operator_type operator_type;
 
   bool success = true;
   try {
+
+  Epetra_Object::SetTracebackMode(2);
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -112,9 +129,12 @@ main (int argc, char *argv[])
   //const int numProcs = mpiSession.getNProc ();
 
   // Get the default communicator and Kokkos Node instance
-  RCP<const Comm<int> > comm =
-    DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+  RCP<Epetra_Comm> comm;
+#ifdef EPETRA_MPI
+  comm = rcp_implicit_cast<Epetra_Comm> (rcp (new Epetra_MpiComm (MPI_COMM_WORLD)));
+#else
+  comm = rcp_implicit_cast<Epetra_Comm> (rcp (new Epetra_SerialComm));
+#endif // EPETRA_MPI
 
   // Did the user specify --help at the command line to print help
   // with command-line arguments?
@@ -183,11 +203,12 @@ main (int argc, char *argv[])
   {
   TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
 
+  // Construct linear system
   RCP<sparse_matrix_type> A;
   RCP<vector_type> B, X_exact, X;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-    makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+    makeMatrixAndRightHandSide (A, B, X_exact, X, comm, meshInput,
 				out, err, verbose, debug);
   }
 
@@ -205,13 +226,39 @@ main (int argc, char *argv[])
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
-    if (prec_type == "MueLu") {
-      if (inputList.isSublist("MueLu")) {
-        ParameterList mueluParams = inputList.sublist("MueLu");
-        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
-      } else {
-        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+    if (prec_type == "ML") {
+      ParameterList mlParams;
+      if (inputList.isSublist("ML"))
+	mlParams = inputList.sublist("ML");
+      else {
+	ML_Epetra::SetDefaults("SA", mlParams);
+	mlParams.set("ML output", 0);
       }
+      M = rcp(new ML_Epetra::MultiLevelPreconditioner(*A, mlParams));
+    }
+
+    else if (prec_type == "MueLu") {
+      // Turns a Epetra_CrsMatrix into a MueLu::Matrix
+      RCP<Xpetra::CrsMatrix<ST> > mueluA_ = 
+	rcp(new Xpetra::EpetraCrsMatrix(A));
+      RCP<Xpetra::Matrix <ST> > mueluA  = 
+	rcp(new Xpetra::CrsMatrixWrap<ST>(mueluA_));
+      
+      // Multigrid Hierarchy
+      ParameterList mueluParams;
+      if (inputList.isSublist("MueLu"))
+	mueluParams = inputList.sublist("MueLu");
+      MueLu::ParameterListInterpreter<ST> mueLuFactory(mueluParams);
+      RCP<MueLu::Hierarchy<ST> > H = 
+	mueLuFactory.CreateHierarchy();
+      H->setVerbLevel(Teuchos::VERB_HIGH);
+      H->GetLevel(0)->Set("A", mueluA);
+      
+      // Multigrid setup phase
+      H->Setup();
+
+      // Wrap MueLu Hierarchy as a Tpetra::Operator
+      M = rcp(new MueLu::EpetraOperator(H));
     }
   }
 
@@ -222,14 +269,15 @@ main (int argc, char *argv[])
   const int maxNumIters = inputList.get("Maximum Iterations", 200);
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-    solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
-		    X, A, B, Teuchos::null, M);
+    solveWithAztecOO (converged, numItersPerformed, tol, maxNumIters,
+		      X, A, B, M);
   }
 
   // Compute ||X-X_exact||_2
-  MT norm_x = X_exact->norm2();
-  X_exact->update(-1.0, *X, 1.0);
-  MT norm_error = X_exact->norm2();
+  MT norm_x, norm_error;
+  X_exact->Norm2(&norm_x);
+  X_exact->Update(-1.0, *X, 1.0);
+  X_exact->Norm2(&norm_error);
   *out << endl
        << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
        << endl;
@@ -242,7 +290,7 @@ main (int argc, char *argv[])
   // reportParams->set ("writeGlobalStats", true);
   // Teuchos::TimeMonitor::report (*out, reportParams);
   Teuchos::TimeMonitor::summarize(std::cout);
-  
+
   } //try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 

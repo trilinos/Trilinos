@@ -31,13 +31,17 @@
 
 namespace Stokhos {
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class Multiply ;
+class DefaultSparseMatOps {};
 
 template< class MatrixType ,
           class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class MMultiply ;
+          class OutputVectorType = InputVectorType ,
+	  class SparseMatOps = DefaultSparseMatOps > class Multiply ;
+
+template< class MatrixType ,
+          class InputVectorType  = void ,
+          class OutputVectorType = InputVectorType ,
+	  class SparseMatOps = DefaultSparseMatOps > class MMultiply ;
 
 template < class ValueType, class Device > class MatrixMarketWriter ;
 

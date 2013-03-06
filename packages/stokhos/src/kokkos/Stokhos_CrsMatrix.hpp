@@ -55,10 +55,22 @@ void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
                const KokkosArray::View<VectorValueType[],Device>         & x ,
                const KokkosArray::View<VectorValueType[],Device>         & y )
 {
+  multiply(A, x, y, DefaultSparseMatOps() );
+}
+
+template< typename MatrixValueType ,
+          typename VectorValueType ,
+          class Device ,
+	  class SparseMatOps >
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+               const KokkosArray::View<VectorValueType[],Device>         & x ,
+               const KokkosArray::View<VectorValueType[],Device>         & y ,
+	       const SparseMatOps& smo = SparseMatOps() )
+{
   typedef CrsMatrix<MatrixValueType,Device>  matrix_type ;
   typedef KokkosArray::View<VectorValueType[],Device>     vector_type ;
 
-  Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
+  Multiply<matrix_type,vector_type,vector_type,SparseMatOps>::apply( A , x , y );
 }
 
 template< typename MatrixValueType ,
@@ -69,20 +81,35 @@ void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
 	       const KokkosArray::View<VectorValueType**, KokkosArray::LayoutLeft, Device> & x ,
 	       const KokkosArray::View<VectorValueType**, KokkosArray::LayoutLeft, Device> & y ,
 	       const std::vector<OrdinalType>& col_indices, 
-	       bool use_block_multiply = true)
+	       bool use_block_multiply = true )
+{
+  multiply(A, x, y, col_indices, use_block_multiply, DefaultSparseMatOps() );
+}
+
+template< typename MatrixValueType ,
+          typename VectorValueType ,
+	  typename OrdinalType ,
+          class Device ,
+	  class SparseMatOps >
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+	       const KokkosArray::View<VectorValueType**, KokkosArray::LayoutLeft, Device> & x ,
+	       const KokkosArray::View<VectorValueType**, KokkosArray::LayoutLeft, Device> & y ,
+	       const std::vector<OrdinalType>& col_indices, 
+	       bool use_block_multiply = true,
+	       const SparseMatOps& smo = SparseMatOps() )
 {
   typedef CrsMatrix<MatrixValueType,Device>           matrix_type ;
   typedef KokkosArray::View<VectorValueType[],Device>  vector_type ;
   typedef KokkosArray::View<VectorValueType**, KokkosArray::LayoutLeft, Device> multi_vector_type ;
 
   if (use_block_multiply)
-    MMultiply<matrix_type,multi_vector_type,multi_vector_type>::apply( 
+    MMultiply<matrix_type,multi_vector_type,multi_vector_type,SparseMatOps>::apply( 
       A , x , y , col_indices );
   else {
     for (size_t i=0; i<col_indices.size(); ++i) {
       const vector_type x_view( x , col_indices[i] );
       const vector_type y_view( y , col_indices[i] );
-      Multiply<matrix_type,vector_type,vector_type>::apply( 
+      Multiply<matrix_type,vector_type,vector_type,SparseMatOps>::apply( 
 	A , x_view , y_view );
     }
   }
@@ -94,17 +121,30 @@ template< typename MatrixValueType ,
 void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
 	       const std::vector< KokkosArray::View<VectorValueType[], Device> > & x ,
 	       const std::vector< KokkosArray::View<VectorValueType[], Device> > & y ,
-	       bool use_block_multiply = true)
+	       bool use_block_multiply = true )
+{
+  multiply(A, x, y, use_block_multiply, DefaultSparseMatOps() );
+}
+
+template< typename MatrixValueType ,
+          typename VectorValueType ,
+	  class Device ,
+	  class SparseMatOps >
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+	       const std::vector< KokkosArray::View<VectorValueType[], Device> > & x ,
+	       const std::vector< KokkosArray::View<VectorValueType[], Device> > & y ,
+	       bool use_block_multiply = true,
+	       const SparseMatOps& smo = SparseMatOps() )
 {
   typedef CrsMatrix<MatrixValueType,Device>           matrix_type ;
   typedef KokkosArray::View<VectorValueType[],Device> vector_type ;
 
   if (use_block_multiply)
-    MMultiply<matrix_type,vector_type,vector_type>::apply( 
+    MMultiply<matrix_type,vector_type,vector_type,SparseMatOps>::apply( 
       A , x , y  );
   else {
     for (size_t i=0; i<x.size(); ++i) {
-      Multiply<matrix_type,vector_type,vector_type>::apply( 
+      Multiply<matrix_type,vector_type,vector_type,SparseMatOps>::apply( 
 	A , x[i] , y[i] );
     }
   }

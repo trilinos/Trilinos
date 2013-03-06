@@ -112,10 +112,17 @@ test_original_matrix_free_epetra(
    // Create a communicator for Epetra objects
   RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-  globalComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  RCP<const Epetra_MpiComm> globalMpiComm = 
+    rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  //globalMpiComm->Print(std::cout);
+  globalComm = globalMpiComm;
 #else
-  globalComm = rcp(new Epetra_SerialComm);
+   RCP<const Epetra_SerialComm> globalSerialComm =
+     rcp(new Epetra_SerialComm);
+   //globalSerialComm->Print(std::cout);
+   globalComm = globalSerialComm;
 #endif
+
   //int MyPID = globalComm->MyPID();
 
   // Create Stochastic Galerkin basis and expansion
