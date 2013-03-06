@@ -71,7 +71,23 @@ void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
   typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
 
-  Multiply<matrix_type,block_vector_type,block_vector_type>::apply( A , x , y );
+  Multiply<matrix_type,block_vector_type,block_vector_type,DefaultSparseMatOps>::apply( A , x , y );
+}
+
+template< class BlockSpec ,
+          typename MatrixValueType ,
+          typename VectorValueType ,
+          class Device ,
+	  class SparseMatOps >
+void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
+	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
+	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y ,
+	      const SparseMatOps& smo = SparseMatOps() )
+{
+  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
+  typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
+
+  Multiply<matrix_type,block_vector_type,block_vector_type,SparseMatOps>::apply( A , x , y );
 }
 
 //----------------------------------------------------------------------------

@@ -599,6 +599,9 @@ public:
   //! The total time spent in all calls to apply().
   double getApplyTime() const;
 
+  //! The estimate of the maximum eigenvalue used in the apply().
+  typename MatrixType::scalar_type getLambdaMaxForApply() const;
+
   //@}
   //! @name Implementation of Teuchos::Describable 
   //@{

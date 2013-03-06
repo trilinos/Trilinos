@@ -917,7 +917,7 @@ public:
 
   //! Convert the given \c std::string to a \c short.
   static short convert (const std::string& t) {
-    return as<int> (safeConvertToLong (t));
+    return as<short> (safeConvertToLong (t));
   }
 };
 
@@ -2041,7 +2041,7 @@ public:
     // We protect the test with an #ifdef ... #endif to avoid compiler
     // warnings like the following: "warning: comparison is always
     // false due to limited range of data type".
-#if UINT_MIN == LONG_MIN && UINT_MAX == LONG_MAX
+#if UINT_MAX == LONG_MAX
     const long minLong = std::numeric_limits<long>::min ();
     const long maxLong = std::numeric_limits<long>::max ();
 
@@ -2181,10 +2181,10 @@ public:
 template<>
 class ValueTypeConversionTraits<unsigned int, long long> {
 public:
-  /// \brief Convert the given <tt>long long</tt> to an </tt>unsigned int</tt>.
+  /// \brief Convert the given <tt>long long</tt> to an <tt>unsigned int</tt>.
   ///
   /// \warning <tt>long long</tt> integer values may overflow
-  ///   </tt>unsigned int</tt>.  You should use safeConvert() if you
+  ///   <tt>unsigned int</tt>.  You should use safeConvert() if you
   ///   aren't sure that the given value fits in an <tt>unsigned
   ///   int</tt>.
   static unsigned int convert (const long long t) {
@@ -2247,7 +2247,7 @@ public:
 };
 
 
-//! Convert from <tt>unsigned long long</tt> to </tt>unsigned int</tt>.
+//! Convert from <tt>unsigned long long</tt> to <tt>unsigned int</tt>.
 template<>
 class ValueTypeConversionTraits<unsigned int, unsigned long long> {
 public:

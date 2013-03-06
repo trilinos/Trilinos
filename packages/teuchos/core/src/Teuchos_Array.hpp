@@ -487,7 +487,7 @@ private:
   inline typename std::vector<T>::iterator
   raw_position( iterator position );
 
-  inline void assertIndex(int i) const;
+  inline void assertIndex(size_type i) const;
 
   inline void assertNotNull() const;
 
@@ -1443,11 +1443,11 @@ Array<T>::raw_position( iterator position )
 
 
 template<typename T> inline
-void Array<T>::assertIndex(int i) const
+void Array<T>::assertIndex(size_type i) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !( 0 <= i && i < length() ), RangeError,
-    "Array<T>::assertIndex(i): i="<<i<<" out of range [0, "<< length() << ")"
+    !( 0 <= i && i < size() ), RangeError,
+    "Array<T>::assertIndex(i): i="<<i<<" out of range [0, "<< size() << ")"
     );
 }
 

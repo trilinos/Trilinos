@@ -91,19 +91,19 @@ bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::str
    return false;
 }
 
-const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
+const std::vector<int> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(blockId!="block_0",std::runtime_error,
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 
    if(elements_==Teuchos::null) { 
-      elements_ = Teuchos::rcp(new std::vector<short>);
+      elements_ = Teuchos::rcp(new std::vector<int>);
       switch(procRank_) {
       case 0:
          elements_->push_back(0);
          break;
       case 1:
-         elements_->push_back(1);
+         elements_->push_back(0);
          break;
       default:
          TEUCHOS_ASSERT(false);
@@ -113,7 +113,7 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId) const
+void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & blockId) const
 {
    gids.resize(8);
 
@@ -304,7 +304,7 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    return fieldNums;
 }
 
-void UniqueGlobalIndexer::getCoordinates(short localElementId,Intrepid::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer::getCoordinates(int localElementId,Intrepid::FieldContainer<double> & vertices)
 {
    vertices.resize(1,4,2);
    switch(procRank_) {

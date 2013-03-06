@@ -51,7 +51,6 @@
 #include "Panzer_SGEpetraLinearObjFactory_impl.hpp"
 
 template class panzer::SGEpetraLinearObjFactory<panzer::Traits,int>;
-template class panzer::SGEpetraLinearObjFactory<panzer::Traits,short>;
 
 #endif
 

@@ -1,5 +1,5 @@
-#ifndef MUELU_PRECONDITIONERINTERFACE_HPP
-#define MUELU_PRECONDITIONERINTERFACE_HPP
+#ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
+#define MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -83,27 +83,6 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
   return tH;
 }
 
-/*! \fn CreateTpetraPreconditioner
-    @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
-
-    Given a Tpetra matrix, this function returns a constructed MueLu preconditioner.
-
-    @param[in] Ain Matrix
-    @param[in] xmlFileName XML file containing MueLu options
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
-*/
-template <class SC, class LO, class GO, class NO>
-Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> >
-CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > const &Ain, std::string const &xmlFileName,
-                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inCoords = Teuchos::null,
-                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inNullspace = Teuchos::null)
-{
-  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
-  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > mueluPrecond = CreateTpetraPreconditioner<SC, LO, GO, NO>(Ain, *paramList, inCoords, inNullspace);
-  return mueluPrecond;
-}
-
 
 /*! \fn CreateTpetraPreconditioner
     @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
@@ -159,6 +138,27 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
   return tH;
 }
 
+/*! \fn CreateTpetraPreconditioner
+    @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
+
+    Given a Tpetra matrix, this function returns a constructed MueLu preconditioner.
+
+    @param[in] Ain Matrix
+    @param[in] xmlFileName XML file containing MueLu options
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace (optional) Near nullspace of the matrix.
+*/
+template <class SC, class LO, class GO, class NO>
+Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> >
+CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > const &Ain, std::string const &xmlFileName,
+                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inCoords = Teuchos::null,
+                          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inNullspace = Teuchos::null)
+{
+  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
+  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > mueluPrecond = CreateTpetraPreconditioner<SC, LO, GO, NO>(Ain, *paramList, inCoords, inNullspace);
+  return mueluPrecond;
+}
+
 } //namespace
 
-#endif //ifndef MUELU_PRECONDITIONERINTERFACE_HPP
+#endif //ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP

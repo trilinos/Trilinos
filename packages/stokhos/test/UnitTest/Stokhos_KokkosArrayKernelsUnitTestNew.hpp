@@ -401,7 +401,7 @@ namespace KokkosArrayKernelsUnitTest {
     
   };
 
-  template <typename value_type, typename Device>
+  template <typename value_type, typename Device, typename SparseMatOps>
   bool test_crs_matrix_free(const UnitTestSetup& setup,
 			    bool test_block,
 			    Teuchos::FancyOStream& out) {
@@ -453,6 +453,7 @@ namespace KokkosArrayKernelsUnitTest {
     }
 
     // Original matrix-free multiply algorithm using a block apply
+    SparseMatOps smo;
     typename UnitTestSetup::Cijk_type::k_iterator k_begin = 
       setup.Cijk->k_begin();
     typename UnitTestSetup::Cijk_type::k_iterator k_end = 
@@ -476,7 +477,7 @@ namespace KokkosArrayKernelsUnitTest {
 	  yy[jdx] = tmp[j];
 	  jdx++;
 	}
-        Stokhos::multiply( matrix[k] , xx , yy, test_block );
+        Stokhos::multiply( matrix[k] , xx , yy, test_block, smo );
 	jdx = 0;
 	for (typename UnitTestSetup::Cijk_type::kj_iterator j_it = j_begin; 
 	     j_it != j_end; ++j_it) {

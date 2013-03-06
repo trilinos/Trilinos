@@ -49,6 +49,5 @@
 #include "Panzer_EpetraLinearObjFactory_impl.hpp"
 
 template class panzer::EpetraLinearObjFactory<panzer::Traits,int>;
-template class panzer::EpetraLinearObjFactory<panzer::Traits,short>;
 
 #endif

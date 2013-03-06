@@ -71,7 +71,7 @@ namespace panzer {
 
     virtual void 
       buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				 const panzer::PhysicsBlock& pb,
+				 const panzer::PhysicsBlock& side_pb,
 				 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 				 const Teuchos::ParameterList& models,
 				 const Teuchos::ParameterList& user_data) const = 0;

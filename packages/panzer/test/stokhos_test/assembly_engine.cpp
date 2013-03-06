@@ -156,6 +156,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
   RCP<unit_test::UniqueGlobalIndexer> indexer
         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+  indexer->buildGlobalUnknowns();
 
   Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
   std::vector<panzer::BC> bcs;
@@ -209,10 +210,10 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   // build DOF Manager
   /////////////////////////////////////////////////////////////
 
-  Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > eLinObjFactory
-        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
-  Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > sgeLinObjFactory
-        = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(eLinObjFactory,sgExpansion,Teuchos::null));
+  Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+  Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sgeLinObjFactory
+        = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(eLinObjFactory,sgExpansion,Teuchos::null));
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = sgeLinObjFactory;
 
   // setup field manager build

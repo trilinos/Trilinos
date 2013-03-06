@@ -275,7 +275,7 @@ namespace Tpetra {
     /// For a definition of "globally distributed" (and its opposite,
     /// "locally replicated"), see the documentation of Map's
     /// isDistributed() method.
-    inline bool isDistributed () const;
+    bool isDistributed () const;
 
     /// \brief The Map describing the parallel distribution of this object.
     ///

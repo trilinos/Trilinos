@@ -917,8 +917,11 @@ namespace Tpetra {
 		 const global_size_t numRows = pRowMap->getGlobalNumElements();
 		 bool theirRowsValid = true;
 		 for (size_type k = 0; k < theirNumRows; ++k) {
-		   // global_ordinal_type is generally signed.
-		   if (theirRows[k] < 0) {
+		   // global_ordinal_type is generally signed, but it
+		   // is possible for it to be unsigned.  Hence, the
+		   // convoluted predicate, rather than the obvious
+		   // "theirRows[k] < 0".
+		   if (theirRows[k] < 1 && theirRows[k] != 0) { // theirRows[k] < 0
 		     theirRowsValid = false;
 		   }
 		   // Same-size signed->unsigned cast never overflows.

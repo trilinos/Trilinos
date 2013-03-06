@@ -757,6 +757,7 @@ namespace Tpetra {
            size_t numPackets,
            const ArrayRCP<Packet>& imports)
   {
+    using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
@@ -766,8 +767,10 @@ namespace Tpetra {
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
+    using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
     using std::endl;
+    typedef Array<size_t>::size_type size_type;
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -789,12 +792,17 @@ namespace Tpetra {
     // so that the tab persists until the end of this method.
     OSTab tab = this->getOSTab();
     if (doPrint) {
-      *out << "sendType=" << DistributorSendTypeEnumToString (sendType)
-           << ", barrierBetween=" << doBarrier << endl;
+      *out << "Parameters:" << endl;
+      {
+	OSTab tab2 (out);
+	*out << "sendType: " << DistributorSendTypeEnumToString (sendType)
+	     << endl << "barrierBetween: " << doBarrier << endl;
+      }
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
@@ -832,7 +840,8 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
+    const size_type actualNumReceives = as<size_type> (numReceives_) + 
+      as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -842,7 +851,7 @@ namespace Tpetra {
     // with a receive).
     {
       size_t curBufferOffset = 0;
-      for (size_t i = 0; i < actualNumReceives; ++i) {
+      for (size_type i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive):
@@ -945,7 +954,15 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by image, use send buffer
+      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
+      // sends), because the buffer is only long enough for one send.
       ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
+	"Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name() 
+	<< "> (3-argument version):" << endl
+	<< "The \"send buffer\" code path doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -1010,6 +1027,7 @@ namespace Tpetra {
            const ArrayRCP<Packet>& imports,
            const ArrayView<size_t>& numImportPacketsPerLID)
   {
+    using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
@@ -1019,6 +1037,7 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     using std::endl;
 #endif // HAVE_TEUCHOS_DEBUG
+    typedef Array<size_t>::size_type size_type;
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -1079,7 +1098,8 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
+    const size_type actualNumReceives = as<size_type> (numReceives_) + 
+      as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -1090,7 +1110,7 @@ namespace Tpetra {
     {
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
-      for (size_t i = 0; i < actualNumReceives; ++i) {
+      for (size_type i = 0; i < actualNumReceives; ++i) {
         size_t totalPacketsFrom_i = 0;
         for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];

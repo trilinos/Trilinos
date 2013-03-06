@@ -48,10 +48,26 @@ UnitTestSetup setup;
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Host ) {
   typedef double Scalar;
   typedef KokkosArray::Host Device;
+  typedef Stokhos::DefaultSparseMatOps SparseMatOps;
   bool test_block = true;
   
-  success = test_crs_matrix_free<Scalar,Device>(setup, test_block, out);
+  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
+    setup, test_block, out);
 }
+
+#ifdef HAVE_STOKHOS_MKL
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_HostMKL ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  typedef Stokhos::MKLSparseMatOps SparseMatOps;
+  bool test_block = true;
+  
+  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
+    setup, test_block, out);
+}
+
+#endif
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Host ) {
   typedef double Scalar;

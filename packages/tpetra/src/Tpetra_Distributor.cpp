@@ -199,10 +199,12 @@ namespace Tpetra {
     // the valid ParameterList and used in Optika.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-      std::invalid_argument, "If you use ready sends, you must include a "
-      "barrier between receives and sends.  Ready sends require that their "
-      "corresponding receives have already been posted, and the only way to "
-      "guarantee that in general is with a barrier.");
+      std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
+      << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
+      "between receives and sends." << endl << "This is invalid; you must "
+      "include the barrier if you use ready sends." << endl << "Ready sends "
+      "require that their corresponding receives have already been posted, "
+      "and the only way to guarantee that in general is with a barrier.");
 
     if (plist->isSublist ("VerboseObject")) {
       // Read the "VerboseObject" sublist for (optional) verbosity
@@ -227,8 +229,8 @@ namespace Tpetra {
     if (doPrint) {
       *out << "Distributor::setParameterList" << endl;
       OSTab tab = this->getOSTab(); // Add one tab level
-      *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_)
-           << ", barrierBetween_=" << barrierBetween_ << endl;
+      *out << "sendType_: " << DistributorSendTypeEnumToString (sendType_)
+           << "barrierBetween_: " << barrierBetween_ << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -246,7 +248,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = false;
+    const bool barrierBetween = true;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -262,7 +264,7 @@ namespace Tpetra {
                 "[Reverse]Posts().  Required for correctness when \"Send type\""
                 "=\"Rsend\", otherwise correct but not recommended.");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of MPI_Send to use in "
+      defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
 
     Teuchos::setupVerboseObjectSublist (&*plist);
@@ -434,42 +436,52 @@ namespace Tpetra {
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
-    Teuchos::OSTab tab(out);
+    Teuchos::OSTab tab (out);
 
     if (vl == VERB_NONE) {
       return;
     } else {
       if (myImageID == 0) {
         // VERB_LOW and higher prints description() (on Proc 0 only).
-        out << this->description() << endl;
+	out << "Tpetra::Distributor:" << endl;
+	Teuchos::OSTab tab2 (out);
+	const std::string label = this->getObjectLabel ();
+	if (label != "") {
+	  out << "label: " << label << endl;
+	}
       }
       if (vl == VERB_LOW) {
         return;
       } else {
+	Teuchos::OSTab tab2 (out);
         // vl > VERB_LOW lets each image print its data.  We assume
         // that all images can print to the given output stream, and
         // execute barriers to make it more likely that the output
         // will be in the right order.
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
-            out << "[Node " << myImageID << " of " << numImages << "]" << endl;
-            out << " selfMessage: " << hasSelfMessage() << endl;
-            out << " numSends: " << getNumSends() << endl;
+	    if (myImageID == 0) {
+	      out << "Number of processes: " << numImages << endl;
+	    }
+            out << "Process: " << myImageID << endl;
+	    Teuchos::OSTab tab3 (out);
+            out << "selfMessage: " << hasSelfMessage () << endl;
+            out << "numSends: " << getNumSends () << endl;
             if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << " imagesTo: " << toString(imagesTo_) << endl;
-              out << " lengthsTo: " << toString(lengthsTo_) << endl;
-              out << " maxSendLength: " << getMaxSendLength() << endl;
+              out << "imagesTo: " << toString (imagesTo_) << endl;
+              out << "lengthsTo: " << toString (lengthsTo_) << endl;
+              out << "maxSendLength: " << getMaxSendLength () << endl;
             }
             if (vl == VERB_EXTREME) {
-              out << " startsTo: " << toString(startsTo_) << endl;
-              out << " indicesTo: " << toString(indicesTo_) << endl;
+              out << "startsTo: " << toString (startsTo_) << endl;
+              out << "indicesTo: " << toString (indicesTo_) << endl;
             }
             if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << " numReceives: " << getNumReceives() << endl;
-              out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
-              out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
-              out << " startsFrom: " << toString(startsFrom_) << endl;
-              out << " imagesFrom: " << toString(imagesFrom_) << endl;
+              out << "numReceives: " << getNumReceives () << endl;
+              out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
+              out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
+              out << "startsFrom: " << toString (startsFrom_) << endl;
+              out << "imagesFrom: " << toString (imagesFrom_) << endl;
             }
             // Last output is a flush; it leaves a space and also
             // helps synchronize output.

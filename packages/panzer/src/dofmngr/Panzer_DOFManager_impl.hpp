@@ -615,6 +615,9 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // build orientations if required
   if(requireOrientations_)
     buildUnknownsOrientation();
+
+  // allocate the local IDs
+  this->buildLocalIds();
 }
 
 

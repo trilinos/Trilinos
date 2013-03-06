@@ -31,7 +31,8 @@
 #include <cstdlib>
 
 template <typename scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric);
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric,
+	     bool mkl);
 
 template <typename scalar>
 int mainCuda(bool test_flat, bool test_orig, bool test_block, bool symmetric,
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
   bool test_orig = true;
   bool symmetric = true;
   bool single = false;
+  bool mkl = false;
   int device = 0;
 
   // Parse command line arguments
@@ -78,6 +80,10 @@ int main(int argc, char *argv[])
       symmetric = true;
     else if (s == "no-symmetric")
       symmetric = false;
+    else if (s == "mkl")
+      mkl = true;
+    else if (s == "no-mkl")
+      mkl = false;
     else if (s == "single")
       single = true;
     else if (s == "double")
@@ -104,9 +110,9 @@ int main(int argc, char *argv[])
 
   if (test_host) {
     if (single)
-      mainHost<float>(test_flat, test_orig, test_block, symmetric);
+      mainHost<float>(test_flat, test_orig, test_block, symmetric, mkl);
     else
-      mainHost<double>(test_flat, test_orig, test_block, symmetric);
+      mainHost<double>(test_flat, test_orig, test_block, symmetric, mkl);
   }
   if (test_cuda) {
     if (single)

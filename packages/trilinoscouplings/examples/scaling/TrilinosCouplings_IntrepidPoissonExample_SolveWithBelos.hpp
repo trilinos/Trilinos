@@ -37,6 +37,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 
 
 namespace TrilinosCouplings {
@@ -115,7 +116,8 @@ solveWithBelos (bool& converged,
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Belos::LinearProblem<ST, MV, OP > problem_type;
-  typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_type;
+  //typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_type;
+  typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_type;
   typedef Belos::MultiVecTraits<ST, MV> MVT;
 
   // Set these in advance, so that if the Belos solver throws an
@@ -136,6 +138,7 @@ solveWithBelos (bool& converged,
   belosParams->set ("Block Size", numColsB);
   belosParams->set ("Maximum Iterations", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
+  belosParams->set ("Orthogonalization", "ICGS");
   belosParams->set("Output Frequency",10);
   belosParams->set("Output Style",1);
   belosParams->set("Verbosity",33);

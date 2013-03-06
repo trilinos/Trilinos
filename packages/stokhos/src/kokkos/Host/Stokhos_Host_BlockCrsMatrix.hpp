@@ -41,7 +41,8 @@ template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , KokkosArray::Host > ,
   KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > >
+  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > ,
+  DefaultSparseMatOps >
 {
 public:
 
@@ -85,7 +86,7 @@ public:
       const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
       const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
-      Multiply< BlockSpec , void , void >::apply( m_A.block , a , x , y );
+      Multiply< BlockSpec , void , void , DefaultSparseMatOps >::apply( m_A.block , a , x , y );
     }
   }
 
