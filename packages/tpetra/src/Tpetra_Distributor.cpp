@@ -80,7 +80,7 @@ namespace Tpetra {
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
-    , sendType_ (Details::DISTRIBUTOR_ISEND)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
@@ -101,7 +101,7 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
-    , sendType_ (Details::DISTRIBUTOR_ISEND)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
@@ -251,7 +251,7 @@ namespace Tpetra {
     const bool barrierBetween = true;
 
     Array<std::string> sendTypes = distributorSendTypes ();
-    const std::string defaultSendType ("Isend");
+    const std::string defaultSendType ("Send");
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
