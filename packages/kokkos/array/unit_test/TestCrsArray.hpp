@@ -85,7 +85,7 @@ public:
     dx = KokkosArray::create_crsarray<dView>( "dx" , graph );
     hx = KokkosArray::create_mirror( dx );
 
-    ASSERT_EQ( hx.row_map.dimension(0) - 1 , LENGTH );
+    ASSERT_EQ( hx.row_map.dimension_0() - 1 , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t begin = hx.row_map[i];
@@ -116,17 +116,17 @@ public:
     hView hx = KokkosArray::create_mirror( dx );
     hView mx = KokkosArray::create_mirror( dx );
 
-    ASSERT_EQ( (size_t) dx.row_map.dimension(0) , (size_t) LENGTH + 1 );
-    ASSERT_EQ( (size_t) hx.row_map.dimension(0) , (size_t) LENGTH + 1 );
-    ASSERT_EQ( (size_t) mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) dx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) hx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
 
-    ASSERT_EQ( (size_t) dx.entries.dimension(0) , (size_t) total_length );
-    ASSERT_EQ( (size_t) hx.entries.dimension(0) , (size_t) total_length );
-    ASSERT_EQ( (size_t) mx.entries.dimension(0) , (size_t) total_length );
+    ASSERT_EQ( (size_t) dx.entries.dimension_0() , (size_t) total_length );
+    ASSERT_EQ( (size_t) hx.entries.dimension_0() , (size_t) total_length );
+    ASSERT_EQ( (size_t) mx.entries.dimension_0() , (size_t) total_length );
 
-    ASSERT_EQ( (size_t) dx.entries.dimension(1) , (size_t) 3 );
-    ASSERT_EQ( (size_t) hx.entries.dimension(1) , (size_t) 3 );
-    ASSERT_EQ( (size_t) mx.entries.dimension(1) , (size_t) 3 );
+    ASSERT_EQ( (size_t) dx.entries.dimension_1() , (size_t) 3 );
+    ASSERT_EQ( (size_t) hx.entries.dimension_1() , (size_t) 3 );
+    ASSERT_EQ( (size_t) mx.entries.dimension_1() , (size_t) 3 );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t entry_begin = hx.row_map[i];
@@ -141,7 +141,7 @@ public:
     KokkosArray::deep_copy( dx.entries , hx.entries );
     KokkosArray::deep_copy( mx.entries , dx.entries );
 
-    ASSERT_EQ( mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+    ASSERT_EQ( mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t entry_begin = mx.row_map[i];

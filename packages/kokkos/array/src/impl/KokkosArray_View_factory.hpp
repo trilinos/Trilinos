@@ -80,21 +80,21 @@ template< class DstView ,
             is_same< typename DstView::array_layout ,
                      typename SrcView::array_layout >::type ,
           class SameRank = typename
-             bool_< DstView::Rank == SrcView::Rank >::type >
+             bool_< unsigned(DstView::Rank) == unsigned(SrcView::Rank) >::type >
 struct ViewDeepCopy ;
 
 // Deep copy compatible views:
 
-template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst ,
-          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc >
-struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
-                     View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc > ,
+template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst , class SpecializeDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc , class SpecializeSrc >
+struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst , SpecializeDst > ,
+                     View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc , SpecializeSrc > ,
                      true_type /* Same scalar_type   */ ,
                      true_type /* Same array_layout */ ,
                      true_type /* Same rank */ >
 {
-  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst >  dst_type ;
-  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc >  src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst , SpecializeDst >  dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc , SpecializeSrc >  src_type ;
 
   inline static
   void apply( const dst_type & dst , const src_type & src )
@@ -107,7 +107,7 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
 
       const size_t n =
         sizeof(typename dst_type::scalar_type) *
-        ViewAssignment< dst_type , typename dst_type::memory_space , void >::allocation_count( dst );
+        ViewAssignment< SpecializeDst >::allocation_count( dst );
 
         KokkosArray::DeepCopy< typename DeviceDst::memory_space ,
                                typename DeviceSrc::memory_space >(
@@ -122,14 +122,14 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
 
 // Deep copy arbitrary arrays:
 
-template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst ,
-          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc >
+template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst , class SpecializeDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc , class SpecializeSrc >
 inline
-void deep_copy( const View< DataDst, LayoutDst, DeviceDst, ManageDst> & dst ,
-                const View< DataSrc, LayoutSrc, DeviceSrc, ManageSrc> & src )
+void deep_copy( const View< DataDst, LayoutDst, DeviceDst, ManageDst, SpecializeDst> & dst ,
+                const View< DataSrc, LayoutSrc, DeviceSrc, ManageSrc, SpecializeSrc> & src )
 {
-  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst > dst_type ;
-  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc > src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst , SpecializeDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc , SpecializeSrc > src_type ;
 
   Impl::ViewDeepCopy<dst_type,src_type>::apply( dst , src );
 }

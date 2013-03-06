@@ -63,7 +63,7 @@ struct LayoutRight { typedef LayoutRight array_layout ; };
  */
 template < unsigned ArgN0 , unsigned ArgN1 ,
            bool IsPowerOfTwo = ( Impl::is_power_of_two<ArgN0>::value &&
-                                 Impl::is_power_of_two<ArgN0>::value )
+                                 Impl::is_power_of_two<ArgN1>::value )
          >
 struct LayoutTileLeft {
   typedef LayoutTileLeft<ArgN0,ArgN1,IsPowerOfTwo> array_layout ;

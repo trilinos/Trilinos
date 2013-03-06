@@ -61,11 +61,10 @@ namespace Impl {
 template< class DstViewType >
 struct ViewInitialize { static void apply( const DstViewType & ) {} };
 
-template< class T , class L , class D , class M >
-size_t allocation_count( const View<T,L,D,M> & view )
+template< class T , class L , class D , class M , class S >
+size_t allocation_count( const View<T,L,D,M,S> & view )
 {
-  return ViewAssignment< View<T,L,D,M> , typename View<T,L,D,M>::memory_space , void >
-    ::allocation_count( view );
+  return ViewAssignment<S>::allocation_count( view );
 }
 
 //----------------------------------------------------------------------------
@@ -227,6 +226,33 @@ struct ShapeCompatible< DstShape , SrcShape , 0 , true >
 
 //----------------------------------------------------------------------------
 
+template< class DstView , class SrcView ,
+          class DstValueType  = typename DstView::value_type ,
+          class DstValueSpace = typename DstView::memory_space ,
+          class SrcValueType  = typename SrcView::value_type ,
+          class SrcValueSpace = typename SrcView::memory_space >
+struct ValueCompatible ;
+
+template< class DstView , class SrcView , class ValueType , class ValueSpace >
+struct ValueCompatible< DstView , SrcView ,
+                        ValueType , ValueSpace ,
+                        ValueType , ValueSpace >
+{
+  typedef ValueType type ;
+  enum { value = true };
+};
+
+template< class DstView , class SrcView , class ValueType , class ValueSpace >
+struct ValueCompatible< DstView , SrcView ,
+                        const ValueType , ValueSpace ,
+                              ValueType , ValueSpace >
+{
+  typedef ValueType type ;
+  enum { value = true };
+};
+
+//----------------------------------------------------------------------------
+
 template< class DstViewTraits , class SrcViewTraits >
 struct ViewAssignment_Compatible {
 public:
@@ -253,213 +279,23 @@ public:
 // 1) Fully compatible DstViewType and SrcViewType
 // 2) ArgCount = 0
 
-template< class DstViewType , class SrcViewType >
-struct ViewAssignment< DstViewType , SrcViewType ,
-  typename enable_if< (
-    ViewAssignment_Compatible< typename DstViewType::view_traits ,
-                               typename SrcViewType::view_traits >::compatible
-  ) , unsigned_<0> >::type >
+template< class DT, class DL, class DD, class DM, class Spec,
+          class ST, class SL, class SD, class SM >
+struct ViewAssignment<
+  View<DT,DL,DD,DM,Spec> ,
+  View<ST,SL,SD,SM,Spec> ,
+  typename enable_if<(
+    ViewAssignment_Compatible< ViewTraits<DT,DL,DD,DM> ,
+                               ViewTraits<ST,SL,SD,SM> >::compatible
+  ), unsigned_<0> >::type >
 {
+  typedef View<DT,DL,DD,DM,Spec> DstViewType ;
+  typedef View<ST,SL,SD,SM,Spec> SrcViewType ;
+
   KOKKOSARRAY_INLINE_FUNCTION
   ViewAssignment( DstViewType & dst , const SrcViewType & src )
-  {
-    typedef typename DstViewType::shape_type shape_type ;
-
-    ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
-
-    shape_type::assign( dst.m_shape ,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-    dst.m_stride        = src.m_stride ;
-    dst.m_ptr_on_device = src.m_ptr_on_device ;
-
-    ViewAssignment< DstViewType >::increment( dst.m_ptr_on_device );
-  }
+  { ViewAssignment<Spec,Spec>( dst , src ); }
 };
-
-//----------------------------------------------------------------------------
-
-template< class DstViewType , class SrcViewType >
-struct ViewAssignment< DstViewType , SrcViewType ,
-  typename enable_if< (
-    ( ViewAssignment_Compatible<
-        typename DstViewType::view_traits ,
-        typename SrcViewType::view_traits >::compatible_value )
-    &&
-    ( DstViewType::Rank == 1 )
-    &&
-    ( SrcViewType::Rank == 1 )
-  ) , unsigned_<1> >::type >
-{
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const std::pair<iType,iType> & range )
-  {
-    ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
-
-    if ( range.first < range.second ) {
-
-      assert_shape_bounds( src.shape() , range.first );
-      assert_shape_bounds( src.shape() , range.second - 1 );
-
-      dst.m_shape.N0 = range.second - range.first ;
-      dst.m_stride   = 0 ;
-      dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
-
-      ViewAssignment< DstViewType >::increment( dst.m_ptr_on_device );
-    }
-    else {
-      dst.m_shape.N0 = 0 ;
-      dst.m_stride   = 0 ;
-      dst.m_ptr_on_device = 0 ;
-    }
-  }
-};
-
-//----------------------------------------------------------------------------
-// Vector from multivector:
-
-template< class DstViewType , class SrcViewType >
-struct ViewAssignment< DstViewType , SrcViewType ,
-  typename enable_if< (
-    ( ViewAssignment_Compatible<
-        typename DstViewType::view_traits ,
-        typename SrcViewType::view_traits >::compatible_value )
-    &&
-    ( DstViewType::Rank == 1 )
-    &&
-    ( is_same< typename SrcViewType::array_layout , LayoutLeft >::value )
-    &&
-    ( SrcViewType::Rank == 2 )
-  ) , unsigned_<1> >::type >
-{
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const unsigned i1 )
-  {
-    assert_shape_bounds( src.shape() , 0 , i1 );
-
-    ViewAssignment< DstViewType >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0 = src.m_shape.N0 ;
-    dst.m_stride   = src.m_stride ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride * i1 ;
-
-    ViewAssignment< DstViewType >::increment( dst.m_ptr_on_device );
-  }
-};
-
-#if 0
-//----------------------------------------------------------------------------
-// ArgCount=2 , dst<Rank=1> : src<Rank=2,LayoutLeft>  : ( range , index )
-// ArgCount=2 , dst<Rank=1> : src<Rank=2,LayoutRight> : ( index , range )
-//----------------------------------------------------------------------------
-
-// Assignment of rank-zero array
-
-template< class DstViewType >
-struct ViewAssignment< DstViewType , 0 >
-{
-  template< const SrcViewType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  typename enable_if<
-                    ViewAssignment_Compatible< typename DstViewType::view_traits ,
-                                               typename SrcViewType::view_traits >::compatible_value
-                  >::type * = 0 )
-  {
-    typedef typename DstDeviceType::memory_space dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = src.m_ptr_on_device ;
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-
-  template< const SrcViewType , typename iType0 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const iType0 & i0 ,
-                  typename enable_if<
-                    ViewAssignment_Compatible< typename DstViewType::view_traits ,
-                                               typename SrcViewType::view_traits >::compatible_value
-                  >::type * = 0 )
-  {
-    typedef typename DstDeviceType::memory_space dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = & src(i0);
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-
-  template< typename iType0 , typename iType1 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const iType0 & i0 , const iType1 & i1 )
-  {
-    typedef typename DstDeviceType::memory_space  dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = & src(i0,i1);
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const iType0 & i0 , const iType1 & i1 , const iType2 & i2 )
-  {
-    typedef typename DstDeviceType::memory_space  dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = & src(i0,i1,i2);
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 )
-  {
-    typedef typename DstDeviceType::memory_space  dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = & src(i0,i1,i2,i3);
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-
-
-
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 , typename iType7 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src ,
-                  const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 )
-  {
-    typedef typename DstDeviceType::memory_space  dst_memory_space ;
-
-    if ( DstManagement::managed ) dst_memory_space::decrement( dst.m_ptr_on_device );
-
-    dst.m_ptr_on_device = & src(i0,i1,i2,i3,i4,i5,i6,i7);
-
-    if ( DstManagement::managed ) dst_memory_space::increment( dst.m_ptr_on_device );
-  }
-};
-
-#endif
 
 //----------------------------------------------------------------------------
 

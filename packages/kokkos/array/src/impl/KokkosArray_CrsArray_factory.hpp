@@ -77,9 +77,9 @@ create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & v
 
   host_work_type tmp_row_map ;
 
-  Impl::ViewAssignment< host_work_type , HostSpace , void >( tmp_row_map , view.row_map );
-  Impl::ViewAssignment< typename host_view::entries_type , HostSpace , void >( tmp.entries , view.entries );
-
+  Impl::ViewAssignment< typename host_work_type::specialize >( tmp_row_map , view.row_map );
+  Impl::ViewAssignment< typename host_view::entries_type::specialize >( tmp.entries , view.entries );
+  
   tmp.row_map = tmp_row_map ;
 
   deep_copy( tmp_row_map , view.row_map );
@@ -107,8 +107,8 @@ create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view )
 
   typename row_map_type::HostMirror tmp_row_map ;
 
-  Impl::ViewAssignment< typename row_map_type::HostMirror, HostSpace , void >( tmp_row_map , view.row_map );
-  Impl::ViewAssignment< typename host_view::entries_type , HostSpace , void >( tmp.entries , view.entries );
+  Impl::ViewAssignment< typename row_map_type::specialize >( tmp_row_map , view.row_map );
+  Impl::ViewAssignment< typename host_view::entries_type::specialize >( tmp.entries , view.entries );
 
   tmp.row_map = tmp_row_map ;
 

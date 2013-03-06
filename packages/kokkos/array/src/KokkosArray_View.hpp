@@ -70,6 +70,15 @@ class ViewOper ;
 template< class DstViewType , class SrcViewType = void , class ArgCount = void >
 struct ViewAssignment {};
 
+/** \brief  View specialization mapping of view traits to a specialization tag */
+template< class ViewTraits ,
+          class ArrayLayout  = typename ViewTraits::array_layout ,
+          unsigned Rank      =          ViewTraits::rank ,
+          class MemorySpace  = typename ViewTraits::memory_space ,
+          class MemoryTraits = typename ViewTraits::memory_traits ,
+          class Enable       = void >
+struct ViewSpecialize { typedef void type ; };
+
 } // namespace Impl
 } // namespace KokkosArray
 
@@ -80,10 +89,9 @@ namespace KokkosArray {
 
 template< class DataType ,
           class LayoutType ,
-          class DeviceType = LayoutType ,
-          class MemoryTraits = void >
-class View ;
-
+          class DeviceType ,
+          class MemoryTraits >
+class ViewTraits ;
 
 /** \brief  ViewTraits
  *
@@ -105,12 +113,11 @@ private:
 
 public:
 
-  typedef DataType       data_type ;
-  typedef LayoutType     layout_type ;
-  typedef DeviceType     device_type ;
-  typedef MemoryTraits   memory_traits ;
+  typedef DataType                            data_type ;
+  typedef LayoutType                          layout_type ;
+  typedef DeviceType                          device_type ;
+  typedef MemoryTraits                        memory_traits ;
 
-  typedef ViewTraits                          view_traits ;
   typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
@@ -121,21 +128,16 @@ public:
   typedef typename device_type::memory_space  memory_space ;
   typedef typename device_type::size_type     size_type ;
 
-  enum { rank           = shape_type::rank };
-  enum { rank_dynamic   = shape_type::rank_dynamic };
-
-  typedef View<           data_type, layout_type, device_type, memory_traits > view_type ;
-  typedef View<     const_data_type, layout_type, device_type, memory_traits > view_const_type ;
-  typedef View< non_const_data_type, layout_type, device_type, memory_traits > view_non_const_type ;
-
-  typedef View< data_type , layout_type , Host >  HostMirror ;
+  enum { rank         = shape_type::rank };
+  enum { rank_dynamic = shape_type::rank_dynamic };
+  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
 };
 
 /** \brief  Memory traits as third argument, void as fourth argument. */
 
 template< class DataType , class DeviceType , class MemoryTraits >
 class ViewTraits< DataType , DeviceType , MemoryTraits , 
-  typename Impl::enable_if_type< typename MemoryTraits::memory_management >::type >
+  typename Impl::enable_if_type< typename MemoryTraits::memory_traits >::type >
 {
 private:
 
@@ -143,12 +145,11 @@ private:
 
 public:
 
-  typedef DataType      data_type ;
-  typedef DeviceType    layout_type ;
-  typedef DeviceType    device_type ;
-  typedef MemoryTraits  memory_traits ;
+  typedef DataType                            data_type ;
+  typedef DeviceType                          layout_type ;
+  typedef DeviceType                          device_type ;
+  typedef MemoryTraits                        memory_traits ;
 
-  typedef ViewTraits                          view_traits ;
   typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
@@ -159,14 +160,9 @@ public:
   typedef typename device_type::memory_space  memory_space ;
   typedef typename device_type::size_type     size_type ;
 
-  enum { rank           = shape_type::rank };
-  enum { rank_dynamic   = shape_type::rank_dynamic };
-
-  typedef View<           data_type, DeviceType, MemoryTraits, void > view_type ;
-  typedef View<     const_data_type, DeviceType, MemoryTraits, void > view_const_type ;
-  typedef View< non_const_data_type, DeviceType, MemoryTraits, void > view_non_const_type ;
-
-  typedef View< data_type , layout_type , Host >  HostMirror ;
+  enum { rank         = shape_type::rank };
+  enum { rank_dynamic = shape_type::rank_dynamic };
+  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
 };
 
 /** \brief  Device as third argument, void as fourth argument. */
@@ -181,12 +177,11 @@ private:
 
 public:
 
-  typedef DataType       data_type ;
-  typedef LayoutType     layout_type ;
-  typedef DeviceType     device_type ;
-  typedef MemoryManaged  memory_traits ;
+  typedef DataType                            data_type ;
+  typedef LayoutType                          layout_type ;
+  typedef DeviceType                          device_type ;
+  typedef MemoryManaged                       memory_traits ;
 
-  typedef ViewTraits                          view_traits ;
   typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::scalar_type      scalar_type ;
@@ -199,12 +194,7 @@ public:
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-
-  typedef View<           data_type, layout_type, device_type, void > view_type ;
-  typedef View<     const_data_type, layout_type, device_type, void > view_const_type ;
-  typedef View< non_const_data_type, layout_type, device_type, void > view_non_const_type ;
-
-  typedef View< non_const_data_type , layout_type , Host >  HostMirror ;
+  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
 };
 
 } // namespace KokkosArray
@@ -215,8 +205,18 @@ namespace KokkosArray {
 
 template< class DataType ,
           class LayoutType ,
+          class DeviceType = LayoutType ,
+          class MemoryTraits = void ,
+          class Specialize   =
+            typename Impl::ViewSpecialize< ViewTraits<DataType,LayoutType,DeviceType,MemoryTraits> >::type >
+class View ;
+
+
+template< class DataType ,
+          class LayoutType ,
           class DeviceType ,
-          class MemoryTraits >
+          class MemoryTraits ,
+          class Specialize >
 class View
   : public Impl::ViewOper<
       typename ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >::memory_space ,
@@ -226,23 +226,25 @@ class View
 {
 public:
 
-  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > view_traits ;
+  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
 
-  typedef typename view_traits::data_type        data_type ;
-  typedef typename view_traits::layout_type      layout_type ;
-  typedef typename view_traits::device_type      device_type ;
-  typedef typename view_traits::view_type        type ;
-  typedef typename view_traits::view_const_type  const_type ;
-  typedef typename view_traits::HostMirror       HostMirror ;
-  typedef typename view_traits::scalar_type      scalar_type ;
-  typedef typename view_traits::value_type       value_type ;
-  typedef typename view_traits::array_layout     array_layout ;
-  typedef typename view_traits::memory_space     memory_space ;
-  typedef typename view_traits::memory_traits    memory_traits ;
-  typedef typename view_traits::memory_traits    memory_management ;
-  typedef typename view_traits::shape_type       shape_type ;
+  typedef typename traits::data_type        data_type ;
+  typedef typename traits::layout_type      layout_type ;
+  typedef typename traits::device_type      device_type ;
+  typedef typename traits::memory_traits    memory_traits ;
+  typedef Specialize                        specialize ;
+
+  typedef typename traits::scalar_type      scalar_type ;
+  typedef typename traits::value_type       value_type ;
+  typedef typename traits::array_layout     array_layout ;
+  typedef typename traits::memory_space     memory_space ;
+  typedef typename traits::shape_type       shape_type ;
 
   typedef typename memory_space::size_type     size_type ;
+
+  typedef View< typename traits::const_data_type, layout_type, device_type, memory_traits > const_type ;
+
+  typedef View< typename traits::non_const_data_type , layout_type , Host >  HostMirror ;
 
 private:
 
@@ -251,7 +253,7 @@ private:
                           shape_type ,
                           array_layout > oper_type ;
 
-  template< class , class , class , class> friend class View ;
+  template< class , class , class , class , class > friend class View ;
   template< class , class , class > friend class Impl::ViewAssignment ;
 
 public:
@@ -330,14 +332,17 @@ public:
   /** \brief  Construct a view of the array */
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
-    { oper_type::m_ptr_on_device = 0 ; Impl::ViewAssignment<View>( *this , rhs ); }
+    {
+      oper_type::m_ptr_on_device = 0 ;
+      Impl::ViewAssignment<Specialize,Specialize>( *this , rhs );
+   }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOSARRAY_INLINE_FUNCTION
   ~View()
-  { Impl::ViewAssignment<View>(*this); }
+  { Impl::ViewAssignment<Specialize>::decrement(*this); }
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
@@ -345,23 +350,23 @@ public:
    */
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View & rhs )
-  { Impl::ViewAssignment<View>( *this , rhs ); return *this ; }
+  { Impl::ViewAssignment<Specialize,Specialize>( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
   // Construct from a compatible view:
 
-  template< class T , class L , class D , class M >
-  View( const View<T,L,D,M> & rhs )
+  template< class T , class L , class D , class M , class S >
+  View( const View<T,L,D,M,S> & rhs )
     {
       oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<0> >( *this , rhs );
+      Impl::ViewAssignment<Specialize,S>( *this , rhs );
     }
 
   // Assign from a compatible view:
 
-  template< class T , class L , class D , class M >
-  View & operator = ( const View<T,L,D,M> & rhs )
-    { Impl::ViewAssignment<View,View<T,L,D,M>,Impl::unsigned_<0> >( *this , rhs ); return *this ; }
+  template< class T , class L , class D , class M , class S >
+  View & operator = ( const View<T,L,D,M,S> & rhs )
+    { Impl::ViewAssignment<Specialize,S>( *this , rhs ); return *this ; }
 
   /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
@@ -378,7 +383,7 @@ public:
         const size_t n7 = 0 )
     {
       oper_type::m_ptr_on_device = 0 ;
-      Impl::ViewAssignment< View , memory_space >( *this , label , n0, n1, n2, n3, n4, n5, n6, n7 );
+      Impl::ViewAssignment< Specialize >( *this , label , n0, n1, n2, n3, n4, n5, n6, n7 );
     }
 
   /*------------------------------------------------------------------*/
@@ -386,11 +391,11 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class LT , class LL , class LD , class LM ,
-          class RT , class RL , class RD , class RM >
+template< class LT , class LL , class LD , class LM , class LS ,
+          class RT , class RL , class RD , class RM , class RS >
 KOKKOSARRAY_INLINE_FUNCTION
-bool operator == ( const View<LT,LL,LD,LM> & lhs ,
-                   const View<RT,RL,RD,RM> & rhs )
+bool operator == ( const View<LT,LL,LD,LM,LS> & lhs ,
+                   const View<RT,RL,RD,RM,RS> & rhs )
 {
   // Same data, layout, dimensions
   typedef ViewTraits<LT,LL,LD,LM> lhs_traits ;
@@ -416,11 +421,11 @@ bool operator == ( const View<LT,LL,LD,LM> & lhs ,
          lhs.dimension_7() == rhs.dimension_7();
 }
 
-template< class LT , class LL , class LD , class LM ,
-          class RT , class RL , class RD , class RM >
+template< class LT , class LL , class LD , class LM , class LS ,
+          class RT , class RL , class RD , class RM , class RS >
 KOKKOSARRAY_INLINE_FUNCTION
-bool operator != ( const View<LT,LL,LD,LM> & lhs ,
-                   const View<RT,RL,RD,RM> & rhs )
+bool operator != ( const View<LT,LL,LD,LM,LS> & lhs ,
+                   const View<RT,RL,RD,RM,RS> & rhs )
 {
   return ! operator==( lhs , rhs );
 }
@@ -428,117 +433,145 @@ bool operator != ( const View<LT,LL,LD,LM> & lhs ,
 //----------------------------------------------------------------------------
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<1> >
-    ( dst, src, arg0 );
+  Impl::ViewAssignment<dst_spec,S>( dst , src , arg0 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<2> >
-    ( dst, src, arg0, arg1 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<3> >
-    ( dst, src, arg0, arg1, arg2 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<4> >
-    ( dst, src, arg0, arg1, arg2, arg3 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 >
 KOKKOSARRAY_INLINE_FUNCTION
@@ -546,30 +579,37 @@ View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 ,
          const ArgType4 & arg4 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<5> >
-    ( dst, src, arg0, arg1, arg2, arg3, arg4 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 >
 KOKKOSARRAY_INLINE_FUNCTION
@@ -577,7 +617,7 @@ View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -585,23 +625,30 @@ subview( const View<T,L,D,M> & src ,
          const ArgType4 & arg4 ,
          const ArgType5 & arg5 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<6> >
-    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 >
 KOKKOSARRAY_INLINE_FUNCTION
@@ -609,7 +656,7 @@ View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -618,23 +665,30 @@ subview( const View<T,L,D,M> & src ,
          const ArgType5 & arg5 ,
          const ArgType6 & arg6 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<7> >
-    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
 
   return dst ;
 }
 
 template< class DstViewType ,
-          class T , class L , class D , class M ,
+          class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
 KOKKOSARRAY_INLINE_FUNCTION
@@ -642,7 +696,7 @@ View< typename DstViewType::data_type ,
       typename DstViewType::layout_type ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
-subview( const View<T,L,D,M> & src ,
+subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -652,17 +706,24 @@ subview( const View<T,L,D,M> & src ,
          const ArgType6 & arg6 ,
          const ArgType7 & arg7 )
 {
+  typedef ViewTraits< typename DstViewType::data_type ,
+                      typename DstViewType::layout_type ,
+                      typename DstViewType::device_type ,
+                      MemoryUnmanaged > dst_traits ;
+
+  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
+
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+                MemoryUnmanaged ,
+                dst_spec > dst_type ;
 
-  typedef View<T,L,D,M> src_type ;
+  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_type,src_type,Impl::unsigned_<8> >
-    ( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
 
   return dst ;
 }
@@ -670,9 +731,9 @@ subview( const View<T,L,D,M> & src ,
 //----------------------------------------------------------------------------
 
 
-template< class T , class L , class D , class M >
-typename View<T,L,D,M>::HostMirror
-create_mirror_view( const View<T,L,D,M> & view ,
+template< class T , class L , class D , class M , class S >
+typename View<T,L,D,M,S>::HostMirror
+create_mirror_view( const View<T,L,D,M,S> & view ,
                     typename Impl::enable_if<
                       Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
                                      HostSpace >::value
@@ -681,9 +742,9 @@ create_mirror_view( const View<T,L,D,M> & view ,
   return view ;
 }
 
-template< class T , class L , class D , class M >
-typename View<T,L,D,M>::HostMirror
-create_mirror_view( const View<T,L,D,M> & view ,
+template< class T , class L , class D , class M , class S >
+typename View<T,L,D,M,S>::HostMirror
+create_mirror_view( const View<T,L,D,M,S> & view ,
                     typename Impl::enable_if<
                       ! Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
                                        HostSpace >::value
@@ -691,32 +752,36 @@ create_mirror_view( const View<T,L,D,M> & view ,
 {
   typedef typename View<T,L,D,M>::HostMirror host_view ;
   host_view tmp ;
-  Impl::ViewAssignment< host_view , HostSpace , void >( tmp , view );
+  Impl::ViewAssignment< S >( tmp , view );
   return tmp ;
 }
 
-template< class T , class L , class D , class M >
-typename View<T,L,D,M>::HostMirror
-create_mirror( const View<T,L,D,M> & view )
+template< class T , class L , class D , class M , class S >
+typename View<T,L,D,M,S>::HostMirror
+create_mirror( const View<T,L,D,M,S> & view )
 {
 #if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
   return create_mirror_view( view );
 #else
-  typedef typename View<T,L,D,M>::HostMirror host_view ;
+  typedef typename View<T,L,D,M,S>::HostMirror host_view ;
   host_view tmp ;
-  Impl::ViewAssignment< host_view , HostSpace , void >( tmp , view );
+  Impl::ViewAssignment< S >( tmp , view );
   return tmp ;
 #endif
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 } // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #include <impl/KokkosArray_View_factory.hpp>
 
 #include <impl/KokkosArray_ViewAssignment.hpp>
+
+#include <impl/KokkosArray_ViewScalar.hpp>
+#include <impl/KokkosArray_ViewVector.hpp>
+
 #include <impl/KokkosArray_ViewLeft.hpp>
 #include <impl/KokkosArray_ViewRight.hpp>
 #include <impl/KokkosArray_ViewTileLeft.hpp>

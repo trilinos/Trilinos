@@ -108,7 +108,7 @@ template< class MemorySpace , typename ValueType , class ShapeType , unsigned M,
 class ViewOper< MemorySpace , ValueType , ShapeType , LayoutTileLeft<M,N,false/*not power of 2*/> , 2 >
 {
 private:
-  template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class , class > friend class KokkosArray::View ;
   template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;
@@ -185,7 +185,7 @@ template< class MemorySpace , typename ValueType , class ShapeType , unsigned M,
 class ViewOper< MemorySpace , ValueType , ShapeType , LayoutTileLeft<M,N,true/* power of 2*/> , 2 >
 {
 private:
-  template< class , class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class , class > friend class KokkosArray::View ;
   template< class , class , class > friend class ViewAssignment ;
 
   ValueType * m_ptr_on_device ;

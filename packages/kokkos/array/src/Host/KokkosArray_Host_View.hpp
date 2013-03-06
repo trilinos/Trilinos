@@ -59,16 +59,28 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class LayoutType , class ManagedType >
-struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType > >
+template< class DataType , class LayoutType , class ManagedType , class Specialize >
+struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Specialize > >
 {
-  typedef View< DataType , LayoutType , Host , ManagedType > view_type ;
+  typedef View< DataType , LayoutType , Host , ManagedType , Specialize > view_type ;
   typedef typename view_type::scalar_type scalar_type ;
 
   static void apply( const view_type & view )
   {
-    const size_t count = ViewAssignment< view_type , HostSpace , void >::allocation_count( view );
+    const size_t count = ViewAssignment< Specialize >::allocation_count( view );
     Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
+  }
+};
+
+template< class DataType , class LayoutType , class ManagedType >
+struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > >
+{
+  typedef View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > view_type ;
+  typedef typename view_type::scalar_type scalar_type ;
+
+  static void apply( const view_type & view )
+  {
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , 1 );
   }
 };
 
