@@ -68,13 +68,17 @@ namespace Details {
   /// \brief Create a Kokkos Node instance with default parameters.
   /// \tparam NodeType The Kokkos Node type.
   ///
+  /// \warning This function is <i>not</i> safe to be called by
+  ///   multiple threads simultaneously.  The first call to this
+  ///   function must be serialized.  Also, RCP is not currently
+  ///   thread safe.
+  ///
   /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
   /// We presume that for every Kokkos Node, if that list of
   /// parameters is empty, then the Node will use default parameters.
   /// This is true for all the Node types implemented in Kokkos.
   template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode() {
+  Teuchos::RCP<NodeType> getNode () {
     static Teuchos::RCP<NodeType> theNode;
     if (theNode.is_null ()) {
       Teuchos::ParameterList defaultParams;
@@ -84,31 +88,19 @@ namespace Details {
   }
 } // namespace Details
 
-  /** \brief Class to specify %Kokkos default node type and instantiate the default node.
-      \ingroup kokkos_node_api
-    */
-  class DefaultNode {
-    public:
-#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-      typedef TPINode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-      typedef TBBNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-      typedef OpenMPNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-      typedef ThrustGPUNode DefaultNodeType;
-#else
-      //! Typedef specifying the default node type.
-      typedef SerialNode DefaultNodeType;
-#endif
+/// \class DefaultNode
+/// \brief Class that specifies Kokkos' default Node type, and
+///   creates and holds an instance of it for you to use.
+/// \ingroup kokkos_node_api
+class DefaultNode {
+public:
+  //! The default Node type.
+  typedef SerialNode DefaultNodeType;
 
-      //! \brief Return a pointer to the default node.
-      static RCP<DefaultNodeType> getDefaultNode();
+  //! Return a pointer to the default Node.
+  static RCP<DefaultNodeType> getDefaultNode();
+};
 
-    private:
-      static RCP<DefaultNodeType> node_;
-  };
-
-}
+} // namespace Kokkos
 
 #endif
