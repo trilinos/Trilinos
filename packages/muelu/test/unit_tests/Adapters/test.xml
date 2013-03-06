@@ -10,121 +10,6 @@
 
     <!-- Note that ParameterLists must be defined prior to being used -->
 
-    <!-- -->
-    <!-- Non-permuted factories -->
-    <!-- -->
-
-    <ParameterList name="myCoalesceDropFact">
-      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
-      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!-- for aggregation dropping -->
-      <!-- <Parameter name="aggregation threshold"                           type="double" value="0.1"/> -->
-    </ParameterList>
-
-    <ParameterList name="CoupledAggregationFact">
-      <Parameter name="factory"                             type="string" value="CoupledAggregationFactory"/>
-      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="Phase3AggCreation"                   type="double" value="0.5"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
-    </ParameterList>
-
-    <ParameterList name="UncoupledAggregationFact">
-      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
-    </ParameterList>
-
-    <ParameterList name="myAggExportFact">
-      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-    </ParameterList>
-
-    <ParameterList name="myTentativePFact">
-      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
-    </ParameterList>
-
-    <ParameterList name="myProlongatorFact">
-      <Parameter name="factory"                             type="string" value="SaPFactory"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
-    </ParameterList>
-
-    <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
-      <Parameter name="factory"                             type="string" value="TransPFactory"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="myRestrictorFact">
-      <Parameter name="factory"                             type="string" value="TransPFactory"/>
-      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
-    </ParameterList>
-
-    <ParameterList name="myTransferCoordinatesFact">
-      <Parameter name="factory"                             type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="Vector name"                         type="string" value="Coordinates"/>
-      <Parameter name="R"                                   type="string" value="myTentativeRFact"/>
-    </ParameterList>
-
-    <ParameterList name="myRAPFact">
-      <Parameter name="factory"                             type="string" value="RAPFactory"/>
-      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
-      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <ParameterList name="TransferFactories">
-        <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
-        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
-      </ParameterList>
-    </ParameterList>
-
-<!-- -->
-<!-- Repartitioning -->
-<!-- -->
-
-    <ParameterList name="myZoltanInterface">
-      <Parameter name="factory"                             type="string" value="ZoltanInterface"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
-    </ParameterList>
-
-    <ParameterList name="myRepartitionFact">
-      <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="Partition"                           type="string" value="myZoltanInterface"/>
-      <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/> <!-- default = 2000 -->
-      <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/> <!-- default = 1.2 -->
-      <Parameter name="startLevel"                          type="int"    value="2"/>   <!-- default = 1 -->
-      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
-    </ParameterList>
-
-    <ParameterList name="myRebalanceProlongatorFact">
-      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
-      <Parameter name="type"                                type="string" value="Interpolation"/>
-      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
-    </ParameterList>
-
-    <ParameterList name="myRebalanceRestrictionFact">
-      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
-      <Parameter name="type"                                type="string" value="Restriction"/>
-      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
-      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="myRebalanceAFact">
-      <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-    </ParameterList>
-
-<!-- -->
-<!-- -->
-<!-- -->
-<!-- -->
-<!-- -->
-
     <!-- =======================  SMOOTHERS  ======================= -->
 
     <ParameterList name="Chebyshev">
@@ -133,47 +18,11 @@
 
       <ParameterList name="ParameterList">
         <Parameter name="chebyshev: degree"                 type="int"     value="3"/>>
-        <!-- 7 in 2D, 20 in 3D -->
-        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
+        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="7"/>
         <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="SymGaussSeidel">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string" value="RELAXATION"/>
-
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"                type="int"    value="2"/>
-        <Parameter name="relaxation: damping factor"        type="double" value="1"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="ForwardGaussSeidel">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string"  value="RELAXATION"/>
-
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
-        <Parameter name="relaxation: backward mode"         type="bool"    value="false"/>
-        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
-        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="BackwardGaussSeidel">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string"  value="RELAXATION"/>
-
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
-        <Parameter name="relaxation: backward mode"         type="bool"    value="true"/>
-        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
-        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
-      </ParameterList>
-    </ParameterList>
-
   </ParameterList>
 
   <!-- Definition of the multigrid preconditioner -->
@@ -186,16 +35,6 @@
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
-      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <!--
-      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
-      <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
-      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
-      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-      <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
-      <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
-      <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
-      -->
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">
