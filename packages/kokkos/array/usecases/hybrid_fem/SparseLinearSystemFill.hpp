@@ -130,7 +130,7 @@ public:
                      const elem_matrices_type & elem_matrices ,
                      const elem_vectors_type  & elem_vectors )
   {
-    const size_t row_count = matrix.graph.row_map.dimension(0) - 1 ;
+    const size_t row_count = matrix.graph.row_map.dimension_0() - 1 ;
     GatherFill op ;
     op.node_elem_ids = mesh.node_elem_ids ;
     op.elem_graph    = elem_graph ;
@@ -179,7 +179,7 @@ struct GraphFactory {
     deep_copy( node_elem_ids.entries , mesh.node_elem_ids.entries );
 
     const size_t owned_node = mesh.parallel_data_map.count_owned ;
-    const size_t total_elem = mesh.elem_node_ids.dimension(0);
+    const size_t total_elem = mesh.elem_node_ids.dimension_0();
 
     if ( total_elem ) {
       elem_map = element_map_type( std::string("element_map"), total_elem );

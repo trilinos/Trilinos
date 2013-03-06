@@ -53,7 +53,7 @@ public:
 		     const value_type &  beta ,
                      const vector_type & y )
   {
-    const size_t row_count = x.dimension(0) ;
+    const size_t row_count = x.dimension_0() ;
     parallel_for( row_count , Update(alpha,x,beta,y) );
   }
 };

@@ -333,7 +333,7 @@ public:
 
   void run() const
   {
-    const size_type row_count        = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count        = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = m_A.block.dimension();
     const size_type tensor_dim_align = tensor_dimension ;
 
@@ -552,7 +552,7 @@ public:
 
   void run() const
   {
-    const size_type row_count        = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count        = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = m_A.block.dimension();
     const size_type tensor_dim_align = tensor_dimension ;
 
@@ -661,7 +661,7 @@ public:
   __device__
   void operator()(void) const
   {
-    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count            = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dim           = m_A.block.dimension();
     const size_type tensor_max_row_width = m_A.block.max_row_width();
 
@@ -806,7 +806,7 @@ public:
 
   void run() const
   {
-    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count            = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dim           = m_A.block.dimension();
     const size_type tensor_max_row_width = m_A.block.max_row_width();
 
@@ -915,7 +915,7 @@ public:
   __device__
   void operator()(void) const
   {
-    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count            = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dim           = m_A.block.dimension();
     const size_type tensor_max_row_width = m_A.block.max_row_width();
 
@@ -1044,7 +1044,7 @@ public:
 
   void run() const
   {
-    const size_type row_count            = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count            = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dim           = m_A.block.dimension();
     const size_type tensor_max_row_width = m_A.block.max_row_width();
 
@@ -1156,7 +1156,7 @@ public:
   void operator()(void) const
   {
     // Finite element and stochastic dimensions:
-    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type fem_row_count  = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dim     = m_A.block.dimension();
 
     // This block's span of tensor rows:
@@ -1362,7 +1362,7 @@ public:
 
 #if 0
 
-    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type fem_row_count  = m_A.graph.row_map.dimension_0() - 1 ;
 
     std::cout << "Multiply< BlockCrsMatrix< CrsProductTensorLegendre ... > >"
               << std::endl 
@@ -1386,7 +1386,7 @@ public:
 
   void run() const
   {
-    const size_type fem_row_count  = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type fem_row_count  = m_A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_subsets = m_tensor_row_offset.dimension_0() - 1 ;
 
     const dim3 dBlock( ThreadCount , 1 , 1 );

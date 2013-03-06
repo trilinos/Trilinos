@@ -267,7 +267,7 @@ public:
 
     //------------------------------------------------------------------------
 
-    const unsigned row_count = A.graph.row_map.dimension(0) - 1 ;
+    const unsigned row_count = A.graph.row_map.dimension_0() - 1 ;
 
     const size_type nGridY =
        std::min( row_count , Impl::CudaTraits::UpperBoundGridCount / nGridX );
@@ -312,7 +312,7 @@ public:
   }
 
   // Required:
-  //   m_A.block.dimension() == m_A.values.dimension(0)
+  //   m_A.block.dimension() == m_A.values.dimension_0()
   //   blockDim.x == WARP_SIZE
   //   blockDim.y >= 6
   //   blockDim.x * blockDim.y >= m_A.block.dimension()
@@ -400,7 +400,7 @@ public:
       }
     }
 
-    const unsigned row_count = m_A.graph.row_map.dimension(0) - 1 ;
+    const unsigned row_count = m_A.graph.row_map.dimension_0() - 1 ;
 
     // This thread is assigned:
     //   iBlockRow == block of the 'y' vector
@@ -601,7 +601,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     // const size_type rem = tensor_dimension % 32;
     // const size_type tensor_align = 
@@ -757,7 +757,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_entry_max = A.block.entry_maximum();
 
@@ -996,7 +996,7 @@ public:
   {
     // Have at least nPool warps working on each tensor-block
 
-    const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_entry_max = A.block.entry_maximum();
 
@@ -1205,7 +1205,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count        = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count        = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_entry_max = A.block.entry_maximum();
 
@@ -1413,7 +1413,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count        = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count        = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_dim_align = KokkosArray::Impl::CudaTraits::warp_align( tensor_dimension );
 

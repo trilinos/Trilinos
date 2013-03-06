@@ -171,7 +171,7 @@ struct ViewAssignment< LayoutVector , LayoutVector , void >
                     ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
                                      ViewTraits<ST,SL,SD,SM> >::value
                     &&
-                    ( ViewTraits<DT,DL,DD,DM>::dynamic_rank == 1 )
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
     typedef typename ViewTraits<DT,DL,DD,DM>::shape_type shape_type ;

@@ -167,6 +167,11 @@ public:
 
   typedef Impl::LayoutScalar specialize ;
 
+  typedef View< typename traits::const_data_type,
+                typename traits::layout_type,
+                typename traits::device_type,
+                typename traits::memory_traits > const_type ;
+
   typedef View< typename traits::non_const_data_type ,
                 typename traits::layout_type ,
                 Host > HostMirror ;
@@ -215,6 +220,9 @@ public:
 
   KOKKOSARRAY_INLINE_FUNCTION
   typename traits::scalar_type & operator()() const { return *m_ptr_on_device ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::scalar_type & operator*() const { return *m_ptr_on_device ; }
 
 
   explicit
