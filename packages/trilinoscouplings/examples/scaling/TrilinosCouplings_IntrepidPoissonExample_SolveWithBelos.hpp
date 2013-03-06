@@ -138,6 +138,7 @@ solveWithBelos (bool& converged,
   belosParams->set ("Block Size", numColsB);
   belosParams->set ("Maximum Iterations", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
+  belosParams->set ("Orthogonalization", "ICGS");
   belosParams->set("Output Frequency",10);
   belosParams->set("Output Style",1);
   belosParams->set("Verbosity",33);
