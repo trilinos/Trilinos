@@ -164,16 +164,18 @@ namespace stk {
       stk::mesh::PartVector m_fromParts;
       stk::mesh::PartVector m_toParts;
       const std::string m_appendConvertString; //="_urpconv_"
-      const std::string m_appendOriginalString; //="_urporig_100000"
+      const std::string m_appendOriginalString; //="_uo_1000"
       static const std::string m_oldElementsPartName;
       stk::mesh::EntityRank m_primaryEntityRank;
+     
     public:
+      bool m_do_strip_hashes;
       //typedef ToTopology TTopo;
 
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
-                                    //m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::MetaData::INVALID_RANK)
+                                    m_primaryEntityRank(stk::mesh::MetaData::INVALID_RANK),
+                                    m_do_strip_hashes(true)
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -2437,6 +2439,7 @@ namespace stk {
                     if (!from_subset_part_cell_topo_data || !to_subset_part_cell_topo_data) 
                       continue;
                     std::string to_subset_name = from_subset.name() + "#" + to_subset_part_cell_topo_data->name + "#" + getAppendConvertString();
+                    //std::string to_subset_name = from_subset.name() + getAppendConvertString();
 
                     stk::mesh::Part* to_subset_p = eMesh.get_fem_meta_data()->get_part(to_subset_name);
                     VERIFY_OP_ON(to_subset_p, !=, 0, std::string("fixSubsets couldn't find part error, part= ")+to_subset_name);
@@ -2671,6 +2674,7 @@ namespace stk {
                         else
                           {
                             std::string newPartName = part->name() + "#" + getToTopoPartName() + "#" + getAppendConvertString();
+                            //std::string newPartName = part->name() + getAppendConvertString();
                             block_to = &eMesh.get_fem_meta_data()->declare_part(newPartName, part->primary_entity_rank());
                             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                                                                   << " with topo= " << getToTopoPartName() << std::endl;

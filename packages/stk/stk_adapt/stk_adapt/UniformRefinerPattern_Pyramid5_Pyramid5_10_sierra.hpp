@@ -30,7 +30,7 @@ namespace stk {
       {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
         Elem::StdMeshObjTopologies::bootstrap();
-
+        m_do_strip_hashes=false;
       }
 
       ~UniformRefinerPattern()
@@ -81,6 +81,7 @@ namespace stk {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         Elem::StdMeshObjTopologies::bootstrap();
+        m_do_strip_hashes=false;
 
       }
 
@@ -150,6 +151,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : m_eMesh(eMesh) 
       {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
+        m_do_strip_hashes=false;
 
         Elem::StdMeshObjTopologies::bootstrap();
 

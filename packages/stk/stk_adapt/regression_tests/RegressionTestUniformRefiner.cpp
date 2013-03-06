@@ -439,6 +439,7 @@ namespace stk
               }
 
             percept::PerceptMesh eMesh(3u);
+            //eMesh.set_sync_io_regions(false);
             eMesh.open(input_mesh);
 
             ShellQuad4_ShellQuad8_1 break_quad4_to_quad8_1(eMesh);
@@ -458,7 +459,7 @@ namespace stk
             breaker.doBreak();
 
             //eMesh.print_info("quad mesh refined", 5);
-            eMesh.print_info("quad shell mesh enriched");
+            eMesh.print_info("quad shell mesh enriched", 2);
             eMesh.save_as(output_files_loc+"freshell_quad4_quad8_1.g");
             eMesh.save_as(input_files_loc+"freshell_quad8_quad8_0.g");
 
@@ -468,6 +469,7 @@ namespace stk
           {
 
             percept::PerceptMesh eMesh(3u);
+            //!eMesh.set_sync_io_regions(false);
             eMesh.open(input_files_loc+"freshell_quad8_quad8_0.g");
 
             ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);

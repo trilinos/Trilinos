@@ -1358,7 +1358,10 @@ namespace stk {
 
           // do the snap
           if (geomSnap)
-            mesh_geometry.snap_points_to_geometry(&m_eMesh);
+            {
+              std::cout << " mesh_geometry.snap_points_to_geometry(&m_eMesh) ... " << std::endl;
+              mesh_geometry.snap_points_to_geometry(&m_eMesh);
+            }
           if (doCheckMovement != 0.0)
             mesh_geometry.print_node_movement_summary();
 
@@ -3500,6 +3503,38 @@ namespace stk {
     ///   in the part with the original name appended with _uo_1000.  These parts are ignored on subsequent input.
     ///
 #define DEBUG_RENAME_NEW_PARTS 0
+#define DEBUG_RENAME_NEW_PARTS_1 0
+    static std::string strip_hashes(std::string in, stk::mesh::PartVector& parts)
+    {
+      std::string out=in;
+      size_t pos=0;
+      pos = in.find("#");
+      if (pos != std::string::npos)
+        {
+          std::string o1 = in.substr(pos+1);
+          size_t pos2 = o1.find("#");
+          out = in.substr(0,pos)+o1.substr(pos2+1);
+        }
+
+      if (DEBUG_RENAME_NEW_PARTS_1) std::cout << "tmp srk in= " << std::setw(50) << in << " out= " << std::setw(50) << out << std::endl;
+      if (out != in)
+        {
+          for (unsigned ii=0; ii < parts.size(); ++ii)
+            {
+              if (parts[ii]->name() == out)
+                {
+                  std::cout << "bad part[" << ii << "] = " << parts[ii]->name() << std::endl;
+                  for (unsigned jj=0; jj < parts.size(); ++jj)
+                    {
+                      std::cout << "part[" << jj << "] = " << parts[jj]->name() << std::endl;
+                    }
+                  throw std::runtime_error("bad name change");
+                }
+            }
+        }
+      return out;
+    }
+
     void Refiner::
     renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
@@ -3507,9 +3542,15 @@ namespace stk {
 
       stk::mesh::PartVector toParts = breakPattern->getToParts();
       stk::mesh::PartVector fromParts = breakPattern->getFromParts();
+      bool do_strip_hashes = breakPattern->m_do_strip_hashes;
+      bool do_strip_hashes_from = false;
+
+      stk::mesh::PartVector all_parts = m_eMesh.get_fem_meta_data()->get_parts();
 
       if (DEBUG_RENAME_NEW_PARTS)
         {
+          std::cout << "\n\ntmp srk getFromTopoPartName()= " << breakPattern->getFromTopoPartName() << " getToTopoPartName()= " << breakPattern->getToTopoPartName() << std::endl;
+          std::cout << "fromParts.size() = " << fromParts.size() << " toParts.size() = " << toParts.size() << std::endl;
           for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
             {
               std::cout << "tmp toParts[i_part]->name() = " << toParts[i_part]->name() << std::endl;
@@ -3527,7 +3568,7 @@ namespace stk {
               if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name()
                                                     << " toPartName= " << toParts[i_part]->name() << std::endl;
 
-              std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
+              std::string * toPartName_ptr = const_cast<std::string *> (&toParts[i_part]->name());
               std::string toPartName = toParts[i_part]->name();
               if (toParts[i_part]->name() == fromParts[i_part]->name())
                 {
@@ -3540,9 +3581,13 @@ namespace stk {
               //mesh::Part *fromPart = m_eMesh.get_non_const_part(fromPartName);
               mesh::Part *fromPart = fromParts[i_part];
               VERIFY_OP_ON(fromPart, !=, 0, std::string("Refiner::renameNewParts null fromPart found, fromPart= ")+fromPartName);
-              std::string * fromPartName_p = const_cast<std::string *> (&fromPart->name());
-              *toPartName_p = fromPartName;
-              *fromPartName_p = fromPartName + breakPattern->getAppendOriginalString();
+              std::string * fromPartName_ptr = const_cast<std::string *> (&fromPart->name());
+
+              *toPartName_ptr = fromPartName;
+              *fromPartName_ptr = fromPartName + breakPattern->getAppendOriginalString();
+
+              if (do_strip_hashes) *toPartName_ptr = strip_hashes(*toPartName_ptr, all_parts);
+              if (do_strip_hashes_from) *fromPartName_ptr = strip_hashes(*fromPartName_ptr, all_parts);
 
               if (DEBUG_RENAME_NEW_PARTS) {
                 std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
@@ -3557,8 +3602,8 @@ namespace stk {
           for (unsigned i_part = 0; i_part < fromParts.size(); i_part++)
             {
               if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name() << std::endl;
-              std::string * fromPartName_p = const_cast<std::string *> (&fromParts[i_part]->name());
-              *fromPartName_p = fromParts[i_part]->name() + breakPattern->getAppendOriginalString();
+              std::string * fromPartName_ptr = const_cast<std::string *> (&fromParts[i_part]->name());
+              *fromPartName_ptr = fromParts[i_part]->name() + breakPattern->getAppendOriginalString();
               if (DEBUG_RENAME_NEW_PARTS) {
                 std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << std::endl;
               }
@@ -3568,14 +3613,14 @@ namespace stk {
             {
               if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: toPartName= " << toParts[i_part]->name() << std::endl;
 
-              std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
+              std::string * toPartName_ptr = const_cast<std::string *> (&toParts[i_part]->name());
               std::string toPartName = toParts[i_part]->name();
               if (toPartName.find(breakPattern->getAppendConvertString()) == std::string::npos)
                 continue;
               int len = toPartName.length();
               int clen = breakPattern->getAppendConvertString().length();
               toPartName.erase(len - clen, clen);
-              *toPartName_p = toPartName;
+              *toPartName_ptr = do_strip_hashes ? strip_hashes(toPartName, all_parts) : toPartName;
 
               if (DEBUG_RENAME_NEW_PARTS) {
                 std::cout << "tmp  after: toPartName= " << toParts[i_part]->name() << std::endl;

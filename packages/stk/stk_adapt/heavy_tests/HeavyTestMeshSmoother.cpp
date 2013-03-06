@@ -534,12 +534,12 @@ namespace stk
             converter.doBreak();
             eMesh.save_as(input_files_loc+"tet_4_smooth.0.0.e");
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6#Triangle_3#") );
+            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
