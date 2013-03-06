@@ -766,6 +766,7 @@ namespace Tpetra {
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
+    using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
     using std::endl;
 
@@ -950,7 +951,15 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by image, use send buffer
+      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
+      // sends), because the buffer is only long enough for one send.
       ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
+	"Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name() 
+	<< "> (3-argument version):" << endl
+	<< "The \"send buffer\" code path doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
