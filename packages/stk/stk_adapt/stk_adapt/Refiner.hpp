@@ -144,6 +144,10 @@ namespace stk {
       getDoProgressMeter();
 
 
+#if defined(STK_BUILT_IN_SIERRA) 
+      void set_rbar_special_treatment(BlockNamesType& rbar_names) { m_rbar_names = rbar_names; }
+#endif
+
       // ================================ unrefine
 
       typedef std::set<stk::mesh::Entity> NodeSetType;
@@ -383,6 +387,9 @@ namespace stk {
       bool m_removeGeometryBlocks;
       SidePartMap m_side_part_map;
 
+#if defined(STK_BUILT_IN_SIERRA)
+      BlockNamesType m_rbar_names;
+#endif
     };
 
 

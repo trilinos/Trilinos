@@ -982,6 +982,28 @@ namespace stk {
                           {
                             // FIXME move this next block of code to a method on UniformRefiner
                             BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
+
+#if defined(STK_BUILT_IN_SIERRA) 
+                            if (rbar_blocks.length())
+                              {
+                                BlockNamesType rbar_names(stk::percept::EntityRankEnd+1u);
+                                std::string block_name_inc_orig = block_name_inc;
+                                if (rbar_blocks.length())
+                                  {
+                                    rbar_names = RefinerUtil::getBlockNames(rbar_blocks, eMesh.get_rank(), eMesh);
+                                    std::cout << "rbar_blocks= " << rbar_blocks << " rbar_names= " << rbar_names << std::endl;
+                                  }
+                                for (unsigned ii=0; ii < rbar_names[eMesh.element_rank()].size(); ii++)
+                                  {
+                                    std::string srb = rbar_names[eMesh.element_rank()][ii];
+                                    Util::replace(srb, "+", "-");
+                                    block_name_inc = block_name_inc+(block_name_inc.length()?",":"")+srb;
+                                  }
+                                if (!eMesh.get_rank()) 
+                                  std::cout << "rbar: original block_name option = " << block_name_inc_orig << " new = " << block_name_inc << std::endl;
+                              }
+#endif
+
                             if (block_name_inc.length())
                               {
                                 block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.get_rank(), eMesh);
@@ -1000,6 +1022,7 @@ namespace stk {
                                     if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
 
                                   }
+                                if (!eMesh.get_rank()) std::cout << "block_names after processing: " << block_names << std::endl;
                               }
 
                             pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
@@ -1040,8 +1063,14 @@ namespace stk {
 
                         if (print_info)
                           {
-                            eMesh.print_info("convert", print_info);
+                            eMesh.print_info("PerceptMesh info:", print_info);
                           }
+
+                        // print message about rbars being treated and beams being refined
+//                         if (!eMesh.get_rank())
+//                           std::cout << "P[" << eMesh.get_rank() << "] Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name() 
+//                                     << "\n  NOTE:  This block is automatically ignored during refinement."
+//                                     << std::endl;
 
                         if (verify_meshes)
                           {
@@ -1235,7 +1264,7 @@ namespace stk {
                                     rbar_names = RefinerUtil::getBlockNames(rbar_blocks, eMesh.get_rank(), eMesh);
                                     std::cout << "rbar_blocks= " << rbar_blocks << " rbar_names= " << rbar_names << std::endl;
                                   }
-                                //breaker.set_rbar_special_treatment(rbar_names);
+                                breaker.set_rbar_special_treatment(rbar_names);
                               }
 #endif
 

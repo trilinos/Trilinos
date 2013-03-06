@@ -622,6 +622,22 @@ namespace stk {
                 {
                   for (unsigned ipart = 0; ipart < fromParts->size(); ipart++)
                     {
+                      // print message about beams
+                      if (1 && m_eMesh.get_rank()==0)
+                        {
+                          mesh::Part *part = (*fromParts)[ipart];
+                          const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+                          if (part_cell_topo_data)
+                            {
+                              shards::CellTopology part_cell_topo(part_cell_topo_data);
+                              std::string ptopo_name = part_cell_topo.getName();
+                              if (ptopo_name.find("Beam") != std::string::npos)
+                                {
+                                  std::cout << "P[0] Info: will refine block: " << part->name() << " with topology= " << part_cell_topo.getName() << std::endl;
+                                }
+                            }
+                        }
+
                       fromPartsAll.push_back((*fromParts)[ipart]);
                     }
                 }
@@ -998,6 +1014,10 @@ namespace stk {
           //std::cout << "tmp interpolateFields... " << std::endl;
           m_nodeRegistry->interpolateFields();
           //std::cout << "tmp interpolateFields...done " << std::endl;
+#if defined(STK_BUILT_IN_SIERRA)
+          if (m_rbar_names.size()) 
+            m_nodeRegistry->add_rbars(m_rbar_names);
+#endif
         }
       //std::cout << "tmp dump_elements 1" << std::endl;
       // m_eMesh.dump_elements();

@@ -125,7 +125,7 @@ namespace stk {
       {
         VERIFY_OP_ON(nsz, ==, 2, "hmmm");
         static SubDimCell_SDSEntityType subDimEntity;
-        subDimEntity.clear(); 
+        subDimEntity.clear();
         subDimEntity.insert(nodes[iv0]);
         subDimEntity.insert(nodes[iv1]);
         bool swapped=false;
@@ -142,8 +142,8 @@ namespace stk {
         if (is_empty) {
           if (0)
             {
-              std::cout << "tmp srk P[" << m_eMesh.get_rank() << "] s_nsz_parent = " << s_nsz_parent << " s_element_is_ghost = " << s_element_is_ghost 
-                        << " iv0= " << iv0 << " iv1= " << iv1 
+              std::cout << "tmp srk P[" << m_eMesh.get_rank() << "] s_nsz_parent = " << s_nsz_parent << " s_element_is_ghost = " << s_element_is_ghost
+                        << " iv0= " << iv0 << " iv1= " << iv1
                         << " n0 =  " << nodes[iv0].identifier() << " n1= " << nodes[iv1].identifier()
                         << std::endl;
             }
@@ -311,14 +311,14 @@ namespace stk {
                 double y = 0.5*(alp12+alp03);
                 if (isp == 0)
                   {
-                    if (0 && element.identifier() == 6659) 
+                    if (0 && element.identifier() == 6659)
                       {
                         PerceptMesh::get_static_instance()->print(element, false);
-                        std::cout 
-                          << " alp01= " << alp01 
+                        std::cout
+                          << " alp01= " << alp01
                           << " alp32= " << alp32
-                          << " alp12= " << alp12 
-                          << " alp03= " << alp03 
+                          << " alp12= " << alp12
+                          << " alp03= " << alp03
                           << std::endl;
                       }
 
@@ -428,7 +428,7 @@ namespace stk {
         VERIFY_OP_ON(oldPart, !=, 0, "hmmm");
         stk::mesh::Selector oldPartSelector (*oldPart);
         s_oldPartSelector = &oldPartSelector;
-        
+
         int spatialDim = m_eMesh.get_spatial_dim();
         int fieldDim = spatialDim;
         stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;
@@ -831,9 +831,9 @@ namespace stk {
                     }
                 }
             }
-          if (doThisPart) 
+          if (doThisPart)
             {
-              std::cout << "tmp srk rbar part = " << part->name() << std::endl;
+              //std::cout << "tmp srk rbar part = " << part->name() << std::endl;
               rbar_parts.insert(part);
             }
         }
@@ -842,6 +842,7 @@ namespace stk {
     /// Check for adding new rbars - these are used for joint modeling in Salinas
     /// This version does it in bulk and thus avoids repeats on shared sub-dim entities.
 
+#define DEBUG_ADD_RBARS 0
     void NodeRegistry::add_rbars(std::vector<std::vector<std::string> >& rbar_types )
     {
       static std::vector<stk::mesh::Part*> add_parts(1, static_cast<stk::mesh::Part*>(0));
@@ -856,11 +857,18 @@ namespace stk {
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
           stk::mesh::Part& part = *parts[ipart];
+          typedef std::pair<stk::mesh::Entity, stk::mesh::Entity> NewBarType;
+          std::vector<NewBarType> new_elems;
 
-          std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::add_rbars Part[" << ipart << "]= " << part.name() << std::endl;
+          if (DEBUG_ADD_RBARS && !m_eMesh.get_rank())
+            std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::add_rbars Part[" << ipart << "]= " << part.name() << std::endl;
+          if ( !m_eMesh.get_rank())
+            std::cout << "P[" << m_eMesh.get_rank() << "] Info: Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name() 
+                      << "\n  NOTE:  This block is automatically ignored during refinement."
+                      << std::endl;
           //std::string part_name = part.name();
 
-          if (stk::mesh::is_auto_declared_part(part)) 
+          if (stk::mesh::is_auto_declared_part(part))
             continue;
 
           const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
@@ -894,7 +902,14 @@ namespace stk {
                   continue;
                 }
 
-              stk::mesh::Entity master_node;
+              //if (subDimEntity.size() == 2) // skip beams  FIXME - need topology
+              //  continue;
+
+              stk::mesh::Entity common_node;
+              bool common_node_is_valid = false;
+              //std::cout << "common_node.is_valid() = " << common_node.is_valid() << std::endl;
+              //std::cout << " common_node= " << common_node << std::endl;
+              //std::cout << "common_node.identifier() = " << common_node.identifier() << std::endl;
 
               for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                 {
@@ -902,6 +917,21 @@ namespace stk {
                   stk::mesh::Entity node = nodeId;
                   found = false;
                   stk::mesh::PairIterRelation beams = node.relations(m_eMesh.element_rank());
+                  if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
+                    {
+                      for (unsigned ii=0; ii < beams.size(); ii++)
+                        {
+                          if (selector(beams[ii].entity()))
+                            {
+                              stk::mesh::PairIterRelation beam_nodes = beams[ii].entity().relations(m_eMesh.node_rank());
+                              VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
+                              std::cout << "node= " << node.identifier() << " beam_nodes[" << beams[ii].entity().identifier() << "]= { "
+                                        << std::setw(20) << beam_nodes[0].entity().identifier()
+                                        << std::setw(20) << beam_nodes[1].entity().identifier()
+                                        << std::endl;
+                            }
+                        }
+                    }
                   for (unsigned ii=0; ii < beams.size(); ii++)
                     {
                       if (selector(beams[ii].entity()))
@@ -913,13 +943,14 @@ namespace stk {
                             {
                               if (beam_nodes[jj].entity() != node)
                                 {
-                                  if (master_node.is_valid())
+                                  if (common_node_is_valid)
                                     {
-                                      VERIFY_OP_ON(master_node.identifier(), ==, beam_nodes[jj].entity().identifier(), "beam issue2 ");
+                                      VERIFY_OP_ON(common_node.identifier(), ==, beam_nodes[jj].entity().identifier(), "rbar issue2: please rerun and exclude rbar blocks from refinement using --block_name option ");
                                     }
                                   else
                                     {
-                                      master_node = beam_nodes[jj].entity();
+                                      common_node = beam_nodes[jj].entity();
+                                      common_node_is_valid = true;
                                     }
                                 }
                             }
@@ -932,7 +963,6 @@ namespace stk {
 
               if (found)
                 {
-                  // create new beam elements, add to part
                   unsigned nidsz = nodeIds_onSE.size();
                   for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
                     {
@@ -946,30 +976,41 @@ namespace stk {
                       // only try to add element if I am the owner
                       if (c_node.owner_rank() == m_eMesh.get_parallel_rank())
                         {
-                          vector<stk::mesh::Entity> new_elements;
-                          m_eMesh.createEntities( m_eMesh.element_rank(), 1, new_elements);
-                          stk::mesh::Entity newElement = new_elements[0];
-                          m_eMesh.get_bulk_data()->declare_relation(newElement, c_node, 0);
-                          m_eMesh.get_bulk_data()->declare_relation(newElement, master_node, 1);
-
-                          m_eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
-
-                          if (1)
-                            {
-                              std::cout << "P[" << m_eMesh.get_rank() << "] adding rbar<" << c_node.identifier() << ", " << master_node.identifier() << "> to   Part[" << ipart << "]= " << part.name()
-                                //<< " topology = " << (topology ? shards::CellTopology(topology).getName() : "null")
-                                        << std::endl;
-                            }
-
+                          NewBarType new_elem(c_node, common_node);
+                          new_elems.push_back(new_elem);
                         }
-
-
                     }
+                }
+            } // m_cell_2_data_map iter
 
+          // create new beam elements, add to part
+          if (new_elems.size())
+            {
+              if (DEBUG_ADD_RBARS && !m_eMesh.get_rank())
+                std::cout << "for Part[" << ipart << "] = " << part.name() << " creating " << new_elems.size() << " new rbars" << std::endl;
+              if (1 && !m_eMesh.get_rank())
+                std::cout << "P[0] Info: ... for block[" << ipart << "] = " << part.name() << " creating " << new_elems.size() << " new rbars" << std::endl;
+              vector<stk::mesh::Entity> new_elements;
+              m_eMesh.createEntities( m_eMesh.element_rank(), new_elems.size(), new_elements);
+              for (unsigned i=0; i < new_elems.size(); i++)
+                {
+                  std::pair<stk::mesh::Entity, stk::mesh::Entity>& new_elem = new_elems[i];
+                  stk::mesh::Entity newElement = new_elements[i];
+                  m_eMesh.get_bulk_data()->declare_relation(newElement, new_elem.first, 0);
+                  m_eMesh.get_bulk_data()->declare_relation(newElement, new_elem.second, 1);
+
+                  m_eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
+
+                  if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
+                    {
+                      std::cout << "P[" << m_eMesh.get_rank() << "] adding rbar<" << new_elem.first << ", " << new_elem.second << "> to   Part[" << ipart << "]= " << part.name()
+                        //<< " topology = " << (topology ? shards::CellTopology(topology).getName() : "null")
+                                << std::endl;
+                    }
                 }
             }
         }
-      std::cout << "tmp add_rbars " << std::endl;
+      if (DEBUG_ADD_RBARS) std::cout << "tmp add_rbars " << std::endl;
 
     }
 
