@@ -949,7 +949,8 @@ void define_node_set(stk::mesh::Part &part,
 void define_element_block(stk::mesh::Part &part,
                           const stk::mesh::BulkData &bulk,
                           Ioss::Region &io_region,
-                          const stk::mesh::Selector *anded_selector)
+                          const stk::mesh::Selector *anded_selector,
+                          bool use_nodeset_for_nodal_fields)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
@@ -983,7 +984,8 @@ void define_element_block(stk::mesh::Part &part,
   // Check whether there are any transient fields defined on the nodes of this elementblock
   // that are to be output.  If so, create a nodeset named "part.name()"+block_nodes_suffix
   // and output the fields on that nodeset...
-  if (will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
+  if (use_nodeset_for_nodal_fields &&
+      will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
     std::string nodes_name = part.name() + block_nodes_suffix;
     define_node_set(part, nodes_name, bulk, io_region, anded_selector);
   }
@@ -1024,7 +1026,8 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 void define_side_set(stk::mesh::Part &part,
                      const stk::mesh::BulkData &bulk,
                      Ioss::Region &io_region,
-                     const stk::mesh::Selector *anded_selector)
+                     const stk::mesh::Selector *anded_selector,
+                     bool use_nodeset_for_nodal_fields)
 {
   const stk::mesh::EntityRank si_rank = mesh::MetaData::get(part).side_rank();
 
@@ -1051,7 +1054,8 @@ void define_side_set(stk::mesh::Part &part,
     int spatial_dim = io_region.get_property("spatial_dimension").get_int();
     define_side_blocks(part, bulk, ss, si_rank, spatial_dim, anded_selector);
 
-    if (will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
+    if (use_nodeset_for_nodal_fields &&
+        will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
       std::string nodes_name = part.name() + block_nodes_suffix;
       define_node_set(part, nodes_name, bulk, io_region, anded_selector);
     }
@@ -1068,7 +1072,8 @@ void define_output_db(Ioss::Region & io_region ,
                       const mesh::BulkData &bulk_data,
                       const Ioss::Region *input_region,
                       const stk::mesh::Selector *anded_selector,
-                      const bool sort_stk_parts)
+                      const bool sort_stk_parts,
+                      const bool use_nodeset_for_part_node_fields)
 {
   io_region.begin_mode( Ioss::STATE_DEFINE_MODEL );
 

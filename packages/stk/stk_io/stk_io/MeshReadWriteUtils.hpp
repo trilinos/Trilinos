@@ -369,6 +369,8 @@ namespace stk {
       private:
         void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
         void create_ioss_region();
+        void define_output_database();
+        void write_output_database();
 
         MPI_Comm m_communicator_;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.

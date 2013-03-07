@@ -111,12 +111,20 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
  * decomposed mesh is read in sequentially and parts are thus
  * possibly created in different orderings.
  *
+ * \param[in] use_nodeset_for_part_node_fields is used to determine
+ * how to output nodal fields that may be defined on a higher-rank
+ * part (e.g., element block or sideset).  If the argument is true,
+ * then a nodeset containing the nodes of that part is defined and
+ * the fields will be output on that nodeset. If false, the fields
+ * are output on all nodes in the model and zero-filled where the
+ * field is not defined.
  */
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const Ioss::Region *input_region = NULL,
                        const stk::mesh::Selector *anded_selector = NULL,
-                       const bool sort_stk_parts = false);
+                       bool sort_stk_parts = false,
+                       bool use_nodeset_for_part_node_fields = true);
 
 
 /** Given an Ioss::Region 'io_region' which has already had its

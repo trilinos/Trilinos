@@ -628,8 +628,8 @@ namespace stk {
           "There is no Output database associated with this Mesh Data.");
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
                        "There is no Output database associated with this Mesh Data.");
-      stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get());
-      stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
+      define_output_database();
+      write_output_database();
     }
 
     // ========================================================================
@@ -747,6 +747,18 @@ namespace stk {
         }
       }
       region->end_state(step);
+    }
+
+    void MeshData::define_output_database()
+    {
+      bool sort_stk_parts = false; // used in stk_adapt/stk_percept
+      stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
+                                sort_stk_parts, use_nodeset_for_part_nodes_fields());
+    }
+
+    void MeshData::write_output_database()
+    {
+      stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
     }
 
     namespace {
