@@ -119,12 +119,12 @@ public:
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    SetParameter("OnePt aggregate map name", ParameterEntry(name)); // revalidate
+    SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
     SetFactory("OnePt aggregate map factory",mapFact);
   }
   // set information about small aggregates
   void SetSmallAggMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    SetParameter("SmallAgg aggregate map name", ParameterEntry(name)); // revalidate
+    SetParameter("SmallAgg aggregate map name", ParameterEntry(std::string(name))); // revalidate
     SetFactory("SmallAgg aggregate map factory",mapFact);
   }
 
