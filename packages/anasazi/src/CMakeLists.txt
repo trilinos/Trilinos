@@ -65,6 +65,8 @@ APPEND_SET(HEADERS
   AnasaziEigensolverDecl.hpp
   AnasaziLOBPCG.hpp
   AnasaziLOBPCGSolMgr.hpp
+  AnasaziGeneralizedDavidson.hpp
+  AnasaziGeneralizedDavidsonSolMgr.hpp
   AnasaziGenOrthoManager.hpp
   AnasaziHelperTraits.hpp
   AnasaziICGSOrthoManager.hpp

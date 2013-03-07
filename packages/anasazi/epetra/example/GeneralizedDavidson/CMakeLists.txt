@@ -1,0 +1,20 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+
+  TRIBITS_ADD_EXECUTABLE(
+    Epetra_GenDav_File_Ifpack_example
+    SOURCES GeneralizedDavidsonEpetraExFileIfpack.cpp
+    COMM serial mpi
+  )
+
+ENDIF (${PACKAGE_NAME}_ENABLE_Ifpack)
+ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+ENDIF(${PACKAGE_NAME}_ENABLE_EpetraExt)
+

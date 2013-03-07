@@ -361,6 +361,24 @@ namespace Teuchos
     */
     void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, ScalarType *BETA, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, ScalarType *WORK, const OrdinalType lwork, OrdinalType *info) const;
 
+
+    /*! Reorders the real Schur factorization of a real matrix so that a selected cluster of eigenvalues appears in the leading diagonal blocks of the upper quasi-triangular matrix \c T, and the leading columns of \c Q form an orthonormal basis of the corresponding right invariant subspace.
+       \note (This function is only defined for \c ScalarType = \c float or \c double.)
+    */
+  void TRSEN(const char JOB, const char COMPQ, const OrdinalType *SELECT, const OrdinalType n, ScalarType *T, const OrdinalType ldt, ScalarType *Q, const OrdinalType ldq, MagnitudeType *WR, MagnitudeType *WI, OrdinalType *M, ScalarType *S, MagnitudeType *SEP, ScalarType *WORK, const OrdinalType lwork, OrdinalType *IWORK, const OrdinalType liwork, OrdinalType *info ) const;
+
+
+    /*! Reorders the generalized real Schur decomposition of a real matrix pair (\c A, \c B), so that a selected cluster of eigenvalues appears in the leading diagonal blocks of the upper quasi-triangular matrix \c A and the upper triangular \c B.
+       \note (This function is only defined for \c ScalarType = \c float or \c double.)
+    */
+  void TGSEN(const OrdinalType ijob, const OrdinalType wantq, const OrdinalType wantz, const OrdinalType *SELECT, const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, MagnitudeType *BETA, ScalarType *Q, const OrdinalType ldq, ScalarType *Z, const OrdinalType ldz, OrdinalType *M, MagnitudeType *PL, MagnitudeType *PR, MagnitudeType *DIF, ScalarType *WORK, const OrdinalType lwork, OrdinalType *IWORK, const OrdinalType liwork, OrdinalType *info ) const;
+
+
+    /*! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, the generalized real Schur form (\c S,\c T), optionally, the left and/or right matrices of Schur vectors.
+       \note (This is the function is only defined for \c ScalarType = \c float or \c double.)
+    */
+    void GGES(const char JOBVL, const char JOBVR, const char SORT, OrdinalType (*ptr2func)(ScalarType *, ScalarType *, ScalarType *), const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, OrdinalType *sdim, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, MagnitudeType *BETA, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, ScalarType *WORK, const OrdinalType lwork, OrdinalType *BWORK, OrdinalType *info ) const;
+
     //@}
 
 
@@ -443,6 +461,12 @@ namespace Teuchos
       \note This method will ignore the WORK vector when ScalarType is \c std::complex<float> or \c std::complex<double>.
     */
     void TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const;
+
+    /*! Computes some or all of the right and/or left eigenvectors of a pair of real matrices ( \c S, \c P ), where \c S is a quasi-triangular matrix and \c P is upper triangular.
+       \note This method is only defined for \c ScalarType = \c float or \c double.
+    */
+    void TGEVC(const char SIDE, const char HOWMNY, const OrdinalType *SELECT, const OrdinalType n, ScalarType *S, const OrdinalType lds, ScalarType *P, const OrdinalType ldp, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType *M, ScalarType *WORK, OrdinalType *info) const;
+
 
     //@}
 
@@ -1100,6 +1124,27 @@ namespace Teuchos
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::TRSEN(const char JOB, const char COMPQ, const OrdinalType *SELECT, const OrdinalType n, ScalarType *T, const OrdinalType ldt, ScalarType *Q, const OrdinalType ldq, MagnitudeType *WR, MagnitudeType *WI, OrdinalType *M, ScalarType *S, MagnitudeType *SEP, ScalarType *WORK, const OrdinalType lwork, OrdinalType *IWORK, const OrdinalType liwork, OrdinalType *info ) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::TGSEN(const OrdinalType ijob, const OrdinalType wantq, const OrdinalType wantz, const OrdinalType *SELECT, const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, MagnitudeType *BETA, ScalarType *Q, const OrdinalType ldq, ScalarType *Z, const OrdinalType ldz, OrdinalType *M, MagnitudeType *PL, MagnitudeType *PR, MagnitudeType *DIF, ScalarType *WORK, const OrdinalType lwork, OrdinalType *IWORK, const OrdinalType liwork, OrdinalType *info ) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GGES(const char JOBVL, const char JOBVR, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* sdim, MagnitudeType* ALPHAR, MagnitudeType* ALPHAI, MagnitudeType* BETA, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType *BWORK, OrdinalType* info ) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
@@ -1153,6 +1198,14 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::TGEVC(const char SIDE, const char HOWMNY, const OrdinalType *SELECT, const OrdinalType n, ScalarType *S, const OrdinalType lds, ScalarType *P, const OrdinalType ldp, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType *M, ScalarType *WORK, OrdinalType *info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
 
   template<typename OrdinalType, typename ScalarType>
   ScalarType LAPACK<OrdinalType, ScalarType>::LAMCH(const char CMACH) const
@@ -1292,6 +1345,9 @@ namespace Teuchos
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *info) const;
+    void TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, float *T, const int ldt, float *Q, const int ldq, float *WR, float *WI, int *M, float *S, float *SEP, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
+    void TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *Q, const int ldq, float *Z, const int ldz, int *M, float *PL, float *PR, float *DIF, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
+    void GGES(const char JOBVL, const char JOBVR, const char SORT, int (*ptr2func)(float*, float*, float*), const int n, float* A, const int lda, float* B, const int ldb, int* sdim, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, int *bwork, int* info ) const;
 
     // SVD routine
     void GESVD(const char JOBU, const char JOBVT, const int m, const int n, float* A, const int lda, float* S, float* U, const int ldu, float* V, const int ldv, float* WORK, const int lwork, float* RWORK, int* info) const;
@@ -1309,6 +1365,7 @@ namespace Teuchos
     void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const float* T, const int ldt, float* VL, const int ldvl, float* VR, const int ldvr, const int mm, int* m, float* WORK, int* info) const;
     void TREVC(const char SIDE, const int n, const float* T, const int ldt, float* VL, const int ldvl, float* VR, const int ldvr, const int mm, int* m, float* WORK, float *RWORK, int* info) const;
     void TREXC(const char COMPQ, const int n, float* T, const int ldt, float* Q, const int ldq, int ifst, int ilst, float* WORK, int* info) const;
+    void TGEVC(const char SIDE, const char HOWMNY, const int *SELECT, const int n, float *S, const int lds, float *P, const int ldp, float *VL, const int ldvl, float *VR, const int ldvr, const int mm, int *M, float *WORK, int *info) const;
 
     // Rotation/reflection generators
     void LARTG( const float f, const float g, float* c, float* s, float* r ) const;
@@ -1409,6 +1466,9 @@ namespace Teuchos
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *info) const;
+    void TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, double *T, const int ldt, double *Q, const int ldq, double *WR, double *WI, int *M, double *S, double *SEP, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
+    void TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *Q, const int ldq, double *Z, const int ldz, int *M, double *PL, double *PR, double *DIF, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
+    void GGES(const char JOBVL, const char JOBVR, const char SORT, int (*ptr2func)(double*, double*, double*), const int n, double* A, const int lda, double* B, const int ldb, int* sdim, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, int *bwork, int* info ) const;
 
 
     // SVD routine
@@ -1426,6 +1486,7 @@ namespace Teuchos
     void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const double* T, const int ldt, double* VL, const int ldvl, double* VR, const int ldvr, const int mm, int* m, double* WORK, int* info) const;
     void TREVC(const char SIDE, const int n, const double* T, const int ldt, double* VL, const int ldvl, double* VR, const int ldvr, const int mm, int* m, double* WORK, double* RWORK, int* info) const;
     void TREXC(const char COMPQ, const int n, double* T, const int ldt, double* Q, const int ldq, int ifst, int ilst, double* WORK, int* info) const;
+    void TGEVC(const char SIDE, const char HOWMNY, const int *SELECT, const int n, double *S, const int lds, double *P, const int ldp, double *VL, const int ldvl, double *VR, const int ldvr, const int mm, int *M, double *WORK, int *info) const;
 
     // Rotation/reflection generators
     void LARTG( const double f, const double g, double* c, double* s, double* r ) const;
