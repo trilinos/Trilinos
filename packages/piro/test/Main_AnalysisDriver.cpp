@@ -46,7 +46,8 @@
 #include "MockModelEval_A.hpp"
 #include "ObserveSolution_Epetra.hpp"
 
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_ExtensibleFactory.hpp"
 
 #include "Piro_Epetra_PerformAnalysis.hpp"
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
-  Piro::Epetra::Factory solverFactory;
+  Piro::Epetra::SolverFactory solverFactory;
 
   for (int iTest=0; iTest<3; iTest++) {
 
@@ -115,7 +116,11 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
 
 #ifdef Piro_ENABLE_NOX
-      piroParams.set("Observer", RCP<NOX::Epetra::Observer>(new ObserveSolution_Epetra));
+      {
+        const std::string noxObserverToken = "My NOX Observer";
+        solverFactory.setNOXObserverProvider(noxObserverToken, Piro::makeProvider<ObserveSolution_Epetra, Piro::Ignore>());
+        piroParams.sublist("NOX Observer").set("Type", noxObserverToken);
+      }
 #endif
 
       // Use these two objects to construct a Piro solved application

@@ -1,4 +1,4 @@
-// @HEADER
+ // @HEADER
 // ************************************************************************
 //
 //        Piro: Strategy package for embedded analysis capabilitites
@@ -43,18 +43,27 @@
 #include <iostream>
 #include <string>
 
-#include "MockModelEval_A.hpp"
-#include "SaveEigenData_Epetra.hpp"
-
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_ExtensibleFactory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
 #include "Piro_Epetra_PerformSolve.hpp"
+
+#include "MockModelEval_A.hpp"
+
+#include "Piro_ConfigDefs.hpp"
+
+#ifdef Piro_ENABLE_NOX
+#include "SaveEigenData_Epetra.hpp"
+#endif /* Piro_ENABLE_NOX */
+
+#ifdef Piro_ENABLE_Rythmos
+#include "Piro_RythmosNOX_RowSumUpdater.hpp"
+#endif /* Piro_ENABLE_Rythmos */
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#include "Piro_ConfigDefs.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -78,7 +87,21 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
-  Piro::Epetra::Factory solverFactory;
+  Piro::Epetra::SolverFactory solverFactory;
+
+#ifdef Piro_ENABLE_NOX
+  const std::string saveEigenDataKey = "My SaveEigenData";
+  solverFactory.setLOCASaveEigenDataProvider(
+      saveEigenDataKey,
+      Piro::makeProvider<SaveEigenData_Epetra, Piro::Dereference>());
+#endif /* Piro_ENABLE_NOX */
+
+#ifdef Piro_ENABLE_Rythmos
+  const std::string rythmosRowSumUpdater = "Rythmos Row Sum Updater";
+  solverFactory.setRythmosObserverProvider(
+      rythmosRowSumUpdater,
+      Piro::makeProvider<Piro::RythmosNOXRowSumUpdaterObserver<double>, Piro::Ignore>());
+#endif /* Piro_ENABLE_Rythmos */
 
 #ifdef Piro_ENABLE_Rythmos
   int numTests=5;
@@ -116,15 +139,6 @@ int main(int argc, char *argv[]) {
       RCP<Teuchos::ParameterList> piroParams =
          rcp(new Teuchos::ParameterList("Piro Parameters"));
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
-
-#ifdef Piro_ENABLE_NOX
-      const std::string &solver = piroParams->get("Solver Type","NOX");
-      if (solver == "LOCA") {
-        const RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
-            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
-        piroParams->set("Save Eigen Data Strategy", saveEigs);
-      }
-#endif
 
       // Wrap original model into a Piro solver to build a response-only application
       const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
