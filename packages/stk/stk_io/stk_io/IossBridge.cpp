@@ -643,9 +643,15 @@ void delete_selector_property(Ioss::Region &region)
     delete_selector_property(*it);
     const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
     for(Ioss::SideBlockContainer::const_iterator ib = blocks.begin();
-	ib != blocks.end(); ++ib) {
+        ib != blocks.end(); ++ib) {
       delete_selector_property(*ib);
     }
+  }
+
+  const Ioss::CommSetContainer &comm_sets = region.get_commsets();
+  for(Ioss::CommSetContainer::const_iterator it = comm_sets.begin();
+      it != comm_sets.end(); ++it) {
+    delete_selector_property(*it);
   }
 }
 
