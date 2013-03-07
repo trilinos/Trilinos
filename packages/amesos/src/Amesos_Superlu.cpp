@@ -56,12 +56,20 @@ struct SLUData
   SLU::superlu_options_t SLU_options;
   SLU::mem_usage_t mem_usage;
   SLU::fact_t refactor_option ;         //  SamePattern or SamePattern_SameRowPerm 
+
+  SLUData() {
+    A.Store = B.Store = X.Store = L.Store = U.Store = NULL;
+#ifdef USE_DGSTRF
+  AC.Store = NULL;
+#endif
+  }
 };
 
 using namespace Teuchos;
 
 //=============================================================================
 Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
+  DummyArray(NULL),
   NumGlobalRows_(-1),
   NumGlobalNonzeros_(-1),
   UseTranspose_(false),
@@ -90,14 +98,14 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   dCreate_Dense_Matrix( &(data_->X), 
 			0, 
 			0, 
-			&DummyArray[0],
+			DummyArray,
 			0, 
 			SLU::SLU_DN, SLU::SLU_D, SLU::SLU_GE);
     
   dCreate_Dense_Matrix( &(data_->B), 
 			0, 
 			0, 
-			&DummyArray[0],
+			DummyArray,
 			0, 
 			SLU::SLU_DN, SLU::SLU_D, SLU::SLU_GE);
 }
@@ -262,9 +270,9 @@ int Amesos_Superlu::Factor()
     }
 
     NumGlobalNonzeros_ = SerialMatrix_->NumGlobalNonzeros();
-    Ap_.resize(NumGlobalRows_ + 1);
-    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
-    Aval_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
+    Ap_.resize(NumGlobalRows_ + 1, 0);
+    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_), 0);
+    Aval_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_), 0);
 
     int NzThisRow ;
     int Ai_index = 0 ; 
@@ -325,9 +333,9 @@ int Amesos_Superlu::ReFactor()
       AMESOS_CHK_ERR(-1);
     }
 
-    Ap_.resize(NumGlobalRows_+ 1);
-    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_)); 
-    Aval_.resize(EPETRA_MAX(NumGlobalRows_, NumGlobalNonzeros_)); 
+    Ap_.resize(NumGlobalRows_+ 1, 0);
+    Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_), 0);
+    Aval_.resize(EPETRA_MAX(NumGlobalRows_, NumGlobalNonzeros_), 0);
 
     int NzThisRow ;
     int Ai_index = 0 ; 
@@ -445,12 +453,12 @@ int Amesos_Superlu::NumericFactorization()
     data_->B.ncol = 0;
     SLU::DNformat* Bstore = (SLU::DNformat *) (data_->B.Store) ; 
     Bstore->lda = NumGlobalRows_; 
-    Bstore->nzval = &DummyArray[0];
+    Bstore->nzval = DummyArray;
     data_->X.nrow = NumGlobalRows_; 
     data_->X.ncol = 0;
     SLU::DNformat* Xstore = (SLU::DNformat *) (data_->X.Store) ; 
     Xstore->lda = NumGlobalRows_; 
-    Xstore->nzval = &DummyArray[0];
+    Xstore->nzval = DummyArray;
 
     SLU::SuperLUStat_t SLU_stat ;
     SLU::StatInit( &SLU_stat ) ; 
