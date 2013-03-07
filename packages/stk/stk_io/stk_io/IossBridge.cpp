@@ -272,11 +272,6 @@ size_t db_api_int_size(const Ioss::GroupingEntity *entity)
   return entity->get_database()->int_byte_size_api();
 }
 
-bool invalid_rank(stk::mesh::EntityRank rank)
-{
-  return rank == mesh::InvalidEntityRank;
-}
-
 stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
 {
   if (mesh::MetaData::get(part).universal_part() == part) {
@@ -285,31 +280,6 @@ stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
   else {
     return part.primary_entity_rank();
   }
-}
-
-stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &)
-{
-  return stk::mesh::MetaData::ELEMENT_RANK;
-}
-
-stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)
-{
-  return meta.side_rank();
-}
-
-stk::mesh::EntityRank face_rank(const stk::mesh::MetaData &)
-{
-  return stk::mesh::MetaData::FACE_RANK;
-}
-
-stk::mesh::EntityRank edge_rank(const stk::mesh::MetaData &)
-{
-  return stk::mesh::MetaData::EDGE_RANK;
-}
-
-stk::mesh::EntityRank node_rank(const stk::mesh::MetaData&)
-{
-  return stk::mesh::MetaData::NODE_RANK;
 }
 
 void initialize_spatial_dimension(stk::mesh::MetaData & meta, size_t spatial_dimension,
@@ -1100,15 +1070,9 @@ void define_output_db(Ioss::Region & io_region ,
                       const stk::mesh::Selector *anded_selector,
                       const bool sort_stk_parts)
 {
-  const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
-
-  const stk::mesh::EntityRank no_rank = stk::mesh::MetaData::NODE_RANK;
-  const stk::mesh::EntityRank el_rank = stk::mesh::MetaData::ELEMENT_RANK;
-  const stk::mesh::EntityRank fa_rank = stk::mesh::MetaData::FACE_RANK;
-  const stk::mesh::EntityRank ed_rank = stk::mesh::MetaData::EDGE_RANK;
-
   io_region.begin_mode( Ioss::STATE_DEFINE_MODEL );
 
+  const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
   define_node_block(meta_data.universal_part(), bulk_data, io_region, anded_selector);
 
   // All parts of the meta data:
@@ -1126,23 +1090,26 @@ void define_output_db(Ioss::Region & io_region ,
     mesh::Part * const part = *i ;
 
     if (is_part_io_part(*part)) {
-      if (invalid_rank(part->primary_entity_rank()))
-	continue;
-      else if (part->primary_entity_rank() == no_rank)
-	define_node_set(*part, part->name(), bulk_data, io_region, anded_selector);
-      else if (part->primary_entity_rank() == el_rank)
-	define_element_block(*part, bulk_data, io_region, anded_selector);
-      else if (part->primary_entity_rank() == fa_rank)
-	define_side_set(*part, bulk_data, io_region, anded_selector);
-      else if (part->primary_entity_rank() == ed_rank)
-	define_side_set(*part, bulk_data, io_region, anded_selector);
+      if (part->primary_entity_rank() == mesh::InvalidEntityRank)
+        continue;
+      else if (part->primary_entity_rank() == stk::mesh::MetaData::NODE_RANK)
+        define_node_set(*part, part->name(), bulk_data, io_region, anded_selector);
+      else if (part->primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK)
+        define_element_block(*part, bulk_data, io_region, anded_selector,
+            use_nodeset_for_part_node_fields);
+      else if (part->primary_entity_rank() == stk::mesh::MetaData::FACE_RANK)
+        define_side_set(*part, bulk_data, io_region, anded_selector,
+            use_nodeset_for_part_node_fields);
+      else if (part->primary_entity_rank() == stk::mesh::MetaData::EDGE_RANK)
+        define_side_set(*part, bulk_data, io_region, anded_selector,
+            use_nodeset_for_part_node_fields);
     }
   }
 
   define_communication_maps(bulk_data, io_region, anded_selector);
 
   if (input_region != NULL)
-	io_region.synchronize_id_and_name(input_region, true);
+    io_region.synchronize_id_and_name(input_region, true);
 
   // for streaming refinement, each "pseudo-processor" doesn't know about others, so we pick a sort order
   //   and use it for all pseudo-procs - the original_block_order property is used to set the order
@@ -1156,20 +1123,18 @@ void define_output_db(Ioss::Region & io_region ,
       mesh::Part * const part = *i ;
 
       if (is_part_io_part(*part)) {
-        if (invalid_rank(part->primary_entity_rank()))
+        if (part->primary_entity_rank() == mesh::InvalidEntityRank)
           continue;
-        else if (part->primary_entity_rank() == el_rank)
-          {
-            Ioss::GroupingEntity *element_block = io_region.get_entity(part->name());
-            if (element_block)
-              {
-                if (element_block->property_exists("original_block_order")) {
-                  element_block->property_erase("original_block_order");
-                }
-                element_block->property_add(Ioss::Property("original_block_order", offset));
-                ++offset;
-              }
+        else if (part->primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK) {
+          Ioss::GroupingEntity *element_block = io_region.get_entity(part->name());
+          if (element_block) {
+            if (element_block->property_exists("original_block_order")) {
+              element_block->property_erase("original_block_order");
+            }
+            element_block->property_add(Ioss::Property("original_block_order", offset));
+            ++offset;
           }
+        }
       }
     }
   }

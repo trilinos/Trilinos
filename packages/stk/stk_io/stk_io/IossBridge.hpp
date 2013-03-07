@@ -296,14 +296,7 @@ const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
-// To minimize ifdefs for the deprecated code:
-bool invalid_rank(mesh::EntityRank rank);
 mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);
-mesh::EntityRank element_rank(const mesh::MetaData &meta);
-mesh::EntityRank side_rank(const mesh::MetaData &meta);
-mesh::EntityRank face_rank(const mesh::MetaData &meta);
-mesh::EntityRank edge_rank(const mesh::MetaData &meta);
-mesh::EntityRank node_rank(const mesh::MetaData &meta);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
