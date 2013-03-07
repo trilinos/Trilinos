@@ -44,6 +44,7 @@ Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which pro
    LOBPCG</em>, U. L. Hetmaniuk and R. B. Lehoucq, J. Comput. Physics, 218, pp. 324-332 (2006)
    <li>IRTR, an implicit version of the Riemannian Trust-Region Eigensolver, orginally described in 
    <em>A truncated-CG style method for symmetric generalized eigenvalue problems</em>, P.-A. Absil, C. G. Baker, and K. A. Gallivan, J. Computational and Applied Mathematics, 189, pp. 274-285 (2006).
+   <li>Generalized Davidson method, a non-symmetric variant of the block Davidson solver described above. This solver is <em>experimental</em>, but is currently in active use. It currently only support real-valued scalar types.
    </ul>
 
    \section contributors Anasazi Contributors
@@ -53,6 +54,7 @@ Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which pro
    <ul>
      <li> <a href="http://www.csm.ornl.gov/~cbaker">Chris Baker</a>, Oak Ridge National Lab
      <li> <a href="http://www.hetmaniuk.net/Site/Welcome.html">Ulrich Hetmaniuk</a>, University of Washington
+     <li> Steve Hamilton, Oak Ridge National Lab
      <li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Labs
      <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Labs
    </ul>
