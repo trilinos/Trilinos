@@ -24,6 +24,7 @@ APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Version.hpp
                    Piro_Epetra_MatrixFreeDecorator.hpp
                    Piro_Epetra_InvertMassMatrixDecorator.hpp
+                   Piro_ExtensibleFactory.hpp
 		   Piro_Epetra_Factory.hpp
 		   Piro_SolverFactory.hpp
 		   Piro_SolverFactory_Def.hpp
