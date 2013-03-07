@@ -87,27 +87,34 @@ del sys, op
 %import "LOCA.TurningPoint.MooreSpence_RelPath.i"
 
 // LOCA::Hopf::MooreSpence AbstractGroup class
+%feature("director") LOCA::Hopf::MooreSpence::AbstractGroup;
 %include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
 
 // LOCA::Hopf::MooreSpence ExtendedGroup class
+%feature("director") LOCA::Hopf::MooreSpence::ExtendedGroup;
 %include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
 
 // LOCA::Hopf::MooreSpence ExtendedMultiVector class
+%feature("director") LOCA::Hopf::MooreSpence::ExtendedMultiVector;
 %include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
 
 // LOCA::Hopf::MooreSpence ExtendedVector class
 %ignore LOCA::Hopf::MooreSpence::ExtendedVector::getFrequency;
 %ignore LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam;
+%feature("director") LOCA::Hopf::MooreSpence::ExtendedVector;
 %include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
 
 // LOCA::Hopf::MooreSpence FiniteDifferenceGroup class
+%feature("director") LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
 %include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MooreSpence SolverFactory class
 %include "LOCA_Hopf_MooreSpence_SolverFactory.H"
 
 // LOCA::Hopf::MooreSpence SolverStrategy class
+%feature("director") LOCA::Hopf::MooreSpence::SolverStrategy;
 %include "LOCA_Hopf_MooreSpence_SolverStrategy.H"
 
 // LOCA::Hopf::MooreSpence SalingerBordering class
+%feature("director") LOCA::Hopf::MooreSpence::SalingerBordering;
 %include "LOCA_Hopf_MooreSpence_SalingerBordering.H"

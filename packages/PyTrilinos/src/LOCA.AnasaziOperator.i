@@ -46,6 +46,7 @@ version of LOCA.AnasaziOperator supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_anasazioperator_docstring) AnasaziOperator
 
 %{
@@ -82,6 +83,7 @@ using Teuchos::RCP;
 %teuchos_rcp(LOCA::AnasaziOperator::Factory)
 
 // LOCA::AnasaziOperator AbstractStrategy class
+%feature("director") LOCA::AnasaziOperator::AbstractStrategy;
 %include "LOCA_AnasaziOperator_AbstractStrategy.H"
 
 // LOCA::AnasaziOperator Factory class

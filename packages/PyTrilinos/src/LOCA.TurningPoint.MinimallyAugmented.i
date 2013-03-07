@@ -53,6 +53,7 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA.TurningPoint",
+        directors = "1",
         docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %include "LOCA.TurningPoint.MinimallyAugmented_Content.i"

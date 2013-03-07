@@ -49,6 +49,7 @@ supports the following classes:
 %enddef
 
 %module(package="PyTrilinos.LOCA.Pitchfork",
+        directors = "1",
         docstring = %loca_pitchfork_moorespence_docstring) MooreSpence
 
 %{
@@ -92,6 +93,7 @@ del sys, op
 %import "LOCA.TurningPoint.MooreSpence_RelPath.i"
 
 // LOCA::Pitchfork::MooreSpence AbstractGroup class
+%feature("director") LOCA::Pitchfork::MooreSpence::AbstractGroup;
 %include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 
 // LOCA::Pitchfork::MooreSpence SolverFactory class

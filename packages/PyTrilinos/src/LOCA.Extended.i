@@ -54,6 +54,7 @@ following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_extended_docstring) Extended
 
 %include "LOCA.Extended_Content.i"

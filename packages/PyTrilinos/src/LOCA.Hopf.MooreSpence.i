@@ -63,6 +63,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 %enddef
 
 %module(package="PyTrilinos.LOCA.Hopf",
+        directors = "1",
         docstring = %loca_hopf_moorespence_docstring) MooreSpence
 
 %include "LOCA.Hopf.MooreSpence_Content.i"

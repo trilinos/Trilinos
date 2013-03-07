@@ -44,6 +44,7 @@ LOCA.BorderedSystem supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_borderedsystem_docstring) BorderedSystem
 
 %include "LOCA.BorderedSystem_Content.i"

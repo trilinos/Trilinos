@@ -59,6 +59,7 @@ supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA.Hopf",
+        directors = "1",
         docstring = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
@@ -120,13 +121,17 @@ del sys, op
 %import "LOCA.Hopf.MooreSpence.i"
 
 // LOCA::Hopf::MinimallyAugmented Constraint class
+%feature("director") LOCA::Hopf::MinimallyAugmented::Constraint;
 %include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 
 // LOCA::Hopf::MinimallyAugmented AbstractGroup class
+%feature("director") LOCA::MinimallyAugmented::AbstractGroup;
 %include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented FiniteDifferenceGroup class
+%feature("director") LOCA::MinimallyAugmented::FiniteDifferenceGroup;
 %include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented ExtendedGroup class
+%feature("director") LOCA::MinimallyAugmented::ExtendedGroup;
 %include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"

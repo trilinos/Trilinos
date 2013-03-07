@@ -64,6 +64,7 @@ LOCA.MultiContinuation supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_multicontinuation_docstring) MultiContinuation
 
 %include "LOCA.MultiContinuation_Content.i"

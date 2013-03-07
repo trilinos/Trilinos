@@ -45,6 +45,7 @@ LOCA.TimeDependent supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_timedependent_docstring) TimeDependent
 
 %include "LOCA.TimeDependent_Content.i"

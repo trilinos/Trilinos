@@ -67,12 +67,6 @@ the following classes:
 #include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
 #include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-// #include "LOCA_MultiContinuation_AbstractStrategy.H"
-// #include "LOCA_MultiContinuation_ArcLengthConstraint.H"
-// #include "LOCA_MultiContinuation_ArcLengthGroup.H"
-// #include "LOCA_MultiContinuation_ExtendedGroup.H"
-// #include "LOCA_MultiContinuation_CompositeConstraint.H"
-// #include "LOCA_MultiContinuation_CompositeConstraintMVDX.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -140,13 +134,20 @@ the following classes:
 %import "LOCA.Pitchfork.MinimallyAugmented.i"
 
 // LOCA::Abstract Group class
+//%feature("director") LOCA::Abstract::Group;
+// The following #define is to change the name of LOCA method
+// arguments that conflict with a SWIG director method argument
+#define result loca_result
 %include "LOCA_Abstract_Group.H"
 
 // LOCA::Abstract TransposeSolveGroup class
+//%feature("director") LOCA::Abstract::TransposeSolveGroup;
 %include "LOCA_Abstract_TransposeSolveGroup.H"
 
 // LOCA::Abstract Iterator class
+//%feature("director") LOCA::Abstract::Iterator;
 %include "LOCA_Abstract_Iterator.H"
 
 // LOCA::Abstract Factory class
+//%feature("director") LOCA::Abstract::Factory;
 %include "LOCA_Abstract_Factory.H"

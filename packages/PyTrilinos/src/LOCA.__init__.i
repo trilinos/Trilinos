@@ -223,6 +223,7 @@ import MultiPredictor
 %import "LOCA.Abstract.i"
 
 // LOCA Stepper class
+%feature("director") LOCA::Stepper;
 %include "LOCA_Stepper.H"
 
 // LOCA ParameterVector class

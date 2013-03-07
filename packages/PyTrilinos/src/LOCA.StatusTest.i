@@ -45,6 +45,7 @@ python version of LOCA.StatusTest supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
         docstring = %loca_statustest_docstring) StatusTest
 
 %{
@@ -79,7 +80,9 @@ python version of LOCA.StatusTest supports the following classes:
 
 // LOCA::StatusTest Abstract class
 %rename (None_) None;
+%feature("director") LOCA::StatusTest::Abstract;
 %include "LOCA_StatusTest_Abstract.H"
 
 // LOCA::StatusTest Wrapper class
+%feature("director") LOCA::StatusTest::Wrapper;
 %include "LOCA_StatusTest_Wrapper.H"

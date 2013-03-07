@@ -46,6 +46,7 @@ following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA.Pitchfork",
+        directors = "1",
         docstring = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
@@ -85,4 +86,5 @@ del sys, op
 %import "LOCA.Pitchfork.MooreSpence.i"
 
 // LOCA::Pitchfork::MinimallyAugmented AbstractGroup class
+%feature("director") LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
 %include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"

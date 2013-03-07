@@ -54,6 +54,7 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 %enddef
 
 %module(package   = "PyTrilinos.LOCA.TurningPoint",
+        directors = "1",
         docstring = %loca_turningpoint_moorespence_docstring) MooreSpence
 
 %include "LOCA.TurningPoint.MooreSpence_Content.i"

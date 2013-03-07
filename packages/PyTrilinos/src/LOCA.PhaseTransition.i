@@ -80,5 +80,5 @@ LOCA.PhaseTransition supports the following classes:
 %import "LOCA.MultiContinuation.i"
 
 // LOCA::PhasTransition AbstractGroup class
+%feature("director") LOCA::PhaseTransition::AbstractGroup;
 %include "LOCA_PhaseTransition_AbstractGroup.H"
-
