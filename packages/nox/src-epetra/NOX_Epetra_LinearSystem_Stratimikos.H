@@ -67,7 +67,7 @@
 #include "Thyra_PreconditionerBase.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -384,10 +384,10 @@ protected:
   PreconditionerMatrixSourceType precMatrixSource;
 
   //! Thyra linear op objects.
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory;
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows;
-  Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp;
-  mutable Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory;
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> > lows;
+  Teuchos::RCP<const ::Thyra::LinearOpBase<double> > linearOp;
+  mutable Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precObj;
 
   //! Scaling object supplied by the user
   Teuchos::RCP<NOX::Epetra::Scaling> scaling;
