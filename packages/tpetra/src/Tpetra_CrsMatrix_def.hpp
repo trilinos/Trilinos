@@ -1646,7 +1646,17 @@ namespace Tpetra {
     return frobNorm;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
+  {
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ == Teuchos::null, std::runtime_error, " requires a graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph(), std::runtime_error, " does not work on static graphs.");
 
+    myGraph_->replaceDomainMapAndImporter(newDomainMap,newImporter);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

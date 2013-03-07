@@ -449,4 +449,19 @@ namespace Xpetra {
       mtx_->FillComplete(doOptimizeStorage);
     }
 
+  //!  Replaces the current domainMap and importer with the user-specified objects.
+  void EpetraCrsMatrix::replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) {
+      XPETRA_MONITOR("EpetraCrsMatrix::replaceDomainMapAndImporter");       
+      XPETRA_DYNAMIC_CAST(const EpetraImport, *newImporter, eImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
+ 
+      const RCP<const Epetra_Import> & myImport = eImporter.getEpetra_Import();
+      if(myImport==Teuchos::null)
+	mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
+      else
+	mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
+  }
+
+
+
+
 }

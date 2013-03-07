@@ -808,6 +808,18 @@ namespace Tpetra {
        */
       ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
+
+    /** Replaces the current domainMap and importer with the user-specified map object, but only
+	if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+	and Importer's SourceMap matches the DomainMap (assuming the importer isn't null). 
+	
+	\pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+
+  */
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const map_type >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
+
+
+
       //@}
 
     private:
