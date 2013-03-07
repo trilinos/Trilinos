@@ -1,3 +1,8 @@
+#ifdef __INTEL_COMPILER
+#pragma warning push
+#pragma warning disable 444
+#endif
+
 #include <iostream>
 #include <cmath>
 #include <math.h>
@@ -523,3 +528,7 @@ namespace stk
 
   }//namespace percept
 }//namespace stk
+
+#ifdef __INTEL_COMPILER
+#pragma warning pop
+#endif
