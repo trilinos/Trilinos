@@ -150,7 +150,7 @@ Factory::create(const std::string& prec_type,
   if (prec_type == "ILUT") {
     /* Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz */
     if(one_mpi_rank) prec = Teuchos::rcp(new Ifpack2::ILUT<MatrixType>(matrix));
-    else prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,0));
+    else prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,overlap));
   }
   else if (prec_type == "RILUK") {
     prec = Teuchos::rcp(new Ifpack2::RILUK<MatrixType>(matrix));
