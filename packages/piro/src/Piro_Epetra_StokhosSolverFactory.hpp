@@ -75,9 +75,6 @@ namespace Epetra {
     StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
 			 const Teuchos::RCP<const Epetra_Comm>& globalComm);
 
-    //! Destructor
-    ~StokhosSolverFactory();
-
     //! Reset Stokhos solver parameters
     void resetSolverParameters(const Teuchos::ParameterList& new_solver_params);
 
@@ -86,12 +83,16 @@ namespace Epetra {
 
     //! Create stochastic model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> createSGModel(
-      const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-      const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver = Teuchos::null);
+      const Teuchos::RCP<EpetraExt::ModelEvaluator>& model);
+
+    //! Create stochastic observer
+    Teuchos::RCP<NOX::Epetra::Observer> createSGObserver(
+        const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver);
 
     //! Create stochastic solver
     Teuchos::RCP<EpetraExt::ModelEvaluator> createSGSolver(
-      const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model);
+      const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model,
+      const Teuchos::RCP<NOX::Epetra::Observer>& sg_observer = Teuchos::null);
 
     //! Create stochastic solver adapter
     Teuchos::RCP<Stokhos::SGInverseModelEvaluator> createSGSolverAdapter(
