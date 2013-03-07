@@ -63,11 +63,13 @@
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
+#ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#endif
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
@@ -286,6 +288,7 @@ int main(int argc, char *argv[]) {
     H->Write(writeMatricesOPT,writeMatricesOPT);
   }
 
+#ifdef HAVE_MUELU_BELOS
   if (amgAsPrecond) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
     // Operator and Multivector type that will be used with Belos
@@ -346,6 +349,7 @@ int main(int argc, char *argv[]) {
     }
     tm = Teuchos::null;
   } //if (amgAsPrecond)
+#endif //ifdef HAVE_MUELU_BELOS
 
   globalTimeMonitor = Teuchos::null;
 
