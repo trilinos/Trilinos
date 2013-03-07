@@ -104,10 +104,10 @@ struct ViewAssignment< LayoutScalar , void , void >
 
     decrement( dst );
 
-    dst.m_ptr_on_device = (typename DstViewType::scalar_type *)
+    dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
-                              typeid(typename DstViewType::scalar_type) ,
-                              sizeof(typename DstViewType::scalar_type) ,
+                              typeid(typename DstViewType::value_type) ,
+                              sizeof(typename DstViewType::value_type) ,
                               1 );
 
     ViewInitialize< DstViewType >::apply( dst );
@@ -161,7 +161,7 @@ private:
 
   typedef ViewTraits< T , L , D , M > traits ;
 
-  typename traits::scalar_type * m_ptr_on_device ;
+  typename traits::value_type * m_ptr_on_device ;
 
 public:
 
@@ -214,15 +214,15 @@ public:
     { Impl::ViewAssignment<Impl::LayoutScalar,Impl::LayoutScalar>( *this , rhs ); return *this ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  operator typename traits::scalar_type & () const { return *m_ptr_on_device ; }
+  operator typename traits::value_type & () const { return *m_ptr_on_device ; }
 
 
 
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type & operator()() const { return *m_ptr_on_device ; }
+  typename traits::value_type & operator()() const { return *m_ptr_on_device ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type & operator*() const { return *m_ptr_on_device ; }
+  typename traits::value_type & operator*() const { return *m_ptr_on_device ; }
 
 
   explicit
@@ -230,7 +230,7 @@ public:
     { Impl::ViewAssignment<Impl::LayoutScalar>( *this , label ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
+  typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
 };
 
 } /* namespace KokkosArray */

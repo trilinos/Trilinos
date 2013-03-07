@@ -105,10 +105,10 @@ struct ViewAssignment< LayoutVector , void , void >
     decrement( dst );
     shape_type::assign( dst.m_shape , n0 );
 
-    dst.m_ptr_on_device = (typename DstViewType::scalar_type *)
+    dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
-                              typeid(typename DstViewType::scalar_type) ,
-                              sizeof(typename DstViewType::scalar_type) ,
+                              typeid(typename DstViewType::value_type) ,
+                              sizeof(typename DstViewType::value_type) ,
                               dst.m_shape.N0 );
 
     ViewInitialize< DstViewType >::apply( dst );
@@ -256,8 +256,8 @@ private:
 
   typedef ViewTraits< T , L , D , M > traits ;
 
-  typename traits::scalar_type * m_ptr_on_device ;
-  typename traits::shape_type    m_shape ;
+  typename traits::value_type * m_ptr_on_device ;
+  typename traits::shape_type   m_shape ;
 
 public:
 
@@ -314,7 +314,7 @@ public:
 
   template< typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type & operator()( const iType0 & i0 ) const
+  typename traits::value_type & operator()( const iType0 & i0 ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -325,7 +325,7 @@ public:
 
   template< typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type & operator[]( const iType0 & i0 ) const
+  typename traits::value_type & operator[]( const iType0 & i0 ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -339,7 +339,7 @@ public:
     { Impl::ViewAssignment<Impl::LayoutVector>( *this , label , n0 ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
+  typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
 };
 
 } /* namespace KokkosArray */

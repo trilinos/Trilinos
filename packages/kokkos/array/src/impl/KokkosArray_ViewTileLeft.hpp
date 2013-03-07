@@ -113,10 +113,10 @@ private:
 
     const size_t count = allocation_count( dst );
 
-    dst.m_ptr_on_device = (typename DstViewType::scalar_type *)
+    dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
-                              typeid(typename DstViewType::scalar_type) ,
-                              sizeof(typename DstViewType::scalar_type) ,
+                              typeid(typename DstViewType::value_type) ,
+                              sizeof(typename DstViewType::value_type) ,
                               count );
 
     ViewInitialize< DstViewType >::apply( dst );
@@ -139,9 +139,9 @@ public:
   {
     typedef View<DT,DL,DD,DM,LayoutTileLeftFast>  DstViewType ;
 
-    dst.m_stride   = 1 ;
     dst.m_shape.N0 = n0 ;
     dst.m_shape.N1 = n1 ;
+    dst.m_tile_N0  = ( n0 + DstViewType::MASK_0 ) >> DstViewType::SHIFT_0 ;
 
     allocate( dst , label );
   }
@@ -156,8 +156,8 @@ public:
                              typename View<ST,SL,SD,SM,LayoutTileLeftFast>::HostMirror >::value
                   >::type * = 0 )
   {
-    dst.m_shape  = src.m_shape ;
-    dst.m_stride = src.m_stride ;
+    dst.m_shape   = src.m_shape ;
+    dst.m_tile_N0 = src.m_tile_N0 ;
     allocate( dst , "mirror" );
   }
 };
@@ -191,7 +191,7 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 
     shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 );
 
-    dst.m_stride        = src.m_stride ;
+    dst.m_tile_N0       = src.m_tile_N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
     ViewAssignment< LayoutTileLeftFast >::increment( dst );
@@ -203,7 +203,7 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 template<>
 struct ViewAssignment< LayoutLeft , LayoutTileLeftFast, void >
 {
-  /** \brief Assign compatible views */
+  /** \brief Extracting a single tile from a tiled view */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
@@ -246,43 +246,138 @@ struct ViewAssignment< LayoutLeft , LayoutTileLeftFast, void >
   }
 };
 
+} /* namespace Impl */
+} /* namespace KokkosArray */
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class DT , unsigned N0 , unsigned N1 , class DD , class DM >
-struct ViewAssignment<
-  View<DT,LayoutTileLeft<N0,N1,true>,DD,DM,LayoutTileLeftFast> ,
-  typename DD::memory_space ,
-  typename enable_if< (
-    ViewTraits<DT,LayoutTileLeft<N0,N1,true>,DD,DM>::is_managed
-  ) >::type >
+namespace KokkosArray {
+
+template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
+class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutTileLeftFast >
+  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
 {
-  typedef View<DT,LayoutTileLeft<N0,N1,true>,DD,DM,LayoutTileLeftFast> DstViewType ;
-  typedef typename DstViewType::shape_type shape_type ;
+private:
+  template< class , class , class > friend class Impl::ViewAssignment ;
 
-  KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( const DstViewType & dst )
-  { return ViewAssignment< LayoutTileLeftFast >::allocation_count( dst ); }
+  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
 
-  // Same data type, same layout, different device; used to create a mirror.
-  template< class D , class M >
-  ViewAssignment( DstViewType & dst , const View< typename DstViewType::data_type ,
-                                                  typename DstViewType::layout_type ,
-                                                  D , M > & src )
-  { ViewAssignment< LayoutTileLeftFast >( dst , src ); }
+  typedef Impl::ViewAssignment<Impl::LayoutTileLeftFast> alloc ;
 
-  ViewAssignment( DstViewType & dst , const std::string & label ,
-                  const size_t n0 , const size_t n1 ,
-                  const size_t ,
-                  const size_t ,
-                  const size_t ,
-                  const size_t ,
-                  const size_t ,
-                  const size_t )
-  { ViewAssignment< LayoutTileLeftFast >( dst , label , n0 , n1 ); }
+  typedef Impl::ViewAssignment<Impl::LayoutTileLeftFast,
+                               Impl::LayoutTileLeftFast> assign ;
+
+  typename traits::value_type * m_ptr_on_device ;
+  typename traits::shape_type   m_shape ;
+  unsigned                      m_tile_N0 ;
+
+  typedef typename traits::array_layout layout ;
+
+  enum { SHIFT_0 = Impl::power_of_two<layout::N0>::value };
+  enum { SHIFT_1 = Impl::power_of_two<layout::N1>::value };
+  enum { MASK_0  = layout::N0 - 1 };
+  enum { MASK_1  = layout::N1 - 1 };
+
+public:
+
+  typedef Impl::LayoutTileLeftFast specialize ;
+
+  typedef View< typename traits::const_data_type ,
+                typename traits::layout_type ,
+                typename traits::device_type ,
+                typename traits::memory_traits > const_type ;
+
+  typedef View< typename traits::non_const_data_type ,
+                typename traits::layout_type ,
+                Host > HostMirror ;
+
+  enum { Rank = 2 };
+
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_2() const { return 1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_3() const { return 1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_4() const { return 1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_5() const { return 1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_6() const { return 1 ; }
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_7() const { return 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  View() : m_ptr_on_device(0) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  ~View() { alloc::decrement( *this ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
+
+  View( const std::string & label , const size_t n0 , const size_t n1 )
+    : m_ptr_on_device(0) { alloc( *this , label , n0 , n1 ); }
+
+  //------------------------------------
+
+  typedef View< typename traits::value_type [ layout::N0 ][ layout::N1 ] ,
+                LayoutLeft ,
+                typename traits::device_type ,
+                MemoryUnmanaged >
+    tile_type ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t tiles_in_dimension_0() const { return m_tile_N0 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t tiles_in_dimension_1() const { return ( m_shape.N1 + MASK_1 ) >> SHIFT_1 ; }
+
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t global_to_tile_index_0( const iType & global_i0 ) const
+    { return global_i0 >> SHIFT_0 ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t global_to_tile_index_1( const iType & global_i1 ) const
+    { return global_i1 >> SHIFT_1 ; }
+
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t global_to_local_tile_index_0( const iType & global_i0 ) const
+    { return global_i0 & MASK_0 ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_t global_to_local_tile_index_1( const iType & global_i1 ) const
+    { return global_i1 & MASK_1 ; }
+
+  //------------------------------------
+
+  template< typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type & operator()( const iType0 & i0 , const iType1 & i1 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i,j );
+
+      // Use care to insert necessary parentheses as the
+      // shift operators have lower precedence than the arithmatic operators.
+
+      return m_ptr_on_device[
+        // ( ( Tile offset                               ) *  ( Tile size       ) )
+         + ( ( (i0>>SHIFT_0) + m_tile_N0 * (i1>>SHIFT_1) ) << (SHIFT_0 + SHIFT_1) )
+        // ( Offset within tile                       )
+         + ( (i0 & MASK_0) + ((i1 & MASK_1)<<SHIFT_0) ) ] ;
+    }
 };
 
-} /* namespace Impl */
 } /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------

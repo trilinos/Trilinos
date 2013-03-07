@@ -49,7 +49,6 @@
 
 #include <impl/KokkosArray_ViewOperLeft.hpp>
 #include <impl/KokkosArray_ViewOperRight.hpp>
-#include <impl/KokkosArray_ViewOperTileLeft.hpp>
 
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
