@@ -1081,18 +1081,21 @@ void define_output_db(Ioss::Region & io_region ,
   define_node_block(meta_data.universal_part(), bulk_data, io_region, anded_selector);
 
   // All parts of the meta data:
-  //const mesh::PartVector & all_parts = meta_data.get_mesh_parts();
-  const mesh::PartVector & all_parts_unsorted = meta_data.get_mesh_parts();
+  const mesh::PartVector *parts = NULL;
+  mesh::PartVector all_parts_sorted;
 
+  const mesh::PartVector & all_parts = meta_data.get_mesh_parts();
   // sort parts so they go out the same on all processors (srk: this was induced by streaming refine)
-  mesh::PartVector all_parts = all_parts_unsorted;
-  if (sort_stk_parts)
-    std::sort(all_parts.begin(), all_parts.end(), part_compare());
+  if (sort_stk_parts) {
+    all_parts_sorted = all_parts;
+    std::sort(all_parts_sorted.begin(), all_parts_sorted.end(), part_compare());
+    parts = &all_parts_sorted;
+  } else {
+    parts = &all_parts;
+  }
 
-  for (mesh::PartVector::const_iterator i = all_parts.begin();
-       i != all_parts.end(); ++i) {
-
-    mesh::Part * const part = *i ;
+  for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
+    mesh::Part * const part = *i;
 
     if (is_part_io_part(*part)) {
       if (part->primary_entity_rank() == mesh::InvalidEntityRank)
@@ -1119,11 +1122,9 @@ void define_output_db(Ioss::Region & io_region ,
   // for streaming refinement, each "pseudo-processor" doesn't know about others, so we pick a sort order
   //   and use it for all pseudo-procs - the original_block_order property is used to set the order
   //   on all procs.
-  if (sort_stk_parts)
-  {
+  if (sort_stk_parts) {
     int offset=0;
-    for (mesh::PartVector::const_iterator i = all_parts.begin();
-         i != all_parts.end(); ++i) {
+    for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
 
       mesh::Part * const part = *i ;
 
