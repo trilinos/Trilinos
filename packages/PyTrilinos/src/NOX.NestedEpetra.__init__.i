@@ -453,6 +453,7 @@ namespace Epetra
 // arguments that conflict with a SWIG director method argument
 #define result nox_result
 %include "NOX_Epetra_LinearSystem.H"
+#undef result
 
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //
