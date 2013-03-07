@@ -203,7 +203,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count = A.graph.row_map.dimension_0() - 1 ;
     const size_type tensor_dimension = A.block.dimension();
     // const size_type rem = tensor_dimension % 32;
     // const size_type tensor_align = 

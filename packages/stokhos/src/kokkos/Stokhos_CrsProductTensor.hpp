@@ -123,12 +123,12 @@ public:
 
   /** \brief  Dimension of the tensor. */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type dimension() const { return m_row_map.dimension(0) - 1 ; }
+  size_type dimension() const { return m_row_map.dimension_0() - 1 ; }
 
   /** \brief  Number of sparse entries. */
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_coord.dimension(0); }
+  { return m_coord.dimension_0(); }
 
   /** \brief  Maximum sparse entries for any coordinate */
   KOKKOSARRAY_INLINE_FUNCTION

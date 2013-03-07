@@ -192,7 +192,7 @@ namespace Tpetra {
   /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.  
+  /// to the host.
   ///
   /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
@@ -648,19 +648,33 @@ namespace Tpetra {
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Scale the current values of a multi-vector, this = alpha*this.
+    /// \brief Scale the current values of a multi-vector, this = alpha*this.
+    ///
+    /// This method will always multiply, even if alpha is zero.  That
+    /// means, for example, that if \c *this contains NaN entries
+    /// before calling this method, the NaN entries will remain after
+    /// this method finishes.
     void scale(const Scalar &alpha);
 
-    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    /// \brief Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    ///
+    /// This method will always multiply, even if all the entries of
+    /// alpha are zero.  That means, for example, that if \c *this
+    /// contains NaN entries before calling this method, the NaN
+    /// entries will remain after this method finishes.
     void scale(Teuchos::ArrayView<const Scalar> alpha);
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    /// \brief Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
 
-    //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    /// \brief Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    ///
+    /// If gamma is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
@@ -848,7 +862,7 @@ namespace Tpetra {
     /// have been made using the appropriate offsetView* method of
     /// Kokkos::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
                  EPrivateComputeViewConstructor /* dummy */);
 
     /// \brief Advanced constructor for noncontiguous views.
@@ -859,7 +873,7 @@ namespace Tpetra {
     /// have been made using the appropriate offsetView* method of
     /// Kokkos::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
                  Teuchos::ArrayView<const size_t> whichVectors,
                  EPrivateComputeViewConstructor /* dummy */);
 

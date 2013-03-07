@@ -91,7 +91,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     KokkosArray::parallel_for( row_count , Multiply(A,x,y) );
   }
 };
@@ -137,7 +137,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
 
     for (size_t j=0; j<num_vecs; j++) {
       Ordinal col = m_col_indices[j];
@@ -159,7 +159,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<Ordinal> & col)
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     const size_t block_size = 20;
     const size_t num_vecs = col.size();
     const size_t num_blocks = num_vecs / block_size;
@@ -214,7 +214,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    //const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    //const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
     const size_t num_vecs = m_x.size();
 
     for (size_t j=0; j<num_vecs; j++) {
@@ -235,7 +235,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     KokkosArray::parallel_for( n , MMultiply(A,x,y) );
   }
 };
@@ -261,7 +261,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -307,7 +307,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, GatherTranspose(x,xt,indices) );
     }
   };
@@ -338,7 +338,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, ScatterTranspose(x,xt,indices) );
     }
   };
@@ -365,7 +365,7 @@ namespace Impl {
     
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, GatherVecTranspose(x,xt) );
     }
   };
@@ -392,7 +392,7 @@ namespace Impl {
     
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, ScatterVecTranspose(x,xt) );
     }
   };
@@ -423,7 +423,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<ordinal_type> & indices)
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -472,7 +472,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -518,7 +518,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -558,7 +558,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<ordinal_type> & indices)
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -605,7 +605,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
