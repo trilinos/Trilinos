@@ -41,7 +41,10 @@
 // @HEADER
 
 #include "Piro_Epetra_StokhosMPSolver.hpp"
-#include "Piro_Epetra_Factory.hpp"
+
+#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_ExtensibleFactory.hpp"
+
 #include "Stokhos_Epetra.hpp"
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"
@@ -126,15 +129,23 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
 						     inner_linsys,
 						     iReq, iJac, A,
 						     model->get_x_map()));
-    
-    piroParams->set("Interface", nox_interface);
-    piroParams->set("Linear System", linsys);
+  }
+
+  Piro::Epetra::SolverFactory solverFactory;
+  {
+    const std::string token = "Interface";
+    solverFactory.setNOXInterfaceProvider(token, nox_interface);
+    Teuchos::sublist(piroParams, token)->set("Type", token);
+  }
+  {
+    const std::string token = "Linear System";
+    solverFactory.setNOXLinearSystemProvider(token, linsys);
+    Teuchos::sublist(piroParams, token)->set("Type", token);
   }
 
   // Create solver to map p -> g
-  mp_solver =
-    Piro::Epetra::Factory::createSolver(piroParams, mp_nonlin_model);
-  
+  mp_solver = solverFactory.createSolver(piroParams, mp_nonlin_model);
+
   // Create MP inverse model evaluator to map p_mp -> g_mp
   Teuchos::Array<int> mp_p_index_map = 
     mp_nonlin_model->get_p_mp_map_indices();

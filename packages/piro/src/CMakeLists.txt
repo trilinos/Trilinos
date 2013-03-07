@@ -22,14 +22,19 @@ SET(HEADERS ${HEADERS}
 #
 APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Version.hpp
+                   Piro_Epetra_MatrixFreeDecorator.hpp
                    Piro_Epetra_InvertMassMatrixDecorator.hpp
+                   Piro_ExtensibleFactory.hpp
 		   Piro_Epetra_Factory.hpp
+		   Piro_Epetra_SolverFactory.hpp
 		   Piro_SolverFactory.hpp
 		   Piro_SolverFactory_Def.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
+                   Piro_Epetra_MatrixFreeDecorator.cpp
                    Piro_Epetra_InvertMassMatrixDecorator.cpp
 		   Piro_Epetra_Factory.cpp
+		   Piro_Epetra_SolverFactory.cpp
                    Piro_Version.cpp)
 APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
                    Piro_MatrixFreeDecorator_Def.hpp
@@ -48,7 +53,6 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_AdaptiveSolutionManager.hpp
                      Piro_Epetra_VelocityVerletSolver.hpp
                      Piro_Epetra_TrapezoidRuleSolver.hpp
-                     Piro_Epetra_MatrixFreeDecorator.hpp
 		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
@@ -56,7 +60,6 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_AdaptiveSolutionManager.cpp
                      Piro_Epetra_VelocityVerletSolver.cpp
                      Piro_Epetra_TrapezoidRuleSolver.cpp
-                     Piro_Epetra_MatrixFreeDecorator.cpp
 		     Piro_Epetra_SensitivityOperator.cpp)
 ENDIF()
 # Optional Rythmos Dependency

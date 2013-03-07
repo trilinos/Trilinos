@@ -43,7 +43,7 @@
 */
 
 #include "Piro_Epetra_NECoupledModelEvaluator.hpp"
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
 #include "Piro_Epetra_StokhosSolver.hpp"
 
 #include "Epetra_LocalMap.h"
@@ -92,9 +92,10 @@ NECoupledModelEvaluator(
     }
   }
   else {
+    Piro::Epetra::SolverFactory solverFactory;
     for (int i=0; i<n_models; i++)
-      solvers[i] = Piro::Epetra::Factory::createSolver(piroParams[i], 
-						       models[i]);
+      solvers[i] = solverFactory.createSolver(
+          piroParams[i], models[i]);
   }
 
   // Get connectivity information
