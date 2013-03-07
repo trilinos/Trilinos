@@ -56,7 +56,9 @@
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
-#include "BelosTsqrOrthoManager.hpp"
+#ifdef HAVE_BELOS_TSQR
+#  include "BelosTsqrOrthoManager.hpp"
+#endif // HAVE_BELOS_TSQR
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
