@@ -639,7 +639,7 @@ namespace stk {
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
-      run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
+      run_environment.clp.setOption("blocks"               , &block_name_inc           , block_name_desc_inc.c_str());
 #if defined(STK_BUILT_IN_SIERRA) 
       run_environment.clp.setOption("rbar_blocks"              , &rbar_blocks              , "list of blocks to treat in special Salinas fashion for RBARs - see block_name description for format.");
 #endif
