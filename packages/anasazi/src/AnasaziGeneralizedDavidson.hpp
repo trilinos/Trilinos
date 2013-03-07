@@ -1213,12 +1213,19 @@ void GeneralizedDavidson<ScalarType,MV,OP>::solveProjectedEigenproblem()
         char rightVecs = 'V'; // compute right vectors
         char sortVals  = 'N'; // don't sort
         int sdim;
-        int work_size = 10*d_curDim+16;
-        std::vector<ScalarType> work(work_size);
-        int info;
-
+        // int work_size = 10*d_curDim+16;
         Teuchos::LAPACK<int,ScalarType> lapack;
-        lapack.GGES( leftVecs, rightVecs, sortVals, 0, d_curDim, d_S->values(), d_S->stride(),
+        int info;
+        // workspace query
+        int work_size = -1;
+        std::vector<ScalarType> work(1);
+        lapack.GGES( leftVecs, rightVecs, sortVals, NULL, d_curDim, d_S->values(), d_S->stride(),
+                     d_T->values(), d_T->stride(), &sdim, &d_alphar[0], &d_alphai[0], &d_betar[0],
+                     d_Q->values(), d_Q->stride(), d_Z->values(), d_Z->stride(), &work[0], work_size, 0, &info );
+        // actual call
+        work_size = work[0];
+        work.resize(work_size);
+        lapack.GGES( leftVecs, rightVecs, sortVals, NULL, d_curDim, d_S->values(), d_S->stride(),
                      d_T->values(), d_T->stride(), &sdim, &d_alphar[0], &d_alphai[0], &d_betar[0],
                      d_Q->values(), d_Q->stride(), d_Z->values(), d_Z->stride(), &work[0], work_size, 0, &info );
 
