@@ -852,7 +852,7 @@ namespace KokkosArrayKernelsUnitTest {
     matrix.graph = KokkosArray::create_crsarray<crsarray_type>( 
       std::string("testing") , flat_graph );
 
-    const size_t flat_graph_length = matrix.graph.entries.dimension(0);
+    const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
     matrix.values = vector_type( "matrix" , flat_graph_length );
     {
@@ -993,7 +993,7 @@ namespace KokkosArrayKernelsUnitTest {
 
     matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-    const size_t flat_graph_length = matrix.graph.entries.dimension(0);
+    const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
     matrix.values = vector_type( "matrix" , flat_graph_length );
     {

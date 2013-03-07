@@ -123,12 +123,12 @@ public:
 
   /** \brief  Number of k entries. */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type num_k() const { return m_j_row_map.dimension(0) - 1 ; }
+  size_type num_k() const { return m_j_row_map.dimension_0() - 1 ; }
 
   /** \brief  Number of sparse entries. */
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_i_coord.dimension(0); }
+  { return m_i_coord.dimension_0(); }
 
   /** \brief  Begin j entries with a coordinate 'k' */
   KOKKOSARRAY_INLINE_FUNCTION
