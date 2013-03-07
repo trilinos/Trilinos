@@ -145,8 +145,12 @@ Factory::create(const std::string& prec_type,
   (void)overlap;
   Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
 
+  bool one_mpi_rank=(matrix->getComm()->getSize()==1);
+
   if (prec_type == "ILUT") {
-    prec = Teuchos::rcp(new Ifpack2::ILUT<MatrixType>(matrix));
+    /* Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz */
+    if(one_mpi_rank) prec = Teuchos::rcp(new Ifpack2::ILUT<MatrixType>(matrix));
+    else prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,0));
   }
   else if (prec_type == "RILUK") {
     prec = Teuchos::rcp(new Ifpack2::RILUK<MatrixType>(matrix));
@@ -161,7 +165,7 @@ Factory::create(const std::string& prec_type,
     prec = Teuchos::rcp(new Ifpack2::Diagonal<MatrixType>(matrix));
   }
   else if (prec_type == "SCHWARZ") {
-    prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix));
+    prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,overlap));
   }
   else if (prec_type == "KRYLOV") {
     prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrix));
