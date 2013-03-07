@@ -46,7 +46,7 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const MatrixType>& A)
    numInitialize_(0),
    numCompute_(0),
    numApply_(0),
-   condEst_(-1.0)
+   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
 {
 }
 
@@ -61,7 +61,7 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,Lo
    numInitialize_(0),
    numCompute_(0),
    numApply_(0),
-   condEst_(-1.0)
+   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
 {
 }
 
@@ -124,12 +124,15 @@ Diagonal<MatrixType>::computeCondEst(
                      CondestType CT,
                      LocalOrdinal MaxIters,
                      magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
+                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix)
+{
+  const magnitudeType minusOne = Teuchos::ScalarTraits<magnitudeType>::one ();
+
   if (!isComputed()) { // cannot compute right now
-    return(-1.0);
+    return minusOne;
   }
   // NOTE: this is computing the *local* condest
-  if (condEst_ == -1.0) {
+  if (condEst_ == minusOne) {
     condEst_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
   }
   return(condEst_);
