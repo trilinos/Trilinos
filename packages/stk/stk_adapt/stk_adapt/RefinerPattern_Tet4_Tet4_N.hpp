@@ -343,7 +343,8 @@ namespace stk {
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
-            interpolateElementFields(eMesh, element, newElement);
+            std::vector<stk::mesh::Entity> elements(1,element);
+            interpolateElementFields(eMesh, elements, newElement);
 
             if (0)
               {

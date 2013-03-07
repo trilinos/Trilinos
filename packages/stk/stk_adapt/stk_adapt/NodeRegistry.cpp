@@ -858,12 +858,14 @@ namespace stk {
         {
           stk::mesh::Part& part = *parts[ipart];
           typedef std::pair<stk::mesh::Entity, stk::mesh::Entity> NewBarType;
+          typedef std::vector<stk::mesh::Entity> EntityVector;
           std::vector<NewBarType> new_elems;
+          std::vector<EntityVector> new_elems_attached_rbars;
 
           if (DEBUG_ADD_RBARS && !m_eMesh.get_rank())
             std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::add_rbars Part[" << ipart << "]= " << part.name() << std::endl;
           if ( !m_eMesh.get_rank())
-            std::cout << "P[" << m_eMesh.get_rank() << "] Info: Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name() 
+            std::cout << "P[" << m_eMesh.get_rank() << "] Info: Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name()
                       << "\n  NOTE:  This block is automatically ignored during refinement."
                       << std::endl;
           //std::string part_name = part.name();
@@ -878,7 +880,9 @@ namespace stk {
           add_parts[0] = &part;
 
           SubDimCellToDataMap::iterator iter;
-          //std::cout << "tmp m_cell_2_data_map.size() = " << m_cell_2_data_map.size() << std::endl;
+
+          // Step 1. loop over all pseudo-face/edges in the NodeRegistry
+
           for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
             {
               const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
@@ -905,11 +909,11 @@ namespace stk {
               //if (subDimEntity.size() == 2) // skip beams  FIXME - need topology
               //  continue;
 
+              // Step 2. for all nodes of this pseudo face/edge...
               stk::mesh::Entity common_node;
               bool common_node_is_valid = false;
-              //std::cout << "common_node.is_valid() = " << common_node.is_valid() << std::endl;
-              //std::cout << " common_node= " << common_node << std::endl;
-              //std::cout << "common_node.identifier() = " << common_node.identifier() << std::endl;
+
+              std::vector<stk::mesh::Entity> attached_rbars;
 
               for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                 {
@@ -917,6 +921,7 @@ namespace stk {
                   stk::mesh::Entity node = nodeId;
                   found = false;
                   stk::mesh::PairIterRelation beams = node.relations(m_eMesh.element_rank());
+
                   if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
                     {
                       for (unsigned ii=0; ii < beams.size(); ii++)
@@ -932,13 +937,21 @@ namespace stk {
                             }
                         }
                     }
+
+                  // Step 3. for all beams attached to this node that belong to the current rbar block...
                   for (unsigned ii=0; ii < beams.size(); ii++)
                     {
                       if (selector(beams[ii].entity()))
                         {
+                          // Step 3a.  we found a beam in the current rbar block attached to current node
                           found = true;
+
+                          attached_rbars.push_back(beams[ii].entity());
+
                           stk::mesh::PairIterRelation beam_nodes = beams[ii].entity().relations(m_eMesh.node_rank());
                           VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
+
+                          // Step 4. for beam nodes, find the node that is common to all rbars, the other node is current one from Step 2
                           for (unsigned jj=0; jj < beam_nodes.size(); jj++)
                             {
                               if (beam_nodes[jj].entity() != node)
@@ -959,10 +972,11 @@ namespace stk {
                     }
                   if (!found)
                     break;
-                }
+                } // loop over nodes of pseudo face/edge
 
               if (found)
                 {
+                  // create new beam element, add to part
                   unsigned nidsz = nodeIds_onSE.size();
                   for (unsigned i_nid = 0; i_nid < nidsz; i_nid++)
                     {
@@ -978,6 +992,7 @@ namespace stk {
                         {
                           NewBarType new_elem(c_node, common_node);
                           new_elems.push_back(new_elem);
+                          new_elems_attached_rbars.push_back(attached_rbars);
                         }
                     }
                 }
@@ -1000,6 +1015,8 @@ namespace stk {
                   m_eMesh.get_bulk_data()->declare_relation(newElement, new_elem.second, 1);
 
                   m_eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
+
+                  UniformRefinerPatternBase::interpolateElementFields(m_eMesh, new_elems_attached_rbars[i], newElement);
 
                   if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
                     {

@@ -158,7 +158,7 @@ namespace stk {
           base_s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
           base_s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
           base_s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key
-          
+
         };
 
       stk::mesh::PartVector m_fromParts;
@@ -167,7 +167,7 @@ namespace stk {
       const std::string m_appendOriginalString; //="_uo_1000"
       static const std::string m_oldElementsPartName;
       stk::mesh::EntityRank m_primaryEntityRank;
-     
+
     public:
       bool m_do_strip_hashes;
       //typedef ToTopology TTopo;
@@ -196,7 +196,7 @@ namespace stk {
       /// 10/02/10 and the number of nodes needed for each sub entity
       virtual void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)=0;
 
-      /// 
+      ///
       virtual void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks,
                                   bool sameTopology=true) {
         throw std::runtime_error("not implemented");
@@ -215,8 +215,8 @@ namespace stk {
       /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
       void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement, unsigned ordinal, unsigned *numChild=0);
 
-      void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement);
-      
+      static void interpolateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement);
+
       /// given a new element (child) that is a child of an original element (parent), look at parent's side to elem
       ///   relations and from the children of the element, choose an element to connect the new side to (using connectSides)
       bool findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity parent, stk::mesh::Entity child);
@@ -303,12 +303,12 @@ namespace stk {
           case base_s_beam_3_key:
             topoDim = 1;
             break;
-            
-          case base_s_shell_tri_3_key: 
-          case base_s_shell_tri_6_key: 
-          case base_s_shell_quad_4_key: 
-          case base_s_shell_quad_9_key: 
-          case base_s_shell_quad_8_key: 
+
+          case base_s_shell_tri_3_key:
+          case base_s_shell_tri_6_key:
+          case base_s_shell_quad_4_key:
+          case base_s_shell_quad_9_key:
+          case base_s_shell_quad_8_key:
             topoDim = 2;
             break;
           }
@@ -355,7 +355,7 @@ namespace stk {
       static const unsigned topo_key_pyramid13  = shards::Pyramid<13>::key;
       static const unsigned topo_key_pyramid5   = shards::Pyramid<5>::key;
       static const unsigned topo_key_tet4       = shards::Tetrahedron<4>::key;
-          
+
       static const unsigned s_shell_line_2_key = shards::ShellLine<2>::key;
       static const unsigned s_shell_line_3_key = shards::ShellLine<3>::key;
       static const unsigned s_shell_tri_3_key  = shards::ShellTriangle<3>::key;
@@ -373,11 +373,11 @@ namespace stk {
       virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
       virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
 
-      virtual std::string getFromTopoPartName() { 
+      virtual std::string getFromTopoPartName() {
         shards::CellTopology cell_topo(getFromTopology());
         return cell_topo.getName();
       }
-      virtual std::string getToTopoPartName() { 
+      virtual std::string getToTopoPartName() {
         shards::CellTopology cell_topo(getToTopology());
         return cell_topo.getName();
       }
@@ -1021,7 +1021,8 @@ namespace stk {
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
-            interpolateElementFields(eMesh, element, newElement);
+            std::vector<stk::mesh::Entity> elements(1,element);
+            interpolateElementFields(eMesh, elements, newElement);
 
             element_pool++;
 
@@ -1271,7 +1272,7 @@ namespace stk {
         unsigned num_child = ref_topo.num_child();
         unsigned iChildStart = 0;
         //unsigned iChildEnd = num_child-1;
-        // SPECIAL CASE ALERT 
+        // SPECIAL CASE ALERT
         if (fromTopoKey == topo_key_pyramid5)
           {
             num_child = getNumNewElemPerElem();
@@ -1530,7 +1531,8 @@ namespace stk {
 
             set_parent_child_relations(eMesh, element, newElement, iChildRefTopo);
 
-            interpolateElementFields(eMesh, element, newElement);
+            std::vector<stk::mesh::Entity> elements(1,element);
+            interpolateElementFields(eMesh, elements, newElement);
 
             element_pool++;
           }
@@ -2436,7 +2438,7 @@ namespace stk {
                     stk::mesh::Part& from_subset = *from_subsets[i_from_subset];
                     const CellTopologyData * from_subset_part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(from_subset);
                     const CellTopologyData * to_subset_part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(toPart);
-                    if (!from_subset_part_cell_topo_data || !to_subset_part_cell_topo_data) 
+                    if (!from_subset_part_cell_topo_data || !to_subset_part_cell_topo_data)
                       continue;
                     std::string to_subset_name = from_subset.name() + "#" + to_subset_part_cell_topo_data->name + "#" + getAppendConvertString();
                     //std::string to_subset_name = from_subset.name() + getAppendConvertString();
@@ -2731,7 +2733,7 @@ namespace stk {
 
           if (!foundOldPart)
             {
-              if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part for oldPartName = " 
+              if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part for oldPartName = "
                                                     << oldPartName << " rank= " << m_primaryEntityRank << std::endl;
               stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
               mesh::MetaData & meta = mesh::MetaData::get(part);
@@ -2957,7 +2959,7 @@ namespace stk {
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
 
 //DPM adding enum for use in initializing empty UniformRefiner objects
-enum Pattern 
+enum Pattern
 	{
 	 LINE2_LINE2_2,
 	 BEAM2_BEAM2_2,
@@ -2972,7 +2974,7 @@ enum Pattern
 	 SHELLQUAD4_SHELLQUAD4_4,
 	 SHELLQUAD8_SHELLQUAD8_4,
 	 TET4_TET4_8,
-	 HEX8_HEX8_8, 
+	 HEX8_HEX8_8,
 	 WEDGE6_WEDGE6_8,
 	 PYRAMID5_PYRAMID5_10,
 	 LINE3_LINE3_2,

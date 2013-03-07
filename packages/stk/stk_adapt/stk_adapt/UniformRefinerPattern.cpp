@@ -307,7 +307,7 @@ namespace stk {
 #endif
     }
 
-    void UniformRefinerPatternBase::interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement)
+    void UniformRefinerPatternBase::interpolateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement)
     {
       // FIXME
 //       if (old_owning_elem.entity_rank() != stk::mesh::MetaData::ELEMENT_RANK)
@@ -315,6 +315,7 @@ namespace stk {
 //           return;
 //         }
       const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
+      double old_owning_elements_size = old_owning_elements.size();
       unsigned nfields = fields.size();
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
@@ -339,32 +340,43 @@ namespace stk {
             {
               continue;
             }
-          if (field_rank == old_owning_elem.entity_rank())
+          for (unsigned iel=0; iel < old_owning_elements.size(); iel++)
             {
-              unsigned stride_old=0, stride_new=0;
-              double *fdata_old = PerceptMesh::field_data_entity(field, old_owning_elem, &stride_old);
-              if (!fdata_old)
-                continue;
-              if ((int)stride_old != field_dimension)
+              stk::mesh::Entity old_owning_elem = old_owning_elements[iel];
+
+              if (field_rank == old_owning_elem.entity_rank())
                 {
-                  VERIFY_OP_ON((int)stride_old, ==, field_dimension, "interpolateElementFields err1");
-                  throw std::runtime_error("interpolateElementFields err1");
-                }
-              double *fdata_new = PerceptMesh::field_data_entity(field, newElement,  &stride_new);
-              if (!fdata_new)
-                continue;
-              if ((int)stride_new != field_dimension || stride_new != stride_old)
-                {
-                  VERIFY_OP_ON((int)stride_new, ==, field_dimension, "interpolateElementFields err2");
-                  VERIFY_OP_ON(stride_new, ==, stride_old, "interpolateElementFields err3");
-                  throw std::runtime_error("interpolateElementFields err2");
-                }
-              for (unsigned i = 0; i < stride_old; i++)
-                {
-                  fdata_new[i] = fdata_old[i];
+                  unsigned stride_old=0, stride_new=0;
+                  double *fdata_old = PerceptMesh::field_data_entity(field, old_owning_elem, &stride_old);
+                  if (!fdata_old)
+                    continue;
+                  if ((int)stride_old != field_dimension)
+                    {
+                      VERIFY_OP_ON((int)stride_old, ==, field_dimension, "interpolateElementFields err1");
+                      throw std::runtime_error("interpolateElementFields err1");
+                    }
+                  double *fdata_new = PerceptMesh::field_data_entity(field, newElement,  &stride_new);
+                  if (!fdata_new)
+                    continue;
+                  if ((int)stride_new != field_dimension || stride_new != stride_old)
+                    {
+                      VERIFY_OP_ON((int)stride_new, ==, field_dimension, "interpolateElementFields err2");
+                      VERIFY_OP_ON(stride_new, ==, stride_old, "interpolateElementFields err3");
+                      throw std::runtime_error("interpolateElementFields err2");
+                    }
+                  if (iel == 0)
+                    {
+                      for (unsigned i = 0; i < stride_old; i++)
+                        {
+                          fdata_new[i] = 0.0;
+                        }
+                    }
+                  for (unsigned i = 0; i < stride_old; i++)
+                    {
+                      fdata_new[i] += fdata_old[i] / old_owning_elements_size;
+                    }
                 }
             }
-
         }
     }
 
