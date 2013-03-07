@@ -246,15 +246,18 @@ struct ViewAssignment< LayoutVector , LayoutLeft , void >
 
 namespace KokkosArray {
 
-template< class T , class L , class D , class M >
-class View< T , L , D , M , Impl::LayoutVector >
-  : public ViewTraits< T , L , D , M >
+template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
+class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutVector >
+  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
 {
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
-  typedef ViewTraits< T , L , D , M > traits ;
+  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+
+  typedef Impl::ViewAssignment<Impl::LayoutVector> alloc ;
+  typedef Impl::ViewAssignment<Impl::LayoutVector,Impl::LayoutVector> assign ;
 
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
@@ -285,61 +288,63 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_7() const { return 1 ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
+  bool is_null() const { return 0 == m_ptr_on_device ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   View() : m_ptr_on_device(0) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
-  ~View() { Impl::ViewAssignment<Impl::LayoutVector>( *this ); }
+  ~View() { alloc::decrement( *this ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
-    : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutVector,Impl::LayoutVector>( *this , rhs ); }
+    : m_ptr_on_device(0) { assign( *this , rhs ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View & rhs )
-    { Impl::ViewAssignment<Impl::LayoutVector,Impl::LayoutVector>( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,Impl::LayoutVector> & rhs )
-    : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutVector,Impl::LayoutVector>( *this , rhs ); }
+    : m_ptr_on_device(0) { assign( *this , rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,Impl::LayoutVector> & rhs )
-    { Impl::ViewAssignment<Impl::LayoutVector,Impl::LayoutVector>( *this , rhs ); return *this ; }
+    { assign( *this , rhs ); return *this ; }
 
-
-
-  template< typename iType0 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::value_type & operator()( const iType0 & i0 ) const
-    {
-      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
-      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[i0] ;
-    }
-
-  template< typename iType0 >
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::value_type & operator[]( const iType0 & i0 ) const
-    {
-      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
-      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[i0] ;
-    }
+  //------------------------------------
 
   explicit
   View( const std::string & label , const unsigned n0 = 0 ) : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutVector>( *this , label , n0 ); }
+    { alloc( *this , label , n0 ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::enable_if<( 0 == iType(0) ), typename traits::value_type >::type &
+  operator()( const iType & i0 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[i0] ;
+    }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::enable_if<( 0 == iType(0) ), typename traits::value_type >::type &
+  operator[]( const iType & i0 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[i0] ;
+    }
 };
 
 } /* namespace KokkosArray */

@@ -809,18 +809,18 @@ public:
     ASSERT_TRUE( hx.is_null() );
     ASSERT_TRUE( hy.is_null() );
     ASSERT_TRUE( hz.is_null() );
-    ASSERT_EQ( dx.dimension(0) , 0u );
-    ASSERT_EQ( dy.dimension(0) , 0u );
-    ASSERT_EQ( dz.dimension(0) , 0u );
-    ASSERT_EQ( hx.dimension(0) , 0u );
-    ASSERT_EQ( hy.dimension(0) , 0u );
-    ASSERT_EQ( hz.dimension(0) , 0u );
-    ASSERT_EQ( dx.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( dy.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( dz.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( hx.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( hy.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( hz.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( dx.dimension_0() , 0u );
+    ASSERT_EQ( dy.dimension_0() , 0u );
+    ASSERT_EQ( dz.dimension_0() , 0u );
+    ASSERT_EQ( hx.dimension_0() , 0u );
+    ASSERT_EQ( hy.dimension_0() , 0u );
+    ASSERT_EQ( hz.dimension_0() , 0u );
+    ASSERT_EQ( dx.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( dy.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( dz.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( hx.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( hy.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( hz.dimension_1() , unsigned(N1) );
 
     dx = dView4( "dx" , N0 );
     dy = dView4( "dy" , N0 );
@@ -836,24 +836,24 @@ public:
     ASSERT_FALSE( dy.is_null() );
     ASSERT_NE( dx , dy );
 
-    ASSERT_EQ( dx.dimension(0) , unsigned(N0) );
-    ASSERT_EQ( dx.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( dx.dimension(2) , unsigned(N2) );
-    ASSERT_EQ( dx.dimension(3) , unsigned(N3) );
+    ASSERT_EQ( dx.dimension_0() , unsigned(N0) );
+    ASSERT_EQ( dx.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( dx.dimension_2() , unsigned(N2) );
+    ASSERT_EQ( dx.dimension_3() , unsigned(N3) );
 
-    ASSERT_EQ( dy.dimension(0) , unsigned(N0) );
-    ASSERT_EQ( dy.dimension(1) , unsigned(N1) );
-    ASSERT_EQ( dy.dimension(2) , unsigned(N2) );
-    ASSERT_EQ( dy.dimension(3) , unsigned(N3) );
+    ASSERT_EQ( dy.dimension_0() , unsigned(N0) );
+    ASSERT_EQ( dy.dimension_1() , unsigned(N1) );
+    ASSERT_EQ( dy.dimension_2() , unsigned(N2) );
+    ASSERT_EQ( dy.dimension_3() , unsigned(N3) );
 
     hx = KokkosArray::create_mirror( dx );
     hy = KokkosArray::create_mirror( dy );
 
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
-    for ( size_t i1 = 0 ; i1 < hx.dimension(1) ; ++i1 ) {
-    for ( size_t i2 = 0 ; i2 < hx.dimension(2) ; ++i2 ) {
-    for ( size_t i3 = 0 ; i3 < hx.dimension(3) ; ++i3 ) {
+    for ( size_t i1 = 0 ; i1 < hx.dimension_1() ; ++i1 ) {
+    for ( size_t i2 = 0 ; i2 < hx.dimension_2() ; ++i2 ) {
+    for ( size_t i3 = 0 ; i3 < hx.dimension_3() ; ++i3 ) {
       hx(ip,i1,i2,i3) = ++count ;
     }}}}
 
