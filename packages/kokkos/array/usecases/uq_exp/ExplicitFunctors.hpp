@@ -171,7 +171,7 @@ struct Fields {
     : num_nodes(       mesh.parallel_data_map.count_owned +
                        mesh.parallel_data_map.count_receive )
     , num_nodes_owned( mesh.parallel_data_map.count_owned )
-    , num_elements(    mesh.elem_node_ids.dimension(0) )
+    , num_elements(    mesh.elem_node_ids.dimension_0() )
     , uq_count(        arg_uq_count )
     , lin_bulk_visc(   arg_lin_bulk_visc )
     , quad_bulk_visc(  arg_quad_bulk_visc )
@@ -326,7 +326,7 @@ struct InitializeElement
     , rotation_new(           mesh_fields.rotation_new )
     , elem_mass(              mesh_fields.elem_mass )
     , density(                mesh_fields.density )
-    , uq_count(               mesh_fields.stretch.dimension(1) )
+    , uq_count(               mesh_fields.stretch.dimension_1() )
     , K_S_XX( Hex8Functions::K_S_XX )
     , K_S_YY( Hex8Functions::K_S_YY )
     , K_S_ZZ( Hex8Functions::K_S_ZZ )
@@ -451,7 +451,7 @@ struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
     , displacement(  fields.displacement )
     , velocity(      fields.velocity )
     , vel_grad(      fields.vel_grad )
-    , uq_count(      fields.displacement.dimension(1) )
+    , uq_count(      fields.displacement.dimension_1() )
     {
       KokkosArray::parallel_for( fields.num_elements , *this );
     }
@@ -580,7 +580,7 @@ struct DecompRotateFunctor< Explicit::Fields< Scalar , DeviceType > >
     , stretch(       mesh_fields.stretch )
     , rot_stretch(   mesh_fields.rot_stretch )
     , dt(            mesh_fields.dt )
-    , uq_count(      mesh_fields.vel_grad.dimension(1) )
+    , uq_count(      mesh_fields.vel_grad.dimension_1() )
     {
       KokkosArray::parallel_for( mesh_fields.num_elements , *this );
     }
@@ -706,7 +706,7 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
     , lin_bulk_visc(          mesh_fields.lin_bulk_visc )
     , quad_bulk_visc(         mesh_fields.quad_bulk_visc )
     , user_dt(                arg_user_dt )
-    , uq_count(               mesh_fields.displacement.dimension(1) )
+    , uq_count(               mesh_fields.displacement.dimension_1() )
   {
     SetNextTimeStep op_dt( mesh_fields.dt_new );
 
@@ -910,7 +910,7 @@ struct NodalUpdateFunctor< Fields< Scalar , DeviceType > , Boundary >
    , acceleration(      mesh_fields.acceleration )
    , internal_force(    mesh_fields.internal_force )
    , element_force(     mesh_fields.element_force )
-   , uq_count(          mesh_fields.displacement.dimension(1) )
+   , uq_count(          mesh_fields.displacement.dimension_1() )
    {
         //std::cout << "finish_step dt: " << dt << std::endl;
         //std::cout << "finish_step prev_dt: " << prev_dt << std::endl;
@@ -1017,7 +1017,7 @@ struct PackState< Explicit::Fields< Scalar , DeviceType > >
     , velocity(     mesh_fields.velocity )
     , output(       arg_output )
     , inode_base(   arg_begin )
-    , uq_count(     mesh_fields.displacement.dimension(1) )
+    , uq_count(     mesh_fields.displacement.dimension_1() )
     {
       KokkosArray::parallel_for( arg_count , *this );
     }
@@ -1067,7 +1067,7 @@ struct UnpackState< Explicit::Fields< Scalar , DeviceType > >
     , velocity(     mesh_fields.velocity )
     , input(        arg_input )
     , inode_base(   arg_begin )
-    , uq_count(     mesh_fields.displacement.dimension(1) )
+    , uq_count(     mesh_fields.displacement.dimension_1() )
     {
       KokkosArray::parallel_for( arg_count , *this );
     }

@@ -96,6 +96,14 @@ struct ArrayCount< 0u >
   explicit ArrayCount( unsigned c ) : N( c ) {}
 };
 
+//----------------------------------------------------------------------------
+
+template< class T >
+struct ArrayTypeCount ;
+
+template< class ScalarType , unsigned Count , class Proxy >
+struct ArrayTypeCount< Array<ScalarType,Count,Proxy> > { enum { value = Count }; };
+
 }
 
 //----------------------------------------------------------------------------

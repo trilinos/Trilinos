@@ -53,12 +53,12 @@ namespace Impl {
 struct LayoutTileLeftFast ;
 struct LayoutTileLeftSlow ;
 
-template< class ViewTraits , unsigned N0, unsigned N1, class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , LayoutTileLeft<N0,N1,true> , 2 , MemorySpace , MemoryTraits , void >
+template< class ViewTraits , class ValueType , unsigned N0, unsigned N1, class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ViewTraits , ValueType , LayoutTileLeft<N0,N1,true> , 2 , MemorySpace , MemoryTraits , void >
 { typedef LayoutTileLeftFast type ; };
 
-template< class ViewTraits , unsigned N0, unsigned N1, class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , LayoutTileLeft<N0,N1,false> , 2 , MemorySpace , MemoryTraits , void >
+template< class ViewTraits , class ValueType , unsigned N0, unsigned N1, class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ViewTraits , ValueType , LayoutTileLeft<N0,N1,false> , 2 , MemorySpace , MemoryTraits , void >
 { typedef LayoutTileLeftSlow type ; };
 
 //----------------------------------------------------------------------------

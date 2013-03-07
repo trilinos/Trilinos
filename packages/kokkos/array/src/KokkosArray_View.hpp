@@ -65,6 +65,7 @@ struct ViewAssignment {};
 
 /** \brief  View specialization mapping of view traits to a specialization tag */
 template< class ViewTraits ,
+          class ValueType    = typename ViewTraits::value_type ,
           class ArrayLayout  = typename ViewTraits::array_layout ,
           unsigned Rank      =          ViewTraits::rank ,
           class MemorySpace  = typename ViewTraits::memory_space ,

@@ -203,11 +203,12 @@ if ( 0 && i == 0 ) {
   : coord("coord",n)
   , gradient("grad",n)
   {
-    std::cout << "TestHexGrad::coord(" ;
-    for ( size_t i = 0 ; i < coord.rank() ; ++i ) {
-      std::cout << " " << coord.dimension(i);
-    }
-    std::cout << " )" << std::endl ;
+    std::cout << "TestHexGrad::coord("
+              << " " << coord.dimension_0() 
+              << " " << coord.dimension_1()
+              << " " << coord.dimension_2()
+              << " " << coord.dimension_3()
+              << " )" << std::endl ;
     KokkosArray::parallel_for(n,InitCoord(coord));
   }
 

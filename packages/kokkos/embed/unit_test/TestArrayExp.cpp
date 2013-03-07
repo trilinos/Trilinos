@@ -50,8 +50,8 @@
 #include <KokkosArray_Array.hpp>
 
 #include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewOperRight.hpp>
-#include <impl/KokkosArray_ArrayViewOperLeft.hpp>
+#include <impl/KokkosArray_ArrayViewLeft.hpp>
+#include <impl/KokkosArray_ArrayViewRight.hpp>
 
 //----------------------------------------------------------------------------
 

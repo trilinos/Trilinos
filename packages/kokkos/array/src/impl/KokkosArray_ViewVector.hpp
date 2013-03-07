@@ -52,12 +52,12 @@ namespace Impl {
 
 struct LayoutVector {};
 
-template< class ViewTraits , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , LayoutLeft , 1 , MemorySpace , MemoryTraits , void >
+template< class ViewTraits , class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ViewTraits , ValueType , LayoutLeft , 1 , MemorySpace , MemoryTraits , void >
 { typedef LayoutVector type ; };
 
-template< class ViewTraits , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , LayoutRight , 1 , MemorySpace , MemoryTraits , void >
+template< class ViewTraits , class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ViewTraits , ValueType , LayoutRight , 1 , MemorySpace , MemoryTraits , void >
 { typedef LayoutVector type ; };
 
 //----------------------------------------------------------------------------

@@ -50,9 +50,9 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class ViewTraits , unsigned R , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , LayoutRight , R , MemorySpace , MemoryTraits , 
-  typename enable_if<( R > 1)>::type >
+template< class ViewTraits , class ValueType , unsigned Rank , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ViewTraits , ValueType , LayoutRight , Rank , MemorySpace , MemoryTraits , 
+  typename enable_if<( Rank > 1)>::type >
 { typedef LayoutRight type ; };
 
 //----------------------------------------------------------------------------
@@ -60,19 +60,20 @@ struct ViewSpecialize< ViewTraits , LayoutRight , R , MemorySpace , MemoryTraits
 template<>
 struct ViewAssignment< LayoutRight , void , void >
 {
+  typedef LayoutRight Specialize ;
 
   template< class T , class L , class D , class M >
   KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( const View<T,L,D,M,LayoutRight> & dst )
+  size_t allocation_count( const View<T,L,D,M,Specialize> & dst )
   {
     return dst.m_shape.N0 * dst.m_stride ;
   }
 
   template< class T , class L , class D , class M >
   KOKKOSARRAY_INLINE_FUNCTION static
-  void decrement( View<T,L,D,M,LayoutRight> & dst )
+  void decrement( View<T,L,D,M,Specialize> & dst )
   {
-    typedef View<T,L,D,M,LayoutRight> DstViewType ;
+    typedef View<T,L,D,M,Specialize> DstViewType ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
@@ -81,9 +82,9 @@ struct ViewAssignment< LayoutRight , void , void >
 
   template< class T , class L , class D , class M >
   KOKKOSARRAY_INLINE_FUNCTION static
-  void increment( View<T,L,D,M,LayoutRight> & dst )
+  void increment( View<T,L,D,M,Specialize> & dst )
   {
-    typedef View<T,L,D,M,LayoutRight> DstViewType ;
+    typedef View<T,L,D,M,Specialize> DstViewType ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
@@ -94,9 +95,9 @@ private:
 
   template< class T , class L , class D , class M >
   inline
-  void allocate( View<T,L,D,M,LayoutRight> & dst , const std::string & label )
+  void allocate( View<T,L,D,M,Specialize> & dst , const std::string & label )
   {
-    typedef View<T,L,D,M,LayoutRight> DstViewType ;
+    typedef View<T,L,D,M,Specialize> DstViewType ;
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::memory_space  memory_space ;
 
@@ -112,7 +113,7 @@ public:
 
   template< class T , class L , class D , class M >
   inline
-  ViewAssignment( View<T,L,D,M,LayoutRight> & dst ,
+  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
                   const typename enable_if< ViewTraits<T,L,D,M>::is_managed , std::string >::type & label ,
                   const size_t n0 = 0 ,
                   const size_t n1 = 0 ,
@@ -123,7 +124,7 @@ public:
                   const size_t n6 = 0 ,
                   const size_t n7 = 0 )
   {
-    typedef View<T,L,D,M,LayoutRight> DstViewType ;
+    typedef View<T,L,D,M,Specialize> DstViewType ;
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
@@ -144,7 +145,7 @@ public:
 
   template< class T , class L , class D , class M >
   inline
-  ViewAssignment( View<T,L,D,M,LayoutRight> & dst ,
+  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
                   const typename enable_if< ViewTraits<T,L,D,M>::is_managed , std::string >::type & label ,
                   const typename ViewTraits<T,L,D,M>::shape_type shape )
   {
@@ -154,11 +155,11 @@ public:
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutRight> & dst ,
-                  const View<ST,SL,SD,SM,LayoutRight> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
                   typename enable_if<
-                    is_same< View<DT,DL,DD,DM,LayoutRight> ,
-                             typename View<ST,SL,SD,SM,LayoutRight>::HostMirror >::value
+                    is_same< View<DT,DL,DD,DM,Specialize> ,
+                             typename View<ST,SL,SD,SM,Specialize>::HostMirror >::value
                   >::type * = 0 )
   {
     dst.m_shape  = src.m_shape ;
@@ -172,13 +173,15 @@ public:
 template<>
 struct ViewAssignment< LayoutRight , LayoutRight , void >
 {
+  typedef LayoutRight Specialize ;
+
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutRight> & dst ,
-                  const View<ST,SL,SD,SM,LayoutRight> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
                   const typename enable_if<(
                     ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
                                      ViewTraits<ST,SL,SD,SM> >::value
@@ -187,12 +190,12 @@ struct ViewAssignment< LayoutRight , LayoutRight , void >
                                      typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
                   )>::type * = 0 )
   {
-    typedef View<DT,DL,DD,DM,LayoutRight> DstViewType ;
+    typedef View<DT,DL,DD,DM,Specialize> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    ViewAssignment< LayoutRight >::decrement( dst );
+    ViewAssignment< Specialize >::decrement( dst );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -201,7 +204,7 @@ struct ViewAssignment< LayoutRight , LayoutRight , void >
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewAssignment< LayoutRight >::increment( dst );
+    ViewAssignment< Specialize >::increment( dst );
   }
 };
 
@@ -441,8 +444,8 @@ private:
   typedef Impl::ViewAssignment<LayoutRight,LayoutRight> assign ;
 
   typename traits::value_type * m_ptr_on_device ;
-  typename traits::shape_type   m_shape ;
   unsigned                      m_stride ;
+  typename traits::shape_type   m_shape ;
 
 public:
 
@@ -473,7 +476,7 @@ public:
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View() : m_ptr_on_device(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
+  View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   ~View() { alloc::decrement( *this ); }

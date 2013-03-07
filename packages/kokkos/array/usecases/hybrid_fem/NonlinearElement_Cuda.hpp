@@ -89,7 +89,7 @@ public:
   , element_matrices( arg_element_matrices )
   , element_vectors(  arg_element_vectors )
   , coeff_K(          arg_coeff_K )
-  , elem_count(       arg_mesh.elem_node_ids.dimension(0) )
+  , elem_count(       arg_mesh.elem_node_ids.dimension_0() )
   {
     const unsigned jInvJ[9][4] = 
      { { j22 , j33 , j23 , j32 } ,

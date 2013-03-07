@@ -17,6 +17,7 @@ rm -rf CMakeCache.txt
 # Location of Trilinos source tree.
 
 CMAKE_TRILINOS_BASE_DIR="../Trilinos"
+CMAKE_TRILINOS_INSTALL_DIR="../TrilinosInstall"
 
 #-----------------------------------------------------------------------------
 # MPI configuation:
@@ -83,6 +84,7 @@ CMAKE_KOKKOSARRAY="${CMAKE_KOKKOSARRAY} -D TPL_ENABLE_Pthread:BOOL=ON"
 #-----------------------------------------------------------------------------
 
 cmake \
+  -D CMAKE_INSTALL_PREFIX=${CMAKE_TRILINOS_INSTALL_DIR} \
   ${CMAKE_MPI} \
   -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
   -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
