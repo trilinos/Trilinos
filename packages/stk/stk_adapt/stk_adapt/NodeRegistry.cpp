@@ -894,7 +894,7 @@ namespace stk {
               //              << std::endl;
 
               bool found = false;
-              stk::mesh::EntityRank needed_entity_rank = stk::mesh::MetaData::NODE_RANK;
+              //stk::mesh::EntityRank needed_entity_rank = stk::mesh::MetaData::NODE_RANK;
               //
               // SPECIAL CASE
               // SPECIAL CASE
@@ -902,7 +902,7 @@ namespace stk {
               //
               if( subDimEntity.size() == 1)
                 {
-                  needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
+                  //needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
                   continue;
                 }
 
