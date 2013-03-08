@@ -311,8 +311,8 @@ namespace MueLu {
         // for now, follow what ML and Epetra do.
         GO numRowsA = A.getGlobalNumRows();
         GO numRowsB = B.getGlobalNumRows();
-        nnzPerRow = sqrt(Teuchos::as<Scalar>(A.getGlobalNumEntries())/numRowsA) +
-                    sqrt(Teuchos::as<Scalar>(B.getGlobalNumEntries())/numRowsB) - 1;
+        nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
+                    sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
         nnzPerRow *=  nnzPerRow;
         double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
         double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
