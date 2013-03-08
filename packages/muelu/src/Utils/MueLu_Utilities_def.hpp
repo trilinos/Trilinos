@@ -306,8 +306,26 @@ namespace MueLu {
     C = C_in;
 
     if (C == Teuchos::null) {
-      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), 0);
-      else            C = MatrixFactory::Build(A.getRowMap(),    0);
+      double nnzPerRow=Teuchos::as<double>(0);
+      if (A.getDomainMap()->lib() == Xpetra::UseTpetra) {
+        // for now, follow what ML and Epetra do.
+        GO numRowsA = A.getGlobalNumRows();
+        GO numRowsB = B.getGlobalNumRows();
+        nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
+                    sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
+        nnzPerRow *=  nnzPerRow;
+        double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
+        double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
+        if (totalNnz < minNnz)
+          totalNnz = minNnz;
+        nnzPerRow = totalNnz / A.getGlobalNumRows();
+        RCP<Teuchos::FancyOStream> fos = MakeFancy(std::cout);
+        fos->setOutputToRootOnly(0);
+        *fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+      }
+
+      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
+      else            C = MatrixFactory::Build(A.getRowMap(),    Teuchos::as<LO>(nnzPerRow));
     } else {
       C->resumeFill(); // why this is not done inside of Tpetra MxM?
       std::cout << "Reuse C pattern" << std::endl;

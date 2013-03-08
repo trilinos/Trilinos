@@ -51,6 +51,10 @@ namespace MueLu {
 
   template <class TagName>
   std::stack<MutuallyExclusiveTime<TagName>*> MutuallyExclusiveTime<TagName>::timerStack_;
+  //template <class TagName>
+  //std::map<std::string,std::string> MutuallyExclusiveTime<TagName>::myParent_;
+// this works
+  std::map<std::string,std::string> myParent_;
 
   //FIXME: move this:
   template class MutuallyExclusiveTime<FactoryBase>;

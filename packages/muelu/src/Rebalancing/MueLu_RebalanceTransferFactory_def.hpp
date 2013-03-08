@@ -53,6 +53,7 @@
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -238,8 +239,27 @@ namespace MueLu {
           {
             SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
             RCP<MultiVector> coords  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
-            RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(rebalanceImporter->getTargetMap(), coords->getNumVectors());
-            permutedCoords->doImport(*coords, *rebalanceImporter, Xpetra::INSERT);
+            LocalOrdinal blkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / coords->getMap()->getNodeNumElements();
+            RCP<const Import>  coordImporter;
+            RCP<const Map> origMap = coords->getMap(), targetMap;
+
+            if (blkSize == 1) {
+              coordImporter = rebalanceImporter;
+            } else {
+              // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
+              // Proper fix would require using decomposition similar to how we construct rebalanceImporter in the
+              // RepartitionFactory
+              ArrayView<const GO> OEntries = rebalanceImporter->getTargetMap()->getNodeElementList();
+              LO numEntries = OEntries.size()/blkSize;
+              ArrayRCP<GO> Entries(numEntries);
+              for (LO i = 0; i < numEntries; i++)
+                Entries[i] = OEntries[i*blkSize]/blkSize;
+              RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), origMap->getIndexBase(), origMap->getComm());
+              coordImporter = ImportFactory::Build(origMap, targetMap);
+            }
+
+            RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+            permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
             Set(coarseLevel, "Coordinates", permutedCoords);
           }
         if (IsAvailable(coarseLevel, "Nullspace")) {

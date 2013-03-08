@@ -153,6 +153,7 @@ namespace MueLu {
       // Test 2: check whether A is spread over more than one process.
       // Note: using type 'int' as it is enough (comm->getSize() is an int). Test can also be done with 'bool' but numActiveProcesses is printed later
       // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
+      // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
       int numActiveProcesses = 0;
       sumAll(comm, (int)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
       std::ostringstream msg2; msg2 << std::endl << "    # processes with rows = " << numActiveProcesses;
@@ -167,6 +168,9 @@ namespace MueLu {
 
       // Test3: check whether any node has too few rows
       // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor
+      // TODO: change it to repartition if only the number of processors with numRows < threshold is larger than some percentage
+      // of the total number. This way, we won't repartition if 2 out of 1000 processors don't have enough elements. I'm thinking
+      // maybe 20% threshold.
       if (minRowsPerProcessor > 0) { // skip test if criteria not used
         LO     minNumRows;
         size_t numMyRows = A->getNodeNumRows();

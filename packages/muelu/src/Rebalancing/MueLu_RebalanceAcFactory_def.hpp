@@ -92,6 +92,7 @@ namespace MueLu {
         rebalancedAc->doImport(*originalAc, *rebalanceImporter, Xpetra::INSERT);
         rebalancedAc->fillComplete(targetMap, targetMap);
 
+        rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
         Set(coarseLevel, "A", rebalancedAc);
       }
 

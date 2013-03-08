@@ -56,12 +56,14 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
+#include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
+#include <MueLu_MutuallyExclusiveTime.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -195,7 +197,7 @@ int main(int argc, char *argv[]) {
   ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
-  H->SetDefaultVerbLevel(MueLu::High);
+  H->SetDefaultVerbLevel(MueLu::Extreme);
 
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
@@ -313,7 +315,7 @@ int main(int argc, char *argv[]) {
 
     // Belos parameter list
     int maxIts = 100;
-    double tol = 1e-8; // FIXME: use command line option
+    double tol = 1e-12; // FIXME: use command line option
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
@@ -355,5 +357,8 @@ int main(int argc, char *argv[]) {
 
   if (printTimings)
     TimeMonitor::summarize();
+
+  MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
+
 
 } //main
