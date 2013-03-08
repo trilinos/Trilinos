@@ -129,13 +129,13 @@ namespace MueLu {
       if (rebalanceImporter != Teuchos::null) {
         SubFactoryMonitor m1(*this, "Rebalancing prolongator", coarseLevel);
 
-        // P is the tranfer operator from the coarse grid to the fine grid.
+        // P is the transfer operator from the coarse grid to the fine grid.
         // P must transfer the data from the newly reordered coarse A to the (unchanged) fine A.
         // This means that the domain map (coarse) of P must be changed according to the new partition. The range map (fine) is kept unchanged.
         //
         // The domain map of P must match the range map of R.
         // See also note below about domain/range map of R and its implications for P.
-        //
+        // 
         // To change the domain map of P, P needs to be fillCompleted again with the new domain map.
         // To achieve this, P is copied into a new matrix that is not fill-completed.
         // The doImport() operation is just used here to make a copy of P: the importer is trivial and there is no data movement involved.
@@ -146,20 +146,19 @@ namespace MueLu {
         for (size_t i=0; i<originalP->getNodeNumRows(); ++i)
           nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
 
-        RCP<Matrix> rebalancedP = MatrixFactory::Build(originalP->getRowMap(), nnzPerRow, Xpetra::StaticProfile);
+	RCP<Matrix> rebalancedP = originalP;	
+	RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
+	if (crsOp == Teuchos::null)
+	  throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+	RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
 
-        // Copy of P
-        {
-          RCP<Import> trivialImporter = ImportFactory::Build(originalP->getRowMap(), originalP->getRowMap());
-          SubFactoryMonitor m2(*this, "Rebalancing prolongator -- import only", coarseLevel);
-          rebalancedP->doImport(*originalP, *trivialImporter, Xpetra::INSERT);
-        }
-
-        // New domain (coarse) map, same range (fine) map
-        {
-          SubFactoryMonitor m2(*this, "Rebalancing prolongator -- fillComplete", coarseLevel);
-          rebalancedP->fillComplete(rebalanceImporter->getTargetMap(), originalP->getRangeMap() );
-        }
+	if(rebalancedP2 == Teuchos::null) throw std::runtime_error("Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
+	RCP<const Import> newImporter;
+	{
+	  SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
+	  newImporter = ImportFactory::Build(rebalanceImporter->getTargetMap(),rebalancedP->getColMap());	 
+	  rebalancedP2->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
+	}
 
         Set(coarseLevel, "P", rebalancedP);
 
