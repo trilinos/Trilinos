@@ -457,13 +457,15 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), useNodesetForPartNodesFields(true)
+    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL),
+      useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     MeshData::MeshData(MPI_Comm comm)
-    : m_communicator_(comm), m_anded_selector(NULL), useNodesetForPartNodesFields(true)
+    : m_communicator_(comm), m_anded_selector(NULL),
+      useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -687,18 +689,21 @@ namespace stk {
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
         int64_t zero = 0;
-        process_elementblocks(*region, bulk_data(), zero);
         process_nodeblocks(*this, zero);
+        process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       } else {
         int zero = 0;
-        process_elementblocks(*region, bulk_data(), zero);
         process_nodeblocks(*this, zero);
+        process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       }
       bulk_data().modification_end();
+      if (region->get_property("state_count").get_int() == 0) {
+        region->get_database()->release_memory();
+      }
     }
 
     void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
@@ -855,7 +860,7 @@ namespace stk {
             stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
             assert(part != NULL);
             stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
-                                      *part, part_primary_entity_rank(*part));
+                                                     *part, part_primary_entity_rank(*part));
           }
         }
       }
@@ -868,7 +873,7 @@ namespace stk {
             stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
             assert(part != NULL);
             stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
-                                      *part, part_primary_entity_rank(*part));
+                                                     *part, part_primary_entity_rank(*part));
           }
         }
       }
@@ -889,7 +894,7 @@ namespace stk {
                 stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
                 assert(part != NULL);
                 stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
-                                          *part, part_primary_entity_rank(*part));
+                                                         *part, part_primary_entity_rank(*part));
               }
             }
           }
@@ -979,7 +984,7 @@ namespace stk {
         }
         region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
       } else {
-        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
+        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in define_output_fields.\n";
         std::exit(EXIT_FAILURE);
       }
     }
