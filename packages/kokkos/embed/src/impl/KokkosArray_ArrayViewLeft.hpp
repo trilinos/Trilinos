@@ -181,16 +181,6 @@ public:
     allocate( dst , label );
   }
 
-  template< class T , class L , class D , class M >
-  inline
-  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
-                  const typename enable_if< ViewTraits<T,L,D,M>::is_managed , std::string >::type & label ,
-                  const typename ViewTraits<T,L,D,M>::shape_type shape )
-  {
-    ViewAssignment( dst, label, shape.N0, shape.N1, shape.N2, shape.N3,
-                                shape.N4, shape.N5, shape.N6 );
-  }
-
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
