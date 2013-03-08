@@ -672,6 +672,98 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstLinearOp,
 
 
 //
+// Tpetra-implemented methods
+//
+
+
+Teuchos::RCP<Teuchos::Time> lookupAndAssertTimer(const std::string &label)
+{
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter(label);
+  TEUCHOS_TEST_FOR_EXCEPTION(timer == null,
+    std::runtime_error,
+    "lookupAndAssertTimer(): timer \"" << label << "\" was not present in Teuchos::TimeMonitor."
+    " Unit test not valid.");
+  return timer;
+}
+
+
+#define CHECK_TPETRA_FUNC_CALL_INCREMENT( timerStr, tpetraCode, thyraCode ) \
+{ \
+  out << "\nTesting that Thyra calls down to " << timerStr << "\n"; \
+  ECHO(tpetraCode); \
+  const RCP<const Time> timer = lookupAndAssertTimer(timerStr); \
+  const int countBefore = timer->numCalls();  \
+  ECHO(thyraCode); \
+  const int countAfter = timer->numCalls(); \
+  TEST_EQUALITY( countAfter, countBefore+1 ); \
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations,
+  Scalar )
+{
+  using Teuchos::Time;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType Magnitude;
+  typedef VectorSpaceBase<Scalar> VectorSpace;
+  typedef MultiVectorBase<Scalar> MultiVec;
+  typedef Tpetra::Map<int> TpetraMap;
+  typedef Tpetra::MultiVector<Scalar> TpetraMultiVec;
+  typedef TpetraOperatorVectorExtraction<Scalar, int> TOVE;
+
+  const int numCols = 3;
+
+  const RCP<const VectorSpace> vs =
+    createTpetraVectorSpace<Scalar>(g_localDim);
+  const RCP<MultiVec>
+    A = createMembers(vs, numCols),
+    B = createMembers(vs, numCols);
+  const RCP<TpetraMultiVec>
+    tA = TOVE::getTpetraMultiVector(A),
+    tB = TOVE::getTpetraMultiVector(B); 
+
+  Teuchos::Array<Magnitude> avMag(numCols);
+  Teuchos::Array<Scalar> avScal(numCols);
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::putScalar()",
+    tA->putScalar(ST::zero()),
+    Thyra::assign(A.ptr(), ST::zero())
+    );
+
+/*
+
+  RCP<Time>
+    timerAssign    = lookupAndAssertTimer("Tpetra::MultiVector::operator=()");
+    timerScale  = lookupAndAssertTimer("Tpetra::MultiVector::scale(alpha,A)"),
+    timerNorm   = lookupAndAssertTimer("Tpetra::MultiVector::norm2()"),
+    timerDot    = lookupAndAssertTimer("Tpetra::MultiVector::dot()"),
+    timerUpdate = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta,B,gamma)"),
+    timerUpdate2   = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta)"),
+    timerPutScalar = lookupAndAssertTimer("Tpetra::MultiVector::putScalar()"),
+    timerMultiply  = lookupAndAssertTimer("Tpetra::MultiVector::multiply()"),
+  
+  CHECK_TPETRA_FUNC_CALL_INCREMENT( timerPutScalar,  Thyra::assign( A.ptr(), ST::zero() ) );
+  CHECK_TPETRA_FUNC_CALL_INCREMENT( timerScale,      Thyra::scale( ST::zero(), B.ptr() ) );
+  CHECK_TPETRA_FUNC_CALL_INCREMENT( timerAssign,     Thyra::assign( A.ptr(), *B ) );
+  CHECK_TPETRA_FUNC_CALL_INCREMENT( timerNorm,       Thyra::norms_2( *A, avMag() ) );
+  CHECK_TPETRA_FUNC_CALL_INCREMENT( timerDot,        Thyra::dots(*A, *B, avScal() ) );
+  // TODO: test multiply; this one will not be possible for a little while
+  // TODO: test update(two vector)
+  // TODO: test update(three vector)
+*/
+}
+
+
+#ifdef TPETRA_TEUCHOS_TIME_MONITOR
+#  define TPETRA_TIMER_TESTS(SCALAR)  \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, UseTpetraImplementations, SCALAR )
+#else
+#  define TPETRA_TIMER_TESTS(SCALAR)
+#endif
+
+
+//
 // TpetraLinearOp_EpetraRowMatrix
 //
 
