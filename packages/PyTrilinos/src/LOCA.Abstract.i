@@ -151,3 +151,6 @@ the following classes:
 // LOCA::Abstract Factory class
 //%feature("director") LOCA::Abstract::Factory;
 %include "LOCA_Abstract_Factory.H"
+
+// We need to undefine the result macro
+#undef result

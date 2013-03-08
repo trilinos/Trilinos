@@ -86,5 +86,5 @@ del sys, op
 %import "LOCA.Pitchfork.MooreSpence.i"
 
 // LOCA::Pitchfork::MinimallyAugmented AbstractGroup class
-%feature("director") LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
+//%feature("director") LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
 %include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"

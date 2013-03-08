@@ -61,6 +61,7 @@ using Teuchos::RCP;
 %teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
 
 // LOCA::BorderedSystem AbstractgGroup class
-%feature("director") LOCA::BorderedSystem::AbstractGroup;
-#define result loca_result
+//%feature("director") LOCA::BorderedSystem::AbstractGroup;
+//#define result loca_result
 %include "LOCA_BorderedSystem_AbstractGroup.H"
+//#undef result

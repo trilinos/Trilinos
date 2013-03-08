@@ -62,5 +62,5 @@
 %include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 
 // LOCA::TurningPoint::MinimallyAugmented FinitDifferenceGroup class
-%feature("director") LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
+//%feature("director") LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
 %include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"

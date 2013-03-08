@@ -74,11 +74,11 @@
 %import "LOCA.Extended.i"
 
 // LOCA::MultiContinuation AbstractGroup class
-%feature("director") LOCA::MultiContinuation::AbstractGroup;
+//%feature("director") LOCA::MultiContinuation::AbstractGroup;
 %include "LOCA_MultiContinuation_AbstractGroup.H"
 
 // LOCA::MultiContinuation FiniteDifferenceGroup class
-%feature("director") LOCA::MultiContinuation::FiniteDifferenceGroup;
+//%feature("director") LOCA::MultiContinuation::FiniteDifferenceGroup;
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 // LOCA::MultiContinuation ConstraintInterface class
@@ -86,15 +86,16 @@
 %include "LOCA_MultiContinuation_ConstraintInterface.H"
 
 // LOCA::MultiContinuation ConstraintInterfaceMVDX class
+%warnfilter(473) LOCA::MultiContinuation::ConstraintInterfaceMVDX;
 %feature("director") LOCA::MultiContinuation::ConstraintInterfaceMVDX;
 %include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
 // LOCA::MultiContinuation ExtendedMultiVector class
-%feature("director") LOCA::MultiContinuation::ExtendedMultiVector;
+//%feature("director") LOCA::MultiContinuation::ExtendedMultiVector;
 %include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 // LOCA::MultiContinuation ExtendedVector class
-%feature("director") LOCA::MultiContinuation::ExtendedVector;
+//%feature("director") LOCA::MultiContinuation::ExtendedVector;
 %include "LOCA_MultiContinuation_ExtendedVector.H"
 
 // LOCA::MultiContinuation Factory class

@@ -94,13 +94,13 @@ the following classes:
 %teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
 
 // LOCA::Homotopy Group class
-%feature("director") LOCA::Homotopy::Group;
+//%feature("director") LOCA::Homotopy::Group;
 %include "LOCA_Homotopy_Group.H"
 
 // LOCA::Homotopy AbstractGroup class
-%feature("director") LOCA::Homotopy::AbstractGroup;
+//%feature("director") LOCA::Homotopy::AbstractGroup;
 %include "LOCA_Homotopy_AbstractGroup.H"
 
 // LOCA::Homotopy DeflatedGroup class
-%feature("director") LOCA::Homotopy::DeflatedGroup;
+//%feature("director") LOCA::Homotopy::DeflatedGroup;
 %include "LOCA_Homotopy_DeflatedGroup.H"

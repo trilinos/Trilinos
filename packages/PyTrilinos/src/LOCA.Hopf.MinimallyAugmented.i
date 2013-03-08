@@ -121,6 +121,7 @@ del sys, op
 %import "LOCA.Hopf.MooreSpence.i"
 
 // LOCA::Hopf::MinimallyAugmented Constraint class
+%warnfilter(473) LOCA::Hopf::MinimallyAugmented::Constraint;
 %feature("director") LOCA::Hopf::MinimallyAugmented::Constraint;
 %include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 

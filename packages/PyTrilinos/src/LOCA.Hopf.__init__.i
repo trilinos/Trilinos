@@ -113,9 +113,9 @@ import MinimallyAugmented
 // %teuchos_rcp(LOCA::Hopf::ComplexVector)
 
 // LOCA::Hopf ComplexMultiVector class
-%feature("director") LOCA::Hopf::ComplexMultiVector;
+//%feature("director") LOCA::Hopf::ComplexMultiVector;
 %include "LOCA_Hopf_ComplexMultiVector.H"
 
 // LOCA::Hopf ComplexVector class
-%feature("director") LOCA::Hopf::ComplexVector;
+//%feature("director") LOCA::Hopf::ComplexVector;
 %include "LOCA_Hopf_ComplexVector.H"

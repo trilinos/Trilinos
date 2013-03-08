@@ -218,6 +218,6 @@ LOCA::Epetra::Interface::Required::computeF;
 %feature("director") LOCA::Epetra::Interface::TimeDependentMatrixFree;
 // The following #define is to change the name of LOCA method
 // arguments that conflict with a SWIG director method argument
-#define result nox_result
+#define result loca_result
 %include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
-
+#undef result

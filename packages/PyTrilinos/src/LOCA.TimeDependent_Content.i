@@ -60,5 +60,5 @@
 %import "LOCA.MultiContinuation.i"
 
 // LOCA::TimeDependent AbstractGroup class
-%feature("director") LOCA::TimeDependent::AbstractGroup;
+//%feature("director") LOCA::TimeDependent::AbstractGroup;
 %include "LOCA_TimeDependent_AbstractGroup.H"

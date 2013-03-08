@@ -70,11 +70,11 @@ del sys, op
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::SolverFactory)
 
 // LOCA::TurningPoint::MooreSpence AbstractGroup class
-%feature("director") LOCA::TurningPoint::MooreSpence::AbstractGroup;
+//%feature("director") LOCA::TurningPoint::MooreSpence::AbstractGroup;
 %include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
 
 // LOCA::TurningPoint::MooreSpence FiniteDifferenceGroup class
-%feature("director") LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
+//%feature("director") LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
 %include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::TurningPoint::MooreSpence SolverFactory class

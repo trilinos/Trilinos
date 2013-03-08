@@ -67,15 +67,21 @@
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 
-// LOCA::Extended MultiVector class
-%feature("director") LOCA::Extended::MultiVector;
+//////////////////////////////////////
+// LOCA::Extended MultiVector class //
+//////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiVector;
 %include "LOCA_Extended_MultiVector.H"
 
-// LOCA::Extended Vector class
-%ignore LOCA::Extended::Vector::getScalar;
-%feature("director") LOCA::Extended::Vector;
+/////////////////////////////////
+// LOCA::Extended Vector class //
+/////////////////////////////////
+//%feature("director") LOCA::Extended::Vector;
+%ignore LOCA::Extended::Vector::getScalar(int);
 %include "LOCA_Extended_Vector.H"
 
-// LOCA::Extended MultiAbstractGroup class
-%feature("director") LOCA::Extended::MultiAbstractGroup;
+/////////////////////////////////////////////
+// LOCA::Extended MultiAbstractGroup class //
+/////////////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiAbstractGroup;
 %include "LOCA_Extended_MultiAbstractGroup.H"
