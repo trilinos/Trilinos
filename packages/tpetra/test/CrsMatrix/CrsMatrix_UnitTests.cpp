@@ -2308,6 +2308,136 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
   }
 
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMap, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // Based on the FullTriDiag tests...
+
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const size_t ONE  = OrdinalTraits<size_t>::one();
+    const size_t ZERO = OrdinalTraits<GO>::one();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
+    if (numImages < 3) return;
+    // create a Map
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
+
+    // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+
+    /* Create the following matrix:
+    0  [2 1       ]   [2 1]
+    1  [1 4 1     ]   [1 2] + [2 1]
+    2  [  1 4 1   ]           [1 2] +
+    3  [    1     ] =
+       [       4 1]
+   n-1 [       1 2]
+    */
+    size_t myNNZ;
+    MAT A(map,4);
+    A.setObjectLabel("The Matrix");
+    MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,true);
+    mveye.setObjectLabel("mveye");
+    mvans.setObjectLabel("mvans");
+    mvres.setObjectLabel("mvres");
+    if (myImageID != numImages-1) { // last image assigns none
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(),ST::one(),static_cast<Scalar>(2)*ST::one()));
+      Array<GO> cols(tuple<GO>(myImageID,myImageID + 1));
+      A.insertGlobalValues(myImageID  ,cols(),vals(0,2)); // insert [2 1]
+      A.insertGlobalValues(myImageID+1,cols(),vals(1,2)); // insert [1 2]
+    }
+    // put one on the diagonal, setting mveye to the identity
+    mveye.replaceLocalValue(0,myImageID,ST::one());
+    // divine myNNZ and build multivector with matrix
+    if (myImageID == 0) {
+      myNNZ = 2;
+      mvans.replaceLocalValue(0,0,static_cast<Scalar>(2));
+      mvans.replaceLocalValue(0,1,static_cast<Scalar>(1));
+    }
+    else if (myImageID == numImages-1) {
+      myNNZ = 2;
+      mvans.replaceLocalValue(0,numImages-2,static_cast<Scalar>(1));
+      mvans.replaceLocalValue(0,numImages-1,static_cast<Scalar>(2));
+    }
+    else {
+      myNNZ = 3;
+      mvans.replaceLocalValue(0,myImageID-1,static_cast<Scalar>(1));
+      mvans.replaceLocalValue(0,myImageID  ,static_cast<Scalar>(4));
+      mvans.replaceLocalValue(0,myImageID+1,static_cast<Scalar>(1));
+    }
+    A.fillComplete();
+
+    // build a 1proc map..
+    if(comm->getSize() > 1) { 
+      // New Matrix
+      CrsMatrix<Scalar,LO,GO,Node> B(A);
+
+      // we know the map is contiguous...
+      size_t NumMyElements = comm->getRank()==0 ? A->getDomainMap().getGlobalNumElements() : 0;
+      RCP<Map<LO,GO,Node> > NewMap = rcp(new Map<LO,GO,Node>(INVALID,NumMyElements,ZERO,comm,node));
+      Tpetra::Import<LO,GO,Node> NewImport(A->getColMap(),NewMap);
+      A->ReplaceDomainMapAndImporter(NewMap,NewImport);       
+
+      // Fill a random vector on the original map
+      Vector<Scalar,LO,GO,Node> AVecX(A->getDomainMap());
+      AVecX.randomize();
+
+      // Import this vector to the new domainmap
+      Vector<Scalar,LO,GO,Node> BVecX(A->getDomainMap());
+      Tpetra::Import<LO,GO,Node> TempImport(A->getDomainMap(),NewMap); // (source,target)
+      BVecX.Import(AVecX,TempImport,Tpetra::REPLACE);
+      
+      // Now do some multiplies
+      Vector<Scalar,LO,GO,Node> AVecY(A->getRangeMap());
+      Vector<Scalar,LO,GO,Node> BVecY(A->getRangeMap());
+
+      A->apply(AVecX,AVecY);
+      B->apply(AVecX,AVecY);
+
+      B.update(-Teuchos::ScalarTraits<Scalar>::one(),A,Teuchos::ScalarTraits<Scalar>::one());
+      Scalar norm = B.norm2();
+      TEST_EQUALITY ( norm < 1e-10, true);
+    }
+
+
+    // test the properties
+    TEST_EQUALITY(A.getGlobalNumEntries()     , static_cast<size_t>(3*numImages-2));
+    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
+    TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
+    TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
+    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
+    TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
+    TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getDomainMap()), true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getRangeMap()) , true);
+    // test the action
+    A.apply(mveye,mvres);
+    mvres.update(-ST::one(),mvans,ST::one());
+    Array<Mag> norms(numImages), zeros(numImages,MT::zero());
+    mvres.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
+  }
+
+
+
+  
+
 //
 // INSTANTIATIONS
 //
