@@ -840,8 +840,8 @@ namespace stk {
       double val[3];
       double count; // for use in normalizing/averaging
     };
-    NormalVector normal;
-    JacobianUtil jac;
+    //     NormalVector normal;
+    //     JacobianUtil jac;
 
     static void get_face_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[3], double normal[3])
     {
@@ -877,6 +877,10 @@ namespace stk {
     std::map<stk::mesh::Part*, PerceptMesh::MinMaxAve > PerceptMesh::hmesh_surface_normal()
     {
       std::map<stk::mesh::Part*, MinMaxAve > result;
+#if defined(__IBMCPP__)
+      throw std::runtime_error("not implemented on IBM");
+#else
+      NormalVector normal;
       int spatial_dim = get_spatial_dim();
       stk::mesh::FieldBase *coord_field = get_coordinates_field();
 
@@ -899,7 +903,7 @@ namespace stk {
               min_max_ave.count = 0.0;
 
               boost::unordered_map<stk::mesh::EntityId, NormalVector> node_normals;
-              Selector this_part(part);
+              stk::mesh::Selector this_part(part);
               const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( side_rank() );
 
               for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -1003,6 +1007,7 @@ namespace stk {
 
               const std::vector<stk::mesh::Bucket*> & element_buckets = get_bulk_data()->buckets( element_rank() );
               DenseMatrix<3,3> AI;
+              JacobianUtil jac;
 
               for ( std::vector<stk::mesh::Bucket*>::const_iterator k = element_buckets.begin() ; k != element_buckets.end() ; ++k )
                 {
@@ -1064,6 +1069,7 @@ namespace stk {
 
             }
         }
+#endif
       return result;
     }
 
@@ -4424,6 +4430,10 @@ namespace stk {
 
     double PerceptMesh::hmesh_stretch_eigens(double min_max_ave[3], Histogram<double> *histogram, Histogram<double> *quality_histogram)
     {
+#if defined(__IBMCPP__)
+      throw std::runtime_error("not implemented on IBM");
+      return 0;
+#else
       JacobianUtil jac;
       min_max_ave[0] = std::numeric_limits<double>::max();
       min_max_ave[1] = -1;
@@ -4463,8 +4473,8 @@ namespace stk {
       stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & min_max_ave[2] ) );
       stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & nele ) );
       min_max_ave[2] /= nele;
-
       return min_max_ave[1];
+#endif
     }
 
     double PerceptMesh::hmesh_edge_lengths(double min_max_ave[3], Histogram<double> *histogram, Histogram<double> *quality_histogram)

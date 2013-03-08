@@ -49,6 +49,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+#if !defined(__IBMCPP__)
       /// test stretch_eigens
 
       STKUNIT_UNIT_TEST(perceptMesh, jacobian_stretch_eigens)
@@ -97,15 +98,13 @@ namespace stk
                         stk::mesh::Entity element = bucket[iElement];
                         double eigens[3] = { 1.0, 1.0, 1.0 };
 
-#if !defined(__IBMCPP__)
                         JacobianUtil jac;
                         jac.stretch_eigens(eMesh, element, eigens, coordField, cell_topo_data);
-#endif
                         const double tol=1.e-6;
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
@@ -162,11 +161,10 @@ namespace stk
 
                         JacobianUtil jac;
                         jac.stretch_eigens(eMesh, element, eigens, coordField, cell_topo_data);
-                        
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 2.0/12.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0/12.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
@@ -227,11 +225,10 @@ namespace stk
 
                         JacobianUtil jac;
                         jac.stretch_eigens(eMesh, element, eigens, coordField, cell_topo_data);
-                        
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], sqp, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], sqm, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier() 
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
@@ -239,6 +236,7 @@ namespace stk
           }
       }
 
+#endif
 
 
     }

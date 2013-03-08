@@ -627,7 +627,9 @@ namespace stk {
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
       run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
       run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
+#if !defined(__IBMCPP__) 
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
+#endif
       run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("dump_geometry_file"       , &dump_geometry_file       , "debug print geometry (OpenNURBS 3dm) file contents");
@@ -833,10 +835,12 @@ namespace stk {
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
           if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+#if !defined(__IBMCPP__) 
           if (respect_spacing == 1) {
             eMesh.set_respect_spacing(true);
             eMesh.add_spacing_fields();
           }
+#endif
           if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
@@ -966,10 +970,12 @@ namespace stk {
                         eMesh.open(input_mesh);
                         eMesh.set_save_internal_fields(save_internal_fields);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+#if !defined(__IBMCPP__) 
                         if (respect_spacing == 1) {
                           eMesh.set_respect_spacing(true);
                           eMesh.add_spacing_fields();
                         }
+#endif
                         if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
                         if (!sync_io_regions) eMesh.set_sync_io_regions(false);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
@@ -1015,10 +1021,12 @@ namespace stk {
                                     eMesh.close();
                                     eMesh.open(input_mesh);
                                     if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
+#if !defined(__IBMCPP__) 
                                     if (respect_spacing == 1) {
                                       eMesh.set_respect_spacing(true);
                                       eMesh.add_spacing_fields();
                                     }
+#endif
                                     if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
 
                                   }
@@ -1172,11 +1180,13 @@ namespace stk {
                             eMesh.print_hmesh_surface_normal(msg, std::cout);
                             eMesh.print_hmesh_surface_normal(msg, stk::percept::pout());
                           }
+#if !defined(__IBMCPP__) 
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
                             sfu.compute_spacing_field();
                           }
+#endif
 
                         if (print_memory_usage)
                           memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after file open");

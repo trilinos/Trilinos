@@ -40,7 +40,6 @@ namespace unit_tests {
 static void test_eigen(double A[3][3], double eig_expected[3])
 {
 #if !defined(__IBMCPP__)
-#else
   double eig[3];
   DenseMatrix<3,3> M(A);
   eigen_3x3(M, eig);
