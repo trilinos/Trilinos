@@ -595,24 +595,32 @@ void define_io_fields(Ioss::GroupingEntity *entity,
 
   bool use_cartesian_for_scalar = false;
   if (role == Ioss::Field::ATTRIBUTE)
-	use_cartesian_for_scalar = true;
+    use_cartesian_for_scalar = true;
 
   Ioss::NameList names;
   entity->field_describe(role, &names);
 
   for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	// \todo IMPLEMENT Need a field selection mechanism and a field naming
-	// (ioss_name -> stk::name)  For now, select all and give the
-	// stk field the same name as the ioss field.
+    // \todo IMPLEMENT Need a field selection mechanism and a field naming
+    // (ioss_name -> stk::name)  For now, select all and give the
+    // stk field the same name as the ioss field.
 
-	// Skip the attribute field that is named "attribute"
-	if (*I == "attribute" && names.size() > 1)
-	  continue;
+    // Skip the attribute field that is named "attribute"
+    if (*I == "attribute" && names.size() > 1)
+      continue;
 
-	// \todo IMPLEMENT Need to determine whether these are
-	// multi-state fields or constant, or interpolated, or ...
-	Ioss::Field io_field = entity->get_field(*I);
-	declare_ioss_field(meta, part_type, part, io_field, use_cartesian_for_scalar);
+    // \todo IMPLEMENT Need to determine whether these are
+    // multi-state fields or constant, or interpolated, or ...
+    Ioss::Field io_field = entity->get_field(*I);
+    declare_ioss_field(meta, part_type, part, io_field, use_cartesian_for_scalar);
+  }
+}
+
+template <typename T>
+void delete_selector_property(const std::vector<T> &entities)
+{
+  for(size_t i=0; i < entities.size(); i++) {
+    delete_selector_property(entities[i]);
   }
 }
 
@@ -621,37 +629,17 @@ void delete_selector_property(Ioss::Region &region)
   // Iterate all Ioss::GroupingEntity types on the io_region and
   // if the have a property named 'selector' of type 'pointer',
   // delete the pointer and remove the property.
-  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-  delete_selector_property(node_blocks[0]);
-
-  const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
-      it != elem_blocks.end(); ++it) {
-    delete_selector_property(*it);
-  }
-
-  const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
-      it != node_sets.end(); ++it) {
-    delete_selector_property(*it);
-  }
+  delete_selector_property(region.get_node_blocks());
+  delete_selector_property(region.get_element_blocks());
+  delete_selector_property(region.get_nodesets());
+  delete_selector_property(region.get_commsets());
 
   const Ioss::SideSetContainer& side_sets = region.get_sidesets();
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
       it != side_sets.end(); ++it) {
     Ioss::SideSet *sset = *it;
     delete_selector_property(*it);
-    const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
-    for(Ioss::SideBlockContainer::const_iterator ib = blocks.begin();
-        ib != blocks.end(); ++ib) {
-      delete_selector_property(*ib);
-    }
-  }
-
-  const Ioss::CommSetContainer &comm_sets = region.get_commsets();
-  for(Ioss::CommSetContainer::const_iterator it = comm_sets.begin();
-      it != comm_sets.end(); ++it) {
-    delete_selector_property(*it);
+    delete_selector_property(sset->get_side_blocks());
   }
 }
 

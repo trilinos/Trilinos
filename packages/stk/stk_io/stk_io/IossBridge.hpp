@@ -229,6 +229,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
  * Delete the selector property (if it exists) which is used to get
  * the entity list on an output database's GroupingEntitys
  */
+template <typename T> void delete_selector_property(std::vector<T> &entities);
 void delete_selector_property(Ioss::Region &io_region);
 void delete_selector_property(Ioss::GroupingEntity *io_entity);
 
