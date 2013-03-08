@@ -320,6 +320,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
         RCP<Teuchos::FancyOStream> fos = MakeFancy(std::cout);
+        fos->setOutputToRootOnly(0);
         *fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
