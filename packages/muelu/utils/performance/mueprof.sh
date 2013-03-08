@@ -27,6 +27,10 @@
 # Borrowed the command line parsing from
 # http://blog.mafr.de/2007/08/05/cmdline-options-in-shell-scripts
 
+# Find the script location
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=$(dirname $SCRIPT)
+
 USAGE="Usage: `basename $0` [-h] file"
 OPTDESCR="\n  -h  help\n"
 
@@ -73,4 +77,4 @@ export AWKPATH
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -f mueprof.awk $file
+awk -f $SCRIPTPATH/mueprof.awk $file
