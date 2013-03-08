@@ -117,10 +117,10 @@ namespace Belos {
       using Teuchos::as;
       using Teuchos::Array;
       using Teuchos::Range1D;
-      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index)";
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
 
 #ifdef HAVE_TPETRA_DEBUG
+      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index)";
       TEUCHOS_TEST_FOR_EXCEPTION(
         *std::min_element (index.begin (), index.end ()) < 0, std::runtime_error,
         fnName << ": All indices must be nonnegative.");
@@ -180,9 +180,9 @@ namespace Belos {
       using Teuchos::as;
       using Teuchos::Array;
       using Teuchos::Range1D;
-      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index)";
 
 #ifdef HAVE_TPETRA_DEBUG
+      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index)";
       TEUCHOS_TEST_FOR_EXCEPTION(
         *std::min_element (index.begin (), index.end ()) < 0, std::invalid_argument,
         fnName << ": All indices must be nonnegative.");
@@ -246,9 +246,9 @@ namespace Belos {
       using Teuchos::as;
       using Teuchos::Array;
       using Teuchos::Range1D;
-      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index)";
 
 #ifdef HAVE_TPETRA_DEBUG
+      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index)";
       TEUCHOS_TEST_FOR_EXCEPTION(
         *std::min_element (index.begin (), index.end ()) < 0,
         std::invalid_argument,
