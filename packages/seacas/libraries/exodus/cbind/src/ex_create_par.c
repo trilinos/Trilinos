@@ -279,7 +279,7 @@ int ex_create_par_int (const char *path,
    * i/o wordsize attribute from file is zero.
    */
 
-  if (ex_conv_ini( exoid, comp_ws, io_ws, 0, int64_status ) != EX_NOERR) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status,1) != EX_NOERR) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to init conversion routines in file id %d",

@@ -305,7 +305,7 @@ int ex_open_par_int (const char  *path,
   int64_status |= (mode & EX_ALL_INT64_API);
   
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini( exoid, comp_ws, io_ws, file_wordsize, int64_status ) != EX_NOERR ) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1) != EX_NOERR ) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to initialize conversion routines in file id %d",
