@@ -80,8 +80,6 @@ namespace Galeri {
         dims.push_back(ny_-1);
         dims.push_back(nz_-1);
 
-
-        std::cout << "nx = " << nx_ << ", ny = " << ny_ << ", nz = " << nz_ << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
       }
 
@@ -104,15 +102,17 @@ namespace Galeri {
       GlobalOrdinal                  nx_, ny_, nz_;
       size_t                         nDim;
       std::vector<GO>                dims;
+      // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
+      // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
       std::vector<Point>             nodes;
       std::vector<std::vector<LO> >  elements;
       std::vector<GO>                local2Global_;
 
+      std::vector<char>              dirichlet_;
+
       Scalar                         E, nu;
       std::vector<Scalar>            stretch;
       std::string                    mode_;
-
-      std::vector<char>              dirichlet_;
 
       void EvalDxi  (const std::vector<Point>& refPoints, Point& gaussPoint, SC * dxi);
       void EvalDeta (const std::vector<Point>& refPoints, Point& gaussPoint, SC * deta);
@@ -259,7 +259,8 @@ namespace Galeri {
         // Insert KE into the global matrix
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
         for (size_t j = 0; j < numDofPerElem; j++)
-          this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+          if (this->Map_->isNodeGlobalElement(elemDofs[j]))
+            this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
       }
       this->A_->fillComplete();
 
@@ -316,9 +317,9 @@ namespace Galeri {
       }
 
       // Calculate center
-      Scalar cx = this->Coords_->getVector(0)->meanValue();
-      Scalar cy = this->Coords_->getVector(1)->meanValue();
-      Scalar cz = this->Coords_->getVector(2)->meanValue();
+      SC cx = this->Coords_->getVector(0)->meanValue();
+      SC cy = this->Coords_->getVector(1)->meanValue();
+      SC cz = this->Coords_->getVector(2)->meanValue();
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
@@ -353,6 +354,14 @@ namespace Galeri {
       Utils::getSubdomainData(dims[1], my, (myPID - (mx*my) * (myPID / (mx*my)) / mx), ny, shifty);
       Utils::getSubdomainData(dims[2], mz, myPID / (mx*my), nz, shiftz);
 
+      // Expand subdomain to do overlap
+      if (shiftx    > 0)        { nx++; shiftx--; }
+      if (shifty    > 0)        { ny++; shifty--; }
+      if (shiftz    > 0)        { nz++; shiftz--; }
+      if (shiftx+nx < dims[0])  { nx++;           }
+      if (shifty+ny < dims[1])  { ny++;           }
+      if (shiftz+nz < dims[2])  { nz++;           }
+
       nodes        .resize((nx+1)*(ny+1)*(nz+1));
       dirichlet_   .resize((nx+1)*(ny+1)*(nz+1), 0);
       local2Global_.resize((nx+1)*(ny+1)*(nz+1));
@@ -367,6 +376,7 @@ namespace Galeri {
             nodes[NODE(i,j,k)] = Point((ii+1)*hx, (jj+1)*hy, (kk+1)*hz);
             local2Global_[NODE(i,j,k)] = kk*nx_*ny_ + jj*nx_ + ii;
 
+            // FIXME: right and top boundaries are definitely checked incorrectly
             if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
                 (ii == nx  && (this->DirichletBC_ & DIR_RIGHT))  ||
                 (jj == 0   && (this->DirichletBC_ & DIR_FRONT))  ||
