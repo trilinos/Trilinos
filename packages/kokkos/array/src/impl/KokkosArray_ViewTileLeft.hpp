@@ -78,28 +78,6 @@ struct ViewAssignment< LayoutTileLeftFast , void , void >
          ( ( dst.m_shape.N1 + layout::N1 - 1 ) / layout::N1 );
   }
 
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void decrement( View<T,L,D,M,LayoutTileLeftFast> & dst )
-  {
-    typedef View<T,L,D,M,LayoutTileLeftFast> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::decrement( dst.m_ptr_on_device );
-  }
-
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void increment( View<T,L,D,M,LayoutTileLeftFast> & dst )
-  {
-    typedef View<T,L,D,M,LayoutTileLeftFast> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::increment( dst.m_ptr_on_device );
-  }
-
 private:
 
   template< class DT , class DL , class DD , class DM >
@@ -109,7 +87,7 @@ private:
     typedef View<DT,DL,DD,DM,LayoutTileLeftFast>  DstViewType ;
     typedef typename DstViewType::memory_space  memory_space ;
 
-    decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     const size_t count = allocation_count( dst );
 
@@ -187,14 +165,14 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    ViewAssignment< LayoutTileLeftFast >::decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 );
 
     dst.m_tile_N0       = src.m_tile_N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewAssignment< LayoutTileLeftFast >::increment( dst );
+    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -229,7 +207,7 @@ struct ViewAssignment< LayoutLeft , LayoutTileLeftFast, void >
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    ViewAssignment< LayoutLeft >::decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     enum { N0 = SL::N0 };
     enum { N1 = SL::N1 };
@@ -242,7 +220,7 @@ struct ViewAssignment< LayoutLeft , LayoutTileLeftFast, void >
     dst.m_ptr_on_device = src.m_ptr_on_device + (( i0 + i1 * NT0 ) << ( SHIFT_0 + SHIFT_1 ));
     dst.m_stride        = N0 ;
 
-    ViewAssignment< LayoutLeft >::increment( dst );
+    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -308,7 +286,7 @@ public:
   View() : m_ptr_on_device(0) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
-  ~View() { alloc::decrement( *this ); }
+  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }

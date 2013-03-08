@@ -103,7 +103,7 @@ namespace Belos {
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
     Clone (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs)
     {
-      return Teuchos::rcp (new MV (mv.getMap (), numvecs));
+      return Teuchos::rcp (new MV (mv.getMap (), numvecs, false));
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )

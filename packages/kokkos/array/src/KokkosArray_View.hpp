@@ -124,7 +124,7 @@ public:
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
+  enum { is_managed   = memory_traits::managed };
 };
 
 /** \brief  Memory traits as third argument, void as fourth argument. */
@@ -156,7 +156,7 @@ public:
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
+  enum { is_managed   = memory_traits::managed };
 };
 
 /** \brief  Device as third argument, void as fourth argument. */
@@ -188,7 +188,7 @@ public:
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = Impl::is_same< memory_traits , MemoryManaged >::value };
+  enum { is_managed   = memory_traits::managed };
 };
 
 } // namespace KokkosArray

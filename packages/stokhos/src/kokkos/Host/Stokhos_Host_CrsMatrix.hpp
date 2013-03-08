@@ -91,7 +91,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     KokkosArray::parallel_for( row_count , Multiply(A,x,y) );
   }
 };
@@ -137,7 +137,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
 
     for (size_t j=0; j<num_vecs; j++) {
       Ordinal col = m_col_indices[j];
@@ -159,7 +159,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<Ordinal> & col)
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     const size_t block_size = 20;
     const size_t num_vecs = col.size();
     const size_t num_blocks = num_vecs / block_size;
@@ -214,7 +214,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    //const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    //const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
     const size_t num_vecs = m_x.size();
 
     for (size_t j=0; j<num_vecs; j++) {
@@ -235,7 +235,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     KokkosArray::parallel_for( n , MMultiply(A,x,y) );
   }
 };
@@ -261,7 +261,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -274,8 +274,10 @@ public:
     double *x_values = x.ptr_on_device() ;
     double *y_values = y.ptr_on_device() ;
     
+    KokkosArray::Host::sleep();
     mkl_dcsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
+    KokkosArray::Host::wake();
   }
 };
 
@@ -307,7 +309,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, GatherTranspose(x,xt,indices) );
     }
   };
@@ -338,7 +340,7 @@ namespace Impl {
     static void apply(const multi_vector_type & x,
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, ScatterTranspose(x,xt,indices) );
     }
   };
@@ -365,7 +367,7 @@ namespace Impl {
     
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, GatherVecTranspose(x,xt) );
     }
   };
@@ -392,7 +394,7 @@ namespace Impl {
     
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
-      const size_t n = xt.dimension(1);
+      const size_t n = xt.dimension_1();
       KokkosArray::parallel_for( n, ScatterVecTranspose(x,xt) );
     }
   };
@@ -423,7 +425,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<ordinal_type> & indices)
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -442,8 +444,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -472,7 +476,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     double *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -491,8 +495,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
@@ -518,7 +524,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -531,8 +537,10 @@ public:
     float *x_values = x.ptr_on_device() ;
     float *y_values = y.ptr_on_device() ;
     
+    KokkosArray::Host::sleep();
     mkl_scsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
+    KokkosArray::Host::wake();
   }
 };
 
@@ -558,7 +566,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<ordinal_type> & indices)
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -577,8 +585,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -605,7 +615,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    MKL_INT n = A.graph.row_map.dimension(0) - 1 ;
+    MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
     float *A_values = A.values.ptr_on_device() ;
     MKL_INT *col_indices = A.graph.entries.ptr_on_device() ;
     MKL_INT *row_beg = const_cast<MKL_INT*>(A.graph.row_map.ptr_on_device()) ;
@@ -624,8 +634,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
