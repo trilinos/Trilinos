@@ -455,10 +455,12 @@ namespace Xpetra {
       XPETRA_DYNAMIC_CAST(const EpetraImport, *newImporter, eImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
  
       const RCP<const Epetra_Import> & myImport = eImporter.getEpetra_Import();
+      int rv=0;
       if(myImport==Teuchos::null)
-	mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
+	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
       else
-	mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
+	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
+      if(rv!=0) throw std::runtime_error("Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter FAILED!");
   }
 
 
