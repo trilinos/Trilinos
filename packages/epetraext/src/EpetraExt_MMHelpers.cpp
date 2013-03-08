@@ -522,7 +522,8 @@ int LightweightMap::GID(int LID) const {
 //=========================================================================
 int* LightweightMap::MyGlobalElements() const {
   if(Data_->CopyMap_) return Data_->CopyMap_->MyGlobalElements();
-  return const_cast<int*>(&Data_->MyGlobalElements_[0]);
+  else if(Data_->MyGlobalElements_.size()>0) return const_cast<int*>(&Data_->MyGlobalElements_[0]);
+  else return 0;
 }
 
 //=========================================================================
