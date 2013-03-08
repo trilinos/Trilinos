@@ -153,7 +153,7 @@ namespace MueLu {
 
       RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
-        XYZ.push_back(Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+        XYZ.push_back(Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), 1)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }
 
       // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
