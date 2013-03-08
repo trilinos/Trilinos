@@ -69,55 +69,24 @@ size_t allocation_count( const View<T,L,D,M,S> & view )
 
 //----------------------------------------------------------------------------
 
-template< class MemorySpace , class MemoryTraits , class = KokkosArray::ExecutionSpace >
+template< class ViewTraits ,
+          class MemorySpace  = typename ViewTraits::memory_space ,
+          class MemoryTraits = typename ViewTraits::memory_traits ,
+          class ExecSpec     = KokkosArray::ExecutionSpace >
 struct ViewTracking {
   KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ) {}
   KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ) {}
 };
 
-template< class MemorySpace >
-struct ViewTracking< MemorySpace , MemoryManaged , HostSpace >
+template< class ViewTraits , class MemorySpace , class MemoryTraits >
+struct ViewTracking< ViewTraits , MemorySpace , MemoryTraits ,
+          typename enable_if< MemoryTraits::managed , HostSpace >::type >
 {
   KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ptr )
     { MemorySpace::increment( ptr ); }
 
   KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ptr )
     { MemorySpace::decrement( ptr ); }
-};
-
-//----------------------------------------------------------------------------
-
-template< class DstViewType >
-struct ViewAssignment< DstViewType , void , void >
-{
-  typedef ViewTracking< typename DstViewType::memory_space ,
-                        typename DstViewType::memory_traits > tracking ;
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void increment( const void * ptr ) { tracking::increment( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static void decrement( const void * ptr ) { tracking::decrement( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  ViewAssignment( DstViewType & dst )
-  {
-    decrement( dst.m_ptr_on_device );
-    dst.m_ptr_on_device = 0 ;
-  }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const DstViewType & src )
-  {
-    decrement( dst.m_ptr_on_device );
-
-    dst.m_shape         = src.m_shape ;
-    dst.m_stride        = src.m_stride ;
-    dst.m_ptr_on_device = src.m_ptr_on_device ;
-
-    increment( dst.m_ptr_on_device );
-  }
 };
 
 } /* namespace Impl */
@@ -128,103 +97,6 @@ struct ViewAssignment< DstViewType , void , void >
 
 namespace KokkosArray {
 namespace Impl {
-
-template< class DstShape , class SrcShape ,
-          unsigned DstRankDynamic   = DstShape::rank_dynamic ,
-          bool     DstRankDynamicOK = unsigned(DstShape::rank_dynamic) >= unsigned(SrcShape::rank_dynamic) >
-struct ShapeCompatible { enum { value = false }; };
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 8 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 7 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 6 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 5 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 4 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 3 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 2 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 1 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N1 == SrcShape::N1 &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-template< class DstShape , class SrcShape >
-struct ShapeCompatible< DstShape , SrcShape , 0 , true >
-{
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N0 == SrcShape::N0 &&
-                 DstShape::N1 == SrcShape::N1 &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
-};
-
-//----------------------------------------------------------------------------
 
 template< class DstView , class SrcView ,
           class DstValueType  = typename DstView::value_type ,
@@ -249,52 +121,6 @@ struct ValueCompatible< DstView , SrcView ,
 {
   typedef ValueType type ;
   enum { value = true };
-};
-
-//----------------------------------------------------------------------------
-
-template< class DstViewTraits , class SrcViewTraits >
-struct ViewAssignment_Compatible {
-public:
-
-  enum { compatible_value =
-    is_same< typename DstViewTraits::memory_space ,
-             typename SrcViewTraits::memory_space >::value &&
-    ( is_same< typename DstViewTraits::value_type ,
-               typename SrcViewTraits::value_type >::value ||
-      is_same< typename DstViewTraits::value_type ,
-               typename SrcViewTraits::const_value_type >::value )
-  };
-
-  enum { compatible_layout = is_same< typename DstViewTraits::array_layout ,
-                                      typename SrcViewTraits::array_layout >::value };
-
-  enum { compatible_shape = ShapeCompatible< typename DstViewTraits::shape_type ,
-                                             typename SrcViewTraits::shape_type >::value };
-
-  enum { compatible = compatible_value && compatible_layout && compatible_shape };
-};
-
-//----------------------------------------------------------------------------
-// 1) Fully compatible DstViewType and SrcViewType
-// 2) ArgCount = 0
-
-template< class DT, class DL, class DD, class DM, class Spec,
-          class ST, class SL, class SD, class SM >
-struct ViewAssignment<
-  View<DT,DL,DD,DM,Spec> ,
-  View<ST,SL,SD,SM,Spec> ,
-  typename enable_if<(
-    ViewAssignment_Compatible< ViewTraits<DT,DL,DD,DM> ,
-                               ViewTraits<ST,SL,SD,SM> >::compatible
-  ), unsigned_<0> >::type >
-{
-  typedef View<DT,DL,DD,DM,Spec> DstViewType ;
-  typedef View<ST,SL,SD,SM,Spec> SrcViewType ;
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( DstViewType & dst , const SrcViewType & src )
-  { ViewAssignment<Spec,Spec>( dst , src ); }
 };
 
 //----------------------------------------------------------------------------

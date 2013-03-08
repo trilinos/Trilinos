@@ -787,9 +787,8 @@ public:
     typedef typename KokkosArray::Impl::StaticAssertSame< view_type , view_host_type >::type mirror_type ;
     view_type a("a");
     mirror_type am = KokkosArray::create_mirror_view(a);
+    mirror_type ax = KokkosArray::create_mirror(a);
     ASSERT_EQ( & a() , & am() );
-
-    // const int x = a ; should not compile
   }
 
   static void run_test()

@@ -50,6 +50,7 @@
 namespace KokkosArray {
 namespace Impl {
 
+/** \brief  Specialization for a Rank = 0 array */
 struct LayoutScalar {};
 
 template< class ViewTraits , class ValueType , class MemorySpace , class MemoryTraits >
@@ -70,28 +71,6 @@ struct ViewAssignment< LayoutScalar , void , void >
   size_t allocation_count( View<T,L,D,M,LayoutScalar> & dst ) { return 1 ; }
 
   template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void decrement( View<T,L,D,M,LayoutScalar> & dst )
-  {
-    typedef ViewTraits<T,L,D,M> traits ;
-    typedef typename traits::memory_space  memory_space ;
-    typedef typename traits::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::decrement( dst.m_ptr_on_device );
-  }
-
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void increment( View<T,L,D,M,LayoutScalar> & dst )
-  {
-    typedef ViewTraits<T,L,D,M> traits ;
-    typedef typename traits::memory_space  memory_space ;
-    typedef typename traits::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::increment( dst.m_ptr_on_device );
-  }
-
-  template< class T , class L , class D , class M >
   ViewAssignment( View<T,L,D,M,LayoutScalar> & dst ,
                   typename enable_if< (
                     is_same< typename ViewTraits<T,L,D,M>::memory_traits ,
@@ -102,7 +81,7 @@ struct ViewAssignment< LayoutScalar , void , void >
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
@@ -113,10 +92,17 @@ struct ViewAssignment< LayoutScalar , void , void >
     ViewInitialize< DstViewType >::apply( dst );
   }
 
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( View<T,L,D,M,LayoutScalar> & dst )
-  { decrement( dst ); }
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutScalar> & dst ,
+                  const View<ST,SL,SD,SM,LayoutScalar> & ,
+                  typename enable_if< (
+                    is_same< View<DT,DL,DD,DM,LayoutScalar> ,
+                             typename View<ST,SL,SD,SM,LayoutScalar>::HostMirror >::value
+                  ) >::type * = 0 )
+  {
+    ViewAssignment( dst , "mirror" );
+  }
 };
 
 template<>
@@ -136,11 +122,11 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
     typedef typename traits::memory_space  memory_space ;
     typedef typename traits::memory_traits memory_traits ;
 
-    ViewTracking< memory_space , memory_traits >::decrement( dst.m_ptr_on_device );
+    ViewTracking< traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewTracking< memory_space , memory_traits >::increment( dst.m_ptr_on_device );
+    ViewTracking< traits >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -151,15 +137,18 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
 
 namespace KokkosArray {
 
-template< class T , class L , class D , class M >
-class View< T , L , D , M , Impl::LayoutScalar >
-  : public ViewTraits< T , L , D , M >
+template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
+class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutScalar >
+  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
 {
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
-  typedef ViewTraits< T , L , D , M > traits ;
+  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+  typedef Impl::ViewAssignment< Impl::LayoutScalar > alloc ;
+  typedef Impl::ViewAssignment< Impl::LayoutScalar ,
+                                Impl::LayoutScalar > assign ;
 
   typename traits::value_type * m_ptr_on_device ;
 
@@ -191,46 +180,56 @@ public:
   View() : m_ptr_on_device(0) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
-  ~View() { Impl::ViewAssignment<Impl::LayoutScalar>( *this ); }
+  ~View()
+    { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
-    : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutScalar,Impl::LayoutScalar>( *this , rhs ); }
+    : m_ptr_on_device(0) { assign( *this , rhs ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View & rhs )
-    { Impl::ViewAssignment<Impl::LayoutScalar,Impl::LayoutScalar>( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,Impl::LayoutScalar> & rhs )
-    : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutScalar,Impl::LayoutScalar>( *this , rhs ); }
+    : m_ptr_on_device(0) { assign( *this , rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,Impl::LayoutScalar> & rhs )
-    { Impl::ViewAssignment<Impl::LayoutScalar,Impl::LayoutScalar>( *this , rhs ); return *this ; }
+    { assign( *this , rhs ); return *this ; }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  operator typename traits::value_type & () const { return *m_ptr_on_device ; }
-
-
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::value_type & operator()() const { return *m_ptr_on_device ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::value_type & operator*() const { return *m_ptr_on_device ; }
-
-
+  //------------------------------------
+  /** \brief  Allocation constructor */
   explicit
-  View( const std::string & label ) : m_ptr_on_device(0)
-    { Impl::ViewAssignment<Impl::LayoutScalar>( *this , label ); }
+  View( const std::string & label ) : m_ptr_on_device(0) { alloc( *this , label ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  operator typename traits::value_type & () const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      return *m_ptr_on_device ;
+    }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type & operator()() const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      return *m_ptr_on_device ;
+    }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type & operator*() const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      return *m_ptr_on_device ;
+    }
 };
 
 } /* namespace KokkosArray */

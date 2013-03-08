@@ -69,28 +69,6 @@ struct ViewAssignment< LayoutRight , void , void >
     return dst.m_shape.N0 * dst.m_stride ;
   }
 
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void decrement( View<T,L,D,M,Specialize> & dst )
-  {
-    typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::decrement( dst.m_ptr_on_device );
-  }
-
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void increment( View<T,L,D,M,Specialize> & dst )
-  {
-    typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::increment( dst.m_ptr_on_device );
-  }
-
 private:
 
   template< class T , class L , class D , class M >
@@ -129,7 +107,7 @@ public:
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
 
-    decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
 
@@ -195,7 +173,7 @@ struct ViewAssignment< LayoutRight , LayoutRight , void >
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    ViewAssignment< Specialize >::decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -204,7 +182,7 @@ struct ViewAssignment< LayoutRight , LayoutRight , void >
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewAssignment< Specialize >::increment( dst );
+    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -226,13 +204,15 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
                   ) , unsigned >::type i1 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -249,16 +229,18 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
                   ) , unsigned >::type i2 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
       i2 + src.m_shape.N2 * (
       i1 ) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -276,9 +258,11 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
                   ) , unsigned >::type i3 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2, i3 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
@@ -286,7 +270,7 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
       i2 + src.m_shape.N2 * (
       i1 )) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -305,9 +289,11 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
                   ) , unsigned >::type i4 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
@@ -316,7 +302,7 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
       i2 + src.m_shape.N2 * (
       i1 ))) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -336,9 +322,11 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
                   ) , unsigned >::type i5 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
@@ -348,7 +336,7 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
       i2 + src.m_shape.N2 * (
       i1 )))) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -369,9 +357,11 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
                   ) , unsigned >::type i6 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5, i6 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
@@ -382,7 +372,7 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
       i2 + src.m_shape.N2 * (
       i1 ))))) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -404,9 +394,11 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
                   ) , unsigned >::type i7 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> view_traits ;
+
     assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5, i6, i7 );
 
-    ViewAssignment< LayoutScalar >::decrement( dst );
+    ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device =
       src.m_ptr_on_device +
@@ -418,7 +410,7 @@ struct ViewAssignment< LayoutScalar , LayoutRight , void >
       i2 + src.m_shape.N2 * (
       i1 )))))) + i0 * src.m_stride ;
 
-    ViewAssignment< LayoutScalar >::increment( dst );
+    ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -479,7 +471,7 @@ public:
   View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  ~View() { alloc::decrement( *this ); }
+  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }

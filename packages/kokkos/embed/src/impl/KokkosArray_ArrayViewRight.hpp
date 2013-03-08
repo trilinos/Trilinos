@@ -131,28 +131,6 @@ struct ViewAssignment<LayoutArrayRight,void,void>
     return dst.m_shape.N0 * dst.m_stride ;
   }
 
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void decrement( View<T,L,D,M,Specialize> & dst )
-  {
-    typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::decrement( dst.m_ptr_on_device );
-  }
-
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  void increment( View<T,L,D,M,Specialize> & dst )
-  {
-    typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< memory_space , memory_traits >::increment( dst.m_ptr_on_device );
-  }
-
 private:
 
   template< class T , class L , class D , class M >
@@ -191,7 +169,7 @@ public:
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
 
-    decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
 
@@ -255,7 +233,7 @@ struct ViewAssignment< LayoutArrayRight , LayoutArrayRight , void >
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
 
-    ViewAssignment< Specialize >::decrement( dst );
+    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -264,7 +242,7 @@ struct ViewAssignment< LayoutArrayRight , LayoutArrayRight , void >
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewAssignment< Specialize >::increment( dst );
+    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 };
 
@@ -329,7 +307,7 @@ public:
   View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  ~View() { alloc::decrement( *this ); }
+  ~View() { Impl::ViewTracking< View >::decrement( m_ptr_on_device ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }
