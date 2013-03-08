@@ -3757,56 +3757,49 @@ namespace Iopx {
         // Handle the MESH fields required for an ExodusII file model.
         // (The 'genesis' portion)
         if (field.get_name() == "connectivity") {
-          if (my_element_count > 0) {
-            // Map element connectivity from global node id to local node id.
-            int element_nodes = eb->get_property("topology_node_count").get_int();
+          // Map element connectivity from global node id to local node id.
+          int element_nodes = eb->get_property("topology_node_count").get_int();
 
-            // Maps global to local
-            nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
+          // Maps global to local
+          nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
 
-            // Maps local to "global_implicit"
-            if (int_byte_size_api() == 4) {
-              map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
-            } else {
-              map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
-            }
-
-            ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          // Maps local to "global_implicit"
+          if (int_byte_size_api() == 4) {
+            map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+          } else {
+            map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
           }
+
+          ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
         } else if (field.get_name() == "connectivity_edge") {
-          if (my_element_count > 0) {
-            // Map element connectivity from global edge id to local edge id.
-            int element_edges = field.transformed_storage()->component_count();
-            edgeMap.reverse_map_data(data, field, num_to_get*element_edges);
-            ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, data, NULL);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
+          // Map element connectivity from global edge id to local edge id.
+          int element_edges = field.transformed_storage()->component_count();
+          edgeMap.reverse_map_data(data, field, num_to_get*element_edges);
+          ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, data, NULL);
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
         } else if (field.get_name() == "connectivity_face") {
-          if (my_element_count > 0) {
-            // Map element connectivity from global face id to local face id.
-            int element_faces = field.transformed_storage()->component_count();
-            faceMap.reverse_map_data(data, field, num_to_get*element_faces);
-            ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, NULL, data);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
+          // Map element connectivity from global face id to local face id.
+          int element_faces = field.transformed_storage()->component_count();
+          faceMap.reverse_map_data(data, field, num_to_get*element_faces);
+          ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, NULL, data);
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
         } else if (field.get_name() == "connectivity_raw") {
-          if (my_element_count > 0) {
-            // Element connectivity is already in local node id, map local to "global_implicit"
-            int element_nodes = eb->get_property("topology_node_count").get_int();
-            if (int_byte_size_api() == 4) {
-              map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
-            } else {
-              map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
-            }
-
-            ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          // Element connectivity is already in local node id, map local to "global_implicit"
+          int element_nodes = eb->get_property("topology_node_count").get_int();
+          if (int_byte_size_api() == 4) {
+            map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+          } else {
+            map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
           }
+
+          ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
         } else if (field.get_name() == "ids") {
           size_t glob_map_offset = eb->get_property("global_map_offset").get_int();
           handle_element_ids(eb, data, num_to_get, glob_map_offset+proc_offset, file_count);
@@ -5258,17 +5251,12 @@ namespace Iopx {
         write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(),
                               field_suffix_separator, myProcessor);
 
-        if (myProcessor == 0) {
-          // Write coordinate names...
-          char const *labels[3];
-          labels[0] = "x";
-          labels[1] = "y";
-          labels[2] = "z";
-          ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
-          if (ierr < 0)
-            exodus_error(get_file_pointer(), __LINE__, myProcessor);
-        }
-      }
+        // Write coordinate names...
+        char const *labels[] = {"x", "y", "z"};
+        ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
+        if (ierr < 0)
+          exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
       // Set the processor offset property. Specifies where in the global list, the data from this
       // processor begins...
 
