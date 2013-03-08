@@ -130,7 +130,7 @@ private:
   typedef ExtensibleFactory<NOX::Epetra::ModelEvaluatorInterface> NOXInterfaceFactory;
   NOXInterfaceFactory noxInterfaceFactory_;
 
-  typedef ExtensibleFactory<NOX::Epetra::LinearSystem> NOXLinearSystemFactory;;
+  typedef ExtensibleFactory<NOX::Epetra::LinearSystem> NOXLinearSystemFactory;
   NOXLinearSystemFactory noxLinearSystemFactory_;
 
   typedef ExtensibleFactory<LOCA::SaveEigenData::AbstractStrategy> LOCASaveEigenDataFactory;
