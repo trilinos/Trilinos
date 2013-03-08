@@ -4,7 +4,7 @@
 //
 // This software is a result of the research described in the report
 //
-// " A comparison of algorithms for modal analysis in the absence 
+// " A comparison of algorithms for modal analysis in the absence
 //   of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
 //  Sandia National Laboratories, Technical report SAND2003-1028J.
 //
@@ -48,12 +48,16 @@ class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT BlockPCGSolver : public virtual E
 
     const Epetra_Comm &MyComm;
 
+#ifdef _MSC_VER
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif // _MSC_VER
     const Teuchos::BLAS<int,double> callBLAS;
     const Teuchos::LAPACK<int,double> callLAPACK;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif // _MSC_VER
 
     const Epetra_Operator *K;
     Epetra_Operator *Prec;
@@ -68,7 +72,7 @@ class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT BlockPCGSolver : public virtual E
 
     mutable int numSolve;
     mutable int maxIter;
-    mutable int sumIter; 
+    mutable int sumIter;
     mutable int minIter;
 
     // Don't define these functions
@@ -81,7 +85,7 @@ class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT BlockPCGSolver : public virtual E
                    double _tol = 0.0, int _iMax = 0, int _verb = 0);
 
     BlockPCGSolver(const Epetra_Comm& _Com, const Epetra_Operator *KK,
-                   Epetra_Operator *PP, 
+                   Epetra_Operator *PP,
                    double _tol = 0.0, int _iMax = 0, int _verb = 0);
 
     ~BlockPCGSolver();
