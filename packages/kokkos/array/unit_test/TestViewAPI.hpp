@@ -51,6 +51,14 @@
 
 namespace Test {
 
+template< class T , class L , class D , class M , class S >
+size_t allocation_count( const KokkosArray::View<T,L,D,M,S> & view )
+{
+  const size_t card  = KokkosArray::Impl::cardinality_count( view.shape() );
+  const size_t alloc = KokkosArray::Impl::ViewAssignment<S>::allocation_count( view );
+
+  return card <= alloc ? alloc : 0 ;
+}
 
 /*--------------------------------------------------------------------------*/
 
@@ -156,8 +164,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -251,8 +259,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -344,8 +352,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -435,8 +443,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -524,8 +532,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -611,8 +619,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -696,8 +704,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     , rsh()
     , left(  "left" )
     , right( "right" )
-    , left_alloc( KokkosArray::Impl::allocation_count( left ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( right ) )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
     {}
 
   static void apply()
@@ -826,7 +834,7 @@ public:
 
 
 
-    dView4_unmanaged unmaaged_dx = dx;
+    dView4_unmanaged unmanaged_dx = dx;
     const_dView4 const_dx = dx ;
 
 

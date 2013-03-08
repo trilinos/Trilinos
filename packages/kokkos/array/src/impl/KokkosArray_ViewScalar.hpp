@@ -211,6 +211,22 @@ public:
   //------------------------------------
 
   KOKKOSARRAY_INLINE_FUNCTION
+  const View & operator = ( const typename traits::value_type & rhs ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      *m_ptr_on_device = rhs ;
+      return *this ;
+    }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  View & operator = ( const typename traits::value_type & rhs )
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      *m_ptr_on_device = rhs ;
+      return *this ;
+    }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   operator typename traits::value_type & () const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
