@@ -658,8 +658,7 @@ MpiComm<Ordinal>::MpiComm(
 
 
 template<typename Ordinal>
-MpiComm<Ordinal>::
-MpiComm (MPI_Comm rawMpiComm)
+MpiComm<Ordinal>::MpiComm (MPI_Comm rawMpiComm)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(rawMpiComm == MPI_COMM_NULL,
     std::invalid_argument, "Teuchos::MpiComm constructor: The given MPI_Comm "
@@ -742,9 +741,13 @@ void MpiComm<Ordinal>::setupMembersFromComm()
 {
   MPI_Comm_size(*rawMpiComm_, &size_);
   MPI_Comm_rank(*rawMpiComm_, &rank_);
-  if(tagCounter_ > maxTag_)
+  // Set the default tag to make unique across all communicators
+  if (tagCounter_ > maxTag_) {
     tagCounter_ = minTag_;
+  }
   tag_ = tagCounter_++;
+  // Must ensure the same tag is used on all processes!
+  MPI_Bcast(&tag_, 1, MPI_INT, 0, *rawMpiComm_);
 }
 
 
