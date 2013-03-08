@@ -2217,12 +2217,12 @@ int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
 //==============================================================================
 int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter) {
   int rv=0;
-  if( !NewImporter && ColMap().PointSameAs(NewDomainMap)) {
+  if( !NewImporter && ColMap().SameAs(NewDomainMap)) {
     CrsGraphData_->DomainMap_ = NewDomainMap;    
     delete CrsGraphData_->Importer_;
     CrsGraphData_->Importer_ = 0;
   }
-  else if(NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap())) {
+  else if(NewImporter && ColMap().SameAs(NewImporter->TargetMap()) && NewDomainMap.SameAs(NewImporter->SourceMap())) {
     CrsGraphData_->DomainMap_ = NewDomainMap;
     delete CrsGraphData_->Importer_;
     CrsGraphData_->Importer_  = new Epetra_Import(*NewImporter);
