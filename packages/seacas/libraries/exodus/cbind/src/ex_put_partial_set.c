@@ -154,8 +154,7 @@ int ex_put_partial_set (int   exoid,
   }
 
   /* write out the entry list and extra list arrays */
-  if (set_entry_list != NULL) {
-
+  if (set_entry_list != NULL || ex_is_parallel(exoid)) {
     start[0] = offset-1;
     count[0] = num_to_put;
     if (count[0] == 0)

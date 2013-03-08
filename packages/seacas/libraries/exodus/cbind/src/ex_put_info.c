@@ -193,7 +193,6 @@ int ex_put_info (int   exoid,
 
     if (info != NULL) {
       /* write out information records */
-
       for (i=0; i<num_info; i++) {
         int length = strlen(info[i]);
         start[0] = i;
@@ -211,9 +210,16 @@ int ex_put_info (int   exoid,
           return (EX_FATAL);
         }
       }
+    } else if (ex_is_parallel(exoid)) {
+      /* All processors need to call nc_put_vara_text in case in a global collective mode */
+      char dummy[] = " ";
+      for (i=0; i<num_info; i++) {
+        start[0] = start[1] = 0;
+        count[0] = count[1] = 0;
+        nc_put_vara_text(exoid, varid, start, count, dummy);
+      }
     }
   }
-
   return (EX_NOERR);
 
   /* Fatal error: exit definition mode and return */

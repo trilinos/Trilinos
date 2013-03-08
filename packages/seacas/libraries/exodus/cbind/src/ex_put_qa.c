@@ -206,6 +206,16 @@ int ex_put_qa (int   exoid,
           }
         }
       }
+    } else if (ex_is_parallel(exoid)) {
+      /* In case we are in a collective mode, all processors need to call */
+      const char dummy[] = " ";
+      for (i=0; i<num_qa_records; i++) {
+        for (j=0; j<4; j++) {
+          start[0] = start[1] = start[2] = 0;
+          count[0] = count[1] = count[2] = 0;
+          nc_put_vara_text(exoid, varid, start, count, dummy);
+        }
+      }
     }
   }
   return (EX_NOERR);
