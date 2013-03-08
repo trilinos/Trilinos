@@ -47,6 +47,7 @@
 #ifdef Piro_ENABLE_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
 #include "Piro_Epetra_LOCASolver.hpp"
+#include "Piro_Epetra_LOCAAdaptiveSolver.hpp"
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #endif
@@ -86,6 +87,14 @@ Piro::Epetra::SolverFactory::createSolver(
     const Teuchos::RCP<LOCA::StatusTest::Abstract> statusTest =
       statusTestFactory_.create(Teuchos::sublist(piroParams, "Status Test"));
     result = Teuchos::rcp(new Piro::Epetra::LOCASolver(piroParams, model, observer, saveEigData, statusTest));
+  } else if (type == "LOCA Adaptive") {
+    const Teuchos::RCP<Piro::Epetra::AdaptiveSolutionManager> adaptMgr =
+      adaptSolMgrFactory_.create(Teuchos::sublist(piroParams, "Adaptive Solution Manager"));
+    const Teuchos::RCP<NOX::Epetra::Observer> observer =
+      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+    const Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData =
+      saveEigFactory_.create(Teuchos::sublist(piroParams, "Save Eigen Data Strategy"));
+    result = Teuchos::rcp(new Piro::Epetra::LOCAAdaptiveSolver(piroParams, model, adaptMgr, observer, saveEigData));
   } else if (type == "Trapezoid Rule") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
       noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
@@ -154,6 +163,14 @@ Piro::Epetra::SolverFactory::setLOCAStatusTestProvider(
     const Piro::Provider<LOCA::StatusTest::Abstract> &p)
 {
   statusTestFactory_.setProvider(key, p);
+}
+
+void
+Piro::Epetra::SolverFactory::setAdapativeSolutionManagerProvider(
+    const std::string &key,
+    const Provider<Piro::Epetra::AdaptiveSolutionManager> &p)
+{
+  adaptSolMgrFactory_.setProvider(key, p);
 }
 #endif /* Piro_ENABLE_NOX */
 
