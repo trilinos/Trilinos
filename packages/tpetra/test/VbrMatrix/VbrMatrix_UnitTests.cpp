@@ -45,6 +45,7 @@
 
 #include <Tpetra_BlockMultiVector.hpp>
 #include <Tpetra_Import.hpp>
+#include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_VbrMatrix.hpp>
 
 // TODO: add test where some nodes have zero rows
