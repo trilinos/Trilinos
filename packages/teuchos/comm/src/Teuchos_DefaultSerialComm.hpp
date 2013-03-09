@@ -62,6 +62,9 @@ public:
 
   //! The source rank that sent the message (must be zero).
   OrdinalType getSourceRank () { return 0; }
+
+  //! The tag of the received message.
+  OrdinalType getTag () { return 0; }
 };
 
 
