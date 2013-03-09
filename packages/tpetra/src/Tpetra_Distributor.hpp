@@ -1096,8 +1096,8 @@ namespace Tpetra {
     using Teuchos::TypeNameTraits;
 #ifdef HAVE_TEUCHOS_DEBUG
     using Teuchos::OSTab;
-    using std::endl;
 #endif // HAVE_TEUCHOS_DEBUG
+    using std::endl;
     typedef Array<size_t>::size_type size_type;
 
     // Run-time configurable parameters that come from the input
