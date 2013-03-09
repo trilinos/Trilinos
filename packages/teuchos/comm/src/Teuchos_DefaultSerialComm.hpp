@@ -149,6 +149,11 @@ public:
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  isend (const ArrayView<const char> &sendBuffer,
+	 const int destRank,
+	 const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
@@ -384,6 +389,18 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
   const ArrayView<const char> &/*sendBuffer*/,
   const int /*destRank*/
   ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> > 
+SerialComm<Ordinal>::
+isend (const ArrayView<const char> &/*sendBuffer*/,
+       const int /*destRank*/,
+       const int /*tag*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;

@@ -478,6 +478,11 @@ public:
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  isend (const ArrayView<const char> &sendBuffer,
+	 const int destRank,
+	 const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
@@ -1075,17 +1080,42 @@ RCP<CommRequest<Ordinal> >
 MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
                          const int destRank) const
 {
+  using Teuchos::as;
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::isend(...)" );
 
   MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
   const int err =
-    MPI_Isend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
-               MPI_CHAR, destRank, tag_, *rawMpiComm_, &rawMpiRequest);
+    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()), 
+	       as<Ordinal> (sendBuffer.size ()), MPI_CHAR, 
+	       destRank, tag_, *rawMpiComm_, &rawMpiRequest);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::isend: MPI_Isend() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
 
-  return mpiCommRequest<Ordinal> (rawMpiRequest, sendBuffer.size());
+  return mpiCommRequest<Ordinal> (rawMpiRequest, sendBuffer.size ());
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> >
+MpiComm<Ordinal>::
+isend (const ArrayView<const char> &sendBuffer,
+       const int destRank,
+       const int tag) const
+{
+  using Teuchos::as;
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::isend(...)" );
+
+  MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
+  const int err =
+    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()), 
+	       as<Ordinal> (sendBuffer.size ()), MPI_CHAR, 
+	       destRank, tag, *rawMpiComm_, &rawMpiRequest);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::isend: MPI_Isend() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+
+  return mpiCommRequest<Ordinal> (rawMpiRequest, sendBuffer.size ());
 }
 
 

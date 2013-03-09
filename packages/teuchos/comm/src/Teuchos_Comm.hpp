@@ -482,7 +482,7 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
-  //! Variant of send that takes a tag.
+  //! Variant of send() that takes a tag.
   virtual void 
   send (const Ordinal bytes, 
 	const char sendBuffer[], 
@@ -578,6 +578,11 @@ public:
     const int destRank
     ) const = 0;
 
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  isend (const ArrayView<const char> &sendBuffer,
+	 const int destRank,
+	 const int tag) const = 0;
 
   /** \brief Non-blocking receive. 
    *
