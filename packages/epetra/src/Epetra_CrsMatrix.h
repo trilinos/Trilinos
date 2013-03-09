@@ -245,6 +245,39 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   */
   
   Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& Graph);
+
+//! Epetra CrsMatrix constructor that also fuses Import and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It the DomainMap is taken from the SourceMatrix,
+    the RangeMap is presumed to be RowImporter.TargetMap() if not specified
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowImporter [in] The Import instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * RangeMap=0);
+
   
   //! Copy constructor.
   Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix);
@@ -1453,6 +1486,26 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  // For fused constructor
+  int PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & Source, 
+				   int NumExportIDs,
+				   int * ExportLIDs,
+				   int & LenExports,
+				   char *& Exports,
+				   int & SizeOfPacket,
+				   int * Sizes,
+				   bool & VarSizes,
+				   Epetra_Distributor & Distor);
+  
+
+  // For fused constructor
+  template<typename int_type>
+  int SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap);
+
+  // For fused constructor
+  template<typename int_type>
+  int LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs);
 
   //! Sort column entries, row-by-row, in ascending order.
   int SortEntries();
