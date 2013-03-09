@@ -797,6 +797,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter);
+
+
   //! Returns the Column Map associated with this graph.
   /*!
     \pre HaveColMap()==true

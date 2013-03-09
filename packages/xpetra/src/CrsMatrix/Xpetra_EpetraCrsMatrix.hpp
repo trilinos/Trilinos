@@ -135,6 +135,9 @@ namespace Xpetra {
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null);
 
+
+    //!  Replaces the current domainMap and importer with the user-specified objects.
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
     //@}
 
     //! @name Methods implementing RowMatrix

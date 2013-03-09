@@ -48,7 +48,7 @@
 #include <iosfwd>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_HostSpace.hpp>
-#include <KokkosArray_MemoryManagement.hpp>
+#include <KokkosArray_MemoryTraits.hpp>
 
 /*--------------------------------------------------------------------------*/
 

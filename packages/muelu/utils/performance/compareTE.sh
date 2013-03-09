@@ -32,6 +32,11 @@
 # Borrowed the command line parsing from
 # http://blog.mafr.de/2007/08/05/cmdline-options-in-shell-scripts
 
+# Find the script location
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=$(dirname $SCRIPT)
+
+
 USAGE="Usage: `basename $0` [-hasl] file1 file2"
 OPTDESCR="\n  -h  help\n   -a  all timings [off]\n  -s  timings summed over all levels [off]\n  -l  timings level-by-level[off]\n"
 
@@ -96,4 +101,4 @@ export AWKPATH
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -f compareTE.awk -v printSummedStats=${printSummedStats} -v printLevelStats=${printLevelStats} $file1 $file2
+awk -f $SCRIPTPATH/compareTE.awk -v printSummedStats=${printSummedStats} -v printLevelStats=${printLevelStats} $file1 $file2

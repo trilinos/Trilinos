@@ -48,6 +48,9 @@
 
 namespace KokkosArray {
 
+struct Host ;
+struct Cuda ;
+
 struct MemoryManaged
 { typedef MemoryManaged  memory_traits ; enum { managed = true }; };
 
@@ -55,23 +58,6 @@ struct MemoryUnmanaged
 { typedef MemoryUnmanaged  memory_traits ; enum { managed = false }; };
 
 } // namespace Kokkos
-
-
-namespace KokkosArray {
-
-struct Host;
-struct Cuda;
-
-template <typename Device>
-struct DefaultMemoryManagement;
-
-template <> struct DefaultMemoryManagement<Host>
-{ typedef MemoryManaged type; };
-
-template <> struct DefaultMemoryManagement<Cuda>
-{ typedef MemoryManaged type; };
-
-} /* namespace KokkosArray */
 
 #endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */
 

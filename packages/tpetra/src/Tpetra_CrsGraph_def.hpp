@@ -2294,6 +2294,25 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
+  {
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter()";  
+
+    if( (newImporter==Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newDomainMap)) ||
+	(newImporter!=Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newImporter->getTargetMap()) && newDomainMap->isSameAs(*newImporter->getSourceMap()))) {
+      domainMap_ = newDomainMap;
+      importer_  = rcp_const_cast<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >(newImporter);
+
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( false, std::runtime_error, " requires matching maps and non-static graph.");
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   const RCP<const typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalGraph() const
   {

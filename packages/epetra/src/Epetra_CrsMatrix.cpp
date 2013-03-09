@@ -455,6 +455,11 @@ int Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap& newmap)
 }
 
 //==============================================================================
+int Epetra_CrsMatrix::ReplaceDomainMapAndImporter(const Epetra_Map& NewDomainMap, const Epetra_Import * NewImporter) {
+  return Graph_.ReplaceDomainMapAndImporter(NewDomainMap,NewImporter);
+}
+
+//==============================================================================
 int Epetra_CrsMatrix::PutScalar(double ScalarConstant) 
 {
   if (StorageOptimized()) {

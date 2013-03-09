@@ -189,32 +189,6 @@ struct ViewAssignment< LayoutScalar , LayoutVector , void >
   }
 };
 
-template<>
-struct ViewAssignment< LayoutVector , LayoutLeft , void >
-{
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutVector> & dst , 
-                  const View<ST,SL,SD,SM,LayoutLeft> & src ,
-                  const typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                  ), unsigned >::type i1 )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0      = src.m_shape.N0 ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride * i1 ;
-
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-  }
-};
-
-//----------------------------------------------------------------------------
-
 } // namespace Impl
 } // namespace KokkosArray
 

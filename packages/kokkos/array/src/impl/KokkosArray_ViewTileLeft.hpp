@@ -179,30 +179,22 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< LayoutLeft , LayoutTileLeftFast, void >
+struct ViewAssignment< LayoutDefault , LayoutTileLeftFast, void >
 {
   /** \brief Extracting a single tile from a tiled view */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutLeft> & dst ,
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
                   const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
                   const unsigned i0 ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 0 )
-                    &&
-                    ( unsigned(ViewTraits<DT,DL,DD,DM>::shape_type::N0) == unsigned(SL::N0) )
-                    &&
-                    ( unsigned(ViewTraits<DT,DL,DD,DM>::shape_type::N1) == unsigned(SL::N1) )
+                    is_same< View<DT,DL,DD,DM,LayoutDefault> ,
+                             typename View<ST,SL,SD,SM,LayoutTileLeftFast>::tile_type >::value
                   ), unsigned >::type i1 )
   {
-    typedef View<DT,DL,DD,DM,LayoutLeft> DstViewType ;
+    typedef View<DT,DL,DD,DM,LayoutDefault> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;

@@ -1025,6 +1025,20 @@ or if the number of entries in this row exceed the Length parameter.
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_Map & NewDomainMap, const Epetra_Import * NewImporter);
+
+
 
   //! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.
   /*!Note that if the matrix was constructed with only a row-map, then until FillComplete() is called, this method returns
