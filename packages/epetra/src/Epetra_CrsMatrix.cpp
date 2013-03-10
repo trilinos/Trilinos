@@ -5380,6 +5380,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   }
   if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in Distor.Do",-3);
 
+
   /*********************************************************************/
   /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
   /*********************************************************************/
@@ -5405,7 +5406,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // RemoteIDs:  RemoteLIDs tells us the ID, we need to look up the length the hard way.  See UnpackAndCombine for where this code came from
 
 
- if(NumRemoteIDs > 0) {
+  if(NumRemoteIDs > 0) {
     double * dintptr = (double *) Imports_;
     if(!UseLL) { 
       // Int version
@@ -5433,7 +5434,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     }
     else {
       // LongLong version
-// Int version
       long long     *  LLptr = (long long *) dintptr;
       int         NumEntries = (int) LLptr[1];
 #ifdef SEND_OWNING_PIDS
@@ -5456,9 +5456,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
 	}
       }
     }
- }
-
-
+  }
+  
   // Turn row length into a real CSR_rowptr
   int last_len = CSR_rowptr[0];
   CSR_rowptr[0] = 0;
@@ -5508,7 +5507,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
       else      CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
     }
   }
-
 
   // RemoteIDs: Loop structure following UnpackAndCombine  
   if(NumRemoteIDs > 0) {
@@ -5623,7 +5621,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     ExpertStaticFillComplete(SourceMatrix.DomainMap(),*MyRowMap); 
   }
 
- }// end fused copy constructor
+}// end fused copy constructor
 
  
 

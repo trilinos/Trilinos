@@ -328,9 +328,10 @@ int main(int argc, char *argv[])
 
     for(int i=0, idx=0; i<A->NumMyCols(); i++)
       if(A->LRID(A->GCID64(i)) == -1){
-	MyGIDS[idx] = A->GCID(i);
+	MyGIDS[idx] = A->GCID64(i);
 	idx++;
       }
+
 
     Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],(long long)0,Comm);
     Import1 = new Epetra_Import(*Map1,A->RowMap());
