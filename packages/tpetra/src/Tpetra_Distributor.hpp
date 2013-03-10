@@ -48,13 +48,13 @@
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-// #ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
-// #  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-#  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
+#ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
+#  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+// #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+// #  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
+// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
 namespace Tpetra {
 
@@ -675,6 +675,18 @@ namespace Tpetra {
 
     //! This Distributor instance's tag for MPI point-to-point communication.
     int instanceTag_;
+
+    /// \brief Whether to use different tags for different instances and code paths.
+    ///
+    /// If false, always use the same tag for all Distributor
+    /// instances and doPosts() code paths.  This is a Parameter
+    bool useDistinctTags_;
+
+    //! Call this in the constructor to update tagCounter_.
+    static void incrementTagCounter ();
+
+    //! Get the tag to use for receives and sends.  Call in doPosts().
+    int getTag (const int pathTag) const;
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     /// \brief Compute receive info from sends.
@@ -817,6 +829,7 @@ namespace Tpetra {
     using Teuchos::ssend;
     using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
+    using std::cerr;
     using std::endl;
     typedef Array<size_t>::size_type size_type;
 
@@ -828,9 +841,11 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    (void) verbLevel; // Silence "unused variable" compiler warning.
     RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    // const bool doPrint = out.get () && (comm_->getRank () == 0) &&
+    //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    const bool doPrint = out.get () && (comm_->getRank () == 0);
 
     if (doPrint) {
       // Only need one process to print out parameters.
@@ -874,7 +889,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = indicesTo_.empty () ? 0 : 1;
-    const int tag = instanceTag_ + pathTag;
+    const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -1163,7 +1178,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = indicesTo_.empty () ? 2 : 3;
-    const int tag = instanceTag_ + pathTag;
+    const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     // Distributor uses requests_.size() as the number of outstanding

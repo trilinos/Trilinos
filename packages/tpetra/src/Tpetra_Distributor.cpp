@@ -78,10 +78,33 @@ namespace Tpetra {
     return sendTypes;
   }
 
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+  #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+  namespace {
+    const bool useDistinctTags_default = false;
+  } // namespace (anonymous)
+
   // Initialize the tag counter, used to assign each Distributor instance its own tag.
   int Distributor::tagCounter_ = 0;
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+  void Distributor::incrementTagCounter () {
+    // The standard requires a minimum upper bound of 32767 for tags
+    // (attribute MPI_TAG_UB).  Some implementations allow larger
+    // values.  We could call MPI_Comm_get_attr() to get the actual
+    // upper bound, but it's not really necessary for this case, since
+    // we don't expect an application to create a large number of
+    // Distributor objects, and since the tag counter is really only
+    // for debugging.
+    if (tagCounter_ >= 32764) {
+      tagCounter_ = 0;
+    } else {
+      tagCounter_ += 4;
+    }
+  }
+
+  int Distributor::getTag (const int pathTag) const {
+    return this->useDistinctTags_ ? (this->instanceTag_ + pathTag) : 42;
+  }
+  #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
@@ -95,6 +118,7 @@ namespace Tpetra {
     , totalReceiveLength_(0)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , useDistinctTags_ (useDistinctTags_default)
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
     using Teuchos::getFancyOStream;
@@ -106,7 +130,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
     // This is not thread safe: tagCounter_ is global.
-    tagCounter_ += 4;
+    incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
@@ -123,6 +147,7 @@ namespace Tpetra {
     , totalReceiveLength_(0)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , useDistinctTags_ (useDistinctTags_default)
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
     using Teuchos::getFancyOStream;
@@ -143,7 +168,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
     // This is not thread safe: tagCounter_ is global.
-    tagCounter_ += 4;
+    incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
@@ -160,6 +185,7 @@ namespace Tpetra {
     , reverseDistributor_(distributor.reverseDistributor_)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , useDistinctTags_ (distributor.useDistinctTags_)
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
     using Teuchos::getFancyOStream;
@@ -185,7 +211,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
     // This is not thread safe: tagCounter_ is global.
-    tagCounter_ += 4;
+    incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
@@ -219,6 +245,9 @@ namespace Tpetra {
       plist->get<bool> ("Barrier between receives and sends");
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
@@ -243,6 +272,9 @@ namespace Tpetra {
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    useDistinctTags_ = useDistinctTags;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
 #ifdef HAVE_TEUCHOS_DEBUG
     // Prepare for verbose output, if applicable.
@@ -250,14 +282,19 @@ namespace Tpetra {
     RCP<FancyOStream> out = this->getOStream ();
     const int myRank = comm_->getRank ();
     // We only want one process to print verbose output here.
-    const bool doPrint = out.get () && (myRank == 0) &&
-      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    // const bool doPrint = out.get () && (myRank == 0) &&
+    //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    (void) verbLevel; // Silence "unused variable" compiler warnings.
+    const bool doPrint = out.get () && (myRank == 0);
 
     if (doPrint) {
       *out << "Distributor::setParameterList" << endl;
       OSTab tab = this->getOSTab(); // Add one tab level
       *out << "sendType_: " << DistributorSendTypeEnumToString (sendType_)
            << "barrierBetween_: " << barrierBetween_ << endl;
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+      *out << "useDistinctTags_: " << useDistinctTags_ << endl;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -276,6 +313,9 @@ namespace Tpetra {
     using Teuchos::setStringToIntegralParameter;
 
     const bool barrierBetween = true;
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    const bool useDistinctTags = useDistinctTags_default;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -293,6 +333,11 @@ namespace Tpetra {
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
+		"MPI message tags for different Distributor instances, and for "
+		"different doPosts() code paths.");
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     Teuchos::setupVerboseObjectSublist (&*plist);
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
