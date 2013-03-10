@@ -5010,8 +5010,8 @@ int Epetra_CrsMatrix::SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap
 
 // private ===================================================================
  template<typename int_type>
- int Epetra_CrsMatrix::LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs)
-{
+ int Epetra_CrsMatrix::LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, const int_type *colind_LL)
+   {
   int i,j;
 
   // Scan all column indices and sort into two groups: 
@@ -5268,12 +5268,18 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   bool communication_needed = RowImporter.SourceMap().DistributedGlobal();
 
   bool UseLL=false;
-  if(SourceMatrix.RowMap().GlobalIndicesLongLong()) UseLL=true;
+  int SizeofIntType = -1;
+  if(SourceMatrix.RowMap().GlobalIndicesInt()) {
+    SizeofIntType = (int)sizeof(int); 
+    UseLL=false;
+  }
+  else if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
+    SizeofIntType = (int)sizeof(long long); 
+    UseLL=true;
+  }
+  else
+    throw ReportError("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type",-1);
 
-  /*  if(!MyPID){
-    if(communication_needed) printf("FusedImport: Communication is needed\n");
-    else printf("FusedImport: Communication NOT needed\n");
-    }*///DEBUG
 
   // The basic algorithm here is:
   // 1) Call Distor.Do to handle the import.
@@ -5304,6 +5310,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   Epetra_IntSerialDenseVector & CSR_colind = ExpertExtractIndices();  
   double *&                     CSR_vals   = ExpertExtractValues();  
   CSR_rowptr.Resize(N+1);
+
+  // Unused if we're not in LL mode
+  std::vector<long long> CSR_colind_LL;
 
   /***************************************************/
   /***** 1) From Epetra_DistObject::DoTransfer() *****/
@@ -5362,30 +5371,61 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     CSR_rowptr[PermuteToLIDs[i]] = SourceMatrix.NumMyEntries(PermuteFromLIDs[i]);
   
   // RemoteIDs:  RemoteLIDs tells us the ID, we need to look up the length the hard way.  See UnpackAndCombine for where this code came from
-  if(NumRemoteIDs > 0) {
+
+
+ if(NumRemoteIDs > 0) {
     double * dintptr = (double *) Imports_;
-    int    *  intptr = (int *) dintptr;
-    int   NumEntries = intptr[1];
+    if(!UseLL) { 
+      // Int version
+      int    *  intptr = (int *) dintptr;
+      int   NumEntries = intptr[1];
 #ifdef SEND_OWNING_PIDS
-    int      IntSize = 1 + (((2*NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+      int      IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #else
-    int      IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+      int      IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #endif
-    for(i=0; i<NumRemoteIDs; i++) {
-      CSR_rowptr[RemoteLIDs[i]] = NumEntries;
-      
-      if( i < (NumRemoteIDs-1) ) {
-	dintptr += IntSize + NumEntries;
-	intptr = (int *) dintptr;
-	NumEntries = intptr[1];
+      for(i=0; i<NumRemoteIDs; i++) {
+	CSR_rowptr[RemoteLIDs[i]] = NumEntries;
+	
+	if( i < (NumRemoteIDs-1) ) {
+	  dintptr += IntSize + NumEntries;
+	  intptr = (int *) dintptr;
+	  NumEntries = intptr[1];
 #ifdef SEND_OWNING_PIDS
-	IntSize = 1 + (((2*NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+	  IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #else
-	IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+	  IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #endif
+	}
       }
     }
-  }
+    else {
+      // LongLong version
+// Int version
+      long long     *  LLptr = (long long *) dintptr;
+      int         NumEntries = (int) LLptr[1];
+#ifdef SEND_OWNING_PIDS
+      int      IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#else
+      int      IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#endif
+      for(i=0; i<NumRemoteIDs; i++) {
+	CSR_rowptr[RemoteLIDs[i]] = NumEntries;
+	
+	if( i < (NumRemoteIDs-1) ) {
+	  dintptr += IntSize + NumEntries;
+	  LLptr = (long long *) dintptr;
+	  NumEntries = (int) LLptr[1];
+#ifdef SEND_OWNING_PIDS
+	  IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#else
+	  IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#endif
+	}
+      }
+    }
+ }
+
 
   // Turn row length into a real CSR_rowptr
   int last_len = CSR_rowptr[0];
@@ -5399,6 +5439,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // Allocate CSR_colind & CSR_values arrays
   int mynnz=CSR_rowptr[N];
   CSR_colind.Resize(mynnz);
+  if(UseLL) CSR_colind_LL.resize(mynnz);
   delete [] CSR_vals; // should be a noop.
   CSR_vals = new double[mynnz];
 
@@ -5417,8 +5458,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     int ToRow   = CSR_rowptr[i];
 
     for(j=Source_rowptr[i]; j<Source_rowptr[i+1]; j++) {
-      CSR_colind[ToRow + j - FromRow]   = SourceMatrix.GCID64(Source_colind[j]);
-      CSR_vals[ToRow + j - FromRow]     = Source_vals[j];      
+      CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
+      if(UseLL) CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
+      else      CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
     }
   }
 
@@ -5428,55 +5470,102 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     int FromRow = Source_rowptr[FromLID];
     int ToRow   = CSR_rowptr[PermuteToLIDs[i]];
 
+
     for(j=Source_rowptr[FromLID]; j<Source_rowptr[FromLID+1]; j++) {
-      CSR_colind[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
-      CSR_vals[ToRow + j - FromRow]   = Source_vals[j];      
+      CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
+      if(UseLL) CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
+      else      CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
     }
   }
+
 
   // RemoteIDs: Loop structure following UnpackAndCombine  
   if(NumRemoteIDs > 0) {
     double * dintptr = (double *) Imports_;
-    int *    intptr  = (int *) dintptr;
-    int NumEntries   = intptr[1];
+    if(!UseLL) {
+      // int version
+      int *    intptr  = (int *) dintptr;
+      int NumEntries   = intptr[1];
 #ifdef SEND_OWNING_PIDS
-    int IntSize      = 1 + (((2*NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+      int IntSize      = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #else
-    int IntSize      = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+      int IntSize      = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #endif
-    double* valptr   = dintptr + IntSize;
-    
-    for (i=0; i<NumRemoteIDs; i++) {
-      int ToLID    = RemoteLIDs[i];
-      int StartRow = CSR_rowptr[ToLID];
+      double* valptr   = dintptr + IntSize;
       
-      double * values  = valptr;
-      int    * Indices = intptr + 2;
-      for(j=0; j<NumEntries; j++){
-#ifdef SEND_OWNING_PIDS
-	CSR_colind[StartRow + j]  = Indices[2*j];
-	if(MyPID !=  Indices[2*j+1]) pids[StartRow+j]   = Indices[2*j+1];
-#else
-	CSR_colind[StartRow + j] = Indices[j];
-#endif
-	CSR_vals[StartRow + j]   = values[j];
+      for (i=0; i<NumRemoteIDs; i++) {
+	int ToLID    = RemoteLIDs[i];
+	int StartRow = CSR_rowptr[ToLID];
 	
-      }
-      if( i < (NumRemoteIDs-1) ) {
+	double * values  = valptr;
+	int    * Indices = intptr + 2;
+	for(j=0; j<NumEntries; j++){
+#ifdef SEND_OWNING_PIDS
+	  CSR_colind[StartRow + j]  = Indices[2*j];
+	  if(MyPID !=  Indices[2*j+1]) pids[StartRow+j]   = Indices[2*j+1];
+#else
+	  CSR_colind[StartRow + j] = Indices[j];
+#endif
+	  CSR_vals[StartRow + j]   = values[j];	  
+	}
+	if( i < (NumRemoteIDs-1) ) {
 	  dintptr += IntSize + NumEntries;
 	  intptr = (int *) dintptr;
 	  NumEntries = intptr[1];
 #ifdef SEND_OWNING_PIDS
-	  IntSize = 1 + (((2*NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+	  IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #else
-	  IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+	  IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
 #endif
 	  valptr = dintptr + IntSize;
 	}
+      }
     }
-  }
-    
-  /**************************************************************/
+    else {
+      // Long Long Version
+      long long * LLptr  = (long long *) dintptr;
+      int NumEntries     = (int) LLptr[1];
+#ifdef SEND_OWNING_PIDS
+      int IntSize        = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#else
+      int IntSize        = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#endif
+      double* valptr     = dintptr + IntSize;
+      
+      for (i=0; i<NumRemoteIDs; i++) {
+	int ToLID    = RemoteLIDs[i];
+	int StartRow = CSR_rowptr[ToLID];
+	
+	double * values        = valptr;
+	long long    * Indices = LLptr + 2;
+	for(j=0; j<NumEntries; j++){
+#ifdef SEND_OWNING_PIDS
+	  CSR_colind_LL[StartRow + j]  = Indices[2*j];
+	  if(MyPID !=  Indices[2*j+1]) pids[StartRow+j]   = (int) Indices[2*j+1];
+#else
+	  CSR_colind_LL[StartRow + j] = Indices[j];
+#endif
+	  CSR_vals[StartRow + j]   = values[j];	  
+	}
+	if( i < (NumRemoteIDs-1) ) {
+	  dintptr += IntSize + NumEntries;
+	  LLptr    = (long long *) dintptr;
+	  NumEntries = (int) LLptr[1];
+#ifdef SEND_OWNING_PIDS
+	  IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#else
+	  IntSize = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+#endif
+	  valptr = dintptr + IntSize;
+	}
+      }    
+    }
+ }
+
+
+
+
+ /**************************************************************/
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
