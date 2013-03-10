@@ -5017,9 +5017,11 @@ int Epetra_CrsMatrix::SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap
   // Sanity checking - If int_type==int, colind current contains GIDs, if not, colind_LL does.
   bool UseLL=false;
   if(RowMap().GlobalIndicesLongLong()) UseLL=true;
-  if( (UseLL && !colind_LL) || (!UseLL && colind_LL))
+
+  if(!UseLL && colind_LL)
     throw ReportError("LowCommunicationMakeColMapAndReindex can't determine whether it is in long-long or int mode due to argument conflict",-1);
   
+  // Note: If we legitimately have no column indices, then colind_LL can be null even if we're in UseLL mode.
 
   // Scan all column indices and sort into two groups: 
   // Local:  those whose GID matches a GID of the domain map on this processor and
@@ -5216,7 +5218,7 @@ int Epetra_CrsMatrix::SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap
 
   // Make Column map with same element sizes as Domain map 
   int_type * ColIndicesPtr = (ColIndices.size()>0) ? &ColIndices[0] : 0;
-  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndicesPtr, domainMap.IndexBase(), domainMap.Comm());
+  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndicesPtr, (int)domainMap.IndexBase64(), domainMap.Comm());
 
   Graph_.CrsGraphData_->ColMap_ = temp;
   Graph_.CrsGraphData_->HaveColMap_ = true;
@@ -5596,7 +5598,10 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
 #ifdef SEND_OWNING_PIDS
-  if(UseLL) LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),&pids[0]);
+  if(UseLL) {
+    long long * LLptr = CSR_colind_LL.size()>0 ? &CSR_colind_LL[0] : 0;
+    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),&pids[0],LLptr);
+  }
   else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),&pids[0]);  
    
 #else
