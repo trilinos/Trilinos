@@ -136,8 +136,15 @@ namespace Tpetra {
   ///   sends, this prevents deadlock, even if MPI_Send blocks and
   ///   does not buffer.)
   /// - "VerboseObject" (sublist): Optional sublist for controlling
-  ///   behavior of Distributor as a Teuchos::VerboseObject.  This
-  ///   is currently useful only for debugging.
+  ///   behavior of Distributor as a Teuchos::VerboseObject.  This is
+  ///   currently useful only for debugging.  This sublist takes
+  ///   optional parameters "Verbosity Level" (std::string) and
+  ///   "Output File" (std::string).  "Verbosity Level" has six valid
+  ///   values: "VERB_DEFAULT", "VERB_NONE", "VERB_LOW",
+  ///   "VERB_MEDIUM", "VERB_HIGH", and "VERB_EXTREME", with
+  ///   increasing verbosity starting with "VERB_NONE".  "Output File"
+  ///   is the name of a file to use for output; "none" means don't
+  ///   open a file, but write to the default output stream.
   class Distributor :
     public Teuchos::Describable,
     public Teuchos::ParameterListAcceptorDefaultBase,
