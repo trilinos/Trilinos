@@ -91,6 +91,11 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES SquareMeshGen.cpp
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  ScatterSpeed_Epetra
+  SOURCES   tScatterSpeed_Epetra.cpp
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tUniformRef
 #  SOURCES tUniformRef.cpp ${UNIT_TEST_DRIVER}
