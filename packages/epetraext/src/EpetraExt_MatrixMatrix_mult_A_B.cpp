@@ -525,7 +525,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 #endif
 
   // Sort the entries
-  sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -669,7 +669,7 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
   }
 
   // Sort the entries
-  sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
   return 0;
 }

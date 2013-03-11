@@ -56,6 +56,7 @@
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_CrsGraphData.h"
 #include "Epetra_HashTable.h"
+#include "Epetra_Util.h"
 
 #include <cstdlib>
 

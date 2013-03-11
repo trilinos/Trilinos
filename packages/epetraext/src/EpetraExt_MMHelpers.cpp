@@ -388,45 +388,6 @@ void boundary_exchange_varsize(const Epetra_MpiComm Comm, MPI_Datatype DataType,
 #endif
 
 
-
-/**********************************************************************************************/
-/**********************************************************************************************/
-/**********************************************************************************************/
-int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
-  // For each row, sort column entries from smallest to largest.
-  // Use shell sort. Stable sort so it is fast if indices are already sorted.
-  // Code copied from  Epetra_CrsMatrix::SortEntries() 
-  for(int i = 0; i < NumRows; i++){
-    int start=CRS_rowptr[i];
-
-    double* locValues = &CRS_vals[start];
-    int NumEntries    = CRS_rowptr[i+1] - start;
-    int* locIndices   = &CRS_colind[start];
-		
-    int n = NumEntries;
-    int m = n/2;
-    
-    while(m > 0) {
-      int max = n - m;
-      for(int j = 0; j < max; j++) {
-	for(int k = j; k >= 0; k-=m) {
-	  if(locIndices[k+m] >= locIndices[k])
-	    break;
-	  double dtemp = locValues[k+m];
-	  locValues[k+m] = locValues[k];
-	  locValues[k] = dtemp;
-	  int itemp = locIndices[k+m];
-	  locIndices[k+m] = locIndices[k];
-	  locIndices[k] = itemp;
-	}
-      }
-      m = m/2;
-    }
-  }
-  return(0);
-}
-
-
 //=========================================================================
 //=========================================================================
 //=========================================================================
@@ -1762,7 +1723,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   mtime=MM.getNewTimer("LWCRS C-4");
   mtime->start();
 #endif
-  if(N>0) sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
+  if(N>0) Epetra_Util::SortCrsEntries(N, &rowptr_[0], &colind_[0], &vals_[0]);
 
   /********************************************/
   /**** 6) Cleanup                         ****/

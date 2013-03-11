@@ -169,8 +169,6 @@ std::pair<int,int> get_col_range(const Epetra_Map& emap);
 
 std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx);
 
-int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
-
 // ==============================================================
 class LightweightMapData : Epetra_Data {
   friend class LightweightMap; 

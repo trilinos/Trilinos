@@ -393,7 +393,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 
 
 //----------------------------------------------------------------------------
-int SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries() 
