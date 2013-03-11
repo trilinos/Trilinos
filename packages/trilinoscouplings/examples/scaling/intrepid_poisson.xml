@@ -1,7 +1,8 @@
 <ParameterList>
   <Parameter name="Preconditioner" type="string" value="None"/>
-  <Parameter name="Maximum Iterations" type="int" value="200"/>
+  <Parameter name="Maximum Iterations" type="int" value="10"/>
   <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
+  <Parameter name="Number of Time Steps" type="int" value="100"/>
 
   <ParameterList name="ML">
     <Parameter name="ML output" type="int" value="10"/>

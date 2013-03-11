@@ -41,6 +41,7 @@ solveWithBelos (bool& converged,
                 int& numItersPerformed,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
+		const int num_steps,
                 const Teuchos::RCP<multivector_type>& X,
                 const Teuchos::RCP<const sparse_matrix_type>& A,
                 const Teuchos::RCP<const multivector_type>& B,
@@ -59,7 +60,7 @@ solveWithBelos (bool& converged,
     Mp_right = Teuchos::rcp(new Belos::EpetraPrecOp(M_right));
 
   // Invoke the generic solve routine.
-  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, tol, maxNumIters, X, A, B, Mp_left, Mp_right);
+  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, tol, maxNumIters, num_steps, X, A, B, Mp_left, Mp_right);
 }
 
 } // namespace EpetraIntrepidPoissonExample

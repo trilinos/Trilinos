@@ -41,6 +41,7 @@ solveWithAztecOO (bool& converged,
 		  int& numItersPerformed,
 		  const double tol,
 		  const int maxNumIters,
+		  const int num_steps,
 		  const Teuchos::RCP<Epetra_Vector>& X,
 		  const Teuchos::RCP<Epetra_Operator>& A,
 		  const Teuchos::RCP<Epetra_Vector>& B,
@@ -64,13 +65,25 @@ solveWithAztecOO (bool& converged,
   solver.SetUserOperator(A.get());
   if (M_right != Teuchos::null)
     solver.SetPrecOperator(M_right.get());
-  solver.SetLHS(X.get());
   solver.SetRHS(B.get());
 
-  int result = solver.Iterate(maxNumIters, tol);
+  // Enter "time step" loop -- we're really solving the same system repeatedly
+  converged = true;
+  numItersPerformed = 0;
+  for (int step=0; step<num_steps; ++step) {
 
-  converged = (result == 0);
-  numItersPerformed = solver.NumIters ();
+    // Set x
+    X->PutScalar(0.0);
+
+    // Reset problem
+    solver.SetLHS(X.get());
+
+    int result = solver.Iterate(maxNumIters, tol);
+
+    converged = converged && (result == 0);
+    numItersPerformed += solver.NumIters ();
+
+  }
 }
 
 } // namespace EpetraIntrepidPoissonExample
