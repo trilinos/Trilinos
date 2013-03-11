@@ -61,6 +61,9 @@ namespace EpetraIntrepidPoissonExample {
 ///   iterative method should perform, regardless of whether it
 ///   converged.
 ///
+/// \param num_steps [in] Number of "time steps", i.e., the number of
+//    times the solver is called in a fake time-step loop.
+///
 /// \param X [in/out] On input: the initial guess(es) for the iterative
 ///   method.  On output: the computed approximate solution.
 ///
@@ -76,6 +79,7 @@ solveWithAztecOO (bool& converged,
 		  int& numItersPerformed,
 		  const double tol,
 		  const int maxNumIters,
+		  const int num_steps,
 		  const Teuchos::RCP<Epetra_Vector>& X,
 		  const Teuchos::RCP<Epetra_Operator>& A,
 		  const Teuchos::RCP<Epetra_Vector>& B,

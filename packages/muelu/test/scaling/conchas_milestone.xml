@@ -17,8 +17,7 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!-- for aggregation dropping -->
-      <!-- <Parameter name="aggregation threshold"                           type="double" value="0.1"/> -->
+      <Parameter name="aggregation threshold"               type="double" value="0.02"/>
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
@@ -76,7 +75,7 @@
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
         <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
-        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+        <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
 
@@ -94,9 +93,9 @@
       <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="Partition"                           type="string" value="myZoltanInterface"/>
-      <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/> <!-- default = 2000 -->
-      <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/> <!-- default = 1.2 -->
-      <Parameter name="startLevel"                          type="int"    value="2"/>   <!-- default = 1 -->
+      <Parameter name="minRowsPerProcessor"                 type="int"    value="1000"/> <!-- default = 2000 -->
+      <Parameter name="nonzeroImbalance"                    type="double" value="1.327"/> <!-- default = 1.2 -->
+      <Parameter name="startLevel"                          type="int"    value="1"/>   <!-- default = 1 -->
       <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
     </ParameterList>
 
@@ -132,11 +131,12 @@
       <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
 
       <ParameterList name="ParameterList">
-        <Parameter name="chebyshev: degree"                 type="int"     value="3"/>>
+        <Parameter name="chebyshev: degree"                 type="int"     value="2"/>>
         <!-- 7 in 2D, 20 in 3D -->
         <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
         <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
+        <Parameter name="chebyshev: eigenvalue max iterations" type="int"    value="15"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SymGaussSeidel">
@@ -181,12 +181,14 @@
 
     <Parameter name="numDesiredLevel"                       type="int"      value="10"/> <!-- Max number of levels -->
     <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
-    <Parameter name="verbosity"                             type="string"   value="High"/>
+    <Parameter name="verbosity"                             type="string"   value="High"/> <!--None, Low, Medium, High, Extreme -->
 
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <!-- FIXME FIXME FIXME FIXME FIXME uncomment once we have coordinates -->
+      <!--
       <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
@@ -194,6 +196,7 @@
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
+      -->
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">

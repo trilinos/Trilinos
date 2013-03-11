@@ -80,6 +80,7 @@
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -178,6 +179,9 @@ namespace MueLu {
       }
       if (factoryName == "MultiVectorTransferFactory") {
         return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
+      }
+      if (factoryName == "CoordinatesTransferFactory") {
+        return Build2<CoordinatesTransferFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

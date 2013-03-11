@@ -2,7 +2,9 @@
 //@HEADER
 // ************************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//                             KokkosArray
+//         Manycore Performance-Portable Multidimensional Arrays
+//
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -35,45 +37,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_SHAPETILELEFT_HPP
-#define KOKKOSARRAY_SHAPETILELEFT_HPP
-
-#include <impl/KokkosArray_Shape.hpp>
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP
+#define KOKKOSARRAY_MEMORYMANAGEMENT_HPP
 
 namespace KokkosArray {
-namespace Impl {
 
-template < unsigned ValueSize , unsigned M, unsigned N, unsigned s0 , unsigned s1 >
-struct ShapeMap< Shape<ValueSize,2,s0,s1> , LayoutTileLeft<M,N> >
-{
-  typedef Shape<ValueSize,2,s0,s1> shape_type ;
+struct Host ;
+struct Cuda ;
 
-  static inline
-  size_t allocation_count( const shape_type & shape , unsigned )
-  { return M*N*((shape.N0+M-1)/M)*((shape.N1+N-1)/N); }
+struct MemoryManaged
+{ typedef MemoryManaged  memory_traits ; enum { managed = true }; };
 
-  static inline
-  size_t offset( const shape_type & shape , const size_t i0, const size_t i1 )
-  { assert_shape_bounds( shape, i0, i1 ); return shape.offset(i0,i1)  ; }
+struct MemoryUnmanaged
+{ typedef MemoryUnmanaged  memory_traits ; enum { managed = false }; };
 
-  template< class MemorySpace >
-  static inline
-  size_t stride( const shape_type & ) { return 1 ; }
-};
+} // namespace Kokkos
 
-//----------------------------------------------------------------------------
-
-} /* namespace Impl */
-} /* namespace KokkosArray */
-
-#endif /* #ifndef KOKKOSARRAY_SHAPETILELEFT_HPP */
+#endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */
 

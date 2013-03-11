@@ -172,7 +172,7 @@ public:
 
   template <typename U>
   /* implicit */ Provider(const Teuchos::RCP<U> &instance) :
-    ptr_(Teuchos::rcp(new ProviderImpl<T, SharingProviderFunctor<T> >(makeSharingProviderFunctor(instance))))
+    ptr_(Teuchos::rcp(new ProviderImpl<T, SharingProviderFunctor<T> >(makeSharingProviderFunctor<T>(instance))))
   {}
 
   template <typename P>

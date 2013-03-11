@@ -71,11 +71,11 @@ namespace MueLu {
   RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null, "Generating factory for aggregates");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null, "Generating factory for number of dofs per node");
-    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null, "Generating factory for amalgamation");
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null,                        "Generating factory for aggregates");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
 
-    validParamList->set< std::string >           ("Output filename", "", "Output filename template. default = aggs_level%LEVELID_proc%PROCID.out. %LEVELID will be replaced by the multigrid level id. %PROCID will be replaced by the processor id.");
+    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%LEVELID is replaced level id, %PROCID is replaced by processor id)");
 
     return validParamList;
   }

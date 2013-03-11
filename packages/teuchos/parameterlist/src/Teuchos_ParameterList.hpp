@@ -66,10 +66,10 @@ namespace Teuchos {
  * \relates ParameterList
  */
 enum EValidateUsed {
-  VALIDATE_USED_ENABLED   /*< \brief Validate that parameters in <tt>*this</tt> list
+  VALIDATE_USED_ENABLED   /*!< Validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
-  ,VALIDATE_USED_DISABLED /*< \brief Do not validate that parameters in <tt>*this</tt> list
+  ,VALIDATE_USED_DISABLED /*!< Do not validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
 };
@@ -78,26 +78,56 @@ enum EValidateUsed {
  * \relates ParameterList
  */
 enum EValidateDefaults {
-  VALIDATE_DEFAULTS_ENABLED   /*< \brief Validate that parameters in <tt>*this</tt> list
+  VALIDATE_DEFAULTS_ENABLED   /*!< Validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                    the validation list */
-  ,VALIDATE_DEFAULTS_DISABLED /*< \brief Do not validate that parameters in <tt>*this</tt> list
+  ,VALIDATE_DEFAULTS_DISABLED /*!< Do not validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                   the validation list */
 };
 
-/*! \brief Templated parameter list.
-  
-    Parameters can be added and retreived with the templated "get" and "set"
-    functions.  These parameters can any data type which uses value sementics
-    (e.g. double, float, int, *double, *float, *int, ...) which includes other
-    parameter lists, allowing for a hierarchy of parameter lists.  These
-    parameters can also be pointers to vectors or functions.
+/*! \brief A list of parameters of arbitrary type.
 
-    \note <ul>
-	  <li> Use static_cast<T>() when the type is ambiguous.  
-          <li> Both char* and std::string std::map to are stored as strings internally. 
-	  </ul>
+  \section Teuchos_ParameterList_Summary Summary
+
+  A ParameterList is a map from parameter name (a string) to its
+  value.  The value may have any type with value semantics (see
+  explanation and examples below).  This includes another
+  ParameterList, which allows a ParameterList to encode a hierarchy of
+  parameters.  Different entries in the same ParameterList may have
+  values of different types.
+
+  Users may add a parameter using one of the get() methods, and
+  retrieve its value (given the parameter's name) using one of the
+  set() methods.  If the compiler gets confused when you use one of
+  the templated methods, you might have to help it by specifying the
+  type explicitly, or by casting the input object (using e.g.,
+  <tt>static_cast</tt>).  There are also methods for iterating through
+  all the parameters in a list, and for validating parameters using
+  validators that you may define for each parameter.
+
+  \section Teuchos_ParameterList_ValueSemantics Value semantics
+
+  A type has <i>value semantics</i> when it can be passed around as a
+  value.  This means that it has an assignment operator and a copy
+  constructor, and that the latter creates "new objects" (rather than
+  references that modify a single object).  Types with value semantics
+  include \c double, \c float, \c int, \c std::string, and similar
+  types.
+
+  Paradoxically, pointers like <tt>double*</tt> also have value
+  semantics.  While the pointer is a reference to an object (e.g., an
+  array of <tt>double</tt>), the pointer itself is a value (an address
+  in memory).  The same holds for Teuchos' reference-counted pointer
+  and array classes (RCP resp. ArrayRCP).  While it is valid to store
+  pointers ("raw" or reference-counted) in a ParameterList, be aware
+  that this hinders serialization.  For example, a <tt>double*</tt>
+  could encode a single \c double or an array of \c double.  The
+  pointer itself does not encode the length of the array.  A
+  ParameterList serializer has no way to know what the
+  <tt>double*</tt> means.  ParameterList does not forbid you from
+  storing objects that cannot be correctly serialized, so you have to
+  know whether or not this concerns you.
 */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterList {
 
@@ -144,38 +174,37 @@ public:
   //! Constructor
   ParameterList();
 
-  //! Constructor
+  //! Constructor that names the entire parameter list.
   ParameterList(const std::string &name);
   
-  //! Copy Constructor
+  //! Copy constructor
   ParameterList(const ParameterList& source);
   
-  //! Deconstructor
+  //! Destructor
   virtual ~ParameterList();
 
   //! Get the number of stored parameters.
-  Ordinal numParams() const;
+  Ordinal numParams () const;
 
   //@}
-  
   //! @name Set Functions 
   //@{
 
-  /** \brief Set the name of <tt>*this</tt> list.
-   */
+  //! Set the name of <tt>*this</tt> list.
   ParameterList& setName( const std::string &name );
   
-  /** Replace the current parameter list with \c source.
-   * \note This also replaces the name returned by <tt>this->name()</tt>
-   */
-  ParameterList& operator=(const ParameterList& source);
+  /// \brief Replace the current parameter list with \c source.
+  ///
+  /// \note This also replaces the name returned by <tt>this->name()</tt>
+  ParameterList& operator= (const ParameterList& source);
   
   /** Set the parameters in <tt>source</tt>.
    *
-   * Note, this function will set the parameters and sublists from
-   * <tt>source</tt> into <tt>*this</tt> but will not result in parameters
-   * being removed from <tt>*this</tt>.  Parameters in <tt>*this</tt> with the
-   * same names as those in <tt>source</tt> will be overwritten.
+   * This function will set the parameters and sublists from
+   * <tt>source</tt> into <tt>*this</tt>, but will not remove
+   * parameters from <tt>*this</tt>.  Parameters in <tt>*this</tt>
+   * with the same names as those in <tt>source</tt> will be
+   * overwritten.
    */
   ParameterList& setParameters(const ParameterList& source);
   
@@ -199,7 +228,17 @@ public:
    */
   ParameterList& disableRecursiveValidation();
   
-  /*! \brief Sets different types of parameters. The type depends on the second entry.  
+  /*! \brief Set a parameter whose value has type T.
+
+    \param name [in] The parameter's name.
+    \param value [in] The parameter's value.  This determines the
+      template parameter T.  In most cases, you will not need to
+      specify the type T explicitly; the compiler will infer it from
+      this argument.
+    \param docString [in] Documentation string for the parameter.
+    \param validator [in] Validator for the parameter.  If not
+      specified, it defaults to \c null, the trivial validator (every
+      value passes validation).
     
     \note <ul>
     <li> Use static_cast<T>() when the type is ambiguous. 
@@ -208,29 +247,32 @@ public:
     </ul>
   */
   template<typename T>
-  ParameterList& set(
-    std::string const& name, T const& value, std::string const& docString = "",
-    RCP<const ParameterEntryValidator> const& validator = null
-    );
+  ParameterList& set (std::string const& name, 
+		      T const& value, 
+		      std::string const& docString = "",
+		      RCP<const ParameterEntryValidator> const& validator = null);
 
-  /*! \brief Specialization for the case when a user sets the parameter with a character
-    std::string in parenthesis.
-  */
+  /// \brief Specialization of set() for a parameter which is a <tt>char[]</tt>.
+  ///
+  /// This version of set() copies the given character array to an
+  /// \c std::string and stores it that way in the ParameterList.
   ParameterList& set(
     std::string const& name, char value[], std::string const& docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
 
-  /*! \brief Specialization for the case when a user sets the parameter with a character
-    std::string in parenthesis.
-  */
+  /// \brief Specialization of set() for a parameter which is a <tt>const char[]</tt>.
+  ///
+  /// This version of set() copies the given character array to an
+  /// \c std::string and stores it that way in the ParameterList.
   ParameterList& set(
     std::string const& name, const char value[], std::string const& docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
 
-  /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
-   */
+  /// \brief Specialization of set() for a parameter which is itself a ParameterList.
+  ///
+  /// We call the input ParameterList a <i>sublist</i> of <tt>*this</tt>.
   ParameterList& set(
     std::string const& name, ParameterList const& value, std::string const& docString = ""
     );
@@ -242,16 +284,21 @@ public:
   ParameterList& setEntry(const std::string& name, const ParameterEntry& entry);
 
   //@}
-  
   //! @name Get Functions 
   //@{
-  
-  /*! \brief Retrieves parameter \c name of type \c T from list, if it exists, else the \c def_value is
-    used to enter a new parameter into the list.
+
+    /*! \brief Return the parameter's value, or the default value if it is not there.
+
+      If the parameter with the given name exists in this
+      ParameterList and has type T, return the parameter's value.  If
+      the parameter exists but does not have type T, throw an
+      exception.  Otherwise, if the parameter does not exist, add it
+      to the list with value <tt>def_value</tt>, and return
+      <tt>def_value</tt>.
     
     \note <ul> 
     <li> Use the static_cast<T>() when the type is ambiguous.
-    <li> Both char* and std::string std::map to are stored as strings internally. 
+    <li> Both char* and std::string are stored as strings internally. 
     <li> Sets the parameter as "used".
     <li> Exception is thrown if \c name exists, but is not of type \c T.
     </ul>
@@ -259,35 +306,78 @@ public:
   template<typename T>
   T& get(const std::string& name, T def_value);
 
-  /*! \brief Specialization of get, where the nominal value is a character std::string in parenthesis.
+  /*! \brief Specialization of get(), where the nominal value is a character string.
     Both char* and std::string are stored as strings and return std::string values.
   */
   std::string& get(const std::string& name, char def_value[]);
   
-  /*! \brief Specialization of get, where the nominal value is a character std::string in parenthesis.
+  /*! \brief Specialization of get(), where the nominal value is a character string.
     Both char* and std::string are stored as strings and return std::string values.
   */
   std::string& get(const std::string& name, const char def_value[]);
-  
-  /*! \brief Retrieves parameter \c name of type \c T from a list, an
-    <tt>Exceptions::InvalidParameter</tt> std::exception is thrown if this
-    parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
-    the wrong type (<tt>Exceptions::InvalidParameterType</tt>).  \note The
-    syntax for calling this method is: <tt> list.template get<int>( "Iters" )
-    </tt>
-  */
+
+  /// \brief Get a nonconst reference to the parameter.
+  ///
+  /// \param name [in] The name of the parameter.
+  ///
+  /// If the given parameter is not in the list at all, this method
+  /// throws Exceptions::InvalidParameter.  If the parameter is in the
+  /// list but does not have type T, this method throws
+  /// Exceptions::InvalidParameterType.  Both exceptions are
+  /// subclasses of Exceptions::InvalidParameter.
+  ///
+  /// You may use the returned reference to modify the parameter's
+  /// value in the list directly.
+  ///
+  /// When you call this method, you must specify the type T explicitly.
+  /// For example:
+  /// \code
+  /// Teuchos::ParameterList plist;
+  /// const int x = 42;
+  /// plist.set ("The Answer", x);
+  /// // ...
+  /// const int y = plist.get<int> ("The Answer");
+  /// \endcode
+  /// If the type T is itself a template parameter in your code, you
+  /// must use the \c template keyword.  For example:
+  /// \code
+  /// template<class T>
+  /// T& getMyParameter (Teuchos::ParameterList& plist) {
+  ///   return plist.template get<T> ("My Parameter");
+  /// }
+  /// \endcode
   template<typename T>
-  T& get(const std::string& name);
-  
-  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an
-    <tt>Exceptions::InvalidParameter</tt> std::exception is thrown if this
-    parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
-    the wrong type (<tt>Exceptions::InvalidParameterType</tt>).  \note The
-    syntax for calling this method is: <tt> list.template get<int>( "Iters" )
-    </tt>
-  */
+  T& get (const std::string& name);
+
+  /// \brief Get a const reference to the parameter.
+  ///
+  /// \param name [in] The name of the parameter.
+  ///
+  /// If the given parameter is not in the list at all, this method
+  /// throws Exceptions::InvalidParameter.  If the parameter is in the
+  /// list but does not have type T, this method throws
+  /// Exceptions::InvalidParameterType.  Both exceptions are
+  /// subclasses of Exceptions::InvalidParameter.
+  ///
+  /// When you call this method, you must specify the type T explicitly.
+  /// For example:
+  /// \code
+  /// Teuchos::ParameterList plist;
+  /// const int x = 42;
+  /// plist.set ("The Answer", x);
+  /// // ...
+  /// const int y = plist.get<int> ("The Answer");
+  /// \endcode
+  /// If the type T is itself a template parameter in your code, you
+  /// must use the \c template keyword.  For example:
+  /// \code
+  /// template<class T>
+  /// const T& getMyParameter (const Teuchos::ParameterList& plist) {
+  ///   return plist.template get<T> ("My Parameter");
+  /// }
+  /// \endcode
   template<typename T>
-  const T& get(const std::string& name) const;  
+  const T& get (const std::string& name) const;  
   
   /*! \brief Retrieves the pointer for parameter \c name of type \c T from a
     list.  A null pointer is returned if this parameter doesn't exist or is
@@ -393,32 +483,28 @@ public:
   //! @name Attribute Functions 
   //@{
 
-  /*! \brief Query the name of this parameter list. */
+  //! The name of this ParameterList.
   const std::string& name() const;
 
-  /*! \brief Query the existence of a parameter.  \return "true" if a
-      parameter with this \c name exists, else "false".  Warning, this
-      function should almost never be used!  Instead, consider using
-      getEntryPtr() instead. \todo Depreicate this function and instead use
-      index lookup.
-  */
-  bool isParameter(const std::string& name) const;
-  
-  /*! \brief Query the existence of a parameter and whether it is a parameter
-      list.  \return "true" if a parameter with this \c name exists and is
-      itself a parameter list, else "false".  Warning, this function should
-      almost never be used!  Instead, consider using getEntryPtr() instead.
-  */
-  bool isSublist(const std::string& name) const;
-  
-  /*! \brief Query the existence and type of a parameter.  \return "true" is a
-    parameter with this \c name exists and is of type \c T, else "false".
-    \note The syntax for calling this method is: <tt> list.template
-    isType<int>( "Iters" ) </tt>.  Warning, this function should almost never
-    be used!  Instead, consider using getEntryPtr() instead.
-  */
+  /// \brief Whether the given parameter exists in this list.
+  ///
+  /// Return true if a parameter with name \c name exists in this
+  /// list, else return false.
+  bool isParameter (const std::string& name) const;
+
+  /// \brief Whether the given sublist exists in this list.
+  ///
+  /// Return true if a parameter with name \c name exists in this
+  /// list, and is itself a ParameterList.  Otherwise, return false.
+  bool isSublist (const std::string& name) const;
+
+  /// \brief Whether the given parameter exists in this list and has type T.
+  ///
+  ///
+  /// Return true if a parameter with name \c name exists in this list
+  /// and has type T.  Otherwise, return false.
   template<typename T>
-  bool isType(const std::string& name) const;
+  bool isType (const std::string& name) const;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS  
   /*! \brief Query the existence and type of a parameter.

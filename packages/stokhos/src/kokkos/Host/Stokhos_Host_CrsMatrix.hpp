@@ -274,8 +274,10 @@ public:
     double *x_values = x.ptr_on_device() ;
     double *y_values = y.ptr_on_device() ;
     
+    KokkosArray::Host::sleep();
     mkl_dcsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
+    KokkosArray::Host::wake();
   }
 };
 
@@ -442,8 +444,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -491,8 +495,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
@@ -531,8 +537,10 @@ public:
     float *x_values = x.ptr_on_device() ;
     float *y_values = y.ptr_on_device() ;
     
+    KokkosArray::Host::sleep();
     mkl_scsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
+    KokkosArray::Host::wake();
   }
 };
 
@@ -577,8 +585,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -624,8 +634,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
+    KokkosArray::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
+    KokkosArray::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);

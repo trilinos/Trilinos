@@ -90,6 +90,7 @@ template< unsigned xSize , unsigned xRank ,
           unsigned ySize , unsigned yRank ,
           unsigned yN0 , unsigned yN1 , unsigned yN2 , unsigned yN3 ,
           unsigned yN4 , unsigned yN5 , unsigned yN6 , unsigned yN7 >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator == ( const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x ,
                    const Shape<ySize,yRank,yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> & y )
 {
@@ -114,13 +115,26 @@ template< unsigned xSize , unsigned xRank ,
           unsigned ySize ,unsigned yRank ,
           unsigned yN0 , unsigned yN1 , unsigned yN2 , unsigned yN3 ,
           unsigned yN4 , unsigned yN5 , unsigned yN6 , unsigned yN7 >
-bool operator != ( const Shape<xSize,xRank,
-                               xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x ,
-                   const Shape<ySize,yRank,
-                               yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> & y )
+KOKKOSARRAY_INLINE_FUNCTION
+bool operator != ( const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x ,
+                   const Shape<ySize,yRank,yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> & y )
 { return ! operator == ( x , y ); }
 
 //----------------------------------------------------------------------------
+
+void assert_counts_are_equal_throw(
+  const unsigned x_count ,
+  const unsigned y_count );
+
+inline
+void assert_counts_are_equal(
+  const unsigned x_count ,
+  const unsigned y_count )
+{
+  if ( x_count != y_count ) {
+    assert_counts_are_equal_throw( x_count , y_count );
+  }
+}
 
 void assert_shapes_are_equal_throw(
   const unsigned x_scalar_size ,
@@ -144,6 +158,7 @@ template< unsigned xSize , unsigned xRank ,
           unsigned ySize , unsigned yRank ,
           unsigned yN0 , unsigned yN1 , unsigned yN2 , unsigned yN3 ,
           unsigned yN4 , unsigned yN5 , unsigned yN6 , unsigned yN7 >
+inline
 void assert_shapes_are_equal(
   const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x ,
   const Shape<ySize,yRank,yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> & y )
@@ -172,6 +187,7 @@ void assert_shapes_equal_dimension(
   typedef Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> x_type ;
   typedef Shape<ySize,yRank,yN0,yN1,yN2,yN3,yN4,yN5,yN6,yN7> y_type ;
 
+  // Omit comparison of scalar_size.
   if ( unsigned( x.rank ) != unsigned( y.rank ) ||
        unsigned( x.N0 ) != unsigned( y.N0 ) || 
        unsigned( x.N1 ) != unsigned( y.N1 ) || 
@@ -182,10 +198,8 @@ void assert_shapes_equal_dimension(
        unsigned( x.N6 ) != unsigned( y.N6 ) || 
        unsigned( x.N7 ) != unsigned( y.N7 ) ) {
     assert_shapes_are_equal_throw(
-      x_type::scalar_size ,
-      x_type::rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
-      y_type::scalar_size ,
-      y_type::rank, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
+      x_type::scalar_size, x_type::rank, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
+      y_type::scalar_size, y_type::rank, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
 
@@ -728,6 +742,103 @@ struct ShapeInsert< ShapeType , N , 7 >
                  0 ,
                  0 ,
                  N > type ;
+};
+
+//----------------------------------------------------------------------------
+
+template< class DstShape , class SrcShape ,
+          unsigned DstRankDynamic   = DstShape::rank_dynamic ,
+          bool     DstRankDynamicOK = unsigned(DstShape::rank_dynamic) >= unsigned(SrcShape::rank_dynamic) >
+struct ShapeCompatible { enum { value = false }; };
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 8 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 7 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 6 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 5 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 4 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N4 == SrcShape::N4 &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 3 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N3 == SrcShape::N3 &&
+                 DstShape::N4 == SrcShape::N4 &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 2 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N2 == SrcShape::N2 &&
+                 DstShape::N3 == SrcShape::N3 &&
+                 DstShape::N4 == SrcShape::N4 &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 1 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N1 == SrcShape::N1 &&
+                 DstShape::N2 == SrcShape::N2 &&
+                 DstShape::N3 == SrcShape::N3 &&
+                 DstShape::N4 == SrcShape::N4 &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
+};
+
+template< class DstShape , class SrcShape >
+struct ShapeCompatible< DstShape , SrcShape , 0 , true >
+{
+  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
+                 DstShape::N0 == SrcShape::N0 &&
+                 DstShape::N1 == SrcShape::N1 &&
+                 DstShape::N2 == SrcShape::N2 &&
+                 DstShape::N3 == SrcShape::N3 &&
+                 DstShape::N4 == SrcShape::N4 &&
+                 DstShape::N5 == SrcShape::N5 &&
+                 DstShape::N6 == SrcShape::N6 &&
+                 DstShape::N7 == SrcShape::N7 };
 };
 
 } /* namespace Impl */

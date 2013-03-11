@@ -42,21 +42,39 @@
 #ifndef TPETRA_VBRMATRIX_DECL_HPP
 #define TPETRA_VBRMATRIX_DECL_HPP
 
+/// \file Tpetra_VbrMatrix_decl.hpp
+/// \brief Declarations for the class Tpetra::VbrMatrix.
+
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_Operator.hpp>
+#include <Tpetra_VbrUtils.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_VbrMatrix.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Operator.hpp"
-#include "Tpetra_BlockMap.hpp"
-#include "Tpetra_BlockCrsGraph.hpp"
-#include "Tpetra_VbrUtils.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
+// Forward declarations, to avoid including files that we don't really
+// need just for declaring VbrMatrix.  The #ifndef ... #endif prevents
+// Doxygen from generating spurious documentation for the forward
+// declarations.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class BlockMap;
 
-/** \file Tpetra_VbrMatrix_decl.hpp
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class BlockCrsGraph;
+} // namespace Tpetra
 
-  Declarations for the class Tpetra::VbrMatrix.
-*/
+namespace Kokkos {
+  template<class Scalar, class LocalOrdinal, class Node>
+  class VbrMatrix;
+} // namespace Kokkos 
+
+namespace Teuchos {
+  template<class OrdinalType, class ScalarType>
+  class SerialDenseMatrix;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 namespace Tpetra {
 
 //! \brief VbrMatrix: Variable block row matrix.
@@ -93,8 +111,10 @@ template <class Scalar,
           class GlobalOrdinal = LocalOrdinal, 
           class Node          = Kokkos::DefaultNode::DefaultNodeType, 
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>, public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
- public:
+class VbrMatrix : 
+    public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>, 
+    public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
@@ -523,7 +543,11 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
 
-  Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
+  // We use a pointer so that the _decl header file only needs a
+  // forward declaration, not an include.  We don't really need an RCP
+  // here, since the local matrix object never gets shared outside the
+  // class.  std::unique_ptr (C++11) would be more appropriate.
+  Teuchos::RCP<Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> > lclMatrix_;
 
   //A variable-block-row matrix is represented by 6 arrays 
   //in packed (contiguous storage) form. For a description of these

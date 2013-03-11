@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,13 +35,70 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-////
+#include <Tpetra_TestingUtilities.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+
+namespace {
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
+
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::FancyOStream;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::outArg;
+  using Teuchos::broadcast;
+  using Teuchos::OrdinalTraits;
+  using Teuchos::ScalarTraits;
+  using Teuchos::Comm;
+  using Teuchos::tuple;
+  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+
+  using Tpetra::Map;
+  using Tpetra::CrsMatrix;
+  using Tpetra::Import;
+  using Tpetra::global_size_t;
+  using Tpetra::createNonContigMapWithNode;
+  using Tpetra::createUniformContigMapWithNode;
+  using Tpetra::createContigMapWithNode;
+  using Tpetra::createLocalMapWithNode;
+  using Tpetra::createVector;
+  using Tpetra::createCrsMatrix;
+  using Tpetra::DefaultPlatform;
+  using Tpetra::ProfileType;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
+  using Tpetra::OptimizeOption;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::DoNotOptimizeStorage;
+  using Tpetra::GloballyDistributed;
+  using Tpetra::INSERT;
+
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.addOutputSetupOptions(true);
+    clp.setOption(
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
+        "Test MPI (if available) or force test of serial.  In a serial build,"
+        " this option is ignored and a serial comm is always used." );
+  }
+
+//
+// UNIT TEST(S)
+//
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scalar, Node )
 {
   RCP<Node> node = getNode<Node>();
@@ -140,4 +197,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
   int globalSuccess_int = -1;
   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+}
+
+//
+// INSTANTIATIONS
+//
+
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonlocalAfterResume, LO, GO, SCALAR, NODE )
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 }

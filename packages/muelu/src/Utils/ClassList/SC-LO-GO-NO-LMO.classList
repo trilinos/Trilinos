@@ -28,6 +28,7 @@ MapTransferFactory
 MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
+CoordinatesTransferFactory
 NullspaceFactory
 ParameterListInterpreter
 PermutationFactory

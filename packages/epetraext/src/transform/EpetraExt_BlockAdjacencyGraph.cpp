@@ -38,7 +38,7 @@
 //
 // ***********************************************************************
 //@HEADER
-  
+
 #include <EpetraExt_BlockAdjacencyGraph.h>
 
 #include <Epetra_CrsMatrix.h>
@@ -58,13 +58,12 @@ namespace EpetraExt {
 
   int ceil31log2(int n)
   { // Given 1 <= n < 2^31, find l such that 2^(l-1) < n <= 2^(l)
-   int l=0, m = 1;
-   while( n > m & l < 31 )
-   {
+    int l=0, m = 1;
+    while ((n > m) && (l < 31)) {
       m = 2*m;
       ++l;
-   }
-   return(l);
+    }
+    return(l);
   }
 //  Purpose: Compute the block connectivity graph of a matrix.
 //  An nrr by nrr sparse matrix admits a (Dulmage-Mendelsohn)
@@ -75,17 +74,17 @@ namespace EpetraExt {
 //  into the graph of the blocks, a graph with nbrr vertices, that is
 //  called here the block connectivity graph.
 //     The partition of the rows and columns of B is represented by
-//  r(0:nbrr),  0 = r(0) < r(1) < .. < r(nbrr) = nrr, 
+//  r(0:nbrr),  0 = r(0) < r(1) < .. < r(nbrr) = nrr,
 //  The graph (Mp,Mj) of the nbrr x nbrr matrix is represened by
 //  a sparse matrix in sparse coordinate format.
 //  Mp: row indices, dimension determined here (nzM).
 //  Mj: column indices, dimension determined here (nzM).
 //  The integer vector, weights, of block sizes  (dimension nbrr) is also
-//  computed here.  
+//  computed here.
 //     The case of nbrr proportional to nrr is critical.  One must
 //  efficiently look up the column indices of B in the partition.
 //  This is done here using a binary search tree, so that the
-//  look up cost is nzB*log2(nbrr).  
+//  look up cost is nzB*log2(nbrr).
 
   Teuchos::RCP<Epetra_CrsGraph> BlockAdjacencyGraph::compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose)
   {
@@ -94,14 +93,14 @@ namespace EpetraExt {
     int myPID = B.Comm().MyPID();
     for (int proc=0; proc<B.Comm().NumProc(); proc++)
       {
-	if (B.NumGlobalEntries() == B.NumMyEntries())
-	  myMatProc = myPID;
+        if (B.NumGlobalEntries() == B.NumMyEntries())
+          myMatProc = myPID;
       }
     B.Comm().MaxAll( &myMatProc, &matProc, 1 );
-    
+
     if( matProc == -1)
       { cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
-    
+
     int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns;
     int tree_height;
     int error = -1;    /* error detected, possibly a problem with the input */
@@ -123,11 +122,11 @@ namespace EpetraExt {
     l = 0; j = 0; m = 0;
     for( i = 0; i < nrr; i++ ){
       if( i >= r[l+1] ){
-	++l;                 /* new block row */
-	m = EPETRA_MAX(m,j) ;   /* nonzeros in block row */
-	j = B.NumGlobalIndices(i);
+        ++l;                 /* new block row */
+        m = EPETRA_MAX(m,j) ;   /* nonzeros in block row */
+        j = B.NumGlobalIndices(i);
       }else{
-	j += B.NumGlobalIndices(i);
+        j += B.NumGlobalIndices(i);
       }
     }
     /* one more time for the final block */
@@ -135,8 +134,8 @@ namespace EpetraExt {
 
     colstack = (int*) malloc( EPETRA_MAX(m,1) * sizeof(int) );
     // The compressed graph is actually computed twice,
-    // due to concerns about memory limitations.  First, 
-    // without memory allocation, just nzM is computed.  
+    // due to concerns about memory limitations.  First,
+    // without memory allocation, just nzM is computed.
     // Next Mj is allocated. Then, the second time, the
     // arrays are actually populated.
     nzM = 0; q = -1; l = 0;
@@ -144,38 +143,38 @@ namespace EpetraExt {
     int numEntries;
     for( i = 0; i <= nrr; i++ ){
       if( i >= r[l+1] ){
-	if( q > 0 ) std::qsort(colstack,q+1,sizeof(int),compare_ints); /* sort stack */
-	if( q >= 0 ) ns = 1; /* l, colstack[0] M */
-	for( j=1; j<=q ; j++ ){ /* delete copies */
-	  if( colstack[j] > colstack[j-1] ) ++ns;
-	}
-	nzM += ns; /*M->p[l+1] = M->p[l] + ns;*/
-	++l;
-	q = -1;
+        if( q > 0 ) std::qsort(colstack,q+1,sizeof(int),compare_ints); /* sort stack */
+        if( q >= 0 ) ns = 1; /* l, colstack[0] M */
+        for( j=1; j<=q ; j++ ){ /* delete copies */
+          if( colstack[j] > colstack[j-1] ) ++ns;
+        }
+        nzM += ns; /*M->p[l+1] = M->p[l] + ns;*/
+        ++l;
+        q = -1;
       }
       if( i < nrr ){
-	B.ExtractMyRowView( i, numEntries, indices );
-	for( k = 0; k < numEntries; k++){
-	  j = indices[k];  ns = 0; p = 0;
-	  while( (r[bstree[p]] > j)  ||  (j >= r[bstree[p]+1])  ){
-	    if( r[bstree[p]] > j){
-	      p = 2*p+1;
-	    }else{
-	      if( r[bstree[p]+1] <= j) p = 2*p+2;
-	    }
-	    ++ns;
-	    if( p > nbrr || ns > tree_height ) {
-	      error = j;
-	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
-	    }
-	  }
-	  colstack[++q] = bstree[p];
-	}
-	//if( error >-1 ){ std::printf("%d\n",error); break; }
+        B.ExtractMyRowView( i, numEntries, indices );
+        for( k = 0; k < numEntries; k++){
+          j = indices[k];  ns = 0; p = 0;
+          while( (r[bstree[p]] > j)  ||  (j >= r[bstree[p]+1])  ){
+            if( r[bstree[p]] > j){
+              p = 2*p+1;
+            }else{
+              if( r[bstree[p]+1] <= j) p = 2*p+2;
+            }
+            ++ns;
+            if( p > nbrr || ns > tree_height ) {
+              error = j;
+              std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
+            }
+          }
+          colstack[++q] = bstree[p];
+        }
+        //if( error >-1 ){ std::printf("%d\n",error); break; }
         // p > nbrr is a fatal error that is ignored
       }
     }
-    
+
     if ( matProc == myPID && verbose )
       std::printf("nzM =  %d \n", nzM );
     Mi.resize( nzM );
@@ -183,46 +182,46 @@ namespace EpetraExt {
     q = -1; l = 0; pm = -1;
     for( i = 0; i <= nrr; i++ ){
       if( i >= r[l+1] ){
-	if( q > 0 ) std::qsort(colstack,q+1,sizeof(colstack[0]),compare_ints); /* sort stack */
-	if( q >= 0 ){
-	  Mi[++pm] = l;
-	  Mj[pm] = colstack[0];
-	}
-	for( j=1; j<=q ; j++ ){ /* delete copies */
-	  if( colstack[j] > colstack[j-1] ){ /* l, colstack[j] */
-	    Mi[++pm] = l;
-	    Mj[pm] = colstack[j];
-	  }
-	}
-	++l;
-	Mnum[l] = pm + 1;
-	
-	/* sparse row format: M->p[l+1] = M->p[l] + ns; */
-	q = -1;
+        if( q > 0 ) std::qsort(colstack,q+1,sizeof(colstack[0]),compare_ints); /* sort stack */
+        if( q >= 0 ){
+          Mi[++pm] = l;
+          Mj[pm] = colstack[0];
+        }
+        for( j=1; j<=q ; j++ ){ /* delete copies */
+          if( colstack[j] > colstack[j-1] ){ /* l, colstack[j] */
+            Mi[++pm] = l;
+            Mj[pm] = colstack[j];
+          }
+        }
+        ++l;
+        Mnum[l] = pm + 1;
+
+        /* sparse row format: M->p[l+1] = M->p[l] + ns; */
+        q = -1;
       }
       if( i < nrr ){
-	B.ExtractMyRowView( i, numEntries, indices );
-	for( k = 0; k < numEntries; k++){
-	  j = indices[k]; ns = 0; p = 0;
-	  while( (r[bstree[p]] > j)  ||  (j >= r[bstree[p]+1])  ){
-	    if( r[bstree[p]] > j){
-	      p = 2*p+1;
-	    }else{
-	      if( r[bstree[p]+1] <= j) p = 2*p+2;
-	    }
-	    ++ns;
-	  }
-	  colstack[++q] = bstree[p];
-	}
+        B.ExtractMyRowView( i, numEntries, indices );
+        for( k = 0; k < numEntries; k++){
+          j = indices[k]; ns = 0; p = 0;
+          while( (r[bstree[p]] > j)  ||  (j >= r[bstree[p]+1])  ){
+            if( r[bstree[p]] > j){
+              p = 2*p+1;
+            }else{
+              if( r[bstree[p]+1] <= j) p = 2*p+2;
+            }
+            ++ns;
+          }
+          colstack[++q] = bstree[p];
+        }
       }
     }
     if ( bstree ) free ( bstree );
     if ( colstack ) free( colstack );
-    
+
     // Compute weights as number of rows in each block.
     weights.resize( nbrr );
     for( l=0; l<nbrr; l++) weights[l] = r[l+1] - r[l];
-    
+
     // Compute Epetra_CrsGraph and return
     Teuchos::RCP<Epetra_Map> newMap;
     if ( matProc == myPID )
@@ -234,10 +233,10 @@ namespace EpetraExt {
       newGraph->InsertGlobalIndices( l, Mnum[l+1]-Mnum[l], &Mj[Mnum[l]] );
     }
     newGraph->FillComplete();
-    
-    return (newGraph);  
+
+    return (newGraph);
   }
-  
+
   /*
    * bst(n) returns the complete binary tree, stored in an integer array of dimension n.
    * index i has children 2i+1 and 2i+2, root index 0.
@@ -266,12 +265,12 @@ namespace EpetraExt {
       i = stack[3*nstack]; os = stack[3*nstack+1]; m = stack[3*nstack+2];
       array[i] = csr_bstrootindex(m) + os; /* 5 */
       if( 2*i+2 < n){   /* right child                4     3      1                      3 - 5 - 1     */
-	stack[3*nstack] = 2*i+2; stack[3*nstack+1] = array[i] + 1 ; stack[3*nstack+2] = m-array[i]-1+os; /* 6 10 -3 */
-	++nstack;
+        stack[3*nstack] = 2*i+2; stack[3*nstack+1] = array[i] + 1 ; stack[3*nstack+2] = m-array[i]-1+os; /* 6 10 -3 */
+        ++nstack;
       }
       if( 2*i+1 < n){   /* left  child */
-	stack[3*nstack] = 2*i+1; stack[3*nstack+1] = os; stack[3*nstack+2] = array[i] - os; /* 5 4 5 */
-	++nstack;
+        stack[3*nstack] = 2*i+1; stack[3*nstack+1] = os; stack[3*nstack+2] = array[i] - os; /* 5 4 5 */
+        ++nstack;
       }
       if( nstack > max_nstack ) max_nstack =  nstack;
     }
@@ -297,8 +296,8 @@ namespace EpetraExt {
     if (n-i < l/4)
       return( n - l/4  );
     else
-      return(i);  
+      return(i);
   }
-  
+
 } //namespace EpetraExt
 

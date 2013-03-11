@@ -84,7 +84,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
     validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
-    validParamList->set< Scalar >                ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection"); 
+    validParamList->set< Scalar >                ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection");
     validParamList->set< Scalar >                ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
     validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
 
@@ -129,12 +129,11 @@ namespace MueLu {
       Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("aggregation threshold"));
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
 
-      LocalOrdinal numDropped = 0;
+      LocalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
           predrop_ = rcp(new PreDropFunctionConstVal(threshold));
-          GetOStream(Runtime0, 0) << "predrop_ constructed" << std::endl;
         }
 
         if (predrop_ != null) {
@@ -205,8 +204,11 @@ namespace MueLu {
             if (realnnz == 1) boundaryNodes[row] = true;
             rows[row+1] = realnnz;
           }
+          columns.resize(realnnz);
 
-          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
+          numTotal = A->getNodeNumEntries();
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", 1);
@@ -223,88 +225,157 @@ namespace MueLu {
         }
 
       } else if (algo == "laplacian") {
-        // Trivial case: scalar problem, no dropping. Can return original graph
-        if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
+        LO blkSize = A->GetFixedBlockSize();
+
+        // [*0*] : FIXME
+        // ap: somehow, if I move this line to [*1*], Belos throws an error
+        // I'm not sure what's going on. Do we always have to Get data, if we did
+        // DeclareInput for it?
+        RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
+
+        if ( (blkSize == 1) && (threshold == STS::zero()) ) {
+          // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-          Set(currentLevel, "DofsPerNode", 1);
+          Set(currentLevel, "DofsPerNode", blkSize);
           Set(currentLevel, "Graph", graph);
-        }
 
-        // TODO: need to be very careful with maps for this case
-        if (A->GetFixedBlockSize() > 1)
-          throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFS is not yet implemented.");
+        } else {
+          // ap: We make quite a few assumptions here; general case may be a lot different,
+          // but much much harder to implement. We assume that:
+          //  1) all maps are standard maps, not strided maps
+          //  2) global indices of dofs in A are related to dofs in coordinates in a simple arithmetic
+          //     way: rows i*blkSize, i*blkSize+1, ..., i*blkSize + (blkSize-1) correspond to node i
+          //
+          // NOTE: Potentially, some of the code below could be simplified with UnAmalgamationInfo,
+          // but as I totally don't understand that code, here is my solution
 
-        // allocate space for the local graph
-        ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(A->getNodeNumRows()+1);
-        ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+          // [*1*]: see [*0*]
 
-        const RCP<const Map> uniqueMap    = A->getDomainMap();
-        const RCP<const Map> nonUniqueMap = A->getColMap();
-        RCP<const Import>        importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+          RCP<const Map> uniqueMap, nonUniqueMap;
+          if (blkSize == 1) {
+            uniqueMap    = A->getRowMap();
+            nonUniqueMap = A->getColMap();
 
-        // Get ghost coordinates
-        RCP<MultiVector>        Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
-        RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
-        ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+          } else {
+            uniqueMap   = Coords->getMap();
 
-        LocalOrdinal numRows = Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());
+            // Amalgamate column map
+            const RCP<const Map> colMap = A->getColMap();
+            ArrayView<const GO> elementAList = colMap->getNodeElementList();
+            Array<GO> elementList(elementAList.size() / blkSize);
+            for (LO row = 0; row < elementList.size(); row++)
+              elementList[row] = elementAList[row*blkSize]/blkSize;
 
-        // Construct Distance Laplacian diagonal
-        RCP<Vector> localLaplDiag = VectorFactory::Build(uniqueMap);
-        Teuchos::ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
-        for (LocalOrdinal row = 0; row < numRows; row++) {
-          LocalOrdinal nnz = Teuchos::as<LocalOrdinal>(A->getNumEntriesInLocalRow(row));
-          ArrayView<const LocalOrdinal> indices;
-          ArrayView<const Scalar>       vals;
-          A->getLocalRowView(row, indices, vals);
-
-          for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-            LocalOrdinal col = indices[colID];
-
-            if (row != col)
-              localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, uniqueMap->getIndexBase(), uniqueMap->getComm());
           }
-        }
-        RCP<Vector> ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
-        ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
-        Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
 
-        LocalOrdinal realnnz = 0;
+          // Get ghost coordinates
+          RCP<const Import>     importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+          RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 
-        rows[0] = 0;
-        for (LocalOrdinal row = 0; row < numRows; row++) {
-          LocalOrdinal nnz = Teuchos::as<LocalOrdinal>(A->getNumEntriesInLocalRow(row));
-          ArrayView<const LocalOrdinal> indices;
-          ArrayView<const Scalar>       vals;
-          A->getLocalRowView(row, indices, vals);
+          // Construct Distance Laplacian diagonal
+          RCP<Vector>      localLaplDiag     = VectorFactory::Build(uniqueMap);
+          ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
+          LocalOrdinal     numRows           = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+          for (LocalOrdinal row = 0; row < numRows; row++) {
+            ArrayView<const LocalOrdinal> indices;
+            Array<LocalOrdinal>           indicesExtra;
 
-          for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-            LocalOrdinal col = indices[colID];
+            if (blkSize == 1) {
+              ArrayView<const Scalar> vals;
+              A->getLocalRowView(row, indices, vals);
 
-            if (row == col) {
-              columns[realnnz++] = col;
-              continue;
+            } else {
+              // Merge rows of A
+              std::set<LO> cols;
+              for (LO j = 0; j < blkSize; ++j) {
+                ArrayView<const LocalOrdinal> inds;
+                ArrayView<const Scalar>       vals;
+                A->getLocalRowView(row*blkSize+j, inds, vals);
+                for (LO k = 0; k < inds.size(); k++)
+                  cols.insert(inds[k]/blkSize);
+              }
+              indicesExtra.resize(cols.size());
+              size_t pos = 0;
+              for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
+                indicesExtra[pos++] = *it;
+              indices = indicesExtra;
             }
 
-            Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
-            typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-            typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+            LocalOrdinal nnz = indices.size();
+            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+              LocalOrdinal col = indices[colID];
 
-            if (aij > aiiajj)
-              columns[realnnz++] = col;
-            else
-              numDropped++;
-    
+              if (row != col)
+                localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+            }
           }
-          rows[row+1] = realnnz;
-        }
+          RCP<Vector> ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+          ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+          Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getCrsGraph(), "amalgamated graph of A"));
-        Set(currentLevel, "Graph", graph);
-        Set(currentLevel, "DofsPerNode", 1);
+          // allocate space for the local graph
+          ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
+          ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+          LocalOrdinal realnnz = 0;
+          rows[0] = 0;
+          for (LocalOrdinal row = 0; row < numRows; row++) {
+            ArrayView<const LocalOrdinal> indices;
+            Array<LocalOrdinal>           indicesExtra;
+
+            if (blkSize == 1) {
+              ArrayView<const Scalar>       vals;
+              A->getLocalRowView(row, indices, vals);
+
+            } else {
+              // Merge rows of A
+              std::set<LO> cols;
+              for (LO j = 0; j < blkSize; ++j) {
+                ArrayView<const LocalOrdinal> inds;
+                ArrayView<const Scalar>       vals;
+                A->getLocalRowView(row*blkSize+j, inds, vals);
+                for (LO k = 0; k < inds.size(); k++)
+                  cols.insert(inds[k]/blkSize);
+              }
+              indicesExtra.resize(cols.size());
+              size_t pos = 0;
+              for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
+                indicesExtra[pos++] = *it;
+              indices = indicesExtra;
+            }
+            numTotal += indices.size();
+
+            LocalOrdinal nnz = indices.size();
+            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+              LocalOrdinal col = indices[colID];
+
+              if (row == col) {
+                columns[realnnz++] = col;
+                continue;
+              }
+
+              Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+              typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+              if (aij > aiiajj)
+                columns[realnnz++] = col;
+              else
+                numDropped++;
+            }
+            rows[row+1] = realnnz;
+          }
+          columns.resize(realnnz);
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "DofsPerNode", blkSize);
+        }
       }
 
-      GetOStream(Statistics0, 0) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/A->getNodeNumEntries() << "%)" << std::endl;
+      GetOStream(Statistics0, -1) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/Teuchos::as<double>(numTotal) << "%)" << std::endl;
 
     } else {
 

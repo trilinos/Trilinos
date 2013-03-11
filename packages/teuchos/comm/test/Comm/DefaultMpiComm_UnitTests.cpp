@@ -722,7 +722,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, split, Ordinal) {
   TEST_ASSERT(shouldBeNull.is_null());
 }
 
+
 namespace {
+
 
 template<typename ValueType>
 class MonotoneSequence
@@ -740,7 +742,9 @@ public:
   }
 };
 
+
 } // namepsace
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal) {
   RCP< const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
@@ -766,6 +770,71 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal
     TEST_ASSERT(rank0Comm.is_null());
   }
 }
+
+
+#ifdef HAVE_TEUCHOS_MPI
+
+
+TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
+{
+  using Teuchos::tuple;
+
+  const Teuchos::RCP<const Teuchos::Comm<int> > defaultComm = 
+    Teuchos::DefaultComm<int>::getComm();
+  const int comm_size = defaultComm->getSize();
+  const int comm_rank = defaultComm->getRank();
+
+  // Must have at least two processes to run this test!
+  if (comm_size < 2) {
+    return;
+  }
+  
+  // Create a subcomm that contains just two processes
+  const Teuchos::RCP<const Teuchos::Comm<int> > masterComm = 
+    defaultComm->createSubcommunicator(tuple<int>(0, 1)());
+
+  int masterComm_size = masterComm->getSize();
+  int masterComm_rank = masterComm->getRank();
+
+  TEST_EQUALITY( masterComm_size, 2 );
+
+  if (comm_rank <= 1) {
+
+    // Split the main communicator into 2 overlapping groups
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_1 = 
+      masterComm->createSubcommunicator(tuple<int>(0, 1)());
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_2 = 
+      masterComm->createSubcommunicator(tuple<int>(0)());
+
+    // Create another communicator.
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_3 =
+      masterComm->createSubcommunicator(tuple<int>(0, 1)());
+
+    // Get my mpi tag for comm 3.
+    int my_tag = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >( 
+      comm_3 )->getTag();
+
+    // Collect the tags for comm 3.
+    int tag1 = 0;
+    if (masterComm_rank == 0) { tag1 = my_tag; }
+    masterComm->barrier();
+    Teuchos::broadcast( *masterComm, 0, Teuchos::Ptr<int>(&tag1) );
+
+    int tag2 = 0;
+    if (masterComm_rank == 1) { tag2 = my_tag; }
+    masterComm->barrier();
+    Teuchos::broadcast( *masterComm, 1, Teuchos::Ptr<int>(&tag2) );
+
+    // This currently fails.
+    TEST_EQUALITY( tag1, tag2 );
+
+  }
+
+}
+
+
+#endif // HAVE_TEUCHOS_MPI
+
 
 //
 // Instantiations

@@ -2213,6 +2213,27 @@ int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
   return(-1);
 }
 
+
+//==============================================================================
+int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter) {
+  int rv=0;
+  if( !NewImporter && ColMap().SameAs(NewDomainMap)) {
+    CrsGraphData_->DomainMap_ = NewDomainMap;    
+    delete CrsGraphData_->Importer_;
+    CrsGraphData_->Importer_ = 0;
+  }
+  else if(NewImporter && ColMap().SameAs(NewImporter->TargetMap()) && NewDomainMap.SameAs(NewImporter->SourceMap())) {
+    CrsGraphData_->DomainMap_ = NewDomainMap;
+    delete CrsGraphData_->Importer_;
+    CrsGraphData_->Importer_  = new Epetra_Import(*NewImporter);
+  }
+  else 
+    rv=-1;
+  return rv;
+}
+
+
+
 // private =====================================================================
 int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
   try {

@@ -298,80 +298,56 @@ struct HostViewRemap< OutputView , InputView , 0 >
     { *arg_out = *arg_in ; }
 };
 
-//----------------------------------------------------------------------------
-// Deep copy views with either different value types
-// or different layouts.
-
-template< class DataTypeDst , class LayoutDst , class ManagedDst ,
-          class DataTypeSrc , class LayoutSrc , class ManagedSrc >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host , ManagedDst > ,
-                     View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > ,
-                     true_type  /* Same scalar_type  */ ,
-                     false_type /* Different layout_type */ ,
-                     true_type  /* Same rank */ >
-{
-  typedef View< DataTypeDst , LayoutDst , Host , ManagedDst > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > src_type ;
-
-  static inline
-  void apply( const dst_type & dst , const src_type & src )
-  {
-    assert_shapes_equal_dimension( dst.shape() , src.shape() );
-
-    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
-  }
-};
-
-template< class DataTypeDst , class LayoutDst , class ManagedDst ,
-          class DataTypeSrc , class LayoutSrc , class ManagedSrc ,
-          class SameLayout >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host , ManagedDst > ,
-                     View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > ,
-                     false_type /* Different scalar_type  */ ,
-                     SameLayout /* Any layout */ ,
-                     true_type  /* Same rank */ >
-{
-  typedef View< DataTypeDst , LayoutDst , Host , ManagedDst > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > src_type ;
-
-  static inline
-  void apply( const dst_type & dst , const src_type & src )
-  {
-    assert_shapes_equal_dimension( dst.shape() , src.shape() );
-
-    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
-  }
-};
-
 } // namespace Impl
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+/** \brief Deep copy equal dimension arrays in the host space which
+ *         have different layouts or specializations.
+ */
 
-template< typename ValueType , class LayoutSrc >
+template< class DT , class DL , class DM , class DS ,
+          class ST , class SL , class SM , class SS >
+inline
+void deep_copy( const View< DT, DL, Host, DM, DS> & dst ,
+                const View< ST, SL, Host, SM, SS> & src ,
+                const typename Impl::enable_if<(
+                  // Destination is not constant:
+                  ( ! ViewTraits<DT,DL,Host,DM>::is_const )
+                  &&
+                  // Different layout or different specialization:
+                  ( ( ! Impl::is_same< typename DL::array_layout ,
+                                       typename SL::array_layout >::value )
+                    ||
+                    ( ! Impl::is_same< DS , SS >::value )
+                  )
+                  &&
+                  // Same rank
+                  ( unsigned( ViewTraits<DT,DL,Host,DM>::rank ) ==
+                    unsigned( ViewTraits<ST,SL,Host,SM>::rank ) )
+                )>::type * = 0 )
+{
+  typedef View< DT, DL, Host, DM, DS> dst_type ;
+  typedef View< ST, SL, Host, SM, SS> src_type ;
+
+  assert_shapes_equal_dimension( dst.shape() , src.shape() );
+
+  Impl::HostViewRemap< dst_type , src_type , dst_type::rank >( dst , src );
+}
+
+/** \brief  Deep copy of scalar value */
+
+template< typename ValueType , class LayoutSrc , class MemoryTraits >
 inline
 void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , Host > & src )
-{
-  typedef View< ValueType , LayoutSrc , Host > src_type ;
-  typedef typename src_type::shape_type        src_shape ;
+                const View< ValueType , LayoutSrc , Host , MemoryTraits , Impl::LayoutScalar > & src )
+{ dst = src ; }
 
-  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
-
-  dst = *src ;
-}
-
-template< typename ValueType , class LayoutDst >
+template< typename ValueType , class LayoutDst , class MemoryTraits >
 inline
-void deep_copy( const View< ValueType , LayoutDst , Host > & dst ,
+void deep_copy( const View< ValueType , LayoutDst , Host , MemoryTraits , Impl::LayoutScalar > & dst ,
                 const ValueType & src )
-{
-  typedef View< ValueType , LayoutDst , Host > dst_type ;
-  typedef typename dst_type::shape_type        dst_shape ;
-
-  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
-
-  *dst = src ;
-}
+{ dst = src ; }
 
 } // namespace KokkosArray
 

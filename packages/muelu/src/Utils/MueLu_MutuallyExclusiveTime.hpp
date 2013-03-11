@@ -48,6 +48,7 @@
 
 #include <string>
 #include <stack>
+#include <map>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include "MueLu_ConfigDefs.hpp"
@@ -55,6 +56,10 @@
 #include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
+
+    // Map that record parent/child relations for post-processing.
+    //this works
+    extern std::map<std::string,std::string> myParent_;
 
   /*! @class MutuallyExclusiveTime
 
@@ -79,7 +84,8 @@ namespace MueLu {
     //@{
     //!Constructor
     MutuallyExclusiveTime(const std::string &name, bool startFlag=false)
-      : timer_(rcp(new Teuchos::Time(name, false))),  // second argument is false in any case, because if start==true,
+      : name_(name),
+        timer_(rcp(new Teuchos::Time(name, false))),  // second argument is false in any case, because if start==true,
                                                       // timer has to be started by MutuallyExclusiveTime::start() instead of Teuchos::Time::start().
 	isPaused_(false)
     {
@@ -110,7 +116,13 @@ namespace MueLu {
 
       // pause currently running timer
       if (!timerStack_.empty()) {
+	    GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
 	    timerStack_.top()->pause();
+	    GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
+        myParent_[this->name_] = timerStack_.top()->name_;
+      } else {
+	    GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
+        myParent_[this->name_] = "no parent";
       }
 
       // start this timer
@@ -135,6 +147,7 @@ namespace MueLu {
       double r = timer_->stop();
 
       if (!timerStack_.empty()) {
+	    GetOStream(Debug, 0) << "resuming timer " << timerStack_.top()->name_ << std::endl;
 	    timerStack_.top()->resume();
       }
 
@@ -192,11 +205,24 @@ namespace MueLu {
     // Note: this function is provided by the timer class, not by a monitor (!= Teuchos)
     static RCP<MutuallyExclusiveTime<TagName> > getNewTimer(const std::string& name) {
       RCP<MutuallyExclusiveTime<TagName> > timer = rcp(new MutuallyExclusiveTime<TagName>(Teuchos::TimeMonitor::getNewTimer(name)));
+      timer->name_ = name;
       return timer;
     }
 
     //! Increment the number of times this timer has been called.
     void incrementNumCalls() { timer_->incrementNumCalls(); }
+
+    std::string name_;
+
+    static void PrintParentChildPairs() {
+      //key is child, value is parent
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
+	  *fos << "Parent Child Map" << std::endl;
+      std::map<std::string, std::string >::const_iterator iter;
+      for (iter = ::MueLu::myParent_.begin(); iter != ::MueLu::myParent_.end(); ++iter) {
+        *fos << "Key: " << iter->first << "  Value: " << iter->second << std::endl;
+      }
+    }
 
   private:
 
@@ -217,6 +243,7 @@ namespace MueLu {
     // - head is the active timer
     // - other timers are timers paused to enforce the mutually exclusive property of the timer set.
     static std::stack<MutuallyExclusiveTime<TagName>*> timerStack_;
+    //static std::map<std::string,std::string> myParent_;
 
     //! Check if 'this' is the head of the stack.
     void TopOfTheStack() {

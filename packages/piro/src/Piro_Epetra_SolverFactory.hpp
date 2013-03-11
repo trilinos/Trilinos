@@ -56,6 +56,8 @@
 
 #include "LOCA_SaveEigenData_AbstractStrategy.H"
 #include "LOCA_StatusTest_Abstract.H"
+
+#include "Piro_Epetra_AdaptiveSolutionManager.hpp"
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
@@ -106,6 +108,11 @@ public:
   void setLOCAStatusTestProvider(
       const std::string &key,
       const Provider<LOCA::StatusTest::Abstract> &p);
+
+  //! Register a new Piro::Epetra::AdaptiveSolutionManager provider
+  void setAdapativeSolutionManagerProvider(
+      const std::string &key,
+      const Provider<Piro::Epetra::AdaptiveSolutionManager> &p);
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
@@ -123,7 +130,7 @@ private:
   typedef ExtensibleFactory<NOX::Epetra::ModelEvaluatorInterface> NOXInterfaceFactory;
   NOXInterfaceFactory noxInterfaceFactory_;
 
-  typedef ExtensibleFactory<NOX::Epetra::LinearSystem> NOXLinearSystemFactory;;
+  typedef ExtensibleFactory<NOX::Epetra::LinearSystem> NOXLinearSystemFactory;
   NOXLinearSystemFactory noxLinearSystemFactory_;
 
   typedef ExtensibleFactory<LOCA::SaveEigenData::AbstractStrategy> LOCASaveEigenDataFactory;
@@ -131,6 +138,9 @@ private:
 
   typedef ExtensibleFactory<LOCA::StatusTest::Abstract> LOCAStatusTestFactory;
   LOCAStatusTestFactory statusTestFactory_;
+
+  typedef ExtensibleFactory<Piro::Epetra::AdaptiveSolutionManager> AdaptiveSolutionManagerFactory;
+  AdaptiveSolutionManagerFactory adaptSolMgrFactory_;
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos

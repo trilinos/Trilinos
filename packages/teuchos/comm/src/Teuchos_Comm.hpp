@@ -63,10 +63,10 @@ namespace Teuchos {
 ///   compatibility with Comm.
 ///
 /// \note For now, this class only exposes the rank of the process
-///   that sent the message (the "source rank").  Later, we might
-///   expose other fields of MPI_Status in this interface.  For now,
-///   you can attempt a dynamic cast to MpiCommStatus to access all
-///   three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
+///   that sent the message (the "source rank") and its tag.  Later,
+///   we might expose other fields of MPI_Status in this interface.
+///   For now, you can attempt a dynamic cast to MpiCommStatus to
+///   access all three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
 template<class OrdinalType>
 class CommStatus {
 public:
@@ -75,6 +75,9 @@ public:
 
   //! The source rank that sent the message.
   virtual OrdinalType getSourceRank () = 0;
+
+  //! The tag of the received message.
+  virtual OrdinalType getTag () = 0;
 };
 
 // Forward declaration for CommRequest::wait.
@@ -479,7 +482,7 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
-  //! Variant of send that takes a tag.
+  //! Variant of send() that takes a tag.
   virtual void 
   send (const Ordinal bytes, 
 	const char sendBuffer[], 
@@ -575,6 +578,11 @@ public:
     const int destRank
     ) const = 0;
 
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  isend (const ArrayView<const char> &sendBuffer,
+	 const int destRank,
+	 const int tag) const = 0;
 
   /** \brief Non-blocking receive. 
    *

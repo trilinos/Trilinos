@@ -1,11 +1,9 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
 //
-//                             KokkosArray
-//         Manycore Performance-Portable Multidimensional Arrays
+// ***********************************************************************
 //
-//              Copyright (2012) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -37,41 +35,37 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
-*/
-
-#ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP
-#define KOKKOSARRAY_MEMORYMANAGEMENT_HPP
-
-namespace KokkosArray {
-
-struct MemoryManaged
-{ typedef MemoryManaged  memory_traits ; enum { managed = true }; };
-
-struct MemoryUnmanaged
-{ typedef MemoryUnmanaged  memory_traits ; enum { managed = false }; };
-
-} // namespace Kokkos
+// ***********************************************************************
+//
+// @HEADER
 
 
-namespace KokkosArray {
+#include "MueLu_ExplicitInstantiation.hpp"
 
-struct Host;
-struct Cuda;
+#include "MueLu_CoordinatesTransferFactory_def.hpp"
 
-template <typename Device>
-struct DefaultMemoryManagement;
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::CoordinatesTransferFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+#endif
 
-template <> struct DefaultMemoryManagement<Host>
-{ typedef MemoryManaged type; };
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::CoordinatesTransferFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
 
-template <> struct DefaultMemoryManagement<Cuda>
-{ typedef MemoryManaged type; };
-
-} /* namespace KokkosArray */
-
-#endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */
-
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::CoordinatesTransferFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif

@@ -75,6 +75,7 @@ namespace Xpetra {
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsMatrixClass;
     typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    typedef TpetraImport<LocalOrdinal,GlobalOrdinal,Node> TpetraImportClass;
 
   public:
 
@@ -141,6 +142,15 @@ namespace Xpetra {
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(params); }
 
+    
+    //!  Replaces the current domainMap and importer with the user-specified objects.
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) { 
+      XPETRA_MONITOR("TpetraCrsMatrix::replaceDomainMapAndImporter"); 
+      XPETRA_DYNAMIC_CAST( const TpetraImportClass , *newImporter, tImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();
+      //      mtx_->replaceDomainMapAndImporter( toTpetra(newDomainMap),tImporter.getTpetra_Import());
+            mtx_->replaceDomainMapAndImporter( toTpetra(newDomainMap),myImport);
+    }
     //@}
 
     //! @name Methods implementing RowMatrix

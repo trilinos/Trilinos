@@ -709,6 +709,17 @@ namespace Tpetra {
     */
     void fillComplete(const RCP<ParameterList> &params = null);
 
+    /** Replaces the current domainMap and importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).
+      Returns 0 if map/importer is replaced, -1 if not.
+
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+
+  */
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
+
+
     //@}
     //! @name Methods implementing RowMatrix
     //@{
@@ -944,7 +955,7 @@ namespace Tpetra {
     /// communication between processes, even if this is necessary for
     /// correctness of the matrix-vector multiply.  Use the apply()
     /// method if you want to compute the mathematical sparse
-    /// matrix-vector multiply.  
+    /// matrix-vector multiply.
     ///
     /// This method is mainly of use to Tpetra developers, though some
     /// users may find it helpful if they plan to reuse the result of
@@ -1063,12 +1074,12 @@ namespace Tpetra {
     /// semantics: Y's entries will be ignored, and Y will be
     /// overwritten with the result of the multiplication, even if it
     /// contains <tt>NaN</tt> (not-a-number) floating-point entries.
-    void 
-    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
-	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	   Scalar alpha = ScalarTraits<Scalar>::one(),
-	   Scalar beta = ScalarTraits<Scalar>::zero()) const;
+    void
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           Scalar alpha = ScalarTraits<Scalar>::one(),
+           Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
@@ -1444,8 +1455,9 @@ namespace Tpetra {
     // useful typedefs
     typedef OrdinalTraits<LocalOrdinal>                     LOT;
     typedef OrdinalTraits<GlobalOrdinal>                    GOT;
-    typedef ScalarTraits<Scalar>                             ST;
-    typedef typename ST::magnitudeType                Magnitude;
+    typedef ScalarTraits<Scalar>                            STS;
+    typedef typename STS::magnitudeType               Magnitude;
+    typedef ScalarTraits<Magnitude>                         STM;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
     typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
     typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
@@ -1586,19 +1598,19 @@ namespace Tpetra {
                           const bool force = false) const;
 
     //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
-    void 
+    void
     applyNonTranspose (const MV& X_in,
-		       MV& Y_in,
-		       Scalar alpha,
-		       Scalar beta) const;
+                       MV& Y_in,
+                       Scalar alpha,
+                       Scalar beta) const;
 
     //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
     void
     applyTranspose (const MV& X_in,
-		    MV& Y_in,
-		    const Teuchos::ETransp mode, 
-		    Scalar alpha, 
-		    Scalar beta) const;
+                    MV& Y_in,
+                    const Teuchos::ETransp mode,
+                    Scalar alpha,
+                    Scalar beta) const;
 
     // matrix data accessors
     ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
@@ -1689,7 +1701,8 @@ namespace Tpetra {
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///
-    /// The value -Teuchos::ScalarTraits<Magnitude>::one() means that
+    /// The value -1 (in general,
+    /// <tt>-Teuchos::ScalarTraits<Magnitude>::one()</tt>) means that
     /// the norm has not yet been computed, or that the values in the
     /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;

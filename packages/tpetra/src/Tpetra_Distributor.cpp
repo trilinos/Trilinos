@@ -78,6 +78,11 @@ namespace Tpetra {
     return sendTypes;
   }
 
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+  // Initialize the tag counter, used to assign each Distributor instance its own tag.
+  int Distributor::tagCounter_ = 0;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
     , sendType_ (Details::DISTRIBUTOR_SEND)
@@ -88,14 +93,21 @@ namespace Tpetra {
     , maxSendLength_(0)
     , numReceives_(0)
     , totalReceiveLength_(0)
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
     using Teuchos::getFancyOStream;
     using Teuchos::oblackholestream;
     using Teuchos::rcp;
-
     // Always start by making sure the Distributor won't print anything.
     this->setVerbLevel (Teuchos::VERB_NONE);
     this->setOStream (getFancyOStream (rcp (new oblackholestream)));
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    // Defer side effects until we know that everything else didn't throw.
+    // This is not thread safe: tagCounter_ is global.
+    tagCounter_ += 4;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -109,23 +121,30 @@ namespace Tpetra {
     , maxSendLength_(0)
     , numReceives_(0)
     , totalReceiveLength_(0)
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
+    using Teuchos::getFancyOStream;
+    using Teuchos::oblackholestream;
+    using Teuchos::rcp;
     TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
       "two-argument Distributor constructor requires that the input "
       "RCP<ParameterList> be nonnull.  If you don't know what parameters to "
       "set, you can either call the one-argument constructor, or supply a "
       "nonnull but empty ParameterList.  Both of these options will set default "
       "parameters.");
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
-    using Teuchos::rcp;
-
     // Always start by making sure the Distributor won't print anything.
     this->setVerbLevel (Teuchos::VERB_NONE);
     this->setOStream (getFancyOStream (rcp (new oblackholestream)));
     // Setting parameters may override these, if there is a
     // "VerboseObject" sublist.
     this->setParameterList (plist);
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    // Defer side effects until we know that everything else didn't throw.
+    // This is not thread safe: tagCounter_ is global.
+    tagCounter_ += 4;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
   Distributor::Distributor (const Distributor & distributor)
@@ -139,6 +158,9 @@ namespace Tpetra {
     , numReceives_(distributor.numReceives_)
     , totalReceiveLength_(distributor.totalReceiveLength_)
     , reverseDistributor_(distributor.reverseDistributor_)
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
     using Teuchos::getFancyOStream;
     using Teuchos::oblackholestream;
@@ -160,6 +182,11 @@ namespace Tpetra {
     if (! rhsList.is_null ()) {
       this->setMyParamList (parameterList (* rhsList));
     }
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    // Defer side effects until we know that everything else didn't throw.
+    // This is not thread safe: tagCounter_ is global.
+    tagCounter_ += 4;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   }
 
   Distributor::~Distributor()

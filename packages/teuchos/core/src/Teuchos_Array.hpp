@@ -1236,7 +1236,7 @@ void Array<T>::remove(int i)
 template<typename T> inline
 int Array<T>::length() const
 {
-  return this->size();
+  return static_cast<int> (this->size ());
 }
 
 

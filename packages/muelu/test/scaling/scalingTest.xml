@@ -77,7 +77,7 @@
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
         <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
-        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+        <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
 

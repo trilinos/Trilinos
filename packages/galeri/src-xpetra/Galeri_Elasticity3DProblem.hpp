@@ -80,8 +80,6 @@ namespace Galeri {
         dims.push_back(ny_-1);
         dims.push_back(nz_-1);
 
-
-        std::cout << "nx = " << nx_ << ", ny = " << ny_ << ", nz = " << nz_ << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
       }
 
@@ -104,15 +102,17 @@ namespace Galeri {
       GlobalOrdinal                  nx_, ny_, nz_;
       size_t                         nDim;
       std::vector<GO>                dims;
+      // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
+      // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
       std::vector<Point>             nodes;
       std::vector<std::vector<LO> >  elements;
       std::vector<GO>                local2Global_;
 
+      std::vector<char>              dirichlet_;
+
       Scalar                         E, nu;
       std::vector<Scalar>            stretch;
       std::string                    mode_;
-
-      std::vector<char>              dirichlet_;
 
       void EvalDxi  (const std::vector<Point>& refPoints, Point& gaussPoint, SC * dxi);
       void EvalDeta (const std::vector<Point>& refPoints, Point& gaussPoint, SC * deta);
@@ -182,7 +182,6 @@ namespace Galeri {
       SerialDenseMatrix<LO,SC> R(D->numRows(), bDim);
       R(0,0) = R(1,4) = R(2,8) = R(3,1) = R(3,3) = R(4,5) = R(4,7) = R(5,2) = R(5,6) = 1;
 
-      // FIXME
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
@@ -245,21 +244,58 @@ namespace Galeri {
           elemDofs[numDofPerNode*j + 2] = elemDofs[numDofPerNode*j + 0] + 2;
         }
 
+        // Deal with Dirichlet nodes
+        bool isDirichlet = false;
         for (size_t j = 0; j < numNodesPerElem; j++)
-          if (dirichlet_[elemNodes[j]]) {
-            LO j0 = numDofPerNode*j+0;
-            LO j1 = numDofPerNode*j+1;
-            LO j2 = numDofPerNode*j+2;
+          if (dirichlet_[elemNodes[j]])
+            isDirichlet = true;
 
-            for (size_t k = 0; k < numDofPerElem; k++)
-              KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = KE[j2][k] = KE[k][j2] = zero;
-            KE[j0][j0] = KE[j1][j1] = KE[j2][j2] = one;
+        if (isDirichlet) {
+          bool keepBCs = this->list_.get("keepBCs", false);
+          if (keepBCs) {
+            // Simple case: keep Dirichlet DOF
+            // We rewrite rows and columns corresponding to Dirichlet DOF with zeros
+            // The diagonal elements corresponding to Dirichlet DOF are set to 1.
+            for (size_t j = 0; j < numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j+0;
+                LO j1 = numDofPerNode*j+1;
+                LO j2 = numDofPerNode*j+2;
+
+                for (size_t k = 0; k < numDofPerElem; k++)
+                  KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = KE[j2][k] = KE[k][j2] = zero;
+                KE[j0][j0] = KE[j1][j1] = KE[j2][j2] = one;
+              }
+
+          } else {
+            // Complex case: get rid of Dirichlet DOF
+            // The case is complex because if we simply reduce the size of the matrix, it would become inconsistent
+            // with maps. So, instead, we modify values of the boundary cells as if we had an additional cell close
+            // to the boundary.
+            for (int j = 0; j < (int)numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j, j1 = j0+1, j2 = j0+2;
+
+                // NOTE: had to make j & k int instead of size_t so that I can use subtraction without overflowing
+                for (int k = 0; k < (int)numNodesPerElem; k++)
+                  if ((j == k) || (std::abs(j-k) <  4 && ((j+k) & 0x1)) || (std::abs(j-k) == 4)) {
+                    // Nodes j and k are connected by an edge, or j == k
+                    LO k0 = numDofPerNode*k, k1 = k0+1, k2 = k0+2;
+                    SC f = pow(2*Teuchos::ScalarTraits<SC>::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+
+                    KE(j0,k0) *= f; KE(j0,k1) *= f; KE(j0,k2) *= f;
+                    KE(j1,k0) *= f; KE(j1,k1) *= f; KE(j1,k2) *= f;
+                    KE(j2,k0) *= f; KE(j2,k1) *= f; KE(j2,k2) *= f;
+                }
+              }
           }
+        }
 
         // Insert KE into the global matrix
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
         for (size_t j = 0; j < numDofPerElem; j++)
-          this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+          if (this->Map_->isNodeGlobalElement(elemDofs[j]))
+            this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
       }
       this->A_->fillComplete();
 
@@ -276,7 +312,7 @@ namespace Galeri {
       Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
       Teuchos::ArrayRCP<SC> z = this->Coords_->getDataNonConst(2);
 
-      Teuchos::ArrayView<const GlobalOrdinal> GIDs = this->Map_->getNodeElementList();
+      Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
       const SC hx = stretch[0], hy = stretch[1], hz = stretch[2];
       for (GO p = 0; p < GIDs.size(); p += 3) { // FIXME: we assume that DOF for the same node are label consequently
@@ -316,9 +352,9 @@ namespace Galeri {
       }
 
       // Calculate center
-      Scalar cx = this->Coords_->getVector(0)->meanValue();
-      Scalar cy = this->Coords_->getVector(1)->meanValue();
-      Scalar cz = this->Coords_->getVector(2)->meanValue();
+      SC cx = this->Coords_->getVector(0)->meanValue();
+      SC cy = this->Coords_->getVector(1)->meanValue();
+      SC cz = this->Coords_->getVector(2)->meanValue();
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
@@ -353,6 +389,14 @@ namespace Galeri {
       Utils::getSubdomainData(dims[1], my, (myPID - (mx*my) * (myPID / (mx*my)) / mx), ny, shifty);
       Utils::getSubdomainData(dims[2], mz, myPID / (mx*my), nz, shiftz);
 
+      // Expand subdomain to do overlap
+      if (shiftx    > 0)        { nx++; shiftx--; }
+      if (shifty    > 0)        { ny++; shifty--; }
+      if (shiftz    > 0)        { nz++; shiftz--; }
+      if (shiftx+nx < dims[0])  { nx++;           }
+      if (shifty+ny < dims[1])  { ny++;           }
+      if (shiftz+nz < dims[2])  { nz++;           }
+
       nodes        .resize((nx+1)*(ny+1)*(nz+1));
       dirichlet_   .resize((nx+1)*(ny+1)*(nz+1), 0);
       local2Global_.resize((nx+1)*(ny+1)*(nz+1));
@@ -364,16 +408,16 @@ namespace Galeri {
         for (int j = 0; j <= ny; j++)
           for (int i = 0; i <= nx; i++) {
             int ii = shiftx+i, jj = shifty+j, kk = shiftz+k;
-            nodes[NODE(i,j,k)] = Point((ii+1)*hx, (jj+1)*hy, (kk+1)*hz);
-            local2Global_[NODE(i,j,k)] = kk*nx_*ny_ + jj*nx_ + ii;
+            int nodeID = NODE(i,j,k);
+            nodes[nodeID]         = Point((ii+1)*hx, (jj+1)*hy, (kk+1)*hz);
+            local2Global_[nodeID] = kk*nx_*ny_ + jj*nx_ + ii;
 
-            if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
-                (ii == nx  && (this->DirichletBC_ & DIR_RIGHT))  ||
-                (jj == 0   && (this->DirichletBC_ & DIR_FRONT))  ||
-                (jj == ny  && (this->DirichletBC_ & DIR_BACK))   ||
-                (kk == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
-                (kk == nz  && (this->DirichletBC_ & DIR_TOP)))
-              dirichlet_[NODE(i,j,k)] = 1;
+            if (ii == 0   && (this->DirichletBC_ & DIR_LEFT))   dirichlet_[nodeID]++;
+            if (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  dirichlet_[nodeID]++;
+            if (jj == 0   && (this->DirichletBC_ & DIR_FRONT))  dirichlet_[nodeID]++;
+            if (jj == ny_ && (this->DirichletBC_ & DIR_BACK))   dirichlet_[nodeID]++;
+            if (kk == 0   && (this->DirichletBC_ & DIR_BOTTOM)) dirichlet_[nodeID]++;
+            if (kk == nz_ && (this->DirichletBC_ & DIR_TOP))    dirichlet_[nodeID]++;
           }
 
       for (int k = 0; k < nz; k++)

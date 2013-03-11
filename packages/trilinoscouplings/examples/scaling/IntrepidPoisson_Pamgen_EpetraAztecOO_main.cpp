@@ -267,9 +267,10 @@ main (int argc, char *argv[])
   const MT tol = inputList.get("Convergence Tolerance",
 			       STM::squareroot (STM::eps ()));
   const int maxNumIters = inputList.get("Maximum Iterations", 200);
+  const int num_steps = inputList.get("Number of Time Steps", 1);
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-    solveWithAztecOO (converged, numItersPerformed, tol, maxNumIters,
+    solveWithAztecOO (converged, numItersPerformed, tol, maxNumIters, num_steps,
 		      X, A, B, M);
   }
 

@@ -76,7 +76,7 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium)   // TODO: default values should be query from Hierarchy class to avoid duplication
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1)   // TODO: default values should be query from Hierarchy class to avoid duplication
     { }
 
     //!
@@ -141,6 +141,8 @@ namespace MueLu {
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
       H.SetDefaultVerbLevel(verbosity_);
+      if (graphOutputLevel_ >= 0)
+        H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
 
       // TODO: coarsestLevelManager
 
@@ -196,6 +198,7 @@ namespace MueLu {
     int                   numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
+    int                   graphOutputLevel_;
 
   private:
     // Levels

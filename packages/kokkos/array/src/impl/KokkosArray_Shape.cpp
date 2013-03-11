@@ -52,6 +52,18 @@
 namespace KokkosArray {
 namespace Impl {
 
+void assert_counts_are_equal_throw(
+  const unsigned x_count ,
+  const unsigned y_count )
+{
+  std::ostringstream msg ;
+
+  msg << "KokkosArray::Impl::assert_counts_are_equal_throw( "
+      << x_count << " != " << y_count << " )" ;
+
+  throw_runtime_exception( msg.str() );
+}
+
 void assert_shapes_are_equal_throw(
   const unsigned x_scalar_size ,
   const unsigned x_rank ,

@@ -803,108 +803,142 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
 //==========================================================================
 template<class MatrixType>
 std::string Relaxation<MatrixType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::LabeledObject::getObjectLabel();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed, ";
+  using Teuchos::TypeNameTraits;
+  std::ostringstream os;
+
+  std::string status;
+  if (isInitialized ()) {
+    status = "initialized";
+    if (isComputed ()) {
+      status += ", computed";
+    } else {
+      status += ", not computed";
     }
-    else {
-      oss << "{status = initialized, not computed, ";
-    }
+  } else {
+    status = "not initialized";
   }
-  else {
-    oss << "{status = not initialized, not computed, ";
+
+  std::string type;
+  if (PrecType_ == Ifpack2::JACOBI) {
+    type = "Jacobi";
+  } else if (PrecType_ == Ifpack2::GS) {
+    type = "Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::SGS) {
+    type = "Symmetric Gauss-Seidel";
+  } else {
+    type = "INVALID";
   }
-  //
-  if (PrecType_ == Ifpack2::JACOBI)   oss << "Type = Jacobi, " << std::endl;
-  else if (PrecType_ == Ifpack2::GS)  oss << "Type = Gauss-Seidel, " << std::endl;
-  else if (PrecType_ == Ifpack2::SGS) oss << "Type = Symmetric Gauss-Seidel, " << std::endl;
 
-  oss << "Sweeps = " << NumSweeps_
-      << ", damping factor = " << DampingFactor_
-      << ", global rows = " << A_->getGlobalNumRows()
-      << ", global cols = " << A_->getGlobalNumCols();
-
-  if (DoL1Method_)
-    oss<<", using L1 correction with eta "<<L1Eta_;
-
-  oss << "}";
-  return oss.str();
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::Relaxation\": { "
+     << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\", "
+     << "Status: " << status << ", "
+     << "\"relaxation: type\": " << type << ", "
+     << "\"relaxation: sweeps\": " << NumSweeps_ << ", "
+     << "\"relaxation: damping factor\": " << DampingFactor_ << ", ";
+  if (DoL1Method_) {
+    os << "\"relaxation: use l1\": " << DoL1Method_ << ", "
+       << "\"relaxation: l1 eta\": " << L1Eta_ << ", ";
+  }
+  os << "\"Global number of rows\": " << A_->getGlobalNumRows () << ", "
+     << "\"Global number of columns\": " << A_->getGlobalNumCols ()
+     << " }";
+  return os.str ();
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-  using std::endl;
-  using std::setw;
+void
+Relaxation<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::OSTab;
+  using Teuchos::TypeNameTraits;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using std::endl;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-  Teuchos::EVerbosityLevel vl = verbLevel;
-  if (vl == VERB_DEFAULT) vl = VERB_LOW;
-  const int myImageID = Comm_->getRank();
-  Teuchos::OSTab tab(out);
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
-  scalar_type MinVal = STS::zero();
-  scalar_type MaxVal = STS::zero();
-
-  if (IsComputed_) {
-    Teuchos::ArrayRCP<scalar_type> DiagView = Diagonal_->get1dViewNonConst();
-    scalar_type myMinVal = DiagView[0];
-    scalar_type myMaxVal = DiagView[0];
-    for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=0; i<DiagView.size(); ++i) {
-      if (STS::magnitude(myMinVal) > STS::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (STS::magnitude(myMaxVal) < STS::magnitude(DiagView[i])) myMaxVal = DiagView[i];
-    }
-
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
-    Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
-  }
+  const int myRank = Comm_->getRank ();
 
   //    none: print nothing
-  //     low: print O(1) info from node 0
+  //     low: print O(1) info from Proc 0
   //  medium:
   //    high:
   // extreme:
-  if (vl != VERB_NONE && myImageID == 0) {
-    out << this->description() << endl;
-    out << endl;
-    out << "===============================================================================" << endl;
-    out << "Sweeps         = " << NumSweeps_ << endl;
-    out << "damping factor = " << DampingFactor_ << endl;
-    if (PrecType_ == Ifpack2::GS && DoBackwardGS_) {
-      out << "Using backward mode (GS only)" << endl;
+  if (vl != VERB_NONE && myRank == 0) {
+    // Output is valid YAML; hence the quotes, to protect the colons.
+    out << "\"Ifpack2::Relaxation\":" << endl;
+    OSTab tab2 (out);
+    out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\"" << endl
+        << "Label: " << this->getObjectLabel () << endl
+        << "Parameters: " << endl;
+    {
+      OSTab tab3 (out);
+      out << "\"relaxation: type\": ";
+      if (PrecType_ == Ifpack2::JACOBI) {
+        out << "Jacobi";
+      } else if (PrecType_ == Ifpack2::GS) {
+        out << "Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::SGS) {
+        out << "Symmetric Gauss-Seidel";
+      } else {
+        out << "INVALID";
+      }
+      out << endl
+          << "\"relaxation: sweeps\": " << NumSweeps_ << endl
+          << "\"relaxation: damping factor\": " << DampingFactor_ << endl
+          << "\"relaxation: min diagonal value\": " << MinDiagonalValue_ << endl
+          << "\"relaxation: zero starting solution\": " << ZeroStartingSolution_ << endl
+          << "\"relaxation: backward mode\": " << DoBackwardGS_ << endl
+          << "\"relaxation: use l1\": " << DoL1Method_ << endl
+          << "\"relaxation: l1 eta\": " << L1Eta_ << endl;
     }
-    if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
-    else                         { out << "Using input starting solution" << endl; }
-    if   (Condest_ == -1.0) { out << "Condition number estimate       = N/A" << endl; }
-    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
-    if (IsComputed_) {
-      out << "Minimum value on stored diagonal = " << MinVal << endl;
-      out << "Maximum value on stored diagonal = " << MaxVal << endl;
+    out << "Computed quantities: " << endl;
+    {
+      OSTab tab3 (out);
+      out << "initialized: " << (isInitialized () ? "true" : "false") << endl
+          << "computed: " << (isComputed () ? "true" : "false") << endl
+          << "Condition number estimate: " << Condest_ << endl
+          << "Global number of rows: " << A_->getGlobalNumRows () << endl
+          << "Global number of columns: " << A_->getGlobalNumCols () << endl;
     }
-    out << endl;
-    out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;
-    out << "------------    -------    ---------------    ---------------   ---------------" << endl;
-    out << setw(12) << "initialize()" << setw(5) << getNumInitialize() << "    " << setw(15) << getInitializeTime() << endl;
-    out << setw(12) << "compute()" << setw(5) << getNumCompute()    << "    " << setw(15) << getComputeTime() << "    "
-        << setw(15) << getComputeFlops() << "    "
-        << setw(15) << (getComputeTime() != 0.0 ? getComputeFlops() / getComputeTime() * 1.0e-6 : 0.0) << endl;
-    out << setw(12) << "apply()" << setw(5) << getNumApply()    << "    " << setw(15) << getApplyTime() << "    "
-        << setw(15) << getApplyFlops() << "    "
-        << setw(15) << (getApplyTime() != 0.0 ? getApplyFlops() / getApplyTime() * 1.0e-6 : 0.0) << endl;
-    out << "===============================================================================" << endl;
-    out << endl;
+    out << "Call counts and total times (in seconds): " << endl;
+    {
+      OSTab tab3 (out);
+      out << "initialize: " << endl;
+      {
+        OSTab tab4 (out);
+        out << "Call count: " << NumInitialize_ << endl;
+        out << "Total time: " << InitializeTime_ << endl;
+      }
+      out << "compute: " << endl;
+      {
+        OSTab tab4 (out);
+        out << "Call count: " << NumCompute_ << endl;
+        out << "Total time: " << ComputeTime_ << endl;
+      }
+      out << "apply: " << endl;
+      {
+        OSTab tab4 (out);
+        out << "Call count: " << NumApply_ << endl;
+        out << "Total time: " << ApplyTime_ << endl;
+      }
+    }
   }
 }
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_RELAXATION_DEF_HPP
 

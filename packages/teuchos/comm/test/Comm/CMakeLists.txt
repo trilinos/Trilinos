@@ -52,3 +52,14 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi  
   SOURCES ReduceAllAndScatter_test.cpp
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DefaultMpiComm_TagTests  
+  SOURCES
+    DefaultMpiComm_TagTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
+  COMM mpi
+  NUM_MPI_PROCS 2-10
+  STANDARD_PASS_OUTPUT
+  )

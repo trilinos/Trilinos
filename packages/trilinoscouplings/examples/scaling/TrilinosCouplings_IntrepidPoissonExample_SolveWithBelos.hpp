@@ -85,6 +85,9 @@ namespace IntrepidPoissonExample {
 ///   iterative method should perform, regardless of whether it
 ///   converged.
 ///
+/// \param num_steps [in] Number of "time steps", i.e., the number of
+//    times the solver is called in a fake time-step loop.
+///
 /// \param X [in/out] On input: the initial guess(es) for the iterative
 ///   method.  On output: the computed approximate solution.
 ///
@@ -105,6 +108,7 @@ solveWithBelos (bool& converged,
                 int& numItersPerformed,
                 const typename Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
+		const int num_steps,
                 const Teuchos::RCP<MV>& X,
                 const Teuchos::RCP<const OP>& A,
                 const Teuchos::RCP<const MV>& B,
@@ -150,16 +154,34 @@ solveWithBelos (bool& converged,
   if (! M_right.is_null ()) {
     problem->setRightPrec (M_right);
   }
-  const bool set = problem->setProblem ();
-  TEUCHOS_TEST_FOR_EXCEPTION(! set, std::runtime_error, "solveWithBelos: The "
-    "Belos::LinearProblem's setProblem() method returned false.  This probably "
-    "indicates that there is something wrong with A, X, or B.");
 
-  solver_type solver (problem, belosParams);
-  Belos::ReturnType result = solver.solve ();
+  // Create solver
+  solver_type solver;
+  solver.setParameters(belosParams);
 
-  converged = (result == Belos::Converged);
-  numItersPerformed = solver.getNumIters ();
+  // Enter "time step" loop -- we're really solving the same system repeatedly
+  converged = true;
+  numItersPerformed = 0;
+  for (int step=0; step<num_steps; ++step) {
+
+    // Set x
+    MVT::MvInit(*X);
+
+    // Reset problem
+    const bool set = problem->setProblem ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! set, std::runtime_error, "solveWithBelos: The "
+      "Belos::LinearProblem's setProblem() method returned false.  "
+      "This probably indicates that there is something wrong with A, X, or B.");
+    solver.setProblem(problem);
+
+    // Solve
+    Belos::ReturnType result = solver.solve ();
+
+    converged = converged && (result == Belos::Converged);
+    numItersPerformed += solver.getNumIters ();
+
+  }
 }
 
 } // namespace IntrepidPoissonExample
