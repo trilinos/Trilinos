@@ -129,7 +129,7 @@ namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   class SerialQRDenseSolver : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>,
-			      public LAPACK<OrdinalType, ScalarType>
+                              public LAPACK<OrdinalType, ScalarType>
   {
 
   public:
@@ -173,7 +173,7 @@ namespace Teuchos {
       must match row dimension of A.
     */
     int setVectors(const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& X,
-		   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
+                   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
     //@}
 
     //! @name Strategy Modifying Methods
@@ -495,7 +495,7 @@ template<typename OrdinalType, typename ScalarType>
 int SerialQRDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& A)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(A->numRows() < A->numCols(), std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setMatrix: the matrix A must have A.numRows() >= A.numCols()!");
+                     "SerialQRDenseSolver<T>::setMatrix: the matrix A must have A.numRows() >= A.numCols()!");
 
   resetMatrix();
   Matrix_ = A;
@@ -520,19 +520,19 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialDense
 
 template<typename OrdinalType, typename ScalarType>
 int SerialQRDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& X,
-							   const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
+                                                           const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
 {
   // Check that these new vectors are consistent
   TEUCHOS_TEST_FOR_EXCEPTION(B->numCols() != X->numCols(), std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setVectors: X and B have different numbers of columns!");
+                     "SerialQRDenseSolver<T>::setVectors: X and B have different numbers of columns!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
+                     "SerialQRDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
+                     "SerialQRDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setVectors: B has an invalid stride!");
+                     "SerialQRDenseSolver<T>::setVectors: B has an invalid stride!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::setVectors: X has an invalid stride!");
+                     "SerialQRDenseSolver<T>::setVectors: X has an invalid stride!");
 
   resetVectors();
   LHS_ = X;
@@ -602,17 +602,17 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
   if (ierr != 0) return(ierr);
 
   TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-  		     std::logic_error, "SerialQRDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
+                     std::logic_error, "SerialQRDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
+                     "SerialQRDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
+                     "SerialQRDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
   if ( TRANS_ == Teuchos::NO_TRANS ) {
     TEUCHOS_TEST_FOR_EXCEPTION( LHS_->numRows() != N_, std::invalid_argument,
-   		     "SerialQRDenseSolver<T>::solve: No transpose: must have LHS_->numRows() = N_");
+                     "SerialQRDenseSolver<T>::solve: No transpose: must have LHS_->numRows() = N_");
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( LHS_->numRows() != M_, std::invalid_argument,
-   		     "SerialQRDenseSolver<T>::solve: Transpose: must have LHS_->numRows() = M_");
+                     "SerialQRDenseSolver<T>::solve: Transpose: must have LHS_->numRows() = M_");
   }
 
   if (shouldEquilibrate() && !equilibratedA_)
@@ -643,7 +643,7 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
     this->solveR( Teuchos::CONJ_TRANS, *TMP_ );
     for (OrdinalType j = 0; j < RHS_->numCols(); j++ ) {
       for (OrdinalType i = N_; i < M_; i++ ) {
-	(*TMP_)(i, j) = ScalarTraits<ScalarType>::zero();
+        (*TMP_)(i, j) = ScalarTraits<ScalarType>::zero();
       }
     }
     this->multiplyQ( Teuchos::NO_TRANS, *TMP_ );
@@ -783,12 +783,12 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
   if (BNORM_ > mZero && BNORM_ < smlnum) {
     // Scale RHS norm up to smlnum
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, BNORM_, smlnum, RHS_->numRows(), RHS_->numCols(),
-     		RHS_->values(), RHS_->stride(), &INFO_);
+                RHS_->values(), RHS_->stride(), &INFO_);
     equilibrationModeB_ = 1;
   } else if (BNORM_ > bignum) {
     // Scale RHS norm down to bignum
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, BNORM_, bignum, RHS_->numRows(), RHS_->numCols(),
-     		RHS_->values(), RHS_->stride(), &INFO_);
+                RHS_->values(), RHS_->stride(), &INFO_);
     equilibrationModeB_ = 2;
   }
 
@@ -809,6 +809,7 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
   ScalarType sZero = ScalarTraits<ScalarType>::zero();
   ScalarType sOne  = ScalarTraits<ScalarType>::one();
   MagnitudeType mZero = ScalarTraits<ScalarType>::magnitude(sZero);
+  (void) mZero; // Silence "unused variable" compiler warning.
 
   MagnitudeType smlnum = ScalarTraits<ScalarType>::magnitude(safeMin/prec);
   MagnitudeType bignum = ScalarTraits<ScalarType>::magnitude(sOne/smlnum);
@@ -817,17 +818,17 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
   int ierr1 = 0;
   if (equilibrationModeA_ == 1) {
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, ANORM_, smlnum, LHS_->numRows(), LHS_->numCols(),
-		LHS_->values(), LHS_->stride(), &INFO_);
+                LHS_->values(), LHS_->stride(), &INFO_);
   } else if (equilibrationModeA_ == 2) {
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, ANORM_, bignum, LHS_->numRows(), LHS_->numCols(),
-		LHS_->values(), LHS_->stride(), &INFO_);
+                LHS_->values(), LHS_->stride(), &INFO_);
   }
   if (equilibrationModeB_ == 1) {
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, smlnum, BNORM_, LHS_->numRows(), LHS_->numCols(),
-		LHS_->values(), LHS_->stride(), &INFO_);
+                LHS_->values(), LHS_->stride(), &INFO_);
   } else if (equilibrationModeB_ == 2) {
     this->LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, bignum, BNORM_, LHS_->numRows(), LHS_->numCols(),
-		LHS_->values(), LHS_->stride(), &INFO_);
+                LHS_->values(), LHS_->stride(), &INFO_);
   }
 
   return(ierr1);
@@ -905,9 +906,9 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::multiplyQ(ETransp transq, Ser
 
   // Check that the matrices are consistent.
   TEUCHOS_TEST_FOR_EXCEPTION(C.numRows()!=M_, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::multiplyQ: C.numRows() != M_!");
+                     "SerialQRDenseSolver<T>::multiplyQ: C.numRows() != M_!");
   TEUCHOS_TEST_FOR_EXCEPTION(C.values()==0, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::multiplyQ: C is an empty SerialDenseMatrix<T>!");
+                     "SerialQRDenseSolver<T>::multiplyQ: C is an empty SerialDenseMatrix<T>!");
 
   // Matrix must be factored
   if (!factored()) factor();
@@ -925,7 +926,7 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::multiplyQ(ETransp transq, Ser
     cMap = qr_.householderQ().adjoint() * cMap;
     for (OrdinalType j = 0; j < C.numCols(); j++) {
       for (OrdinalType i = N_; i < C.numRows(); i++ ) {
-	cMap(i, j) = ScalarTraits<ScalarType>::zero();
+        cMap(i, j) = ScalarTraits<ScalarType>::zero();
       }
     }
   }
@@ -938,17 +939,17 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::multiplyQ(ETransp transq, Ser
 
     // C = Q * C
     this->UNMQR(ESideChar[SIDE], ETranspChar[NO_TRANS], M_, C.numCols(), N_, AF_, LDAF_,
-		&TAU_[0], C.values(), C.stride(), &WORK_[0], LWORK_, &INFO_);
+                &TAU_[0], C.values(), C.stride(), &WORK_[0], LWORK_, &INFO_);
 
   } else {
 
     // C = Q**H * C
     this->UNMQR(ESideChar[SIDE], ETranspChar[TRANS], M_, C.numCols(), N_, AF_, LDAF_,
-		&TAU_[0], C.values(), C.stride(), &WORK_[0], LWORK_, &INFO_);
+                &TAU_[0], C.values(), C.stride(), &WORK_[0], LWORK_, &INFO_);
 
     for (OrdinalType j = 0; j < C.numCols(); j++) {
       for (OrdinalType i = N_; i < C.numRows(); i++ ) {
-	C(i, j) = ScalarTraits<ScalarType>::zero();
+        C(i, j) = ScalarTraits<ScalarType>::zero();
       }
     }
   }
@@ -966,9 +967,9 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::solveR(ETransp transr, Serial
 
   // Check that the matrices are consistent.
   TEUCHOS_TEST_FOR_EXCEPTION(C.numRows()<N_ || C.numRows()>M_, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::solveR: must have N_ < C.numRows() < M_!");
+                     "SerialQRDenseSolver<T>::solveR: must have N_ < C.numRows() < M_!");
   TEUCHOS_TEST_FOR_EXCEPTION(C.values()==0, std::invalid_argument,
-		     "SerialQRDenseSolver<T>::solveR: C is an empty SerialDenseMatrix<T>!");
+                     "SerialQRDenseSolver<T>::solveR: C is an empty SerialDenseMatrix<T>!");
 
   // Matrix must be factored
   if (!factored()) factor();
@@ -1005,13 +1006,13 @@ int  SerialQRDenseSolver<OrdinalType, ScalarType>::solveR(ETransp transr, Serial
 
     // C = R \ C
     this->TRTRS(EUploChar[UPLO], ETranspChar[NO_TRANS], EDiagChar[DIAG], N_, C.numCols(),
-		RMAT, LDRMAT, C.values(), C.stride(), &INFO_);
+                RMAT, LDRMAT, C.values(), C.stride(), &INFO_);
 
   } else {
 
     // C = R**H \ C
     this->TRTRS(EUploChar[UPLO], ETranspChar[TRANS], EDiagChar[DIAG], N_, C.numCols(),
-		RMAT, LDRMAT, C.values(), C.stride(), &INFO_);
+                RMAT, LDRMAT, C.values(), C.stride(), &INFO_);
 
   }
 #endif
