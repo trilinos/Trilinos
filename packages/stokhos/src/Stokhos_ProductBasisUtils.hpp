@@ -867,6 +867,52 @@ namespace Stokhos {
 
   };
 
+  /*! 
+   * \brief A comparison functor implementing a strict weak ordering based
+   * Morton Z-ordering.
+   */
+  /*
+   * A Morton Z-ordering is based on thinking of terms of dimension d as 
+   * coordinates in a d-dimensional space, and forming a linear ordering of
+   * the points in that space by interleaving the bits from each coordinate.
+   * As implemented, this ordering only works with integral types and 
+   * directly uses <.  The code was taken from here:
+   *
+   * http://en.wikipedia.org/wiki/Z-order_curve
+   *
+   * With the idea behind it published here:
+   *
+   * Chan, T. (2002), "Closest-point problems simplified on the RAM", 
+   * ACM-SIAM Symposium on Discrete Algorithms.
+   */
+  template <typename term_type>
+  class MortonZLess {
+  public:
+    
+    typedef term_type product_element_type;
+    typedef typename term_type::ordinal_type ordinal_type;
+    typedef typename term_type::element_type element_type;
+
+    //! Constructor
+    MortonZLess() {}
+
+    bool operator()(const term_type& a, const term_type& b) const {
+      ordinal_type d = a.dimension();
+      ordinal_type j = ordinal_type(0);
+      ordinal_type k = ordinal_type(0);
+      element_type x = element_type(0);
+      for (ordinal_type k=0; k<d; ++k) {
+	element_type y = a[k] ^ b[k];
+	if ( (x < y) && (x < (x^y)) ) {
+	  j = k;
+	  x = y;
+	}
+      }
+      return a[j] < b[j];
+    }
+
+  };
+
   //! A functor for comparing floating-point numbers to some tolerance
   /*!
    * The difference between this and standard < is that if |a-b| < tol, 
