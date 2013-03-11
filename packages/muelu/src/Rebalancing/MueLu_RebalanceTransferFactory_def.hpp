@@ -240,7 +240,7 @@ namespace MueLu {
             RCP<MultiVector> coords  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
             LocalOrdinal blkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / coords->getMap()->getNodeNumElements();
             RCP<const Import>  coordImporter;
-            RCP<const Map> origMap = coords->getMap(), targetMap;
+            RCP<const Map> origMap = coords->getMap();
 
             if (blkSize == 1) {
               coordImporter = rebalanceImporter;

@@ -289,7 +289,7 @@ namespace MueLu {
             } else {
               // Merge rows of A
               std::set<LO> cols;
-              for (size_t j = 0; j < blkSize; j++) {
+              for (LO j = 0; j < blkSize; ++j) {
                 ArrayView<const LocalOrdinal> inds;
                 ArrayView<const Scalar>       vals;
                 A->getLocalRowView(row*blkSize+j, inds, vals);
@@ -332,7 +332,7 @@ namespace MueLu {
             } else {
               // Merge rows of A
               std::set<LO> cols;
-              for (size_t j = 0; j < blkSize; j++) {
+              for (LO j = 0; j < blkSize; ++j) {
                 ArrayView<const LocalOrdinal> inds;
                 ArrayView<const Scalar>       vals;
                 A->getLocalRowView(row*blkSize+j, inds, vals);

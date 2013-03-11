@@ -149,7 +149,6 @@ namespace MueLu {
     if (IsAvailable(level, "Coordinates")) {
 
       RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
-      LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
       RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
