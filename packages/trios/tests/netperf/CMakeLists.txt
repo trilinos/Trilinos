@@ -41,16 +41,65 @@
 # @HEADER
 
 
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
 INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TriosProcessXDR)
 
-TRIBITS_SUBPACKAGE(tests)
 
-TRIBITS_ADD_TEST_DIRECTORIES(unit)
-TRIBITS_ADD_TEST_DIRECTORIES(injection)
-TRIBITS_ADD_TEST_DIRECTORIES(multicast)
-TRIBITS_ADD_TEST_DIRECTORIES(netperf)
-TRIBITS_ADD_TEST_DIRECTORIES(getservice)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+# Generate the XDR header and source file for the service arguments
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/netperf_service_args.x)
+
+
+#TRIBITS_ADD_EXECUTABLE(
+#  NetperfMPITest
+#  SOURCES netperf_service_args.c netperf_util.cpp netperf_mpi_server.cpp netperf_mpi_test.cpp netperf_mpi_client.cpp
+#  DEPLIBS ${DEPLIBS}
+#  NOEXEPREFIX
+#)
+
+
+TRIBITS_ADD_EXECUTABLE(
+  NetperfServiceTest
+  SOURCES netperf_service_args.c netperf_util.cpp netperf_server.cpp netperf_threads.cpp netperf_service_test.cpp netperf_client.cpp
+  DEPLIBS ${DEPLIBS}
+  NOEXEPREFIX
+)
+
+SET(EXTRA_TEST_ARGS "")
+
+# Gemini network transport takes a few seconds to initialize
+IF (${PACKAGE_NAME}_ENABLE_Gemini)
+  APPEND_SET(EXTRA_TEST_ARGS "--delay=3")
+ENDIF()
+
+
+SET(TESTNAMES
+   write-rdma-sync
+   write-rdma-async
+   read-rdma-sync
+   read-rdma-async)
+
+
+foreach (testname ${TESTNAMES})
+
+  SET(DEFAULT_ARGS "--io-method=${testname} --validate ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file=${testname}-result.out ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
+
+  TRIBITS_ADD_TEST(
+    NetperfServiceTest
+    NOEXEPREFIX
+    NAME NetperfService_${testname}
+    ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
+    COMM serial mpi
+    NUM_MPI_PROCS 2)
+
+  #SET_TESTS_PROPERTIES(${PACKAGE_NAME}_NetperfService_${testname}_MPI_2 PROPERTIES TIMEOUT 10)
+endforeach()
+
+
