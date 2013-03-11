@@ -5774,6 +5774,8 @@ namespace Iopx {
       // Update the attribute.
       Iopx::Internals data(get_file_pointer(), maximumNameLength, util());
       data.update_last_time_attribute(sim_time);
+
+	ex_update(get_file_pointer());
     }
 
     void Iopx::DatabaseIO::add_attribute_fields(ex_entity_type entity_type,
