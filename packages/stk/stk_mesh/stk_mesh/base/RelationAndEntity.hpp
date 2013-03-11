@@ -678,7 +678,8 @@ public:
 //  RelationVector& rel_vec() { return m_entityImpl->rel_vec(); }
   void compress_relation_capacity();
 
-  bool operator==(Entity entity) const;
+  bool operator==(Entity entity) const
+  { return m_entityImpl == entity.m_entityImpl; }
 
   bool operator!=(Entity entity) const;
 
@@ -1008,10 +1009,6 @@ std::string print_entity_key(const Entity entity);
 std::string print_entity_key(const Entity entity);
 
 /** \} */
-
-inline
-bool Entity::operator==(Entity entity) const
-{ return EntityEqual()(*this, entity); }
 
 inline
 bool Entity::operator!=(Entity entity) const
