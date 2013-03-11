@@ -82,6 +82,10 @@
 
 log_level xfer_debug_level = LOG_UNDEFINED;
 
+#ifdef GNI_PERF
+#include <gemini.h>
+extern gemini_state_t gni_state;
+#endif
 
 /**
  * @brief Emulate a write operation where all the data is sent
@@ -397,6 +401,10 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     NSSI_REGISTER_SERVER_STUB(XFER_READ_ENCODE_OP, xfer_read_encode_srvr, xfer_read_encode_args, xfer_read_encode_res);
     NSSI_REGISTER_SERVER_STUB(XFER_READ_RDMA_OP, xfer_read_rdma_srvr, xfer_read_rdma_args, void);
 
+
+#ifdef GNI_PERF
+    gemini_init_state(server_comm, &gni_state);
+#endif
 
     // Get the Server URL
     std::string url(NSSI_URL_LEN, '\0');
