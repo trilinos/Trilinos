@@ -120,10 +120,11 @@ namespace {
     // Based on the FullTriDiag tests...
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef ScalarTraits<Scalar> ST;
+    typedef ScalarTraits<Scalar> STS;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
+    typedef typename STS::magnitudeType MT;
+    typedef ScalarTraits<MT> STM;
+
     const size_t ONE  = OrdinalTraits<size_t>::one();
     const size_t ZERO = OrdinalTraits<GO>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -151,7 +152,7 @@ namespace {
     A.setObjectLabel("The Matrix");
     A.setObjectLabel("The Other Matrix");
     if (myImageID != numImages-1) { // last image assigns none
-      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(),ST::one(),static_cast<Scalar>(2)*ST::one()));
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*STS::one(),STS::one(),static_cast<Scalar>(2)*STS::one()));
       Array<GO> cols(tuple<GO>(myImageID,myImageID + 1));
       A.insertGlobalValues(myImageID  ,cols(),vals(0,2)); // insert [2 1]
       A.insertGlobalValues(myImageID+1,cols(),vals(1,2)); // insert [1 2]
@@ -161,19 +162,20 @@ namespace {
     A.fillComplete();
     B.fillComplete();
 
-    // build a 1proc map..
-    if(comm->getSize() > 1) { 
-      Scalar norm;
+    // Build a one-process Map.
+    if (comm->getSize() > 1) {
+      MT norm = STM::zero ();
 
       // we know the map is contiguous...
-      size_t NumMyElements = comm->getRank()==0 ? A.getDomainMap()->getGlobalNumElements() : 0;
+      size_t NumMyElements = (comm->getRank() == 0) ?
+        A.getDomainMap ()->getGlobalNumElements () : 0;
       RCP<Map<LO,GO,Node> > NewMap = rcp(new Map<LO,GO,Node>(INVALID,NumMyElements,ZERO,comm,node));
       Tpetra::Import<LO,GO,Node> NewImport(NewMap,A. getColMap());//(source,target)
 
       // Because rcp's are insanely picky about these things...
       RCP<const Map<LO,GO,Node> > NewMap2 = NewMap;
       RCP<const Tpetra::Import<LO,GO,Node> > NewImport2 = rcp(&NewImport,false);
-      B.replaceDomainMapAndImporter(NewMap2,NewImport2);       
+      B.replaceDomainMapAndImporter(NewMap2,NewImport2);
 
       // Fill a random vector on the original map
       Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
@@ -183,16 +185,26 @@ namespace {
       Vector<Scalar,LO,GO,Node> BVecX(B.getDomainMap());
       Tpetra::Import<LO,GO,Node> TempImport(A.getDomainMap(),NewMap); // (source,target)
       BVecX.doImport(AVecX,TempImport,Tpetra::ADD);
-      
+
       // Now do some multiplies
       Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
       Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
       A.apply(AVecX,AVecY);
       B.apply(BVecX,BVecY);
-      
-      BVecY.update(-Teuchos::ScalarTraits<Scalar>::one(),AVecY,Teuchos::ScalarTraits<Scalar>::one());
-      norm = BVecY.norm2(); 
-      TEST_EQUALITY ( norm < 1e-10, true);
+
+      BVecY.update (-STS::one (), AVecY, STS::one ());
+      norm = BVecY.norm2();
+
+      out << "Residual norm: " << norm << endl;
+
+      // Macros don't like spaces, so we put the test outside the
+      // macro.  Use <= rather than <, so the test passes even if
+      // Scalar is an integer type.
+      //
+      // FIXME (mfh 10 Mar 2013) We should pick the tolerance relative
+      // to the Scalar type and problem size.
+      const bool normSmallEnough = norm <= as<MT> (1e-10);
+      TEST_EQUALITY ( normSmallEnough, true );
     }
   }
 
