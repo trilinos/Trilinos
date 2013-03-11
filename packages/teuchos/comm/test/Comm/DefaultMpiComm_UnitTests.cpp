@@ -772,6 +772,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal
 }
 
 
+#ifdef HAVE_TEUCHOS_MPI
+
+
 TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 {
   using Teuchos::tuple;
@@ -828,6 +831,9 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
   }
 
 }
+
+
+#endif // HAVE_TEUCHOS_MPI
 
 
 //
