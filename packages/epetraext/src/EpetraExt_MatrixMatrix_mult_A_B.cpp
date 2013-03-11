@@ -78,7 +78,7 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   int Aest=(A.NumMyRows()>0)? A.NumMyNonzeros()/A.NumMyRows():100;
   int Best=(B.NumMyRows()>0)? B.NumMyNonzeros()/B.NumMyRows():100;
 
-  int nnzperrow=(int)(sqrt(Aest) + sqrt(Best) - 1);
+  int nnzperrow=(int)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow*=nnzperrow;
  
   return (int)(A.NumMyRows()*nnzperrow*0.75 + 100);
