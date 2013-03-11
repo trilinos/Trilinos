@@ -181,6 +181,8 @@ namespace MueLu {
 
         RCP<Matrix> rebalancedR;
 
+#define OLD_AND_BUSTED
+#ifdef  OLD_AND_BUSTED
         {
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- allocate new R", coarseLevel);
 
@@ -224,8 +226,17 @@ namespace MueLu {
           //TODO its domain map matches the range map of R.
           rebalancedR->fillComplete( originalR->getDomainMap(), rebalanceImporter->getTargetMap() );
         }
+#else
+	{
+          SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
+	  // Note: The 3rd argument says to use originalR's domain map.
+	  rebalanced = MatrixFactory::Build(originalR,rebalanceImporter,Teuchos::null,rebalanceImporter->getTargetMap());
+	}
+#endif
 
         Set(coarseLevel, "R", rebalancedR);
+
+
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.

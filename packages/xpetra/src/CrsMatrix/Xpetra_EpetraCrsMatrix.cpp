@@ -76,6 +76,24 @@ namespace Xpetra {
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(*(matrix.mtx_)))), isFillResumed_(false) { }
 #endif
 
+
+  EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+				   const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
+				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+				   const Teuchos::RCP<Teuchos::ParameterList>& params)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(domainMap!=Teuchos::null, Xpetra::Exceptions::NotImplemented, "The Epetra version of the fusedImport constructor does not let you specify the domainMap.");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraImport as an input argument.");
+
+    const Epetra_Map* mymap = (rangeMap!=Teuchos::null)? &toEpetra(rangeMap): 0;
+    
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),mymap));			
+  }
+
+
   void EpetraCrsMatrix::insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) {
     XPETRA_MONITOR("EpetraCrsMatrix::insertGlobalValues");
     XPETRA_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr()));

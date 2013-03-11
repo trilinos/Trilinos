@@ -102,6 +102,24 @@ namespace Xpetra {
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
       : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(graph), params))) {  }
 
+
+
+    //! Constructor for a fused import
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+		    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+    {
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MyTpetraCrsMatrix;
+      XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, *sourceMatrix, tSourceMatrix, "Xpetra::TpetraCrsMatrix constructor only accepts Xpetra::TpetraCrsMatrix as the input argument.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSourceMatrix.getTpetra_CrsMatrix();
+
+      mtx_=Tpetra::importAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(importer),toTpetra(domainMap),toTpetra(rangeMap),params);
+      
+    }
+      
+
     //! Destructor.
     virtual ~TpetraCrsMatrix() {  }
 
