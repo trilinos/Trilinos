@@ -309,6 +309,13 @@ public:
 template<typename Ordinal>
 class Comm : virtual public Describable {
 public:
+  /// \brief The current tag.
+  ///
+  /// \warning This method is ONLY for use by Teuchos developers.
+  ///   Users should not depend on the interface of this method.
+  ///   It may change or disappear at any time without warning.
+  virtual int getTag () const = 0;
+
   //! @name Destructor
   //@{
 
