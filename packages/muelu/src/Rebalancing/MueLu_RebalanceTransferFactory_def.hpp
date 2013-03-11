@@ -146,19 +146,19 @@ namespace MueLu {
         for (size_t i=0; i<originalP->getNodeNumRows(); ++i)
           nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
 
-	RCP<Matrix> rebalancedP = originalP;	
-	RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
-	if (crsOp == Teuchos::null)
-	  throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
-	RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
+        RCP<Matrix> rebalancedP = originalP;    
+        RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
+        if (crsOp == Teuchos::null)
+          throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+        RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
 
-	if(rebalancedP2 == Teuchos::null) throw std::runtime_error("Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
-	RCP<const Import> newImporter;
-	{
-	  SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
-	  newImporter = ImportFactory::Build(rebalanceImporter->getTargetMap(),rebalancedP->getColMap());	 
-	  rebalancedP2->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
-	}
+        if(rebalancedP2 == Teuchos::null) throw std::runtime_error("Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
+        RCP<const Import> newImporter;
+        {
+          SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
+          newImporter = ImportFactory::Build(rebalanceImporter->getTargetMap(),rebalancedP->getColMap());     
+          rebalancedP2->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
+        }
 
         Set(coarseLevel, "P", rebalancedP);
 
@@ -235,10 +235,15 @@ namespace MueLu {
 
         TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "");
         if (IsAvailable(coarseLevel, "Coordinates"))
-          {
+        {
             SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
             RCP<MultiVector> coords  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
-            LocalOrdinal blkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / coords->getMap()->getNodeNumElements();
+            LO nodeNumElts = coords->getMap()->getNodeNumElements();
+            //If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+            LO myBlkSize = 0, blkSize = 0;
+            if (nodeNumElts > 0)
+              myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
+            maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
             RCP<const Import>  coordImporter;
             RCP<const Map> origMap = coords->getMap();
 
@@ -260,7 +265,7 @@ namespace MueLu {
             RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
             permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
             Set(coarseLevel, "Coordinates", permutedCoords);
-          }
+        }
         if (IsAvailable(coarseLevel, "Nullspace")) {
           SubFactoryMonitor subM(*this, "Rebalancing nullspace", coarseLevel );
           RCP<MultiVector> nullspace  = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
