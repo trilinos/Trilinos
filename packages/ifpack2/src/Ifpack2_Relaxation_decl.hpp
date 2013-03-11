@@ -489,12 +489,40 @@ public:
   //! @name Implementation of Teuchos::Describable interface
   //@{
 
-  //! A simple one-line description of this object.
+  /// \brief A simple one-line description of this object.
+  ///
+  /// Be aware that this will print a very long line, because some
+  /// users really like to see all the attributes of the object in a
+  /// single line.  If you prefer multiple lines of output, you should
+  /// call describe() instead.
   std::string description() const;
 
-  //! Print the object with some verbosity level to a Teuchos::FancyOStream.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+  /// \brief Print the object's attributes to the given output stream.
+  ///
+  /// This method will print a constant amount of information (not
+  /// proportional to the matrix's dimensions or number of entries) on
+  /// Process 0 of the communicator over which this object is
+  /// distributed.
+  ///
+  /// You may wrap an std::ostream in a Teuchos::FancyOStream by
+  /// including "Teuchos_FancyOStream.hpp" and calling
+  /// Teuchos::getFancyOStream().  For example:
+  /// \code
+  /// using Teuchos::RCP;
+  /// using Teuchos::rcpFromRef;
+  /// using Teuchos::FancyOStream;
+  ///
+  /// // Wrap std::cout in a FancyOStream.
+  /// RCP<FancyOStream> wrappedCout = getFancyOStream (rcpFromRef (std::cout));
+  ///
+  /// // Wrap an output file in a FancyOStream.
+  /// RCP<std::ofstream> outFile (new std::ofstream ("myFile.txt"));
+  /// RCP<FancyOStream> wrappedFile = getFancyOStream (outFile);
+  /// \endcode
+  void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
