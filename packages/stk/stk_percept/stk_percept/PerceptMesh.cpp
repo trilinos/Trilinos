@@ -90,6 +90,7 @@ namespace stk {
       m_isOpen(false),
       m_isInitialized(false),
       m_isAdopted(false),
+      m_needsDelete(false),
       m_dontCheckState(false),
       m_filename(),
       m_comm(comm),
@@ -152,6 +153,7 @@ namespace stk {
       m_isAdopted = false;
       m_isOpen = true;
       m_filename = "";
+      m_needsDelete = true;
     }
 
     /// reads but doesn't commit mesh, enabling edit
@@ -1141,6 +1143,7 @@ namespace stk {
         m_isOpen(true),
         m_isInitialized(true),
         m_isAdopted(true),
+        m_needsDelete(false),
         m_dontCheckState(false),
         m_filename(),
         m_comm(),
@@ -1204,6 +1207,13 @@ namespace stk {
       m_coordinatesField = NULL;
       if (m_geometry_parts) delete m_geometry_parts;
       m_iossMeshData = Teuchos::null;
+      if (m_needsDelete)
+        {
+          if (m_metaData) delete m_metaData;
+          if (m_bulkData) delete m_bulkData;
+          m_metaData = 0;
+          m_bulkData = 0;
+        }
 
     }
 

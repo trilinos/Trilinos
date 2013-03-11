@@ -65,7 +65,7 @@ namespace stk {
       {
         m_hash = hash;
       }
-      void clear() 
+      void clear()
       {
         m_hash = 0u;
         SubDimCellBaseClass::clear();
@@ -84,9 +84,9 @@ namespace stk {
     public:
       //typedef boost::array<T,4> base_type;
       typedef std::vector<T> base_type;
-      
+
       SubDimCell(unsigned n=4) : base_type() { base_type::reserve(n); }
-      void insert(T val) 
+      void insert(T val)
       {
         bool found = false;
         for (unsigned i = 0; i < base_type::size(); i++)
@@ -101,7 +101,7 @@ namespace stk {
           {
             base_type::push_back(val);
             std::sort( base_type::begin(), base_type::end(), CompareClass() );
-            
+
           }
       }
 
@@ -117,20 +117,20 @@ namespace stk {
     class SubDimCell : public stk::percept::NoMallocArray<T,N>
     {
       std::size_t m_hash;
-      
+
     public:
       typedef stk::percept::NoMallocArray<T,N> base_type;
       typedef std::size_t    size_type;
 
       typedef SubDimCell<T,N> VAL;
-      
+
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
       SubDimCell() : base_type(), m_hash(0u) {}
       SubDimCell(unsigned n) : base_type(), m_hash(0u) {}
+      SubDimCell(const SubDimCell& sdc) : base_type(sdc), m_hash(sdc.m_hash) {}
 
-      
       // behaves like std::set
-      void insert(T val) 
+      void insert(T val)
       {
         bool found = false;
         for (size_type i = 0; i < base_type::size(); i++)
@@ -146,7 +146,7 @@ namespace stk {
             //if (size() > max_size() ) throw std::runtime_error("SubDimCell out of range");
             base_type::insert(val);
             std::sort( base_type::begin(), base_type::end(), CompareClass() );
-            
+
           }
         m_hash = hashCode();
       }
@@ -161,7 +161,7 @@ namespace stk {
       {
         m_hash = hash;
       }
-      void clear() 
+      void clear()
       {
         m_hash = 0u;
         base_type::clear();
@@ -226,7 +226,7 @@ namespace stk {
 #define GET(x,i) x[i]
 
     template<class T, std::size_t N=4>
-    struct SubDimCell_compare 
+    struct SubDimCell_compare
     {
       bool operator() (const SubDimCell<T,N>& lhs, const SubDimCell<T,N>& rhs) const
       {
@@ -282,7 +282,7 @@ namespace stk {
     };
 
     template<class T, std::size_t N>
-    struct my_equal_to :  public std::binary_function<SubDimCell<T,N>,  
+    struct my_equal_to :  public std::binary_function<SubDimCell<T,N>,
                                                       SubDimCell<T,N>, bool>
     {
       typedef SubDimCell<T,N> _Tp ;
@@ -304,7 +304,7 @@ namespace stk {
     };
 
     template<class T, std::size_t N>
-    struct my_fast_equal_to :  public std::binary_function<SubDimCell<T,N>,  
+    struct my_fast_equal_to :  public std::binary_function<SubDimCell<T,N>,
                                                            SubDimCell<T,N>, bool>
     {
       typedef SubDimCell<T,N> _Tp ;

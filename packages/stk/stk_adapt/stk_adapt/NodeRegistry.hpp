@@ -465,7 +465,10 @@ namespace stk {
             if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes nodeIds_onSE.size() != node_to_keep.size()), to_erase= " << to_erase.size() <<  std::endl;
             for (unsigned i=0; i < to_erase.size(); i++)
               {
-                map.erase(to_erase[i]);
+                if ( to_erase[i].size() &&  map.find(to_erase[i]) != map.end())
+                  {
+                    map.erase(to_erase[i]);
+                  }
               }
           }
 

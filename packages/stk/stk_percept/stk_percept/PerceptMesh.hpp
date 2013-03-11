@@ -756,6 +756,7 @@ namespace stk {
       bool                                  m_isOpen;
       bool                                  m_isInitialized;
       bool                                  m_isAdopted;
+      bool                                  m_needsDelete;
       bool                                  m_dontCheckState;
       std::string                           m_filename;
       stk::ParallelMachine                  m_comm;

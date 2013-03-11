@@ -32,7 +32,7 @@ namespace stk {
 
       explicit NoMallocArray() : m_size(0u) {}
 
-      NoMallocArray(size_type sz, const T& val) :  m_size(sz) 
+      NoMallocArray(size_type sz, const T& val) :  m_size(sz)
       {
 #ifdef NOMALLOC_ARRAY_CHECK_SIZES
 #endif
@@ -43,6 +43,13 @@ namespace stk {
             m_data[i] = val;
           }
 #endif
+      }
+
+      NoMallocArray(const NoMallocArray& nma) : m_size(nma.m_size) {
+        for (size_type i = 0; i < m_size; i++)
+          {
+            m_data[i] = nma.m_data[i];
+          }
       }
 
       void clear() { m_size=0; }
@@ -71,46 +78,46 @@ namespace stk {
       }
 
       // operator[]
-      reference operator[](size_type i) 
-      { 
-        VERIFY_OP( i, <,  N,  "out of range" ); 
+      reference operator[](size_type i)
+      {
+        VERIFY_OP( i, <,  N,  "out of range" );
         return m_data[i];
       }
-        
-      const_reference operator[](size_type i) const 
-      {     
-        VERIFY_OP( i, <,  N,  "out of range" ); 
-        return m_data[i]; 
+
+      const_reference operator[](size_type i) const
+      {
+        VERIFY_OP( i, <,  N,  "out of range" );
+        return m_data[i];
       }
 
       // at() with range check
       reference at(size_type i) { rangecheck(i); return m_data[i]; }
       const_reference at(size_type i) const { rangecheck(i); return m_data[i]; }
-    
+
       // front() and back()
-      reference front() 
-      { 
-        return m_data[0]; 
-      }
-        
-      const_reference front() const 
+      reference front()
       {
         return m_data[0];
       }
-        
-      reference back() 
-      { 
-        return m_data[m_size-1]; 
+
+      const_reference front() const
+      {
+        return m_data[0];
       }
-        
-      const_reference back() const 
-      { 
-        return m_data[m_size-1]; 
+
+      reference back()
+      {
+        return m_data[m_size-1];
+      }
+
+      const_reference back() const
+      {
+        return m_data[m_size-1];
       }
 
       inline size_type size() const { return m_size;}
 
-      void insert(T val) 
+      void insert(T val)
       {
         VERIFY_OP(m_size, < ,  N, "out of bounds");
         (*this)[m_size] = val;
@@ -122,7 +129,7 @@ namespace stk {
       bool empty() { return m_size == 0; }
       size_type max_size() { return N; }
       size_type max_capacity() { return N; }
-      
+
 
       bool contains(T val)
       {
