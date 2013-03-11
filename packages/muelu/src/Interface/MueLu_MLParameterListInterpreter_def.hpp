@@ -127,9 +127,9 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "coarse: max size",                         int,                 128,       maxCoarseSize);
 
     MUELU_READ_PARAM(paramList, "aggregation: type",                std::string,         "Uncoupled",       agg_type);
-    MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
+    //MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
-    MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
+    //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
@@ -429,7 +429,7 @@ namespace MueLu {
         // TODO fix this (type mismatch double vs. int)
         //MUELU_COPY_PARAM(paramList, "smoother: ifpack level-of-fill", double /*int*/, 0.0 /*2*/,  smootherParamList, "fact: level-of-fill");
         if (paramList.isParameter("smoother: ifpack level-of-fill"))
-          smootherParamList.set<int>("fact: level-of-fill", paramList.get<double>("smoother: ifpack level-of-fill"));
+          smootherParamList.set<int>("fact: level-of-fill", Teuchos::as<int>(paramList.get<double>("smoother: ifpack level-of-fill")));
         else smootherParamList.set<int>("fact: level-of-fill", 0);
 
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
