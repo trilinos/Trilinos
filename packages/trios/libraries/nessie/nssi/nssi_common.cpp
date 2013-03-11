@@ -99,6 +99,9 @@ static nssi_rpc_encode encoding        = NSSI_DEFAULT_ENCODE;
 #define BQ_MAX 1000
 trios_buffer_queue_t send_bq;
 trios_buffer_queue_t recv_bq;
+trios_buffer_queue_t rdma_target_bq;
+trios_buffer_queue_t rdma_get_bq;
+trios_buffer_queue_t rdma_put_bq;
 
 
 void *memdup(void *src, int size)
@@ -217,6 +220,30 @@ int nssi_rpc_init(
                 &transports[rpc_transport],
                 NNTI_RECV_DST,
                 NSSI_SHORT_REQUEST_SIZE);
+        trios_buffer_queue_init(
+                &rdma_target_bq,
+                nssi_config.rdma_buffer_queue_initial_size,
+                nssi_config.rdma_buffer_queue_max_size,
+                nssi_config.rdma_buffer_queue_create_if_empty,
+                &transports[rpc_transport],
+                (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                nssi_config.rdma_buffer_queue_buffer_size);
+        trios_buffer_queue_init(
+                &rdma_get_bq,
+                nssi_config.rdma_buffer_queue_initial_size,
+                nssi_config.rdma_buffer_queue_max_size,
+                nssi_config.rdma_buffer_queue_create_if_empty,
+                &transports[rpc_transport],
+                NNTI_GET_DST,
+                nssi_config.rdma_buffer_queue_buffer_size);
+        trios_buffer_queue_init(
+                &rdma_put_bq,
+                nssi_config.rdma_buffer_queue_initial_size,
+                nssi_config.rdma_buffer_queue_max_size,
+                nssi_config.rdma_buffer_queue_create_if_empty,
+                &transports[rpc_transport],
+                NNTI_PUT_SRC,
+                nssi_config.rdma_buffer_queue_buffer_size);
     }
 
     rpc_initialized = true;
@@ -321,6 +348,10 @@ static void config_init(nssi_config_t *c)
     c->buffer_queue_initial_size   =50;
     c->buffer_queue_max_size       =1000;
     c->buffer_queue_create_if_empty=true;
+    c->rdma_buffer_queue_initial_size   =5;
+    c->rdma_buffer_queue_max_size       =10;
+    c->rdma_buffer_queue_create_if_empty=true;
+    c->rdma_buffer_queue_buffer_size    =1*1024*1024; /* 1 megabyte */
 }
 static void config_get_from_env(nssi_config_t *c)
 {
@@ -372,6 +403,54 @@ static void config_get_from_env(nssi_config_t *c)
             c->buffer_queue_create_if_empty=false;
         }
     } else {
-        log_debug(rpc_debug_level, "TRIOS_NNTI_USE_BUFFER_QUEUE is undefined.  using c->use_buffer_queue default");
+        log_debug(rpc_debug_level, "TRIOS_NSSI_BUFFER_QUEUE_CREATE_IF_EMPTY is undefined.  using c->buffer_queue_create_if_empty default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_RDMA_BUFFER_QUEUE_INITIAL_SIZE")) != NULL) {
+        errno=0;
+        uint32_t initial_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(rpc_debug_level, "setting c->rdma_buffer_queue_initial_size to %lu", initial_size);
+            c->rdma_buffer_queue_initial_size=initial_size;
+        } else {
+            log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_INITIAL_SIZE value conversion failed (%s).  using c->rdma_buffer_queue_initial_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_INITIAL_SIZE is undefined.  using c->rdma_buffer_queue_initial_size default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_RDMA_BUFFER_QUEUE_MAX_SIZE")) != NULL) {
+        errno=0;
+        uint32_t max_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(rpc_debug_level, "setting c->rdma_buffer_queue_max_size to %lu", max_size);
+            c->rdma_buffer_queue_max_size=max_size;
+        } else {
+            log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_MAX_SIZE value conversion failed (%s).  using c->rdma_buffer_queue_max_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_MAX_SIZE is undefined.  using c->rdma_buffer_queue_max_size default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_RDMA_BUFFER_QUEUE_CREATE_IF_EMPTY")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(rpc_debug_level, "setting c->rdma_buffer_queue_create_if_empty to TRUE");
+            c->rdma_buffer_queue_create_if_empty=true;
+        } else {
+            log_debug(rpc_debug_level, "setting c->rdma_buffer_queue_create_if_empty to FALSE");
+            c->rdma_buffer_queue_create_if_empty=false;
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_CREATE_IF_EMPTY is undefined.  using c->rdma_buffer_queue_create_if_empty default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_RDMA_BUFFER_QUEUE_BUFFER_SIZE")) != NULL) {
+        errno=0;
+        uint32_t max_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(rpc_debug_level, "setting c->rdma_buffer_queue_buffer_size to %lu", max_size);
+            c->rdma_buffer_queue_buffer_size=max_size;
+        } else {
+            log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_BUFFER_SIZE value conversion failed (%s).  using c->rdma_buffer_queue_buffer_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_RDMA_BUFFER_QUEUE_BUFFER_SIZE is undefined.  using c->rdma_buffer_queue_buffer_size default");
     }
 }

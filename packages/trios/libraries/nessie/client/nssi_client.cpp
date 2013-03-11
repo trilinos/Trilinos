@@ -101,6 +101,9 @@ static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
+extern trios_buffer_queue_t rdma_target_bq;
+extern trios_buffer_queue_t rdma_get_bq;
+extern trios_buffer_queue_t rdma_put_bq;
 
 /**
  *   @addtogroup rpc_ptl_impl
@@ -1018,10 +1021,10 @@ complete:
 //     */
 //    if (req_array[*which]->data != NULL) {
 //        /* Unlink the MD for the data */
-//        log_debug(rpc_debug_level, "unpinning req_array[*which]->data_hdl");
-//        nssi_ptl_unpin_memory(&req_array[*which]->data_hdl);
-////        log_debug(rpc_debug_level, "unlinking req_array[*which]->data_hdl.md_h: %d", req_array[*which]->data_hdl.md_h);
-////        rc = nssi_PtlMDUnlink(req_array[*which]->data_hdl.md_h);
+//        log_debug(rpc_debug_level, "unpinning req_array[*which]->bulk_data_hdl");
+//        nssi_ptl_unpin_memory(&req_array[*which]->bulk_data_hdl);
+////        log_debug(rpc_debug_level, "unlinking req_array[*which]->bulk_data_hdl.md_h: %d", req_array[*which]->bulk_data_hdl.md_h);
+////        rc = nssi_PtlMDUnlink(req_array[*which]->bulk_data_hdl.md_h);
 ////        if (rc != PTL_OK) {
 ////            log_error(rpc_debug_level, "failed to unlink data MD");
 ////            rc=NSSI_EBADRPC;
@@ -1029,8 +1032,8 @@ complete:
 ////        }
 ////
 ////        /* free the EQ for the data */
-////        log_debug(rpc_debug_level, "freeing req_array[*which]->data_hdl.eq_h: %d", req_array[*which]->data_hdl.eq_h);
-////        rc = nssi_PtlEQFree(req_array[*which]->data_hdl.eq_h);
+////        log_debug(rpc_debug_level, "freeing req_array[*which]->bulk_data_hdl.eq_h: %d", req_array[*which]->bulk_data_hdl.eq_h);
+////        rc = nssi_PtlEQFree(req_array[*which]->bulk_data_hdl.eq_h);
 ////        if (rc != PTL_OK) {
 ////            log_error(rpc_debug_level, "failed to free data EQ");
 ////            log_error(rpc_debug_level, "failed to free data EQ: %d", rc);
@@ -1336,11 +1339,22 @@ cleanup:
      * We need to unlink the MD and free the event queue.
      */
     if (req->data != NULL) {
-        log_debug(debug_level, "Unregister memory for data");
-        rc=NNTI_unregister_memory(&req->data_hdl);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed unregistering data: %s",
-                    nnti_err_str(rc));
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= req->data_size)) {
+            /* copy the RDMA buffer contents into the user buffer.
+             * we can't tell if the server op was get or put.
+             * if it was get, then this is a waste of time.
+             * if it was put, then this is required.
+             */
+            memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
+            trios_buffer_queue_push(&rdma_target_bq, req->bulk_data_hdl);
+        } else {
+            log_debug(debug_level, "Unregister memory for data");
+            rc=NNTI_unregister_memory(req->bulk_data_hdl);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering data: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -1675,25 +1689,39 @@ int nssi_call_rpc(
 
     if (data_size > 0) {
 
-        log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
-        trios_start_timer(call_time);
-        rc=NNTI_register_memory(
-                &transports[svc->transport_id],
-                (char *)data,
-                data_size,
-                1,
-                (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                &svc->svc_host,
-                &request->data_hdl);
-        trios_stop_timer("NNTI_register_memory - data", call_time);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering data: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+            log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
+            request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+            assert(request->bulk_data_hdl);
+        } else {
+            log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
+            log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
+            request->bulk_data_hdl=&request->bulk_data;
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[svc->transport_id],
+                    (char *)data,
+                    data_size,
+                    1,
+                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                    &svc->svc_host,
+                    request->bulk_data_hdl);
+            trios_stop_timer("NNTI_register_memory - data", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed registering data: %s",
+                        nnti_err_str(rc));
+                goto cleanup;
+            }
         }
-        header.data_addr=request->data_hdl;
+        header.data_addr=*request->bulk_data_hdl;
 
-        log_debug(rpc_debug_level, "Registered long args buffer");
+        if (logging_debug(rpc_debug_level)) {
+            fprint_NNTI_buffer(logger_get_file(), "request->bulk_data_hdl",
+                    "nssi_call_rpc", request->bulk_data_hdl);
+        }
+
+        log_debug(rpc_debug_level, "Registered data buffer");
     }
 
     if (nssi_config.use_buffer_queue) {
@@ -1812,7 +1840,12 @@ cleanup:
 
     if (rc != NSSI_OK) {
         if (data_size > 0) {
-            NNTI_unregister_memory(&request->data_hdl);
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+                trios_buffer_queue_push(&rdma_target_bq, request->bulk_data_hdl);
+            } else {
+                NNTI_unregister_memory(request->bulk_data_hdl);
+            }
         }
         if (nssi_config.use_buffer_queue) {
             trios_buffer_queue_push(&recv_bq, request->short_result_hdl);

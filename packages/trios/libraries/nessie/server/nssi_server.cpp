@@ -98,6 +98,9 @@ extern nssi_config_t nssi_config;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
+extern trios_buffer_queue_t rdma_target_bq;
+extern trios_buffer_queue_t rdma_get_bq;
+extern trios_buffer_queue_t rdma_put_bq;
 
 
 int rpc_get_service(
@@ -141,6 +144,12 @@ unsigned long max_mem_allowed=0;
 static int trace_counter_gid;
 static int trace_interval_gid;
 
+#undef GNI_PERF
+
+#ifdef GNI_PERF
+#include <gemini.h>
+gemini_state_t gni_state;
+#endif
 
 /* Need a struct to encapsulate a IB connection addr/port pair.
  * STL does not like arrays in template defs.
@@ -1196,34 +1205,52 @@ int nssi_get_data(
         const NNTI_buffer_t *data_addr)
 {
     int rc = NSSI_OK;
-    NNTI_buffer_t rpc_msg;
+    NNTI_buffer_t  rpc_msg;
+    NNTI_buffer_t *rpc_msg_hdl=NULL;
     NNTI_status_t status;
     trios_declare_timer(call_time);
 
     if (len == 0)
         return rc;
 
-    trios_start_timer(call_time);
-    rc=NNTI_register_memory(
-            &transports[data_addr->transport_id],
-            (char *)buf,
-            len,
-            1,
-            NNTI_GET_DST,
-            caller,
-            &rpc_msg);
-    trios_stop_timer("register get dest", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        log_debug(rpc_debug_level, "using buffer queue for GET buffer");
+        rpc_msg_hdl=trios_buffer_queue_pop(&rdma_get_bq);
+        assert(rpc_msg_hdl);
+    } else {
+        log_debug(rpc_debug_level, "using user buffer for GET buffer");
+        trios_start_timer(call_time);
+        rpc_msg_hdl=&rpc_msg;
+        rc=NNTI_register_memory(
+                &transports[data_addr->transport_id],
+                (char *)buf,
+                len,
+                1,
+                NNTI_GET_DST,
+                caller,
+                rpc_msg_hdl);
+        trios_stop_timer("register get dest", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering data: %s",
+                    nnti_err_str(rc));
+        }
     }
+
     trios_start_timer(call_time);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+#endif
     rc=NNTI_get(
             data_addr,
             0,
             len,
-            &rpc_msg,
+            rpc_msg_hdl,
             0);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_get_data - NNTI_get");
+#endif
     trios_stop_timer("get to get dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed getting data: %s",
@@ -1231,23 +1258,33 @@ int nssi_get_data(
     }
     trios_start_timer(call_time);
     rc=NNTI_wait(
-            &rpc_msg,
+            rpc_msg_hdl,
             NNTI_GET_DST,
             -1,
             &status);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_get_data - NNTI_wait");
+#endif
     trios_stop_timer("wait for get dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));
     }
-    trios_start_timer(call_time);
-    rc=NNTI_unregister_memory(&rpc_msg);
-    trios_stop_timer("deregister get dest", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        /* copy the RDMA buffer contents into the user buffer */
+        memcpy(buf, NNTI_BUFFER_C_POINTER(rpc_msg_hdl), len);
+        trios_buffer_queue_push(&rdma_get_bq, rpc_msg_hdl);
+    } else {
+        trios_start_timer(call_time);
+        rc=NNTI_unregister_memory(rpc_msg_hdl);
+        trios_stop_timer("deregister get dest", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering data: %s",
+                    nnti_err_str(rc));
+        }
     }
-
 
     return rc;
 }
@@ -1271,31 +1308,50 @@ extern int nssi_put_data(
 {
     int rc = NSSI_OK;
     NNTI_buffer_t rpc_msg;
+    NNTI_buffer_t *rpc_msg_hdl=NULL;
     NNTI_status_t status;
     trios_declare_timer(call_time);
 
     if (len == 0)
         return rc;
 
-    rc=NNTI_register_memory(
-            &transports[data_addr->transport_id],
-            (char *)buf,
-            len,
-            1,
-            NNTI_PUT_SRC,
-            caller,
-            &rpc_msg);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        log_debug(rpc_debug_level, "using buffer queue for PUT buffer");
+        rpc_msg_hdl=trios_buffer_queue_pop(&rdma_put_bq);
+        assert(rpc_msg_hdl);
+        /* copy the user buffer contents into RDMA buffer */
+        memcpy(NNTI_BUFFER_C_POINTER(rpc_msg_hdl), buf, len);
+    } else {
+        log_debug(rpc_debug_level, "using user buffer for GET buffer");
+        rpc_msg_hdl=&rpc_msg;
+        rc=NNTI_register_memory(
+                &transports[data_addr->transport_id],
+                (char *)buf,
+                len,
+                1,
+                NNTI_PUT_SRC,
+                caller,
+                rpc_msg_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering data: %s",
+                    nnti_err_str(rc));
+        }
     }
     trios_start_timer(call_time);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+#endif
     rc=NNTI_put(
-            &rpc_msg,
+            rpc_msg_hdl,
             0,
             len,
             data_addr,
             0);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_put_data - NNTI_put");
+#endif
     trios_stop_timer("NNTI_put - put to put dest", call_time);
     if (rc != NSSI_OK) {
         log_error(rpc_debug_level, "failed putting data: %s",
@@ -1303,19 +1359,28 @@ extern int nssi_put_data(
     }
     trios_start_timer(call_time);
     rc=NNTI_wait(
-            &rpc_msg,
+            rpc_msg_hdl,
             NNTI_PUT_SRC,
             -1,
             &status);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_put_data - NNTI_wait");
+#endif
     trios_stop_timer("NNTI_wait - put to put dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));
     }
-    rc=NNTI_unregister_memory(&rpc_msg);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        trios_buffer_queue_push(&rdma_put_bq, rpc_msg_hdl);
+    } else {
+        rc=NNTI_unregister_memory(rpc_msg_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering data: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     return rc;
