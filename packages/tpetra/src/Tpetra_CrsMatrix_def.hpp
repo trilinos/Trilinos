@@ -2468,10 +2468,8 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef Scalar ST;
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<ST, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       isFillComplete() == false, std::runtime_error,
@@ -2702,10 +2700,8 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef Scalar ST;
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-    typedef MultiVector<ST, LocalOrdinal, GlobalOrdinal, Node> MV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       isFillComplete() == false, std::runtime_error,
@@ -3494,7 +3490,6 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef Map<LO, GO, Node> map_type;
     typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "packAndPrepare";
 
@@ -3739,7 +3734,6 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef Map<LO, GO, Node> map_type;
     typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine";
 
@@ -3849,7 +3843,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! this->hasColMap (), std::runtime_error, "Tpetra::CrsMatrix::getColumn"
@@ -3912,7 +3905,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     // If the graph is not fill complete, then the Export object (if
     // one should exist) hasn't been constructed yet.

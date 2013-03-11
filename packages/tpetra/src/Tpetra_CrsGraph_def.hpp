@@ -257,7 +257,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "getGlobalNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillComplete() == false, std::runtime_error, 
+      isFillComplete() == false, std::runtime_error,
       ": requires domain map, which requires that fillComplete() has been "
       "called.");
     return getDomainMap()->getGlobalNumElements();
@@ -274,7 +274,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "getNodeNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasColMap() == false, std::runtime_error, 
+      hasColMap() == false, std::runtime_error,
       ": requires column map.  This requires either that a custom column Map "
       "was given to the constructor, or that fillComplete() has been called.");
     return colMap_->getNodeNumElements();
@@ -499,7 +499,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   allocateIndices (ELocalGlobal lg)
   {
@@ -670,7 +670,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RowInfo 
+  RowInfo
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   updateGlobalAlloc (RowInfo rowinfo, size_t newAllocSize)
   {
@@ -693,24 +693,24 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, class T>
-  RowInfo 
+  RowInfo
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  updateAllocAndValues (RowInfo rowinfo, 
-			size_t newAllocSize, 
-			ArrayRCP<T> &rowVals)
+  updateAllocAndValues (RowInfo rowinfo,
+                        size_t newAllocSize,
+                        ArrayRCP<T> &rowVals)
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) || 
-			     (lg == GlobalIndices && ! isGloballyIndexed()) );
+    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
+                             (lg == GlobalIndices && ! isGloballyIndexed()) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
 #endif
     // ArrayRCP::resize automatically copies over values on reallocation.
     if (lg == LocalIndices) {
       lclInds2D_[rowinfo.localRow].resize (newAllocSize);
-    } 
+    }
     else { // lg == GlobalIndices
       gblInds2D_[rowinfo.localRow].resize (newAllocSize);
     }
@@ -724,7 +724,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<const LocalOrdinal> 
+  ArrayView<const LocalOrdinal>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getLocalView (RowInfo rowinfo) const
   {
@@ -744,7 +744,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<LocalOrdinal> 
+  ArrayView<LocalOrdinal>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getLocalViewNonConst (RowInfo rowinfo)
   {
@@ -764,7 +764,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<const GlobalOrdinal> 
+  ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getGlobalView (RowInfo rowinfo) const
   {
@@ -784,7 +784,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<GlobalOrdinal> 
+  ArrayView<GlobalOrdinal>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getGlobalViewNonConst (RowInfo rowinfo)
   {
@@ -816,7 +816,7 @@ namespace Tpetra {
         "This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
         "Please report this to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasRowInfo() == false, std::logic_error, 
+      hasRowInfo() == false, std::logic_error,
       ": Late catch! Graph does not have row info anymore.  "
       "Error should have been caught earlier.  Please contact Tpetra team.");
 #endif // HAVE_TPETRA_DEBUG
@@ -831,11 +831,11 @@ namespace Tpetra {
         ret.offset1D  = rowPtrs_[myRow];
         ret.allocSize = rowPtrs_[myRow+1] - rowPtrs_[myRow];
         if (numRowEntries_ == null) {
-	  ret.numEntries = ret.allocSize;
-	}
-	else {
-	  ret.numEntries = numRowEntries_[myRow];
-	}
+          ret.numEntries = ret.allocSize;
+        }
+        else {
+          ret.numEntries = numRowEntries_[myRow];
+        }
       }
       else {
         ret.offset1D = STINV;
@@ -882,7 +882,7 @@ namespace Tpetra {
     //     This is so that we can store local indices in the memory
     //     formerly occupied by global indices.
     //
-    // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal) and 
+    // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal) and
     //   max(size_t) >= max(LocalOrdinal)
     //     This is so that we can represent any LocalOrdinal as a
     //     size_t, and any LocalOrdinal as a GlobalOrdinal
@@ -1058,8 +1058,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertIndicesAndValues (RowInfo rowinfo, const SLocalGlobalViews &newInds, 
-			  IterO rowVals, IterN newVals)
+  insertIndicesAndValues (RowInfo rowinfo, const SLocalGlobalViews &newInds,
+                          IterO rowVals, IterN newVals)
   {
     size_t numNewInds = insertIndices<lg,I> (rowinfo, newInds);
     std::copy (newVals, newVals + numNewInds, rowVals + rowinfo.numEntries);
@@ -1652,12 +1652,12 @@ namespace Tpetra {
     using Teuchos::as;
     const char tfecfFuncName[] = "getGlobalRowView()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error, 
+      isLocallyIndexed() == true, std::runtime_error,
       ": The graph is locally indexed, so we cannot return a view with global "
       "column indices.  Use getGlobalRowCopy() instead.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasRowInfo() == false, std::runtime_error, 
+      hasRowInfo() == false, std::runtime_error,
       ": graph row information was deleted at fillComplete().");
 
     // isNodeGlobalElement() requires a global to local lookup anyway,
@@ -1672,13 +1672,13 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     using std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
-      as<size_t> (indices.size ()) != getNumEntriesInGlobalRow (globalRow), 
-      std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      as<size_t> (indices.size ()) != getNumEntriesInGlobalRow (globalRow),
+      std::logic_error,
       ": Violated stated post-conditions:"
       << "  indices.size () = " << indices.size () << endl
       << "  as<size_t> (indices.size ()) = " << as<size_t> (indices.size ())
-      << endl << "  getNumEntriesInGlobalRow (globalRow = " << globalRow 
+      << endl << "  getNumEntriesInGlobalRow (globalRow = " << globalRow
       << ") = " << getNumEntriesInGlobalRow (globalRow) << endl
       << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
@@ -1688,10 +1688,10 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertLocalIndices (LocalOrdinal localRow, 
-		      const ArrayView<const LocalOrdinal> &indices)
+  insertLocalIndices (LocalOrdinal localRow,
+                      const ArrayView<const LocalOrdinal> &indices)
   {
     using std::endl;
     const char tfecfFuncName[] = "insertLocalIndices()";
@@ -1714,8 +1714,8 @@ namespace Tpetra {
       const size_t newNumEntries = curNumEntries + numFilteredEntries;
       if (newNumEntries > rowInfo.allocSize) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          getProfileType() == StaticProfile, std::runtime_error, 
-	  ": new indices exceed statically allocated graph structure.");
+          getProfileType() == StaticProfile, std::runtime_error,
+          ": new indices exceed statically allocated graph structure.");
         // Only print an efficiency warning once per CrsGraph
         // instance, per method name (insertLocalIndices() or
         // insertGlobalIndices()).
@@ -1725,11 +1725,11 @@ namespace Tpetra {
             "Pre-allocated space has been exceeded, requiring new allocation.  "
             "This is allowed but not efficient in terms of run time.  "
             "To improve efficiency, we suggest that you specify a larger "
-	    "number of entries per row in the constructor.  "
+            "number of entries per row in the constructor.  "
             "You may either specify a maximum number of entries for all the "
-	    "rows, or a per-row maximum.  "
+            "rows, or a per-row maximum.  "
             "This CrsGraph instance will not print further messages of this "
-	    "kind, in order not to clutter output.");
+            "kind, in order not to clutter output.");
           insertLocalIndicesWarnedEfficiency_ = true;
         }
         // update allocation only as much as necessary
@@ -1749,27 +1749,27 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertGlobalIndices (GlobalOrdinal grow, 
-		       const ArrayView<const GlobalOrdinal> &indices)
+  insertGlobalIndices (GlobalOrdinal grow,
+                       const ArrayView<const GlobalOrdinal> &indices)
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "insertGlobalIndices()";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error, 
+      isLocallyIndexed() == true, std::runtime_error,
       ": graph indices are local; use insertLocalIndices().");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasRowInfo() == false, std::runtime_error, 
+      hasRowInfo() == false, std::runtime_error,
       ": graph row information was deleted at fillComplete().");
     // This can't really be satisfied for now, because if we are
     // fillComplete(), then we are local.  In the future, this may
     // change.  However, the rule that modification require active
     // fill will not change.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive() == false, std::runtime_error, 
+      isFillActive() == false, std::runtime_error,
       ": You are not allowed to call this method if fill is not active.  "
       "If fillComplete has been called, you must first call resumeFill "
       "before you may insert indices.");
@@ -1786,8 +1786,8 @@ namespace Tpetra {
         // filter indices and values through the column map
         filtered_indices.assign (indices.begin(), indices.end());
         inds_ncview.ginds = filtered_indices();
-        const size_t numFilteredEntries = 
-	  filterIndices<GlobalIndices> (inds_ncview);
+        const size_t numFilteredEntries =
+          filterIndices<GlobalIndices> (inds_ncview);
         inds_view.ginds = filtered_indices (0, numFilteredEntries);
       }
       else {
@@ -1801,8 +1801,8 @@ namespace Tpetra {
         const size_t newNumEntries = curNumEntries + numFilteredEntries;
         if (newNumEntries > rowInfo.allocSize) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            getProfileType() == StaticProfile, std::runtime_error, 
-	    ": new indices exceed statically allocated graph structure.");
+            getProfileType() == StaticProfile, std::runtime_error,
+            ": new indices exceed statically allocated graph structure.");
           // Only print an efficiency warning once per CrsGraph
           // instance, per method name (insertLocalIndices() or
           // insertGlobalIndices()).
@@ -1810,13 +1810,13 @@ namespace Tpetra {
             TPETRA_EFFICIENCY_WARNING(
               true, std::runtime_error,
               "::insertGlobalIndices():" << std::endl << "Pre-allocated space "
-	      "has been exceeded, requiring new allocation.  This is allowed "
+              "has been exceeded, requiring new allocation.  This is allowed "
               "but not efficient in terms of run time.  To improve efficiency, "
               "we suggest using a larger number of entries per row in the "
-	      "constructor.  You may either specify a maximum number of "
-	      "entries for all the rows, or a per-row maximum.  This CrsGraph "
-	      "instance will not print further messages of this kind, in order "
-	      "not to clutter output.");
+              "constructor.  You may either specify a maximum number of "
+              "entries for all the rows, or a per-row maximum.  This CrsGraph "
+              "instance will not print further messages of this kind, in order "
+              "not to clutter output.");
             insertGlobalIndicesWarnedEfficiency_ = true;
           }
           // update allocation only as much as necessary
@@ -1827,8 +1827,8 @@ namespace Tpetra {
         {
           const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            chkNewNumEntries != newNumEntries, std::logic_error, 
-	    ": Internal logic error. Please contact Tpetra team.");
+            chkNewNumEntries != newNumEntries, std::logic_error,
+            ": Internal logic error. Please contact Tpetra team.");
         }
 #endif
       }
@@ -1837,12 +1837,12 @@ namespace Tpetra {
       typedef typename ArrayView<const GO>::size_type size_type;
       const size_type numIndices = indices.size ();
       for (size_type k = 0; k < numIndices; ++k) {
-	nonlocals_[grow].push_back (indices[k]);
+        nonlocals_[grow].push_back (indices[k]);
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated() == false || isGloballyIndexed() == false, 
+      indicesAreAllocated() == false || isGloballyIndexed() == false,
       std::logic_error,
       ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
@@ -2170,11 +2170,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void 
+  void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-		const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-		const RCP<ParameterList> &params)
+                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
+                const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
@@ -2197,9 +2197,9 @@ namespace Tpetra {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        nonlocals_.size() > 0, std::runtime_error, 
-	": cannot have non-local entries on a serial run. Invalid entries were "
-	"submitted to the CrsGraph (or CrsMatrix).");
+        nonlocals_.size() > 0, std::runtime_error,
+        ": cannot have non-local entries on a serial run. Invalid entries were "
+        "submitted to the CrsGraph (or CrsMatrix).");
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
@@ -2296,10 +2296,10 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
   {
-    const char tfecfFuncName[] = "replaceDomainMapAndImporter()";  
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter()";
 
     if( (newImporter==Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newDomainMap)) ||
-	(newImporter!=Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newImporter->getTargetMap()) && newDomainMap->isSameAs(*newImporter->getSourceMap()))) {
+        (newImporter!=Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newImporter->getTargetMap()) && newDomainMap->isSameAs(*newImporter->getSourceMap()))) {
       domainMap_ = newDomainMap;
       importer_  = rcp_const_cast<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >(newImporter);
 
@@ -2473,12 +2473,12 @@ namespace Tpetra {
     // This method is _only_ called in makeIndicesLocal and
     // makeColMap.  makeIndicesLocal calls makeColMap, which is
     // collective, so both methods must be called collectively.
-    // 
+    //
     // There are only two methods that modify indicesAreLocal_:
     // allocateIndices, and makeIndicesLocal.  makeIndicesLocal always
     // has the eponymous effect.  It must be called collectively,
     // since it calls makeColMap, which must be called collectively.
-    // 
+    //
     // allocateIndices, on the other hand, could perhaps be called
     // with lg=LocalIndices on one process, but with lg=GlobalIndices
     // on another.  However, I will argue that CrsGraph cannot reach
@@ -2551,7 +2551,6 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef Map<LO, GO, Node> map_type;
     const char tfecfFuncName[] = "makeColMap";
 
     if (hasColMap ()) { // The graph already has a column Map.
@@ -2562,7 +2561,7 @@ namespace Tpetra {
 
     computeIndexState ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed (), std::runtime_error, 
+      isLocallyIndexed (), std::runtime_error,
       ": The graph is locally indexed.  Calling makeColMap() to make the "
       "column Map requires that the graph be globally indexed.");
 
@@ -2608,9 +2607,9 @@ namespace Tpetra {
       for (size_t r = 0; r < myNumRows; ++r) {
         RowInfo rowinfo = getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-	  // FIXME (mfh 03 Mar 2013) It's a bit puzzling to me why the
-	  // ArrayView that getGlobalView() returns doesn't return
-	  // rowinfo.numEntries entries.
+          // FIXME (mfh 03 Mar 2013) It's a bit puzzling to me why the
+          // ArrayView that getGlobalView() returns doesn't return
+          // rowinfo.numEntries entries.
           ArrayView<const GO> rowGids = getGlobalView (rowinfo);
           rowGids = rowGids (0, rowinfo.numEntries);
 
@@ -2664,15 +2663,15 @@ namespace Tpetra {
       //  * user submitted erroneous column indices
       //  * user submitted erroneous domain Map
       if (domainMap_->getComm ()->getSize () == 1) {
-	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           numRemoteColGIDs != 0, std::runtime_error,
-	  ": " << numRemoteColGIDs << " column "
-	  << (numRemoteColGIDs != 1 ? "indices are" : "index is")
-	  << " not in the domain Map." << endl
-	  << "Either these indices are invalid or the domain Map is invalid." 
-	  << endl << "Remember that nonsquare matrices, or matrices where the "
-	  "row and range Maps are different, require calling the version of "
-	  "fillComplete that takes the domain and range Maps as input.");
+          ": " << numRemoteColGIDs << " column "
+          << (numRemoteColGIDs != 1 ? "indices are" : "index is")
+          << " not in the domain Map." << endl
+          << "Either these indices are invalid or the domain Map is invalid."
+          << endl << "Remember that nonsquare matrices, or matrices where the "
+          "row and range Maps are different, require calling the version of "
+          "fillComplete that takes the domain and range Maps as input.");
         if (numLocalColGIDs == domainMap_->getNodeNumElements()) {
           colMap_ = domainMap_;
           checkInternalState ();
@@ -2696,25 +2695,25 @@ namespace Tpetra {
       Array<int> RemoteImageIDs (numRemoteColGIDs);
       // Look up the remote process' ranks in the domain Map.
       {
-        LookupStatus stat = 
-	  domainMap_->getRemoteIndexList (RemoteColGIDs, RemoteImageIDs ());
+        LookupStatus stat =
+          domainMap_->getRemoteIndexList (RemoteColGIDs, RemoteImageIDs ());
         // If any process returns IDNotPresent, then at least one of
         // the remote indices was not present in the domain Map.  This
         // means that the Import object cannot be constructed, because
         // of incongruity between the column Map and domain Map.
-	// This has two likely causes:
+        // This has two likely causes:
         //   - The user has made a mistake in the column indices
         //   - The user has made a mistake with respect to the domain Map
         const char missingID_lcl = (stat == IDNotPresent ? 1 : 0);
         char missingID_gbl = 0;
-        reduceAll<int,char> (*getComm (), REDUCE_MAX, missingID_lcl, 
-			     outArg (missingID_gbl));
+        reduceAll<int,char> (*getComm (), REDUCE_MAX, missingID_lcl,
+                             outArg (missingID_gbl));
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           missingID_gbl == 1, std::runtime_error,
-	  ": Some column indices are not in the domain Map." << endl
-	  << "Either these column indices are invalid or the domain Map is "
-	  "invalid." << endl << "Likely cause: For a nonsquare matrix, you "
-	  "must give the domain and range Maps as input to fillComplete.");
+          ": Some column indices are not in the domain Map." << endl
+          << "Either these column indices are invalid or the domain Map is "
+          "invalid." << endl << "Likely cause: For a nonsquare matrix, you "
+          "must give the domain and range Maps as input to fillComplete.");
       }
       // Sort incoming remote column indices so that all columns
       // coming from a given remote process are contiguous.  This
@@ -2738,14 +2737,14 @@ namespace Tpetra {
       ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
       const size_t numDomainElts = domainMap_->getNodeNumElements ();
       if (numLocalColGIDs == numDomainElts) {
-	// If the number of locally owned GIDs are the same as the
-	// number of local domain Map elements, then the local domain
-	// Map elements are the same as the locally owned GIDs.
+        // If the number of locally owned GIDs are the same as the
+        // number of local domain Map elements, then the local domain
+        // Map elements are the same as the locally owned GIDs.
         std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
       }
       else {
-	// Count the number of locally owned GIDs, both to keep track
-	// of the current array index, and as a sanity check.
+        // Count the number of locally owned GIDs, both to keep track
+        // of the current array index, and as a sanity check.
         size_t numLocalCount = 0;
         for (size_t i = 0; i < numDomainElts; ++i) {
           if (GIDisLocal[i]) {
@@ -2754,18 +2753,18 @@ namespace Tpetra {
         }
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           numLocalCount != numLocalColGIDs, std::logic_error,
-	  ": numLocalCount = " << numLocalCount << " != numLocalColGIDs = " 
-	  << numLocalColGIDs << ".  This should never happen.  Please report "
-	  "this bug to the Tpetra developers.");
+          ": numLocalCount = " << numLocalCount << " != numLocalColGIDs = "
+          << numLocalColGIDs << ".  This should never happen.  Please report "
+          "this bug to the Tpetra developers.");
       }
     } // if the graph is globally indexed
 
-    const global_size_t gstInv = 
+    const global_size_t gstInv =
       Teuchos::OrdinalTraits<global_size_t>::invalid ();
     const GO indexBase = domainMap_->getIndexBase ();
-    colMap_ = rcp (new map_type (gstInv, myColumns, indexBase, 
-				 domainMap_->getComm (), 
-				 domainMap_->getNode ()));
+    colMap_ = rcp (new map_type (gstInv, myColumns, indexBase,
+                                 domainMap_->getComm (),
+                                 domainMap_->getNode ()));
     checkInternalState ();
     return;
   }
