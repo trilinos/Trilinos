@@ -60,16 +60,21 @@ std::string Describable::description() const
   return oss.str();
 }
 
-
-void Describable::describe(
-	FancyOStream                &out_arg
-	,const EVerbosityLevel      verbLevel
-	) const
+void
+Describable::describe (FancyOStream& out_arg,
+                       const EVerbosityLevel verbLevel) const
 {
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out << this->description() << std::endl;
 }
 
+void
+Describable::describe (std::ostream& out,
+                       const EVerbosityLevel verbLevel) const
+{
+  RCP<FancyOStream> fancyOut = getFancyOStream (rcpFromRef (out));
+  this->describe (*fancyOut, verbLevel);
+}
 
 } // namespace Teuchos
