@@ -2698,7 +2698,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
     int_type iGlobal = MyGlobalElements[i];
     for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
-      Values[j] = (double)abs(iGlobal-j);
+      Values[j] = abs((double)(iGlobal-j));
     }
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
@@ -2790,7 +2790,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
     for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       // cast to avoid error: call of overloaded pow(double&, long long int) is ambiguous
-      Values[j] = pow(a_,(double) abs(iGlobal-j));
+      Values[j] = pow(a_, abs((double)(iGlobal-j)));
     }
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
