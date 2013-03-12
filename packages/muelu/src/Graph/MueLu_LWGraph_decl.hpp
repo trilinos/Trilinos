@@ -78,7 +78,7 @@ namespace MueLu {
     //@{
     LWGraph(const ArrayRCP<const LocalOrdinal> & rowPtrs, const ArrayRCP<const LocalOrdinal> & colPtrs,
             const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, std::string const & objectLabel="")
-            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), rangeMap_(rangeMap), objectLabel_(objectLabel) {}
+            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), objectLabel_(objectLabel) {}
 
     virtual ~LWGraph() {}
     //@}
@@ -97,7 +97,7 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > GetComm() const { return domainMap_->getComm(); }
     const RCP<const Map> GetDomainMap() const            { return domainMap_; }
     //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const            { return rangeMap_; }
+    const RCP<const Map> GetImportMap() const            { return importMap_; }
 
     void SetBoundaryNodeMap(RCP<const Map> const &map)   {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
 
@@ -128,8 +128,8 @@ namespace MueLu {
     const ArrayRCP<const LocalOrdinal> rows_;
     //! Columns corresponding to connections.  Part of local graph information.
     const ArrayRCP<const LocalOrdinal> columns_;
-    //! Graph maps (FIXME: is it domain/range, or row/column?)
-    const RCP<const Map> domainMap_, rangeMap_;
+    //! Graph maps
+    const RCP<const Map> domainMap_, importMap_;
     //! Name of this graph.
     const std::string & objectLabel_;
     //! Boolean array marking Dirichlet rows.

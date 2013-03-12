@@ -777,7 +777,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal
 
 TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 {
-  using Teuchos::tuple;
+  using Teuchos::tuple; using Teuchos::inoutArg;
 
   const Teuchos::RCP<const Teuchos::Comm<int> > defaultComm = 
     Teuchos::DefaultComm<int>::getComm();
@@ -793,12 +793,10 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
   const Teuchos::RCP<const Teuchos::Comm<int> > masterComm = 
     defaultComm->createSubcommunicator(tuple<int>(0, 1)());
 
-  int masterComm_size = masterComm->getSize();
-  int masterComm_rank = masterComm->getRank();
-
-  TEST_EQUALITY( masterComm_size, 2 );
-
   if (comm_rank <= 1) {
+
+    const int masterComm_size = masterComm->getSize();
+    const int masterComm_rank = masterComm->getRank();
 
     // Split the main communicator into 2 overlapping groups
     Teuchos::RCP<const Teuchos::Comm<int> > comm_1 = 
@@ -818,12 +816,12 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
     int tag1 = 0;
     if (masterComm_rank == 0) { tag1 = my_tag; }
     masterComm->barrier();
-    Teuchos::broadcast( *masterComm, 0, Teuchos::Ptr<int>(&tag1) );
+    Teuchos::broadcast( *masterComm, 0, inoutArg(tag1) );
 
     int tag2 = 0;
     if (masterComm_rank == 1) { tag2 = my_tag; }
     masterComm->barrier();
-    Teuchos::broadcast( *masterComm, 1, Teuchos::Ptr<int>(&tag2) );
+    Teuchos::broadcast( *masterComm, 1, inoutArg(tag2) );
 
     // This currently fails.
     TEST_EQUALITY( tag1, tag2 );
