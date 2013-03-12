@@ -45,12 +45,14 @@ namespace stk {
 #endif
       }
 
+#if 0
       NoMallocArray(const NoMallocArray& nma) : m_size(nma.m_size) {
         for (size_type i = 0; i < m_size; i++)
           {
             m_data[i] = nma.m_data[i];
           }
       }
+#endif
 
       void clear() { m_size=0; }
 

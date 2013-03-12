@@ -127,8 +127,9 @@ namespace stk {
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
       SubDimCell() : base_type(), m_hash(0u) {}
       SubDimCell(unsigned n) : base_type(), m_hash(0u) {}
+#if 0
       SubDimCell(const SubDimCell& sdc) : base_type(sdc), m_hash(sdc.m_hash) {}
-
+#endif
       // behaves like std::set
       void insert(T val)
       {
