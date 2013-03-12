@@ -78,6 +78,16 @@ echo "
 " > SERIAL_RELEASE_SS.config
 
 #
+# Extra builds
+#
+
+echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-mpi-debug-ps-options.cmake'
+-DCMAKE_BUILD_TYPE:STRING=RELEASE
+-DTrilinos_ENABLE_DEBUG:BOOL=OFF
+" > MPI_RELEASE.config
+
+#
 # Invocation
 #
 
