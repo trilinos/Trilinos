@@ -66,6 +66,9 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   # assemble single scalar instantiations
   TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts   "S=${Tpetra_ETI_SCALARS}" "N=${Tpetra_ETI_NODES}"
                                                  "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}")
+  TRIBITS_ETI_TYPE_EXPANSION(PacketInsts         "P=${Tpetra_ETI_SCALARS};${Tpetra_ETI_GORDS}"
+                                                 "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}"
+                                                 "N=${Tpetra_ETI_NODES}")
   TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${SingleScalarInsts})
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "ETI set (before exclusions): ${Tpetra_ETI_LIBRARYSET}")
@@ -108,6 +111,11 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_TSLGN_NOGPU(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN_NOGPU
     "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
     "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}|P" "${PacketInsts}" 
+    "${Tpetra_ETI_EXCLUDE_SET}"  
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_PLGN(P,LO,GO,N)"            TPETRA_ETIMACRO_PLGN)
 
 # testing macros
 TRIBITS_ETI_GENERATE_MACROS(
