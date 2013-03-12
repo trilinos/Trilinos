@@ -130,6 +130,12 @@ namespace MueLu {
 
   public:
 
+     /*! @brief Constructor
+
+        @param[in] object      Reference to the class instance that is creating this MutuallyExclusiveTimeMonitor.
+        @param[in] msg         String that indicates what the Monitor is monitoring, e.g., "Build"
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     MutuallyExclusiveTimeMonitor(const BaseClass& object, const std::string& msg, MsgType timerLevel = Timings0)
     {
       // Inherit verbosity from 'object'

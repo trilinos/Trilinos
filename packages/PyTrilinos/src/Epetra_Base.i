@@ -540,10 +540,15 @@ or it will hang your code."
 %rename(FLOPS) Epetra_Flops;
 %include "Epetra_Flops.h"
 
+// The Epetra_Time constructor takes an Epetra_Comm as its argument,
+// so it needs to know how to convert a PyObject to an Epetra_Comm.
+// Since the Epetra_Comm classes get wrapped later in Epetra_Comm.i,
+// we set up the Teuchos::RCP typemaps for Epetra_Comm here.
+%teuchos_rcp(Epetra_Comm)
+
 /////////////////////////
 // Epetra_Time support //
 /////////////////////////
 %teuchos_rcp(Epetra_Time)
 %rename(Time) Epetra_Time;
 %include "Epetra_Time.h"
-

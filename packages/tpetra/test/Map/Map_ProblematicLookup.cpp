@@ -53,9 +53,12 @@ using Teuchos::tuple;
 ////
 TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
 {
+  using std::cerr;
+  using std::endl;
+
   Teuchos::oblackholestream blackhole;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  const int MyPid = comm->getRank();
+  const int myRank = comm->getRank();
   /**********************************************************************************/
   // Map in question:
   // -----------------------------
@@ -64,8 +67,15 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   //
   // Lookup of global IDs 7 8 should return IDNotFound
   //
+  if (myRank == 0) {
+    cerr << "Creating Map" << endl;
+  }
+  comm->barrier ();
+  comm->barrier ();
+  comm->barrier (); // Just to make sure output finishes.
+
   RCP<const Tpetra::Map<int,int> > map;
-  if (MyPid == 0) {
+  if (myRank == 0) {
     Array<int> gids( tuple<int>(1) );
     map = Tpetra::createNonContigMap<int>( gids().getConst() , comm );
   }
@@ -73,8 +83,33 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
     Array<int> gids( tuple<int>(3) );
     map = Tpetra::createNonContigMap<int>( gids().getConst() , comm );
   }
+
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": created Map" << endl;
+    cerr << os.str ();
+  }
+
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": calling getRemoteIndexList" << endl;
+    cerr << os.str ();
+  }
+
   Array<int> nodeIDs( 1 );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( tuple<int>(2), nodeIDs() );
+
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": getRemoteIndexList done" << endl;
+    cerr << os.str ();
+  }
+  comm->barrier ();
+  if (myRank == 0) {
+    cerr << "getRemoteIndexList finished on all processes" << endl;
+  }
+  comm->barrier (); // Just to make sure output finishes.
+
   TEST_EQUALITY_CONST( map->isDistributed(), true )
   TEST_EQUALITY_CONST( map->isContiguous(), false )
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )

@@ -105,6 +105,13 @@ namespace MueLu {
   */
   class Monitor: public BaseClass {
   public:
+    /*! @brief Constructor.
+
+        @param[in] object      Reference to the class instance that is creating this Monitor. 
+        @param[in] msg         String that indicates what the Monitor is monitoring, e.g., "Build"
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     Monitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
       : printMonitor_(object, msg + " (" + object.description() + ")", msgLevel),
         timerMonitor_(object, object.ShortClassName() + ": " + msg + " (total)",    timerLevel)
@@ -137,6 +144,13 @@ namespace MueLu {
   */
   class SubMonitor: public BaseClass {
   public:
+    /*! @brief Constructor.
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     SubMonitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : printMonitor_(object, msg, msgLevel),
         timerMonitor_(object, object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel)
@@ -182,7 +196,14 @@ namespace MueLu {
     static int timerIdentifier_;
 #endif
 
-    //! Constructor
+    /*! @brief Constructor
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
+        @param[in] levelID     The MueLu Level number.
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
       : Monitor(object, msg, msgLevel, timerLevel),
         timerMonitorExclusive_(object, object.ShortClassName() + " " + MUELU_TIMER_AS_STRING + " : " + msg, timerLevel)
@@ -193,7 +214,13 @@ namespace MueLu {
       }
     }
 
-    /*! Constructor
+    /*! @brief Constructor
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build".
+        @param[in] level       The MueLu Level object.
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
 
       TODO: code factorization
     */
@@ -235,7 +262,14 @@ namespace MueLu {
   class SubFactoryMonitor: public SubMonitor {
   public:
 
-    //!Constructor
+    /*! @brief Constructor
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
+        @param[in] levelID     The Level number.
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, msgLevel, timerLevel)
     {
@@ -244,7 +278,14 @@ namespace MueLu {
       }
     }
 
-    //!Constructor
+    /*! @brief Constructor
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
+        @param[in] level       The MueLu Level object.
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, msgLevel, timerLevel)
     {

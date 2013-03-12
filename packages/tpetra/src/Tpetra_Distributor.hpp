@@ -48,13 +48,13 @@
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-// #ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
-// #  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-#  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
+#ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
+#  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+// #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+// #  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
+// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
 namespace Tpetra {
 
@@ -528,6 +528,9 @@ namespace Tpetra {
 
     //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
     bool barrierBetween_;
+
+    //! Whether to print copious debug output to stderr on all processes.
+    bool debug_;
     //@}
 
     /// \brief The number of export process IDs on input to \c createFromSends().
@@ -675,6 +678,18 @@ namespace Tpetra {
 
     //! This Distributor instance's tag for MPI point-to-point communication.
     int instanceTag_;
+
+    /// \brief Whether to use different tags for different instances and code paths.
+    ///
+    /// If false, always use the same tag for all Distributor
+    /// instances and doPosts() code paths.  This is a Parameter
+    bool useDistinctTags_;
+
+    //! Call this in the constructor to update tagCounter_.
+    static void incrementTagCounter ();
+
+    //! Get the tag to use for receives and sends.  Call in doPosts().
+    int getTag (const int pathTag) const;
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     /// \brief Compute receive info from sends.
@@ -828,9 +843,11 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    (void) verbLevel; // Silence "unused variable" compiler warning.
     RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    // const bool doPrint = out.get () && (comm_->getRank () == 0) &&
+    //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    const bool doPrint = out.get () && (comm_->getRank () == 0);
 
     if (doPrint) {
       // Only need one process to print out parameters.
@@ -874,7 +891,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = indicesTo_.empty () ? 0 : 1;
-    const int tag = instanceTag_ + pathTag;
+    const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -1163,7 +1180,7 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = indicesTo_.empty () ? 2 : 3;
-    const int tag = instanceTag_ + pathTag;
+    const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -1512,8 +1529,16 @@ namespace Tpetra {
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
     using Teuchos::as;
+    using std::cerr;
+    using std::endl;
 
     const int myRank = comm_->getRank();
+    if (debug_) {
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": computeSends" << endl;
+      cerr << os.str ();
+    }
+
     const size_t numImports = importNodeIDs.size();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size ()) < numImports,
       std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
@@ -1532,18 +1557,33 @@ namespace Tpetra {
     //
     size_t numExports;
     Distributor tempPlan (comm_);
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": tempPlan.createFromSends" << endl;
+      cerr << os.str ();
+    }
     numExports = tempPlan.createFromSends (importNodeIDs);
     if (numExports > 0) {
       exportIDs = arcp<OrdinalType> (numExports);
       exportNodeIDs = arcp<int> (numExports);
     }
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": tempPlan.doPostsAndWaits" << endl;
+      cerr << os.str ();
+    }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
       exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
+    }
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": done with computeSends" << endl;
+      cerr << os.str ();
     }
   }
 

@@ -359,12 +359,13 @@ namespace MueLu {
         bool emptySolve = true;
         if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
-          preSmoo->Apply(X, B, false);
+          preSmoo->Apply(X, B, zeroGuess);
+          zeroGuess=false;
           emptySolve=false;
         }
         if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-          postSmoo->Apply(X, B, false);
+          postSmoo->Apply(X, B, zeroGuess);
           emptySolve=false;
         }
         if (emptySolve==true)
