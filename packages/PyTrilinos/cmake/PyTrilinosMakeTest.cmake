@@ -31,7 +31,7 @@ INCLUDE(TribitsAddTest)
 MACRO(PyTrilinos_MAKE_TEST TEST_NAME)
 
   ADD_CUSTOM_COMMAND(OUTPUT ${TEST_NAME}.py
-    COMMAND ${CMAKE_SOURCE_DIR}/packages/PyTrilinos/util/copyWithCMakeSubstitutions.py
+    COMMAND ${CMAKE_BINARY_DIR}/packages/PyTrilinos/util/copyWithCMakeSubstitutions.py
             ${CMAKE_CURRENT_SOURCE_DIR}/${TEST_NAME}.py.in
 	    ${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.py
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TEST_NAME}.py.in)
