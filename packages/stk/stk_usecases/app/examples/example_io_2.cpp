@@ -714,7 +714,7 @@ namespace app {
       app::process_output_request(out_region, bulk_data, out_step);
     }
     out_region.end_mode(Ioss::STATE_TRANSIENT);
-
+    stk::io::delete_selector_property(out_region);
   }
 } // namespace stk_examples
 
