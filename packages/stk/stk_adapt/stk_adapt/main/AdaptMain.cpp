@@ -1292,8 +1292,9 @@ namespace stk {
                                     std::cout << std::endl;
                                     int ib = iBreak;
                                     if (!query_only) ib = 0;
-                                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
-                                    RefinementInfoByType::printTable(stk::percept::pout(), breaker.getRefinementInfoByType(), ib , true);
+                                    bool printAllTopologies = false;
+                                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , printAllTopologies);
+                                    RefinementInfoByType::printTable(stk::percept::pout(), breaker.getRefinementInfoByType(), ib , printAllTopologies);
                                     std::cout << std::endl;
                                   }
                                 if (print_memory_usage)
