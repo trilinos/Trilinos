@@ -528,6 +528,9 @@ namespace Tpetra {
 
     //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
     bool barrierBetween_;
+
+    //! Whether to print copious debug output to stderr on all processes.
+    bool debug_;
     //@}
 
     /// \brief The number of export process IDs on input to \c createFromSends().
@@ -829,7 +832,6 @@ namespace Tpetra {
     using Teuchos::ssend;
     using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
-    using std::cerr;
     using std::endl;
     typedef Array<size_t>::size_type size_type;
 
@@ -1527,8 +1529,16 @@ namespace Tpetra {
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
     using Teuchos::as;
+    using std::cerr;
+    using std::endl;
 
     const int myRank = comm_->getRank();
+    if (debug_) {
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": computeSends" << endl;
+      cerr << os.str ();
+    }
+
     const size_t numImports = importNodeIDs.size();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size ()) < numImports,
       std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
@@ -1547,18 +1557,33 @@ namespace Tpetra {
     //
     size_t numExports;
     Distributor tempPlan (comm_);
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": tempPlan.createFromSends" << endl;
+      cerr << os.str ();
+    }
     numExports = tempPlan.createFromSends (importNodeIDs);
     if (numExports > 0) {
       exportIDs = arcp<OrdinalType> (numExports);
       exportNodeIDs = arcp<int> (numExports);
     }
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": tempPlan.doPostsAndWaits" << endl;
+      cerr << os.str ();
+    }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
       exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
+    }
+    if (debug_) {
+      std::ostringstream os;
+      os << "  - Proc " << myRank << ": done with computeSends" << endl;
+      cerr << os.str ();
     }
   }
 
