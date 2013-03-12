@@ -403,8 +403,8 @@ namespace Iogn {
             << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
             << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
             << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
-            << "\tvariables:type,count,...  type=element|nodal|nodeset"
-            << "\ttimes:count (number of timesteps to generate)"
+            << "\tvariables:type,count,...  type=element|nodal|nodeset\n"
+            << "\ttimes:count (number of timesteps to generate)\n"
             << "\tshow -- show mesh parameters\n"
             << "\thelp -- show this list\n\n";
       }
@@ -415,7 +415,7 @@ namespace Iogn {
 
       else {
         std::cerr << "ERROR: Unrecognized option '" << option[0]
-                                                              << "'.  It will be ignored.\n";
+		  << "'.  It will be ignored.\n";
       }
     }
   }
