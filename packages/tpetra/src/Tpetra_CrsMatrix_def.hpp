@@ -528,7 +528,7 @@ namespace Tpetra {
     // as well.  Note that we only call fillLocalGraphAndMatrix() if
     // the matrix owns the graph, which means myGraph_ is not null.
     ArrayRCP<LO>            &lclInds1D_     = myGraph_->lclInds1D_;
-    ArrayRCP<ArrayRCP<LO> > &lclInds2D_     = myGraph_->lclInds2D_;
+    ArrayRCP<Array<LO> >    &lclInds2D_     = myGraph_->lclInds2D_;
     ArrayRCP<size_t>        &rowPtrs_       = myGraph_->rowPtrs_;
     ArrayRCP<size_t>        &numRowEntries_ = myGraph_->numRowEntries_;
     size_t & nodeNumEntries_   = myGraph_->nodeNumEntries_;
@@ -719,7 +719,7 @@ namespace Tpetra {
 
     // get data from staticGraph_
     ArrayRCP<LocalOrdinal>            lclInds1D     = staticGraph_->lclInds1D_;
-    ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = staticGraph_->lclInds2D_;
+    ArrayRCP<Array<LocalOrdinal> >    lclInds2D     = staticGraph_->lclInds2D_;
     ArrayRCP<size_t>                  rowPtrs       = staticGraph_->rowPtrs_;
     ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;

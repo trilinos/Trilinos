@@ -1189,9 +1189,9 @@ namespace Tpetra {
       //
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //! <tt>lclInds2D_[r]</tt> are the indices for row \c r.
-      ArrayRCP<ArrayRCP< LocalOrdinal> > lclInds2D_;
+      ArrayRCP<Array< LocalOrdinal> > lclInds2D_;
       //! <tt>gblInds2D_[r]</tt> are the indices for row \c r.
-      ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
+      ArrayRCP<Array<GlobalOrdinal> > gblInds2D_;
 
       //! The number valid entries in the row.
       // This is deleted after fillComplete if "Optimize Storage" is set to \c true
