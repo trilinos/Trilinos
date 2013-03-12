@@ -386,7 +386,7 @@ namespace Galeri {
       GO shiftx, shifty, shiftz;
 
       Utils::getSubdomainData(dims[0], mx, myPID % mx, nx, shiftx);
-      Utils::getSubdomainData(dims[1], my, (myPID - (mx*my) * (myPID / (mx*my)) / mx), ny, shifty);
+      Utils::getSubdomainData(dims[1], my, ((myPID - (mx*my) * (myPID / (mx*my))) / mx), ny, shifty);
       Utils::getSubdomainData(dims[2], mz, myPID / (mx*my), nz, shiftz);
 
       // Expand subdomain to do overlap
