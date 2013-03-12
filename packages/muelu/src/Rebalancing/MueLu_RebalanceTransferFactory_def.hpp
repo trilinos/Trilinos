@@ -181,7 +181,7 @@ namespace MueLu {
 
         RCP<Matrix> rebalancedR;
 
-#define OLD_AND_BUSTED
+	//#define OLD_AND_BUSTED
 #ifdef  OLD_AND_BUSTED
         {
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- allocate new R", coarseLevel);
@@ -230,7 +230,13 @@ namespace MueLu {
 	{
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
 	  // Note: The 3rd argument says to use originalR's domain map.
-	  rebalanced = MatrixFactory::Build(originalR,rebalanceImporter,Teuchos::null,rebalanceImporter->getTargetMap());
+
+	  RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalR);
+	  if (crsOp == Teuchos::null)
+	    throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+	  RCP<CrsMatrix> originalR2 = crsOp->getCrsMatrix();
+	  RCP<Map> dummy;
+	  rebalancedR = rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalR2,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap())));
 	}
 #endif
 

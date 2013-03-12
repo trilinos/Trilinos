@@ -250,7 +250,7 @@ namespace Xpetra {
 
     
     //! Constructor using FusedImport
-    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &sourceMatrix, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null, const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &sourceMatrix, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
