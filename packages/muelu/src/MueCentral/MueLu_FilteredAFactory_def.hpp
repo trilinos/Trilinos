@@ -84,7 +84,6 @@ namespace MueLu {
     RCP<Matrix>     A = Get< RCP<Matrix> >   (currentLevel, "A");
     RCP<GraphBase>  G = Get< RCP<GraphBase> >(currentLevel, "Graph");
     bool      lumping = pL.get<bool>("lumping");
-
     size_t    blkSize = A->GetFixedBlockSize();
 
     if (lumping)
