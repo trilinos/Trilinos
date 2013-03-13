@@ -21,27 +21,6 @@ A) Prioritized Backlog Items:
 A.1) Prioritized Backlog Items that require changes to CMake/CTest/CDash:
 -------------------------------------------------------------------------
 
-(*) [CDash] [P2] Submissions to the nightly dashboard sometimes get stuck
-while being inserted into the mysql database.  To fix this, analyze how long
-it takes to submit typically, set a threshhold sufficiently longer than that
-and reset the submission process if the threshhold time is reached without
-progress.  It would also be useful to list the number of pending submissions
-on the CDash site.  Finally, we need to be notified if the submission process
-gets stuck so we can fix it, without having to discover for ourselves that
-things have stalled.
-
-
-(*) [CTest, CDash] [P2] Append update results to every subproject build and
-send out emails to users who checked in code: Currently, CDash will only send
-emails to the subproject email lists (signed up for labels) but will not send
-out emails to the users who checked in (except for the first subproject built)
-... Now that there is the ability to go from a subproject build to the entire
-set of subprojects this is less important.  However, this would still be
-needed for correct CI email notification.  This would make the CI reporting
-100% robust in that everyone who pushed commits associated with a broken CI
-build would get emails.  Right now, Trilinos framework people have to globally
-monitor the CI builds and send emails notifying people of problems.
-
 
 (*) [CDash] [P3] Separate out coverage results for library code and
 for test/example code: Currently, our coverage shows lower coverage
@@ -95,15 +74,10 @@ weeks.
 history.
 
 
-(*) [CDash] [P4] Get CDash to deal correctly with subprojects when
-considering the "last build".  Currently, CDash thinks the last build
-is the last subproject build.  This messes up everything related to
-the "last build" like the increase (or decrease) in the number of
-tests, the links on the various results pages, etc.
-
-
-(*) [CDash] [P4] Line wrap all warning and error messages in CDash output.
-Long lines are impossible to read currently. 
+(*) [CDash] [P4] Get CDash to deal correctly with subprojects when considering
+the "last build" w.r.t. the number of warnings.  Note that CDash has been
+fixed in this w.r.t. the number of passing and failing tests which is the more
+important metric.
 
 
 (*) [CMake] [P3] Add support for drop-down 'ON', 'OFF', '' for the function
@@ -145,53 +119,6 @@ A.2) Prioritized Backlog Items that do *not* need changes in CMake/CTest/CDash:
 ---------------------------------------------------------------------------------
 
 
-(*) [CTest] [P2] [Epic] Create a robust system to handle the overall testing
-process driving different CTest scripts on a machine that has the following
-properties:
-
-This epic has been broken down into the following items:
-
-A) Automatically updates all of the scripts and CMake/CDash code needed to
-perform the tests (including upgrading CMake/CTest if necessary). A mirror
-CDash server should be set up to make updates safer. Submissions should be
-sent to both servers, but kept on the mirror for only 1 week. All emails for
-mirror server should go to a single list to avoid duplication, but insure that
-sending mail works. Some nightly tests should use the current CMake release
-version, some should use a dev version that has gone through a verification
-process, and one should use the latest nightly snapshot of CMake and conduct a
-verification process on that version. If the version is verified to work, it
-should become the new verified dev version for the next day.
-
-B) Put a time limit (or max date stamp) on the full set of tests so that they
-will get killed after that point. For example, you might say that if the full
-set of tests takes longer than 8 hours, then the current CTest script and all
-remaiming scripts should be killed and an email should be sent to some list of
-email addresses list (e.g. trilinos-framework) stating that the tests where
-killed. Alternatively or in addition to limiting the total time for all tests,
-the time could be limited for each build.
-
-C) Send email to some list of email addresses when the tests finish.  Emails
-should also be sent when an expected build is not registered, when a machine
-cannot submit to the main dashboard, and when any catastrophic failure occurs.
-When a testing machine has no network connectivity at the beginning or end of
-a testing attempt, an easily accessible log should be left on the machine. 
-
-D) Support parallel build tracks. If there are enough cores available,
-multiple test builds should be done at the same time. For example, dev builds
-could be done on one track and release on another, or a more sophisticated
-system could be developed similar to a queuing system on a cluster. Having
-ctest manage the tracks may be appropriate as it is able to run tests in
-parallel already.
-
-E) Make the continuous integration testing process more robust. See bugzilla
-bug 4681: https://software.sandia.gov/bugzilla/show_bug.cgi?id=4681. Some of
-the tasks overlap with other items from the robust testing system epic, but
-should be verified to work for CI testing.
-
-These capabilities are critical for the robustness and maintainability of the
-automated testing system run by CTest.
-
-
 (*) [CTest] [P2] Add a --rerun-failed option to 'ctest' to make CTest only
 rerun failing tests and then create a new output file that contains all of the
 previously run passing tests as well as the newly run test results.  When you
@@ -205,15 +132,6 @@ code to read the LastTestFailed.log file, re-run just those tests, and then
 write a new LastTest.log file replacing the tests that got rerun.  This tool
 would not be all that hard to write in an external tool actually, but again,
 this is a feature that should go into CTest proper.
-
-
-(*) [CTest] [P2] Unit test the TribitsCTestDriverCore.cmake script.
-
-
-(*) [General] [P2] Set up an Official Trilinos Development Toolset that
-provides a standard development environment for Trilinos developers.  This may
-look similar to the CSE that was set up for another Kitware customer.  We can
-do this for ourselves and don't need Kitware.
 
 
 (*) [CDash] [P3] General handling of data files in different test directories:
@@ -270,16 +188,6 @@ B) Unprioritized items:
 
 B.1) Unprioritized Backlog Items that require changes to CMake/CTest/CDash:
 ---------------------------------------------------------------------------
-
-
-(*) [CTest] CTest needs to print out the list of available labels that can be
-used to select and deselect tests.  Currently, as of 2.8.1, ctest supports the
-arguments -L and -LE to include or exclude tests based on their labels, not
-even with -N -VV.  What CTest needs is to a) show the labels associated with a
-test when you run the test or just pass in -N -VV, and b) add a new option
-called --print-labels that will have CTest print all of the currently defined
-labels.  Without this, labels are not very useful because no-one can figure
-out what labels there are to use in selecting tests.
 
 
 (*) [CMake] When cross compiling it would be nice to have the ability to specify
@@ -437,13 +345,6 @@ use them to compile object files in parallel.  Work around: Use
 'distgcc'.
 
 
-(*) [CMake] Generate error messages for missing source files that have
-line numbers in the corresponding CMakeLists.txt file: Currently,
-cmake just lists the entire CMakeLists.txt file and nothing else.
-Workaround: Just add files slowly and re-run CMake each time to debug
-the problem.
-
-
 (*) [CTest] Add an optional summary section that will show the number of tests
 that passed and failed for each Trilinos package (i.e. subproject in current
 CTest lingo).  This output might look like:
@@ -532,239 +433,3 @@ A summary of all Trilinos coverage, and the ability to click through to the
 package breakdown would be more useful.  Right now, we have to find the
 coverage build in the nightly category, click into that, and scroll to the
 bottom for package coverage numbers.
-
-
-
-D) Done:
----------
-
-
-(*) [CMake] [P4] Reduce the options shown in the default view of the CMake
-GUI, moving most options to the advanced area.  There are a lot of Trilinos
-options, and users could easily have trouble finding what they are looking
-for.  Really, CMake should support a grouping capability to group options
-hierarchically with the GUI allowing expansion and contraction of the
-categories of options shown.  One thing that would help a lot is if the CMake
-GUI would allow you to select "Grouped" view but turn "Advanced" options on
-and off.  Currently, the "Grouped" view shows all options including advanced
-options.  Then, in the Trilinos CMake system, we could avoid setting package
-specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
-explicitly enabled.  Again though, to really organize all of these options we
-need the ability to hierarchically group options any way that we would
-like. ... With the changes Ross B. made to only add cache variables for
-packages that are actually enabled and since Kitware changed the CMake
-QT-based GUI in the 2.8.2 release to have seprate check boxes for "Grouped"
-and "Advanced", the options for Trilinos are now very manageable.  This
-problem is solved as far as I cam concerned.
-
-
-(*) [CTest, CDash] Support for the Git VC tool: We really only need built-in
-support for git in order for CDash to show what files were updated.  If we
-don't care about that then built-in git support is no big deal.  ... Since
-Kitware has switched to git on its own, the git support will be as good as it
-can be.
-
-
-(*) [CDash] [P1] Fix behavior of CDash error email notification
-reporting: Currently, when errors occur in dependent subprojects
-during a given subproject build, either the proper emails don't go out
-or emails with improper subjects and/or contents go out to various 
-subproject emails lists.  The logic of the subproject email
-notification reports needs to be revised to send the right emails with
-the right contents to the right subproject email lists.  The current
-CDash system is also just not sending out any emails for some
-failures.
-
-
-(*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
-machine purple.sandia.gov.  See Trilinos bug
-https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
-
-
-(*) [CMake] [P1] C++ Fortran 77/90 mixed language issues.  See
-Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
-
-
-(*) [CMake] [P1] Verify compatibility of compilers.  If compilers are not
-specified in the environment and a compiler, or an mpi compiler wrapper, is
-found in some directory, that directory should be searched first for the
-remaining compilers that need to be found.  In our experience, mixing compiler
-vendors, or even versions within the same vendor tends not to work.  After
-finding all compilers, if any mixed language linking is to take place, the
-compilers should be tested for compatibility.
-
-
-(*) [General] [P1] MS Windows port and installer: We would like
-Kitware to set up our MS Windows HPC Server 2008 machine and get the
-Trilinos CMake build going with nightly testing.  We would also like
-some help porting Trilinos packages.
-
-
-(*) [CTest] [P1] Implement timeouts of tests when CTest will be run on the
-commandline and not in dashbaord mode.  Currently, if you set the option CMake
-configure DART_TESTING_TIMEOUT, this will only affect timeouts when CTest is
-run in dasbhaord mode, not when it is run in regular command-line mode.  This
-is very bad because it will not timeout tests in our checkin-test.py script
-(or when run manually by Trilinos developers).  We just need some way to set a
-timeout when running ctest like 'ctest -jN'.
-
-
-(*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
-looping for continuous integration testing.  Assist in getting
-continuous integration testing set up on trilinos-test.sandia.gov.
-
-
-(*) [CTest] [P2] By default, automatically widen the main summary
-output to show the full test names: Currently, only the first 30
-characters of the name are shown.  The option -W was added to the CVS
-version of CTest to allow the width to be manually set but this is a
-hassle and does not interact well with MS Visual C++ projects.
-
-
-(*) [CMake] [P2] Native and mixed-language support for Fortran 2003
-(and some 2008): Collaborate with Damian Rouson on this.
-
-
-(*) [CMake] [P2] Need to pass compile options to configure time tests. We made
-an effort to do this for the Trilinos created configure time tests, but not
-all of the CMake given ones allow us to to that right now. Most promenently is
-the verify CXX test. Being able to pass in the options to use or using the
-CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
-
-
-(*) [CDash] [P2] Add general query filters to the test results pages.
-This would allow you to search over multiple Trilinos packages over
-multiple platforms and days all in one place.
-
-
-(*) [CTest] [P2] Get updated files info attached to every build row for each
-package (e.g. Label).  Currently, it is very hard to track down what files
-where updated when you are querying individual tests with queryTests.php or
-individual builds with index.php?project=Trilinos&subproject=Zoltan (in
-general, we need to get from the individual results pages to the page
-summarizing the whole build of all Trilinos packages, even if we arrived at
-the page through a search, rather than starting from the build summary page).
-Only the first package in the build sequence shows updated files.  All the
-packages (i.e. Labels) in a build sequence need to show the updated files.
-
-
-(*) [CTest] [P2] Not all Zoltan tests are being run nightly.  See Bugzilla bug
-4511.
-
-
-(*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
-This will allow reliably killing timed-out tests.
-
-
-(*) [CDash] [P2] Some submissions to the nightly dashboard are failing.
-These failed submissions should be prevented in most cases, and should be
-logged by the TrilinosDriver dashboard in all cases where the tests are
-running through the TrilinosDriver scripts.
-
-
-(*) [CDash] [P2] (4/14/2010) Not all of the Trilinos subprojects (packages)
-are being displayed on
-http://trilinos.sandia.gov/cdash/index.php?project=Trilinos.  For example, the
-row for STK is empty but if you click on 'STK' you go to
-http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
-see that it is being tested. 
-
-
-(*) [CTest] [P3] Define the number of processors to be used when
-running a parallel test: Currently, ctest has no way of knowing how
-many processors a test will use when it runs.  For example, it has no
-way of knowing that an MPI run will use 8 processors.  This is
-important information for ctest to know if it is going to be doing a
-good job of launching tests to run on multiple processors at the same
-time (a new feature being implemented in the development branch).  The
-optimal job scheduling would be difficult but all we need is some
-basic non-optimal logic to do a good job of using the machine to its
-fullest when running lots of test simultaneously.  This is an issue in
-fully utilizing our overloaded testing machines.  Workaround: Set up
-testing to run only single-process jobs in parallel first, then MPI
-jobs sequentially that use all of the processes.  We would have to
-provide a tool on top of ctest to make this easy to use.  This is
-related to the above item when running with MPI.
-
-
-(*) [CDash] [P3] Append all query fields when going from 'collapsed'
-view page to 'non-collapsed' view page: Currently, if you create a
-query and limit the builds shown in a 'collapsed' view, when you click
-on a build name collapsed group, you go to a new page that does not
-contain your query fields.  This is not at all what you expect and you
-have to entry the query fields again on the non-collapsed page.
-
-
-(*) [CTest] [P3] Add general summary timing to the console summary
-outputting:
-
-- Print the CPU time for each test (not just the start and end times in
-the log file): The test run time helps to determine what tests are taking too
-long and need to be revised.  This feature should be very easy to add to the
-CTest C++ source code.
-
-- Print intermediate summary times for individual groups of tests (see
-example below): This will allow us to see how long individual Trilinos
-packages are taking to complete their tests.  This could be
-facilitated with an option like --summary-testing-group=REGEX that
-causes test to be grouped together based on REGEX matching.
-
-- Print the overall testing time at the end of the summary and detailed
-log files (see below):
-
-Example output showing the above items:
-
-=========================================================
-
-Start processing tests
-
-Test project
-/home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/GCC-4.1.2/SERIAL_DEBUG
-
- 12/119 Testing Teuchos_BLAS_test ..........................................
-Passed   5.20 sec
- 13/119 Testing Teuchos_DefaultMpiComm_UnitTests ...........................
-Passed   0.48 sec
- 14/119 Testing Teuchos_Comm_test ..........................................
-Passed   2.56 sec
- 15/119 Testing Teuchos_Containers_test ....................................
-Passed   0.43 sec
- 16/119 Testing Teuchos_UnitTest_UnitTests .................................
-Passed   0.31 sec
- 17/119 Testing Teuchos_UnitTest_BadUnitTest_final_results .................
-Passed   0.01 sec
- ...
- Subproject summary Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
-
- 72/119 Testing Epetra_BlockMap_test .......................................
-Passed   0.00 sec
- 73/119 Testing Epetra_BasicPerfTest_test ..................................
-Passed   0.98 sec
- 74/119 Testing Epetra_Comm_test ...........................................
-Passed   7.05 sec
- 75/119 Testing Epetra_CrsGraph_test_unit ..................................
-Passed   2.74 sec
- 76/119 Testing Epetra_CrsMatrix_test ......................................
-Passed   20.5 sec
- ...
- Subproject summary Epetra: #passed = 48, #failed=0, CPU time = 150 sec
-
- ...
-
-100% tests passed, 0 tests failed out of 113
-
-Total CPU time = 1050 sec
-
-=========================================================
-
-
-(*) [CTest] [P3] Fully finish the ctest -jN option: The -jN option needs to
-provide good parallel scalability.  It also needs to be able to write the
-needed output files for submitting to the dashboard.  We also need to be able
-to invoke -jN functionality from advanced CTest scripts when calling
-CTEST_TEST(...) and the other such commands like CTEST_MEMCHECK(...) and
-CTEST_COVERAGE(...).  Improved support might include remembering what tests
-are most expensive and launching them first.  Note that this will be
-sufficient for serial runs but when running with MPI, we need to consider the
-numbers of processes a test is using.
-
