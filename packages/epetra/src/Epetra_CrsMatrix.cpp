@@ -5011,11 +5011,11 @@ int Epetra_CrsMatrix::SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap
 
 // private ===================================================================
  template<typename int_type>
- int Epetra_CrsMatrix::LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, const int_type *colind_LL)
+ int Epetra_CrsMatrix::LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int>& RemotePIDs, const int_type *colind_LL)
    {
   int i,j;
 
-  // Sanity checking - If int_type==int, colind current contains GIDs, if not, colind_LL does.
+  // Sanity checking - If int_type==int, colind (aka Graph_.CrsGraphData_->data->All_Indices_)  contains GIDs, if not, colind_LL does.
   bool UseLL=false;
   if(RowMap().GlobalIndicesLongLong()) UseLL=true;
 
@@ -5149,6 +5149,10 @@ int Epetra_CrsMatrix::SimplifiedMakeColMapAndReindex(const Epetra_Map& domainMap
   }
  
   Epetra_Util::Sort(true, NumRemoteColGIDs, &PIDList[0], 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
+
+  // Stash the RemotePIDs  
+  PIDList.resize(NumRemoteColGIDs);
+  RemotePIDs = PIDList;
 
   if (Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
     // Sort external column indices so that columns from a given remote processor are not only contiguous
@@ -5561,11 +5565,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
 #ifdef SEND_OWNING_PIDS
+  std::vector<int> RemotePIDs;
   if(UseLL) {
     long long * LLptr = CSR_colind_LL.size()>0 ? &CSR_colind_LL[0] : 0;
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),&pids[0],LLptr);
+    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),&pids[0],RemotePIDs,LLptr);
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),&pids[0]);  
+  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),&pids[0],RemotePIDs);  
    
 #else
   if(UseLL) SimplifiedMakeColMapAndReindex<long long>(SourceMatrix.DomainMap());
@@ -5578,13 +5583,24 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // Sort the entries
   Epetra_Util::SortCrsEntries(N, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
-  // Update the CrsGraphData
-  // NTS: Are we sure this is the right thing to do?
-  if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap); 
+
+
+  Epetra_Import * MyImport=0;
+#ifdef SEND_OWNING_PIDS
+  // Pre-build the importer using the existing PIDs
+  int NumRemotePIDs = RemotePIDs.size();
+  const int * RemotePIDs_ptr = NumRemotePIDs ? &RemotePIDs[0] : 0;
+  if(!DomainMap().SameAs(ColMap()))
+    MyImport = new Epetra_Import(ColMap(),DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
+#endif
+
+  if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
   else {
     const Epetra_Map *MyRowMap = dynamic_cast<const Epetra_Map*>(&RowImporter.TargetMap());
-    ExpertStaticFillComplete(SourceMatrix.DomainMap(),*MyRowMap); 
+    ExpertStaticFillComplete(SourceMatrix.DomainMap(),*MyRowMap,MyImport);
   }
+  // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
+  // We are not to deallocate that here.
 
 }// end fused copy constructor
 
