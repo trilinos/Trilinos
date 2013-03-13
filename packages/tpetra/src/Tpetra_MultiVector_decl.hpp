@@ -695,7 +695,11 @@ namespace Tpetra {
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
-    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
+    /// \brief Matrix-matrix multiplication: <tt>this = beta*this + alpha*op(A)*op(B)</tt>.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if
+    /// it contains NaN entries.  This imitates the semantics of
+    /// analogous BLAS routines like DGEMM.
     void
     multiply (Teuchos::ETransp transA,
               Teuchos::ETransp transB,
@@ -704,22 +708,24 @@ namespace Tpetra {
               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
               const Scalar& beta);
 
-    //! Element-wise multiply of a Vector A with a MultiVector B.
-    /** Forms this = scalarThis * this + scalarAB * B @ A
-     *  where @ denotes element-wise multiplication.
-     *  B must be the same shape (size and num-vectors) as this, while
-     *  A is the same size but a single vector (column).
-     *
-     *  this = scalarThis * this(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
-     *
-     */
+    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    ///
+    /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    /// \code
+    /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    /// \endcode
+    /// for all rows i and columns j of C.
+    ///
+    /// B must have the same dimensions as <tt>*this</tt>, while A
+    /// must have the same number of rows but a single column.
     void
     elementWiseMultiply (Scalar scalarAB,
                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                          Scalar scalarThis);
     //@}
-
     //! @name Attribute access functions
     //@{
 

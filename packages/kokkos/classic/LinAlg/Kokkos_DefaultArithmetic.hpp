@@ -348,12 +348,15 @@ namespace Kokkos {
     /// \brief Set C to the scaled element-wise multiple of A and B.
     ///
     /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
-    /// where the input multivector A has only 1 column.
-    static void ElemMult (MV& C,
-                          typename MV::ScalarType scalarC,
-                          typename MV::ScalarType scalarAB,
-                          const MV& A,
-                          const MV& B);
+    /// where the input multivector A has only 1 column.  If scalarC
+    /// is zero, this method ignores the initial contents of C, even
+    /// if there are NaN entries.
+    static void
+    ElemMult (MV& C,
+              typename MV::ScalarType scalarC,
+              typename MV::ScalarType scalarAB,
+              const MV& A,
+              const MV& B);
 
     /// \brief Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
     ///
@@ -682,7 +685,7 @@ namespace Kokkos {
       RCP<Node> node = B.getNode();
       ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
       ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar>       Adata = A.getValues();
+      ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -690,17 +693,33 @@ namespace Kokkos {
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
-      MVElemMultOp<Scalar> wdp;
-      wdp.scalarX = scalarC;
-      wdp.scalarYZ = scalarAB;
-      // one kernel invocation for each column
-      for (size_t j=0; j<nC_C; ++j) {
-        wdp.x = Cdata(0,nR_C).getRawPtr();
-        wdp.y = Adata(0,nR_C).getRawPtr();
-        wdp.z = Bdata(0,nR_C).getRawPtr();
-        node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
-        Cdata += Cstride;
-        Bdata += Bstride;
+
+      if (scalarC == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        MVElemMultOverwriteOp<Scalar> wdp;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOverwriteOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+      else {
+        MVElemMultOp<Scalar> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
       }
     }
 
@@ -1509,25 +1528,34 @@ namespace Kokkos {
       RCP<SerialNode> node = B.getNode();
       ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
       ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar>       Adata = A.getValues();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addNonConstBuffer<Scalar>(Cdata);
-      rbh.template addConstBuffer<Scalar>(Bdata);
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      MVElemMultOp<Scalar> wdp;
-      wdp.scalarX = scalarC;
-      wdp.scalarYZ = scalarAB;
-      // one kernel invocation for each column
-      for (size_t j=0; j<nC_C; ++j) {
-        wdp.x = Cdata(0,nR_C).getRawPtr();
-        wdp.y = Adata(0,nR_C).getRawPtr();
-        wdp.z = Bdata(0,nR_C).getRawPtr();
-        node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
-        Cdata += Cstride;
-        Bdata += Bstride;
+      ArrayRCP<const Scalar> Adata = A.getValues();
+
+      if (scalarC == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        MVElemMultOverwriteOp<Scalar> wdp;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOverwriteOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+      else {
+        MVElemMultOp<Scalar> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
       }
     }
 

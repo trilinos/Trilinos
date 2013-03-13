@@ -111,6 +111,18 @@ namespace Kokkos {
   };
 
   template <typename Scalar>
+  struct MVElemMultOverwriteOp {
+    Scalar scalarYZ;
+    const Scalar *y;
+    const Scalar *z;
+    Scalar *x;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      x[i] = scalarYZ*y[i]*z[i];
+    }
+  };
+
+  template <typename Scalar>
   struct AbsOp {
     const Scalar *y;
     Scalar *x;

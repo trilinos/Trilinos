@@ -461,12 +461,12 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
-		  size_t numSameIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
@@ -479,8 +479,8 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
       "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs"
-      " must have the same size." << std::endl << "permuteToLIDs.size() = " 
-      << permuteToLIDs.size() << " != permuteFromLIDs.size() = " 
+      " must have the same size." << std::endl << "permuteToLIDs.size() = "
+      << permuteToLIDs.size() << " != permuteFromLIDs.size() = "
       << permuteFromLIDs.size() << ".");
     const size_t numCols = getNumVectors ();
 
@@ -533,16 +533,16 @@ namespace Tpetra {
       // FIXME (mfh 10 Mar 2012) Copying should really be done on the
       // device.  There's no need to bring everything back to the
       // host, copy there, and then copy back.
-      ArrayView<const Scalar> srcView = 
-	sourceMV.getSubArrayRCP (sourceMV.cview_, j) ();
+      ArrayView<const Scalar> srcView =
+        sourceMV.getSubArrayRCP (sourceMV.cview_, j) ();
       ArrayView<Scalar> dstView = getSubArrayRCP (ncview_, j) ();
 
       if (! Node::isHostNode) {
         // The first numSameIDs IDs are the same between source and
         // target, so we can just copy the data.  (This favors faster
         // contiguous access whenever we can do it.)
-        std::copy (srcView.begin (), srcView.begin () + numSameIDs, 
-		   dstView.begin ());
+        std::copy (srcView.begin (), srcView.begin () + numSameIDs,
+                   dstView.begin ());
       }
 
       // For the remaining GIDs, execute the permutations.  This may
@@ -556,24 +556,24 @@ namespace Tpetra {
       // the same process, this merges their values by replacement of
       // the last encountered GID, not by the specified merge rule
       // (such as ADD).
-      const size_type numPermuteLIDs = 
-	std::min (permuteToLIDs.size (), permuteFromLIDs.size ());
+      const size_type numPermuteLIDs =
+        std::min (permuteToLIDs.size (), permuteFromLIDs.size ());
       for (size_type k = 0; k < numPermuteLIDs; ++k) {
-	dstView[permuteToLIDs[k]] = srcView[permuteFromLIDs[k]];
+        dstView[permuteToLIDs[k]] = srcView[permuteFromLIDs[k]];
       }
     }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
-		  const ArrayView<const LocalOrdinal> &exportLIDs,
-		  Array<Scalar> &exports,
-		  const ArrayView<size_t> &numExportPacketsPerLID,
-		  size_t& constantNumPackets,
-		  Distributor & /* distor */ )
+                  const ArrayView<const LocalOrdinal> &exportLIDs,
+                  Array<Scalar> &exports,
+                  const ArrayView<size_t> &numExportPacketsPerLID,
+                  size_t& constantNumPackets,
+                  Distributor & /* distor */ )
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -601,7 +601,7 @@ namespace Tpetra {
     const size_t numCols = sourceMV.getNumVectors ();
     const size_t stride = MVT::getStride (sourceMV.lclMV_);
     // This spares us from needing to fill numExportPacketsPerLID.
-    // Setting constantNumPackets to a nonzero value signals that 
+    // Setting constantNumPackets to a nonzero value signals that
     // all packets have the same number of entries.
     constantNumPackets = numCols;
     exports.resize (numCols * exportLIDs.size ());
@@ -612,7 +612,7 @@ namespace Tpetra {
     const size_type numExportLIDs = exportLIDs.size ();
     if (sourceMV.isConstantStride ()) {
       for (size_type k = 0; k < numExportLIDs; ++k) {
-	const size_t localRow = as<size_t> (exportLIDs[k]);
+        const size_t localRow = as<size_t> (exportLIDs[k]);
         for (size_t j = 0; j < numCols; ++j) {
           *expptr++ = srcView[localRow + j*stride];
         }
@@ -621,7 +621,7 @@ namespace Tpetra {
     else {
       ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
       for (size_type k = 0; k < numExportLIDs; ++k) {
-	const size_t localRow = as<size_t> (exportLIDs[k]);
+        const size_t localRow = as<size_t> (exportLIDs[k]);
         for (size_t j = 0; j < numCols; ++j) {
           *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
         }
@@ -654,12 +654,12 @@ namespace Tpetra {
       required to be contiguous. */
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(), 
+      as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
       std::runtime_error,
       ": 'imports' buffer size must be consistent with the amount of data to "
-      "be sent.  " << std::endl << "imports.size() = " << imports.size() 
-      << " != getNumVectors()*importLIDs.size() = " << getNumVectors() << "*" 
-      << importLIDs.size() << " = " << getNumVectors() * importLIDs.size() 
+      "be sent.  " << std::endl << "imports.size() = " << imports.size()
+      << " != getNumVectors()*importLIDs.size() = " << getNumVectors() << "*"
+      << importLIDs.size() << " = " << getNumVectors() * importLIDs.size()
       << ".");
 #endif
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -673,7 +673,7 @@ namespace Tpetra {
       std::runtime_error,
       ": numPacketsPerLID must have the same length as importLIDs.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (numVecs) != as<size_t> (constantNumPackets), 
+      as<size_t> (numVecs) != as<size_t> (constantNumPackets),
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 
     if (numVecs > 0 && importLIDs.size()) {
@@ -690,7 +690,7 @@ namespace Tpetra {
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*j] = *impptr++;
             }
@@ -698,7 +698,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*whichVectors_[j]] = *impptr++;
             }
@@ -708,7 +708,7 @@ namespace Tpetra {
       else if (CM == ADD) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*j] += *impptr++;
             }
@@ -716,7 +716,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*whichVectors_[j]] += *impptr++;
             }
@@ -726,7 +726,7 @@ namespace Tpetra {
       else if (CM == ABSMAX) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               Scalar &curval       = destView[localRow + myStride*j];
               const Scalar &newval = *impptr++;
@@ -736,7 +736,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-	    const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = as<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               Scalar &curval       = destView[localRow + myStride*whichVectors_[j]];
               const Scalar &newval = *impptr++;
@@ -747,9 +747,9 @@ namespace Tpetra {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX, 
-	  std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
-	  "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
+          CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
+          std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
+          "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
       }
     }
   }
@@ -2095,25 +2095,28 @@ namespace Tpetra {
                        Scalar scalarThis)
   {
     using Teuchos::arcp_const_cast;
-
     const char tfecfFuncName[] = "elementWiseMultiply()";
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! this->getMap()->isCompatible(*A.getMap()) ||
+      ! this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
       ": MultiVectors do not have compatible Maps:" << std::endl
       << "this->getMap(): " << std::endl << *this->getMap()
       << "A.getMap(): " << std::endl << *A.getMap() << std::endl
       << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
 #else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
-        ": MultiVectors do not have the same local length.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      getLocalLength() != A.getLocalLength() ||
+      getLocalLength() != B.getLocalLength(), std::runtime_error,
+      ": MultiVectors do not have the same local length.");
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        ": MultiVectors 'this' and B must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != 1, std::runtime_error,
-        ": MultiVectors A must have just 1 vector.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      B.getNumVectors() != this->getNumVectors(), std::runtime_error,
+      ": MultiVectors 'this' and B must have the same number of vectors.");
     try {
-      MVT::ElemMult(lclMV_,scalarThis,scalarAB,(const KMV &)A.lclMV_,(const KMV &)B.lclMV_);
+      MVT::ElemMult (lclMV_, scalarThis, scalarAB, (const KMV&) A.lclMV_,
+                     (const KMV&) B.lclMV_);
     }
     catch (std::runtime_error &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true,std::runtime_error,
@@ -2334,9 +2337,9 @@ namespace Tpetra {
     using std::endl;
     std::ostringstream oss;
     oss << Teuchos::typeName (*this) << " {" << endl
-	<< "  label: \"" << this->getObjectLabel () << "\"" << endl
-	<< "  numRows: " << getGlobalLength () << endl
-	<< "  numCols: " << getNumVectors () << endl
+        << "  label: \"" << this->getObjectLabel () << "\"" << endl
+        << "  numRows: " << getGlobalLength () << endl
+        << "  numCols: " << getNumVectors () << endl
         << "  isConstantStride: " << isConstantStride () << endl;
     if (isConstantStride ()) {
       oss << "  columnStride: " << getStride () << endl;
