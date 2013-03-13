@@ -197,7 +197,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->getFieldData<ScalarT,EvalType>(s);
   fm->getFieldData<ScalarT,EvalType>(t);
 
-  ScalarT tol = 100.0*Teuchos::ScalarTraits<ScalarT>::eps();
+  typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
+    100.0 * Teuchos::ScalarTraits<ScalarT>::eps();
 
   TEST_FLOATING_EQUALITY(t(0,0),s(0,0),tol);
   TEST_FLOATING_EQUALITY(t(0,1),s(0,1),tol);
