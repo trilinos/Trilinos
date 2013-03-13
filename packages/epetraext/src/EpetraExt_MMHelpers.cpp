@@ -1395,7 +1395,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
     UseLL=true;
   }
   else
-    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type");
+    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::Construct: Unable to determine source global index type");
 
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
