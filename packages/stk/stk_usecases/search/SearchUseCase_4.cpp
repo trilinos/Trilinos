@@ -80,13 +80,13 @@ use_case_4_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
 
-  stk::io::CoordinateFieldType *range_coord_field = &range_mesh_data.get_coordinate_field();
+  CartesianField *range_coord_field = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
   std::vector<AxisAlignedBoundingBox3D> range_vector;
   stk::search_util::build_axis_aligned_bbox(range_bulk_data,
                                             range_meta_data.entity_rank(range_entity),
                                             range_coord_field, range_vector);
 
-  stk::io::CoordinateFieldType *domain_coord_field = &domain_mesh_data.get_coordinate_field();
+  CartesianField *domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
   stk::search_util::build_axis_aligned_bbox(domain_bulk_data,
 					domain_meta_data.entity_rank(domain_entity),

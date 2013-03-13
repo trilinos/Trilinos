@@ -22,6 +22,7 @@
 #include <stk_mesh/base/Trace.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
@@ -108,6 +109,9 @@ public:
       ParallelMachine parallel ,
       unsigned bucket_max_size = 1000 ,
       bool use_memory_pool = true );
+
+  FieldBase* coordinate_field() const { return m_coord_field; }
+  void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -511,6 +515,8 @@ private:
   std::vector<EntityCommListInfo>     m_entity_comm_list ;
 
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
+
+  FieldBase* m_coord_field;
 
   // Other information:
   MetaData &         m_mesh_meta_data ;

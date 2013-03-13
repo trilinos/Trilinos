@@ -31,8 +31,7 @@ namespace stk {
     class Selector;
   }
   namespace io {
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian> CoordinateFieldType;
-    static const std::string CoordinateFieldName("coordinates");
+    static std::string CoordinateFieldName("coordinates");
 
     class MeshData {
         // Used to maintain state between the meta data and bulk data
@@ -317,12 +316,7 @@ namespace stk {
         /*!
          * Return the coordinate field for this mesh.
          */
-        CoordinateFieldType & get_coordinate_field()
-        {
-          CoordinateFieldType * coord_field = meta_data().get_field<CoordinateFieldType>(CoordinateFieldName);
-          ThrowRequire( coord_field != NULL);
-          return * coord_field;
-        }
+        stk::mesh::FieldBase & get_coordinate_field();
 
         /*!
          * If there are nodal fields defined on parts with higher-rank. For example, a nodal

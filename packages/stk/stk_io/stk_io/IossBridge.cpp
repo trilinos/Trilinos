@@ -860,6 +860,18 @@ void define_side_blocks(stk::mesh::Part &part,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expected_size)
+{
+  const stk::mesh::FieldBase::RestrictionVector& restrictions = field->restrictions();
+  for(size_t i=0; i<restrictions.size(); ++i) {
+    unsigned field_size = restrictions[i].stride(field->rank());
+    if (field_size != expected_size) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 void define_node_block(stk::mesh::Part &part,
                        const stk::mesh::BulkData &bulk,
@@ -870,23 +882,16 @@ void define_node_block(stk::mesh::Part &part,
   // Set the spatial dimension:
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
-  /// \todo REFACTOR The coordinate field would typically be
-  /// stored by the app and wouldn't need to be accessed via
-  /// string lookup.  App infrastructure is not shown here, so
-  /// lookup by string for the example.
-  mesh::Field<double, mesh::Cartesian> *coord_field =
-    meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
-  if (coord_field == NULL) {
-    std::ostringstream msg ;
-    msg << "ERROR: Could not find the coordinate field which should be named '" << coordinate_field_name
-	<< "'.";
-    throw std::runtime_error( msg.str() );
-  }
-  assert(coord_field != NULL);
-  const mesh::FieldBase::Restriction &res = coord_field->restriction(stk::mesh::MetaData::NODE_RANK, part);
+  //We now get spatial-dim from meta.spatial_dimension() rather than getting
+  //it from the coordinate-field's restriction onto the universal part.
+  //This is because some codes (sierra framework) don't put the coordinate
+  //field on the universal part. (framework puts it on active and inactive parts)
+  //As a debug-mode error-check, we'll assert that 'field_has_expected_size'.
 
-  const int spatial_dim = res.dimension() ;
+  const int spatial_dim = meta.spatial_dimension();
   io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
+
+  ThrowAssertMsg(field_has_expected_size(bulk.coordinate_field(), spatial_dim), "IossBridge define_node_block ERROR, coordinate field doesn't have the correct size. (Should match spatial-dimension.)");
 
   //--------------------------------
   // Create the special universal node block:
@@ -1291,14 +1296,7 @@ void output_node_block(Ioss::NodeBlock &nb,
 
   /// \todo REFACTOR Need a better way to indicate which field is the coordinate field.
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
-  mesh::Field<double, mesh::Cartesian> *coord_field =
-    meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
-  if (coord_field == NULL) {
-    std::ostringstream msg ;
-    msg << "ERROR: Could not find the coordinate field which should be named '" << coordinate_field_name
-	<< "'.";
-    throw std::runtime_error( msg.str() );
-  }
+  const mesh::FieldBase *coord_field = bulk.coordinate_field();
   assert(coord_field != NULL);
   field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 

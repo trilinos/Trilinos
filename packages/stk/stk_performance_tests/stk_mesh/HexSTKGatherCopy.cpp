@@ -32,16 +32,13 @@ namespace {
 //This very simple test will visit all local elements, gather coordinates,
 //compute element-centroid (simple average of nodal coords) for each, and
 //store the sum of the centroids in sum_centroid.
-void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_centroid)
+void copy_out_flat_connectivity_and_coords(stk::mesh::BulkData& bulk, std::vector<int>& connectivity, std::vector<double>& coords)
 {
   using namespace stk::mesh;
   typedef Field<double,Cartesian> VectorField;
 
   MetaData& meta = MetaData::get(bulk);
   const unsigned spatial_dim = meta.spatial_dimension();
-  for(unsigned d=0; d<spatial_dim; ++d) sum_centroid[d] = 0;
-
-  std::vector<double> elem_centroid(spatial_dim, 0);
 
   const VectorField& coord_field = *meta.get_field<VectorField>("coordinates");
 
@@ -50,15 +47,21 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
   BucketVector buckets;
   get_buckets(local, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK), buckets);
 
-  std::vector<double> elem_node_coords;
-
   size_t num_elems = 0;
+  int nodes_per_elem = 0;
   for(size_t ib=0; ib<buckets.size(); ++ib) {
     const Bucket& b = *buckets[ib];
+    if (nodes_per_elem == 0) nodes_per_elem = b.topology().num_nodes();
     num_elems += b.size();
-    const size_t num_nodes = b.topology().num_nodes();
-    const size_t len = num_nodes*spatial_dim;
-    if (elem_node_coords.size() != len) elem_node_coords.resize(len);
+  }
+
+  connectivity.clear();
+  connectivity.reserve(num_elems*nodes_per_elem);
+
+  unsigned min_lid = 99;
+  unsigned max_lid = 99;
+  for(size_t ib=0; ib<buckets.size(); ++ib) {
+    const Bucket& b = *buckets[ib];
 
     for(size_t i=0; i<b.size(); ++i) {
       Entity elem = b[i];
@@ -66,29 +69,71 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
       //here's the gather:
 
-      unsigned offset = 0;
-      for(; !node_rels.empty(); ++node_rels) {
-        Entity node = node_rels->entity();
-        double* node_coords = field_data(coord_field, node);
-        elem_node_coords[offset++] = node_coords[0];
-        elem_node_coords[offset++] = node_coords[1];
-        elem_node_coords[offset++] = node_coords[2];
+      for(int n=0; n<8; ++n) {
+        Entity node = node_rels[n].entity();
+        if (min_lid > node.local_id()) min_lid = node.local_id();
+        if (max_lid < node.local_id()) max_lid = node.local_id();
+        connectivity.push_back(node.local_id());
       }
-
-      stk::performance_tests::calculate_centroid_3d(num_nodes, &elem_node_coords[0], &elem_centroid[0]);
-
-      //add this element-centroid to the sum_centroid vector, and
-      //re-zero the element-centroid vector:
-      sum_centroid[0] += elem_centroid[0]; elem_centroid[0] = 0;
-      sum_centroid[1] += elem_centroid[1]; elem_centroid[1] = 0;
-      sum_centroid[2] += elem_centroid[2]; elem_centroid[2] = 0;
     }
+  }
+
+  get_buckets(local, bulk.buckets(stk::mesh::MetaData::NODE_RANK), buckets);
+
+  size_t num_nodes = 0;
+  for(size_t ib=0; ib<buckets.size(); ++ib) {
+    num_nodes += buckets[ib]->size();
+  }
+
+  coords.resize(num_nodes*spatial_dim);
+
+  for(size_t ib=0; ib<buckets.size(); ++ib) {
+    const Bucket& b = *buckets[ib];
+    const double* data = b.field_data(coord_field, b[0]);
+    for(size_t i=0; i<b.size(); ++i) {
+      int index = b[i].local_id()*spatial_dim;
+      coords[index] = *data++;
+      coords[index+1] = *data++;
+      coords[index+2] = *data++;
+    }
+  }
+}
+
+void compute_centroid(int num_elems, int nodes_per_elem, int spatial_dim, const std::vector<int>& connectivity, const std::vector<double>& coords, std::vector<double>& sum_centroid)
+{
+  std::vector<double> elem_centroid(spatial_dim, 0);
+
+  std::vector<double> elem_node_coords;
+
+  for(int d=0; d<spatial_dim; ++d) sum_centroid[d] = 0;
+
+  const size_t len = nodes_per_elem*spatial_dim;
+  elem_node_coords.resize(len);
+
+  const int* conn_ptr = &connectivity[0];
+  for(int ie=0; ie<num_elems; ++ie) {
+
+    unsigned offset = 0;
+    for(int i=0; i<8; ++i) {
+      int index = *conn_ptr++ * spatial_dim;
+      elem_node_coords[offset++] = coords[index];
+      elem_node_coords[offset++] = coords[index+1];
+      elem_node_coords[offset++] = coords[index+2];
+    }
+
+    stk::performance_tests::calculate_centroid_3d(nodes_per_elem, &elem_node_coords[0], &elem_centroid[0]);
+
+    //add this element-centroid to the sum_centroid vector, and
+    //re-zero the element-centroid vector:
+    sum_centroid[0] += elem_centroid[0]; elem_centroid[0] = 0;
+    sum_centroid[1] += elem_centroid[1]; elem_centroid[1] = 0;
+    sum_centroid[2] += elem_centroid[2]; elem_centroid[2] = 0;
   }
 }
 
 } // empty namespace
 
-TEST(hex_gather, hex_gather)
+TEST(hex_gather, hex_gather_copy)
 {
   //vector of mesh-dimensions holds the number of elements in each dimension.
   //Hard-wired to 3. This test can run with spatial-dimension less than 3,
@@ -128,10 +173,14 @@ TEST(hex_gather, hex_gather)
 
   start_time = stk::cpu_time();
 
+  std::vector<int> connectivity;
+  std::vector<double> coords;
+
   const int num_iters = 100;
   for(int t=0; t<num_iters; ++t) {
 
-    do_stk_gather_test(fixture.getBulkData(), avg_centroid);
+    copy_out_flat_connectivity_and_coords(fixture.getBulkData(), connectivity, coords);
+    compute_centroid(num_elems, 8, spatial_dim, connectivity, coords, avg_centroid);
 
     //Next, divide by num_elems to turn the sum into an average,
     //then insist that the average matches our expected value.

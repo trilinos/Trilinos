@@ -118,7 +118,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
 
-  stk::io::CoordinateFieldType *range_coord_field = &range_mesh_data.get_coordinate_field();
+  CartesianField *range_coord_field = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
   std::vector<PointBoundingBox3D> range_vector;
 
   {
@@ -133,7 +133,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
                                           use_universal_set);
   }
 
-  stk::io::CoordinateFieldType *domain_coord_field = &domain_mesh_data.get_coordinate_field();
+  CartesianField *domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
 
   {

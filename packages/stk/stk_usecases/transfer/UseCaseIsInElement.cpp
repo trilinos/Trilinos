@@ -20,8 +20,8 @@
 namespace stk {
 namespace usecase {
 
-size_t is_in_element(VectorField *domain_coordinates,
-                     VectorField *range_coordinates,
+size_t is_in_element(const VectorField *domain_coordinates,
+                     const VectorField *range_coordinates,
                      const std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> > &entity_map,
                      std::vector<std::size_t> &not_in_element)
 {

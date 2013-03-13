@@ -237,7 +237,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
-  CartesianField &range_coordinates_field = range_mesh_data.get_coordinate_field();
+  CartesianField &range_coordinates_field = static_cast<CartesianField&>(range_mesh_data.get_coordinate_field());
   ScalarField &range_coord_sum_field = declare_scalar_field_on_all_nodes( range_meta_data, "coord_sum" );
 
   range_meta_data.commit();
@@ -250,7 +250,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   domain_mesh_data.open_mesh_database(filename, domain_mesh_type);
   domain_mesh_data.create_input_mesh();
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
-  CartesianField &domain_coordinates_field = domain_mesh_data.get_coordinate_field();
+  CartesianField &domain_coordinates_field = static_cast<CartesianField&>(domain_mesh_data.get_coordinate_field());
 
   domain_meta_data.commit();
 

@@ -183,8 +183,8 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
-  stk::io::CoordinateFieldType& coord_field =
-      meta.declare_field<stk::io::CoordinateFieldType>(stk::io::CoordinateFieldName);
+  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field =
+      meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::io::CoordinateFieldName);
 
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
@@ -220,7 +220,7 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
     nodes.push_back(node);
   }
 
-  stk::io::CoordinateFieldType *coord_field = &mesh.get_coordinate_field();
+  stk::mesh::FieldBase *coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
 
   // Add all attributes as fields.
@@ -476,6 +476,13 @@ namespace stk {
         stk::io::delete_selector_property(*m_output_region);
     }
 
+    stk::mesh::FieldBase & MeshData::get_coordinate_field()
+    {
+      stk::mesh::FieldBase * coord_field = bulk_data().coordinate_field();
+      ThrowRequire( coord_field != NULL);
+      return * coord_field;
+    }
+
     void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
     {
       m_output_region = ioss_output_region;
@@ -495,6 +502,25 @@ namespace stk {
       m_meta_data = arg_meta_data;
     }
 
+    stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
+    {
+      stk::mesh::FieldBase* coord_field = meta.get_field("coordinates");
+      if (coord_field == NULL) {
+        coord_field = meta.get_field("model_coordinates");
+      }
+      if (coord_field == NULL) {
+        coord_field = meta.get_field("mesh_model_coordinates");
+      }
+      if (coord_field == NULL) {
+        coord_field = meta.get_field("mesh_model_coordinates_0");
+      }
+      if (coord_field == NULL) {
+        coord_field = meta.get_field("model_coordinates_0");
+      }
+
+      return coord_field;
+    }
+
     void MeshData::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_bulk_data),
@@ -503,6 +529,10 @@ namespace stk {
 
       if (Teuchos::is_null(m_meta_data)) {
         set_meta_data(const_cast<stk::mesh::MetaData&>(bulk_data().mesh_meta_data()));
+      }
+
+      if (m_bulk_data->coordinate_field() == NULL) {
+        m_bulk_data->set_coordinate_field(try_to_find_coord_field(*m_meta_data));
       }
 
       m_communicator_ = m_bulk_data->parallel();
@@ -683,6 +713,9 @@ namespace stk {
         set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(meta_data(),
                                                             region->get_database()->util().communicator())));
       }
+
+      stk::mesh::FieldBase* coord_field = meta_data().get_field(stk::io::CoordinateFieldName);
+      bulk_data().set_coordinate_field(coord_field);
 
       bulk_data().modification_begin();
 

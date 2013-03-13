@@ -83,6 +83,30 @@ void ensure_part_superset_consistency( const Entity entity )
                    "Entity " << print_entity_key(entity) << " has bad part list:\n" << errs.str() );
 }
 
+stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
+{
+  //attempt to initialize the coordinate-field pointer, trying a couple
+  //of commonly-used names. It is expected that the client code will initialize
+  //the coordinates field using BulkData::set_coordinate_field, but this is an
+  //attempt to be helpful for existing client codes which aren't yet calling that.
+
+  stk::mesh::FieldBase* coord_field = meta.get_field("mesh_model_coordinates");
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("mesh_model_coordinates_0");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("model_coordinates");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("model_coordinates_0");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("coordinates");
+  }
+
+  return coord_field;
+}
+
 }
 
 //----------------------------------------------------------------------
@@ -100,7 +124,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         ),
     m_entity_comm_list(),
     m_ghosting(),
-
+    m_coord_field(NULL),
     m_mesh_meta_data( mesh_meta_data ),
     m_parallel_machine( parallel ),
     m_parallel_size( parallel_machine_size( parallel ) ),
@@ -111,6 +135,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_optimize_buckets(false),
     m_mesh_finalized(false)
 {
+  m_coord_field = try_to_find_coord_field(mesh_meta_data);
+
   create_ghosting( "shared" );
   create_ghosting( "shared_aura" );
 

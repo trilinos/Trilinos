@@ -178,12 +178,12 @@ performance_driver(stk::ParallelMachine  comm,
   stk::search::FactoryOrder order;
   order.m_communicator = comm;
 
-  stk::io::CoordinateFieldType *range_coord_field  = &range_mesh_data.get_coordinate_field();
-  stk::io::CoordinateFieldType *domain_coord_field = NULL;
+  CartesianField *range_coord_field  = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
+  CartesianField *domain_coord_field = NULL;
   if (same_mesh)
     domain_coord_field = range_coord_field;
   else
-    domain_coord_field = &domain_mesh_data.get_coordinate_field();
+    domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
 
   IdentProcRelation relation;
   size_t domain_vector_size = 0;
