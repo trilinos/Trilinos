@@ -43,31 +43,66 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_FILTEREDAFACTORY_DECL_HPP
+#define MUELU_FILTEREDAFACTORY_DECL_HPP
 
+#include <string>
 
-#include "MueLu_ExplicitInstantiation.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_FilteredAFactory_fwd.hpp"
 
-#include "MueLu_CoordinatesTransferFactory_def.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_GraphBase.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::CoordinatesTransferFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+namespace MueLu {
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::CoordinatesTransferFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+  /*!
+    @class FilteredAFactory class.
+    @brief Factory for building filtered matrices using filtered graphs.
+  */
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::CoordinatesTransferFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  class FilteredAFactory : public SingleLevelFactoryBase {
+#undef MUELU_FILTEREDAFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
 
+  public:
 
+    //! @name Constructors/Destructors.
+    //@{
+
+    FilteredAFactory() { }
+
+    //! Destructor.
+    virtual ~FilteredAFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
+    //@}
+
+    //! Input
+    //@{
+
+    void DeclareInput(Level& currentLevel) const;
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    /*!
+      @brief Build method.
+
+      Builds filtered matrix and returns it in <tt>currentLevel</tt>.
+      */
+    void Build(Level& currentLevel) const;
+
+    //@}
+
+  }; //class FilteredAFactory
+
+} //namespace MueLu
+
+#define MUELU_FILTEREDAFACTORY_SHORT
+#endif // MUELU_FILTEREDAFACTORY_DECL_HPP

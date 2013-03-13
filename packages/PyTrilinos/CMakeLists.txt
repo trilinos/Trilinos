@@ -183,6 +183,9 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
   CACHE PATH "The path prefix for where PyTrilinos will be installed, e.g. /usr/local")
 
+# Add the util directory
+ADD_SUBDIRECTORY(util)
+
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
 # compiles the PyTrilinos extension modules

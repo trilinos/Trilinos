@@ -212,8 +212,15 @@ namespace MueLu {
     //! Increment the number of times this timer has been called.
     void incrementNumCalls() { timer_->incrementNumCalls(); }
 
+    //! Name of this mutually exclusive timer.
     std::string name_;
 
+    /*! @brief Print std::map of (child,parent) pairs for post-run analysis.
+    
+        This method print a std::map.  Each key is a child, and the value is its parent.  This should be used when MueLu has been configured
+        with -D MueLu_ENABLE_PROFILING:STRING=ON.  Then the (child,parent0) pairs can be used by the MueLu script ``mueprof.sh" to print a
+        nice hierarchical tree that shows both runtime flow and time for each section.
+    */
     static void PrintParentChildPairs() {
       //key is child, value is parent
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);

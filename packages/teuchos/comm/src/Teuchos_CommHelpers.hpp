@@ -2319,7 +2319,7 @@ Teuchos::ireceive (const Teuchos::ArrayRCP<Packet> &recvBuffer,
   ValueTypeSerializationBuffer<int, Packet>
     charRecvBuffer (recvBuffer.size (), recvBuffer.getRawPtr ());
   RCP<CommRequest<int> > commRequest = 
-    comm.ireceive (charRecvBuffer.getCharBufferView (), sourceRank);
+    comm.ireceive (charRecvBuffer.getCharBufferView (), sourceRank, tag);
   set_extra_data (recvBuffer, "buffer", inOutArg (commRequest));
   return commRequest;
 }

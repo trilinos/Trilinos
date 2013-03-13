@@ -32,7 +32,7 @@ ENABLE_TESTING()
 INCLUDE(PyTrilinosMakeTest)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
-  COMMAND ${PyTrilinos_SOURCE_DIR}/util/copyWithCMakeSubstitutions.py
+  COMMAND ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
           ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)

@@ -559,21 +559,21 @@ namespace Tpetra {
       typename ArrayRCP<const size_t>::iterator numalloc = numAllocPerRow_.begin();
       size_t howmany = numAllocForAllRows_;
       if (lg == LocalIndices) {
-        lclInds2D_ = arcp< ArrayRCP<LocalOrdinal> >(numRows);
+        lclInds2D_ = arcp< Array<LocalOrdinal> >(numRows);
         nodeNumAllocated_ = 0;
         for (size_t i=0; i < numRows; ++i) {
           if (numAllocPerRow_ != null) howmany = *numalloc++;
           nodeNumAllocated_ += howmany;
-          if (howmany > 0) lclInds2D_[i] = arcp<LocalOrdinal>(howmany);
+          if (howmany > 0) lclInds2D_[i] = Array<LocalOrdinal>(howmany);
         }
       }
       else { // allocate global indices
-        gblInds2D_ = arcp< ArrayRCP<GlobalOrdinal> >(numRows);
+        gblInds2D_ = arcp< Array<GlobalOrdinal> >(numRows);
         nodeNumAllocated_ = 0;
         for (size_t i=0; i < numRows; ++i) {
           if (numAllocPerRow_ != null) howmany = *numalloc++;
           nodeNumAllocated_ += howmany;
-          if (howmany > 0) gblInds2D_[i] = arcp<GlobalOrdinal>(howmany);
+          if (howmany > 0) gblInds2D_[i] = Array<GlobalOrdinal>(howmany);
         }
       }
     }
@@ -630,7 +630,7 @@ namespace Tpetra {
     if (lclInds2D_ != null) {
       const size_t numRows = lclInds2D_.size();
       for (size_t r=0; r != numRows; ++r) {
-        if (lclInds2D_[r] != null) {
+        if (!lclInds2D_[r].empty()) {
           values2D[r] = arcp<T>(lclInds2D_[r].size());
         }
       }
@@ -638,7 +638,7 @@ namespace Tpetra {
     else if (gblInds2D_ != null) {
       const size_t numRows = gblInds2D_.size();
       for (size_t r=0; r != numRows; ++r) {
-        if (gblInds2D_[r] != null) {
+        if (!gblInds2D_[r].empty()) {
           values2D[r] = arcp<T>(gblInds2D_[r].size());
         }
       }
@@ -661,12 +661,12 @@ namespace Tpetra {
 #endif
     // Instead of allocating the requested amount, double the current size 
     // to allow for amortized constant time insertion at the end of the array
-    const size_t doubleSize = 2*rowinfo.allocSize;
-    if (doubleSize > newAllocSize)
-      newAllocSize = doubleSize;
+    size_t reserveSize = 2*rowinfo.allocSize;
+    if (reserveSize < newAllocSize)
+      reserveSize = newAllocSize;
 
     // If this reallocates, it does copy over into new storage.
-    // It's also nice because it doesn't change the reference count.
+    lclInds2D_[rowinfo.localRow].reserve (reserveSize);
     lclInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
@@ -689,12 +689,12 @@ namespace Tpetra {
 #endif
     // Instead of allocating the requested amount, double the current size 
     // to allow for amortized constant time insertion at the end of the array
-    const size_t doubleSize = 2*rowinfo.allocSize;
-    if (doubleSize > newAllocSize)
-      newAllocSize = doubleSize;
+    size_t reserveSize = 2*rowinfo.allocSize;
+    if (reserveSize < newAllocSize)
+      reserveSize = newAllocSize;
 
     // If this reallocates, it does copy over into new storage.
-    // It's also nice because it doesn't change the reference count.
+    gblInds2D_[rowinfo.localRow].reserve (reserveSize);
     gblInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
@@ -745,7 +745,7 @@ namespace Tpetra {
       if (lclInds1D_ != null) {
         view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (lclInds2D_[rowinfo.localRow] != null) {
+      else if (!lclInds2D_[rowinfo.localRow].empty()) {
         view = lclInds2D_[rowinfo.localRow] ();
       }
     }
@@ -765,7 +765,7 @@ namespace Tpetra {
       if (lclInds1D_ != null) {
         view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (lclInds2D_[rowinfo.localRow] != null) {
+      else if (!lclInds2D_[rowinfo.localRow].empty()) {
         view = lclInds2D_[rowinfo.localRow] ();
       }
     }
@@ -785,7 +785,7 @@ namespace Tpetra {
       if (gblInds1D_ != null) {
         view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (gblInds2D_[rowinfo.localRow] != null) {
+      else if (!gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
       }
     }
@@ -805,7 +805,7 @@ namespace Tpetra {
       if (gblInds1D_ != null) {
         view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (gblInds2D_[rowinfo.localRow] != null) {
+      else if (!gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
       }
     }
@@ -2442,15 +2442,15 @@ namespace Tpetra {
         gblInds1D_ = null;
       }
       else {  // getProfileType() == DynamicProfile
-        lclInds2D_ = arcp< ArrayRCP<LocalOrdinal> >(nlrs);
+        lclInds2D_ = arcp< Array<LocalOrdinal> >(nlrs);
         // if we have views, then make views
         for (size_t r=0; r < getNodeNumRows(); ++r) {
-          if (gblInds2D_[r] != null) {
-            ArrayRCP<GlobalOrdinal> ginds = gblInds2D_[r];
-            const size_t rna = gblInds2D_[r].size();
-            ArrayRCP< LocalOrdinal> linds = arcp_reinterpret_cast<LocalOrdinal>(ginds).persistingView(0,rna);
-            // do the conversion in situ. this must be done from front to back.
+          if (!gblInds2D_[r].empty()) {
+            const GlobalOrdinal *ginds = gblInds2D_[r].getRawPtr();
+	    const size_t rna = gblInds2D_[r].size();
             const size_t numentry = numRowEntries_[r];
+	    lclInds2D_[r].resize(rna);
+	    LocalOrdinal *linds = lclInds2D_[r].getRawPtr();
             for (size_t j=0; j < numentry; ++j) {
               GlobalOrdinal gid = ginds[j];
               LocalOrdinal  lid = colMap_->getLocalElement(gid);
@@ -2460,9 +2460,6 @@ namespace Tpetra {
                   ": Internal error in makeIndicesLocal(). Please contact Tpetra team.");
 #endif
             }
-            // reinterpret the the compute buffer as LocalOrdinal; keep the original size
-            lclInds2D_[r] = linds;
-            gblInds2D_[r] = null;
           }
         }
         gblInds2D_ = null;
