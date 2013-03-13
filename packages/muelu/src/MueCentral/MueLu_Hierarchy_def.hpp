@@ -315,9 +315,17 @@ namespace MueLu {
                                                                                   const bool &InitialGuessIsZero, const CycleType &Cycle, const LO &startLevel)
   {
 
+    //These timers work as follows.  "h" records total time spent in iterate.  "hl" records time on a per level basis.  The label is crafted to mimic the per-level
+    //messages used in Monitors.  Note that a given level is timed with a TimeMonitor instead of a Monitor or SubMonitor.  This is mainly because I want to time each
+    //level separately, and Monitors/SubMonitors print "(total) xx yy zz" , "(sub,total) xx yy zz", respectively, which is subject to misinterpretation.
+    //The per-level TimeMonitors are stopped/started manually before/after a recursive call to Iterate.  A side artifact to this approach is that the counts for
+    //intermediate level timers are twice the counts for the finest and coarsest levels.
     RCP<Monitor> h;
+    RCP<TimeMonitor> hl;
+    std::string thisLevelTimerLabel = this->ShortClassName() + ": " + "Iterate" + " (level=" + Teuchos::Utils::toString(startLevel) + ")";
     if (startLevel == 0)                                                               // -> Timing and msg only if startLevel == 0
       h = rcp(new Monitor(*this, "Iterate", (nIts == 1) ? None : Runtime0, Timings0)); // -> Do not issue msg if part of an iterative method (but always start timer)
+    hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel), Timings0);                           // -> "raw" MueLu timer, never prints messages
 
     //Teuchos::Array<Magnitude> norms(1);
     bool zeroGuess=InitialGuessIsZero;
@@ -400,11 +408,13 @@ namespace MueLu {
         }
         coarseX->putScalar(0.);
 
+        hl = Teuchos::null; //stop timing this level
         Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
         // ^^ zero initial guess
         if (Cycle>1)
           Iterate(*coarseRhs, 1, *coarseX, false, Cycle, startLevel+1);
         // ^^ nonzero initial guess
+        hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel) );  //restart timing this level
 
         // update X+=P * coarseX
         //P->apply(*coarseX, X, Teuchos::NO_TRANS, 1.0, 1.0);  //Xpetra throws an error if linAlgebra==Epetra
