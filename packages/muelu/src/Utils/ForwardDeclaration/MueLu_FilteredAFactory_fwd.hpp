@@ -1,11 +1,12 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,47 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
+//
 // @HEADER
-
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-
-
-namespace Teuchos {
+#ifndef MUELU_FILTEREDAFACTORY_FWD_HPP
+#define MUELU_FILTEREDAFACTORY_FWD_HPP
 
 
-const EVerbosityLevel Describable::verbLevel_default = VERB_DEFAULT;
 
 
-std::string Describable::description() const
-{
-  std::string objectLabel = this->getObjectLabel();
-  std::ostringstream oss;
-  if(objectLabel.length()) {
-    oss << "\""<<objectLabel<<"\": ";
-  }
-  oss << typeName(*this);
-  return oss.str();
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class FilteredAFactory;
 }
 
-void
-Describable::describe (FancyOStream& out_arg,
-                       const EVerbosityLevel verbLevel) const
-{
-  RCP<FancyOStream> out = rcp(&out_arg,false);
-  OSTab tab(out);
-  *out << this->description() << std::endl;
-}
+#ifndef MUELU_FILTEREDAFACTORY_SHORT
+#define MUELU_FILTEREDAFACTORY_SHORT
+#endif
 
-void
-Describable::describe (std::ostream& out,
-                       const EVerbosityLevel verbLevel) const
-{
-  RCP<FancyOStream> fancyOut = getFancyOStream (rcpFromRef (out));
-  this->describe (*fancyOut, verbLevel);
-}
 
-} // namespace Teuchos
+
+#endif // MUELU_FILTEREDAFACTORY_FWD_HPP

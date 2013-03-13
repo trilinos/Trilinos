@@ -876,7 +876,10 @@ describe (Teuchos::FancyOStream &out,
   //  medium:
   //    high:
   // extreme:
+
   if (vl != VERB_NONE && myRank == 0) {
+    // Describable interface asks each implementation to start with a tab.
+    OSTab tab1 (out);
     // Output is valid YAML; hence the quotes, to protect the colons.
     out << "\"Ifpack2::Relaxation\":" << endl;
     OSTab tab2 (out);

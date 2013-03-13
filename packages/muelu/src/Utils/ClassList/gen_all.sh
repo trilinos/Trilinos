@@ -17,7 +17,6 @@ cd ../..
 
 # Touch CMakeLists.txt for a new class
 new=`git status -s ./Utils/ForwardDeclaration/ ./Utils/ExplicitInstantiation/ | grep "^??" | wc -l`
-echo "$new"
 if [ "$new" != "0" ]; then
   echo "# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration" >> CMakeLists.txt
 fi

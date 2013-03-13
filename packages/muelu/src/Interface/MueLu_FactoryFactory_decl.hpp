@@ -85,6 +85,7 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_FilteredAFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -182,6 +183,9 @@ namespace MueLu {
       }
       if (factoryName == "CoordinatesTransferFactory") {
         return Build2<CoordinatesTransferFactory>(paramList, factoryMapIn);
+      }
+      if (factoryName == "FilteredAFactory") {
+        return Build2<FilteredAFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

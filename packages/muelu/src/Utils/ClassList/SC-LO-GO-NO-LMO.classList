@@ -8,15 +8,21 @@ BlockedGaussSeidelSmoother
 BlockedPFactory
 BlockedRAPFactory
 BraessSarazinSmoother
+CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
 CoalesceDropFactory
 CoarseMapFactory
+Constraint - #ifdef HAVE_MUELU_EXPERIMENTAL
+ConstraintFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+CoordinatesTransferFactory
 CoupledRBMFactory
 DemoFactory
 DirectSolver
 DistanceLaplacianFactory
+EminPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 FactoryFactory
 FactoryManager
 FakeSmootherPrototype
+FilteredAFactory
 GaussSeidelSmoother
 GenericRFactory
 Hierarchy
@@ -28,9 +34,10 @@ MapTransferFactory
 MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
-CoordinatesTransferFactory
 NullspaceFactory
+NullspacePresmoothFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 ParameterListInterpreter
+PatternFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 PermutationFactory
 PermutingSmoother
 PgPFactory
@@ -49,16 +56,10 @@ SmootherBase
 SmootherFactory
 SmootherPrototype
 SolverBase
+SteepestDescentSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
 SubBlockAFactory
 TentativePFactory
 ThresholdAFilterFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother
-CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
-Constraint - #ifdef HAVE_MUELU_EXPERIMENTAL
-ConstraintFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
-EminPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
-NullspacePresmoothFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
-PatternFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
-SteepestDescentSolver - #ifdef HAVE_MUELU_EXPERIMENTAL

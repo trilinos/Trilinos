@@ -451,7 +451,7 @@ namespace MueLu {
     //! Add two .
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C);
+                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -473,7 +473,7 @@ namespace MueLu {
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C);
+                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
   }; //specialization to Scalar=double
 
 

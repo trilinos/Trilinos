@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LocalOrdinal maxLevels = 3;
+  LocalOrdinal maxLevels = 2;
 
   GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
 
@@ -723,8 +723,8 @@ int main(int argc, char *argv[]) {
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
 
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  //RCP<Level> coarseLevel2 = H->GetLevel(2);
+  //coarseLevel2->print(*out);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
