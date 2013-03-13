@@ -659,7 +659,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
-    // Instead of allocating the requested amount, double the current size 
+    // Instead of allocating the requested amount, double the current size
     // to allow for amortized constant time insertion at the end of the array
     size_t reserveSize = 2*rowinfo.allocSize;
     if (reserveSize < newAllocSize)
@@ -687,7 +687,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
     TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
 #endif
-    // Instead of allocating the requested amount, double the current size 
+    // Instead of allocating the requested amount, double the current size
     // to allow for amortized constant time insertion at the end of the array
     size_t reserveSize = 2*rowinfo.allocSize;
     if (reserveSize < newAllocSize)
@@ -2347,6 +2347,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::computeGlobalConstants()
   {
+    using Teuchos::as;
+    using Teuchos::reduceAll;
+
     // compute the local constants first
     const size_t nlrs = getNodeNumRows();
     // reset all local properties
@@ -2372,12 +2375,16 @@ namespace Tpetra {
             if (rlcid == (*cur)) ++nodeNumDiags_;
           }
           // because of sorting, smallest column index is (*beg); it indicates upper triangularity
-          if (Teuchos::as<size_t>(beg[0]) < r) upperTriangular_ = false;
+          if (as<size_t> (beg[0]) < r) {
+            upperTriangular_ = false;
+          }
           // because of sorting, largest column index is (*newend); it indicates lower triangularity
-          if (r < Teuchos::as<size_t>(end[-1])) lowerTriangular_ = false;
+          if (r < as<size_t> (end[-1])) {
+            lowerTriangular_ = false;
+          }
         }
         // compute num entries for this row, accumulate into nodeNumEntries_, update nodeMaxNumRowEntries_
-        nodeMaxNumRowEntries_ = std::max( nodeMaxNumRowEntries_, rowinfo.numEntries );
+        nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowinfo.numEntries);
       }
     }
 
@@ -2386,11 +2393,13 @@ namespace Tpetra {
       global_size_t lcl[2], gbl[2];
       lcl[0] = nodeNumEntries_;
       lcl[1] = nodeNumDiags_;
-      Teuchos::reduceAll<int,global_size_t>(*getComm(),Teuchos::REDUCE_SUM,2,lcl,gbl);
+      reduceAll<int,global_size_t> (*getComm (), Teuchos::REDUCE_SUM,
+                                    2, lcl, gbl);
       globalNumEntries_ = gbl[0];
       globalNumDiags_   = gbl[1];
-      Teuchos::reduceAll<int,global_size_t>(*getComm(),Teuchos::REDUCE_MAX,nodeMaxNumRowEntries_,
-          outArg(globalMaxNumRowEntries_));
+      reduceAll<int,global_size_t> (*getComm(), Teuchos::REDUCE_MAX,
+                                    nodeMaxNumRowEntries_,
+                                    outArg (globalMaxNumRowEntries_));
       haveGlobalConstants_ = true;
     }
   }
@@ -2401,6 +2410,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeIndicesLocal()
   {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
     // All nodes must be in the same index state.
     // Update index state by checking isLocallyIndexed/Global on all nodes
     computeIndexState();
@@ -2409,56 +2421,67 @@ namespace Tpetra {
       isLocallyIndexed() && isGloballyIndexed(), std::logic_error,
       ": inconsistent index state. Indices must be either local on all "
       "processes, or global on all processes.");
-    // If user has not prescribed column map, create one from indices
-    makeColMap();
+    // If user has not prescribed a column Map, create one from indices.
+    // If we already have a column Map, this call won't do anything.
+    makeColMap ();
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
-    //
     if (isGloballyIndexed() && nlrs > 0) {
       // allocate data for local indices
       if (getProfileType() == StaticProfile) {
-        // reinterpret the the compute buffer as LocalOrdinal if they are the same size
-        // otherwise, just reallocate
-        if (nodeNumAllocated_ && sizeof(LocalOrdinal) == sizeof(GlobalOrdinal) ) {
-          lclInds1D_ = arcp_reinterpret_cast<LocalOrdinal>(gblInds1D_).persistingView(0,nodeNumAllocated_);
+        // If GO and LO are the same size, we can reuse the existing
+        // array of 1-D index storage to convert column indices from
+        // GO to LO.  Otherwise, we'll just allocate a new buffer.
+        if (nodeNumAllocated_ && sizeof (LO) == sizeof (GO)) {
+          lclInds1D_ = arcp_reinterpret_cast<LO> (gblInds1D_).persistingView (0, nodeNumAllocated_);
         }
         else {
-          lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
+          lclInds1D_ = LocalMatOps::template allocStorage<LO> (getRowMap ()->getNode (), rowPtrs_ ());
         }
-        for (size_t r=0; r < getNodeNumRows(); ++r) {
-          const size_t offset   = rowPtrs_[r],
-                       numentry = numRowEntries_[r];
-          for (size_t j=0; j<numentry; ++j) {
-            GlobalOrdinal gid = gblInds1D_[offset + j];
-            LocalOrdinal  lid = colMap_->getLocalElement(gid);
+        for (size_t r = 0; r < getNodeNumRows (); ++r) {
+          const size_t offset   = rowPtrs_[r];
+          const size_t numentry = numRowEntries_[r];
+          for (size_t j = 0; j < numentry; ++j) {
+            const GO gid = gblInds1D_[offset + j];
+            const LO lid = colMap_->getLocalElement (gid);
             lclInds1D_[offset + j] = lid;
 #ifdef HAVE_TPETRA_DEBUG
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(lclInds1D_[offset + j] == OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
-                ": Internal error in fillComplete(). Please contact Tpetra team.");
-#endif
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+              lclInds1D_[offset + j] == Teuchos::OrdinalTraits<LO>::invalid(),
+              std::logic_error,
+              ": In local row r=" << r << ", global column " << gid << " is "
+              "not in the column Map.  This should never happen.  Please "
+              "report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
           }
         }
-        // done with this pointer (allocation will persist in lclInds1D_)
+        // We've converted column indices from global to local, so we
+        // can deallocate the global column indices (which we know are
+        // in 1-D storage, because the graph has static profile).
         gblInds1D_ = null;
       }
-      else {  // getProfileType() == DynamicProfile
-        lclInds2D_ = arcp< Array<LocalOrdinal> >(nlrs);
-        // if we have views, then make views
-        for (size_t r=0; r < getNodeNumRows(); ++r) {
-          if (!gblInds2D_[r].empty()) {
-            const GlobalOrdinal *ginds = gblInds2D_[r].getRawPtr();
-	    const size_t rna = gblInds2D_[r].size();
+      else {  // the graph has dynamic profile (2-D index storage)
+        lclInds2D_ = arcp<Array<LO> > (nlrs);
+        for (size_t r = 0; r < getNodeNumRows (); ++r) {
+          if (! gblInds2D_[r].empty ()) {
+            const GO* const ginds = gblInds2D_[r].getRawPtr ();
+            const size_t rna = gblInds2D_[r].size ();
             const size_t numentry = numRowEntries_[r];
-	    lclInds2D_[r].resize(rna);
-	    LocalOrdinal *linds = lclInds2D_[r].getRawPtr();
-            for (size_t j=0; j < numentry; ++j) {
-              GlobalOrdinal gid = ginds[j];
-              LocalOrdinal  lid = colMap_->getLocalElement(gid);
+            lclInds2D_[r].resize (rna);
+            LO* const linds = lclInds2D_[r].getRawPtr ();
+            for (size_t j = 0; j < numentry; ++j) {
+              GO gid = ginds[j];
+              LO lid = colMap_->getLocalElement (gid);
               linds[j] = lid;
 #ifdef HAVE_TPETRA_DEBUG
-              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(linds[j] == OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
-                  ": Internal error in makeIndicesLocal(). Please contact Tpetra team.");
-#endif
+              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+                linds[j] == Teuchos::OrdinalTraits<LO>::invalid(),
+                std::logic_error,
+                ": Global column ginds[j=" << j << "]=" << ginds[j]
+                << " of local row r=" << r << " is not in the column Map.  "
+                "This should never happen.  Please report this bug to the "
+                "Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
             }
           }
         }
@@ -2479,50 +2502,76 @@ namespace Tpetra {
     // FIXME (mfh 03 Mar 2013) It's not clear to me that we need to do
     // an all-reduce.
     //
-    // This method is _only_ called in makeIndicesLocal and
-    // makeColMap.  makeIndicesLocal calls makeColMap, which is
+    // This method is _only_ called in makeIndicesLocal() and
+    // makeColMap().  makeIndicesLocal() calls makeColMap(), which is
     // collective, so both methods must be called collectively.
     //
     // There are only two methods that modify indicesAreLocal_:
-    // allocateIndices, and makeIndicesLocal.  makeIndicesLocal always
-    // has the eponymous effect.  It must be called collectively,
-    // since it calls makeColMap, which must be called collectively.
+    // allocateIndices(), and makeIndicesLocal().  makeIndicesLocal()
+    // always has the eponymous effect.  It must be called
+    // collectively, since it calls makeColMap(), which must be called
+    // collectively.
     //
-    // allocateIndices, on the other hand, could perhaps be called
+    // allocateIndices(), on the other hand, could perhaps be called
     // with lg=LocalIndices on one process, but with lg=GlobalIndices
     // on another.  However, I will argue that CrsGraph cannot reach
     // this state if used correctly.
     //
-    // allocateIndices specifically forbids an lg argument which does
-    // not correspond to the state of the graph.  The graph starts out
-    // locally indexed if its constructor was given a column Map;
-    // otherwise, it starts out neither locally nor globally indexed,
-    // and only gains one of these identities on the calling process
-    // ("locally") once the user inserts an entry.  (This is the
-    // classic Epetra way to tell if a graph is empty.)  It is an
-    // error to call different constructors for the same CrsGraph
-    // instance on different processes.  Thus, the initial
+    // allocateIndices() specifically forbids an lg argument which
+    // does not correspond to the state of the graph.  The graph
+    // starts out locally indexed if its constructor was given a
+    // column Map; otherwise, it starts out neither locally nor
+    // globally indexed, and only gains one of these identities on the
+    // calling process ("locally") once the user inserts an entry.
+    // (This is the classic Epetra way to tell if a graph is empty.)
+    // It is an error to call different constructors for the same
+    // CrsGraph instance on different processes.  Thus, the initial
     // local-or-global state before any insertions on any processes
     // must be the same.
     //
-    // insertGlobalIndices and insertLocalIndices only call
-    // allocateIndices if no insertion method has yet been called on
-    // the graph.  These methods only allow indices to have the state
-    // matching their name.  insertLocalIndices explicitly requires
-    // that the graph has a column Map.  insertGlobalIndices requires
-    // that the graph not be locally indexed, which currently means
-    // that the graph was not constructed with a column Map and that
-    // fillComplete (which is collective) has not yet been called.
+    // Before inserting any entries, indicesAreLocal_ and
+    // indicesAreGlobal_ are both locally false.  They may be modified
+    // locally by calls to insertGlobalIndices() or
+    // insertLocalIndices().  These two methods only call
+    // allocateIndices() if no insertion method has yet been called on
+    // the graph.  Furthermore, these methods only allow indices to
+    // have the state matching their name.  insertLocalIndices()
+    // explicitly requires that the graph has a column Map.
+    // insertGlobalIndices() requires that the graph not be locally
+    // indexed, which currently means that the graph was not
+    // constructed with a column Map and that fillComplete() (which is
+    // collective) has not yet been called.
     //
-    // fillComplete makes the column Map first (if it doesn't already
-    // exist) before making indices local, so there is a point in
-    // fillComplete at which the graph has a column Map and is
-    // globally indexed.  However, makeIndicesLocal fixes this state
+    // Thus, before calling fillComplete() for the first time, it is
+    // possible that on some (but not necessarily all) processes,
+    // indicesAreLocal_ == false && indicesAreGlobal_ == false.
+    // However, on all processes p on which any one of these Booleans
+    // are true, the two Booleans must have the same values, for the
+    // reasons discussed in the previous paragraph.
+    //
+    // fillComplete() makes the column Map first (if it doesn't
+    // already exist) before making indices local, so there is a point
+    // in fillComplete() at which the graph has a column Map and is
+    // globally indexed.  However, makeIndicesLocal() fixes this state
     // right away.  This intermediate state would never be exposed to
-    // users.  fillComplete must be called collectively.
+    // users.  fillComplete() must be called collectively.
     //
-    // Finally, resumeFill does _not_ currently change the global
-    // vs. local indices state of the graph.
+    // resumeFill() does _not_ currently change the global vs. local
+    // indices state of the graph.  If we were to give users the
+    // option to do this in the future (e.g., they want to insert
+    // column indices not in the column Map, so that we would have to
+    // convert all the column indices back to global first and get rid
+    // of the existing column Map), then that would be a collective
+    // decision in any case.
+    //
+    // The only part of makeIndicesLocal() that is not a local
+    // operation is the call to makeColMap().  Everything else is
+    // local.  Thus, it suffices in that method to check the local
+    // state.  Furthermore, makeIndicesLocal() always makes indices
+    // local, so there is no need to check at the end of the method.
+    // One would only call makeColMap() if the graph does not have a
+    // column Map.  In that case, the graph must be globally indexed
+    // anyway.
     char myIndices[2] = {0,0};
     if (indicesAreLocal_)  myIndices[0] = 1;
     if (indicesAreGlobal_) myIndices[1] = 1;
@@ -2579,8 +2628,10 @@ namespace Tpetra {
     // this process in the column Map.
     Array<GO> myColumns;
 
-    // If both isGloballyIndexed() and isLocallyIndexed() are false,
-    // then the graph contains no entries, so myColumns will be empty.
+    // If we reach this point, we don't have a column Map yet, so the
+    // graph can't be locally indexed.  Thus, isGloballyIndexed() ==
+    // false means that the graph is empty on this process, so
+    // myColumns will be left empty.
     if (isGloballyIndexed ()) {
       // Go through all the rows, finding the populated column indices.
       //
