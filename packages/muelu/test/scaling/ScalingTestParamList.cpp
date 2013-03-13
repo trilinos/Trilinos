@@ -186,20 +186,6 @@ int main(int argc, char *argv[]) {
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
   RCP<Matrix> A = Pr->BuildMatrix();
 
-  tm = Teuchos::null;
-
-  //
-  // Construct a multigrid preconditioner
-  //
-
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
-  // Multigrid Hierarchy
-  ParameterListInterpreter mueLuFactory(xmlFileName);
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-
-  H->SetDefaultVerbLevel(MueLu::Extreme);
-
-
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   if (matrixParameters.GetMatrixType() == "Elasticity2D" ||
       matrixParameters.GetMatrixType() == "Elasticity3D") {
@@ -209,46 +195,31 @@ int main(int argc, char *argv[]) {
     nullspace->putScalar( (SC) 1.0);
   }
 
+  comm->barrier();
+
+  tm = Teuchos::null;
+
+  //
+  // Construct a multigrid preconditioner
+  //
+
+  // Multigrid Hierarchy
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+  ParameterListInterpreter mueLuFactory(xmlFileName);
+
+  comm->barrier();
+
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+
+  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+  H->SetDefaultVerbLevel(MueLu::Extreme);
+
+
   H->GetLevel(0)->Set("A", A);
 
   H->GetLevel(0)->Set("Nullspace", nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);
-
-  /*
-  {
-    // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
-
-    // making a copy because I don't want to keep 'open' the Xpetra_MultiVector
-    if (coordinates->getNumVectors() >= 1) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("XCoordinates", coordCpy);
-      //std::cout << coordCpy << std::endl;
-    }
-
-    if (coordinates->getNumVectors() >= 2) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("YCoordinates", coordCpy);
-    }
-
-    if (coordinates->getNumVectors() >= 3) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("ZCoordinates", coordCpy);
-    }
-
-  }
-  */
 
   mueLuFactory.SetupHierarchy(*H);
 
