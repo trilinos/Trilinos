@@ -263,6 +263,7 @@ namespace panzer {
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Dirichlet Counter",dd_loc);
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
 
@@ -270,7 +271,7 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = loc;
+    workset.ghostedLinContainer = Teuchos::null;
     workset.linContainer = Teuchos::null;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2
@@ -514,13 +515,14 @@ namespace panzer {
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Dirichlet Counter",dd_loc);
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = loc;
+    workset.ghostedLinContainer = Teuchos::null;
     workset.linContainer = Teuchos::null;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2

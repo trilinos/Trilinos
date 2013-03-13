@@ -176,9 +176,6 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // Teuchos::RCP<BLOC> blockedContainer 
-   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
-
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
      x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
@@ -327,9 +324,6 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-
-   // Teuchos::RCP<BLOC> blockedContainer 
-   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
    double seed_value = 0.0;
    Teuchos::RCP<ProductVectorBase<double> > x;
