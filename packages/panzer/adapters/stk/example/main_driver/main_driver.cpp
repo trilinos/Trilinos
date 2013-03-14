@@ -200,13 +200,13 @@ int main(int argc, char *argv[])
       rLibrary = me_factory.getResponseLibrary();
       physicsBlocks = me_factory.getPhysicsBlocks();
       linObjFactory = me_factory.getLinearObjFactory();
-    }
-    
+    }  
+
     // setup outputs to mesh on the stkIOResponseLibrary
     ////////////////////////////////////////////////////////////////
 
     stkIOResponseLibrary->initialize(*rLibrary);
-
+    
     // 1. Register correct aggregator and reserve response - this was done in the appropriate observer object
 
     // 2. Build volume field managers
@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
                                         input_params->sublist("Closure Models"),
                                         user_data);
     }
-
+    
     // setup outputs to mesh on the fluxResponseLibrary
     ////////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > fluxResponseLibrary 
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
-
+    
     if(fluxCalculation) {
       fluxResponseLibrary->initialize(*rLibrary);
   
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     }
     
     ////////////////////////////////////////////////////////////////
-    
+
     // solve the system
     {
       
@@ -353,6 +353,11 @@ int main(int argc, char *argv[])
         }
       }
     }
+
+    // Clear out a circular dependency on rcp's
+    stkIOResponseLibrary->free();
+    fluxResponseLibrary->free();
+
   }
   catch (std::exception& e) {
     *out << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
