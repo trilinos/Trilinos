@@ -334,7 +334,7 @@ in the above example to do an export operation to y, adding the contributions th
   
 
   template<typename int_type>
-  void Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs=0, const int * UserRemotePIDs=0);
+  void Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs=-1, const int * UserRemotePIDs=0);
 
   template<typename int_type>
     void Construct_Expert( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs, const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs);

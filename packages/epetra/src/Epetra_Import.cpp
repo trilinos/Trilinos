@@ -349,7 +349,7 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
 
 #ifdef EPETRA_ENABLE_DEBUG
-    if(UserRemotePIDs){ 
+    if(NumRemotePIDs!=-1){
       int myeq = (NumRemotePIDs==NumRemoteIDs_);
       int globaleq=0;
       sourceMap.Comm().MinAll(&myeq,&globaleq,1);
@@ -364,7 +364,7 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     }
 #endif
 
-    if(UserRemotePIDs && NumRemotePIDs==NumRemoteIDs_){
+    if(NumRemotePIDs!=-1 && NumRemotePIDs==NumRemoteIDs_){
       // Since I need to sort these, I'll copy them
       for(i=0; i<NumRemoteIDs_; i++)  RemotePIDs[i] = UserRemotePIDs[i];
     }

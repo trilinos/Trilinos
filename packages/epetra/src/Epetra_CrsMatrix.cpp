@@ -5583,15 +5583,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // Sort the entries
   Epetra_Util::SortCrsEntries(N, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
-
-
   Epetra_Import * MyImport=0;
 #ifdef SEND_OWNING_PIDS
   // Pre-build the importer using the existing PIDs
   int NumRemotePIDs = RemotePIDs.size();
   const int * RemotePIDs_ptr = NumRemotePIDs ? &RemotePIDs[0] : 0;
-  if(!DomainMap().SameAs(ColMap()))
-    MyImport = new Epetra_Import(ColMap(),DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
+  if(!SourceMatrix.DomainMap().SameAs(ColMap()))
+    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
 #endif
 
   if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
