@@ -116,25 +116,6 @@ fail_syntax(
   return false;
 }
 
-/*
-bool
-vectest(
-  const char *	expr)
-{
-  std::cout << " syntax " << expr << " ...  ";
-  try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
-    expr_eval.parse();
-  }
-  catch (std::runtime_error &x) {
-    std::cout << "pass" << std::endl;
-    return true;
-  }
-  std::cout << "fail, should have parse error" << std::endl;
-  return false;
-}
-*/
-
 bool
 test_one_value(const char *expression, double gold_value)
 {
@@ -200,7 +181,7 @@ evaluate_range(
     if(write_csv) {
       expression_csv << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
     } else {
-      std::cout << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
+      //std::cout << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
     }
   }
 
@@ -447,6 +428,11 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(test_one_value("a=3;a^2",9.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
+  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;c=(a!=b);",1));
+  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;c=(a==b);",0));
+  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=!a;",0));
+  STKUNIT_EXPECT_TRUE(test_one_value("sign(7)", 1));
+  STKUNIT_EXPECT_TRUE(test_one_value("sign(-5)", -1));
 
 #ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
@@ -471,8 +457,9 @@ UnitTestEvaluator::testEvaluator()
 
   STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("uniform_pdf(x,10,1.0)"    ,    0,    4,  1000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, true ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"       ,  0.0,  2.0,  2000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"         ,  0.0,  2.0,  2000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
@@ -507,11 +494,14 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(notUndefinedFunction("sin(1)"));
   STKUNIT_EXPECT_TRUE(notUndefinedFunction("0.01.02"));
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
-  STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
+  STKUNIT_EXPECT_TRUE(syntax("srand()"));
+  STKUNIT_EXPECT_TRUE(syntax("randomize()"));
+  STKUNIT_EXPECT_TRUE(syntax("time()"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
   STKUNIT_EXPECT_TRUE(syntax("random(1)"));
-  STKUNIT_EXPECT_TRUE(syntax("time()"));
   STKUNIT_EXPECT_TRUE(syntax("random(time())"));
+  STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
+  STKUNIT_EXPECT_TRUE(syntax("sign(x)"));
 
 #ifndef __PATHSCALE__
   STKUNIT_EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
