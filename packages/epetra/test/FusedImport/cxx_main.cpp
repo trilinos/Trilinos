@@ -73,6 +73,8 @@ double test_with_matvec(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B){
   const Epetra_Map & Xmap = A.DomainMap();
   const Epetra_Map & Ymap = A.RangeMap();
 
+  if(!A.RangeMap().SameAs(B.RangeMap()) || !A.DomainMap().SameAs(B.DomainMap())) return 1.0;
+
   Epetra_Vector X(Xmap), Y1(Ymap), Y2(Ymap);
 
   X.SetSeed(24601);
@@ -240,7 +242,7 @@ int main(int argc, char *argv[])
 
     // Execute fused constructor
     B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
-    
+
     double diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
