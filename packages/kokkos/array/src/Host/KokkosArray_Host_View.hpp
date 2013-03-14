@@ -313,7 +313,12 @@ void deep_copy( const View< DT, DL, Host, DM, DS> & dst ,
                 const View< ST, SL, Host, SM, SS> & src ,
                 const typename Impl::enable_if<(
                   // Destination is not constant:
-                  ( ! ViewTraits<DT,DL,Host,DM>::is_const )
+                  Impl::is_same< typename ViewTraits<DT,DL,Host,DM>::value_type ,
+                                 typename ViewTraits<DT,DL,Host,DM>::non_const_value_type >::value
+                  &&
+                  // Same rank
+                  ( unsigned( ViewTraits<DT,DL,Host,DM>::rank ) ==
+                    unsigned( ViewTraits<ST,SL,Host,SM>::rank ) )
                   &&
                   // Different layout or different specialization:
                   ( ( ! Impl::is_same< typename DL::array_layout ,
@@ -321,10 +326,6 @@ void deep_copy( const View< DT, DL, Host, DM, DS> & dst ,
                     ||
                     ( ! Impl::is_same< DS , SS >::value )
                   )
-                  &&
-                  // Same rank
-                  ( unsigned( ViewTraits<DT,DL,Host,DM>::rank ) ==
-                    unsigned( ViewTraits<ST,SL,Host,SM>::rank ) )
                 )>::type * = 0 )
 {
   typedef View< DT, DL, Host, DM, DS> dst_type ;

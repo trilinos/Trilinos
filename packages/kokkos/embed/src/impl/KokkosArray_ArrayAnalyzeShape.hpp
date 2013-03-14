@@ -74,8 +74,8 @@ public:
 
   typedef typename nested::scalar_type  scalar_type ;
   typedef typename nested::array_type   array_type[ N ];
-  typedef const Array< T , N , void >   value_type ;
-  typedef const Array< T , N , void >   type ;
+  typedef Array< const T , N , void >   value_type ;
+  typedef Array< const T , N , void >   type ;
 
   typedef scalar_type const_scalar_type ;
   typedef array_type  const_array_type ;
@@ -105,8 +105,8 @@ public:
 
   typedef typename nested::const_scalar_type    const_scalar_type ;
   typedef typename nested::const_array_type     const_array_type[ N ];
-  typedef          const Array< T , N , void >  const_value_type ;
-  typedef          const Array< T , N , void >  const_type ;
+  typedef          Array< const T , N , void >  const_value_type ;
+  typedef          Array< const T , N , void >  const_type ;
 
   typedef          scalar_type  non_const_scalar_type ;
   typedef          array_type   non_const_array_type ;
@@ -128,8 +128,8 @@ public:
 
   typedef typename nested::scalar_type    scalar_type ;
   typedef typename nested::array_type   * array_type ;
-  typedef const Array< T , 0 , void >     value_type ;
-  typedef const Array< T , 0 , void >     type ;
+  typedef Array< const T , 0 , void >     value_type ;
+  typedef Array< const T , 0 , void >     type ;
 
   typedef scalar_type const_scalar_type ;
   typedef array_type  const_array_type ;
@@ -159,8 +159,8 @@ public:
 
   typedef typename nested::const_scalar_type    const_scalar_type ;
   typedef typename nested::const_array_type   * const_array_type ;
-  typedef          const Array< T , 0 , void >  const_value_type ;
-  typedef          const Array< T , 0 , void >  const_type ;
+  typedef          Array< const T , 0 , void >  const_value_type ;
+  typedef          Array< const T , 0 , void >  const_type ;
 
   typedef          scalar_type  non_const_scalar_type ;
   typedef          array_type   non_const_array_type ;

@@ -50,7 +50,7 @@ ${CXX} ${INC_PATH} -c ${CXX_SOURCES}
 ${CXX} ${INC_PATH} -c -DTEST_KOKKOSARRAY_SPACE=KokkosArray::HostSpace TestArrayExp.cpp TestMain.cpp
 ${CXX} ${INC_PATH} -o unit_test.exe *.o ${LIB}
 
-# rm -f *.o *.a
+rm -f *.o *.a
 
 #-----------------------------------------------------------------------------
 

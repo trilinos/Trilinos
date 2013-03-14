@@ -906,11 +906,14 @@ public:
   {
     typedef KokkosArray::View< DataType , device > typeX ;
     typedef KokkosArray::View< const DataType , device > const_typeX ;
+    typedef KokkosArray::View< const DataType , device , KokkosArray::MemoryRandomRead > const_typeR ;
     typeX x( "X" );
     const_typeX xc = x ;
+    const_typeR xr = x ;
 
     ASSERT_TRUE( xc == x );
     ASSERT_TRUE( x == xc );
+    ASSERT_TRUE( x.ptr_on_device() == xr.ptr_on_device() );
 
     // typeX xf = xc ; // setting non-const from const must not compile
 

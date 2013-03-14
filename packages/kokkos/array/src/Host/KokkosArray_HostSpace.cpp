@@ -57,6 +57,32 @@
 namespace KokkosArray {
 namespace {
 
+class HostMemoryTrackingEntry : public Impl::MemoryTrackingEntry
+{
+public:
+
+  void * const ptr_alloc ;
+
+  HostMemoryTrackingEntry( const std::string & arg_label ,
+                           const std::type_info & arg_info ,
+                           void * const           arg_ptr ,
+                           const unsigned         arg_size )
+    : Impl::MemoryTrackingEntry( arg_label , arg_info , arg_ptr , arg_size )
+    , ptr_alloc( arg_ptr )
+    {}
+
+  ~HostMemoryTrackingEntry();
+};
+
+HostMemoryTrackingEntry::~HostMemoryTrackingEntry()
+{
+#if defined( __INTEL_COMPILER )
+   _mm_free( ptr_alloc );
+#else
+   free( ptr_alloc );
+#endif
+}
+
 Impl::MemoryTracking & host_space_singleton()
 {
   static Impl::MemoryTracking self("KokkosArray::HostSpace");
@@ -108,8 +134,8 @@ void * host_allocate_not_thread_safe(
 
     if ( ptr_alloc && ptr_alloc <= ptr &&
          0 == ( reinterpret_cast<ptrdiff_t>(ptr) % HostSpace::MEMORY_ALIGNMENT ) ) {
-      host_space_singleton()
-        .track( ptr_alloc, & scalar_type, scalar_size, count_alloc, label );
+      host_space_singleton().insert(
+        new HostMemoryTrackingEntry( label , scalar_type , ptr_alloc , scalar_size * count_alloc ) );
     }
     else {
       std::ostringstream msg ;
@@ -128,22 +154,13 @@ void * host_allocate_not_thread_safe(
 
 void host_decrement_not_thread_safe( const void * ptr )
 {
-  if ( 0 != ptr ) {
-
-    void * ptr_alloc = host_space_singleton().decrement( ptr );
-
-    if ( 0 != ptr_alloc ) {
-#if defined( __INTEL_COMPILER )
-       _mm_free( ptr_alloc );
-#else
-       free( ptr_alloc );
-#endif
-    }
-  }
+  host_space_singleton().decrement( ptr );
 }
 
 }
 }
+
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 
@@ -163,7 +180,7 @@ void * HostSpace::allocate(
 
 void HostSpace::increment( const void * ptr )
 {
-  if ( 0 != ptr && Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( Impl::HostInternal::singleton().is_master_thread() ) {
     host_space_singleton().increment( ptr );
   }
 }
@@ -182,10 +199,10 @@ void HostSpace::print_memory_view( std::ostream & o )
 
 std::string HostSpace::query_label( const void * p )
 {
-  const Impl::MemoryTracking::Info info = 
+  const Impl::MemoryTrackingEntry * const info = 
     host_space_singleton().query( p );
 
-  return info.label ;
+  return 0 != info ? info->label : std::string("ERROR NOT DEFINED");
 }
 
 size_t HostSpace::preferred_alignment(

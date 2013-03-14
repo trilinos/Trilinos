@@ -57,6 +57,9 @@ struct MemoryManaged
 struct MemoryUnmanaged
 { typedef MemoryUnmanaged  memory_traits ; enum { managed = false }; };
 
+struct MemoryRandomRead
+{ typedef MemoryRandomRead  memory_traits ; enum { managed = false }; };
+
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */

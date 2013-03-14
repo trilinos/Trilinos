@@ -50,14 +50,18 @@
 namespace KokkosArray {
 namespace Impl {
 
-struct LayoutVector {};
+struct LayoutVector ;
 
-template< class ViewTraits , class ValueType , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , ValueType , LayoutLeft , 1 , MemorySpace , MemoryTraits , void >
+template< typename ScalarType , class RankDynamic , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ScalarType , ScalarType ,
+                       LayoutLeft , unsigned_<1> , RankDynamic ,
+                       MemorySpace , MemoryTraits >
 { typedef LayoutVector type ; };
 
-template< class ViewTraits , class ValueType , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , ValueType , LayoutRight , 1 , MemorySpace , MemoryTraits , void >
+template< typename ScalarType , class RankDynamic , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ScalarType , ScalarType ,
+                       LayoutRight , unsigned_<1> , RankDynamic ,
+                       MemorySpace , MemoryTraits >
 { typedef LayoutVector type ; };
 
 //----------------------------------------------------------------------------
@@ -215,8 +219,6 @@ private:
 
 public:
 
-  typedef Impl::LayoutVector specialize ;
-
   typedef View< typename traits::const_data_type ,
                 typename traits::layout_type ,
                 typename traits::device_type ,
@@ -237,6 +239,11 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_5() const { return 1 ; }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_6() const { return 1 ; }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_7() const { return 1 ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::size_type dimension( const iType & i ) const
+    { return 0 == i ? m_shape.N0 : 1 ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }

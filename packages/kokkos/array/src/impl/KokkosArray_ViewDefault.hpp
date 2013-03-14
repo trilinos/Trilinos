@@ -52,12 +52,16 @@ namespace Impl {
 
 struct LayoutDefault ;
 
-template< class ViewTraits , class ValueType , unsigned Rank , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , ValueType , LayoutLeft , Rank , MemorySpace , MemoryTraits , void >
+template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ScalarType , ScalarType ,
+                       LayoutLeft , Rank , RankDynamic ,
+                       MemorySpace , MemoryTraits >
 { typedef LayoutDefault type ; };
 
-template< class ViewTraits , class ValueType , unsigned Rank , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ViewTraits , ValueType , LayoutRight , Rank , MemorySpace , MemoryTraits , void >
+template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ScalarType , ScalarType ,
+                       LayoutRight , Rank , RankDynamic ,
+                       MemorySpace , MemoryTraits >
 { typedef LayoutDefault type ; };
 
 //----------------------------------------------------------------------------
@@ -764,8 +768,6 @@ private:
 
 public:
 
-  typedef Impl::LayoutDefault  specialize ;
-
   typedef View< typename traits::const_data_type ,
                 typename traits::layout_type ,
                 typename traits::device_type ,
@@ -787,6 +789,11 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
 
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::size_type dimension( const iType & i ) const
+    { return Impl::dimension( m_shape , i ); }
+
   KOKKOSARRAY_INLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
@@ -806,12 +813,12 @@ public:
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
-  View( const View<RT,RL,RD,RM,specialize> & rhs )
+  View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
     : m_ptr_on_device(0) { assign( *this , rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View<RT,RL,RD,RM,specialize> & rhs )
+  View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
     { assign( *this , rhs ); return *this ; }
 
   //------------------------------------

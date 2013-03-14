@@ -852,6 +852,25 @@ namespace Impl {
 
 template< unsigned ScalarSize , unsigned Rank ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
+          unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 ,
+          typename iType >
+KOKKOSARRAY_INLINE_FUNCTION
+size_t dimension( 
+  const Shape<ScalarSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape ,
+  const iType & r )
+{
+  return 0 == r ? shape.N0 : (
+         1 == r ? shape.N1 : (
+         2 == r ? shape.N2 : (
+         3 == r ? shape.N3 : (
+         4 == r ? shape.N4 : (
+         5 == r ? shape.N5 : (
+         6 == r ? shape.N6 : (
+         7 == r ? shape.N7 : 1 )))))));
+}
+
+template< unsigned ScalarSize , unsigned Rank ,
+          unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
 size_t cardinality_count(
   const Shape<ScalarSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )

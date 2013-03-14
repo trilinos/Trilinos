@@ -125,6 +125,11 @@ public:
 
   static size_type detect_device_count();
 
+  /** \brief  Cuda device architecture of the selected device.
+   *          Matches the __CUDA_ARCH__ specification.
+   */
+  static size_type device_arch();
+
   //@}
 };
 

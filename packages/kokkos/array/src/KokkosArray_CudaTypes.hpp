@@ -41,91 +41,99 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_CUDA_TEXTURE
-#define KOKKOSARRAY_CUDA_TEXTURE
-
-#include <stdlib.h>
+#ifndef KOKKOSARRAY_CUDATYPES_HPP
+#define KOKKOSARRAY_CUDATYPES_HPP
 
 #include <KokkosArray_Macros.hpp>
-#include <KokkosArray_View.hpp>
 
-namespace KokkosArray {
-namespace Impl {
-
-/** \brief
- *
- *  Usage
- *  1) Declare at global file scope:  CudaTexture<MyType>::type  my_texture_obj ;
- *  2) Bind in host code:             CudaTexture<MyType>::bind( my_texture_obj , my_ptr );
- *  3) Access from Cuda code:         CudaTexture<MyType>::fetch( my_texture_obj , i );
- */
-
-template< typename T >
-struct CudaTexture ;
-
-} // namespace Impl
-} // namespace KokkosArray
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
 
 namespace KokkosArray {
-namespace Impl {
 
-//----------------------------------------------------------------------------
+typedef ::int2 int2 ;
+typedef ::int3 int3 ;
+typedef ::int4 int4 ;
 
-template<>
-struct CudaTexture<double>
-{
-  typedef texture<int2,cudaTextureType1D,cudaReadModeElementType> texture_type ;
+typedef ::float2 float2 ;
+typedef ::float3 float3 ;
+typedef ::float4 float4 ;
 
-  static inline
-  void bind( const texture_type & tex_ref , const double * ptr , const size_t count )
-  {
-    const cudaChannelFormatDesc desc = cudaCreateChannelDesc<int2>();
+typedef ::double2 double2 ;
+typedef ::double3 double3 ;
+typedef ::double4 double4 ;
 
-    cudaBindTexture( NULL , & tex_ref , (void*) ptr , & desc , sizeof(double) * count );
-  }
-
-  static inline
-  void unbind( const texture_type & tex_ref )
-  { cudaUnbindTexture( & tex_ref ); }
-
-  static inline __device__
-  double fetch( texture_type tex_ref , int i )
-  {
-    const int2 v = tex1Dfetch(tex_ref,i);
-    return __hiloint2double(v.y,v.x);
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< typename T >
-struct CudaTexture
-{
-  typedef texture<T,cudaTextureType1D,cudaReadModeElementType> texture_type ;
-
-  static inline
-  void bind( const texture_type & tex_ref , const T * ptr , const size_t count )
-  {
-    const cudaChannelFormatDesc desc = cudaCreateChannelDesc<T>();
-
-    cudaBindTexture( NULL , & tex_ref , (void*) ptr , & desc , sizeof(T) * count );
-  }
-
-  static inline
-  void unbind( const texture_type & tex_ref )
-  { cudaUnbindTexture( & tex_ref ); }
-
-  static inline __device__
-  T fetch( texture_type tex_ref , int i )
-  { return tex1Dfetch(tex_ref,i); }
-};
-
-} // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #if defined( __CUDACC__ ) */
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOSARRAY_CUDA_TEXTURE */
+#else /* NOT #if defined( __CUDACC__ ) */
+
+namespace KokkosArray {
+
+struct int2 {
+        int x;
+        int y;
+};
+
+struct int3 {
+        int x;
+        int y;
+        int z;
+};
+
+struct int4 {
+        int x;
+        int y;
+        int z;
+        int w;
+};
+
+struct float2 {
+        float x;
+        float y;
+};
+
+struct float3 {
+        float x;
+        float y;
+        float z;
+};
+
+struct float4 {
+        float x;
+        float y;
+        float z;
+        float w;
+};
+
+struct double2 {
+        double x;
+        double y;
+};
+
+struct double3 {
+        double x;
+        double y;
+        double z;
+};
+
+struct double4 {
+        double x;
+        double y;
+        double z;
+        double w;
+};
+
+} // namespace KokkosArray
+
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #define KOKKOSARRAY_CUDATYPES_HPP */
 

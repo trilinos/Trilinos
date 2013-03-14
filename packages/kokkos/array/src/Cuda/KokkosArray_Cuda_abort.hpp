@@ -47,12 +47,15 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && \
-    defined( __CUDA_ARCH__ ) && \
-    defined( CUDA_VERSION_MAJOR ) && \
-    defined( CUDA_VERSION_MINOR ) && \
-      ( 4 <  CUDA_VERSION_MAJOR || \
-      ( 4 == CUDA_VERSION_MAJOR && 1 <= CUDA_VERSION_MINOR ) )
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+
+#if ! defined( CUDA_VERSION ) || ( CUDA_VERSION < 401 )
+#errof "Cuda version 4.1 or greater required"
+#endif
+
+#if ( __CUDA_ARCH__ < 200 )
+#error "Cuda device capability 2.0 or greater required"
+#endif
 
 extern "C" {
 /*  Cuda runtime function, declared in <crt/device_runtime.h>

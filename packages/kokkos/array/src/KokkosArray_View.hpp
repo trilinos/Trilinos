@@ -59,6 +59,15 @@
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
+
+/** \brief  View specialization mapping of view traits to a specialization tag */
+template< typename ScalarType , class ValueType ,
+          class ArrayLayout , class uRank , class uRankDynamic ,
+          class MemorySpace , class MemoryTraits >
+struct ViewSpecialize ;
+
+}
 
 /** \brief  ViewTraits
  *
@@ -80,26 +89,51 @@ private:
 
 public:
 
+  //------------------------------------
+  // Data type traits:
   typedef DataType                            data_type ;
-  typedef LayoutType                          layout_type ;
-  typedef DeviceType                          device_type ;
-  typedef MemoryTraits                        memory_traits ;
-
-  typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
-  typedef typename analysis::scalar_type      scalar_type ;
-  typedef typename analysis::value_type       value_type ;
-  typedef typename analysis::const_value_type const_value_type ;
-  typedef typename analysis::non_const_value_type non_const_value_type ;
-  typedef typename analysis::shape            shape_type ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+
+  //------------------------------------
+  // Scalar type traits:
+  typedef typename analysis::scalar_type            scalar_type ;
+  typedef typename analysis::const_scalar_type      const_scalar_type ;
+  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
+
+  //------------------------------------
+  // Value type traits:
+  typedef typename analysis::value_type            value_type ;
+  typedef typename analysis::const_value_type      const_value_type ;
+  typedef typename analysis::non_const_value_type  non_const_value_type ;
+
+  //------------------------------------
+  // Layout and shape traits:
+  typedef LayoutType                          layout_type ;
   typedef typename layout_type::array_layout  array_layout ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef typename analysis::shape            shape_type ;
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = memory_traits::managed };
-  enum { is_const     = Impl::is_same< value_type , const_value_type >::value };
+
+  //------------------------------------
+  // Device and memory space traits:
+  typedef DeviceType                          device_type ;
+  typedef MemoryTraits                        memory_traits ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { is_managed = memory_traits::managed };
+
+  //------------------------------------
+  // Specialization:
+  typedef typename
+    Impl::ViewSpecialize< scalar_type , value_type ,
+                          array_layout ,
+                          Impl::unsigned_<rank> ,
+                          Impl::unsigned_<rank_dynamic> ,
+                          memory_space , memory_traits
+                        >::type specialize ;
 };
 
 /** \brief  Memory traits as third argument, void as fourth argument. */
@@ -114,26 +148,51 @@ private:
 
 public:
 
+  //------------------------------------
+  // Data type traits:
   typedef DataType                            data_type ;
-  typedef DeviceType                          layout_type ;
-  typedef DeviceType                          device_type ;
-  typedef MemoryTraits                        memory_traits ;
-
-  typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
-  typedef typename analysis::scalar_type      scalar_type ;
-  typedef typename analysis::value_type       value_type ;
-  typedef typename analysis::const_value_type const_value_type ;
-  typedef typename analysis::non_const_value_type non_const_value_type ;
-  typedef typename analysis::shape            shape_type ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+
+  //------------------------------------
+  // Scalar type traits:
+  typedef typename analysis::scalar_type            scalar_type ;
+  typedef typename analysis::const_scalar_type      const_scalar_type ;
+  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
+
+  //------------------------------------
+  // Value type traits:
+  typedef typename analysis::value_type            value_type ;
+  typedef typename analysis::const_value_type      const_value_type ;
+  typedef typename analysis::non_const_value_type  non_const_value_type ;
+
+  //------------------------------------
+  // Layout and shape traits:
+  typedef DeviceType                          layout_type ;
   typedef typename layout_type::array_layout  array_layout ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef typename analysis::shape            shape_type ;
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = memory_traits::managed };
-  enum { is_const     = Impl::is_same< value_type , const_value_type >::value };
+
+  //------------------------------------
+  // Device and memory space traits:
+  typedef DeviceType                          device_type ;
+  typedef MemoryTraits                        memory_traits ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { is_managed = memory_traits::managed };
+
+  //------------------------------------
+  // Specialization:
+  typedef typename
+    Impl::ViewSpecialize< scalar_type , value_type ,
+                          array_layout ,
+                          Impl::unsigned_<rank> ,
+                          Impl::unsigned_<rank_dynamic> ,
+                          memory_space , memory_traits
+                        >::type specialize ;
 };
 
 /** \brief  Device as third argument, void as fourth argument. */
@@ -148,26 +207,51 @@ private:
 
 public:
 
+  //------------------------------------
+  // Data type traits:
   typedef DataType                            data_type ;
-  typedef LayoutType                          layout_type ;
-  typedef DeviceType                          device_type ;
-  typedef MemoryManaged                       memory_traits ;
-
-  typedef typename analysis::non_const_type   non_const_data_type ;
   typedef typename analysis::const_type       const_data_type ;
-  typedef typename analysis::scalar_type      scalar_type ;
-  typedef typename analysis::value_type       value_type ;
-  typedef typename analysis::const_value_type const_value_type ;
-  typedef typename analysis::non_const_value_type non_const_value_type ;
-  typedef typename analysis::shape            shape_type ;
+  typedef typename analysis::non_const_type   non_const_data_type ;
+
+  //------------------------------------
+  // Scalar type traits:
+  typedef typename analysis::scalar_type            scalar_type ;
+  typedef typename analysis::const_scalar_type      const_scalar_type ;
+  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
+
+  //------------------------------------
+  // Value type traits:
+  typedef typename analysis::value_type            value_type ;
+  typedef typename analysis::const_value_type      const_value_type ;
+  typedef typename analysis::non_const_value_type  non_const_value_type ;
+
+  //------------------------------------
+  // Layout and shape traits:
+  typedef LayoutType                          layout_type ;
   typedef typename layout_type::array_layout  array_layout ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef typename analysis::shape            shape_type ;
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
-  enum { is_managed   = memory_traits::managed };
-  enum { is_const     = Impl::is_same< value_type , const_value_type >::value };
+
+  //------------------------------------
+  // Device and memory space traits:
+  typedef DeviceType                          device_type ;
+  typedef MemoryManaged                       memory_traits ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  enum { is_managed = memory_traits::managed };
+
+  //------------------------------------
+  // Specialization:
+  typedef typename
+    Impl::ViewSpecialize< scalar_type , value_type ,
+                          array_layout ,
+                          Impl::unsigned_<rank> ,
+                          Impl::unsigned_<rank_dynamic> ,
+                          memory_space , memory_traits
+                        >::type specialize ;
 };
 
 } // namespace KokkosArray
@@ -185,14 +269,6 @@ template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enabl
 struct ViewAssignment ;
 
 /** \brief  View specialization mapping of view traits to a specialization tag */
-template< class ViewTraits ,
-          class ValueType    = typename ViewTraits::value_type ,
-          class ArrayLayout  = typename ViewTraits::array_layout ,
-          unsigned Rank      =          ViewTraits::rank ,
-          class MemorySpace  = typename ViewTraits::memory_space ,
-          class MemoryTraits = typename ViewTraits::memory_traits ,
-          class Enable       = void >
-struct ViewSpecialize { typedef void type ; };
 
 //----------------------------------------------------------------------------
 /** \brief  Value is compatible for reference assignment: */
@@ -258,7 +334,7 @@ template< class DataType ,
           class LayoutType , class DeviceType = LayoutType ,
           class MemoryTraits = void ,
           class Specialize   =
-            typename Impl::ViewSpecialize< ViewTraits<DataType,LayoutType,DeviceType,MemoryTraits> >::type >
+            typename ViewTraits<DataType,LayoutType,DeviceType,MemoryTraits>::specialize >
 class View ;
 
 //----------------------------------------------------------------------------
@@ -266,15 +342,15 @@ class View ;
 template< class LT , class LL , class LD , class LM , class LS ,
           class RT , class RL , class RD , class RM , class RS >
 KOKKOSARRAY_INLINE_FUNCTION
-bool operator == ( const View<LT,LL,LD,LM,LS> & lhs ,
-                   const View<RT,RL,RD,RM,RS> & rhs )
+typename Impl::enable_if<( Impl::is_same< LS , RS >::value ), bool >::type
+operator == ( const View<LT,LL,LD,LM,LS> & lhs ,
+              const View<RT,RL,RD,RM,RS> & rhs )
 {
   // Same data, layout, dimensions
   typedef ViewTraits<LT,LL,LD,LM> lhs_traits ;
   typedef ViewTraits<RT,RL,RD,RM> rhs_traits ;
 
   return
-    Impl::is_same< LS , RS >::value &&
     Impl::is_same< typename lhs_traits::const_data_type ,
                    typename rhs_traits::const_data_type >::value &&
     Impl::is_same< typename lhs_traits::array_layout ,
@@ -346,24 +422,16 @@ View< typename DstViewType::data_type ,
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst , src , arg0 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst , src , arg0 );
 
   return dst ;
 }
@@ -380,24 +448,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1 );
 
   return dst ;
 }
@@ -415,24 +475,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2 );
 
   return dst ;
 }
@@ -451,24 +503,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3 );
 
   return dst ;
 }
@@ -489,24 +533,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType3 & arg3 ,
          const ArgType4 & arg4 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
 
   return dst ;
 }
@@ -528,24 +564,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType4 & arg4 ,
          const ArgType5 & arg5 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
 
   return dst ;
 }
@@ -568,24 +596,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType5 & arg5 ,
          const ArgType6 & arg6 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
 
   return dst ;
 }
@@ -609,24 +629,16 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType6 & arg6 ,
          const ArgType7 & arg7 )
 {
-  typedef ViewTraits< typename DstViewType::data_type ,
-                      typename DstViewType::layout_type ,
-                      typename DstViewType::device_type ,
-                      MemoryUnmanaged > dst_traits ;
-
-  typedef typename Impl::ViewSpecialize<dst_traits>::type dst_spec ;
-
   typedef View< typename DstViewType::data_type ,
                 typename DstViewType::layout_type ,
                 typename DstViewType::device_type ,
-                MemoryUnmanaged ,
-                dst_spec > dst_type ;
+                MemoryUnmanaged > dst_type ;
 
   typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
-  Impl::ViewAssignment<dst_spec,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
 
   return dst ;
 }

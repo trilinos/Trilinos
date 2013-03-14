@@ -176,8 +176,8 @@ public:
   size_type * m_scratchFlags ;
   size_type * m_scratchUnified ;
 
-  static       CudaInternal & raw_singleton();
-  static const CudaInternal & singleton();
+  static CudaInternal & raw_singleton();
+  static CudaInternal & singleton();
 
   const CudaInternal & assert_initialized() const ;
   void initialize( int cuda_device_id );
@@ -247,9 +247,11 @@ const CudaInternal & CudaInternal::assert_initialized() const
   return *this ;
 }
 
-const CudaInternal & CudaInternal::singleton()
+CudaInternal & CudaInternal::singleton()
 {
-  return raw_singleton().assert_initialized();
+  CudaInternal & s = raw_singleton();
+  s.assert_initialized();
+  return s ;
 }
 
 void CudaInternal::initialize( int cuda_device_id )
@@ -465,13 +467,14 @@ Cuda::size_type cuda_internal_maximum_shared_words()
 { return CudaInternal::singleton().m_maxSharedWords ; }
 
 Cuda::size_type * cuda_internal_scratch_space( const Cuda::size_type size )
-{ return CudaInternal::raw_singleton().scratch_space( size ); }
+{ return CudaInternal::singleton().scratch_space( size ); }
 
 Cuda::size_type * cuda_internal_scratch_flags( const Cuda::size_type size )
-{ return CudaInternal::raw_singleton().scratch_flags( size ); }
+{ return CudaInternal::singleton().scratch_flags( size ); }
 
 Cuda::size_type * cuda_internal_scratch_unified( const Cuda::size_type size )
-{ return CudaInternal::raw_singleton().scratch_unified( size ); }
+{ return CudaInternal::singleton().scratch_unified( size ); }
+
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -485,6 +488,16 @@ Cuda::size_type Cuda::detect_device_count()
 
 void Cuda::initialize( const Cuda::SelectDevice config )
 { Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
+
+Cuda::size_type Cuda::device_arch()
+{
+  const int dev_id = Impl::CudaInternal::singleton().m_cudaDev ;
+
+  const struct cudaDeviceProp & cudaProp =
+    Impl::CudaInternalDevices::singleton().m_cudaProp[ dev_id ] ;
+
+  return cudaProp.major * 100 + cudaProp.minor ;
+}
 
 void Cuda::finalize()
 { Impl::CudaInternal::raw_singleton().finalize(); }

@@ -98,9 +98,9 @@ CudaSpace::size_type cuda_internal_maximum_warp_count();
 CudaSpace::size_type cuda_internal_maximum_grid_count();
 CudaSpace::size_type cuda_internal_maximum_shared_words();
 
-CudaSpace::size_type * cuda_internal_scratch_flags( CudaSpace::size_type size );
-CudaSpace::size_type * cuda_internal_scratch_space( CudaSpace::size_type size );
-CudaSpace::size_type * cuda_internal_scratch_unified( CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_flags( const CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_space( const CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type size );
 
 template< typename ValueType >
 inline

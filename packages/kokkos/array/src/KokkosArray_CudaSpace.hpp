@@ -44,6 +44,10 @@
 #ifndef KOKKOSARRAY_CUDASPACE_HPP
 #define KOKKOSARRAY_CUDASPACE_HPP
 
+#if defined( __CUDACC__ )
+#include <cuda_runtime.h>
+#endif
+
 #include <iosfwd>
 #include <typeinfo>
 #include <string>
