@@ -58,9 +58,12 @@ CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
 
 # Cuda compilation flags:
 
-CUDA_NVCC_FLAGS="-arch=sm_20"
-CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR}"
-CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR}"
+CUDA_NVCC_FLAGS="-gencode;arch=compute_20,code=sm_20"
+if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
+then
+  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30"
+fi
+
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
 
