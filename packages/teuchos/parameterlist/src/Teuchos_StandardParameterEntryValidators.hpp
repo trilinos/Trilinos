@@ -183,7 +183,7 @@ public:
    *
    * \param sublistName [in] The name of the sublist.
    *
-   * \param activeQuery [in] If true, then this lookup will be recored as an
+   * \param activeQuery [in] If true, then this lookup will be recorded as an
    * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
    */
   std::string getStringValue(
@@ -191,10 +191,12 @@ public:
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
-  /** \brief Lookup a parameter from a parameter list, perform a mapping from
-   * a std::string value embedded in the <tt>ParameterEntry</tt> object and return
-   * its associated integral value.
-   */
+  /// \brief Get the integer enum value for the given parameter.
+  ///
+  /// Look up a parameter from a parameter list, map from the
+  /// std::string value in the <tt>ParameterEntry</tt> object to its
+  /// corresponding integer enum value, and return the integer enum
+  /// value.
   IntegralType getIntegralValue(
     ParameterList &paramList, const std::string &paramName,
     const std::string &defaultValue
