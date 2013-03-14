@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 
   // Multigrid Hierarchy
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-  ParameterListInterpreter mueLuFactory(xmlFileName);
+  ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
 
   comm->barrier();
 

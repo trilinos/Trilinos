@@ -78,12 +78,13 @@ namespace MueLuTests {
 #endif
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
 
     for(int i=0; i< fileList.size(); i++) {
       out << "Processing file: " << fileList[i] << std::endl;
-      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i]);
+      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
       H->GetLevel(0)->Set<RCP<Matrix> >("A", A);

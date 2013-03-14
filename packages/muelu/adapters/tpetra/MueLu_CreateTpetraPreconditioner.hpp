@@ -154,8 +154,11 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
                           Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inCoords = Teuchos::null,
                           Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> > const &inNullspace = Teuchos::null)
 {
-  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
-  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > mueluPrecond = CreateTpetraPreconditioner<SC, LO, GO, NO>(Ain, *paramList, inCoords, inNullspace);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Ain->getComm();
+  Teuchos::ParameterList paramList;
+  //TODO why are we doing this directly and not using the MueLu::ParameterListInterpreter?
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > mueluPrecond = CreateTpetraPreconditioner<SC, LO, GO, NO>(Ain, paramList, inCoords, inNullspace);
   return mueluPrecond;
 }
 
