@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -48,10 +48,18 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"
 
+// #ifndef HAVE_TPETRA_TRANSFER_TIMERS
+// #  define HAVE_TPETRA_TRANSFER_TIMERS 1
+// #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+#  undef HAVE_TPETRA_TRANSFER_TIMERS
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
 
 namespace Tpetra {
 
-  /// \class DistObject 
+  /// \class DistObject
   /// \brief Base class for distributed Tpetra objects that support data redistribution.
   ///
   /// DistObject is a base class for all Tpetra distributed global
@@ -59,11 +67,11 @@ namespace Tpetra {
   /// basic mechanisms and interface specifications for importing and
   /// exporting operations using Import and Export objects.
   ///
-  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's 
+  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's
   ///   \c LocalOrdinal template parameter.  This should be an integer
   ///   type, preferably signed.
   ///
-  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's 
+  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's
   ///   \c GlobalOrdinal template parameter.  Defaults to the same type
   ///   as \c LocalOrdinal.  This should also be an integer type,
   ///   preferably signed.
@@ -121,7 +129,7 @@ namespace Tpetra {
   /// After the linear solve, you may want to bring the resulting
   /// nonoverlapping distribution vector back to the overlapping
   /// distribution for another update phase.  This would be a reverse
-  /// mode Import, using the precomputed Export object.  
+  /// mode Import, using the precomputed Export object.
   ///
   /// Another use case for reverse mode is in CrsMatrix, for the
   /// transpose version of distributed sparse matrix-vector multiply
@@ -154,14 +162,14 @@ namespace Tpetra {
   /// default implementation of these hooks does nothing.  The
   /// documentation of these methods explains different ways you might
   /// choose to implement them.
-  template <class Packet, 
-            class LocalOrdinal = int, 
-            class GlobalOrdinal = LocalOrdinal, 
+  template <class Packet,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : virtual public Teuchos::Describable {
   public:
     //! @name Constructors and destructor
-    //@{ 
+    //@{
 
     //! Constructor.
     explicit DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
@@ -174,7 +182,7 @@ namespace Tpetra {
 
     //@}
     //! @name Public methods for redistributing data
-    //@{ 
+    //@{
 
     /// \brief Import data into this object using an Import object ("forward mode").
     ///
@@ -193,9 +201,9 @@ namespace Tpetra {
     ///   and its target Map must be the same as <tt>this->getMap()</tt>.
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
-    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source, 
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+    void
+    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
     /// \brief Export data into this object using an Export object ("forward mode").
@@ -215,9 +223,9 @@ namespace Tpetra {
     ///   and its target Map must be the same as <tt>this->getMap()</tt>.
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+    void
+    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
     /// \brief Import data into this object using an Export object ("reverse mode").
@@ -238,9 +246,9 @@ namespace Tpetra {
     ///   (Note the difference from forward mode.)
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
+    void
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
     /// \brief Export data into this object using an Import object ("reverse mode").
@@ -261,14 +269,14 @@ namespace Tpetra {
     ///   (Note the difference from forward mode.)
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
+    void
     doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
     //@}
     //! @name Attribute accessor methods
-    //@{ 
+    //@{
 
     /// \brief Whether this is a globally distributed object.
     ///
@@ -284,12 +292,12 @@ namespace Tpetra {
     /// Map and a column Map.  It is up to the subclass to decide
     /// which Map to use when invoking the DistObject constructor.
     /// (CrsMatrix uses the row Map.)
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >&
     getMap() const { return map_; }
 
     //@}
     //! @name I/O methods
-    //@{ 
+    //@{
 
     /// \brief Print this object to the given output stream.
     ///
@@ -299,7 +307,7 @@ namespace Tpetra {
 
     //@}
     //! @name Implementation of Teuchos::Describable
-    //@{ 
+    //@{
 
     /// \brief One-line descriptiion of this object.
     ///
@@ -312,10 +320,10 @@ namespace Tpetra {
     ///
     /// We declare this method virtual so that subclasses of
     /// DistObject may override it.
-    virtual void 
-    describe (Teuchos::FancyOStream &out, 
+    virtual void
+    describe (Teuchos::FancyOStream &out,
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-    //@} 
+    //@}
 
   protected:
 
@@ -353,7 +361,7 @@ namespace Tpetra {
     ///
     /// \param revOp [in] Whether to do a forward or reverse mode
     ///   redistribution.
-    virtual void 
+    virtual void
     doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
                 CombineMode CM,
                 size_t numSameIDs,
@@ -365,7 +373,7 @@ namespace Tpetra {
                 ReverseOption revOp);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
-    /// 
+    ///
     /// The doTransfer() method uses the subclass' implementations of
     /// these methods to implement data transfer.  Subclasses of
     /// DistObject must implement these methods.  This is an instance
@@ -374,12 +382,12 @@ namespace Tpetra {
     /// Method Pattern</a>.  ("Template" here doesn't mean "C++
     /// template"; it means "pattern with holes that are filled in by
     /// the subclass' method implementations.")
-    //@{ 
+    //@{
 
     /// \brief Compare the source and target (\e this) objects for compatibility.
     ///
     /// \return True if they are compatible, else false.
-    virtual bool 
+    virtual bool
     checkSizes (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
 
     /// \brief Perform copies and permutations that are local to this process.
@@ -399,7 +407,7 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their LID in the source
     ///   object.
-    virtual void 
+    virtual void
     copyAndPermute (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -426,7 +434,7 @@ namespace Tpetra {
     ///   constant, and constantNumPackets holds that value.
     ///
     /// \param distor [in] The Distributor object we are using.
-    virtual void 
+    virtual void
     packAndPrepare (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                     Teuchos::Array<Packet>& exports,
@@ -453,15 +461,15 @@ namespace Tpetra {
     ///
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
-    virtual void 
+    virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                       const Teuchos::ArrayView<const Packet> &imports,
                       const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                       size_t constantNumPackets,
                       Distributor &distor,
                       CombineMode CM) = 0;
-    //@} 
-    
+    //@}
+
     /// \brief Hook for creating a const view.
     ///
     /// doTransfer() calls this on the source object.  By default,
@@ -507,7 +515,7 @@ namespace Tpetra {
     Teuchos::Array<Packet> imports_;
 
     /// \brief Number of packets to receive for each receive operation.
-    /// 
+    ///
     /// This array is used in Distributor::doPosts() (and
     /// doReversePosts()) when starting the ireceive operation.
     ///
@@ -532,6 +540,14 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
     Teuchos::Array<size_t> numExportPacketsPerLID_;
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    Teuchos::RCP<Teuchos::Time> doXferTimer_;
+    Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
+    Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;
+    Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
+    Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
   }; // class DistObject
 } // namespace Tpetra
 
