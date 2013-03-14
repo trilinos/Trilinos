@@ -318,7 +318,7 @@ if (1) {
   printLevelStats = 1;
   if (printLevelStats) {
     PrintHeader("Timings without child calls, level specific",linalg);
-    SortAndReportTimings("Tpetra",ntllabels,ntltallies,linalg);
+    SortAndReportTimings(linalg[FILENAME],ntllabels,ntltallies,linalg);
     PrintTotalSetupTime();
     printf("\n\n");
   }
