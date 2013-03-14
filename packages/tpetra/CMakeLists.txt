@@ -71,13 +71,6 @@ IF(Tpetra_ENABLE_OpenMP AND NOT KokkosClassic_ENABLE_OpenMP)
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_UNORDERED_MAP
-  HAVE_TPETRA_UNORDERED_MAP
-  "Whether Tpetra::Map should use std::unordered_map instead of std::map for the global->local index lookup table.  This option requires C++11 support."
-  OFF
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."
