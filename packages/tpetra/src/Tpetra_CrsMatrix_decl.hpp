@@ -1916,10 +1916,6 @@ namespace Tpetra {
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
       MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
 
-
-
-
-
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (exporter.getTargetMap (),
 			      MyNnz,
