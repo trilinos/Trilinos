@@ -110,6 +110,35 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
 }
 
 
+template <typename T, typename F>
+class CachingProviderFunctor :
+  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
+public:
+  explicit CachingProviderFunctor(F otherFunctor) :
+    otherFunctor_(otherFunctor),
+    instance_(Teuchos::null)
+  {}
+
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
+    if (Teuchos::is_null(instance_)) {
+      instance_ = otherFunctor_(params);
+    }
+    return instance_;
+  }
+
+private:
+  F otherFunctor_;
+  Teuchos::RCP<T> instance_;
+};
+
+template <typename T, typename F>
+CachingProviderFunctor<T, F>
+makeCachingProviderFunctor(F otherFunctor)
+{
+  return CachingProviderFunctor<T, F>(otherFunctor);
+}
+
+
 template <typename T, typename ArgumentHandlingStrategy>
 class CreatingProviderFunctor :
   public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
@@ -244,6 +273,12 @@ Provider<T> providerFromConstructor()
   return CreatingProviderFunctor<T, ForwardArg>();
 }
 
+template <typename T>
+inline
+Provider<T> cachingProvider(const Provider<T> &p)
+{
+  return CachingProviderFunctor<T, Provider<T> >(p);
+}
 
 template <typename T>
 struct NullProviderFunctor :
