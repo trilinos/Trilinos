@@ -1,27 +1,27 @@
 // ***********************************************************************
-// 
+//
 //      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 
 
@@ -98,15 +98,15 @@ public:
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename STS::magnitudeType MT;
   typedef Tpetra::Vector<typename MV::scalar_type,
-			 typename MV::local_ordinal_type,
-			 typename MV::global_ordinal_type,
-			 typename MV::node_type> V;
+                         typename MV::local_ordinal_type,
+                         typename MV::global_ordinal_type,
+                         typename MV::node_type> V;
   /// Constructor.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
   ///   A must be symmetric (resp. Hermitian) positive definite.
-  CG (Teuchos::RCP<const MAT> A) : 
-    A_ (A), 
+  CG (Teuchos::RCP<const MAT> A) :
+    A_ (A),
     D_ (getDiagonal (*A)),
     numIters_ (1)
   {}
@@ -117,8 +117,8 @@ public:
   ///   A must be symmetric (resp. Hermitian) positive definite.
   /// \param params [in/out] On input: the parameters.  On output:
   ///   filled with the current parameter settings.
-  CG (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) : 
-    A_ (A), 
+  CG (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
+    A_ (A),
     D_ (getDiagonal (*A)),
     numIters_ (1)
   {
@@ -159,9 +159,9 @@ private:
   int numIters_;
 
   //! r = b - A * x
-  static void 
-  computeResidual (MV& r, const MV& b, const MAT& A, const MV& x, 
-		   const Teuchos::ETransp mode = Teuchos::NO_TRANS) 
+  static void
+  computeResidual (MV& r, const MV& b, const MAT& A, const MV& x,
+                   const Teuchos::ETransp mode = Teuchos::NO_TRANS)
   {
     r = b;
     A.apply (x, r, mode, -STS::one(), STS::one());
@@ -201,10 +201,10 @@ private:
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   static MT
   leftScaledCG (const MAT& A,
-		const MV& B,
-		MV& X,
-		const int numIters,
-		const V& D_inv)
+                const MV& B,
+                MV& X,
+                const int numIters,
+                const V& D_inv)
   {
     Teuchos::Array<MT> norms (B.getNumVectors ());
     for (size_t j = 0; j < B.getNumVectors (); ++j) {
@@ -231,10 +231,10 @@ private:
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   static MT
   oneVecLeftScaledCG (const MAT& A,
-		      const V& b,
-		      V& x,
-		      const int numIters,
-		      const V& D_inv)
+                      const V& b,
+                      V& x,
+                      const int numIters,
+                      const V& D_inv)
   {
     const ST one = STS::one ();
     V r (b.getMap ());
@@ -242,16 +242,19 @@ private:
     V q (b.getMap ());
     V z (b.getMap ());
 
-    ST alpha, beta, rho, rho_prev;
+    ST alpha, beta, rho;
+    // We don't actually need to assign to rho_prev here,
+    // but doing so silences a GCC 4.4.6 compiler warning.
+    ST rho_prev = STS::zero ();
     computeResidual (r, b, A, x); // r = b - A*x
     for (int i = 0; i < numIters; ++i) {
       solve (z, D_inv, r); // z = D_inv * r, that is, D \ r.
       rho = r.dot (z); // rho = r^T z; not sure if the order is right for complex arithmetic.
       if (i == 0) {
-	p = z;
+        p = z;
       } else {
-	beta = rho / rho_prev;
-	p.update (one, z, beta); // p = z + beta*p
+        beta = rho / rho_prev;
+        p.update (one, z, beta); // p = z + beta*p
       }
       A.apply (p, q);
       const ST p_dot_q = p.dot (q); // p_dot_q = p^T q; not sure if the order is right for complex arithmetic.
@@ -279,18 +282,18 @@ int numberOfIterations = 50;
 int numberOfEigenanalysisIterations = 15;
 int localNumberOfRows = 10000;
 
-} // namespace (anonymous) 
+} // namespace (anonymous)
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP ();
-  clp.setOption ("numIters", &numberOfIterations, 
-		 "Number of Chebyshev iterations");
-  clp.setOption ("numEigIters", &numberOfEigenanalysisIterations, 
-		 "Number of iterations of eigenvalue analysis (e.g., power method)");
-  clp.setOption ("localNumRows", &localNumberOfRows, 
-		 "Number of rows per process in the sparse matrix.");
+  clp.setOption ("numIters", &numberOfIterations,
+                 "Number of Chebyshev iterations");
+  clp.setOption ("numEigIters", &numberOfEigenanalysisIterations,
+                 "Number of iterations of eigenvalue analysis (e.g., power method)");
+  clp.setOption ("localNumRows", &localNumberOfRows,
+                 "Number of rows per process in the sparse matrix.");
 }
 
 
@@ -356,7 +359,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Fill the matrix.
   Array<GO> cols (3);
   Array<ST> vals (3);
-  for (GO globalRow = rowMap->getMinGlobalIndex (); 
+  for (GO globalRow = rowMap->getMinGlobalIndex ();
        globalRow <= rowMap->getMaxGlobalIndex (); ++globalRow) {
     size_t numEntries = 3;
     if (globalRow == rowMap->getMinAllGlobalIndex ()) {
@@ -429,7 +432,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "lambdaMin: " << lambdaMin << endl
       << "lambdaMax: " << lambdaMax << endl
       << "eigRatio: " << eigRatio << endl
-      << "Initial residual norm: " << maxInitResNorm << endl 
+      << "Initial residual norm: " << maxInitResNorm << endl
       << endl;
 
   Teuchos::ParameterList params;
@@ -481,7 +484,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   cg.setParameters (params);
   maxResNormCg = cg.apply (b, x);
 
-  os2 << "Results with lambdaMax = " << lambdaMax 
+  os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin and eigRatio:" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -523,7 +526,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   cg.setParameters (params);
   maxResNormCg = cg.apply (b, x);
 
-  os2 << "Results with lambdaMax = " << lambdaMax 
+  os2 << "Results with lambdaMax = " << lambdaMax
       << ", lambdaMin = " << lambdaMin << ", eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -575,7 +578,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   cg.setParameters (params);
   maxResNormCg = cg.apply (b, x);
 
-  os2 << "Results with lambdaMax = " << lambdaMax 
+  os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -620,7 +623,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   cg.setParameters (params);
   maxResNormCg = cg.apply (b, x);
 
-  os2 << "Results with lambdaMax = " << lambdaMax 
+  os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -731,13 +734,13 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   if (numEigIters >= 15) {
     const MT tol = Teuchos::as<MT> (1.0e-4);
     // Avoid division by zero when computing relative accuracy.
-    const MT relDiff = maxResNormTextbook == zero ? 
+    const MT relDiff = maxResNormTextbook == zero ?
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) :
       STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      maxResNormIfpack2 > maxResNormTextbook && relDiff > tol, 
-      std::runtime_error, 
-      "After " << numIters << " iterations of Chebyshev, with lambdaMax = " 
+      maxResNormIfpack2 > maxResNormTextbook && relDiff > tol,
+      std::runtime_error,
+      "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
       << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
       "does quite a bit worse than the textbook version of the algorithm.  The "
       "former has a max relative residual norm of " << maxResNormIfpack2 << ", "
