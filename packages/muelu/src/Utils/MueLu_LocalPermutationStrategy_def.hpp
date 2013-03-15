@@ -23,59 +23,81 @@
 namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
+  void
+  LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildPermutation (const Teuchos::RCP<Matrix> & A,
+                    const Teuchos::RCP<const Map> permRowMap,
+                    Level & currentLevel,
+                    const FactoryBase* genFactory) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
+
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT // TODO remove this -> check scalar = std::complex
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
-      Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
-      nDofsPerNode = Teuchos::rcp_dynamic_cast<const StridedMap>(permRowMapStrided)->getFixedBlockSize();
+      RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
+      nDofsPerNode = rcp_dynamic_cast<const StridedMap>(permRowMapStrided)->getFixedBlockSize();
     }
 
     //////////////////
-    std::vector<std::pair<GlobalOrdinal,GlobalOrdinal> > RowColPairs;
+    std::vector<std::pair<GO, GO> > RowColPairs;
+
+    // mfh 14 Mar 2013: Amortize the overhead of accessing the row and
+    // column Maps by hoisting access to them outside the loops.
+    // There are a lot of places in this method where you could do
+    // that for loop bounds; see the loop below, for example.
+    const Map& rowMap = * (A->getRowMap ());
+    const Map& colMap = * (A->getColMap ());
+    const Map& domMap = * (A->getDomainMap ());
 
     // loop over local nodes
     // TODO what about nOffset?
-    for ( LocalOrdinal node = 0; node < A->getRowMap()->getNodeNumElements()/nDofsPerNode; node++) {
+    for (LO node = 0; node < as<LO> (A->getRowMap()->getNodeNumElements()/nDofsPerNode); ++node) {
+      // FIXME (mfh 14 Mar 2013) SerialDenseMatrix only works (where
+      // "works" means "with the BLAS and LAPACK") for OrdinalType=int
+      // (its first template parameter).
+      Teuchos::SerialDenseMatrix<LO, Scalar> subBlockMatrix (nDofsPerNode, nDofsPerNode, true);
 
-      Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> subBlockMatrix(nDofsPerNode, nDofsPerNode, true);
+      std::vector<GO> growIds (nDofsPerNode);
 
-      std::vector<GlobalOrdinal> growIds(nDofsPerNode);
-
-      for ( LocalOrdinal lrdof = 0; lrdof < nDofsPerNode; lrdof++) { // TODO more complicated for variable dofs per node
-        GlobalOrdinal grow = getGlobalDofId(A, node, lrdof);
+      for (LO lrdof = 0; lrdof < as<GO> (nDofsPerNode); ++lrdof) { // TODO more complicated for variable dofs per node
+        const GO grow = getGlobalDofId (A, node, lrdof);
         growIds[lrdof] = grow;
 
         //if(permRowMap->isNodeGlobalElement(grow) == true) continue;
 
         // extract local row information from matrix
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> vals;
-        A->getLocalRowView(A->getRowMap()->getLocalElement(grow), indices, vals);
+        ArrayView<const LO> indices;
+        ArrayView<const Scalar> vals;
+        A->getLocalRowView (rowMap.getLocalElement (grow), indices, vals);
 
-        // find column entry with max absolute value
-        //GlobalOrdinal gMaxValIdx = 0;
-        //Scalar norm1 = 0.0;
-        Scalar maxVal = 0.0;
-        for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-          //norm1 += std::abs(vals[j]);
-          if(std::abs(vals[j]) > maxVal) {
-            maxVal = std::abs(vals[j]);
-            //gMaxValIdx = A->getColMap()->getGlobalElement(indices[j]);
+        // Find column entry with max absolute value
+        MT maxVal = STM::zero ();
+        for (size_t j = 0; j < as<size_t> (indices.size ()); ++j) {
+          const MT curMag = STS::magnitude (vals[j]);
+          if (curMag > maxVal) {
+            maxVal = curMag;
           }
         }
 
-        GlobalOrdinal grnodeid = globalDofId2globalNodeId(A,grow);
+        const GO grnodeid = globalDofId2globalNodeId (A, grow);
 
-        for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-          GlobalOrdinal gcol = A->getColMap()->getGlobalElement(indices[j]);
-          GlobalOrdinal gcnodeid = globalDofId2globalNodeId(A,gcol); // -> global node id
+        for (size_t j = 0; j < as<size_t> (indices.size ()); ++j) {
+          const GO gcol = colMap.getGlobalElement (indices[j]);
+          const GO gcnodeid = globalDofId2globalNodeId (A, gcol); // -> global node id
           if (grnodeid == gcnodeid) {
-            if(maxVal != 0.0) {
-              subBlockMatrix(lrdof, gcol % nDofsPerNode) = vals[j]/maxVal;
-            } else
-            {
-              subBlockMatrix(lrdof, gcol % nDofsPerNode) = vals[j]; // there is a problem
+            if (maxVal != STM::zero ()) {
+              subBlockMatrix (lrdof, gcol % nDofsPerNode) = vals[j] / maxVal;
+            } else {
+              subBlockMatrix (lrdof, gcol % nDofsPerNode) = vals[j]; // there is a problem
               std::cout << "maxVal never should be zero!!!!" << std::endl;
             }
           }
@@ -98,20 +120,21 @@ namespace MueLu {
       std::vector<Scalar> performance_vector = std::vector<Scalar>(result_perms.size());
       for(size_t t = 0; t < result_perms.size(); t++) {
         std::string s = result_perms[t];
-        Scalar value = 1.0;
-        for(size_t len=0; len<s.length(); len++) {
-          int col = static_cast<int>(s[len]-'0');
-          value = value * subBlockMatrix(len,col);
+        Scalar value = STS::one ();
+        for (size_t len = 0; len < s.length (); ++len) {
+          const int col = static_cast<int> (s[len] - '0');
+          value = value * subBlockMatrix (len, col);
         }
         performance_vector[t] = value;
       }
 
       // find permutation with maximum performance value
-      Scalar maxVal = 0.0;
+      MT maxVal = STM::one ();
       size_t maxPerformancePermutationIdx = 0;
       for (size_t j = 0; j < Teuchos::as<size_t>(performance_vector.size()); j++) {
-        if(std::abs(performance_vector[j]) > maxVal) {
-          maxVal = std::abs(performance_vector[j]);
+        const MT curMag = STS::magnitude (performance_vector[j]);
+        if (curMag > maxVal) {
+          maxVal = curMag;
           maxPerformancePermutationIdx = j;
         }
       }
@@ -121,10 +144,9 @@ namespace MueLu {
 
       std::string bestPerformancePermutation = result_perms[maxPerformancePermutationIdx] ;
       for(size_t t = 0; t<nDofsPerNode; t++) {
-        int col = static_cast<int>(bestPerformancePermutation[t]-'0');
-        RowColPairs.push_back(std::make_pair(growIds[t],growIds[col]));
+        const int col = static_cast<int> (bestPerformancePermutation[t] - '0');
+        RowColPairs.push_back (std::make_pair (growIds[t], growIds[col]));
       }
-
     } // end loop over local nodes
 
     //
@@ -138,60 +160,71 @@ namespace MueLu {
     Teuchos::RCP<Vector> Pperm = VectorFactory::Build(A->getRowMap());
     Teuchos::RCP<Vector> Qperm = VectorFactory::Build(A->getDomainMap());
 
-    Pperm->putScalar(0.0);
-    Qperm->putScalar(0.0);
+    Pperm->putScalar (STS::zero ());
+    Qperm->putScalar (STS::zero ());
 
     Teuchos::ArrayRCP<Scalar> PpermData = Pperm->getDataNonConst(0);
     Teuchos::ArrayRCP<Scalar> QpermData = Qperm->getDataNonConst(0);
 
-    typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = RowColPairs.begin();
-    while(p != RowColPairs.end() ) {
-      GlobalOrdinal ik = (*p).first;
-      GlobalOrdinal jk = (*p).second;
+    typename std::vector<std::pair<GO, GO> >::iterator p = RowColPairs.begin();
+    while (p != RowColPairs.end()) {
+      const GO ik = p->first;
+      const GO jk = p->second;
 
-      LocalOrdinal lik = A->getRowMap()->getLocalElement(ik);
-      LocalOrdinal ljk = A->getDomainMap()->getLocalElement(jk);
+      const LO lik = rowMap.getLocalElement (ik);
+      const LO ljk = domMap.getLocalElement (jk);
 
-      Pperm->replaceLocalValue(lik,ik);
-      Qperm->replaceLocalValue(ljk,ik);
+      Pperm->replaceLocalValue (lik, ik);
+      Qperm->replaceLocalValue (ljk, ik);
 
-      p = RowColPairs.erase(p);
+      p = RowColPairs.erase (p);
     }
 
-    if(RowColPairs.size()>0) GetOStream(Warnings0,0) << "MueLu::LocalPermutationStrategy: There are Row/col pairs left!" << std::endl;
+    if (RowColPairs.size() > 0) {
+      GetOStream(Warnings0, 0) << "MueLu::LocalPermutationStrategy: "
+        "There are Row/col pairs left!" << std::endl;
+    }
 
     // Qperm should be fine
     // build matrices
 
     // create new empty Matrix
-    Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
-    Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
+    RCP<CrsMatrixWrap> permPTmatrix =
+      rcp (new CrsMatrixWrap (A->getRowMap (), 1, Xpetra::StaticProfile));
+    RCP<CrsMatrixWrap> permQTmatrix =
+      rcp (new CrsMatrixWrap (A->getRowMap (), 1, Xpetra::StaticProfile));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
-      Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(PpermData[row])); // column idx for Perm^T
-      Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(QpermData[row])); // column idx for Qperm
-      Teuchos::ArrayRCP<Scalar> valout(1,1.0);
-      permPTmatrix->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indoutP.view(0,indoutP.size()), valout.view(0,valout.size()));
-      permQTmatrix->insertGlobalValues (A->getRowMap()->getGlobalElement(row), indoutQ.view(0,indoutQ.size()), valout.view(0,valout.size()));
+    for (size_t row = 0; row < A->getNodeNumRows (); ++row) {
+      ArrayRCP<GO> indoutP (1, Teuchos::as<GO> (PpermData[row])); // column idx for Perm^T
+      ArrayRCP<GO> indoutQ (1, Teuchos::as<GO> (QpermData[row])); // column idx for Qperm
+      ArrayRCP<Scalar> valout (1, STS::one ());
+      permPTmatrix->insertGlobalValues (rowMap.getGlobalElement (row),
+                                        indoutP.view (0, indoutP.size ()),
+                                        valout.view (0, valout.size ()));
+      permQTmatrix->insertGlobalValues (rowMap.getGlobalElement (row),
+                                        indoutQ.view (0,indoutQ.size ()),
+                                        valout.view (0,valout.size ()));
     }
 
+    // FIXME (mfh 14 Mar 2013) Do we need to be passing in the domain
+    // and range Maps here?
     permPTmatrix->fillComplete();
     permQTmatrix->fillComplete();
 
-    Teuchos::RCP<Matrix> permPmatrix = Utils2::Transpose(permPTmatrix,true);
+    RCP<Matrix> permPmatrix = Utils2::Transpose (permPTmatrix, true);
 
-    for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
-      if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
+    for (size_t row=0; row < permPTmatrix->getNodeNumRows (); ++row) {
+      if (permPTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
-      if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
+      if (permPmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPmatrix is " << permPmatrix->getNumEntriesInLocalRow(row) << std::endl;
-      if(permQTmatrix->getNumEntriesInLocalRow(row) != 1)
+      if (permQTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permQmatrix is " << permQTmatrix->getNumEntriesInLocalRow(row) << std::endl;
     }
 
     // build permP * A * permQT
-    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false);
-    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false);
+    RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false);
+    RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false);
 
     /*
     MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
@@ -200,69 +233,76 @@ namespace MueLu {
     MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permPApermQt.mat", *permPApermQt);
     */
     // build scaling matrix
-    Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
-    Teuchos::RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
-    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
-    Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
+    RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
+    RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
+    ArrayRCP<const Scalar> diagVecData = diagVec->getData(0);
+    ArrayRCP<Scalar> invDiagVecData = invDiagVec->getDataNonConst(0);
 
     permPApermQt->getLocalDiagCopy(*diagVec);
-    for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagVecData[i] != 0.0)
-        invDiagVecData[i] = 1/diagVecData[i];
+    for (size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
+      if(diagVecData[i] != STS::zero ())
+        invDiagVecData[i] = STS::one () / diagVecData[i];
       else {
-        invDiagVecData[i] = 1.0;
+        invDiagVecData[i] = STS::one ();
         GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found zero on diagonal in row " << i << std::endl;
       }
     }
 
-    Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
+    RCP<CrsMatrixWrap> diagScalingOp = rcp (new CrsMatrixWrap (permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
-      Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
-      Teuchos::ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
-      diagScalingOp->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
+    for (size_t row=0; row<A->getNodeNumRows(); ++row) {
+      ArrayRCP<GO> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
+      ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
+      diagScalingOp->insertGlobalValues (rowMap.getGlobalElement (row),
+                                         indout.view(0,indout.size()),
+                                         valout.view(0,valout.size()));
     }
+
+    // FIXME (mfh 14 Mar 2013) Do we need to be passing in the domain
+    // and range Maps here?
     diagScalingOp->fillComplete();
 
-    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false);
-    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory/*this*/);
+    RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false);
+    currentLevel.Set("A", rcp_dynamic_cast<Matrix>(scaledA), genFactory/*this*/);
 
-    currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory/*this*/);  // TODO careful with this!!!
-    currentLevel.Set("permP", Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), genFactory/*this*/);
-    currentLevel.Set("permQT", Teuchos::rcp_dynamic_cast<Matrix>(permQTmatrix), genFactory/*this*/);
-    currentLevel.Set("permScaling", Teuchos::rcp_dynamic_cast<Matrix>(diagScalingOp), genFactory/*this*/);
+    currentLevel.Set("permA", rcp_dynamic_cast<Matrix>(permPApermQt), genFactory/*this*/);  // TODO careful with this!!!
+    currentLevel.Set("permP", rcp_dynamic_cast<Matrix>(permPmatrix), genFactory/*this*/);
+    currentLevel.Set("permQT", rcp_dynamic_cast<Matrix>(permQTmatrix), genFactory/*this*/);
+    currentLevel.Set("permScaling", rcp_dynamic_cast<Matrix>(diagScalingOp), genFactory/*this*/);
 
     //// count row permutations
     // count zeros on diagonal in P -> number of row permutations
-    Teuchos::RCP<Vector> diagPVec = VectorFactory::Build(permPmatrix->getRowMap(),true);
+    RCP<Vector> diagPVec = VectorFactory::Build(permPmatrix->getRowMap(),true);
     permPmatrix->getLocalDiagCopy(*diagPVec);
-    Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
-    LocalOrdinal lNumRowPermutations = 0;
-    GlobalOrdinal gNumRowPermutations = 0;
-    for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagPVecData[i] == 0.0) {
+    ArrayRCP<const Scalar> diagPVecData = diagPVec->getData(0);
+    LO lNumRowPermutations = 0;
+    GO gNumRowPermutations = 0;
+    for (size_t i = 0; i < diagPVec->getMap()->getNodeNumElements(); ++i) {
+      if (diagPVecData[i] == STS::zero ()) {
         lNumRowPermutations++;
       }
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagPVec->getMap()->getComm(), (LocalOrdinal)lNumRowPermutations, gNumRowPermutations);
+    sumAll (diagPVec->getMap()->getComm(), as<LO> (lNumRowPermutations),
+            gNumRowPermutations);
 
     //// count column permutations
     // count zeros on diagonal in Q^T -> number of column permutations
-    Teuchos::RCP<Vector> diagQTVec = VectorFactory::Build(permQTmatrix->getRowMap(),true);
+    RCP<Vector> diagQTVec = VectorFactory::Build(permQTmatrix->getRowMap(),true);
     permQTmatrix->getLocalDiagCopy(*diagQTVec);
-    Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
-    LocalOrdinal lNumColPermutations = 0;
-    GlobalOrdinal gNumColPermutations = 0;
+    ArrayRCP<const Scalar> diagQTVecData = diagQTVec->getData(0);
+    LO lNumColPermutations = 0;
+    GO gNumColPermutations = 0;
     for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagQTVecData[i] == 0.0) {
+      if(diagQTVecData[i] == STS::zero ()) {
         lNumColPermutations++;
       }
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
+    sumAll (diagQTVec->getMap()->getComm(), as<LO> (lNumColPermutations),
+            gNumColPermutations);
 
     currentLevel.Set("#RowPermutations", gNumRowPermutations, genFactory/*this*/);
     currentLevel.Set("#ColPermutations", gNumColPermutations, genFactory/*this*/);
