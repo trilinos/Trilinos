@@ -20,6 +20,8 @@ namespace Teuchos
 namespace stk {
   namespace adapt {
 
+    bool s_compare_using_entity_impl = false;
+
     static int s_nsz_parent = 0;
     static bool s_element_is_ghost = false;
     static stk::mesh::Selector *s_oldPartSelector = 0;

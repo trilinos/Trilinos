@@ -168,36 +168,13 @@ namespace stk {
         base_type::clear();
       }
 
-      inline
-      bool operator==(const VAL& rhs) const
+      bool operator==(const VAL& rhs) const;
+      bool operator!=(const VAL& rhs) const
       {
-        if (base_type::size() != rhs.size())
-          return false;
-        //return true;
-        for (size_type i = 0; i < base_type::size(); i++)
-          {
-            if ((*this)[i] != rhs[i])
-              return false;
-          }
-        return true;
+        return !operator==(rhs);
       }
 
-      bool operator<(const VAL& rhs) const
-      {
-        if (base_type::size() < rhs.size())
-          return true;
-        else if (base_type::size() > rhs.size())
-          return false;
-        else
-          {
-            for (size_type i = 0; i < base_type::size(); i++)
-              {
-                if ((*this)[i] < rhs[i])
-                  return true;
-              }
-          }
-        return false;
-      }
+      bool operator<(const VAL& rhs) const;
 
     };
 
@@ -217,6 +194,38 @@ namespace stk {
       return sum;
     }
 
+    template<class T, std::size_t N, class CompareClass >
+    inline bool SubDimCell<T,N,CompareClass>::
+    operator==(const VAL& rhs) const
+    {
+      if (base_type::size() != rhs.size())
+        return false;
+      for (size_type i = 0; i < base_type::size(); i++)
+        {
+          if ((*this)[i] != rhs[i])
+            return false;
+        }
+      return true;
+    }
+
+    template<class T, std::size_t N, class CompareClass >
+    inline bool SubDimCell<T,N,CompareClass>::
+    operator<(const VAL& rhs) const
+    {
+      if (base_type::size() < rhs.size())
+        return true;
+      else if (base_type::size() > rhs.size())
+        return false;
+      else
+        {
+          for (size_type i = 0; i < base_type::size(); i++)
+            {
+              if ((*this)[i] < rhs[i])
+                return true;
+            }
+        }
+      return false;
+    }
 
 
 #endif
@@ -312,9 +321,6 @@ namespace stk {
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
-#if 0
-        return x == y;
-#else
         if (x.getHash() != y.getHash()) return false;
         if (x.size() != y.size()) return false;
         typename  _Tp::const_iterator ix = x.begin();
@@ -325,7 +331,6 @@ namespace stk {
             if (*ix != *iy) return false;
           }
         return true;
-#endif
       }
     };
 

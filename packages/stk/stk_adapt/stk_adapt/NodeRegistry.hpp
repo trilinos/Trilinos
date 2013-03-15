@@ -181,41 +181,123 @@ namespace stk {
 
     typedef boost::array<double, 2> Double2;
     typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char, Double2> SubDimCellData;
+    // FIXME - this is a hack to avoid a valgrind error that will go away after
+    //  migrating to the current stk_migration branch - srk 3/15/13
+    extern bool s_compare_using_entity_impl;
 
 #define SDS_ENTITY_TYPE_ID 0
 #if SDS_ENTITY_TYPE_ID
     typedef stk::mesh::EntityId SDSEntityType;
 
-    struct CompareSDSEntityType {
-      bool operator() (SDSEntityType i, SDSEntityType j) { return (i < j) ; }
-    };
-
 #else
     typedef stk::mesh::Entity SDSEntityType;
 
-    struct CompareSDSEntityType {
-      bool operator() (SDSEntityType i, SDSEntityType j) { return (i.identifier() < j.identifier());}
+    class MyEntityLess {
+    public:
+      /** \brief  Comparison operator */
+      bool operator()(const stk::mesh::Entity lhs, const stk::mesh::Entity rhs) const
+      {
+        if (s_compare_using_entity_impl)
+          {
+            return lhs.m_entityImpl < rhs.m_entityImpl;
+          }
+        else
+          {
+            const stk::mesh::EntityKey lhs_key = lhs.is_valid() ? lhs.key() : stk::mesh::EntityKey();
+            const stk::mesh::EntityKey rhs_key = rhs.is_valid() ? rhs.key() : stk::mesh::EntityKey();
+            return lhs_key < rhs_key;
+          }
+      }
+
+    }; //class MyEntityLess
+
+    class MyEntityEqual
+    {
+    public:
+      bool operator()(const stk::mesh::Entity lhs, const stk::mesh::Entity rhs) const
+      {
+        if (s_compare_using_entity_impl)
+          {
+            return lhs.m_entityImpl == rhs.m_entityImpl;
+          }
+        else
+          {
+            const stk::mesh::EntityKey lhs_key = lhs.is_valid() ? lhs.key() : stk::mesh::EntityKey();
+            const stk::mesh::EntityKey rhs_key = rhs.is_valid() ? rhs.key() : stk::mesh::EntityKey();
+            return lhs_key == rhs_key;
+          }
+      }
     };
 
+    struct CompareSDSEntityType {
+      bool operator() (SDSEntityType i, SDSEntityType j) {
+        //return (i.identifier() < j.identifier());
+        MyEntityLess el = MyEntityLess();
+        return el(i,j);
+      }
+    };
+
+    // SubDimCellCompare<SDSEntityType>
     template<>
-    inline int SubDimCell<SDSEntityType, 4, SubDimCellCompare<SDSEntityType> >::hashCode()
-#if 1
+    inline int SubDimCell<SDSEntityType, 4, CompareSDSEntityType >::hashCode()
     {
       typedef stk::percept::NoMallocArray<SDSEntityType,4> base_type;
 
       std::size_t sum = 0;
-
       for ( base_type::iterator i = this->begin(); i != this->end(); i++)
         {
-          sum += static_cast<std::size_t>((*i).identifier());
+
+          if (s_compare_using_entity_impl)
+            {
+              sum += size_t((*i).m_entityImpl);
+            }
+          else
+            {
+              sum += static_cast<std::size_t>((*i).identifier());
+            }
         }
       return sum;
     }
-#endif
+
+    template<>
+    struct my_fast_hash<SDSEntityType, 4> : public std::unary_function< SubDimCell<SDSEntityType, 4, CompareSDSEntityType>, std::size_t>
+    {
+      typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
+
+      inline std::size_t
+      operator()(const _Tp& x) const
+      {
+        return x.getHash();
+      }
+
+    };
+
+
+    template<>
+    struct my_fast_equal_to<SDSEntityType, 4> :  public std::binary_function<SubDimCell<SDSEntityType, 4, CompareSDSEntityType>,
+                                                           SubDimCell<SDSEntityType, 4, CompareSDSEntityType>, bool>
+    {
+      typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
+      inline bool
+      operator()(const _Tp& x, const _Tp& y) const
+      {
+        if (x.getHash() != y.getHash()) return false;
+        if (x.size() != y.size()) return false;
+        _Tp::const_iterator ix = x.begin();
+        _Tp::const_iterator iy = y.begin();
+        for (; ix != x.end(); ix++, iy++)
+          {
+            MyEntityEqual ee = MyEntityEqual();
+            if (!ee(*ix, *iy)) return false;
+          }
+        return true;
+      }
+    };
 
 #endif
 
-    typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
+    //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
+    typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> SubDimCell_SDSEntityType;
 
     inline std::ostream& operator<<(std::ostream& out,  SubDimCellData& val)
     {
@@ -462,6 +544,7 @@ namespace stk {
         if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes num_delete= " << num_delete <<  std::endl;
         if (to_erase.size())
           {
+            s_compare_using_entity_impl = true;
             if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes nodeIds_onSE.size() != node_to_keep.size()), to_erase= " << to_erase.size() <<  std::endl;
             for (unsigned i=0; i < to_erase.size(); i++)
               {
@@ -470,6 +553,7 @@ namespace stk {
                     map.erase(to_erase[i]);
                   }
               }
+            s_compare_using_entity_impl = false;
           }
 
         // check
