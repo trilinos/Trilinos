@@ -223,21 +223,21 @@ struct Ignore :
 
 template <typename T>
 inline
-Provider<T> makeProvider(const Teuchos::RCP<T> &instance)
+Provider<T> providerFromRcp(const Teuchos::RCP<T> &instance)
 {
   return SharingProviderFunctor<T>(instance);
 }
 
 template <typename T, typename ArgumentHandlingStrategy>
 inline
-Provider<T> makeProvider()
+Provider<T> providerFromConstructor()
 {
   return CreatingProviderFunctor<T, ArgumentHandlingStrategy>();
 }
 
 template <typename T>
 inline
-Provider<T> makeProvider()
+Provider<T> providerFromConstructor()
 {
   return CreatingProviderFunctor<T, Forward>();
 }

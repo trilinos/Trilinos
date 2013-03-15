@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef Piro_ENABLE_NOX
       solverFactory.setDefaultProvider<NOX::Epetra::Observer>(
-          Piro::makeProvider<ObserveSolution_Epetra, Piro::Ignore>());
+          Piro::providerFromConstructor<ObserveSolution_Epetra, Piro::Ignore>());
 #endif
 
       // Use these two objects to construct a Piro solved application
