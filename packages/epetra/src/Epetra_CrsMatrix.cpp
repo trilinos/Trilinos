@@ -4651,7 +4651,7 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
 {
   (void)Distor;	
 
-  // Rest of work can be done using RowMatrix only  
+  // Rest of work can be done using CrsMatrix only  
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
 
   // Grab the importer, if we have one
@@ -5020,27 +5020,43 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
 }
 
 
+
 // ===================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * RangeMap)
-   : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
-   Epetra_CompObject(),
-   Epetra_BLAS(),
-   Graph_(Copy, RowImporter.TargetMap(), 0, false),
-   Values_(0),
-   Values_alloc_lengths_(0),
-   All_Values_(0),
-   NumMyRows_(RowImporter.TargetMap().NumMyPoints()),
-   ImportVector_(0),
-   ExportVector_(0),
-   CV_(Copy)
+template<typename int_type>
+int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& Source, 
+						    int NumSameIDs,
+						    int NumRemoteIDs,
+						    const int * RemoteLIDs,
+						    int NumPermuteIDs,
+						    const int *PermuteToLIDs,
+						    const int *PermuteFromLIDs,
+						    int LenImports,
+						    char* Imports,
+						    std::vector<int> & pids,
+						    std::vector<int_type> &CSR_colind_LL)
 {
-   // Fused constructor, import & FillComplete
+  // What we really need to know is where in the CSR arrays each row should start (aka the rowptr).
+  // We do that by (a) having each row record it's size in the rowptr (b) doing a cumulative sum to get the rowptr values correct and 
+  // (c) Having each row copied into the right colind / values locations.
+
+  // From Epetra_CrsMatrix UnpackAndCombine():
+  // Each segment of Exports will be filled by a packed row of information for each row as follows:
+  // 1st int: GRID of row where GRID is the global row ID for the source matrix
+  // next int:  NumEntries, Number of indices in row.
+  // next NumEntries: The actual indices for the row.
+
   int i,j,rv;
   int N = NumMyRows();
-  Epetra_Util util;
-  int MyPID = SourceMatrix.Comm().MyPID();
+  int MyPID = Comm().MyPID();
 
-  bool communication_needed = RowImporter.SourceMap().DistributedGlobal();
+  // Rest of work can be done using CrsMatrix only  
+  const Epetra_CrsMatrix & SourceMatrix = dynamic_cast<const Epetra_CrsMatrix &>(Source);
+
+  // Pull and pointers & allocate memory (rowptr should be the right size already)
+  Epetra_IntSerialDenseVector & CSR_rowptr = ExpertExtractIndexOffset();
+  Epetra_IntSerialDenseVector & CSR_colind = ExpertExtractIndices();  
+  double *&                     CSR_vals   = ExpertExtractValues();  
+  // Presume the RowPtr is the right size
 
   bool UseLL=false;
   int SizeofIntType = -1;
@@ -5053,80 +5069,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
     UseLL=true;
   }
   else
-    throw ReportError("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type",-1);
-
-
-  // The basic algorithm here is:
-  // 1) Call Distor.Do to handle the import.
-  // 2) Copy all the Imported and Copy/Permuted data into the raw Epetra_CrsMatrix / Epetra_CrsGraphData pointers, still using GIDs.
-  // 3) Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids) AND
-  //    reindexes to LIDs.
-  // 4) Call ExpertStaticFillComplete(B.DomainMap(),A.RangeMap());
-
-  // WARNING: This assumes both GIDs and LIDs are ints (we use the All_Indices array for both).  Will need to fix for Epetra64.
-
-  // Sanity Check
-  if (!SourceMatrix.RowMap().SameAs(RowImporter.SourceMap())) 
-    throw ReportError("Epetra_CrsMatrix: Fused copy constructor requires Importer.SourceMap() to match SourceMatrix.RowMap()",-1);
-  
-  // Get information from the Importer
-  int NumSameIDs             = RowImporter.NumSameIDs();
-  int NumPermuteIDs          = RowImporter.NumPermuteIDs();
-  int NumRemoteIDs           = RowImporter.NumRemoteIDs();
-  int NumExportIDs           = RowImporter.NumExportIDs();
-  int* ExportLIDs            = RowImporter.ExportLIDs();
-  int* RemoteLIDs            = RowImporter.RemoteLIDs();
-  int* PermuteToLIDs         = RowImporter.PermuteToLIDs();
-  int* PermuteFromLIDs       = RowImporter.PermuteFromLIDs();
-  Epetra_Distributor& Distor = RowImporter.Distributor();
-
-  // Pull and pointers & allocate memory (rowptr should be the right size already)
-  Epetra_IntSerialDenseVector & CSR_rowptr = ExpertExtractIndexOffset();
-  Epetra_IntSerialDenseVector & CSR_colind = ExpertExtractIndices();  
-  double *&                     CSR_vals   = ExpertExtractValues();  
-  CSR_rowptr.Resize(N+1);
-
-  // Unused if we're not in LL mode
-  std::vector<long long> CSR_colind_LL;
-
-  /***************************************************/
-  /***** 1) From Epetra_DistObject::DoTransfer() *****/
-  /***************************************************/
-  rv=CheckSizes(SourceMatrix);
-  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in CheckSizes()",-2);
-
-  int SizeOfPacket; 
-  bool VarSizes = false;
-  if( NumExportIDs > 0) {
-    delete [] Sizes_;
-    Sizes_ = new int[NumExportIDs];
-  }
-
-  rv=PackAndPrepareWithOwningPIDs(SourceMatrix, NumExportIDs, ExportLIDs,LenExports_, Exports_, SizeOfPacket, Sizes_, VarSizes, Distor);
-  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in PackAndPrepareWithOwningPIDs()",-3);
-
-  if (communication_needed) {
-    // Do the exchange of remote data
-    if( VarSizes ) 
-      rv=Distor.Do(Exports_, SizeOfPacket, Sizes_, LenImports_, Imports_);
-    else
-      rv=Distor.Do(Exports_, SizeOfPacket, LenImports_, Imports_);
-  }
-  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in Distor.Do",-3);
-
-
-  /*********************************************************************/
-  /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
-  /*********************************************************************/
-  // What we really need to know is where in the CSR arrays each row should start (aka the rowptr).
-  // We do that by (a) having each row record it's size in the rowptr (b) doing a cumulative sum to get the rowptr values correct and 
-  // (c) Having each row copied into the right colind / values locations.
-
-  // From Epetra_CrsMatrix UnpackAndCombine():
-  // Each segment of Exports will be filled by a packed row of information for each row as follows:
-  // 1st int: GRID of row where GRID is the global row ID for the source matrix
-  // next int:  NumEntries, Number of indices in row.
-  // next NumEntries: The actual indices for the row.
+    throw ReportError("EpetraExt::npackAndCombineIntoStaticProfile: Unable to determine source global index type",-1);
 
 
   // SameIDs: Always first, always in the same place
@@ -5195,7 +5138,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   if(SourceMatrix.Importer()) Epetra_Util::GetPids(*SourceMatrix.Importer(),SourcePids,true);
 
   // Get a list of GIDs ready for colmap, preseed with -1 for local
-  std::vector<int> pids(mynnz,-1);
+  pids.resize(mynnz); pids.assign(mynnz,-1);
  
   // Grab pointers for SourceMatrix
   int    * Source_rowptr, * Source_colind;
@@ -5287,6 +5230,115 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
 	}
       }    
     }
+  }
+  return 0;
+}
+
+
+// ===================================================================
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * RangeMap)
+   : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
+   Epetra_CompObject(),
+   Epetra_BLAS(),
+   Graph_(Copy, RowImporter.TargetMap(), 0, false),
+   Values_(0),
+   Values_alloc_lengths_(0),
+   All_Values_(0),
+   NumMyRows_(RowImporter.TargetMap().NumMyPoints()),
+   ImportVector_(0),
+   ExportVector_(0),
+   CV_(Copy)
+{
+   // Fused constructor, import & FillComplete
+  int rv;
+  int N = NumMyRows();
+  Epetra_Util util;
+
+  bool communication_needed = RowImporter.SourceMap().DistributedGlobal();
+
+  bool UseLL=false;
+  int SizeofIntType = -1;
+  if(SourceMatrix.RowMap().GlobalIndicesInt()) {
+    SizeofIntType = (int)sizeof(int); 
+    UseLL=false;
+  }
+  else if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
+    SizeofIntType = (int)sizeof(long long); 
+    UseLL=true;
+  }
+  else
+    throw ReportError("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type",-1);
+
+
+  // The basic algorithm here is:
+  // 1) Call Distor.Do to handle the import.
+  // 2) Copy all the Imported and Copy/Permuted data into the raw Epetra_CrsMatrix / Epetra_CrsGraphData pointers, still using GIDs.
+  // 3) Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids) AND
+  //    reindexes to LIDs.
+  // 4) Call ExpertStaticFillComplete(B.DomainMap(),A.RangeMap());
+
+  // WARNING: This assumes both GIDs and LIDs are ints (we use the All_Indices array for both).  Will need to fix for Epetra64.
+
+  // Sanity Check
+  if (!SourceMatrix.RowMap().SameAs(RowImporter.SourceMap())) 
+    throw ReportError("Epetra_CrsMatrix: Fused copy constructor requires Importer.SourceMap() to match SourceMatrix.RowMap()",-1);
+  
+  // Get information from the Importer
+  int NumSameIDs             = RowImporter.NumSameIDs();
+  int NumPermuteIDs          = RowImporter.NumPermuteIDs();
+  int NumRemoteIDs           = RowImporter.NumRemoteIDs();
+  int NumExportIDs           = RowImporter.NumExportIDs();
+  int* ExportLIDs            = RowImporter.ExportLIDs();
+  int* RemoteLIDs            = RowImporter.RemoteLIDs();
+  int* PermuteToLIDs         = RowImporter.PermuteToLIDs();
+  int* PermuteFromLIDs       = RowImporter.PermuteFromLIDs();
+  Epetra_Distributor& Distor = RowImporter.Distributor();
+
+  // Pull and pointers & allocate memory (rowptr should be the right size already)
+  Epetra_IntSerialDenseVector & CSR_rowptr = ExpertExtractIndexOffset();
+  Epetra_IntSerialDenseVector & CSR_colind = ExpertExtractIndices();  
+  double *&                     CSR_vals   = ExpertExtractValues();  
+  CSR_rowptr.Resize(N+1);
+
+  // Unused if we're not in LL mode
+  std::vector<long long> CSR_colind_LL;
+
+  /***************************************************/
+  /***** 1) From Epetra_DistObject::DoTransfer() *****/
+  /***************************************************/
+  rv=CheckSizes(SourceMatrix);
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in CheckSizes()",-2);
+
+  int SizeOfPacket; 
+  bool VarSizes = false;
+  if( NumExportIDs > 0) {
+    delete [] Sizes_;
+    Sizes_ = new int[NumExportIDs];
+  }
+
+  rv=PackAndPrepareWithOwningPIDs(SourceMatrix, NumExportIDs, ExportLIDs,LenExports_, Exports_, SizeOfPacket, Sizes_, VarSizes, Distor);
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in PackAndPrepareWithOwningPIDs()",-3);
+
+  if (communication_needed) {
+    // Do the exchange of remote data
+    if( VarSizes ) 
+      rv=Distor.Do(Exports_, SizeOfPacket, Sizes_, LenImports_, Imports_);
+    else
+      rv=Distor.Do(Exports_, SizeOfPacket, LenImports_, Imports_);
+  }
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused copy constructor failed in Distor.Do",-3);
+
+
+  /*********************************************************************/
+  /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
+  /*********************************************************************/
+
+  std::vector<int> pids;
+  if(UseLL) 
+    UnpackAndCombineIntoCrsArrays<long long>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,pids,CSR_colind_LL);
+  else {
+    std::vector<int> dummy;
+    UnpackAndCombineIntoCrsArrays<int>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,pids,dummy);
   }
 
   /**************************************************************/

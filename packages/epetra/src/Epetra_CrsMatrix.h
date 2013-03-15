@@ -1498,6 +1498,19 @@ or if the number of entries in this row exceed the Length parameter.
 				   bool & VarSizes,
 				   Epetra_Distributor & Distor);
   
+  // For fused constructor
+  template<typename int_type>
+  int UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& Source, 
+				    int NumSameIDs,
+				    int NumRemoteIDs,
+				    const int * RemoteLIDs,
+				    int NumPermuteIDs,
+				    const int *PermuteToLIDs,
+				    const int *PermuteFromLIDs,
+				    int LenImports,
+				    char* Imports,
+				    std::vector<int> & pids,
+				    std::vector<int_type> &CSR_colind_LL);
 
   // For fused constructor
   template<typename int_type>
