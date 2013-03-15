@@ -116,11 +116,8 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
 
 #ifdef Piro_ENABLE_NOX
-      {
-        const std::string noxObserverToken = "My NOX Observer";
-        solverFactory.setNOXObserverProvider(noxObserverToken, Piro::makeProvider<ObserveSolution_Epetra, Piro::Ignore>());
-        piroParams.sublist("NOX Observer").set("Type", noxObserverToken);
-      }
+      solverFactory.setDefaultProvider<NOX::Epetra::Observer>(
+          Piro::makeProvider<ObserveSolution_Epetra, Piro::Ignore>());
 #endif
 
       // Use these two objects to construct a Piro solved application

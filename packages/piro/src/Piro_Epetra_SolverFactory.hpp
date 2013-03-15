@@ -83,6 +83,11 @@ public:
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<EpetraExt::ModelEvaluator> &model);
 
+  //! Replace the default auxiliary object provider
+  template <typename T>
+  void setDefaultProvider(const Provider<T> &p);
+
+  //! Register a new auxiliary object provider
   template <typename T>
   void setProvider(const std::string &key, const Provider<T> &p);
 
@@ -148,6 +153,14 @@ private:
   ExtensibleFactory<Rythmos::IntegrationObserverBase<double> > rythmosObserverFactory_;
 #endif /* Piro_ENABLE_Rythmos */
 };
+
+template <typename T>
+inline
+void
+SolverFactory::setDefaultProvider(const Piro::Provider<T> &p)
+{
+  this->getFactory<T>().setDefaultProvider(p);
+}
 
 template <typename T>
 inline

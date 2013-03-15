@@ -132,16 +132,8 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
   }
 
   Piro::Epetra::SolverFactory solverFactory;
-  {
-    const std::string token = "Interface";
-    solverFactory.setNOXInterfaceProvider(token, nox_interface);
-    Teuchos::sublist(piroParams, token)->set("Type", token);
-  }
-  {
-    const std::string token = "Linear System";
-    solverFactory.setNOXLinearSystemProvider(token, linsys);
-    Teuchos::sublist(piroParams, token)->set("Type", token);
-  }
+  solverFactory.setDefaultProvider<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
+  solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(linsys);
 
   // Create solver to map p -> g
   mp_solver = solverFactory.createSolver(piroParams, mp_nonlin_model);

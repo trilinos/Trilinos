@@ -216,16 +216,8 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_)
     }
 
     Piro::Epetra::SolverFactory solverFactory;
-    {
-      const std::string token = "Interface";
-      solverFactory.setNOXInterfaceProvider(token, nox_interface);
-      Teuchos::sublist(piroParams, token)->set("Type", token);
-    }
-    {
-      const std::string token = "Linear System";
-      solverFactory.setNOXLinearSystemProvider(token, linsys);
-      Teuchos::sublist(piroParams, token)->set("Type", token);
-    }
+    solverFactory.setDefaultProvider<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
+    solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(linsys);
 
     // Create solver to map p -> g
     const Teuchos::RCP<EpetraExt::ModelEvaluator>  mp_solver
@@ -435,18 +427,10 @@ createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model,
 		       basis, sg_parallel_data, A, base_map, sg_map));
       }
 
-      {
-        const std::string token = "Linear System";
-        solverFactory.setNOXLinearSystemProvider(token, sg_linsys);
-        Teuchos::sublist(piroParams, token)->set("Type", token);
-      }
+      solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(sg_linsys);
     }
 
-    {
-      const std::string token = "NOX Observer";
-      solverFactory.setNOXObserverProvider(token, sg_observer);
-      Teuchos::sublist(piroParams, token)->set("Type", token);
-    }
+    solverFactory.setDefaultProvider<NOX::Epetra::Observer>(sg_observer);
 
     // Will find preconditioner for Matrix-Free method
     sg_block_solver = solverFactory.createSolver(piroParams, sg_model);

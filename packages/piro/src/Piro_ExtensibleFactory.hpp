@@ -244,25 +244,36 @@ Provider<T> makeProvider()
 
 
 template <typename T>
+struct NullProviderFunctor :
+  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const { return Teuchos::null; }
+};
+
+template <typename T>
 class ExtensibleFactory {
 public:
-  explicit ExtensibleFactory(const std::string &selectorToken = "Type") :
-    selectorToken_(selectorToken)
+  ExtensibleFactory() :
+    defaultProvider_(NullProviderFunctor<T>()),
+    selectorToken_("Type")
   {}
 
+  const Provider<T> &defaultProvider() const { return defaultProvider_; }
+  void setDefaultProvider(const Provider<T> &p) { defaultProvider_ = p; }
+
   const std::string &selectorToken() const { return selectorToken_; }
+  void setSelectorToken(const std::string &t) { selectorToken_ = t; }
 
   Teuchos::RCP<const ProviderBase<T> > provider(const std::string &key) const;
-
-  void setProvider(const std::string &key, const Provider<T> &h);
+  void setProvider(const std::string &key, const Provider<T> &p);
 
   Teuchos::RCP<T> create(const Teuchos::RCP<Teuchos::ParameterList> &params);
 
 private:
-  Provider<T> getProvider(const std::string &key) const;
+  Provider<T> defaultProvider_;
 
   std::string selectorToken_;
 
+  Provider<T> getProvider(const std::string &key) const;
   typedef std::map<std::string, Provider<T> > ProviderMap;
   ProviderMap providers_;
 };
@@ -271,17 +282,16 @@ template <typename T>
 Teuchos::RCP<T>
 ExtensibleFactory<T>::create(const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
-  Teuchos::RCP<T> result;
   const Teuchos::Ptr<const std::string> type(Teuchos::getParameterPtr<std::string>(*params, selectorToken_));
   if (Teuchos::nonnull(type)) {
     const std::string &key = *type;
     Provider<T> typeProvider = this->getProvider(key);
     if (nonnull(typeProvider)) {
       const Teuchos::RCP<Teuchos::ParameterList> &providerParams = Teuchos::sublist(params, key);
-      result = typeProvider(providerParams);
+      return typeProvider(providerParams);
     }
   }
-  return result;
+  return defaultProvider_(params);
 }
 
 template <typename T>
