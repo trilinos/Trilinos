@@ -1553,6 +1553,25 @@ class test_checkin_test(unittest.TestCase):
       False)
 
 
+  def test_help_debug_dump(self):
+    testName = "help_debug_dump"
+    checkin_test_run_case(
+      self,
+      testName,
+      "--help",
+      "", # No shell commands!
+      True,
+      "checkin-test.py \[OPTIONS\]\n" \
+      +"thisFilePath\n" \
+      +"thisFileRealAbsBasePath\n" \
+      +"sys.path\n" \
+      +"Loading project configuration from\n" \
+      ,
+      mustHaveCheckinTestOut=False,
+      envVars=["TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON"]
+      )
+
+
   def test_show_defaults(self):
     testName = "show_defaults"
     checkin_test_run_case(
