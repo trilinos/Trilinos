@@ -90,16 +90,14 @@ int main(int argc, char *argv[]) {
   Piro::Epetra::SolverFactory solverFactory;
 
 #ifdef Piro_ENABLE_NOX
-  const std::string saveEigenDataKey = "My SaveEigenData";
-  solverFactory.setLOCASaveEigenDataProvider(
-      saveEigenDataKey,
+  solverFactory.setProvider<LOCA::SaveEigenData::AbstractStrategy>(
+      "My SaveEigenData",
       Piro::makeProvider<SaveEigenData_Epetra, Piro::Dereference>());
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
-  const std::string rythmosRowSumUpdater = "Rythmos Row Sum Updater";
-  solverFactory.setRythmosObserverProvider(
-      rythmosRowSumUpdater,
+  solverFactory.setProvider<Rythmos::IntegrationObserverBase<double> >(
+      "Rythmos Row Sum Updater",
       Piro::makeProvider<Piro::RythmosNOXRowSumUpdaterObserver<double>, Piro::Ignore>());
 #endif /* Piro_ENABLE_Rythmos */
 

@@ -60,6 +60,130 @@
 
 #include <string>
 
+namespace Piro {
+
+namespace Epetra {
+
+#ifdef Piro_ENABLE_NOX
+template <>
+std::string
+SolverFactory::getLabel<NOX::Epetra::Observer>()
+{
+  return "NOX Observer";
+}
+
+template <>
+ExtensibleFactory<NOX::Epetra::Observer> &
+SolverFactory::getFactory<NOX::Epetra::Observer>()
+{
+  return noxObserverFactory_;
+}
+
+
+template <>
+std::string
+SolverFactory::getLabel<NOX::Epetra::ModelEvaluatorInterface>()
+{
+  return "Interface";
+}
+
+template <>
+ExtensibleFactory<NOX::Epetra::ModelEvaluatorInterface> &
+SolverFactory::getFactory<NOX::Epetra::ModelEvaluatorInterface>()
+{
+  return noxInterfaceFactory_;
+}
+
+
+template <>
+std::string
+SolverFactory::getLabel<NOX::Epetra::LinearSystem>()
+{
+  return "Linear System";
+}
+
+template <>
+ExtensibleFactory<NOX::Epetra::LinearSystem> &
+SolverFactory::getFactory<NOX::Epetra::LinearSystem>()
+{
+  return noxLinearSystemFactory_;
+}
+
+
+template <>
+std::string
+SolverFactory::getLabel<LOCA::SaveEigenData::AbstractStrategy>()
+{
+  return "Save Eigen Data Strategy";
+}
+
+template <>
+ExtensibleFactory<LOCA::SaveEigenData::AbstractStrategy> &
+SolverFactory::getFactory<LOCA::SaveEigenData::AbstractStrategy>()
+{
+  return saveEigFactory_;
+}
+
+
+template <>
+std::string
+SolverFactory::getLabel<LOCA::StatusTest::Abstract>()
+{
+  return "Status Test";
+}
+
+template <>
+ExtensibleFactory<LOCA::StatusTest::Abstract> &
+SolverFactory::getFactory<LOCA::StatusTest::Abstract>()
+{
+  return statusTestFactory_;
+}
+
+
+template <>
+std::string
+SolverFactory::getLabel<Piro::Epetra::AdaptiveSolutionManager>()
+{
+  return "Adaptive Solution Manager";
+}
+
+template <>
+ExtensibleFactory<Piro::Epetra::AdaptiveSolutionManager> &
+SolverFactory::getFactory<Piro::Epetra::AdaptiveSolutionManager>()
+{
+  return adaptSolMgrFactory_;
+}
+#endif /* Piro_ENABLE_NOX */
+
+#ifdef Piro_ENABLE_Rythmos
+template <>
+std::string
+SolverFactory::getLabel<Rythmos::IntegrationObserverBase<double> >()
+{
+  return "Rythmos Observer";
+}
+
+template <>
+ExtensibleFactory<Rythmos::IntegrationObserverBase<double> > &
+SolverFactory::getFactory<Rythmos::IntegrationObserverBase<double> >()
+{
+  return rythmosObserverFactory_;
+}
+#endif /* Piro_ENABLE_Rythmos */
+
+} // namespace Epetra
+
+} // namespace Piro
+
+template <typename T>
+Teuchos::RCP<T>
+Piro::Epetra::SolverFactory::create(const Teuchos::RCP<Teuchos::ParameterList> &params)
+{
+  const std::string &label = this->getLabel<T>();
+  return this->getFactory<T>().create(Teuchos::sublist(params, label));
+}
+
+
 Teuchos::RCP<EpetraExt::ModelEvaluator>
 Piro::Epetra::SolverFactory::createSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
@@ -73,35 +197,35 @@ Piro::Epetra::SolverFactory::createSolver(
 #ifdef Piro_ENABLE_NOX
   if (type == "NOX") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
-      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+      this->create<NOX::Epetra::Observer>(piroParams);
     const Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface =
-      noxInterfaceFactory_.create(Teuchos::sublist(piroParams, "Interface"));
+      this->create<NOX::Epetra::ModelEvaluatorInterface>(piroParams);
     const Teuchos::RCP<NOX::Epetra::LinearSystem> linsys =
-      noxLinearSystemFactory_.create(Teuchos::sublist(piroParams, "Linear System"));
+      this->create<NOX::Epetra::LinearSystem>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::NOXSolver(piroParams, model, observer, interface, linsys));
   } else if (type == "LOCA") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
-      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+      this->create<NOX::Epetra::Observer>(piroParams);
     const Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData =
-      saveEigFactory_.create(Teuchos::sublist(piroParams, "Save Eigen Data Strategy"));
+      this->create<LOCA::SaveEigenData::AbstractStrategy>(piroParams);
     const Teuchos::RCP<LOCA::StatusTest::Abstract> statusTest =
-      statusTestFactory_.create(Teuchos::sublist(piroParams, "Status Test"));
+      this->create<LOCA::StatusTest::Abstract>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::LOCASolver(piroParams, model, observer, saveEigData, statusTest));
   } else if (type == "LOCA Adaptive") {
     const Teuchos::RCP<Piro::Epetra::AdaptiveSolutionManager> adaptMgr =
-      adaptSolMgrFactory_.create(Teuchos::sublist(piroParams, "Adaptive Solution Manager"));
+      this->create<Piro::Epetra::AdaptiveSolutionManager>(piroParams);
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
-      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+      this->create<NOX::Epetra::Observer>(piroParams);
     const Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData =
-      saveEigFactory_.create(Teuchos::sublist(piroParams, "Save Eigen Data Strategy"));
+      this->create<LOCA::SaveEigenData::AbstractStrategy>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::LOCAAdaptiveSolver(piroParams, model, adaptMgr, observer, saveEigData));
   } else if (type == "Trapezoid Rule") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
-      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+      this->create<NOX::Epetra::Observer>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::TrapezoidRuleSolver(piroParams, model, observer));
   } else if (type == "Velocity Verlet") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
-      noxObserverFactory_.create(Teuchos::sublist(piroParams, "NOX Observer"));
+      this->create<NOX::Epetra::Observer>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::VelocityVerletSolver(piroParams, model, observer));
   } else
 #endif
@@ -109,7 +233,7 @@ Piro::Epetra::SolverFactory::createSolver(
 #ifdef Piro_ENABLE_Rythmos
   if (type == "Rythmos") {
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer =
-      rythmosObserverFactory_.create(Teuchos::sublist(piroParams, "Rythmos Observer"));
+      this->create<Rythmos::IntegrationObserverBase<double> >(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::RythmosSolver(piroParams, model, observer));
   } else
 #endif
@@ -130,7 +254,7 @@ Piro::Epetra::SolverFactory::setNOXObserverProvider(
     const std::string &key,
     const Piro::Provider<NOX::Epetra::Observer> &p)
 {
-  noxObserverFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 
 void
@@ -138,7 +262,7 @@ Piro::Epetra::SolverFactory::setNOXInterfaceProvider(
     const std::string &key,
     const Piro::Provider<NOX::Epetra::ModelEvaluatorInterface> &p)
 {
-  noxInterfaceFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 
 void
@@ -146,7 +270,7 @@ Piro::Epetra::SolverFactory::setNOXLinearSystemProvider(
     const std::string &key,
     const Piro::Provider<NOX::Epetra::LinearSystem> &p)
 {
-  noxLinearSystemFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 
 void
@@ -154,7 +278,7 @@ Piro::Epetra::SolverFactory::setLOCASaveEigenDataProvider(
     const std::string &key,
     const Piro::Provider<LOCA::SaveEigenData::AbstractStrategy> &p)
 {
-  saveEigFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 
 void
@@ -162,7 +286,7 @@ Piro::Epetra::SolverFactory::setLOCAStatusTestProvider(
     const std::string &key,
     const Piro::Provider<LOCA::StatusTest::Abstract> &p)
 {
-  statusTestFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 
 void
@@ -170,7 +294,7 @@ Piro::Epetra::SolverFactory::setAdapativeSolutionManagerProvider(
     const std::string &key,
     const Provider<Piro::Epetra::AdaptiveSolutionManager> &p)
 {
-  adaptSolMgrFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 #endif /* Piro_ENABLE_NOX */
 
@@ -180,6 +304,6 @@ Piro::Epetra::SolverFactory::setRythmosObserverProvider(
     const std::string &key,
     const Piro::Provider<Rythmos::IntegrationObserverBase<double> > &p)
 {
-  rythmosObserverFactory_.setProvider(key, p);
+  this->setProvider(key, p);
 }
 #endif /* Piro_ENABLE_Rythmos */
