@@ -47,7 +47,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Teuchos_Ptr.hpp"
-#include "Teuchos_TypeTraits.hpp"
 
 #include <string>
 #include <map>
@@ -111,10 +110,6 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
 }
 
 
-template <bool b> struct TruthType {};
-typedef TruthType<true> TrueType;
-typedef TruthType<false> FalseType;
-
 template <typename T, typename ArgumentHandlingStrategy>
 class CreatingProviderFunctor :
   public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
@@ -131,19 +126,20 @@ public:
     return Teuchos::rcp(
         this->create(
           params,
-          TruthType<Teuchos::TypeTraits::is_same<typename ArgumentHandlingStrategy::result_type, void>::value>()));
+          (typename ArgumentHandlingStrategy::result_type *) 0));
   }
 
 private:
+  template <typename A>
   T* create(
       const Teuchos::RCP<Teuchos::ParameterList> &params,
-      FalseType /*strategy_returns_void*/) const {
+      A*) const {
     return new T(strategy_(params));
   }
 
   T* create(
       const Teuchos::RCP<Teuchos::ParameterList> &/*params*/,
-      TrueType /*strategy_returns_void*/) const {
+      void*) const {
     return new T;
   }
 
