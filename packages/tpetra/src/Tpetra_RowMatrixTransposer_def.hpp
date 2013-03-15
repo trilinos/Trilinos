@@ -172,13 +172,30 @@ createTranspose (const OptimizeOption optimizeTranspose,
   params->set ("Optimize Storage", false); //TODO should storage be optimized for this temporary matrix? EpetraExt does not.
   transMatrixWithSharedRows->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap(), params);
 
-  RCP<Vector<size_t, LO, GO, Node> > partialNnzPerRow = createVectorFromView(transMap,TransNumNz);
-  RCP<Vector<size_t, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(newRowMap,false));
+  //exporter that is used in the transfers of nnz per row and rows themselves
   RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = rcp( new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(transMap,newRowMap) );
-  fullNnzPerRow->doExport(*partialNnzPerRow,*exporter,Tpetra::ADD);
-  const ArrayRCP<const size_t> nnzPerRow = fullNnzPerRow->getData();
 
-  RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRow, StaticProfile));
+  //RCP<Vector<size_t, LO, GO, Node> > partialNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(transMap,TransNumNz()));
+  //RCP<Vector<size_t, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(newRowMap,false));
+  //fullNnzPerRow->doExport(*partialNnzPerRow,*exporter,Tpetra::ADD);
+  //const ArrayRCP<const size_t> nnzPerRow = fullNnzPerRow->getData();
+  //RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRow, StaticProfile));
+  
+  // The following code is to avoid compilation problems with explicit instantiation.
+  // It replaces the 5 line of code abovve.  Here's the issue:
+  // The CRS matrix ctor requires size_t for specifying nz per row.  But to avoid required EI of Vector<size_t>,
+  // I copy to a Vector<LO>, communicate it, then copy it back to a Vector<size_t>.
+  // The overhead is allocating and filling two additional ArrayRCPs, each with global length about the #rows in the matrix.
+  ArrayRCP<LO> TransNumNzAsLO(TransNumNz.size());
+  for (LO i=0; i<TransNumNz.size(); ++i) TransNumNzAsLO[i] = Teuchos::as<LO>(TransNumNz[i]);
+  RCP<Vector<LO, LO, GO, Node> > partialNnzPerRow = rcp(new Vector<LO,LO,GO,Node>(transMap,TransNumNzAsLO()));
+  RCP<Vector<LO, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<LO,LO,GO,Node>(newRowMap,false));
+  fullNnzPerRow->doExport(*partialNnzPerRow,*exporter,Tpetra::ADD);
+  const ArrayRCP<const LO> nnzPerRow = fullNnzPerRow->getData();
+  ArrayRCP<size_t> nnzPerRowAsSizeT(nnzPerRow.size());
+  for (LO i=0; i<nnzPerRowAsSizeT.size(); ++i) nnzPerRowAsSizeT[i] = Teuchos::as<size_t>(nnzPerRow[i]);
+
+  RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRowAsSizeT, StaticProfile));
 
   transposeMatrix->doExport(*transMatrixWithSharedRows,*exporter,Tpetra::ADD);
 
