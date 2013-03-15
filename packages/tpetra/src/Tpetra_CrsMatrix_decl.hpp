@@ -1796,6 +1796,8 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
+    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -1803,10 +1805,27 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Import with fillComplete().
     // This will change in the future.
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal> sourceNnzPerRowVec(importer.getSourceMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal> targetNnzPerRowVec(importer.getTargetMap());
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
+    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
+      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+
+    targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
+  
+
+    ArrayRCP<size_t> MyNnz(importer.getTargetMap()->getNodeNumElements());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
+    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
+      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
+
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (importer.getTargetMap (),
-                              as<size_t> (0),
-                              DynamicProfile,
+      rcp (new CrsMatrixType (importer.getTargetMap(),
+                              MyNnz,
+                              StaticProfile,
                               params));
     destMat->doImport (*sourceMatrix, importer, INSERT);
 
@@ -1871,6 +1890,8 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
+    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -1878,10 +1899,31 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Export with fillComplete().
     // This will change in the future.
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal> sourceNnzPerRowVec(exporter.getSourceMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal> targetNnzPerRowVec(exporter.getTargetMap());
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
+    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
+      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+
+    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
+  
+
+    ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
+    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
+      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
+
+
+
+
+
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (exporter.getTargetMap (),
-                              as<size_t> (0),
-                              DynamicProfile,
+			      MyNnz,
+                              StaticProfile,
                               params));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
 
