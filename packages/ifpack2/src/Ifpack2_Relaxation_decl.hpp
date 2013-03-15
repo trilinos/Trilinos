@@ -358,7 +358,11 @@ public:
   /// real-valued floating-point types (like \c float and \c double).
   /// If scalar_type is <tt>std::complex<T></tt> for some type \c T,
   /// then magnitude_type is \c T.
-  void setParameters(const Teuchos::ParameterList& params);
+  void setParameters (const Teuchos::ParameterList& params);
+
+  //! Return a list of all the parameters that this class accepts.
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters () const;
 
   //! Initialize the preconditioner.
   void initialize();
@@ -540,6 +544,12 @@ private:
   //! @name Internal methods
   //@{
 
+  /// \brief Variant of setParameters() that takes a nonconst Teuchos::ParameterList.
+  ///
+  /// This variant fills in default values for any valid parameters
+  /// that are not in the input list.
+  void setParametersImpl (Teuchos::ParameterList& params);
+
   //! Apply Jacobi to X, returning the result in Y.
   void ApplyInverseJacobi(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -580,6 +590,14 @@ private:
   //@}
   //! @name Internal data and parameters
   //@{
+
+  /// \brief List of valid parameters.
+  ///
+  /// This is created on demand by getValidParameters().  That method
+  /// is const to help comply with the Teuchos::ParameterListAcceptor
+  /// interface (which we might like to use later), which is why we
+  /// have to declare this field \c mutable.
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   //! The matrix for which to construct the preconditioner or smoother.
   const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;

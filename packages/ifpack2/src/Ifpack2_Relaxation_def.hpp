@@ -31,6 +31,64 @@
 #define IFPACK2_RELAXATION_DEF_HPP
 
 #include "Ifpack2_Relaxation_decl.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+
+
+namespace {
+  // Validate that a given int is nonnegative.
+  class NonnegativeIntValidator : public Teuchos::ParameterEntryValidator {
+  public:
+    // Constructor (does nothing).
+    NonnegativeIntValidator () {}
+
+    // ParameterEntryValidator wants this method.
+    Teuchos::ParameterEntryValidator::ValidStringsList validStringValues () const {
+      return Teuchos::null;
+    }
+
+    // Actually validate the parameter's value.
+    void
+    validate (const Teuchos::ParameterEntry& entry,
+              const std::string& paramName,
+              const std::string& sublistName) const
+    {
+      using std::endl;
+      Teuchos::any anyVal = entry.getAny (true);
+      const std::string entryName = entry.getAny (false).typeName ();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        anyVal.type () != typeid (int),
+        Teuchos::Exceptions::InvalidParameterType,
+        "Parameter \"" << paramName << "\" in sublist \"" << sublistName
+        << "\" has the wrong type." << endl << "Parameter: " << paramName
+        << endl << "Type specified: " << entryName << endl
+        << "Type required: int" << endl);
+
+      const int val = Teuchos::any_cast<int> (anyVal);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        val < 0, Teuchos::Exceptions::InvalidParameterValue,
+        "Parameter \"" << paramName << "\" in sublist \"" << sublistName
+        << "\" is negative." << endl << "Parameter: " << paramName
+        << endl << "Value specified: " << val << endl
+        << "Required range: [0, INT_MAX]" << endl);
+    }
+
+    // ParameterEntryValidator wants this method.
+    const std::string getXMLTypeName () const {
+      return "NonnegativeIntValidator";
+    }
+
+    // ParameterEntryValidator wants this method.
+    void
+    printDoc (const std::string& docString,
+              std::ostream &out) const
+    {
+      Teuchos::StrUtils::printLines (out, "# ", docString);
+      out << "#\tValidator Used: " << std::endl;
+      out << "#\t\tNonnegativeIntValidator" << std::endl;
+    }
+  };
+} // namespace (anonymous)
 
 namespace Ifpack2 {
 
@@ -76,47 +134,108 @@ template<class MatrixType>
 Relaxation<MatrixType>::~Relaxation() {
 }
 
+template<class MatrixType>
+Teuchos::RCP<const Teuchos::ParameterList>
+Relaxation<MatrixType>::getValidParameters () const
+{
+  using Teuchos::Array;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_implicit_cast;
+  using Teuchos::setStringToIntegralParameter;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  typedef Teuchos::ParameterEntryValidator PEV;
+
+  if (validParams_.is_null ()) {
+    RCP<ParameterList> pl = parameterList ("Ifpack2::Relaxation");
+
+    // Set a validator that automatically converts from the valid
+    // string options to their enum values.
+    Array<std::string> precTypes (3);
+    precTypes[0] = "Jacobi";
+    precTypes[1] = "Gauss-Seidel";
+    precTypes[2] = "Symmetric Gauss-Seidel";
+    Array<RelaxationType> precTypeEnums (3);
+    precTypeEnums[0] = JACOBI;
+    precTypeEnums[1] = GS;
+    precTypeEnums[2] = SGS;
+    const std::string defaultPrecType ("Jacobi");
+    setStringToIntegralParameter<RelaxationType> ("relaxation: type",
+      defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
+      pl.getRawPtr ());
+
+    const int numSweeps = 1;
+    RCP<PEV> numSweepsValidator =
+      rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
+    pl->set ("relaxation: sweeps", numSweeps, "Number of relaxation sweeps",
+             rcp_const_cast<const PEV> (numSweepsValidator));
+
+    const scalar_type minDiagonalValue = STS::zero ();
+    pl->set ("relaxation: min diagonal value", minDiagonalValue);
+
+    const scalar_type dampingFactor = STS::one ();
+    pl->set ("relaxation: damping factor", dampingFactor);
+
+    const bool zeroStartingSolution = true;
+    pl->set ("relaxation: zero starting solution", zeroStartingSolution);
+
+    const bool doBackwardGS = false;
+    pl->set ("relaxation: backward mode", doBackwardGS);
+
+    const bool doL1Method = false;
+    pl->set ("relaxation: use l1", doL1Method);
+
+    const magnitude_type l1eta = (STM::one() + STM::one() + STM::one()) /
+      (STM::one() + STM::one()); // 1.5
+    pl->set ("relaxation: l1 eta", l1eta);
+
+    validParams_ = rcp_const_cast<const ParameterList> (pl);
+  }
+  return validParams_;
+}
+
+
+template<class MatrixType>
+void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
+{
+  using Teuchos::getIntegralValue;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  typedef scalar_type ST; // just to make code below shorter
+
+  pl.validateParametersAndSetDefaults (* getValidParameters ());
+
+  const RelaxationType precType =
+    getIntegralValue<RelaxationType> (pl, "relaxation: type");
+  const int numSweeps = pl.get<int> ("relaxation: sweeps");
+  const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
+  const ST minDiagonalValue = pl.get<ST> ("relaxation: min diagonal value");
+  const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
+  const bool doBackwardGS = pl.get<bool> ("relaxation: backward mode");
+  const bool doL1Method = pl.get<bool> ("relaxation: use l1");
+  const magnitude_type l1Eta = pl.get<magnitude_type> ("relaxation: l1 eta");
+
+  // "Commit" the changes, now that we've validated everything.
+  PrecType_ = precType;
+  NumSweeps_ = numSweeps;
+  DampingFactor_ = dampingFactor;
+  MinDiagonalValue_ = minDiagonalValue;
+  ZeroStartingSolution_ = zeroStartSol;
+  DoBackwardGS_ = doBackwardGS;
+  DoL1Method_ = doL1Method;
+  L1Eta_ = l1Eta;
+}
+
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
+void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
 {
-  Teuchos::ParameterList validparams;
-  Ifpack2::getValidParameters(validparams);
-  List.validateParameters(validparams);
-
-  std::string PT;
-  if (PrecType_ == Ifpack2::JACOBI)
-    PT = "Jacobi";
-  else if (PrecType_ == Ifpack2::GS)
-    PT = "Gauss-Seidel";
-  else if (PrecType_ == Ifpack2::SGS)
-    PT = "Symmetric Gauss-Seidel";
-
-  Ifpack2::getParameter(List, "relaxation: type", PT);
-
-  if (PT == "Jacobi") {
-    PrecType_ = Ifpack2::JACOBI;
-  }
-  else if (PT == "Gauss-Seidel") {
-    PrecType_ = Ifpack2::GS;
-  }
-  else if (PT == "Symmetric Gauss-Seidel") {
-    PrecType_ = Ifpack2::SGS;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true,
-      std::invalid_argument,
-      "Ifpack2::Relaxation::setParameters: unsupported value for 'relaxation: type' parameter (\"" << PT << "\")");
-  }
-
-  Ifpack2::getParameter(List, "relaxation: sweeps",NumSweeps_);
-  Ifpack2::getParameter(List, "relaxation: damping factor", DampingFactor_);
-  Ifpack2::getParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
-  Ifpack2::getParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
-  Ifpack2::getParameter(List, "relaxation: backward mode",DoBackwardGS_);
-  Ifpack2::getParameter(List, "relaxation: use l1",DoL1Method_);
-  Ifpack2::getParameter(List, "relaxation: l1 eta",L1Eta_);
+  Teuchos::ParameterList plCopy (pl); // pl is const, so we must copy it.
+  this->setParametersImpl (plCopy);
 }
 
 //==========================================================================
