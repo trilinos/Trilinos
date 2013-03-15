@@ -4955,12 +4955,6 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
     Epetra_Util::Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, 1,IntSortLists,0,0);
   }
 
-  /*  printf("[%d] Sortd :",Comm().MyPID());
-  for(i = 0; i < NumRemoteColGIDs; i++) 
-    printf("%3d[%3d] ",RemoteGIDList[i],PIDList[i]);
-  printf("\n");
-  fflush(stdout);*/
-
   // Reverse the permutation to get the information we actually care about
   std::vector<int> ReverseRemotePermuteIDs(NumRemoteColGIDs);
   for(i=0; i<NumRemoteColGIDs; i++) ReverseRemotePermuteIDs[RemotePermuteIDs[i]]=i;
@@ -5003,8 +4997,7 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
   if (LocalGIDs!=0) delete [] LocalGIDs; 
 
   // Make Column map with same element sizes as Domain map 
-  int_type * ColIndicesPtr = (ColIndices.size()>0) ? &ColIndices[0] : 0;
-  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndicesPtr, (int)domainMap.IndexBase64(), domainMap.Comm());
+  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndices.data(), (int)domainMap.IndexBase64(), domainMap.Comm());
 
   Graph_.CrsGraphData_->ColMap_ = temp;
   Graph_.CrsGraphData_->HaveColMap_ = true;
