@@ -182,14 +182,14 @@ createTranspose (const OptimizeOption optimizeTranspose,
   //RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRow, StaticProfile));
   
   // The following code is to avoid compilation problems with explicit instantiation.
-  // It replaces the 5 line of code abovve.  Here's the issue:
+  // It replaces the 5 line of code above.  Here's the issue:
   // The CRS matrix ctor requires size_t for specifying nz per row.  But to avoid required EI of Vector<size_t>,
   // I copy to a Vector<LO>, communicate it, then copy it back to a Vector<size_t>.
   // The overhead is allocating and filling two additional ArrayRCPs, each with global length about the #rows in the matrix.
   ArrayRCP<LO> TransNumNzAsLO(TransNumNz.size());
   for (LO i=0; i<TransNumNz.size(); ++i) TransNumNzAsLO[i] = Teuchos::as<LO>(TransNumNz[i]);
   RCP<Vector<LO, LO, GO, Node> > partialNnzPerRow = rcp(new Vector<LO,LO,GO,Node>(transMap,TransNumNzAsLO()));
-  RCP<Vector<LO, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<LO,LO,GO,Node>(newRowMap,false));
+  RCP<Vector<LO, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<LO,LO,GO,Node>(newRowMap));
   fullNnzPerRow->doExport(*partialNnzPerRow,*exporter,Tpetra::ADD);
   const ArrayRCP<const LO> nnzPerRow = fullNnzPerRow->getData();
   ArrayRCP<size_t> nnzPerRowAsSizeT(nnzPerRow.size());
