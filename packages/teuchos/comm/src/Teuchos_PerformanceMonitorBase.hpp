@@ -189,21 +189,19 @@ namespace Teuchos
     /// the given name exist, this method simply returns the first in
     /// the list.  Do not rely on the ability to create multiple
     /// counters with the same name; this may go away in the future.
-    ///
-    /// If you want to create a counter with a given name if it doesn't
-    /// yet exist, do the following:
-    /// \code
-    /// RCP<T> counter = PerformanceMonitorBase<T>::lookupCounter (name);
-    /// if (counter.is_null())
-    ///   counter = PerformanceMonitorBase<T>::getNewCounter (name);
-    /// \endcode
-    /// We do not offer this functionality as a single class method
-    /// ("lookupOrCreateCounter()"), because it is easy to misspell a
-    /// timer name.  If timers that don't exist yet are created
-    /// silently, misspelled timer names can cause hard-to-find bugs.
-    /// (Analogies: Fortran's "implicit none" or Perl's "use strict.")
     static RCP<T>
     lookupCounter (const std::string& name);
+
+    /// \brief Return the first counter with the given name, creating
+    ///   it first if it doesn't yet exist.
+    ///
+    /// \warning If you misspell the counter's name, this will create
+    ///   a new counter.  We make no attempt to spell-check counter
+    ///   names.  If you're worried about this, you might want to use
+    ///   lookupCounter() instead to find out if the counter exists,
+    ///   before creating it with getNewCounter().
+    static RCP<T>
+    lookupOrCreateCounter (const std::string& name);
 
     /// \brief "Forget" about all counters created with \c getNewCounter().
     ///
@@ -284,15 +282,28 @@ namespace Teuchos
   PerformanceMonitorBase<T>::lookupCounter (const std::string& name)
   {
     Array<RCP<T> >& ctrs = counters();
+    typedef typename Array<RCP<T> >::const_iterator iter_type;
 
     // This will have to change if we change how we store the
     // counters.
-    for (typename Array<RCP<T> >::const_iterator it = ctrs.begin();
-         it != ctrs.end(); ++it)
-      if ((*it)->name() == name)
+    for (iter_type it = ctrs.begin(); it != ctrs.end(); ++it) {
+      if ((*it)->name() == name) {
         return *it;
-
+      }
+    }
     return null;
+  }
+
+  template<class T>
+  RCP<T>
+  PerformanceMonitorBase<T>::lookupOrCreateCounter (const std::string& name)
+  {
+    RCP<T> counter = lookupCounter (name);
+    if (counter.is_null ()) {
+      return getNewCounter (name);
+    } else {
+      return counter;
+    }
   }
 
   template<class T>
