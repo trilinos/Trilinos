@@ -57,7 +57,7 @@ namespace Piro {
 template <typename T>
 class ProviderBase {
 public:
-  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const = 0;
+  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
   ~ProviderBase() {}
 };
 
@@ -68,7 +68,7 @@ public:
     functor_(functor)
   {}
 
-  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
+  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
     return functor_(params);
   }
 
@@ -162,10 +162,6 @@ public:
     ptr_(ptr)
   {}
 
-  /* implicit */ Provider(const Teuchos::RCP<const ProviderBase<T> > &ptr) :
-    ptr_(ptr)
-  {}
-
   template <typename U>
   /* implicit */ Provider(const Teuchos::RCP<U> &instance) :
     ptr_(Teuchos::rcp(new ProviderImpl<T, SharingProviderFunctor<T> >(makeSharingProviderFunctor<T>(instance))))
@@ -178,13 +174,14 @@ public:
 
   bool is_null() const { return ptr_.is_null(); }
   Teuchos::RCP<const ProviderBase<T> > ptr() const { return ptr_; }
+  Teuchos::RCP<ProviderBase<T> > ptr() { return ptr_; }
 
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
     return (*ptr_)(params);
   }
 
 private:
-  Teuchos::RCP<const ProviderBase<T> > ptr_;
+  Teuchos::RCP<ProviderBase<T> > ptr_;
 };
 
 template <typename T>
@@ -259,7 +256,7 @@ public:
 
   void setProvider(const std::string &key, const Provider<T> &h);
 
-  Teuchos::RCP<T> create(const Teuchos::RCP<Teuchos::ParameterList> &params) const;
+  Teuchos::RCP<T> create(const Teuchos::RCP<Teuchos::ParameterList> &params);
 
 private:
   Provider<T> getProvider(const std::string &key) const;
@@ -272,13 +269,13 @@ private:
 
 template <typename T>
 Teuchos::RCP<T>
-ExtensibleFactory<T>::create(const Teuchos::RCP<Teuchos::ParameterList> &params) const
+ExtensibleFactory<T>::create(const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   Teuchos::RCP<T> result;
   const Teuchos::Ptr<const std::string> type(Teuchos::getParameterPtr<std::string>(*params, selectorToken_));
   if (Teuchos::nonnull(type)) {
     const std::string &key = *type;
-    const Provider<T> typeProvider = this->getProvider(key);
+    Provider<T> typeProvider = this->getProvider(key);
     if (nonnull(typeProvider)) {
       const Teuchos::RCP<Teuchos::ParameterList> &providerParams = Teuchos::sublist(params, key);
       result = typeProvider(providerParams);
