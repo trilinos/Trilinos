@@ -128,7 +128,7 @@ public:
      */ 
    void clear();
 
-   //! Look up an input physics block, throws an exception if it can be found.
+   //! Look up an input physics block, throws an exception if it can not be found.
    const PhysicsBlock & lookupPhysicsBlock(const std::string & eBlock) const;
 
    //! Access to volume worksets
@@ -157,12 +157,12 @@ public:
    { return getSideWorksets(bc)->end(); }
 
    /** Allocate worksets associated with the element blocks in a vector, this
-     * will overwrite an previously constructed worksets.
+     * will overwrite any previously constructed worksets.
      */
    void allocateVolumeWorksets(const std::vector<std::string> & eBlocks);
 
    /** Allocate worksets associated with the BC objects in a vector, this
-     * will overwrite an previously constructed worksets.
+     * will overwrite any previously constructed worksets.
      */
    void allocateSideWorksets(const std::vector<BC> & bcs);
 
