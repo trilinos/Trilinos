@@ -4898,19 +4898,14 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
   // Build back end, containing remote GIDs, first
   int numMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
   std::vector<int_type> ColIndices;
-  if(numMyBlockCols > 0) 
+  int_type * RemoteColIndices=0;
+  if(numMyBlockCols > 0) {
     ColIndices.resize(numMyBlockCols);
-  int_type * RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back end of ColIndices
+    RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back end of ColIndices
+  }
 
   for(i = 0; i < NumRemoteColGIDs; i++) 
     RemoteColIndices[i] = RemoteGIDList[i]; 
-
-
-  /*printf("[%d] Start :",Comm().MyPID());
-  for(i = 0; i < NumRemoteColGIDs; i++) 
-    printf("%3d[%3d] ",RemoteGIDList[i],PIDList[i]);
-  printf("\n");
-  fflush(stdout);*/
 
   // Build permute array for *remote* reindexing.
   std::vector<int> RemotePermuteIDs(NumRemoteColGIDs);
@@ -4924,17 +4919,17 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
   if(!UseLL) {
     // int version
     IntSortLists[0] = (int*) RemoteColIndices;
-    IntSortLists[1] = &RemotePermuteIDs[0];  
+    IntSortLists[1] = RemotePermuteIDs.data();
     NumListsInt=2;
   }
   else {
     //LL version
     LLSortLists[0]  = (long long*) RemoteColIndices;
-    IntSortLists[0] = &RemotePermuteIDs[0];
+    IntSortLists[0] = RemotePermuteIDs.data();
     NumListsInt = NumListsLL = 1;
   }
  
-  Epetra_Util::Sort(true, NumRemoteColGIDs, &PIDList[0], 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
+  Epetra_Util::Sort(true, NumRemoteColGIDs, PIDList.data(), 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
 
   // Stash the RemotePIDs  
   PIDList.resize(NumRemoteColGIDs);
@@ -5306,24 +5301,23 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
+
   if(UseLL) {
-    long long * LLptr = CSR_colind_LL.size()>0 ? &CSR_colind_LL[0] : 0;
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),&pids[0],RemotePIDs,LLptr);
+    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs,CSR_colind_LL.data());
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),&pids[0],RemotePIDs);  
+  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs);  
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/
   /********************************************/
   // Sort the entries
-  Epetra_Util::SortCrsEntries(N, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+  Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
 
   // Pre-build the importer using the existing PIDs
   Epetra_Import * MyImport=0;
   int NumRemotePIDs = RemotePIDs.size();
-  const int * RemotePIDs_ptr = NumRemotePIDs ? &RemotePIDs[0] : 0;
   if(!SourceMatrix.DomainMap().SameAs(ColMap()))
-    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
+    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs.data());
 
   if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
   else {
