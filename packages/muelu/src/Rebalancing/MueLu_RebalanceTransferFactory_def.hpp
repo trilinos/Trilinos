@@ -181,52 +181,6 @@ namespace MueLu {
 
         RCP<Matrix> rebalancedR;
 
-	//#define OLD_AND_BUSTED
-#ifdef  OLD_AND_BUSTED
-        {
-          SubFactoryMonitor subM(*this, "Rebalancing restriction -- allocate new R", coarseLevel);
-
-          //TODO is there a better preallocation strategy?
-          /*
-            Answer:  YES! :
-            Count nnz per row of R
-            Put this in a MV
-            Use the rebalanceImporter to communicate this
-            Allocate rebalancedR according to the nnz info
-            Proceed as usual
-          */
-          //Note is to avoid that Epetra only supports vectors of type int or double, not size_t, which is unsigned.
-          RCP<Xpetra::Vector<double, LO, GO, NO> > originalNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO, NO>::Build(rebalanceImporter->getSourceMap());
-          ArrayRCP<double> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
-          for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
-            nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
-          nnzPerRow = Teuchos::null;
-          RCP<Xpetra::Vector<double, LO, GO, NO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO, NO>::Build(rebalanceImporter->getTargetMap());
-          permutedNnzPerRowVec->doImport(*originalNnzPerRowVec, *rebalanceImporter, Xpetra::INSERT);
-
-          ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
-          ArrayRCP<size_t> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
-          for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i)
-            permutedNnzPerRow[i] = Teuchos::as<size_t, double>(tmpData[i]);
-
-          rebalancedR = MatrixFactory::Build(rebalanceImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
-        }
-
-        {
-          SubFactoryMonitor subM(*this, "Rebalancing restriction -- import", coarseLevel);
-          rebalancedR->doImport(*originalR, *rebalanceImporter, Xpetra::INSERT);
-        }
-
-        {
-          SubFactoryMonitor subM(*this, "Rebalancing restriction -- fillComplete", coarseLevel);
-
-          //TODO is the following range map correct?
-          //TODO RangeMap controls where a coarse grid vector's data resides after applying R
-          //TODO if the targetMap of the importer is used, then we must either resumeFill or copy/fillComplete P so
-          //TODO its domain map matches the range map of R.
-          rebalancedR->fillComplete( originalR->getDomainMap(), rebalanceImporter->getTargetMap() );
-        }
-#else
 	{
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
 	  // Note: The 3rd argument says to use originalR's domain map.
@@ -238,7 +192,6 @@ namespace MueLu {
 	  RCP<Map> dummy;
 	  rebalancedR = rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalR2,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap())));
 	}
-#endif
 
         Set(coarseLevel, "R", rebalancedR);
 
