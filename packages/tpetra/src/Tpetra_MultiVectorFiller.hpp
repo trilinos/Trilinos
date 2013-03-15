@@ -45,8 +45,8 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <iterator>
 
-namespace {
-
+namespace Tpetra {
+namespace Details {
   // \fn sortAndMergeIn
   // \brief Sort and merge newEntries into allEntries, and make unique.
   //
@@ -433,7 +433,8 @@ namespace {
 
     void
     describe (Teuchos::FancyOStream& out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const
     {
       using std::endl;
       using Teuchos::Array;
@@ -879,7 +880,8 @@ namespace {
       return allNonlocals;
     }
   };
-} // namespace (anonymous)
+} // namespace Details
+} // namespace Tpetra
 
 namespace Tpetra {
 
@@ -1051,7 +1053,7 @@ namespace Tpetra {
     ///
     /// We separate this to facilitate experimentation with different
     /// storage formats.
-    MultiVectorFillerData2<MV> data_;
+    Tpetra::Details::MultiVectorFillerData2<MV> data_;
 
     typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
     Teuchos::RCP<export_type> exporter_;
