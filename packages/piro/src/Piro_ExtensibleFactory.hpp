@@ -199,26 +199,28 @@ bool nonnull(const Provider<T> &h)
 }
 
 
-struct Forward :
+struct ForwardArg :
   public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<Teuchos::ParameterList> > {
   const Teuchos::RCP<Teuchos::ParameterList> &operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return params;
   }
 };
 
-struct Dereference :
+struct DereferenceArg :
   public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::ParameterList> {
   Teuchos::ParameterList &operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return *params;
   }
 };
 
-struct Ignore :
+struct IgnoreArg :
   public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, void> {
   void operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
     return;
   }
 };
+
+typedef IgnoreArg DiscardArg;
 
 
 template <typename T>
@@ -239,7 +241,7 @@ template <typename T>
 inline
 Provider<T> providerFromConstructor()
 {
-  return CreatingProviderFunctor<T, Forward>();
+  return CreatingProviderFunctor<T, ForwardArg>();
 }
 
 
