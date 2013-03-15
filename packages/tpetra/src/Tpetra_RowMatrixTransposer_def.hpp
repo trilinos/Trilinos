@@ -42,6 +42,7 @@
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
+#include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef DOXYGEN_USE_ONLY
@@ -92,44 +93,102 @@ createTranspose (const OptimizeOption optimizeTranspose,
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
 
+  //
+  // This transpose is based upon the approach in EpetraExt.
+  //
+
   // mfh 03 Feb 2013: The domain Map of the input matrix will become
   // the range Map of the transpose, so it's a good default choice for
   // the row Map of the transpose.
   RCP<const map_type> newRowMap = transposeRowMap.is_null () ? 
     origMatrix_->getDomainMap () : transposeRowMap;
-  RCP<crs_matrix_type> transposeMatrix (new crs_matrix_type (newRowMap, 0));
 
+  global_size_t numLocalCols = origMatrix_->getNodeNumCols();
+  global_size_t numLocalRows = origMatrix_->getNodeNumRows();
   ArrayView<const LO> localIndices;
   ArrayView<const Scalar> localValues;
-  Array<GO> rowNum (1);
-
-  // mfh 03 Feb 2013: Get references rather than RCPs, so that we
-  // don't have to pay for the dereference on each iteration.
-  const map_type& origRowMap = * (origMatrix_->getRowMap ());
-  const map_type& origColMap = * (origMatrix_->getColMap ());
-
-  // mfh 03 Feb 2013: It would be faster to implement this as a lcoal
-  // kernel, rather than to call insertGlobalValues() for each entry.
-  for (size_t i = 0; i < origMatrix_->getNodeNumRows (); ++i) {
-    rowNum[0] = origRowMap.getGlobalElement (i);
-    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow (i);
-    origMatrix_->getLocalRowView (i, localIndices, localValues);
-    for (size_t j = 0; j < numEntriesInRow; ++j) {
-      const GO globalColIndex = origColMap.getGlobalElement (localIndices[j]);
-      transposeMatrix->insertGlobalValues (globalColIndex,
-					   rowNum (0,1), 
-					   localValues (j,1));
+  // Determine how many nonzeros there are per row in the transpose.
+  ArrayRCP<size_t> TransNumNz(numLocalCols,0);
+  for (size_t i=0; i<numLocalRows; ++i) {
+    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
+    origMatrix_->getLocalRowView(i, localIndices, localValues);
+    for (size_t j=0; j<numEntriesInRow; ++j) {
+      ++TransNumNz[ localIndices[j] ];
     }
   }
 
+  //create temporary row-major storage for the transposed matrix
+  size_t numLocalNnz  = origMatrix_->getNodeNumEntries();
+  ArrayRCP<GO> TransIndices(numLocalNnz);
+  ArrayRCP<Scalar> TransValues(numLocalNnz);
+
+  //ptr is an vector of indices into TransIndices and TransValues
+  //ptr[i]..ptr[i+1]-1 correspond to nonzero rows/values in the original matrix's local column i 
+  std::vector<size_t> ptr(numLocalCols+1);
+  ptr[0]=0;
+  for (size_t i=1; i<numLocalCols+1; ++i) {
+    ptr[i] = ptr[i-1] + TransNumNz[i-1];
+  }
+
+  //TransNumNz will now be used to track how many entries have been placed thus far in each
+  //row of the row-major storage.
+  for (size_t i=0; i<numLocalCols; ++i) TransNumNz[i] = 0;
+
+  //populate the row-major storage so that the data for the transposed matrix is easy to access
+  const map_type& origRowMap = *(origMatrix_->getRowMap());
+  for (size_t i=0; i<numLocalRows; ++i) {
+
+    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
+    origMatrix_->getLocalRowView(i, localIndices, localValues);
+
+    const GO transCol = origRowMap.getGlobalElement(i);
+    for (size_t j=0; j<numEntriesInRow; ++j) {
+      const LO transRow = localIndices[j];
+      const LO offset = TransNumNz[transRow];
+      TransIndices[ptr[transRow]+offset] = transCol;
+      TransValues [ptr[transRow]+offset] = localValues[j];
+      ++TransNumNz[transRow];
+    }
+    
+  } //for (size_t i=0; i<numLocalRows; ++i)
+
+  //Allocate and populate temporary matrix with rows not uniquely owned
+  RCP<const map_type> transMap = origMatrix_->getColMap();
+  RCP<crs_matrix_type> transMatrixWithSharedRows(new crs_matrix_type (transMap, TransNumNz, StaticProfile));
+
+  const map_type& transMapRef = *transMap;
+  for (size_t i=0; i<numLocalCols; ++i) {
+     const size_t leng=ptr[i+1]-ptr[i];
+     transMatrixWithSharedRows->insertGlobalValues(transMapRef.getGlobalElement(i),
+                                                   TransIndices.view(ptr[i],leng),
+                                                   TransValues.view(ptr[i],leng) );
+  }
+
+  //A comment in EpetraExt says
+  // "Note: The following call to FillComplete is currently necessary because
+  //        some global constants that are needed by the Export () are computed in this routine"
+  //TODO determine whether this is necessary here
   RCP<ParameterList> params = parameterList ();
+  params->set ("Optimize Storage", false); //TODO should storage be optimized for this temporary matrix? EpetraExt does not.
+  transMatrixWithSharedRows->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap(), params);
+
+  RCP<Vector<size_t, LO, GO, Node> > partialNnzPerRow = createVectorFromView(transMap,TransNumNz);
+  RCP<Vector<size_t, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(newRowMap,false));
+  RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = rcp( new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(transMap,newRowMap) );
+  fullNnzPerRow->doExport(*partialNnzPerRow,*exporter,Tpetra::ADD);
+  const ArrayRCP<const size_t> nnzPerRow = fullNnzPerRow->getData();
+
+  RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRow, StaticProfile));
+
+  transposeMatrix->doExport(*transMatrixWithSharedRows,*exporter,Tpetra::ADD);
+
   const bool optimizeStorage = (optimizeTranspose == DoOptimizeStorage);
   params->set ("Optimize Storage", optimizeStorage);
-  transposeMatrix->fillComplete (origMatrix_->getRangeMap (), 
-				 origMatrix_->getDomainMap (), params);
+  transposeMatrix->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap(), params);
   return transposeMatrix;
-}
 
+
+}
 //
 // Explicit instantiation macro
 //

@@ -55,11 +55,16 @@ namespace Tpetra {
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 class Map;
 
-/// \class RowMatrixTransposer
-/// \brief Construct and (optionally) redistribute the transpose of a CrsMatrix.
-///
-/// This class takes the same template parameters (with the same
-/// default values) as CrsMatrix.
+/*! \class RowMatrixTransposer
+    \brief Construct and (optionally) redistribute the transpose of a CrsMatrix.
+
+    This class is based on the EpetraExt version.  It first transposes the matrix to an
+    intermediate version with overlapping row map.  That matrix is then converted to
+    a final version whose row map is "unique", i.e., a row is wholly owned by one process.
+
+    This class takes the same template parameters (with the same
+    default values) as CrsMatrix.
+*/
 template <class Scalar, 
 	  class LocalOrdinal=int, 
 	  class GlobalOrdinal=LocalOrdinal, 
