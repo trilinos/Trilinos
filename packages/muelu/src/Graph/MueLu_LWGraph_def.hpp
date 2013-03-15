@@ -75,6 +75,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
+    // mfh 15 Mar 2013: Apparently, the above macro creates a magic
+    // variable out0, which the code below doesn't use.  For now, I'm
+    // silencing the resulting compiler warning using the standard
+    // idiom.  A MueLu developer might later want to move this idiom
+    // inside the above macro.
+    (void) out0;
 
     if (verbLevel & Parameters0) {
       //out0 << "Prec. type: " << type_ << std::endl;
