@@ -91,45 +91,6 @@ public:
   template <typename T>
   void setProvider(const std::string &key, const Provider<T> &p);
 
-#ifdef Piro_ENABLE_NOX
-  //! Register a new NOX::Epetra::Observer provider
-  void setNOXObserverProvider(
-      const std::string &key,
-      const Provider<NOX::Epetra::Observer> &p);
-
-  //! Register a new NOX::Epetra::ModelEvaluatorInterface provider
-  void setNOXInterfaceProvider(
-      const std::string &key,
-      const Provider<NOX::Epetra::ModelEvaluatorInterface> &p);
-
-  //! Register a new NOX::Epetra::LinearSystem provider
-  void setNOXLinearSystemProvider(
-      const std::string &key,
-      const Provider<NOX::Epetra::LinearSystem> &p);
-
-  //! Register a new LOCA::SaveEigenData::AbstractStrategy provider
-  void setLOCASaveEigenDataProvider(
-      const std::string &key,
-      const Provider<LOCA::SaveEigenData::AbstractStrategy> &p);
-
-  //! Register a new LOCA::StatusTest::Abstract provider
-  void setLOCAStatusTestProvider(
-      const std::string &key,
-      const Provider<LOCA::StatusTest::Abstract> &p);
-
-  //! Register a new Piro::Epetra::AdaptiveSolutionManager provider
-  void setAdapativeSolutionManagerProvider(
-      const std::string &key,
-      const Provider<Piro::Epetra::AdaptiveSolutionManager> &p);
-#endif /* Piro_ENABLE_NOX */
-
-#ifdef Piro_ENABLE_Rythmos
-  //! Register a new Rythmos::IntegrationObserverBase<double> provider
-  void setRythmosObserverProvider(
-      const std::string &key,
-      const Provider<Rythmos::IntegrationObserverBase<double> > &p);
-#endif /* Piro_ENABLE_Rythmos */
-
 private:
   template <typename T>
   static std::string getLabel();
