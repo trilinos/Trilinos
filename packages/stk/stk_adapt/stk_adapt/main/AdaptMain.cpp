@@ -551,6 +551,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      int smooth_use_reference_mesh = 1;
       int snap_geometry = 0;
       std::string internal_test = "";
       int respect_spacing = 1;
@@ -625,6 +626,7 @@ namespace stk {
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
+      run_environment.clp.setOption("smooth_use_reference_mesh", &smooth_use_reference_mesh, "for most cases, set to 1 (default) - can be used for smoothing with no reference mesh");
       run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
       run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
 #if !defined(__IBMCPP__) 
@@ -655,8 +657,9 @@ namespace stk {
 
       run_environment.clp.setOption("histogram"  , &histogram_options  ,
                                     "  either a single filename, which reads further commands from that file, or\n"
-                                    "  a string of the form \"{ fields: [field_1,...,field_n], file_root: my_histograms, mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }\" \n"
+                                    "  a string of the form \"{ fields: [field_1,...,field_n], file_root: my_histograms, mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume], time: 0.1, step: 2 }\" \n"
                                     "  where field_i are field names to get stats for, file_root is a root filename, and mesh: gives options for mesh quality histograms.\n"
+                                    "  time: or step: options allow specifying which timestep in the database should be used.\n"
                                     "  If read from a file, file format is like this: \n"
                                     "    fields:\n"
                                     "      - pressure\n"
@@ -1332,10 +1335,10 @@ namespace stk {
 
                               } // iBreak
 
-                            if (number_refines == 0 && input_geometry != "" && (smooth_geometry == 1 || snap_geometry == 1))
+                            if (number_refines == 0 && (smooth_geometry == 1 || snap_geometry == 1))
                               {
                                 breaker.setSmoothGeometry((smooth_geometry == 1));
-                                breaker.snapAndSmooth((snap_geometry == 1), input_geometry);
+                                breaker.snapAndSmooth((snap_geometry == 1), input_geometry, (smooth_use_reference_mesh == 1) );
                               }
 
                             if (streaming_size)
@@ -1376,6 +1379,24 @@ namespace stk {
                                     throw std::runtime_error("ERROR: verify_meshes shows a bad output mesh");
                                   }
                               }
+#if STK_ADAPT_HAVE_YAML_CPP
+                            if (histogram_options.size() != 0)
+                              {
+                                Histograms<double> histograms;
+                                HistogramsParser<double> hparser(histogram_options);
+                                hparser.create(histograms);
+
+                                eMesh.mesh_field_stats(&histograms);
+                                histograms.compute_uniform_bins(10);
+
+                                if (!p_rank) {
+                                  std::cout << "After refine, user-requested histograms= " << std::endl;
+                                  histograms.print(true);
+                                  //histograms.print(stk::percept::pout());
+                                }
+                              }
+#endif
+
                             if (compute_hmesh.size() != 0)
                               {
                                 double hmesh=0.0;

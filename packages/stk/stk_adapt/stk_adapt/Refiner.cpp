@@ -1329,10 +1329,10 @@ namespace stk {
 
 
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
-    void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile)
+    void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile, bool use_ref_mesh)
     {
       //std::cout << " geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
-      if (geomFile == "") return;
+      //if (geomFile == "") return;
       //std::cout << " 2 geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
 
       //SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
@@ -1349,7 +1349,7 @@ namespace stk {
 
       MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
       GeometryFactory factory(&gk, &mesh_geometry);
-      factory.read_file(geomFile, &m_eMesh);
+      if (geomFile != "") factory.read_file(geomFile, &m_eMesh);
 
       switch(option) {
       case SNAP_PLUS_SMOOTH:
@@ -1360,7 +1360,7 @@ namespace stk {
 
           if (m_doSmoothGeometry)
             {
-              smoothGeometry(mesh_geometry,option);
+              smoothGeometry(&mesh_geometry, 0, option, use_ref_mesh);
               mesh_geometry.snap_points_to_geometry(&m_eMesh);
             }
         }
@@ -1393,8 +1393,29 @@ namespace stk {
               // reset current state to non-snapped state
               m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
 
-              smoothGeometry(mesh_geometry,option);
-              //mesh_geometry.snap_points_to_geometry(&m_eMesh);
+              if (geomFile == "")
+                {
+                  // build a selector from all surface parts
+                  stk::mesh::Selector boundarySelector;
+                  const stk::mesh::PartVector parts = m_eMesh.get_fem_meta_data()->get_parts();
+                  for (unsigned ip=0; ip < parts.size(); ip++)
+                    {
+                      bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
+                      //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+                      if (stk_auto) continue;
+                      unsigned per = parts[ip]->primary_entity_rank();
+                      //std::cout << " per,part = " << per << " " << parts[ip]->name() << std::endl;
+                      if (per == m_eMesh.side_rank())
+                        {
+                          std::cout << "Info::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
+                          boundarySelector = boundarySelector | *parts[ip];
+                        }
+                    }
+                  smoothGeometry(0, &boundarySelector, option, use_ref_mesh);
+                }
+              else
+                smoothGeometry(&mesh_geometry, 0, option, use_ref_mesh);
+
             }
 
         }
@@ -1405,7 +1426,7 @@ namespace stk {
 #endif
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
-    void Refiner::smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option)
+    void Refiner::smoothGeometry(MeshGeometry* mesh_geometry, stk::mesh::Selector* selector, SMOOTHING_OPTIONS option, bool use_ref_mesh)
     {
       bool do_smoothing = true;
       if (do_smoothing)
@@ -1422,7 +1443,8 @@ namespace stk {
           case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
             {
               // geometry used for classification of fixed/non-fixed nodes
-              percept::ReferenceMeshSmoother1 pmmpsi(&m_eMesh, 0, &mesh_geometry, 1001, 1.e-4, 1);
+              percept::ReferenceMeshSmoother1 pmmpsi(&m_eMesh, selector, mesh_geometry, 1001, 1.e-4, 1);
+              pmmpsi.m_use_ref_mesh = use_ref_mesh;
               pmmpsi.run( always_smooth, msq_debug);
 
             }

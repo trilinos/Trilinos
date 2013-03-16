@@ -9,7 +9,7 @@
 #define ReferenceMeshSmoother_hpp
 
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <stk_percept/mesh/mod/smoother/SmootherMetric.hpp>
@@ -22,16 +22,16 @@ namespace stk {
     /// A smoother based on a reference mesh - tries to make the new mesh the same local size as original
 
     class ReferenceMeshSmoother : public MeshSmoother {
-     
-    public:  
+
+    public:
 
       typedef std::vector<double> Vector;
       typedef boost::unordered_map<stk::mesh::Entity , Vector  > NodeMap;
-      
-        
+
+
       ReferenceMeshSmoother(PerceptMesh *eMesh,
                             stk::mesh::Selector *boundary_selector=0,
-                            MeshGeometry *meshGeometry=0, 
+                            MeshGeometry *meshGeometry=0,
                             int inner_iterations = 100,
                             double grad_norm =1.e-8,
                             int parallel_iterations = 20)
@@ -44,7 +44,8 @@ namespace stk {
           m_omega(0),
           m_omega_prev(0),
           m_iter(0),
-          m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false), m_num_nodes(0)
+          m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false), m_num_nodes(0),
+          m_use_ref_mesh(true)
       {}
 
 
@@ -55,7 +56,7 @@ namespace stk {
 
       void sync_fields(int iter=0);
       virtual bool check_convergence();
-      
+
       template<typename T>
       void check_equal(T& val)
       {
@@ -93,7 +94,8 @@ namespace stk {
       stk::mesh::FieldBase *m_coord_field_lagged;
 
       SmootherMetric *m_metric;
-      
+    public:
+      bool m_use_ref_mesh;
     };
 
 

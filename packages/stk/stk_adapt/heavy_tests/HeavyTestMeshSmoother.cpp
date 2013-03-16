@@ -56,11 +56,11 @@
 #define DO_TESTS 1
 #if DO_TESTS
 
-namespace stk 
+namespace stk
 {
   namespace adapt
   {
-    namespace heavy_tests 
+    namespace heavy_tests
     {
 
 
@@ -91,7 +91,7 @@ namespace stk
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
-        
+
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
@@ -110,6 +110,7 @@ namespace stk
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
             //eMesh.print_info("quad fixture",  2);
             eMesh.save_as(input_files_loc+"quad_4_smooth.0.e");
+            eMesh.set_save_internal_fields(false);
 
             eMesh.reopen();
             eMesh.add_coordinate_state_fields();
@@ -126,13 +127,13 @@ namespace stk
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
                 {
                   stk::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_elements_in_bucket = bucket.size();
-                
+
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity node = bucket[iEntity];
@@ -149,17 +150,17 @@ namespace stk
             eMesh.save_as(input_files_loc+"quad_4_smooth.1.e");
 
             // save state of original mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (boundarySelector_1(**k)) 
+                if (boundarySelector_1(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity node = bucket[iEntity];
@@ -175,7 +176,7 @@ namespace stk
               }
 
             // save state of projected mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"quad_4_smooth.0_perturbed.e");
@@ -290,7 +291,7 @@ namespace stk
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
-        
+
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
@@ -325,13 +326,13 @@ namespace stk
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
                 {
                   stk::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_elements_in_bucket = bucket.size();
-                
+
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity node = bucket[iEntity];
@@ -348,17 +349,17 @@ namespace stk
             eMesh.save_as(input_files_loc+"tri_4_smooth.1.e");
 
             // save state of original mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (boundarySelector_1(**k)) 
+                if (boundarySelector_1(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity node = bucket[iEntity];
@@ -374,7 +375,7 @@ namespace stk
               }
 
             // save state of projected mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"tri_4_smooth.0_perturbed.e");
@@ -434,14 +435,14 @@ namespace stk
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
 
             // cluster the mesh towards the bump
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                //if (boundarySelector_5(**k)) 
+                //if (boundarySelector_5(**k))
                 {
                   stk::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_elements_in_bucket = bucket.size();
-                
+
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity entity = bucket[iEntity];
@@ -454,17 +455,17 @@ namespace stk
             eMesh.save_as(input_files_loc+"hex_4_smooth.0.e");
 
             // save state of original mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (boundarySelector_5(**k)) 
+                if (boundarySelector_5(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
@@ -477,7 +478,7 @@ namespace stk
                   }
               }
             // save state of projected mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"hex_4_smooth.0_perturbed.e");
@@ -547,14 +548,14 @@ namespace stk
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
 
             // cluster the mesh towards the bump
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                //if (boundarySelector_5(**k)) 
+                //if (boundarySelector_5(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
@@ -567,17 +568,17 @@ namespace stk
             eMesh.save_as(input_files_loc+"tet_4_smooth.0.e");
 
             // save state of original mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (boundarySelector_5(**k)) 
+                if (boundarySelector_5(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
@@ -590,7 +591,7 @@ namespace stk
                   }
               }
             // save state of projected mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"tet_4_smooth.0_perturbed.e");

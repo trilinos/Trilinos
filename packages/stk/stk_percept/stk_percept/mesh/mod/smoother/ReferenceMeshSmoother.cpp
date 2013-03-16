@@ -109,7 +109,7 @@ namespace stk {
       SmootherMetricShapeSizeOrient shape_size_orient_metric(eMesh);
 
       // shape
-      SmootherMetricShapeB1 shape_b1_metric(eMesh);
+      SmootherMetricShapeB1 shape_b1_metric(eMesh, m_use_ref_mesh);
 
       SmootherMetricShapeC1 shape_c1_metric(eMesh);
 

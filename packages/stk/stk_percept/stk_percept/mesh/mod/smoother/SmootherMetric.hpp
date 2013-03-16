@@ -246,9 +246,9 @@ namespace stk {
       DenseMatrix<3,3> WI, T;
       JacobianUtil jacA, jacW;
       const int spatialDim;
-
+      bool m_use_ref_mesh;
     public:
-      SmootherMetricShapeB1(PerceptMesh *eMesh) : SmootherMetric(eMesh), spatialDim( m_eMesh->get_spatial_dim()) {
+      SmootherMetricShapeB1(PerceptMesh *eMesh, bool use_ref_mesh=true) : SmootherMetric(eMesh), spatialDim( m_eMesh->get_spatial_dim()), m_use_ref_mesh(use_ref_mesh) {
         identity(Ident);
       }
 
@@ -284,33 +284,21 @@ namespace stk {
             // det = h*h*h
             // met = f*f*f/(3^3/2 *det) - 1 = f*f*f/(3*sqrt(3)*det) - 1
             double shape_metric = 0.0;
-            if (detAi > 1.e-15)
+            if (detAi > 0.0)
               {
-#if 0
-                inverse(W, WI);
-                //double d = detAi/detWi;
-                double d = detAi*det(WI);
-                double f = 0.0;
-                product_norm(A, WI, f);
-#else
-                inverse(W, WI);
-                product(A, WI, T);
-                double d = det(T);
-                double f = my_sqr_Frobenius(T);
-#endif
-
-#if 0
-                if (0 && spatialDim==2)
+                if (m_use_ref_mesh)
                   {
-                    // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
-                    f = f - 1.0;
-                    f = std::sqrt(f);
-                    double fac = 2.0;
-                    double den = fac * d;
-                    shape_metric = (f*f)/den - 1.0;
+                    inverse(W, WI);
+                    product(A, WI, T);
                   }
                 else
-#endif
+                  {
+                    T = A;
+                    detWi = 1.0;
+                  }
+                double d = det(T);
+                double f = my_sqr_Frobenius(T);
+
                   {
                     f = std::sqrt(f);
                     const double fac = 3.0*std::sqrt(3.0);
@@ -364,22 +352,20 @@ namespace stk {
             double shape_metric = 0.0;
             if (detAi > 1.e-15)
               {
-                inverse(W, WI);
-                product(A, WI, T);
-                double d = det(T);
-                double f = my_sqr_Frobenius(T);
-#if 0
-                if (0 && spatialDim==2)
+                if (m_use_ref_mesh)
                   {
-                    // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
-                    f = f - 1.0;
-                    f = std::sqrt(f);
-                    double fac = 2.0;
-                    double den = fac * d;
-                    shape_metric = (f*f)/den - 1.0;
+                    inverse(W, WI);
+                    product(A, WI, T);
                   }
                 else
-#endif
+                  {
+                    T = A;
+                    detWi = 1.0;
+                  }
+
+                double d = det(T);
+                double f = my_sqr_Frobenius(T);
+
                   {
                     f = std::sqrt(f);
                     const double fac = 3.0*std::sqrt(3.0);
@@ -399,7 +385,8 @@ namespace stk {
                       wrt_A -= norm_cube * iden/d * transpose_adj(T);
 
                       // now convert to wrt_A
-                      wrt_A = wrt_A * transpose(WI);
+                      if (m_use_ref_mesh)
+                        wrt_A = wrt_A * transpose(WI);
                       wrt_A = wrt_A * detWi;
                     }
                   }

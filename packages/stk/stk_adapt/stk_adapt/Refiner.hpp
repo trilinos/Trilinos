@@ -176,9 +176,9 @@ namespace stk {
         //,END_OPTIONS
       };
 
-      void snapAndSmooth(bool geomSnap, std::string geomFile);
+      void snapAndSmooth(bool geomSnap, std::string geomFile, bool use_ref_mesh=true);
 
-      void smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option);
+      void smoothGeometry(MeshGeometry* mesh_geometry, stk::mesh::Selector *selector, SMOOTHING_OPTIONS option, bool use_ref_mesh=true);
 #endif
 
       void deleteParentElements();
