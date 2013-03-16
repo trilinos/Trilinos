@@ -44,6 +44,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Flops.h"
 
@@ -73,15 +74,13 @@ double test_with_matvec(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B){
   const Epetra_Map & Xmap = A.DomainMap();
   const Epetra_Map & Ymap = A.RangeMap();
 
+  if(!A.RangeMap().SameAs(B.RangeMap()) || !A.DomainMap().SameAs(B.DomainMap())) return 1.0;
   Epetra_Vector X(Xmap), Y1(Ymap), Y2(Ymap);
 
   X.SetSeed(24601);
   X.Random();
-
   A.Apply(X,Y1);
-
   B.Apply(X,Y2);
-
   Y1.Update(-1.0,Y2,1.0);
   double norm;
   Y1.Norm2(&norm);
@@ -98,6 +97,15 @@ int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & 
   return rv;
 }
 
+int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Export & RowExporter, Epetra_CrsMatrix *&A){
+  int rv=0;
+  rv=A->Export(SourceMatrix, RowExporter, Insert);
+  if(rv) {cerr<<"build_matrix_unfused: Export failed"<<endl; return rv;}
+
+  rv=A->FillComplete(SourceMatrix.DomainMap(), SourceMatrix.RangeMap()); 
+  return rv;
+}
+
 
 
 int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *&A){
@@ -109,14 +117,14 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
     //    int NumMyEquations = 10000;
     int NumMyEquations = 100;
 
-    long long NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
+    int NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
     if(MyPID < 3)  NumMyEquations++;
     
     // Construct a Map that puts approximately the same Number of equations on each processor
-    Epetra_Map Map(NumGlobalEquations, NumMyEquations, (long long)0, Comm);
+    Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
     
     // Get update list and number of local equations from newly created Map
-    long long* MyGlobalElements = new long long[Map.NumMyElements()];
+    int* MyGlobalElements = new int[Map.NumMyElements()];
     Map.MyGlobalElements(MyGlobalElements);
     
     // Create an integer vector NumNz that is used to build the Petra Matrix.
@@ -143,7 +151,7 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
     double* Values = new double[2];
     Values[0] = -1.0; 
     Values[1] = -1.0;
-    long long* Indices = new long long[2];
+    int* Indices = new int[2];
     double two = 2.0;
     int NumEntries;
     
@@ -218,6 +226,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix *A, *B, *C;
   Epetra_Map* Map1;
   Epetra_Import* Import1;
+  Epetra_Export* Export1;
   double diff_tol=1e-12;
 
 #define ENABLE_TEST_1
@@ -230,24 +239,36 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
 #ifdef ENABLE_TEST_1
   {
+    double diff;
     ierr=build_test_matrix(Comm,1,A); 
-    long long num_global = A->RowMap().NumGlobalElements64();
+    int num_global = A->RowMap().NumGlobalElements();
     
-    // New map with all on Proc1 + importer
-    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long) 0,Comm);
-    else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
-    Import1 = new Epetra_Import(*Map1,A->RowMap());
+    // New map with all on Proc1
+    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,0,Comm);
+    else         Map1=new Epetra_Map(num_global,0,0,Comm);
 
-    // Execute fused constructor
+    // Execute fused import constructor
+    Import1 = new Epetra_Import(*Map1,A->RowMap());
     B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
-    
-    double diff=test_with_matvec(*A,*B);
+
+    diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
     
-    delete A; delete B; delete Map1; delete Import1;
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+
+    diff=test_with_matvec(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete Map1; delete Import1; delete Export1;
   }
 #endif
 
@@ -257,27 +278,39 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
 #ifdef ENABLE_TEST_2
   {
+    double diff;
     ierr=build_test_matrix(Comm,1,A); 
     int num_local = A->RowMap().NumMyElements();
     
-    std::vector<long long> MyGIDS(num_local);
+    std::vector<int> MyGIDS(num_local);
     for(int i=0; i<num_local; i++)
-      MyGIDS[i] = A->RowMap().GID64(num_local-i-1);
+      MyGIDS[i] = A->RowMap().GID(num_local-i-1);
 
-    // New map with all on Proc1 + importer
-    Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],0,Comm);
+    // New map with all on Proc1
+    Map1=new Epetra_Map(-1,num_local,&MyGIDS[0],0,Comm);
+
+    // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
-
-    // Execute fused constructor
     B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
 
-    double diff=test_with_matvec(*A,*B);
+    diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 
-    delete A; delete B; delete Map1; delete Import1;
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+
+    diff=test_with_matvec(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete Map1; delete Import1; delete Export1;
   }
 #endif
 
@@ -286,31 +319,43 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
 #ifdef ENABLE_TEST_3
   {
+    double diff;
     ierr=build_test_matrix(Comm,1,A); 
     int num_local  = A->RowMap().NumMyElements();
-    long long num_global = A->RowMap().NumGlobalElements64();
+    int num_global = A->RowMap().NumGlobalElements();
     int num_scansum = 0;
 
     Comm.ScanSum(&num_local,&num_scansum,1);
 
-    std::vector<long long> MyGIDS(num_local);
+    // New Map
+    std::vector<int> MyGIDS(num_local);
     for(int i=0; i<num_local; i++)
       MyGIDS[i] = num_global - num_scansum + num_local - i - 1;
+    Map1=new Epetra_Map(-1,num_local,&MyGIDS[0],0,Comm);
 
-    Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],(long long)0,Comm);
-    Import1 = new Epetra_Import(*Map1,A->RowMap());
-    
-    // Execute fused constructor
+
+    // Execute fused import constructor
+    Import1 = new Epetra_Import(*Map1,A->RowMap());   
     B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
     
-    double diff=test_with_matvec(*A,*B);
+    diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #3 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 
-    delete A; delete B; delete Map1; delete Import1;
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
 
+    diff=test_with_matvec(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #3 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete Map1; delete Import1; delete Export1;
   }
 #endif
 
@@ -320,45 +365,57 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
 #ifdef ENABLE_TEST_4
   {
+    double diff;
     ierr=build_test_matrix(Comm,1,A); 
 
     // Assume we always own the diagonal
     int num_local = A->NumMyCols()-A->NumMyRows();
-    std::vector<long long> MyGIDS(num_local);
+    std::vector<int> MyGIDS(num_local);
 
     for(int i=0, idx=0; i<A->NumMyCols(); i++)
-      if(A->LRID(A->GCID64(i)) == -1){
-	MyGIDS[idx] = A->GCID64(i);
+      if(A->LRID(A->GCID(i)) == -1){
+	MyGIDS[idx] = A->GCID(i);
 	idx++;
       }
 
+    // New map
+    Map1=new Epetra_Map(-1,num_local,&MyGIDS[0],0,Comm);
 
-    Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],(long long)0,Comm);
-    Import1 = new Epetra_Import(*Map1,A->RowMap());
     
-    // Execute fused constructor
+    // Execute fused import constructor
+    Import1 = new Epetra_Import(*Map1,A->RowMap());
     B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
 
     // Build unfused matrix to compare
     C=new Epetra_CrsMatrix(Copy,*Map1,0);
     build_matrix_unfused(*A,*Import1,C);
 
-    double diff=test_with_matvec(*B,*C);
+    diff=test_with_matvec(*B,*C);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 
-    delete A; delete B; delete C; delete Map1; delete Import1;
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+
+    diff=test_with_matvec(*B,*C);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete C; delete Map1; delete Import1; delete Export1;
   }
 #endif
 
-
   // Final output for OK
   if(MyPID==0 && total_err==0)
-    cout<<"FusedImport: All tests PASSED."<<endl;
+    cout<<"FusedImportExport: All tests PASSED."<<endl;
 
-    // Cleanup  
+  // Cleanup  
   MPI_Finalize();
 
   return total_err ;
