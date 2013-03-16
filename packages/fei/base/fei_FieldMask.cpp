@@ -53,18 +53,18 @@ fei::FieldMask::~FieldMask()
 {
 }
 
-void fei::FieldMask::getFieldEqnOffset(int fieldID,
+int fei::FieldMask::getFieldEqnOffset(int fieldID,
 					   int& offset) const
 {
   int idindex = 0;
   if (numFields_ < 2) {
     if (numFields_ < 1) {
       offset = 0;
-      return;
+      return 0;
     }
 
     if (fieldIDs_[0] != fieldID) {
-      throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
+      return -1;
     }
   }
   else {
@@ -77,10 +77,11 @@ void fei::FieldMask::getFieldEqnOffset(int fieldID,
   }
 
   if (idindex < 0) {
-    throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
+    return -1;
   }
 
   offset = fieldEqnOffsets_[idindex];
+  return 0;
 }
 
 void fei::FieldMask::addField(int fieldID, int fieldSize)

@@ -533,10 +533,14 @@ int fei::Vector_core::copyOutFieldData(int fieldID,
 
       nodeNumber = node->getNumber();
       int* eqnNumbers = vspcEqnPtr+node->getOffsetIntoEqnNumbers();
-      node->getFieldMask()->getFieldEqnOffset(fieldID, foffset);
+      int err = node->getFieldMask()->getFieldEqnOffset(fieldID, foffset);
+      if (err != 0) {
+        offset += fieldSize;
+        continue;
+      }
       dofOffset = eqnNumbers[foffset] - eqnNumbers[0];
       for(int j=0; j<fieldSize; ++j) {
-	CHK_ERR( copyOut_FE(nodeNumber, dofOffset+j, data[offset++]));
+        CHK_ERR( copyOut_FE(nodeNumber, dofOffset+j, data[offset++]));
       }
     }
   }
