@@ -4916,20 +4916,22 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
   int NumListsLL =0;
   int* IntSortLists[2];
   long long * LLSortLists[2];
+  int * RemotePermuteIDs_ptr = RemotePermuteIDs.size() ? &RemotePermuteIDs[0] : 0;
   if(!UseLL) {
     // int version
     IntSortLists[0] = (int*) RemoteColIndices;
-    IntSortLists[1] = RemotePermuteIDs.data();
+    IntSortLists[1] = RemotePermuteIDs_ptr;
     NumListsInt=2;
   }
   else {
     //LL version
     LLSortLists[0]  = (long long*) RemoteColIndices;
-    IntSortLists[0] = RemotePermuteIDs.data();
+    IntSortLists[0] = RemotePermuteIDs_ptr;
     NumListsInt = NumListsLL = 1;
   }
- 
-  Epetra_Util::Sort(true, NumRemoteColGIDs, PIDList.data(), 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
+
+  int * PIDList_ptr = PIDList.size() ? &PIDList[0] : 0;
+  Epetra_Util::Sort(true, NumRemoteColGIDs, PIDList_ptr, 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
 
   // Stash the RemotePIDs  
   PIDList.resize(NumRemoteColGIDs);
@@ -4997,7 +4999,8 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
   if (LocalGIDs!=0) delete [] LocalGIDs; 
 
   // Make Column map with same element sizes as Domain map 
-  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndices.data(), (int)domainMap.IndexBase64(), domainMap.Comm());
+  int_type * ColIndices_ptr  = ColIndices.size() ? &ColIndices[0] : 0;
+  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndices_ptr, (int)domainMap.IndexBase64(), domainMap.Comm());
 
   Graph_.CrsGraphData_->ColMap_ = temp;
   Graph_.CrsGraphData_->HaveColMap_ = true;
@@ -5344,11 +5347,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
-
+  int * pids_ptr = pids.size() ? &pids[0] : 0;
+  
   if(UseLL) {
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs,CSR_colind_LL.data());
+    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
+    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs);  
+  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/
@@ -5359,8 +5364,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // Pre-build the importer using the existing PIDs
   Epetra_Import * MyImport=0;
   int NumRemotePIDs = RemotePIDs.size();
+  int *RemotePIDs_ptr = RemotePIDs.size() ? &RemotePIDs[0] : 0;
   if(!SourceMatrix.DomainMap().SameAs(ColMap()))
-    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs.data());
+    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
 
   if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
   else {
@@ -5482,11 +5488,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
-
+  int * pids_ptr = pids.size() ? &pids[0] : 0;
   if(UseLL) {
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs,CSR_colind_LL.data());
+    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
+    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids.data(),RemotePIDs);  
+  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/
@@ -5497,8 +5504,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   // Pre-build the importer using the existing PIDs
   Epetra_Import * MyImport=0;
   int NumRemotePIDs = RemotePIDs.size();
+  int * RemotePIDs_ptr = RemotePIDs.size() ? &RemotePIDs[0] : 0;
   if(!SourceMatrix.DomainMap().SameAs(ColMap()))
-    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs.data());
+    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
 
   if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
   else {
