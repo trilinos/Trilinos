@@ -252,6 +252,11 @@ namespace Teuchos
       // threads call counters() for the "first time" at the same
       // time, the array may be initialized incorrectly.
       static std::map<std::string, RCP<T> > theCounters;
+      static int initialized;
+      if (! initialized) {
+        theCounters.clear ();
+        initialized = 1;
+      }
       return theCounters;
     }
 
@@ -273,13 +278,45 @@ namespace Teuchos
 
     map_type& ctrs = counters ();
     iter_type it = ctrs.find (name);
+    RCP<T> newCounter = null;
     if (it == ctrs.end ()) {
-      RCP<T> newCounter = rcp (new T (name));
+      newCounter = rcp (new T (name));
+#ifdef HAVE_TEUCHOS_DEBUG
+      const bool wasNotThere = ctrs.insert (std::make_pair (name, newCounter)).second;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! wasNotThere, std::logic_error,
+        "getNewCounter: insert() claims that timer \"" << name << "\" was "
+        "already there in the map, even though find() claims that it was not.  "
+        "Please report this bug to the Teuchos developers.");
+#else
+      // Use the returned iterator to optimize insertion.
       ctrs.insert (it, std::make_pair (name, newCounter));
-      return newCounter;
+#endif // HAVE_TEUCHOS_DEBUG
     } else {
-      return it->second;
+      newCounter = it->second;
+#ifdef HAVE_TEUCHOS_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        it->second.is_null (), std::logic_error,
+        "getNewCounter: Timer \"" << name << "\" was already there in the map, "
+        "but looking it up by name resulted in a null timer.  "
+        "Please report this bug to the Teuchos developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        name != it->second->name (), std::logic_error,
+        "getNewCounter: Timer \"" << name << "\" was already there in the map, "
+        "but looking it up by name resulted in a timer with a different name \""
+        << it->second->name () << "\".  Please report this bug to the Teuchos "
+        "developers.");
+#endif // HAVE_TEUCHOS_DEBUG
     }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newCounter.is_null (), std::logic_error,
+      "getNewCounter: At end of method, when creating timer \"" << name
+      << "\", newCounter is null.  Please report this bug to the Teuchos "
+      "developers.");
+#endif // HAVE_TEUCHOS_DEBUG
+    return newCounter;
   }
 
   template<class T>

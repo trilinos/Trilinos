@@ -58,8 +58,8 @@
 namespace MueLu {
 
     // Map that record parent/child relations for post-processing.
-    //this works
-    extern std::map<std::string,std::string> myParent_;
+  //extern std::map<std::string,std::string> myParent_;
+  extern std::map<void*, void*> myParent_;
 
   /*! @class MutuallyExclusiveTime
 
@@ -70,7 +70,7 @@ namespace MueLu {
       Timers have three states (running, stopped, paused) to enforce the mutually exclusive property.
       When the running timer is stopped, the last active timer is restarted. A stack of timers is used internally to support this functionality.
       The template parameter of this class can be used to define several sets of mutually exclusive timers.
-     
+
       Note: Only one timer can be active at a time but all timers can be inactive at the same time. Timers cannot be destroyed when they are in 'paused'.
 
       @todo inheritence from PerformanceMonitorBase<Time> ?
@@ -87,7 +87,7 @@ namespace MueLu {
       : name_(name),
         timer_(rcp(new Teuchos::Time(name, false))),  // second argument is false in any case, because if start==true,
                                                       // timer has to be started by MutuallyExclusiveTime::start() instead of Teuchos::Time::start().
-	isPaused_(false)
+        isPaused_(false)
     {
       if (startFlag == true) timer_->start();
     }
@@ -96,9 +96,9 @@ namespace MueLu {
     ~MutuallyExclusiveTime() {
       // This timer can only be destroyed if it is not in the stack
       if (isPaused()) {
-	// error message because cannot throw an exception in destructor
-	GetOStream(Errors, 0) << "MutuallyExclusiveTime::~MutuallyExclusiveTime(): Error: destructor called on a paused timer." << std::endl;
-	//TODO: Even if timing results will be wrong, the timer can be removed from the stack to avoid a segmentation fault.
+        // error message because cannot throw an exception in destructor
+        GetOStream(Errors, 0) << "MutuallyExclusiveTime::~MutuallyExclusiveTime(): Error: destructor called on a paused timer." << std::endl;
+        //TODO: Even if timing results will be wrong, the timer can be removed from the stack to avoid a segmentation fault.
       }
 
       stop(); // if isRunning(), remove from the stack, resume previous timer
@@ -116,13 +116,15 @@ namespace MueLu {
 
       // pause currently running timer
       if (!timerStack_.empty()) {
-	    GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
-	    timerStack_.top()->pause();
-	    GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
-        myParent_[this->name_] = timerStack_.top()->name_;
+            GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
+            timerStack_.top()->pause();
+            GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
+            //myParent_[this->name_] = timerStack_.top()->name_;
+            myParent_[this] = timerStack_.top();
       } else {
-	    GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
-        myParent_[this->name_] = "no parent";
+            GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
+            //myParent_[this->name_] = "no parent";
+            myParent_[this] = NULL;
       }
 
       // start this timer
@@ -133,7 +135,7 @@ namespace MueLu {
     //! @name Functions that can only be called on the most recent timer (i.e., the running or last paused timer)
     //@{
 
-    //!	@brief Stops the timer.
+    //! @brief Stops the timer.
     //! The previous MutuallyExclusiveTime that has been paused when this timer was started will be resumed.
     //! This method can be called on an already stopped timer or on the currently running timer.
     double stop() {
@@ -147,8 +149,8 @@ namespace MueLu {
       double r = timer_->stop();
 
       if (!timerStack_.empty()) {
-	    GetOStream(Debug, 0) << "resuming timer " << timerStack_.top()->name_ << std::endl;
-	    timerStack_.top()->resume();
+            GetOStream(Debug, 0) << "resuming timer " << timerStack_.top()->name_ << std::endl;
+            timerStack_.top()->resume();
       }
 
       return r;
@@ -188,8 +190,8 @@ namespace MueLu {
 
     bool isRunning() {
       if (timer_->isRunning()) {
-        TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,
-                   "MueLu::MutuallyExclusiveTime::isRunning(): this timer is active so it is supposed to be the head of the stack");
+               // TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,
+               //            "MueLu::MutuallyExclusiveTime::isRunning(): this timer is active so it is supposed to be the head of the stack");
       }
       return timer_->isRunning();
     }
@@ -216,7 +218,7 @@ namespace MueLu {
     std::string name_;
 
     /*! @brief Print std::map of (child,parent) pairs for post-run analysis.
-    
+
         This method print a std::map.  Each key is a child, and the value is its parent.  This should be used when MueLu has been configured
         with -D MueLu_ENABLE_PROFILING:STRING=ON.  Then the (child,parent0) pairs can be used by the MueLu script ``mueprof.sh" to print a
         nice hierarchical tree that shows both runtime flow and time for each section.
@@ -224,8 +226,9 @@ namespace MueLu {
     static void PrintParentChildPairs() {
       //key is child, value is parent
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
-	  *fos << "Parent Child Map" << std::endl;
-      std::map<std::string, std::string >::const_iterator iter;
+          *fos << "Parent Child Map" << std::endl;
+          //std::map<std::string, std::string >::const_iterator iter;
+          std::map<void*, void*>::const_iterator iter;
       for (iter = ::MueLu::myParent_.begin(); iter != ::MueLu::myParent_.end(); ++iter) {
         *fos << "Key: " << iter->first << "  Value: " << iter->second << std::endl;
       }
@@ -255,7 +258,7 @@ namespace MueLu {
     //! Check if 'this' is the head of the stack.
     void TopOfTheStack() {
       TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.empty(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTime::TopOfTheStack(): timer is not the head of the stack (stack is empty).");
-      TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,  "MueLu::MutuallyExclusiveTime::TopOfTheStack(): timer is not the head of the stack.");
+      // TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,  "MueLu::MutuallyExclusiveTime::TopOfTheStack(): timer is not the head of the stack.");
       TEUCHOS_TEST_FOR_EXCEPTION(!(isRunning() || isPaused()), Exceptions::RuntimeError,  "MueLu::MutuallyExclusiveTime::TopOfTheStack(): head of the stack timer is neither active nor paused.");
     }
 
