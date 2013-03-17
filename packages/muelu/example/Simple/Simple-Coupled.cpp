@@ -60,7 +60,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPShiftFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -105,7 +105,7 @@ typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
 typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
 typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
 typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
-typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
+typedef MueLu::RAPShiftFactory<SC,LO,GO,NO,LMO>      RAPShiftFactory;
 typedef MueLu::CoupledRBMFactory<SC,LO,GO,NO,LMO>    RBMFactory;
 typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
 typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
@@ -180,13 +180,11 @@ int main(int argc, char *argv[]) {
   int ny=9;
   int nz=83;*/
 
-  // Parameters
-  double alpha  = 1.0;
-  double beta   = 0.5;
-  double omega  = 2.0*M_PI*freq;
-  double omega2 = omega*omega;
+  // Some constants
+  SC omega  = (SC) 2.0*M_PI*freq;
+  SC omega2 = omega*omega;
   SC one(1.0,0.0);
-  SC shift(alpha,beta);
+  SC ii(0.0,1.0);
 
   // Construct a Map that puts approximately the same number of mesh nodes per processor
   RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(nTotalNodes, comm);
@@ -198,9 +196,11 @@ int main(int argc, char *argv[]) {
 
   // Create a CrsMatrix using the map
   // K - only stiffness matrix
+  // M - only mass matrix
   // A - original Helmholtz operator
   // S - shifted Helmholtz operator
   RCP<TCRS> K = rcp(new TCRS(map,maxDOFsPerRow));
+  RCP<TCRS> M = rcp(new TCRS(map,maxDOFsPerRow));
   RCP<TCRS> A = rcp(new TCRS(map,maxDOFsPerRow));
   RCP<TCRS> S = rcp(new TCRS(map,maxDOFsPerRow));
 
@@ -218,18 +218,8 @@ int main(int argc, char *argv[]) {
     else                               { current_row    = current_row-nAcousticDOFs+nPaddedDOFs;     }
     if(current_column < nAcousticDOFs) { current_column = current_column*3;                          }
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
-    if(current_row >= nTotalDOFs || current_column >= nTotalDOFs) {
-      std::cout<<"Error: matrix file contained corrupt values."<<std::endl;
-      std::cout<<"current_row: "<<current_row<<" current_column: "<<current_column<<std::endl;
-    }
     if(map->isNodeGlobalElement(current_row)==true) {
       K->insertGlobalValues(current_row,
-			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (cpx_current_value));
-      A->insertGlobalValues(current_row,
-			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (cpx_current_value));
-      S->insertGlobalValues(current_row,
 			    Teuchos::tuple<GO> (current_column),
 			    Teuchos::tuple<SC> (cpx_current_value));
     }
@@ -240,52 +230,29 @@ int main(int argc, char *argv[]) {
       K->insertGlobalValues(3*i+1,
 			    Teuchos::tuple<GO> (3*i+1),
 			    Teuchos::tuple<SC> (one));
-      A->insertGlobalValues(3*i+1,
-			    Teuchos::tuple<GO> (3*i+1),
-			    Teuchos::tuple<SC> (one));
-      S->insertGlobalValues(3*i+1,
-			    Teuchos::tuple<GO> (3*i+1),
-			    Teuchos::tuple<SC> (one));
     }
     if(map->isNodeGlobalElement(3*i+2)==true) {
       K->insertGlobalValues(3*i+2,
 			    Teuchos::tuple<GO> (3*i+2),
 			    Teuchos::tuple<SC> (one));
-      A->insertGlobalValues(3*i+2,
-			    Teuchos::tuple<GO> (3*i+2),
-			    Teuchos::tuple<SC> (one));
-      S->insertGlobalValues(3*i+2,
-			    Teuchos::tuple<GO> (3*i+2),
-			    Teuchos::tuple<SC> (one));
-    }
-    if(3*i+1 >= nTotalDOFs || 3*i+2 >= nTotalDOFs) {
-      std::cout<<"Error: padding contained corrupt values."<<std::endl;
-      std::cout<<"3*i+1: "<<3*i+1<<" 3*i+2: "<<3*i+2<<std::endl;
     }
   }
-  // damping matrix
+  // damping matrix - lump into stiffness matrix
   std::ifstream matfile_damp;
   matfile_damp.open("coupled_damp.txt");
   for (int i = 0; i < nnzeros_damp; i++) {
     int current_row, current_column;
     double current_value;
     matfile_damp >> current_row >> current_column >> current_value ;
-    SC cpx_current_value(0.0,omega*current_value);
+    SC cpx_current_value(current_value,0.0);
     if(current_row < nAcousticDOFs)    { current_row    = current_row*3;                             }
     else                               { current_row    = current_row-nAcousticDOFs+nPaddedDOFs;     }
     if(current_column < nAcousticDOFs) { current_column = current_column*3;                          }
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
-    if(current_row >= nTotalDOFs || current_column >= nTotalDOFs) {
-      std::cout<<"Error: damping matrix file contained corrupt values."<<std::endl;
-      std::cout<<"current_row: "<<current_row<<" current_column: "<<current_column<<std::endl;
-    }
     if(map->isNodeGlobalElement(current_row)==true) {
-      A->insertGlobalValues(current_row,
+      K->insertGlobalValues(current_row,
 			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (cpx_current_value));
-      S->insertGlobalValues(current_row,
-			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (cpx_current_value));
+			    Teuchos::tuple<SC> (ii*omega*cpx_current_value));
     }
   }
   // mass matrix
@@ -295,40 +262,48 @@ int main(int argc, char *argv[]) {
     int current_row, current_column;
     double current_value;
     matfile_mass >> current_row >> current_column >> current_value ;
-    SC cpx_current_value(-omega2*current_value,0.0);
-    SC cpx_current_value_shift=cpx_current_value*shift;
+    SC cpx_current_value(current_value,0.0);
     if(current_row < nAcousticDOFs)    { current_row    = current_row*3;                             }
     else                               { current_row    = current_row-nAcousticDOFs+nPaddedDOFs;     }
     if(current_column < nAcousticDOFs) { current_column = current_column*3;                          }
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
-    if(current_row >= nTotalDOFs || current_column >= nTotalDOFs) {
-      std::cout<<"Error: mass matrix file contained corrupt values."<<std::endl;
-      std::cout<<"current_row: "<<current_row<<" current_column: "<<current_column<<std::endl;
-    }
     if(map->isNodeGlobalElement(current_row)==true) {
-      A->sumIntoGlobalValues(current_row,
+      M->insertGlobalValues(current_row,
 			     Teuchos::tuple<GO> (current_column),
 			     Teuchos::tuple<SC> (cpx_current_value));
-      S->sumIntoGlobalValues(current_row,
-			     Teuchos::tuple<GO> (current_column),
-			     Teuchos::tuple<SC> (cpx_current_value_shift));
+    }
+  }
+  // pad with identity
+  for(int i = 0; i < nAcousticDOFs; i++) {
+    if(map->isNodeGlobalElement(3*i+1)==true) {
+      M->insertGlobalValues(3*i+1,
+			    Teuchos::tuple<GO> (3*i+1),
+			    Teuchos::tuple<SC> (one));
+    }
+    if(map->isNodeGlobalElement(3*i+2)==true) {
+      M->insertGlobalValues(3*i+2,
+			    Teuchos::tuple<GO> (3*i+2),
+			    Teuchos::tuple<SC> (one));
     }
   }
   // Complete fill
   K->fillComplete();
-  A->fillComplete();
-  S->fillComplete();
+  M->fillComplete();
 
   // Turn Tpetra::CrsMatrix into MueLu::Matrix
   RCP<XCRS> mueluK_ = rcp(new XTCRS(K)); 
   RCP<XMAT> mueluK  = rcp(new XWRAP(mueluK_));
-  RCP<XCRS> mueluA_ = rcp(new XTCRS(A)); 
-  RCP<XMAT> mueluA  = rcp(new XWRAP(mueluA_));
-  RCP<XCRS> mueluS_ = rcp(new XTCRS(S)); 
-  RCP<XMAT> mueluS  = rcp(new XWRAP(mueluS_));
+  RCP<XCRS> mueluM_ = rcp(new XTCRS(M)); 
+  RCP<XMAT> mueluM  = rcp(new XWRAP(mueluM_));
   mueluK->SetFixedBlockSize(nDOFsPerNode);
-  mueluA->SetFixedBlockSize(nDOFsPerNode);
-  mueluS->SetFixedBlockSize(nDOFsPerNode);
+  mueluM->SetFixedBlockSize(nDOFsPerNode);
+  // combine to make Helmholtz and shifted Laplace operators
+  RCP<XMAT> mueluA, mueluS;
+  SC shift1(1.0,0.5);
+  MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -omega2, mueluA);
+  MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -shift1*omega2, mueluS);
+  mueluA->fillComplete();
+  mueluS->fillComplete();
   xmap=mueluA->getDomainMap();
   map=Xpetra::toTpetra(xmap);
 
@@ -367,14 +342,14 @@ int main(int argc, char *argv[]) {
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluK));
-  FactoryManager M;
+  FactoryManager Manager;
 
   // Prolongation/Restriction
-  RCP<TPFactory>  TentPFact = rcp( new TPFactory     );
-  RCP<SaPFactory> Pfact     = rcp( new SaPFactory    );
-  RCP<GRFactory>  Rfact     = rcp( new GRFactory     );
-  //RCP<RAPFactory> Acfact    = rcp( new RAPFactory    );
-  RCP<RBMFactory> RBMfact   = rcp( new RBMFactory(3) );
+  RCP<TPFactory>  TentPFact    = rcp(  new TPFactory       );
+  RCP<SaPFactory> Pfact        = rcp(  new SaPFactory      );
+  RCP<GRFactory>  Rfact        = rcp(  new GRFactory       );
+  RCP<RAPShiftFactory> Acfact  = rcp(  new RAPShiftFactory );
+  RCP<RBMFactory> RBMfact      = rcp(  new RBMFactory(3)   );
   RBMfact->setLastAcousticDOF(nPaddedDOFs);
 
   // Smoothers
@@ -382,13 +357,13 @@ int main(int argc, char *argv[]) {
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
   // Krylov smoother
-  ifpack2Type = "KRYLOV";
+  /*ifpack2Type = "KRYLOV";
   ifpack2List.set("krylov: iteration type",1);
   ifpack2List.set("krylov: number of iterations",4);
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  ifpack2List.set("krylov: preconditioner type",1);*/
   // Additive Schwarz smoother
   //ifpack2Type = "SCHWARZ";
   //ifpack2List.set("schwarz: compute condest", false);
@@ -403,9 +378,9 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: relative threshold", (double)1.0);
   //ifpack2List.set("fact: relax value", (double)0.0);
   // Gauss-Seidel smoother
-  //ifpack2Type = "RELAXATION";
+  ifpack2Type = "RELAXATION";
   ifpack2List.set("relaxation: sweeps", (LO) 4);
-  ifpack2List.set("relaxation: damping factor", 1.0); // 0.7
+  ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
   ifpack2List.set("relaxation: type", "Gauss-Seidel");
   
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
@@ -429,24 +404,40 @@ int main(int argc, char *argv[]) {
   RCP<XMV> nullspace;
   RBMfact->BuildRBM(mueluA,coordinates,nullspace);
 
-  // Setup R's and P's
-  M.SetFactory("P", Pfact);
-  M.SetFactory("R", Rfact);
-  //M.SetFactory("A", Acfact);
-  M.SetFactory("Ptent", TentPFact);
-  H->GetLevel(0)->Set("Nullspace",nullspace);
+  // determine shifts for RAPShiftFactory
+  std::vector<SC> shifts;
+  for(int i=0; i<maxLevels; i++) {
+    double alpha=1.0;
+    double beta=0.5+((double) i)*0.2;
+    SC shift(alpha,beta);
+    shifts.push_back(-shift*omega2);
+  }
+  Acfact->SetShifts(shifts);
+
+  // Set factory managers for prolongation/restriction
+  Manager.SetFactory("P", Pfact);
+  Manager.SetFactory("R", Rfact);
+  Manager.SetFactory("Ptent", TentPFact);
   H->Keep("P", Pfact.get());
   H->Keep("R", Rfact.get());
   H->Keep("Ptent", TentPFact.get());
-  H->Setup(M, 0, maxLevels);
+  H->GetLevel(0)->Set("Nullspace",nullspace);
+  H->SetImplicitTranspose(true);
+  H->Setup(Manager, 0, maxLevels);
+  H->Delete("Smoother");
+  H->Delete("CoarseSolver");
   H->print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
 
-  // Setup coarse grid operators and smoothers
-  RCP<Level> finestLevel = H->GetLevel();
-  finestLevel->Set("A", mueluS);
-  M.SetFactory("Smoother", SmooFact);
-  M.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->Setup(M, 0, H->GetNumLevels());
+  // Set factories for smoothing and coarse grid
+  Manager.SetFactory("Smoother", SmooFact);
+  Manager.SetFactory("CoarseSolver", coarsestSmooFact);
+  Manager.SetFactory("A", Acfact);
+  Manager.SetFactory("K", Acfact);
+  Manager.SetFactory("M", Acfact);
+  H->GetLevel(0)->Set("A",mueluS);
+  H->GetLevel(0)->Set("K",mueluK);
+  H->GetLevel(0)->Set("M",mueluM);
+  H->Setup(Manager, 0, H->GetNumLevels());
   
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
@@ -476,7 +467,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", true);         // set flexible GMRES on
+  belosList.set("Flexible Gmres", false);         // set flexible GMRES on
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );

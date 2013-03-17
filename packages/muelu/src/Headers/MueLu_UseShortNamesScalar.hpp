@@ -190,6 +190,10 @@ typedef MueLu::ProjectorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMat
 typedef MueLu::RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RAPFactory;
 #endif
 
+#ifdef MUELU_RAPSHIFTFACTORY_SHORT
+typedef MueLu::RAPShiftFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RAPShiftFactory;
+#endif
+
 #ifdef MUELU_REBALANCEACFACTORY_SHORT
 typedef MueLu::RebalanceAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceAcFactory;
 #endif

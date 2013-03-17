@@ -191,12 +191,12 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
-  ifpack2Type = "KRYLOV";
+  /*ifpack2Type = "KRYLOV";
   ifpack2List.set("krylov: number of iterations",4);
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  ifpack2List.set("krylov: preconditioner type",1);*/
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
@@ -204,10 +204,10 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: relative threshold", (double)1.0);
   //ifpack2List.set("fact: relax value", (double)0.0);
   // Gauss-Seidel smoother
-  //ifpack2Type = "RELAXATION";
-  //ifpack2List.set("relaxation: sweeps", (LO) 1);
-  //ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
-  //ifpack2List.set("relaxation: type", "Gauss-Seidel");
+  ifpack2Type = "RELAXATION";
+  ifpack2List.set("relaxation: sweeps", (LO) 1);
+  ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
+  ifpack2List.set("relaxation: type", "Gauss-Seidel");
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;

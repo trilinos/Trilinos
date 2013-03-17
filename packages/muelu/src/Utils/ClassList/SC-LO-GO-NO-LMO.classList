@@ -45,6 +45,7 @@ PreDropFunctionBaseClass
 PreDropFunctionConstVal
 ProjectorSmoother
 RAPFactory
+RAPShiftFactory
 RebalanceAcFactory
 RebalanceTransferFactory
 RepartitionFactory - #ifdef HAVE_MPI
