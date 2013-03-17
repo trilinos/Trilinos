@@ -55,7 +55,7 @@
 #include <qd/dd_real.h>
 #endif
 
-namespace std { 
+namespace std {
 
 
 template <typename Packet>
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordina
       as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
       );
   }
-  
+
 }
 
 
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
     );
 
   const Packet expectedMyGlobalReduct = as<Packet>(
-    numProcs * procRank + ((numProcs - 1) * numProcs)/2 
+    numProcs * procRank + ((numProcs - 1) * numProcs)/2
     );
 
   if (std::numeric_limits<Packet>::is_integer) {
@@ -539,7 +539,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   if (procRank == numProcs-1) {
     wait( *comm, outArg(recvRequest) );
   }
-  
+
   TEST_EQUALITY_CONST( sendRequest, Teuchos::null );
   TEST_EQUALITY_CONST( recvRequest, Teuchos::null );
 
@@ -601,9 +601,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
     int offset = 0;
     for (int i = 0; i < numSendRecv; ++i, offset += sendLen) {
       const ArrayRCP<Packet> origInputData_i =
-        origInputData.persistingView(offset, sendLen); 
+        origInputData.persistingView(offset, sendLen);
       const ArrayRCP<Packet> origOutputData_i =
-        origOutputData.persistingView(offset, sendLen); 
+        origOutputData.persistingView(offset, sendLen);
       for (int j = 0; j < sendLen; ++j) {
         origInputData_i[j] = PT::random();
         origOutputData_i[j] = PT::random();
@@ -779,7 +779,7 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 {
   using Teuchos::tuple; using Teuchos::inoutArg;
 
-  const Teuchos::RCP<const Teuchos::Comm<int> > defaultComm = 
+  const Teuchos::RCP<const Teuchos::Comm<int> > defaultComm =
     Teuchos::DefaultComm<int>::getComm();
   const int comm_size = defaultComm->getSize();
   const int comm_rank = defaultComm->getRank();
@@ -788,20 +788,21 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
   if (comm_size < 2) {
     return;
   }
-  
+
   // Create a subcomm that contains just two processes
-  const Teuchos::RCP<const Teuchos::Comm<int> > masterComm = 
+  const Teuchos::RCP<const Teuchos::Comm<int> > masterComm =
     defaultComm->createSubcommunicator(tuple<int>(0, 1)());
 
   if (comm_rank <= 1) {
 
     const int masterComm_size = masterComm->getSize();
+    (void) masterComm_size; // Forestall "unused variable" warning.
     const int masterComm_rank = masterComm->getRank();
 
     // Split the main communicator into 2 overlapping groups
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_1 = 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_1 =
       masterComm->createSubcommunicator(tuple<int>(0, 1)());
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_2 = 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_2 =
       masterComm->createSubcommunicator(tuple<int>(0)());
 
     // Create another communicator.
@@ -809,7 +810,7 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
       masterComm->createSubcommunicator(tuple<int>(0, 1)());
 
     // Get my mpi tag for comm 3.
-    int my_tag = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >( 
+    int my_tag = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(
       comm_3 )->getTag();
 
     // Collect the tags for comm 3.
@@ -921,7 +922,7 @@ typedef std::pair<double,double> PairOfDoubles;
 
 #  define UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS_AND_QD( ORDINAL ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, short)			\
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, short)                      \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
@@ -946,7 +947,7 @@ typedef std::pair<double,double> PairOfDoubles;
   UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS_AND_QD(int)
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL(LongInt) // can't do QD with LongInt, one of the tests complains
-  
+
 #  ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL(LongLongInt)
