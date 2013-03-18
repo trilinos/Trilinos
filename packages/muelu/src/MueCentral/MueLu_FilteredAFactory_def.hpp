@@ -76,6 +76,8 @@ namespace MueLu {
   // TODO: rewrite the function using AmalgamationInfo
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
+    using Teuchos::as;
+
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
 
     const ParameterList& pL = GetParameterList();
@@ -102,7 +104,7 @@ namespace MueLu {
     for (size_t i = 0; i < numGRows; i++) {
       // Set up filtering array
       Teuchos::ArrayView<const LO> indsG = G->getNeighborVertices(i);
-      for (size_t j = 0; j < indsG.size(); j++)
+      for (size_t j = 0; j < as<size_t> (indsG.size()); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 1;
 
@@ -118,7 +120,7 @@ namespace MueLu {
         newInds.resize(oldInds.size());
         newVals.resize(oldVals.size());
         numInds = 0;
-        for (size_t j = 0; j < oldInds.size(); j++)
+        for (size_t j = 0; j < as<size_t> (oldInds.size()); j++)
           if (filter[oldInds[j]]) {
             newInds[numInds] = oldInds[j];
             newVals[numInds] = oldVals[j];
@@ -148,7 +150,7 @@ namespace MueLu {
       }
 
       // Clean up filtering array
-      for (size_t j = 0; j < indsG.size(); j++)
+      for (size_t j = 0; j < as<size_t> (indsG.size()); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
