@@ -69,7 +69,7 @@ namespace MueLu {
     RCP<const Matrix> A = rcpFromRef(Aref);
 
     RCP<Matrix> X, P, R, Z, AP;
-    RCP<Matrix> newX, newR, newP, tmpAP;
+    RCP<Matrix> newX, tmpAP;
     SC oldRZ, newRZ, alpha, beta, app;
 
     bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
@@ -78,6 +78,8 @@ namespace MueLu {
     RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());
     T_->fillComplete(P0.getDomainMap(), P0.getRangeMap());
     RCP<Matrix>    T = rcp(new CrsMatrixWrap(T_));
+
+    SC one = Teuchos::ScalarTraits<SC>::one();
 
     Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
 
@@ -93,7 +95,7 @@ namespace MueLu {
     if (useTpetra)
       Utils::Op2NonConstTpetraCrs(R)->resumeFill();
 #endif
-    R->scale(-Teuchos::ScalarTraits<SC>::one());
+    R->scale(-one);
     if (useTpetra)
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
@@ -107,7 +109,7 @@ namespace MueLu {
     oldRZ = Frobenius(*R, *Z);
 
     for (size_t k = 0; k < nIts_; k++) {
-      // AP = contrain(A*P)
+      // AP = constrain(A*P)
       tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
       C.Apply(*tmpAP, *T);
       AP = T;
@@ -127,19 +129,20 @@ namespace MueLu {
       std::cout << "emin: alpha = " << alpha << std::endl;
 
       // X_{k+1} = X_k + alpha*P_k
+#if 0
+      Utils2::TwoMatrixAdd(P, false, alpha, X, one);
+#else
       newX = Teuchos::null;
       Utils2::TwoMatrixAdd(P, false, alpha, X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
+#endif
 
       if (k == nIts_ - 1)
         break;
 
       // R_{k+1} = R_k - alpha*A*P_k
-      newR = Teuchos::null;
-      Utils2::TwoMatrixAdd(AP, false, -alpha, R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
-      newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
-      R.swap(newR);
+      Utils2::TwoMatrixAdd(AP, false, -alpha, R, one);
 
       // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory::BuildCopy(R);
@@ -150,10 +153,7 @@ namespace MueLu {
       beta = newRZ / oldRZ;
 
       // P_{k+1} = Z_{k+1} + beta*P_k
-      newP = Teuchos::null;
-      Utils2::TwoMatrixAdd(P, false, beta, Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
-      newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
-      P.swap(newP);
+      Utils2::TwoMatrixAdd(Z, false, one, P, beta);
 
       oldRZ = newRZ;
     }
@@ -170,9 +170,8 @@ namespace MueLu {
     // In the future, one might need to restrict this test for only row maps
     // For instance, if matrix B = M*A then they would have different colmaps
     // See comments in the loop how to update the algorithm
-    TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*(B->getRowMap())) ||
-                               !A->getColMap()->isSameAs(*(B->getColMap())),
-                               Exceptions::Incompatible, "MueLu::CGSolver: matrices' maps are incompatible");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*(B->getRowMap())), Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: row maps are incompatible");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A->getColMap()->isSameAs(*(B->getColMap())), Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: col maps are incompatible");
 
     SC f = Teuchos::ScalarTraits<SC>::zero();
     for (size_t i = 0; i < numRows; i++) {
