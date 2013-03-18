@@ -189,7 +189,7 @@ namespace MueLu {
       size_t nnzA = indA.size()/*, nnzB = indB.size()*/;
 
       // We assume that indA and indB are sorted in increasing order
-      for (size_t j0 = 0, j1 = 0; j0 < nnzA; j0++) {
+      for (size_t j0 = 0, j1 = 0; j0 < nnzA;) {
         if (indA[j0] < indB[j1])
           j0++;
         else if (indA[j0] > indB[j1])
