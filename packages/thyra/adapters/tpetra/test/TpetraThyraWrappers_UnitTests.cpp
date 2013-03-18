@@ -703,6 +703,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
   Scalar )
 {
   using Teuchos::Time;
+  using Teuchos::CONJ_TRANS;
+  using Teuchos::NO_TRANS;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType Magnitude;
   typedef VectorSpaceBase<Scalar> VectorSpace;
@@ -720,7 +722,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
     B = createMembers(vs, numCols);
   const RCP<TpetraMultiVec>
     tA = TOVE::getTpetraMultiVector(A),
-    tB = TOVE::getTpetraMultiVector(B); 
+    tB = TOVE::getTpetraMultiVector(B);
+  Array<Scalar> C(numCols*numCols,ST::zero());
 
   Teuchos::Array<Magnitude> avMag(numCols);
   Teuchos::Array<Scalar> avScal(numCols);
@@ -730,6 +733,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
     tA->putScalar(ST::zero()),
     Thyra::assign(A.ptr(), ST::zero())
     );
+
+  //{
+  //  RCP<MultiVec> Ctmvb = Thyra::createMembersView(
+  //      A->domain(),
+  //      RTOpPack::SubMultiVectorView<Scalar>(
+  //        0, numCols, 0, numCols,
+  //        Teuchos::arcpFromArrayView(C()), numCols
+  //      )
+  //    );
+  //  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+  //    "Tpetra::multiplyOntoHost()",
+  //    Tpetra::multiplyOntoHost(CONJ_TRANS,NO_TRANS,ST::one(),*A,*B, C()),
+  //    A->apply(Thyra::CONJTRANS,*B,Ctmvb.ptr(),ST::one(),ST::zero())
+  //    );
+  //}
+
+  //{
+  //  RCP<const MultiVec> Ctmvb = Thyra::createMembersView(
+  //      A->domain(),
+  //      RTOpPack::ConstSubMultiVectorView<Scalar>(
+  //        0, numCols, 0, numCols,
+  //        Teuchos::arcpFromArrayView(C()), numCols
+  //      )
+  //    );
+  //  // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
+  //  A->apply(Thyra::NOTRANS,*Ctmvb,B.ptr(),ST::one(),ST::zero());
+  //}
 
 /*
 
@@ -742,7 +772,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
     timerUpdate2   = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta)"),
     timerPutScalar = lookupAndAssertTimer("Tpetra::MultiVector::putScalar()"),
     timerMultiply  = lookupAndAssertTimer("Tpetra::MultiVector::multiply()"),
-  
+
   CHECK_TPETRA_FUNC_CALL_INCREMENT( timerPutScalar,  Thyra::assign( A.ptr(), ST::zero() ) );
   CHECK_TPETRA_FUNC_CALL_INCREMENT( timerScale,      Thyra::scale( ST::zero(), B.ptr() ) );
   CHECK_TPETRA_FUNC_CALL_INCREMENT( timerAssign,     Thyra::assign( A.ptr(), *B ) );
