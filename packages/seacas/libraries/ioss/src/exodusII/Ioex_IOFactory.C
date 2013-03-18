@@ -49,8 +49,8 @@ namespace Ioss { class DatabaseIO; }
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_external_decomposition_property(MPI_Comm comm);
-  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage);
+  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &props, Ioss::DatabaseUsage db_usage);
+  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &props, Ioss::DatabaseUsage db_usage);
 }
 #endif
 
@@ -79,7 +79,7 @@ namespace Ioex {
     // The "exodus" and "parallel_exodus" databases can both be accessed
     // from this factory.  The "parallel_exodus" is returned only if the following
     // are true:
-    // 0. The db_usage is 'READ_MODEL' (not suppported for READ_RESTART yet)
+    // 0. The db_usage is 'READ_MODEL' (not officially suppported for READ_RESTART yet)
     // 1. Parallel run with >1 processor
     // 2. There is a DECOMPOSITION_METHOD specified in 'properties'
     // 3. The decomposition method is not "EXTERNAL"
@@ -88,36 +88,19 @@ namespace Ioex {
     if (communicator != MPI_COMM_NULL) {
       MPI_Comm_size(communicator, &proc_count);
     }
-    
+
     bool decompose = false;
     if (proc_count > 1) {
-      if (db_usage == Ioss::READ_MODEL) {
-	// Check for property...
-	if (properties.exists("DECOMPOSITION_METHOD")) {
-	  std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
-	  if (method != "EXTERNAL") {
-	    decompose = true;
-	  }
-	} else {
-	  std::string method = check_external_decomposition_property(communicator);
-	  if (!method.empty() && method != "EXTERNAL") {
-	    decompose = true;
-	  }
-	}
+      if (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART) {
+        std::string method = check_decomposition_property(communicator, properties, db_usage);
+        if (!method.empty() && method != "EXTERNAL") {
+          decompose = true;
+        }
       }
-      else if (db_usage == Ioss::WRITE_RESULTS) {
-	if (properties.exists("COMPOSE_RESULTS")) {
-	  decompose = true;
-	} else if (check_external_composition_property(communicator, db_usage)) {
-	  decompose = true;
-	}
-      }
-      else if (db_usage == Ioss::WRITE_RESTART) {
-	if (properties.exists("COMPOSE_RESTART")) {
-	  decompose = true;
-	} else if (check_external_composition_property(communicator, db_usage)) {
-	  decompose = true;
-	}
+      else if (db_usage == Ioss::WRITE_RESULTS || db_usage == Ioss::WRITE_RESTART) {
+        if (check_composition_property(communicator, properties, db_usage)) {
+          decompose = true;
+        }
       }
     }
 
@@ -133,13 +116,24 @@ namespace Ioex {
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_external_decomposition_property(MPI_Comm comm)
+  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties, Ioss::DatabaseUsage db_usage)
   {
+    std::string decomp_method;
+    std::string decomp_property;
+    if (db_usage == Ioss::READ_MODEL) {
+      decomp_property = "DECOMPOSITION_METHOD";
+    } else if (db_usage == Ioss::READ_RESTART) {
+      decomp_property = "RESTART_DECOMPOSITION_METHOD";
+    }
+
+    // Check for property...
+    if (properties.exists(decomp_property)) {
+      std::string method = properties.get(decomp_property).get_string();
+      return Ioss::Utils::uppercase(method);
+    }
+
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies a decomposition method.
-  
-    std::string decomp_method;
-    
     Ioss::ParallelUtils util(comm);
     std::string env_props;
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
@@ -147,32 +141,44 @@ namespace {
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val;
       Ioss::tokenize(env_props, ":", prop_val);
-    
+
       for (size_t i=0; i < prop_val.size(); i++) {
-	std::vector<std::string> property;
-	Ioss::tokenize(prop_val[i], "=", property);
-	if (property.size() != 2) {
-	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
-		 << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
-	  IOSS_ERROR(errmsg);
-	}
-	std::string prop = Ioss::Utils::uppercase(property[0]);
-	if (prop == "DECOMPOSITION_METHOD") {
-	  std::string value = property[1];
-	  decomp_method = Ioss::Utils::uppercase(value);
-	}
+        std::vector<std::string> property;
+        Ioss::tokenize(prop_val[i], "=", property);
+        if (property.size() != 2) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
+              << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
+          IOSS_ERROR(errmsg);
+        }
+        std::string prop = Ioss::Utils::uppercase(property[0]);
+        if (prop == decomp_property) {
+          std::string value = property[1];
+          decomp_method = Ioss::Utils::uppercase(value);
+        }
       }
     }
     return decomp_method;
   }
 
-  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage)
+  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties, Ioss::DatabaseUsage db_usage)
   {
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies the use of a single file for output...
 
     bool compose = false;
+    std::string compose_property = "COMPOSE_INVALID";
+    if (db_usage == Ioss::WRITE_RESULTS) {
+      compose_property = "COMPOSE_RESULTS";
+    } else if (db_usage == Ioss::WRITE_RESTART) {
+      compose_property = "COMPOSE_RESTART";
+    }
+
+    if (properties.exists(compose_property)) {
+      compose = true;
+      return compose;
+    }
+
     Ioss::ParallelUtils util(comm);
     std::string env_props;
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
@@ -180,19 +186,15 @@ namespace {
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val;
       Ioss::tokenize(env_props, ":", prop_val);
-    
+
       for (size_t i=0; i < prop_val.size(); i++) {
-	std::vector<std::string> property;
-	Ioss::tokenize(prop_val[i], "=", property);
-	std::string prop = Ioss::Utils::uppercase(property[0]);
-	if (db_usage == Ioss::WRITE_RESULTS && prop == "COMPOSE_RESULTS") {
-	  compose = true;
-	  break;
-	}
-	else if (db_usage == Ioss::WRITE_RESTART && prop == "COMPOSE_RESTART") {
-	  compose = true;
-	  break;
-	}
+        std::vector<std::string> property;
+        Ioss::tokenize(prop_val[i], "=", property);
+        std::string prop = Ioss::Utils::uppercase(property[0]);
+        if (prop == compose_property) {
+          compose = true;
+          break;
+        }
       }
     }
     return compose;
