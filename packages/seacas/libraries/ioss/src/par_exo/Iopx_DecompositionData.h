@@ -72,12 +72,13 @@ namespace Iopx {
       // contains global entity-list positions for all entities in this set on this processor. 
       std::vector<int> entitylist_map;
       std::vector<bool> hasEntities; // T/F if this set exists on processor p
-      int root_;  // Lowest number processor that has nodes for this nodest
+
       size_t fileCount; // Number of nodes in nodelist for file decomposition
       int64_t id_;
+      int root_;  // Lowest number processor that has nodes for this nodest
 
-      size_t distributionFactorCount;
       int    distributionFactorValsPerEntity; // number of df / element or node. -1 if nonconstant.
+      size_t distributionFactorCount;
       double distributionFactorValue; // If distributionFactorConstant == true, the constant value
       bool distributionFactorConstant; // T if all distribution factors the same value.
   };
