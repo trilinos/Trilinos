@@ -882,7 +882,6 @@ namespace stk {
 #if defined(__IBMCPP__)
       throw std::runtime_error("not implemented on IBM");
 #else
-      NormalVector normal;
       int spatial_dim = get_spatial_dim();
       stk::mesh::FieldBase *coord_field = get_coordinates_field();
 
@@ -937,6 +936,7 @@ namespace stk {
                                 stk::mesh::Entity nodes[2] = {elem_nodes[elem_topo_data->side[side_ord].node[0]].entity(),
                                                               elem_nodes[elem_topo_data->side[side_ord].node[1]].entity() };
 
+                                NormalVector normal;
                                 get_line_normal(coord_field, nodes, normal.val);
 
                                 int nsn = side_nodes.size();
@@ -962,6 +962,7 @@ namespace stk {
                                     nodes[0] = side_nodes[(i+nsn-1)%nsn].entity();
                                     nodes[1] = side_nodes[i].entity();
                                     nodes[2] = side_nodes[(i+1)%nsn].entity();
+                                    NormalVector normal;
                                     get_face_normal(coord_field, nodes, normal.val);
 
                                     NormalVector& global_normal = node_normals[nodes[1].identifier()];
