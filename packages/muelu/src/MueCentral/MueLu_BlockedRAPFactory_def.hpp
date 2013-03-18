@@ -71,6 +71,11 @@ namespace MueLu {
     Input(coarseLevel, "R");
     Input(fineLevel,   "A");
     Input(coarseLevel, "P");
+
+    // call DeclareInput of all user-given transfer factories
+    for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it!=transferFacts_.end(); ++it) {
+      (*it)->CallDeclareInput(coarseLevel);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -102,6 +107,14 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::BadCast, "MueLu::BlockedRAPFactory::Build(): matrices R, A and P must be of type BlockedCrsMatrix. " << e.what());
     }
 
+    /*Utils::Write( "A00.m", CrsMatrixWrap(bA->getMatrix(0,0)) );
+    Utils::Write( "A11.m", CrsMatrixWrap(bA->getMatrix(1,1)) );
+    Utils::Write( "A01.m", CrsMatrixWrap(bA->getMatrix(0,1)) );
+    Utils::Write( "A10.m", CrsMatrixWrap(bA->getMatrix(1,0)) );
+
+    Utils::Write( "P00.m", CrsMatrixWrap(bP->getMatrix(0,0)) );
+    Utils::Write( "P11.m", CrsMatrixWrap(bP->getMatrix(1,1)) );*/
+
     //
     // Build Ac = RAP
     //
@@ -116,6 +129,15 @@ namespace MueLu {
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 
+    if (transferFacts_.begin() != transferFacts_.end()) {
+      SubFactoryMonitor m(*this, "Projections", coarseLevel);
+
+      // call Build of all user-given transfer factories
+      for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
+        GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        (*it)->CallBuild(coarseLevel);
+      }
+    }
   }
 
 
@@ -158,6 +180,13 @@ namespace MueLu {
     Aout->fillComplete(c00->getDomainMap(), c00->getRangeMap());
 
     bAc->setMatrix(0, 0, Aout);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<const FactoryBase>& factory) {
+    // check if it's a TwoLevelFactoryBase based transfer factory
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    transferFacts_.push_back(factory);
   }
 
 } //namespace MueLu
