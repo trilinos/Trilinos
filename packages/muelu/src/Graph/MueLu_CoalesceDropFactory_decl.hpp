@@ -60,6 +60,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_GraphBase.hpp"

@@ -261,10 +261,22 @@ namespace MueLu {
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
+
             ArrayView<const GO> elementAList = colMap->getNodeElementList();
-            Array<GO> elementList(elementAList.size() / blkSize);
-            for (LO row = 0; row < elementList.size(); row++)
-              elementList[row] = elementAList[row*blkSize]/blkSize;
+            size_t              numElements  = elementAList.size();
+            Array<GO>           elementList(numElements);
+            // NOTE: very ineffective, should be replaced
+            std::set<GO>        filter;
+
+            LO numRows = 0;
+            for (LO id = 0; id < numElements; id++) {
+              GO amalgID = elementAList[id]/blkSize;
+              if (filter.find(amalgID) == filter.end()) {
+                elementList[numRows++] = amalgID;
+                filter.insert(amalgID);
+              }
+            }
+            elementList.resize(numRows);
 
             nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, uniqueMap->getIndexBase(), uniqueMap->getComm());
           }
