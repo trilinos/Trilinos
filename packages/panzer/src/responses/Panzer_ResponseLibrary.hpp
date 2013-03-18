@@ -114,13 +114,6 @@ public:
      */
    void initialize(const ResponseLibrary & rl);
 
-   /** Deletes internal RCPs when done with the object.
-       This should be called by the user if the object was initialized
-       with another response library as circular dependencies are
-       introduced by that initialize call.
-     */
-   void free();
-
    /** Asks, does this string correspond to a response type
      * in this library?
      */
@@ -383,7 +376,7 @@ private:
    Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
    Teuchos::RCP<FieldManagerBuilder> fmb_;
-   Teuchos::RCP<AssemblyEngine_TemplateManager<panzer::Traits> > ae_tm_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -393,7 +386,7 @@ private:
    typedef TypeAssocMap<panzer::Traits::EvalTypes,Teuchos::RCP<ResponseBase> > Response_TemplateManager;
 
    Teuchos::RCP<FieldManagerBuilder> fmb2_;
-   Teuchos::RCP<AssemblyEngine_TemplateManager<panzer::Traits> > ae_tm2_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
 
    typedef boost::unordered_map<panzer::BC,
                                 Teuchos::RCP<std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > >,

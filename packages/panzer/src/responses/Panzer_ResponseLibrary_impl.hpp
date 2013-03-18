@@ -59,8 +59,6 @@ ResponseLibrary<TraitsT>::ResponseLibrary()
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
 
    fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
-   ae_tm_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
-   ae_tm2_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
 }
 
 template <typename TraitsT>
@@ -73,8 +71,6 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
 
    fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
-   ae_tm_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
-   ae_tm2_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
 }
 
 template <typename TraitsT>
@@ -86,8 +82,6 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
 
    fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
-   ae_tm_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
-   ae_tm2_ = Teuchos::rcp(new AssemblyEngine_TemplateManager<panzer::Traits>);
 }
 
 template <typename TraitsT>
@@ -110,19 +104,6 @@ initialize(const ResponseLibrary<TraitsT> & rl)
    wkstContainer_ = rl.wkstContainer_;
    globalIndexer_ = rl.globalIndexer_; 
    linObjFactory_ = rl.linObjFactory_;
-}
-
-template <typename TraitsT>
-void ResponseLibrary<TraitsT>::
-free()
-{
-  respAggManager_.initialize(Teuchos::null,Teuchos::null);
-  wkstContainer_ = Teuchos::null;
-  globalIndexer_ = Teuchos::null; 
-  linObjFactory_ = Teuchos::null;
-  fmb2_ = Teuchos::null;
-  ae_tm_ = Teuchos::null;
-  ae_tm2_ = Teuchos::null;
 }
 
 template <typename TraitsT>
@@ -343,7 +324,7 @@ buildVolumeFieldManagersFromResponses(
    fmb_->setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
 
    AssemblyEngine_TemplateBuilder builder(fmb_,linObjFactory_); 
-   ae_tm_->buildObjects(builder);
+   ae_tm_.buildObjects(builder);
 
    // load up appropriate volume field managers
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
@@ -365,7 +346,7 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
 
    linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
   
-   Teuchos::RCP<panzer::AssemblyEngine<EvalT> > ae = ae_tm_->getAsObject<EvalT>();
+   Teuchos::RCP<panzer::AssemblyEngine<EvalT> > ae = ae_tm_.getAsObject<EvalT>();
    ae->evaluateVolume(ae_in);
 
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
@@ -765,7 +746,7 @@ buildResponseEvaluators(
    ////////////////////////////////////////////////////////////////////////////////
 
    AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
-   ae_tm2_->buildObjects(builder);
+   ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
 }
@@ -790,7 +771,7 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 evaluate(const panzer::AssemblyEngineInArgs& input_args)
 {
-   ae_tm2_->template getAsObject<EvalT>()->evaluate(input_args);
+   ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
 }
 
 }

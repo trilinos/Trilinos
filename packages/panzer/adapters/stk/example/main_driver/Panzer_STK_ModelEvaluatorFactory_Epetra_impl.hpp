@@ -130,7 +130,6 @@ namespace panzer_stk {
       pl->sublist("Closure Models").disableRecursiveValidation();
       pl->sublist("Boundary Conditions").disableRecursiveValidation();
       pl->sublist("Solution Control").disableRecursiveValidation();
-      pl->sublist("Solver Factories").disableRecursiveValidation();
       pl->set<bool>("Use Discrete Adjoint",false);
       pl->sublist("Mesh").disableRecursiveValidation();
       pl->sublist("Initial Conditions").disableRecursiveValidation();
@@ -662,16 +661,22 @@ namespace panzer_stk {
   }
   
   template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory)
+  {
+    m_nox_observer_factory = nox_observer_factory;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory)
+  {
+    m_rythmos_observer_factory = rythmos_observer_factory;
+  }
+
+  template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseOnlyModelEvaluator()
   {
-    /*
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
-		       "Objects are not built yet!  Please call buildObjects() member function.");
-    return m_rome_me;
-    */
-
     if(m_rome_me==Teuchos::null)
-       m_rome_me = buildResponseOnlyModelEvaluator(m_physics_me,m_global_data);
+      m_rome_me = buildResponseOnlyModelEvaluator(m_physics_me,m_global_data);
  
     return m_rome_me;
   }
@@ -680,7 +685,7 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
  		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > & rythmosSolver)
+                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_lin_obj_factory), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
@@ -698,9 +703,11 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me_db
        = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me);
     if (solver=="NOX") {
-      Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_nox_observer_factory), std::runtime_error,
+				 "No NOX obersver built!  Please call setNOXObserverFactory() member function if you plan to use a NOX solver.");
+
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = m_nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, 
                                             Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
@@ -710,16 +717,14 @@ namespace panzer_stk {
       piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
     }
     else if (solver=="Rythmos") {
-      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory> >("Rythmos Observer Factory");
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rythmos_observer_factory), std::runtime_error,
+				 "No NOX obersver built!  Please call setrythmosObserverFactory() member function if you plan to use a Rythmos solver.");
 
       // install the nox observer
-      if(observer_factory->useNOXObserver()) {
-         Teuchos::RCP<const panzer_stk::NOXObserverFactory> nox_observer_factory = 
-   	    p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-         
-         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
-         piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
+      if(m_rythmos_observer_factory->useNOXObserver()) {
+	Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = m_nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+	piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       }
 
       // override printing to use panzer ostream
@@ -734,7 +739,7 @@ namespace panzer_stk {
       else
         piro_rythmos = rythmosSolver;
 
-      piro_rythmos->initialize(piro_params, thyra_me_db, observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
+      piro_rythmos->initialize(piro_params, thyra_me_db, m_rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
 
       piro = piro_rythmos;
     } 

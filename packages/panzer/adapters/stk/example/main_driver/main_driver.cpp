@@ -158,31 +158,6 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
 
-    // Add in the application specific observer factories
-    {
-      // Rythmos
-      {
-	Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
-	  Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
-	input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
-      }
-
-      // NOX
-      {
-	Teuchos::RCP<user_app::NOXObserverFactory_Epetra> nof = 
-	  Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
-
-	Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
-	  Teuchos::parameterList(input_params->sublist("Solver Factories").sublist("NOX Observers"));
-	  
-	input_params->sublist("Solver Factories").remove("NOX Observers");
-
-	nof->setParameterList(observers_to_build);
-
-	input_params->sublist("Solver Factories").set<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory", nof);
-      }
-    }
-
     Teuchos::RCP<Thyra::ModelEvaluator<double> > physics;
     Teuchos::RCP<Thyra::ModelEvaluator<double> > solver;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
@@ -190,6 +165,31 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
+      
+      // Add in the application specific observer factories
+      {
+	// Rythmos
+	{
+	  Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
+	    Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
+	  me_factory.setRythmosObserverFactory(rof);
+	}
+	
+	// NOX
+	{
+	  Teuchos::RCP<user_app::NOXObserverFactory_Epetra> nof = 
+	    Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
+	  
+	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
+	    Teuchos::parameterList(input_params->sublist("Solver Factories").sublist("NOX Observers"));
+	  
+	  nof->setParameterList(observers_to_build);
+	  me_factory.setNOXObserverFactory(nof);
+	}
+	
+	input_params->remove("Solver Factories");
+      } 
+
       Teuchos::RCP<user_app::MyResponseAggregatorFactory<panzer::Traits> > ra_factory = 
 	Teuchos::rcp(new user_app::MyResponseAggregatorFactory<panzer::Traits>);
       me_factory.setParameterList(input_params);
@@ -200,13 +200,13 @@ int main(int argc, char *argv[])
       rLibrary = me_factory.getResponseLibrary();
       physicsBlocks = me_factory.getPhysicsBlocks();
       linObjFactory = me_factory.getLinearObjFactory();
-    }  
-
+    }
+    
     // setup outputs to mesh on the stkIOResponseLibrary
     ////////////////////////////////////////////////////////////////
 
     stkIOResponseLibrary->initialize(*rLibrary);
-    
+
     // 1. Register correct aggregator and reserve response - this was done in the appropriate observer object
 
     // 2. Build volume field managers
@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
                                         input_params->sublist("Closure Models"),
                                         user_data);
     }
-    
+
     // setup outputs to mesh on the fluxResponseLibrary
     ////////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > fluxResponseLibrary 
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
-    
+
     if(fluxCalculation) {
       fluxResponseLibrary->initialize(*rLibrary);
   
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     }
     
     ////////////////////////////////////////////////////////////////
-
+    
     // solve the system
     {
       
@@ -353,11 +353,6 @@ int main(int argc, char *argv[])
         }
       }
     }
-
-    // Clear out a circular dependency on rcp's
-    stkIOResponseLibrary->free();
-    fluxResponseLibrary->free();
-
   }
   catch (std::exception& e) {
     *out << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
