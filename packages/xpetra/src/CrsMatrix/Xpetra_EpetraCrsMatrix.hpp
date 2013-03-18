@@ -103,6 +103,13 @@ namespace Xpetra {
 		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
 		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    //! Constructor for a fused export
+    EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+		    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     //! Destructor.
     virtual ~EpetraCrsMatrix() { }
 

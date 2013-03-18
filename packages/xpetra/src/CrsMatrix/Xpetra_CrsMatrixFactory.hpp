@@ -148,6 +148,18 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &sourceMatrix, const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter, const RCP<Map<LocalOrdinal,GlobalOrdinal,Scalar> > & domainMap = Teuchos::null, const RCP<Map<LocalOrdinal,GlobalOrdinal,Scalar> > & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (sourceMatrix->getRowMap()->lib() == UseTpetra)
+	return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(sourceMatrix,exporter,domainMap,rangeMap,params));
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(sourceMatrix->getRowMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+
   };
 
   template <>
@@ -262,6 +274,24 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
 	return rcp( new EpetraCrsMatrix(sourceMatrix,importer,domainMap,rangeMap,params) );
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Constructor using FusedExport
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &sourceMatrix, const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (sourceMatrix->getRowMap()->lib() == UseTpetra)
+	return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(sourceMatrix,exporter,domainMap,rangeMap,params) );
+
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+      if (sourceMatrix->getRowMap()->lib() == UseEpetra)
+	return rcp( new EpetraCrsMatrix(sourceMatrix,exporter,domainMap,rangeMap,params) );
 #endif
 
       XPETRA_FACTORY_END;
