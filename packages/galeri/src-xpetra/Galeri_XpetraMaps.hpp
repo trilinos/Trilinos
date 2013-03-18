@@ -109,9 +109,9 @@ namespace Galeri {
 
 //#include "Maps/Galeri_XpetraLinear.hpp"
 //#include "Maps/Galeri_XpetraNodeCartesian2D.hpp"
-#include "Maps/Galeri_XpetraCartesian1D.hpp"
-#include "Maps/Galeri_XpetraCartesian2D.hpp"
-#include "Maps/Galeri_XpetraCartesian3D.hpp"
+#include "Galeri_XpetraCartesian1D.hpp"
+#include "Galeri_XpetraCartesian2D.hpp"
+#include "Galeri_XpetraCartesian3D.hpp"
 //#include "Maps/Galeri_XpetraRandom.hpp"
 //#include "Maps/Galeri_XpetraInterlaced.hpp"
 
