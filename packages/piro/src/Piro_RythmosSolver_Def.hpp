@@ -387,8 +387,18 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
       const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
         initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
       if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        // Ok to return early since only one parameter supported
         return outArgs;
       }
+    }
+
+    // Computing the DxDp sensitivity for a transient problem currently requires the evaluation of
+    // the mutilivector-based, Jacobian-oriented DfDp derivatives of the underlying transient model.
+    const Thyra::ModelEvaluatorBase::DerivativeSupport model_dfdp_support =
+      modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
+    if (!model_dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+      // Ok to return early since only one parameter supported
+      return outArgs;
     }
 
     // Solution sensitivity
@@ -403,7 +413,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
       const int j = 0;
 
       const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
-        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, l);
+        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
       if (!model_dgdx_support.none()) {
         const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
           modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
@@ -459,7 +469,6 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   if(t_initial > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t))
 
     state_ic.set_t(t_initial);
-
 
   if (Teuchos::nonnull(initialConditionModel)) {
     // The initial condition depends on the parameter
