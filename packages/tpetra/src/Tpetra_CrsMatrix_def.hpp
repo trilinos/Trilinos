@@ -2452,7 +2452,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node,
+            class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
@@ -2667,9 +2668,17 @@ namespace Tpetra {
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
                                                  Kokkos::Forward);
-        // Communicate again before the Backward sweep.
-        if (! importer.is_null ()) {
-          X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+        // Gauss-Seidel" does _not_ do an Import between the forward
+        // and backward sweeps.  This makes sense, because Aztec
+        // considers "symmetric Gauss-Seidel" a subdomain solver.
+        const bool doImportBetweenDirections = false;
+
+        if (doImportBetweenDirections) {
+          // Communicate again before the Backward sweep.
+          if (! importer.is_null ()) {
+            X_colMap->doImport (*X_domainMap, *importer, INSERT);
+          }
         }
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
@@ -2684,7 +2693,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node,
+            class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
@@ -2880,9 +2890,17 @@ namespace Tpetra {
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
                                                  Kokkos::Forward);
-        // Communicate again before the Backward sweep, if necessary.
-        if (! importer.is_null ()) {
-          X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+        // Gauss-Seidel" does _not_ do an Import between the forward
+        // and backward sweeps.  This makes sense, because Aztec
+        // considers "symmetric Gauss-Seidel" a subdomain solver.
+        const bool doImportBetweenDirections = false;
+
+        if (doImportBetweenDirections) {
+          // Communicate again before the Backward sweep, if necessary.
+          if (! importer.is_null ()) {
+            X_colMap->doImport (*X_domainMap, *importer, INSERT);
+          }
         }
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
