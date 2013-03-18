@@ -876,6 +876,12 @@ void define_node_block(stk::mesh::Part &part,
   /// lookup by string for the example.
   mesh::Field<double, mesh::Cartesian> *coord_field =
     meta.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
+  if (coord_field == NULL) {
+    std::ostringstream msg ;
+    msg << "ERROR: Could not find the coordinate field which should be named '" << coordinate_field_name
+	<< "'.";
+    throw std::runtime_error( msg.str() );
+  }
   assert(coord_field != NULL);
   const mesh::FieldBase::Restriction &res = coord_field->restriction(stk::mesh::MetaData::NODE_RANK, part);
 
@@ -1287,6 +1293,12 @@ void output_node_block(Ioss::NodeBlock &nb,
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   mesh::Field<double, mesh::Cartesian> *coord_field =
     meta_data.get_field<stk::mesh::Field<double, mesh::Cartesian> >(coordinate_field_name);
+  if (coord_field == NULL) {
+    std::ostringstream msg ;
+    msg << "ERROR: Could not find the coordinate field which should be named '" << coordinate_field_name
+	<< "'.";
+    throw std::runtime_error( msg.str() );
+  }
   assert(coord_field != NULL);
   field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 
