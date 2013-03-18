@@ -393,8 +393,8 @@ namespace MueLu {
         blockdim = strMap->getFixedBlockSize(); // TODO shorten code
         offset   = strMap->getOffset();
         oldView = A->SwitchToView(oldView);
-        GetOStream(Debug, 0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
-      } else GetOStream(Debug, 0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+        GetOStream(Statistics0, -1) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
+      } else GetOStream(Statistics0, -1) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
       // 2) build (un)amalgamation information
       //    prepare generation of nodeRowMap (of amalgamated matrix)
@@ -407,13 +407,13 @@ namespace MueLu {
       // inter processor communication: sum up number of block ids
       GlobalOrdinal num_blockids = 0;
       Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
-      GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
+      GetOStream(Statistics0, -1) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
 
       // 3) generate row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       Teuchos::ArrayRCP<GlobalOrdinal> arr_gNodeIds = Teuchos::arcp( gNodeIds );
       Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
-      GetOStream(Debug, 0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+      GetOStream(Statistics0, -1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       /////////////////////// experimental
       // vector of boundary node GIDs on current proc
@@ -463,7 +463,8 @@ namespace MueLu {
         Teuchos::ArrayRCP<GlobalOrdinal> arr_cnodeIds = Teuchos::arcp( cnodeIds );
 
         //TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
-        crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
+        if(arr_cnodeIds.size() > 0 )
+          crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
       }
       // fill matrix graph
       crsGraph->fillComplete(nodeMap,nodeMap);
