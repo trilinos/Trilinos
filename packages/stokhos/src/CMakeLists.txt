@@ -121,6 +121,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_Dense3Tensor.hpp
   Stokhos_Dense3TensorImp.hpp
   Stokhos_Sparse3TensorUtilities.hpp
+  Stokhos_LTBSparse3Tensor.hpp
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
   Stokhos_TensorProductQuadratureImp.hpp
@@ -394,11 +395,13 @@ IF (Stokhos_ENABLE_KokkosArray)
     kokkos/Stokhos_StochasticProductTensor.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
+    kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_CrsMatrix.hpp
     kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
     kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
     kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
     )
   IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
@@ -407,6 +410,7 @@ IF (Stokhos_ENABLE_KokkosArray)
       kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp
       )
   ENDIF()
 ENDIF()
