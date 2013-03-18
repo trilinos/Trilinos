@@ -445,7 +445,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   # system).  However, when we configure actual packages, we do set this to
   # TRUE so that the package configures will not fail due to missing extra
   # repositories.
-  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
