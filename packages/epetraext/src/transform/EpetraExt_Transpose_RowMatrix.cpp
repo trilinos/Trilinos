@@ -189,36 +189,33 @@ operator()( OriginalTypeRef orig )
 
   const Epetra_Map & TransMap = orig.RowMatrixColMap();
 
-  Epetra_CrsMatrix TempTransA1(Copy, TransMap, TransNumNz_);
+  Epetra_CrsMatrix * TempTransA1 = new Epetra_CrsMatrix(Copy, TransMap, TransNumNz_);
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   for (i=0; i<NumMyCols_; i++) {
-    err = TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+    err = TempTransA1->InsertGlobalValues(TransMyGlobalEquations_[i], 
                      TransNumNz_[i], TransValues_[i], TransIndices_[i]);
-    if (err < 0) throw TempTransA1.ReportError("InsertGlobalValues failed.",err);
+    if (err < 0) throw TempTransA1->ReportError("InsertGlobalValues failed.",err);
   }
 
-  // CMS: Next up, convert TempTransA1 to using ESFC.
-  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_); 
+  err = TempTransA1->FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_); 
   if (err != 0) {
-    throw TempTransA1.ReportError("FillComplete failed.",err);
+    throw TempTransA1->ReportError("FillComplete failed.",err);
   }
 
-  // CMS: Check to see if we're in "serial" aka the TransposeRowMap_  == TransMap.  If so, end NOW.  None of this
-  // import stuff afterwards.
-
-  // If TempTransA1 has an Exporter, it is, in fact, exactly what we need to migrate its
-  // rows into TransposeMatrix_
-  if( TempTransA1.Exporter()) TransposeExporter_ = new Epetra_Export(*TempTransA1.Exporter());
-  else     
-    throw std::runtime_error("CMS: We don't need to export at all.  So we shouldn't make one of these guys.  I should fix this.");
+  if(!TempTransA1->Exporter()) {
+    // Short Circuit: There is no need to make another matrix since TransposeRowMap_== TransMap
+    newObj_ = TransposeMatrix_ = TempTransA1;
+    return *newObj_;    
+  }
+  else
+    TransposeExporter_ = new Epetra_Export(*TempTransA1->Exporter());
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(TempTransA1,*TransposeExporter_,TransposeRowMap_);
+  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TransposeExporter_,TransposeRowMap_);
 
   newObj_ = TransposeMatrix_;
-
   return *newObj_;
 }
 
