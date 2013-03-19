@@ -92,13 +92,13 @@ int main(int argc, char *argv[]) {
 #ifdef Piro_ENABLE_NOX
   solverFactory.setProvider<LOCA::SaveEigenData::AbstractStrategy>(
       "My SaveEigenData",
-      Piro::providerFromConstructor<SaveEigenData_Epetra, Piro::DereferenceArg>());
+      Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
   solverFactory.setProvider<Rythmos::IntegrationObserverBase<double> >(
       "Rythmos Row Sum Updater",
-      Piro::providerFromConstructor<Piro::RythmosNOXRowSumUpdaterObserver<double>, Piro::IgnoreArg>());
+      Piro::providerFromDefaultConstructor<Piro::RythmosNOXRowSumUpdaterObserver<double> >());
 #endif /* Piro_ENABLE_Rythmos */
 
 #ifdef Piro_ENABLE_Rythmos

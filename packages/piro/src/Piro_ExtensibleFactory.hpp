@@ -159,40 +159,28 @@ makeCachingProviderFunctor(F otherFunctor)
 }
 
 
-template <typename T, typename ArgumentHandlingStrategy>
-class CreatingProviderFunctor :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
+template <typename T>
+struct ConstructorProviderFunctor {
 public:
-  CreatingProviderFunctor() :
-    strategy_()
-  {}
-
-  explicit CreatingProviderFunctor(const ArgumentHandlingStrategy &strategy) :
-    strategy_(strategy)
-  {}
-
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
-    return Teuchos::rcp(
-        this->create(
-          params,
-          (typename ArgumentHandlingStrategy::result_type *) 0));
+    return Teuchos::rcp(new T(params));
   }
+};
 
-private:
-  template <typename A>
-  T* create(
-      const Teuchos::RCP<Teuchos::ParameterList> &params,
-      A*) const {
-    return new T(strategy_(params));
+template <typename T>
+struct DefaultConstructorProviderFunctor {
+public:
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
+    return Teuchos::rcp(new T);
   }
+};
 
-  T* create(
-      const Teuchos::RCP<Teuchos::ParameterList> &/*params*/,
-      void*) const {
-    return new T;
+template <typename T>
+struct ReferenceAcceptingConstructorProviderFunctor {
+public:
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
+    return Teuchos::rcp(new T(*params));
   }
-
-  ArgumentHandlingStrategy strategy_;
 };
 
 
@@ -248,30 +236,6 @@ bool nonnull(const Provider<T> &h)
 }
 
 
-struct ForwardArg :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<Teuchos::ParameterList> > {
-  const Teuchos::RCP<Teuchos::ParameterList> &operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
-    return params;
-  }
-};
-
-struct DereferenceArg :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::ParameterList> {
-  Teuchos::ParameterList &operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
-    return *params;
-  }
-};
-
-struct IgnoreArg :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, void> {
-  void operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
-    return;
-  }
-};
-
-typedef IgnoreArg DiscardArg;
-
-
 template <typename T>
 inline
 Provider<T> providerFromInstance(const Teuchos::RCP<T> &instance)
@@ -279,19 +243,28 @@ Provider<T> providerFromInstance(const Teuchos::RCP<T> &instance)
   return SharingProviderFunctor<T>(instance);
 }
 
-template <typename T, typename ArgumentHandlingStrategy>
-inline
-Provider<T> providerFromConstructor()
-{
-  return CreatingProviderFunctor<T, ArgumentHandlingStrategy>();
-}
 
 template <typename T>
 inline
 Provider<T> providerFromConstructor()
 {
-  return CreatingProviderFunctor<T, ForwardArg>();
+  return ConstructorProviderFunctor<T>();
 }
+
+template <typename T>
+inline
+Provider<T> providerFromDefaultConstructor()
+{
+  return DefaultConstructorProviderFunctor<T>();
+}
+
+template <typename T>
+inline
+Provider<T> providerFromReferenceAcceptingConstructor()
+{
+  return ReferenceAcceptingConstructorProviderFunctor<T>();
+}
+
 
 template <typename T>
 inline
@@ -299,6 +272,7 @@ Provider<T> cachingProvider(const Provider<T> &p)
 {
   return CachingProviderFunctor<T, Provider<T> >(p);
 }
+
 
 template <typename T>
 struct NullProviderFunctor :
