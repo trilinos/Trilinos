@@ -1871,10 +1871,10 @@ namespace stk {
     void PerceptMesh::read_database_at_step(int step)
     {
       EXCEPTWATCH;
-      std::cout << "PerceptMesh::read_database_at_step() " << std::endl;
+      //std::cout << "PerceptMesh::read_database_at_step() " << std::endl;
       if (m_isAdopted)
         {
-          std::cout << "PerceptMesh::read_database_at_step() m_isAdopted " << std::endl;
+          //std::cout << "PerceptMesh::read_database_at_step() m_isAdopted " << std::endl;
           return;
         }
 

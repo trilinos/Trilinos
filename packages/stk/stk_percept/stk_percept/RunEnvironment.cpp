@@ -320,8 +320,8 @@ namespace stk {
 
       stk::bind_output_streams(output_description);
 
-      std::cout << "tmp srk Output log binding: " << output_description << std::endl;
-      dout() << "Output log binding: " << output_description << std::endl;
+      //std::cout << "tmp srk Output log binding: " << output_description << std::endl;
+      //dout() << "Output log binding: " << output_description << std::endl;
 
       // Start stk_percept root timer
       timer().start();

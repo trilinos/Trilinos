@@ -50,6 +50,7 @@
 #endif
 
 #define ALLOW_MEM_TEST 1
+#define DEBUG_ADAPT_MAIN 0
 
 namespace stk {
 
@@ -1461,13 +1462,17 @@ namespace stk {
                                 eMesh.print_hmesh_surface_normal(msg, stk::percept::pout());
                               }
 
-                            stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
-                            std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+                            if (DEBUG_ADAPT_MAIN || 0 == p_rank) {
+                              stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
+                              std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+                            }
                             if (streaming_size) eMesh.setStreamingSize(m_M);
                             if (remove_geometry_blocks) eMesh.remove_geometry_blocks_on_output(input_geometry);
                             eMesh.save_as(output_mesh);
-                            stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
-                            std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+                            if (DEBUG_ADAPT_MAIN || 0 == p_rank) {
+                              stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
+                              std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+                            }
 
                             if (print_memory_usage)
                               memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(), "after final save mesh");
@@ -1505,10 +1510,13 @@ namespace stk {
                       exit(1);
                     }
 
-                  stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
-                                       << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
-                  std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
-                            << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+                  if (DEBUG_ADAPT_MAIN)
+                    {
+                      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                                           << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
+                      std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                                << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+                    }
 
                   double cpuMax = (cpu1-cpu0);
                   double wallMax = (t1-t0);
