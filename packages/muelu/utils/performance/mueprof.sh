@@ -7,8 +7,7 @@
 #
 # prerequisites:
 #
-# 1) MueLu must be configured with -D MueLu_ENABLE_PROFILING:STRING=ON.
-# 2) Timer parent/child relations must be written out by putting
+# 1) Timer parent/child relations must be written out by putting
 #
 #       MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
 #

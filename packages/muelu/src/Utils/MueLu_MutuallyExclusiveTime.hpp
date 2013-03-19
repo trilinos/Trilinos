@@ -219,8 +219,8 @@ namespace MueLu {
 
     /*! @brief Print std::map of (child,parent) pairs for post-run analysis.
 
-        This method print a std::map.  Each key is a child, and the value is its parent.  This should be used when MueLu has been configured
-        with -D MueLu_ENABLE_PROFILING:STRING=ON.  Then the (child,parent0) pairs can be used by the MueLu script ``mueprof.sh" to print a
+        This method print a std::map.  Each key is a child, and the value is its parent.
+        The (child,parent0) pairs can be used by the MueLu script ``mueprof.sh" to print a
         nice hierarchical tree that shows both runtime flow and time for each section.
     */
     static void PrintParentChildPairs() {
