@@ -1379,7 +1379,7 @@ namespace stk {
           // do the snap
           if (geomSnap)
             {
-              std::cout << " mesh_geometry.snap_points_to_geometry(&m_eMesh) ... " << std::endl;
+              if (m_eMesh.get_rank() == 0) std::cout << " mesh_geometry.snap_points_to_geometry(&m_eMesh) ... " << std::endl;
               mesh_geometry.snap_points_to_geometry(&m_eMesh);
             }
           if (doCheckMovement != 0.0)

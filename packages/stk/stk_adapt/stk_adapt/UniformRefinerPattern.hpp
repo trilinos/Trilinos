@@ -594,7 +594,7 @@ namespace stk {
       URP(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
 
       typedef ToTopology TTopo;
-      typedef boost::array<unsigned, ToTopology::node_count > refined_element_type;
+      typedef boost::array<stk::mesh::EntityId, ToTopology::node_count > refined_element_type;
 
 
       void interpolateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
