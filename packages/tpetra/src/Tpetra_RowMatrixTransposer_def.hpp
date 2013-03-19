@@ -164,16 +164,15 @@ createTranspose (const OptimizeOption optimizeTranspose,
                                                    TransValues.view(ptr[i],leng) );
   }
 
-  //A comment in EpetraExt says
-  // "Note: The following call to FillComplete is currently necessary because
-  //        some global constants that are needed by the Export () are computed in this routine"
-  //TODO determine whether this is necessary here
-  RCP<ParameterList> params = parameterList ();
-  params->set ("Optimize Storage", false); //TODO should storage be optimized for this temporary matrix? EpetraExt does not.
-  transMatrixWithSharedRows->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap(), params);
+  transMatrixWithSharedRows->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap());
 
-  //exporter that is used in the transfers of nnz per row and rows themselves
-  RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = rcp( new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(transMap,newRowMap) );
+  // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
+  // and we're done!
+  RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
+  if(exporter == Teuchos::null) {
+    return transMatrixWithSharedRows;
+  }
+
 
   //RCP<Vector<size_t, LO, GO, Node> > partialNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(transMap,TransNumNz()));
   //RCP<Vector<size_t, LO, GO, Node> > fullNnzPerRow = rcp(new Vector<size_t,LO,GO,Node>(newRowMap,false));
@@ -198,7 +197,8 @@ createTranspose (const OptimizeOption optimizeTranspose,
   RCP<crs_matrix_type> transposeMatrix(new crs_matrix_type (newRowMap, nnzPerRowAsSizeT, StaticProfile));
 
   transposeMatrix->doExport(*transMatrixWithSharedRows,*exporter,Tpetra::ADD);
-
+  
+  RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList);
   const bool optimizeStorage = (optimizeTranspose == DoOptimizeStorage);
   params->set ("Optimize Storage", optimizeStorage);
   transposeMatrix->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap(), params);
