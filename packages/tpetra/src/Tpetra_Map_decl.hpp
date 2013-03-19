@@ -626,6 +626,8 @@ namespace Tpetra {
     GlobalOrdinal minMyGID_, maxMyGID_;
     //! The minimum and maximum global IDs located in this Map across all nodes.
     GlobalOrdinal minAllGID_, maxAllGID_;
+    //! First, last contiguous GID for use-cases of partially contiguous maps
+    GlobalOrdinal firstContiguousGID_, lastContiguousGID_;
     //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
     //! Whether this map's global indices are non-identically distributed among different nodes.
@@ -819,6 +821,8 @@ namespace Tpetra {
     map->maxMyGID_          = maxMyGID_;
     map->minAllGID_         = minAllGID_;
     map->maxAllGID_         = maxAllGID_;
+    map->firstContiguousGID_= firstContiguousGID_;
+    map->lastContiguousGID_ = lastContiguousGID_;
     map->contiguous_        = contiguous_;
     map->distributed_       = distributed_;
     map->lgMap_             = lgMap_;

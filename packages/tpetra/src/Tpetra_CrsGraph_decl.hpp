@@ -857,11 +857,6 @@ namespace Tpetra {
       template <class T>
       ArrayRCP<ArrayRCP<T> > allocateValues2D () const;
 
-      //! Update allocation size of the given row, for local indices.
-      RowInfo updateLocalAlloc (RowInfo rowinfo, size_t newAllocSize);
-      //! Update allocation size of the given row, for global indices.
-      RowInfo updateGlobalAlloc (RowInfo rowinfo, size_t newAllocSize);
-
       template <ELocalGlobal lg, class T>
       RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
 
@@ -896,6 +891,11 @@ namespace Tpetra {
 
       template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
       void insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
+
+     void insertGlobalIndicesImpl(
+       LocalOrdinal myRow, const ArrayView<const GlobalOrdinal> &indices);
+    void insertLocalIndicesImpl(
+       LocalOrdinal myRow, const ArrayView<const LocalOrdinal> &indices);
 
       /// \brief Transform the given values using local indices.
       ///
