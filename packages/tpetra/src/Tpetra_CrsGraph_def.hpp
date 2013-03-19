@@ -661,12 +661,11 @@ namespace Tpetra {
 #endif
     // Instead of allocating the requested amount, double the current size
     // to allow for amortized constant time insertion at the end of the array
-    size_t reserveSize = 2*rowinfo.allocSize;
-    if (reserveSize < newAllocSize)
-      reserveSize = newAllocSize;
+    const size_t doubleSize = 2*rowinfo.allocSize;
+    if (doubleSize > newAllocSize)
+      newAllocSize = doubleSize;
 
     // If this reallocates, it does copy over into new storage.
-    lclInds2D_[rowinfo.localRow].reserve (reserveSize);
     lclInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
@@ -689,12 +688,11 @@ namespace Tpetra {
 #endif
     // Instead of allocating the requested amount, double the current size
     // to allow for amortized constant time insertion at the end of the array
-    size_t reserveSize = 2*rowinfo.allocSize;
-    if (reserveSize < newAllocSize)
-      reserveSize = newAllocSize;
+    size_t doubleSize = 2*rowinfo.allocSize;
+    if (doubleSize > newAllocSize)
+      newAllocSize = doubleSize;
 
     // If this reallocates, it does copy over into new storage.
-    gblInds2D_[rowinfo.localRow].reserve (reserveSize);
     gblInds2D_[rowinfo.localRow].resize (newAllocSize);
     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
     rowinfo.allocSize = newAllocSize;
