@@ -674,7 +674,8 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(omega));
+    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+    SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
     SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
     //Smoother Factory, using SFact as a factory for A
