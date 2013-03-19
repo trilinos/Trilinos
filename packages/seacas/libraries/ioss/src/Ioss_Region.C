@@ -648,10 +648,10 @@ namespace Ioss {
 
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
+      nodeBlocks.push_back(node_block);
       // Add name as alias to itself to simplify later uses...
       add_alias(node_block);
 
-      nodeBlocks.push_back(node_block);
       return true;
     } else {
       return false;
@@ -943,12 +943,26 @@ namespace Ioss {
   {
     // For use with the USTRING type in Sierra, create an uppercase
     // version of all aliases...
-    std::string uname = uppercase(alias);
-    if (uname != alias)
-      aliases_.insert(IOAliasValuePair(uname, db_name));
 
-    std::pair<AliasMap::iterator, bool> result = aliases_.insert(IOAliasValuePair(alias, db_name));
-    return result.second;
+    // Possible that 'db_name' is itself an alias, resolve down to "canonical" name...
+    std::string canon = db_name;
+    if (db_name != alias)
+      canon = get_alias(db_name);
+      
+    if (!canon.empty()) {
+      std::string uname = uppercase(alias);
+      if (uname != alias)
+	aliases_.insert(IOAliasValuePair(uname, canon));
+
+      std::pair<AliasMap::iterator, bool> result = aliases_.insert(IOAliasValuePair(alias, canon));
+      return result.second;
+    } else {
+	std::ostringstream errmsg;
+	errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
+	       << "' does not exist in region '" << name() << "'.\n";
+	IOSS_ERROR(errmsg);
+	return false;
+    }
   }
 
   std::string Region::get_alias(const std::string &alias) const
