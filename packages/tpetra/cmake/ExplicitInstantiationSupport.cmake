@@ -7,10 +7,12 @@ SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 ASSERT_DEFINED(Tpetra_ENABLE_Thrust)
 IF(Tpetra_ENABLE_Thrust)
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
-  SET(CUDA_UNSUPPORTED_SCALARS "long|int|dd_real|qd_real|std::complex<double>|std::complex<float>")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "S=${CUDA_UNSUPPORTED_SCALARS}"             "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=${CUDA_UNSUPPORTED_SCALARS}" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  SET(CUDA_UNSUPPORTED_SCALARS "long|dd_real|qd_real|std::complex<double>|std::complex<float>")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}|int" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=${CUDA_UNSUPPORTED_SCALARS}|int" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  # do int separately, because we will instantiate vector in it
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET_INT "S=int"                                         "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
   IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
@@ -26,7 +28,7 @@ ENDIF()
 ASSERT_DEFINED(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
 IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "User/Downstream ETI set: ${Tpetra_ETI_LIBRARYSET}")
-  MESSAGE(STATUS "Excluded instantiations: ${Tpetra_ETI_EXCLUDE_SET}")
+  MESSAGE(STATUS "Excluded instantiations: ${Tpetra_ETI_EXCLUDE_SET}:${Tpetra_ETI_EXCLUDE_SET_INT}")
   MESSAGE(STATUS "Full coverage explicit instantiation for scalars:         ${Tpetra_ETI_SCALARS}")
   MESSAGE(STATUS "Full coverage explicit instantiation for global ordinals: ${Tpetra_ETI_GORDS}")
   MESSAGE(STATUS "Full coverage explicit instantiation for local ordinals:  ${Tpetra_ETI_LORDS}")
@@ -65,7 +67,12 @@ ENDIF()
 
 TRIBITS_ETI_GENERATE_MACROS(
     "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
-    "${Tpetra_ETI_EXCLUDE_SET}"  
+    "${Tpetra_ETI_EXCLUDE_SET}"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_VECTOR(S,LO,GO,N)"            TPETRA_ETIMACRO_VECTOR)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET};${Tpetra_ETI_EXCLUDE_SET_INT}"  
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_SLGN(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN 
     "TPETRA_INSTANTIATE_LGN(LO,GO,N)"               TPETRA_ETIMACRO_LGN
