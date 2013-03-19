@@ -1,35 +1,25 @@
 include(Join)
 
 # Tpetra ETI type fields
-SET(Tpetra_ETI_FIELDS "SIN|SOUT|CS|DS|S|LO|GO|N")
+SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 
 # Exclude all of the types that CUDA/Thrust doesn't support
 ASSERT_DEFINED(Tpetra_ENABLE_Thrust)
 IF(Tpetra_ENABLE_Thrust)
-  # no cross scalar support for CUDA
-  FOREACH(ds ${Tpetra_ETI_SCALARS})
-    FOREACH(cs ${Tpetra_ETI_SCALARS})
-      IF(NOT "${cs}" STREQUAL "${ds}")
-        TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${cs}" "DS=${ds}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
   SET(CUDA_UNSUPPORTED_SCALARS "long|int|dd_real|qd_real|std::complex<double>|std::complex<float>")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${CUDA_UNSUPPORTED_SCALARS}" "DS=.*"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=.*" "DS=${CUDA_UNSUPPORTED_SCALARS}"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "S=${CUDA_UNSUPPORTED_SCALARS}"             "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=${CUDA_UNSUPPORTED_SCALARS}" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
   IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
-    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "CS=double DS=double S=double SIN=double SOUT=double LO=.* GO=.* N=Kokkos::ThrustGPUNode")
+    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "S=double SIN=double SOUT=double LO=.* GO=.* N=Kokkos::ThrustGPUNode")
   ENDIF()
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_FLOAT)
   IF(NOT KokkosClassic_ENABLE_CUDA_FLOAT)
-    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "CS=float DS=float S=float SIN=float SOUT=float LO=.* GO=.* N=Kokkos::ThrustGPUNode")
+    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "S=float SIN=float SOUT=float LO=.* GO=.* N=Kokkos::ThrustGPUNode")
   ENDIF()
 ENDIF()
 
@@ -51,18 +41,7 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   JOIN(Tpetra_ETI_LORDS   "|" FALSE ${Tpetra_ETI_LORDS}  )
   JOIN(Tpetra_ETI_GORDS   "|" FALSE ${Tpetra_ETI_GORDS}  )
   JOIN(Tpetra_ETI_NODES   "|" FALSE ${Tpetra_ETI_NODES}  )
-  FOREACH(ds ${Tpetra_ETI_SCALARS})
-    FOREACH(cs ${Tpetra_ETI_SCALARS})
-      IF(NOT "${cs}" STREQUAL "${ds}")
-        TRIBITS_ETI_TYPE_EXPANSION(DualScalarInsts   "CS=${cs}" "DS=${ds}" 
-                                                     "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}" 
-                                                     "N=${Tpetra_ETI_NODES}")
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
   JOIN(Tpetra_ETI_SCALARS "|" FALSE ${Tpetra_ETI_SCALARS})
-  # ogb: no default support for dual scalar instantiations at this time
-  #TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${DualScalarInsts})
   # assemble single scalar instantiations
   TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts   "S=${Tpetra_ETI_SCALARS}" "N=${Tpetra_ETI_NODES}"
                                                  "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}")
