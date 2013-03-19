@@ -99,6 +99,40 @@ struct ProviderFunctorBase :
 
 
 template <typename T>
+struct NullProviderFunctor : public ProviderFunctorBase<T> {
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const
+  {
+    return Teuchos::null;
+  }
+};
+
+
+template <typename T>
+struct ConstructorProviderFunctor : public ProviderFunctorBase<T> {
+public:
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
+    return Teuchos::rcp(new T(params));
+  }
+};
+
+template <typename T>
+struct DefaultConstructorProviderFunctor : public ProviderFunctorBase<T> {
+public:
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
+    return Teuchos::rcp(new T);
+  }
+};
+
+template <typename T>
+struct ReferenceAcceptingConstructorProviderFunctor : public ProviderFunctorBase<T> {
+public:
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
+    return Teuchos::rcp(new T(*params));
+  }
+};
+
+
+template <typename T>
 class SharingProviderFunctor : public ProviderFunctorBase<T> {
 public:
   SharingProviderFunctor() :
@@ -164,31 +198,6 @@ makeCachingProviderFunctor(F otherFunctor)
 
 
 template <typename T>
-struct ConstructorProviderFunctor : public ProviderFunctorBase<T> {
-public:
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
-    return Teuchos::rcp(new T(params));
-  }
-};
-
-template <typename T>
-struct DefaultConstructorProviderFunctor : public ProviderFunctorBase<T> {
-public:
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
-    return Teuchos::rcp(new T);
-  }
-};
-
-template <typename T>
-struct ReferenceAcceptingConstructorProviderFunctor : public ProviderFunctorBase<T> {
-public:
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
-    return Teuchos::rcp(new T(*params));
-  }
-};
-
-
-template <typename T>
 class Provider : public ProviderFunctorBase<T> {
 public:
   Provider() :
@@ -242,14 +251,6 @@ bool nonnull(const Provider<T> &h)
 
 template <typename T>
 inline
-Provider<T> providerFromInstance(const Teuchos::RCP<T> &instance)
-{
-  return SharingProviderFunctor<T>(instance);
-}
-
-
-template <typename T>
-inline
 Provider<T> providerFromConstructor()
 {
   return ConstructorProviderFunctor<T>();
@@ -272,19 +273,19 @@ Provider<T> providerFromReferenceAcceptingConstructor()
 
 template <typename T>
 inline
+Provider<T> providerFromInstance(const Teuchos::RCP<T> &instance)
+{
+  return SharingProviderFunctor<T>(instance);
+}
+
+
+template <typename T>
+inline
 Provider<T> cachingProvider(const Provider<T> &p)
 {
   return CachingProviderFunctor<T, Provider<T> >(p);
 }
 
-
-template <typename T>
-struct NullProviderFunctor : public ProviderFunctorBase<T> {
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const
-  {
-    return Teuchos::null;
-  }
-};
 
 template <typename T>
 class ExtensibleFactory {
