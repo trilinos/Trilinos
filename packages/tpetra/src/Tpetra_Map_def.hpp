@@ -199,6 +199,8 @@ namespace Tpetra {
     indexBase_ = indexBase;
     numGlobalElements_ = numGlobalElements;
     numLocalElements_ = numLocalElements;
+    firstContiguousGID_ = minMyGID_;
+    lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
 
     setupDirectory ();
@@ -326,6 +328,8 @@ namespace Tpetra {
     maxAllGID_ = indexBase + numGlobalElements_ - 1;
     minMyGID_ = indexBase + myOffset;
     maxMyGID_ = indexBase + myOffset + numLocalElements - 1;
+    firstContiguousGID_ = minMyGID_;
+    lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
     distributed_ = checkIsDist ();
 
@@ -512,6 +516,24 @@ namespace Tpetra {
       }
     }
 
+    // Find contiguous GID range, with the restriction that the beginning
+    // of the range starts with the first entry
+    if (numLocalElements_ > 0) {
+      firstContiguousGID_ = lgMap_[as<LO>(0)];
+      lastContiguousGID_ = firstContiguousGID_+1;
+      for (size_t i = 1; i < numLocalElements_; ++i) {
+	const LO curLid = as<LO> (i);
+	if (lastContiguousGID_ != lgMap_[curLid]) break;
+	++lastContiguousGID_;
+      }
+      --lastContiguousGID_;
+    }
+    else {
+      firstContiguousGID_ = indexBase_;
+      lastContiguousGID_ = indexBase_;
+    }
+      
+
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
     // are both indexBase_.  This is wrong, but fixing it would
@@ -565,6 +587,10 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       }
       return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
+    }
+    else if (globalIndex >= firstContiguousGID_ && 
+	     globalIndex <= lastContiguousGID_) {
+      return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
     }
     else {
       LocalOrdinal i = glMap_->get(globalIndex);
