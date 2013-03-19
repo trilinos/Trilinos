@@ -68,12 +68,20 @@ private:
   ProviderBase &operator=(const ProviderBase &);
 };
 
+
 template <typename T, typename Functor>
 class ProviderImpl : public ProviderBase<T> {
 public:
+  ProviderImpl() :
+    functor_()
+  {}
+
   explicit ProviderImpl(const Functor &functor) :
     functor_(functor)
   {}
+
+  const Functor &functor() const { return functor_; }
+  Functor &functor() { return functor_; }
 
   virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
     return functor_(params);
@@ -121,6 +129,11 @@ template <typename T, typename F>
 class CachingProviderFunctor :
   public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
 public:
+  CachingProviderFunctor() :
+    otherFunctor_(),
+    instance_(Teuchos::null)
+  {}
+
   explicit CachingProviderFunctor(F otherFunctor) :
     otherFunctor_(otherFunctor),
     instance_(Teuchos::null)
