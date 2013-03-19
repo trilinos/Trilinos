@@ -55,7 +55,8 @@
 namespace Piro {
 
 template <typename T>
-class ProviderBase {
+class ProviderBase :
+  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
 public:
   virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
 
@@ -93,8 +94,12 @@ private:
 
 
 template <typename T>
-class SharingProviderFunctor :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
+struct ProviderFunctorBase :
+  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {};
+
+
+template <typename T>
+class SharingProviderFunctor : public ProviderFunctorBase<T> {
 public:
   SharingProviderFunctor() :
     instance_(Teuchos::null)
@@ -126,8 +131,7 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
 
 
 template <typename T, typename F>
-class CachingProviderFunctor :
-  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
+class CachingProviderFunctor : public ProviderFunctorBase<T> {
 public:
   CachingProviderFunctor() :
     otherFunctor_(),
@@ -160,7 +164,7 @@ makeCachingProviderFunctor(F otherFunctor)
 
 
 template <typename T>
-struct ConstructorProviderFunctor {
+struct ConstructorProviderFunctor : public ProviderFunctorBase<T> {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return Teuchos::rcp(new T(params));
@@ -168,7 +172,7 @@ public:
 };
 
 template <typename T>
-struct DefaultConstructorProviderFunctor {
+struct DefaultConstructorProviderFunctor : public ProviderFunctorBase<T> {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
     return Teuchos::rcp(new T);
@@ -176,7 +180,7 @@ public:
 };
 
 template <typename T>
-struct ReferenceAcceptingConstructorProviderFunctor {
+struct ReferenceAcceptingConstructorProviderFunctor : public ProviderFunctorBase<T> {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return Teuchos::rcp(new T(*params));
@@ -185,7 +189,7 @@ public:
 
 
 template <typename T>
-class Provider {
+class Provider : public ProviderFunctorBase<T> {
 public:
   Provider() :
     ptr_(Teuchos::null)
@@ -275,9 +279,11 @@ Provider<T> cachingProvider(const Provider<T> &p)
 
 
 template <typename T>
-struct NullProviderFunctor :
-  public std::unary_function<Teuchos::RCP<Teuchos::ParameterList>, Teuchos::RCP<T> > {
-  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const { return Teuchos::null; }
+struct NullProviderFunctor : public ProviderFunctorBase<T> {
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const
+  {
+    return Teuchos::null;
+  }
 };
 
 template <typename T>
