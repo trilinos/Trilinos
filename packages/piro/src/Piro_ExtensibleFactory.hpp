@@ -197,6 +197,62 @@ makeCachingProviderFunctor(F otherFunctor)
 }
 
 
+template <typename T, typename NullaryFunctor>
+class NullaryProviderFunctorAdapter : public ProviderFunctorBase<T> {
+public:
+  NullaryProviderFunctorAdapter() :
+    nullaryFunctor_()
+  {}
+
+  explicit NullaryProviderFunctorAdapter(NullaryFunctor nf) :
+    nullaryFunctor_(nf)
+  {}
+
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/)
+  {
+    return nullaryFunctor_();
+  }
+
+public:
+  NullaryFunctor nullaryFunctor_;
+};
+
+template <typename T, typename NullaryFunctor>
+NullaryProviderFunctorAdapter<T, NullaryFunctor>
+makeNullaryProviderFunctorAdapter(NullaryFunctor nf)
+{
+  return NullaryProviderFunctorAdapter<T, NullaryFunctor>(nf);
+}
+
+
+template <typename T, typename ReferenceAcceptingFunctor>
+class ReferenceAcceptingProviderFunctorAdapter : public ProviderFunctorBase<T> {
+public:
+  ReferenceAcceptingProviderFunctorAdapter() :
+    referenceAcceptingFunctor_()
+  {}
+
+  explicit ReferenceAcceptingProviderFunctorAdapter(ReferenceAcceptingFunctor raf) :
+    referenceAcceptingFunctor_(raf)
+  {}
+
+  Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params)
+  {
+    return referenceAcceptingFunctor_(*params);
+  }
+
+public:
+  ReferenceAcceptingFunctor referenceAcceptingFunctor_;
+};
+
+template <typename T, typename ReferenceAcceptingFunctor>
+ReferenceAcceptingProviderFunctorAdapter<T, ReferenceAcceptingFunctor>
+makeReferenceAcceptingProviderFunctorAdapter(ReferenceAcceptingFunctor raf)
+{
+  return ReferenceAcceptingProviderFunctorAdapter<T, ReferenceAcceptingFunctor>(raf);
+}
+
+
 template <typename T>
 class Provider : public ProviderFunctorBase<T> {
 public:
@@ -284,6 +340,36 @@ inline
 Provider<T> cachingProvider(const Provider<T> &p)
 {
   return CachingProviderFunctor<T, Provider<T> >(p);
+}
+
+
+template <typename T, typename NullaryFunctor>
+inline
+Provider<T> providerFromNullary(NullaryFunctor nf)
+{
+  return NullaryProviderFunctorAdapter<T, NullaryFunctor>(nf);
+}
+
+template <typename T, typename NullaryFunctor>
+inline
+Provider<T> providerFromNullary()
+{
+  return NullaryProviderFunctorAdapter<T, NullaryFunctor>();
+}
+
+
+template <typename T, typename ReferenceAcceptingFunctor>
+inline
+Provider<T> providerFromReferenceAccepting(ReferenceAcceptingFunctor raf)
+{
+  return NullaryProviderFunctorAdapter<T, ReferenceAcceptingFunctor>(raf);
+}
+
+template <typename T, typename ReferenceAcceptingFunctor>
+inline
+Provider<T> providerFromReferenceAccepting()
+{
+  return NullaryProviderFunctorAdapter<T, ReferenceAcceptingFunctor>();
 }
 
 
