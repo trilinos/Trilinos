@@ -63,7 +63,7 @@ namespace stk {
       table.setTitle("Refinement Info\n");
       //table.setAutoEndCol(false);
 
-      table << "|" << "                     " <<  "|" << justify(PrintTable::Cell::CENTER) 
+      table << "|" << "                     " <<  "|" << justify(PrintTable::Cell::CENTER)
         << "Original" << stk::end_col << "     " << "|" << "New     " << stk::end_col << "     " << "|" << stk::end_header;
       //    << stk::span << "Original"  << "|" << stk::span << "New     "  << "|" << stk::end_header;
       table << justify(PrintTable::Cell::LEFT) ;
@@ -105,8 +105,8 @@ namespace stk {
       mesh::Selector selector(eMesh.get_fem_meta_data()->locally_owned_part());
       std::vector<unsigned> count ;
       stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
-      
-      unsigned nnodes = count[0];
+
+      RefinementInfoCount nnodes = count[0];
 
       stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
       stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
