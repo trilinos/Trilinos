@@ -157,7 +157,7 @@ function PrintHeader(description,linalg)
     printf(" (total)");
   }
   printf("%10s   ","T/E ratio");
-  printf("\n%80s          ----------------------------------------------\n",space);
+  printf("\n%80s          ---------------------------------\n",space);
 }
 
 ###############################################################################
@@ -333,8 +333,8 @@ if (1) {
     myTN[newlabs[i]] = i;
   }
 
-  printf("%92s%-17s%-17s%-17s%-17s\n"," ","minimum","average","maximum","running total");
-  printf("%92s%-17s%-17s%-17s%-17s\n"," ","-------","-------","-------","--------------");
+  printf("%77s%-17s%-17s%-17s%-11s\n"," ","minimum","average","maximum","running sum");
+  printf("%77s%-17s%-17s%-17s%-11s\n"," ","-------","-------","-------","-----------");
 
   for (j in linalg) {
     runningTotals[j] = 0;
@@ -349,11 +349,11 @@ if (1) {
         else                             {tab[me] = tab[ParentOf[me]] "  ";}
       }
       runningTotals[j] += newtals[tn,linalg[j]]
-      printf("%-90s  %-s%-17s\n",tab[me] me,ntlenchilada[me,linalg[j]],runningTotals[j]);
+      printf("%-75s  %-s%-11s\n",tab[me] me,ntlenchilada[me,linalg[j]],runningTotals[j]);
     }
   }
-  printf("%92s%-17s%-17s%-17s%-17s\n"," "," "," "," ","-------");
-  printf("%92s%-17s%-17s%-17s%-17s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
+  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," "," ","-------");
+  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
 }
 
 #  if (printSummedStats) {
