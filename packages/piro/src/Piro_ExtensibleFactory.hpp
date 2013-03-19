@@ -274,7 +274,7 @@ typedef IgnoreArg DiscardArg;
 
 template <typename T>
 inline
-Provider<T> providerFromRcp(const Teuchos::RCP<T> &instance)
+Provider<T> providerFromInstance(const Teuchos::RCP<T> &instance)
 {
   return SharingProviderFunctor<T>(instance);
 }
