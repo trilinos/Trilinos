@@ -201,7 +201,7 @@ template <typename T>
 class Provider : public ProviderFunctorBase<T> {
 public:
   Provider() :
-    ptr_(Teuchos::null)
+    ptr_(Teuchos::rcp(new ProviderImpl<T, NullProviderFunctor<T> >))
   {}
 
   /* implicit */ Provider(Teuchos::ENull) :
@@ -291,7 +291,7 @@ template <typename T>
 class ExtensibleFactory {
 public:
   ExtensibleFactory() :
-    defaultProvider_(NullProviderFunctor<T>()),
+    defaultProvider_(),
     selectorToken_("Type")
   {}
 
