@@ -123,7 +123,7 @@ int ex_put_partial_coord (int   exoid,
     return (EX_FATAL);
   }
 
-  if (start_node_num + num_nodes -1 > (int)num_nod) {
+  if (start_node_num + num_nodes -1 > num_nod) {
     exerrval = EX_BADPARAM;
       sprintf(errmsg,
               "Error: start index (%"PRId64") + node count (%"PRId64") is larger than total number of nodes (%"PRId64") in file id %d",
