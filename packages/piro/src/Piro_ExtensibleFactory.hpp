@@ -58,7 +58,14 @@ template <typename T>
 class ProviderBase {
 public:
   virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
-  ~ProviderBase() {}
+
+  ProviderBase() {}
+  virtual ~ProviderBase() {}
+
+private:
+  // Disallow copy & assignment
+  ProviderBase(const ProviderBase &);
+  ProviderBase &operator=(const ProviderBase &);
 };
 
 template <typename T, typename Functor>
