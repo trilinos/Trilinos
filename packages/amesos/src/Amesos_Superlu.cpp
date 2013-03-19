@@ -62,6 +62,8 @@ struct SLUData
 #ifdef USE_DGSTRF
   AC.Store = NULL;
 #endif
+  SLU::set_default_options(&SLU_options);
+  refactor_option = SLU::DOFACT;
   }
 };
 
@@ -305,6 +307,7 @@ int Amesos_Superlu::Factor()
 			    &Ai_[0], &Ap_[0], SLU::SLU_NR, SLU::SLU_D, SLU::SLU_GE );
   }
 
+  FactorizationDone_ = true;
   MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_, 0);
 
   return 0;
