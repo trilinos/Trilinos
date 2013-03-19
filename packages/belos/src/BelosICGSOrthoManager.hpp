@@ -233,16 +233,16 @@ namespace Belos {
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 
       std::string updateLabel = label_ + ": Ortho (Update)";
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 
       std::string normLabel = label_ + ": Ortho (Norm)";
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel); 
 #endif
     }
 
@@ -260,16 +260,16 @@ namespace Belos {
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 
       std::string updateLabel = label_ + ": Ortho (Update)";
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 
       std::string normLabel = label_ + ": Ortho (Norm)";
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel); 
 #endif
     }
 
@@ -698,22 +698,22 @@ namespace Belos {
       label_ = label;
       std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 #endif
 
       std::string updateLabel = label_ + ": Ortho (Update)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 #endif
 
       std::string normLabel = label_ + ": Ortho (Norm)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 #endif
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel);
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
   } 

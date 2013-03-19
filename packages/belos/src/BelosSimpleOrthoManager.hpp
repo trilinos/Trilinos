@@ -113,7 +113,7 @@ namespace Belos {
     {
       const std::string timerLabel = 
 	prefix.empty() ? timerName : (prefix + ": " + timerName);
-      return Teuchos::TimeMonitor::getNewTimer (timerLabel);
+      return Teuchos::TimeMonitor::getNewCounter (timerLabel);
     }
 #endif // BELOS_TEUCHOS_TIME_MONITOR
     

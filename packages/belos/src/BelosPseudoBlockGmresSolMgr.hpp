@@ -688,6 +688,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
