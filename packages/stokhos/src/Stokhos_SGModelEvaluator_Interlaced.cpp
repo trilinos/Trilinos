@@ -663,9 +663,6 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
           = Teuchos::rcp(new Epetra_Vector(*interlace_overlapped_f_map));
     copyToInterlacedVector(*f_sg_blocks,*overlapped_f);
     f_out->Export(*overlapped_f,*interlace_overlapped_f_exporter,Insert);
-
-    // f_out->Export(*(f_sg_blocks->getBlockVector()), *interlace_overlapped_f_exporter, 
-    // 		  Insert);
   }
 
   // df/dp -- determinsistic p

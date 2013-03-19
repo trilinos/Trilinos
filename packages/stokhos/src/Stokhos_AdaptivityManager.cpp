@@ -196,7 +196,7 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
       int * d_Indices;
       double * d_Values;
      
-      J_k.ExtractMyRowView(m,d_numEntries,d_Values,d_Indices);
+      J_k.ExtractMyRowView(localM,d_numEntries,d_Values,d_Indices);
       
       // loop over stochastic degrees of freedom of this row
       for(int rb_i=0;rb_i<rowStochBasis->size();rb_i++) {
@@ -216,8 +216,7 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
 
          // loop over each column
          for(int colInd=0;colInd<d_numEntries;colInd++) {
-            int n = d_Indices[colInd]; // grab global deterministic column id
-            int localN = J_k.LCID(n);  // grab local deterministic column id
+            int localN = d_Indices[colInd];  // grab local deterministic column id
 
             // grab row basis
             Teuchos::RCP<const Stokhos::ProductBasis<int,double> > colStochBasis 
