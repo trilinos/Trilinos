@@ -197,7 +197,7 @@ const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, T
 
     aggStart = ArrayRCP<LO>(aggregates.GetNumAggregates()+1,0);
     aggStart[0]=0;
-    for (size_t i=0; i<aggregates.GetNumAggregates(); ++i) {
+    for (GO i=0; i<aggregates.GetNumAggregates(); ++i) {
       aggStart[i+1] = aggStart[i] + sizes[i];
     }
 

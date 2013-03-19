@@ -125,7 +125,7 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
     // number of aggregates
-    LO numAggs = aggregates.GetNumAggregates();
+    GO numAggs = aggregates.GetNumAggregates();
 
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggStart is a pointer into aggToRowMap
@@ -137,7 +137,7 @@ namespace MueLu {
 
     // find size of the largest aggregate
     LO maxAggSize=0;
-    for (size_t i=0; i<numAggs; ++i) {
+    for (GO i=0; i<numAggs; ++i) {
       LO sizeOfThisAgg = aggStart[i+1] - aggStart[i];
       if (sizeOfThisAgg > maxAggSize) maxAggSize = sizeOfThisAgg;
     }
@@ -234,7 +234,7 @@ namespace MueLu {
     GO qctr=0; //for indexing into Ptent data vectors
     const Map& nonUniqueMapRef = *nonUniqueMap;
     const Map& coarseMapRef = *coarseMap;
-    for (LO agg=0; agg<numAggs; ++agg)
+    for (GO agg=0; agg<numAggs; ++agg)
     {
       LO myAggSize = aggStart[agg+1]-aggStart[agg];
       // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
