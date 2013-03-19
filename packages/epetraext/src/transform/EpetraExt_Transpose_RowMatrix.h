@@ -73,7 +73,6 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
 		       Epetra_Map * TransposeRowMap = 0,
 		       bool IgnoreNonLocalCols = false)
   : TransposeMatrix_(0),
-    TransposeExporter_(0),
     TransposeRowMap_(TransposeRowMap),
     MakeDataContiguous_(MakeDataContiguous),
     IgnoreNonLocalCols_(IgnoreNonLocalCols),
@@ -82,10 +81,6 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
     MaxNumEntries_(0),
     Indices_(0),
     Values_(0),
-    TransNumNz_(0),
-    TransIndices_(0),
-    TransValues_(0),
-    TransMyGlobalEquations_(0),
     OrigMatrixIsCrsMatrix_(false)
   {}
 
@@ -99,10 +94,9 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   bool rvs();
 
  private:
+  Epetra_CrsMatrix * BuildTempTrans();
 
   Epetra_CrsMatrix * TransposeMatrix_;
-
-  Epetra_Export * TransposeExporter_;
 
   Epetra_Map * TransposeRowMap_;
 
@@ -114,11 +108,6 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   int MaxNumEntries_;
   int * Indices_;
   double * Values_;
-
-  int * TransNumNz_;
-  int ** TransIndices_;
-  double ** TransValues_;
-  int * TransMyGlobalEquations_;
 
   bool OrigMatrixIsCrsMatrix_;
 
