@@ -57,9 +57,8 @@
 
 namespace MueLu {
 
-    // Map that record parent/child relations for post-processing.
-  //extern std::map<std::string,std::string> myParent_;
-  extern std::map<void*, void*> myParent_;
+  // Map that record parent/child relations for post-processing.
+  extern std::map<std::string,std::string> myParent_;
 
   /*! @class MutuallyExclusiveTime
 
@@ -116,15 +115,13 @@ namespace MueLu {
 
       // pause currently running timer
       if (!timerStack_.empty()) {
-            GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
-            timerStack_.top()->pause();
-            GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
-            //myParent_[this->name_] = timerStack_.top()->name_;
-            myParent_[this] = timerStack_.top();
+        GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
+        timerStack_.top()->pause();
+        GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
+        myParent_[this->name_] = timerStack_.top()->name_;
       } else {
-            GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
-            //myParent_[this->name_] = "no parent";
-            myParent_[this] = NULL;
+        GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
+        myParent_[this->name_] = "no parent";
       }
 
       // start this timer
@@ -226,9 +223,8 @@ namespace MueLu {
     static void PrintParentChildPairs() {
       //key is child, value is parent
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
-          *fos << "Parent Child Map" << std::endl;
-          //std::map<std::string, std::string >::const_iterator iter;
-          std::map<void*, void*>::const_iterator iter;
+      *fos << "Parent Child Map" << std::endl;
+      std::map<std::string, std::string >::const_iterator iter;
       for (iter = ::MueLu::myParent_.begin(); iter != ::MueLu::myParent_.end(); ++iter) {
         *fos << "Key: " << iter->first << "  Value: " << iter->second << std::endl;
       }
