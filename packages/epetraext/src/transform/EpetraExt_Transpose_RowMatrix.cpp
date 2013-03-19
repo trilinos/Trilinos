@@ -46,6 +46,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
+#include <Epetra_Comm.h>    //DEBUG
+
 #include <vector>
 
 namespace EpetraExt {
@@ -187,7 +189,7 @@ operator()( OriginalTypeRef orig )
 
   const Epetra_Map & TransMap = orig.RowMatrixColMap();
 
-  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
+  Epetra_CrsMatrix TempTransA1(Copy, TransMap, TransNumNz_);
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   for (i=0; i<NumMyCols_; i++) {
@@ -195,34 +197,25 @@ operator()( OriginalTypeRef orig )
                      TransNumNz_[i], TransValues_[i], TransIndices_[i]);
     if (err < 0) throw TempTransA1.ReportError("InsertGlobalValues failed.",err);
   }
- 
-  // Note: The following call to FillComplete is currently necessary because
-  //      some global constants that are needed by the Export () are computed in this routine
-  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_, false);
+
+  // CMS: Next up, convert TempTransA1 to using ESFC.
+  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_); 
   if (err != 0) {
     throw TempTransA1.ReportError("FillComplete failed.",err);
   }
 
+  // CMS: Check to see if we're in "serial" aka the TransposeRowMap_  == TransMap.  If so, end NOW.  None of this
+  // import stuff afterwards.
+
+  // If TempTransA1 has an Exporter, it is, in fact, exactly what we need to migrate its
+  // rows into TransposeMatrix_
+  if( TempTransA1.Exporter()) TransposeExporter_ = new Epetra_Export(*TempTransA1.Exporter());
+  else     
+    throw std::runtime_error("CMS: We don't need to export at all.  So we shouldn't make one of these guys.  I should fix this.");
+
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  if( IgnoreNonLocalCols_ )
-    TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_, *TransposeRowMap_, 0);
-  else
-    TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_,0);
-
-  // Create an Export object that will move TempTransA around
-  TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
-
-  err = TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add);
-  if (err != 0) throw TransposeMatrix_->ReportError("Export failed.",err);
-  
-  err = TransposeMatrix_->FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
-  if (err != 0) throw TransposeMatrix_->ReportError("FillComplete failed.",err);
-
-  if (MakeDataContiguous_) {
-    err = TransposeMatrix_->MakeDataContiguous();
-    if (err != 0) throw TransposeMatrix_->ReportError("MakeDataContiguous failed.",err);
-  }
+  TransposeMatrix_ = new Epetra_CrsMatrix(TempTransA1,*TransposeExporter_,TransposeRowMap_);
 
   newObj_ = TransposeMatrix_;
 
