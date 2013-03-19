@@ -790,7 +790,7 @@ int ex_id_lkup( int exoid,
 
       /* allocate space for new status array */
 
-      if (!(stat_vals = malloc((int)dim_len*sizeof(int)))) {
+      if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
         sprintf(errmsg,
                  "Error: failed to allocate memory for %s array for file id %d",
