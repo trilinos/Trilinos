@@ -7,7 +7,7 @@ SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 ASSERT_DEFINED(Tpetra_ENABLE_Thrust)
 IF(Tpetra_ENABLE_Thrust)
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
-  SET(CUDA_UNSUPPORTED_SCALARS "long|dd_real|qd_real|std::complex<double>|std::complex<float>")
+  SET(CUDA_UNSUPPORTED_SCALARS "long|unsigned int|dd_real|qd_real|std::complex<double>|std::complex<float>")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}|int" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=${CUDA_UNSUPPORTED_SCALARS}|int" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
