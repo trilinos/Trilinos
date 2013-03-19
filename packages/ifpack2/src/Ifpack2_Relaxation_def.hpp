@@ -589,11 +589,52 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
-  int NumVectors = X.getNumVectors();
-  MV A_times_Y (Y.getMap (), NumVectors);
+  const size_t numVectors = X.getNumVectors ();
+  if (NumSweeps_ == 1 && ZeroStartingSolution_) {
+    // If we are only doing one Jacobi sweep, and if we are allowed to
+    // assume that the initial guess is zero, then Jacobi is just
+    // diagonal scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
+    //
+    // Compute the diagonal scaling as
+    // Y(i,j) = Y(i,j) + DampingFactor_ * X(i,j) * D(i).
+    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, X, STS::one ());
+
+    // Count (global) floating-point operations.  Ifpack2 represents
+    // this as a floating-point number rather than an integer, so that
+    // overflow (for a very large number of calls, or a very large
+    // problem) is approximate instead of catastrophic.
+    //
+    // It's unfair to count the multiply if the damping factor is one.
+    double flopUpdate = 0.0;
+    if (DampingFactor_ == STS::one ()) {
+      // The update would normally be
+      //
+      // Y(i,j) = Y(i,j) + X(i,j) * D(i),
+      //
+      // but we're also assuming that Y is zero on input, so it's
+      // unfair to count the update addition.  (Flop counts aren't
+      // about counting the number of floating-point operations we
+      // actually did; they are about counting the number that the
+      // algorithm _requires_ us to have done.)
+      flopUpdate = as<double> (NumGlobalRows_) * as<double> (numVectors);
+    }
+    else {
+      // The update would normally be
+      //
+      // Y(i,j) = Y(i,j) + DampingFactor_ * X(i,j) * D(i),
+      //
+      // but we're also assuming that Y is zero on input, so it's
+      // unfair to count the update addition.
+      flopUpdate = 2.0 * as<double> (NumGlobalRows_) * as<double> (numVectors);
+    }
+    ApplyFlops_ += flopUpdate;
+    return;
+  }
+  MV A_times_Y (Y.getMap (), numVectors);
 
   for (int j = 0; j < NumSweeps_; ++j) {
     applyMat (Y, A_times_Y);
@@ -612,11 +653,11 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
 
   // Floating-point operations due to the damping factor, per matrix
   // row, per direction, per columm of output.
-  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
-  const size_t numVectors = X.getNumVectors ();
-
-  ApplyFlops_ += NumSweeps_ * numVectors *
-    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
+  const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
+  ApplyFlops_ += as<double> (NumSweeps_) * as<double> (numVectors) *
+    (2.0 * as<double> (NumGlobalRows_) +
+     2.0 * as<double> (NumGlobalNonzeros_) +
+     dampingFlops);
 }
 
 //==========================================================================
