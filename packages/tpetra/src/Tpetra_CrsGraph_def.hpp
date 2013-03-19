@@ -564,7 +564,7 @@ namespace Tpetra {
         for (size_t i=0; i < numRows; ++i) {
           if (numAllocPerRow_ != null) howmany = *numalloc++;
           nodeNumAllocated_ += howmany;
-          if (howmany > 0) lclInds2D_[i] = Array<LocalOrdinal>(howmany);
+          if (howmany > 0) lclInds2D_[i].resize(howmany);
         }
       }
       else { // allocate global indices
@@ -573,7 +573,7 @@ namespace Tpetra {
         for (size_t i=0; i < numRows; ++i) {
           if (numAllocPerRow_ != null) howmany = *numalloc++;
           nodeNumAllocated_ += howmany;
-          if (howmany > 0) gblInds2D_[i] = Array<GlobalOrdinal>(howmany);
+          if (howmany > 0) gblInds2D_[i].resize(howmany);
         }
       }
     }
@@ -646,58 +646,6 @@ namespace Tpetra {
     return values2D;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  updateLocalAlloc (RowInfo rowinfo, size_t newAllocSize)
-  {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( rowMap_->isNodeLocalElement(rowinfo.localRow) == false );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( isLocallyIndexed() == false );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-    TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
-#endif
-    // Instead of allocating the requested amount, double the current size
-    // to allow for amortized constant time insertion at the end of the array
-    const size_t doubleSize = 2*rowinfo.allocSize;
-    if (doubleSize > newAllocSize)
-      newAllocSize = doubleSize;
-
-    // If this reallocates, it does copy over into new storage.
-    lclInds2D_[rowinfo.localRow].resize (newAllocSize);
-    nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
-    rowinfo.allocSize = newAllocSize;
-    return rowinfo;
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RowInfo
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  updateGlobalAlloc (RowInfo rowinfo, size_t newAllocSize)
-  {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( rowMap_->isNodeLocalElement(rowinfo.localRow) == false );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed() == false );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-    TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
-#endif
-    // Instead of allocating the requested amount, double the current size
-    // to allow for amortized constant time insertion at the end of the array
-    size_t doubleSize = 2*rowinfo.allocSize;
-    if (doubleSize > newAllocSize)
-      newAllocSize = doubleSize;
-
-    // If this reallocates, it does copy over into new storage.
-    gblInds2D_[rowinfo.localRow].resize (newAllocSize);
-    nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
-    rowinfo.allocSize = newAllocSize;
-    return rowinfo;
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -1061,6 +1009,130 @@ namespace Tpetra {
     setSorted(false);
     setMerged(false);
     return numNewInds;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertGlobalIndicesImpl(LocalOrdinal myRow,
+                          const ArrayView<const GlobalOrdinal> &indices)
+  {
+    const char* tfecfFuncName("insertGlobalIndicesImpl()");
+
+    RowInfo rowInfo = getRowInfo(myRow);
+    const size_t numNewInds = indices.size();
+    const size_t newNumEntries = rowInfo.numEntries + numNewInds;
+    if (newNumEntries > rowInfo.allocSize) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        getProfileType() == StaticProfile, std::runtime_error,
+        ": new indices exceed statically allocated graph structure.");
+      // Only print an efficiency warning once per CrsGraph
+      // instance, per method name (insertLocalIndices() or
+      // insertGlobalIndices()).
+      if (! insertGlobalIndicesWarnedEfficiency_) {
+        TPETRA_EFFICIENCY_WARNING(
+          true, std::runtime_error,
+          "::insertGlobalIndices():" << std::endl << "Pre-allocated space "
+          "has been exceeded, requiring new allocation.  This is allowed "
+          "but not efficient in terms of run time.  To improve efficiency, "
+          "we suggest using a larger number of entries per row in the "
+          "constructor.  You may either specify a maximum number of "
+          "entries for all the rows, or a per-row maximum.  This CrsGraph "
+          "instance will not print further messages of this kind, in order "
+          "not to clutter output.");
+        insertGlobalIndicesWarnedEfficiency_ = true;
+      }
+      // update allocation, doubling size to reduce number of reallocations
+      size_t newAllocSize = 2*rowInfo.allocSize;
+      if (newAllocSize < newNumEntries)
+        newAllocSize = newNumEntries;
+      gblInds2D_[myRow].resize(newAllocSize);
+      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+    }
+
+    // Copy new indices at end of global index array
+    if (gblInds1D_ != null)
+      std::copy(indices.begin(), indices.end(),
+                gblInds1D_.begin()+rowInfo.offset1D+rowInfo.numEntries);
+    else
+      std::copy(indices.begin(), indices.end(),
+                gblInds2D_[myRow].begin()+rowInfo.numEntries);
+    numRowEntries_[myRow] += numNewInds;
+    nodeNumEntries_ += numNewInds;
+    setSorted(false);
+    setMerged(false);
+
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        chkNewNumEntries != newNumEntries, std::logic_error,
+        ": Internal logic error. Please contact Tpetra team.");
+    }
+#endif
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertLocalIndicesImpl(LocalOrdinal myRow,
+                         const ArrayView<const LocalOrdinal> &indices)
+  {
+    const char* tfecfFuncName("insertLocallIndicesImpl()");
+
+    RowInfo rowInfo = getRowInfo(myRow);
+    const size_t numNewInds = indices.size();
+    const size_t newNumEntries = rowInfo.numEntries + numNewInds;
+    if (newNumEntries > rowInfo.allocSize) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        getProfileType() == StaticProfile, std::runtime_error,
+        ": new indices exceed statically allocated graph structure.");
+      // Only print an efficiency warning once per CrsGraph
+      // instance, per method name (insertLocalIndices() or
+      // insertGlobalIndices()).
+      if (! insertLocalIndicesWarnedEfficiency_) {
+        TPETRA_EFFICIENCY_WARNING(
+          true, std::runtime_error,
+          "::insertLocalIndices():" << std::endl << "Pre-allocated space "
+          "has been exceeded, requiring new allocation.  This is allowed "
+          "but not efficient in terms of run time.  To improve efficiency, "
+          "we suggest using a larger number of entries per row in the "
+          "constructor.  You may either specify a maximum number of "
+          "entries for all the rows, or a per-row maximum.  This CrsGraph "
+          "instance will not print further messages of this kind, in order "
+          "not to clutter output.");
+        insertLocalIndicesWarnedEfficiency_ = true;
+      }
+      // update allocation, doubling size to reduce number of reallocations
+      size_t newAllocSize = 2*rowInfo.allocSize;
+      if (newAllocSize < newNumEntries)
+        newAllocSize = newNumEntries;
+      lclInds2D_[myRow].resize(newAllocSize);
+      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+    }
+
+    // Insert new indices at end of lclInds array
+    if (lclInds1D_ != null)
+      std::copy(indices.begin(), indices.end(),
+                lclInds1D_.begin()+rowInfo.offset1D+rowInfo.numEntries);
+    else
+      std::copy(indices.begin(), indices.end(), 
+                lclInds2D_[myRow].begin()+rowInfo.numEntries);
+    numRowEntries_[myRow] += numNewInds;
+    nodeNumEntries_ += numNewInds;
+    setSorted(false);
+    setMerged(false);
+
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        chkNewNumEntries != newNumEntries, std::logic_error,
+        ": Internal logic error. Please contact Tpetra team.");
+    }
+#endif
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1703,55 +1775,48 @@ namespace Tpetra {
   insertLocalIndices (LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices)
   {
-    using std::endl;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "insertLocalIndices()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                        std::runtime_error, ": requires that fill is active.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isGloballyIndexed() == true,                    std::runtime_error, ": graph indices are global; use insertGlobalIndices().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false,                           std::runtime_error, ": cannot insert local indices without a column map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error, ": row does not belong to this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(hasRowInfo() == false, std::runtime_error, ": graph row information was deleted at fillComplete().");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillActive() == false, std::runtime_error,
+      ": requires that fill is active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed() == true, std::runtime_error,
+      ": graph indices are global; use insertGlobalIndices().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      hasColMap() == false, std::runtime_error,
+      ": cannot insert local indices without a column map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
+      ": row does not belong to this node.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      hasRowInfo() == false, std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
     if (indicesAreAllocated() == false) {
       allocateIndices(LocalIndices);
     }
-    // use column map to filter the entries
-    Array<LocalOrdinal> f_inds(indices);
-    SLocalGlobalNCViews inds_ncview;
-    inds_ncview.linds = f_inds();
-    const size_t numFilteredEntries = filterIndices<LocalIndices>(inds_ncview);
-    if (numFilteredEntries > 0) {
-      RowInfo rowInfo = getRowInfo(localRow);
-      const size_t curNumEntries = rowInfo.numEntries;
-      const size_t newNumEntries = curNumEntries + numFilteredEntries;
-      if (newNumEntries > rowInfo.allocSize) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          getProfileType() == StaticProfile, std::runtime_error,
-          ": new indices exceed statically allocated graph structure.");
-        // Only print an efficiency warning once per CrsGraph
-        // instance, per method name (insertLocalIndices() or
-        // insertGlobalIndices()).
-        if (! insertLocalIndicesWarnedEfficiency_) {
-          TPETRA_EFFICIENCY_WARNING(
-            true, std::runtime_error, "::insertLocalIndices():" << endl <<
-            "Pre-allocated space has been exceeded, requiring new allocation.  "
-            "This is allowed but not efficient in terms of run time.  "
-            "To improve efficiency, we suggest that you specify a larger "
-            "number of entries per row in the constructor.  "
-            "You may either specify a maximum number of entries for all the "
-            "rows, or a per-row maximum.  "
-            "This CrsGraph instance will not print further messages of this "
-            "kind, in order not to clutter output.");
-          insertLocalIndicesWarnedEfficiency_ = true;
-        }
-        // update allocation only as much as necessary
-        rowInfo = updateLocalAlloc (rowInfo, newNumEntries);
-      }
+
+     // If we have a column map, use it to filter the entries.
+    if (hasColMap ()) {
+      Array<LO> filtered_indices(indices);
       SLocalGlobalViews inds_view;
-      inds_view.linds = f_inds(0,numFilteredEntries);
-      insertIndices<LocalIndices,LocalIndices>(rowInfo, inds_view);
+      SLocalGlobalNCViews inds_ncview;
+      inds_ncview.linds = filtered_indices();
+      const size_t numFilteredEntries = 
+	filterIndices<LocalIndices>(inds_ncview);
+      inds_view.linds = filtered_indices (0, numFilteredEntries);
+      insertLocalIndicesImpl(localRow, inds_view.linds);
+    }
+    else {
+      insertLocalIndicesImpl(localRow, indices);
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(indicesAreAllocated() == false || isLocallyIndexed() == false, std::logic_error,
-        ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      indicesAreAllocated() == false || isLocallyIndexed() == false, 
+      std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
   }
 
@@ -1789,58 +1854,18 @@ namespace Tpetra {
     const LO myRow = rowMap_->getLocalElement (grow);
     if (myRow != Teuchos::OrdinalTraits<LO>::invalid ()) {
       // If we have a column map, use it to filter the entries.
-      Array<GO> filtered_indices;
-      SLocalGlobalViews inds_view;
       if (hasColMap ()) {
+	Array<GO> filtered_indices(indices);
+	SLocalGlobalViews inds_view;
         SLocalGlobalNCViews inds_ncview;
-        // filter indices and values through the column map
-        filtered_indices.assign (indices.begin(), indices.end());
         inds_ncview.ginds = filtered_indices();
         const size_t numFilteredEntries =
           filterIndices<GlobalIndices> (inds_ncview);
         inds_view.ginds = filtered_indices (0, numFilteredEntries);
+	insertGlobalIndicesImpl(myRow, inds_view.ginds);
       }
       else {
-        inds_view.ginds = indices;
-      }
-      const size_t numFilteredEntries = inds_view.ginds.size();
-      // add the new indices and values
-      if (numFilteredEntries > 0) {
-        RowInfo rowInfo = getRowInfo(myRow);
-        const size_t curNumEntries = rowInfo.numEntries;
-        const size_t newNumEntries = curNumEntries + numFilteredEntries;
-        if (newNumEntries > rowInfo.allocSize) {
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            getProfileType() == StaticProfile, std::runtime_error,
-            ": new indices exceed statically allocated graph structure.");
-          // Only print an efficiency warning once per CrsGraph
-          // instance, per method name (insertLocalIndices() or
-          // insertGlobalIndices()).
-          if (! insertGlobalIndicesWarnedEfficiency_) {
-            TPETRA_EFFICIENCY_WARNING(
-              true, std::runtime_error,
-              "::insertGlobalIndices():" << std::endl << "Pre-allocated space "
-              "has been exceeded, requiring new allocation.  This is allowed "
-              "but not efficient in terms of run time.  To improve efficiency, "
-              "we suggest using a larger number of entries per row in the "
-              "constructor.  You may either specify a maximum number of "
-              "entries for all the rows, or a per-row maximum.  This CrsGraph "
-              "instance will not print further messages of this kind, in order "
-              "not to clutter output.");
-            insertGlobalIndicesWarnedEfficiency_ = true;
-          }
-          // update allocation only as much as necessary
-          rowInfo = updateGlobalAlloc (rowInfo, newNumEntries);
-        }
-        insertIndices<GlobalIndices,GlobalIndices> (rowInfo, inds_view);
-#ifdef HAVE_TPETRA_DEBUG
-        {
-          const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            chkNewNumEntries != newNumEntries, std::logic_error,
-            ": Internal logic error. Please contact Tpetra team.");
-        }
-#endif
+       insertGlobalIndicesImpl(myRow, indices);
       }
     }
     else { // a nonlocal row
@@ -1857,7 +1882,6 @@ namespace Tpetra {
       ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
