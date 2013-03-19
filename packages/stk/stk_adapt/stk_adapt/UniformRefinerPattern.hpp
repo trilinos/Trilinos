@@ -877,7 +877,7 @@ namespace stk {
 
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
-        typedef boost::array<unsigned, ToTopology::node_count > quadratic_type;
+        typedef boost::array<stk::mesh::EntityId, ToTopology::node_count > quadratic_type;
 
         static vector<quadratic_type> elems(NumNewElements_Enrich);
 
@@ -939,7 +939,7 @@ namespace stk {
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)
                   {
                     unsigned edge_ord = cell_topo_data_toTopo->edge[i_edge].node[2];
-                    unsigned inode = EDGE_N(i_edge);
+                    stk::mesh::EntityId inode = EDGE_N(i_edge);
                     EN[edge_ord] = inode;
                   }
               }
@@ -965,7 +965,7 @@ namespace stk {
                             face_ord = cell_topo_data_toTopo->side[i_face].node[8];
                           }
 
-                        unsigned inode = FACE_N(i_face);
+                        stk::mesh::EntityId inode = FACE_N(i_face);
 
                         //std::cout << "tmp P[" << eMesh.get_rank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
 
@@ -1074,10 +1074,10 @@ namespace stk {
         //subCell_from_element.resize(num_subcell_verts);
         // tmp end
 
-        unsigned minNodeId = 0;
+        stk::mesh::EntityId minNodeId = 0;
         for (int iv = 0; iv < num_subcell_verts; iv++)
           {
-            unsigned nid = elem_nodes[inodes[iv]].entity().identifier();
+            stk::mesh::EntityId nid = elem_nodes[inodes[iv]].entity().identifier();
             if (iv == 0)
               minNodeId = nid;
             else
@@ -1105,7 +1105,7 @@ namespace stk {
 
             //! extract the minimal node index
             //set_sdcell_global_baseline_iter = set_sdcell_global_baseline.begin();
-            unsigned i0 = minNodeId;
+            stk::mesh::EntityId i0 = minNodeId;
 
             //! find the rotation to get to the minimal node
             int j0 = -1;
@@ -1307,7 +1307,7 @@ namespace stk {
                 VERIFY_OP(childNodeIdx, ==, childNodeIdxCheck, "childNodeIdxCheck");
 #endif
 
-                unsigned inode=0;
+                stk::mesh::EntityId inode=0;
                 unsigned rank_of_subcell            = ref_topo_x[childNodeIdx].rank_of_subcell;
                 unsigned ordinal_of_subcell         = ref_topo_x[childNodeIdx].ordinal_of_subcell;
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
