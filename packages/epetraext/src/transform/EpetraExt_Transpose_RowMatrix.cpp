@@ -186,19 +186,16 @@ operator()( OriginalTypeRef orig )
   // First get the local indices to count how many nonzeros will be in the 
   // transpose graph on each processor
   Epetra_CrsMatrix * TempTransA1 = BuildTempTrans();  
-  Epetra_Export * TransposeExporter=0;
 
   if(!TempTransA1->Exporter()) {
     // Short Circuit: There is no need to make another matrix since TransposeRowMap_== TransMap
     newObj_ = TransposeMatrix_ = TempTransA1;
     return *newObj_;    
   }
-  else
-    TransposeExporter = new Epetra_Export(*TempTransA1->Exporter());
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TransposeExporter,TransposeRowMap_);
+  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),TransposeRowMap_);
 
   newObj_ = TransposeMatrix_;
   delete TempTransA1;
