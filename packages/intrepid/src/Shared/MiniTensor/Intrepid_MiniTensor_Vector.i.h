@@ -492,17 +492,17 @@ namespace Intrepid
   // \param v the operands
   // \return \f$ u + v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Vector<T>
-  operator+(Vector<T> const & u, Vector<T> const & v)
+  Vector<typename Promote<S, T>::type>
+  operator+(Vector<S> const & u, Vector<T> const & v)
   {
     Index const
 		N = u.get_dimension();
 
     assert(v.get_dimension() == N);
 
-    Vector<T>
+    Vector<typename Promote<S, T>::type>
     s(N);
 
     switch (N) {
@@ -535,17 +535,17 @@ namespace Intrepid
   // \param v the operands
   // \return \f$ u - v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Vector<T>
-  operator-(Vector<T> const & u, Vector<T> const & v)
+  Vector<typename Promote<S, T>::type>
+  operator-(Vector<S> const & u, Vector<T> const & v)
   {
     Index const
 		N = u.get_dimension();
 
     assert(v.get_dimension() == N);
 
-    Vector<T>
+    Vector<typename Promote<S, T>::type>
     s(N);
 
     switch (N) {
@@ -618,10 +618,10 @@ namespace Intrepid
   // \param v the operands
   // \return \f$ u \cdot v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  T
-  operator*(Vector<T> const & u, Vector<T> const & v)
+  typename Promote<S, T>::type
+  operator*(Vector<S> const & u, Vector<T> const & v)
   {
     return dot(u, v);
   }
@@ -685,15 +685,16 @@ namespace Intrepid
   // \param u vector factor
   // \return \f$ s u \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Vector<T>
+  Vector<typename Promote<S, T>::type>
   operator*(S const & s, Vector<T> const & u)
   {
     Index const
-		N = u.get_dimension();
+    N = u.get_dimension();
 
-    Vector<T> v(N);
+    Vector<typename Promote<S, T>::type>
+    v(N);
 
     switch (N) {
 
@@ -725,9 +726,9 @@ namespace Intrepid
   // \param s scalar factor
   // \return \f$ s u \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Vector<T>
+  Vector<typename Promote<S, T>::type>
   operator*(Vector<T> const & u, S const & s)
   {
     return s * u;
@@ -739,15 +740,16 @@ namespace Intrepid
   // \param s scalar that divides each component of vector
   // \return \f$ u / s \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Vector<T>
+  Vector<typename Promote<S, T>::type>
   operator/(Vector<T> const & u, S const & s)
   {
     Index const
 		N = u.get_dimension();
 
-    Vector<T> v(N);
+    Vector<typename Promote<S, T>::type>
+    v(N);
 
     switch (N) {
 
@@ -779,17 +781,17 @@ namespace Intrepid
   // \param v operands
   // \return \f$ u \cdot v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  T
-  dot(Vector<T> const & u, Vector<T> const & v)
+  typename Promote<S, T>::type
+  dot(Vector<S> const & u, Vector<T> const & v)
   {
     Index const
 		N = u.get_dimension();
 
     assert(v.get_dimension() == N);
 
-    T
+    typename Promote<S, T>::type
     s = 0.0;
 
     switch (N) {
@@ -820,17 +822,17 @@ namespace Intrepid
   // \param v operands
   // \return \f$ u \times v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Vector<T>
-  cross(Vector<T> const & u, Vector<T> const & v)
+  Vector<typename Promote<S, T>::type>
+  cross(Vector<S> const & u, Vector<T> const & v)
   {
     Index const
 		N = u.get_dimension();
 
     assert(v.get_dimension() == N);
 
-    Vector<T>
+    Vector<typename Promote<S, T>::type>
     w(N);
 
     switch (N) {

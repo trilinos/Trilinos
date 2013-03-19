@@ -676,108 +676,108 @@ namespace Intrepid {
   // R^N tensor addition
   // \return \f$ A + B \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  operator+(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  operator+(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
-    S(N);
+    Tensor<typename Promote<S, T>::type>
+    C(N);
 
     switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          S(i, j) = A(i, j) + B(i, j);
+          C(i, j) = A(i, j) + B(i, j);
         }
       }
       break;
 
     case 3:
-      S(0,0) = A(0,0) + B(0,0);
-      S(0,1) = A(0,1) + B(0,1);
-      S(0,2) = A(0,2) + B(0,2);
+      C(0,0) = A(0,0) + B(0,0);
+      C(0,1) = A(0,1) + B(0,1);
+      C(0,2) = A(0,2) + B(0,2);
 
-      S(1,0) = A(1,0) + B(1,0);
-      S(1,1) = A(1,1) + B(1,1);
-      S(1,2) = A(1,2) + B(1,2);
+      C(1,0) = A(1,0) + B(1,0);
+      C(1,1) = A(1,1) + B(1,1);
+      C(1,2) = A(1,2) + B(1,2);
 
-      S(2,0) = A(2,0) + B(2,0);
-      S(2,1) = A(2,1) + B(2,1);
-      S(2,2) = A(2,2) + B(2,2);
+      C(2,0) = A(2,0) + B(2,0);
+      C(2,1) = A(2,1) + B(2,1);
+      C(2,2) = A(2,2) + B(2,2);
       break;
 
     case 2:
-      S(0,0) = A(0,0) + B(0,0);
-      S(0,1) = A(0,1) + B(0,1);
+      C(0,0) = A(0,0) + B(0,0);
+      C(0,1) = A(0,1) + B(0,1);
 
-      S(1,0) = A(1,0) + B(1,0);
-      S(1,1) = A(1,1) + B(1,1);
+      C(1,0) = A(1,0) + B(1,0);
+      C(1,1) = A(1,1) + B(1,1);
       break;
 
     }
 
-    return S;
+    return C;
   }
 
   //
   // R^N Tensor substraction
   // \return \f$ A - B \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  operator-(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  operator-(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
-    S(N);
+    Tensor<typename Promote<S, T>::type>
+    C(N);
 
     switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          S(i, j) = A(i, j) - B(i, j);
+          C(i, j) = A(i, j) - B(i, j);
         }
       }
       break;
 
     case 3:
-      S(0,0) = A(0,0) - B(0,0);
-      S(0,1) = A(0,1) - B(0,1);
-      S(0,2) = A(0,2) - B(0,2);
+      C(0,0) = A(0,0) - B(0,0);
+      C(0,1) = A(0,1) - B(0,1);
+      C(0,2) = A(0,2) - B(0,2);
 
-      S(1,0) = A(1,0) - B(1,0);
-      S(1,1) = A(1,1) - B(1,1);
-      S(1,2) = A(1,2) - B(1,2);
+      C(1,0) = A(1,0) - B(1,0);
+      C(1,1) = A(1,1) - B(1,1);
+      C(1,2) = A(1,2) - B(1,2);
 
-      S(2,0) = A(2,0) - B(2,0);
-      S(2,1) = A(2,1) - B(2,1);
-      S(2,2) = A(2,2) - B(2,2);
+      C(2,0) = A(2,0) - B(2,0);
+      C(2,1) = A(2,1) - B(2,1);
+      C(2,2) = A(2,2) - B(2,2);
       break;
 
     case 2:
-      S(0,0) = A(0,0) - B(0,0);
-      S(0,1) = A(0,1) - B(0,1);
+      C(0,0) = A(0,0) - B(0,0);
+      C(0,1) = A(0,1) - B(0,1);
 
-      S(1,0) = A(1,0) - B(1,0);
-      S(1,1) = A(1,1) - B(1,1);
+      C(1,0) = A(1,0) - B(1,0);
+      C(1,1) = A(1,1) - B(1,1);
       break;
 
     }
 
-    return S;
+    return C;
   }
 
   //
@@ -890,20 +890,61 @@ namespace Intrepid {
   }
 
   //
+  // R^N tensor vector product v = A u
+  // \param A tensor
+  // \param u vector
+  // \return \f$ A u \f$
+  //
+  template<typename S, typename T>
+  inline
+  Vector<typename Promote<S, T>::type>
+  operator*(Tensor<T> const & A, Vector<S> const & u)
+  {
+    return dot(A, u);
+  }
+
+  //
+  // R^N vector tensor product v = u A
+  // \param A tensor
+  // \param u vector
+  // \return \f$ u A = A^T u \f$
+  //
+  template<typename S, typename T>
+  inline
+  Vector<typename Promote<S, T>::type>
+  operator*(Vector<S> const & u, Tensor<T> const & A)
+  {
+    return dot(u, A);
+  }
+
+  //
+  // R^N tensor dot product C = A B
+  // \return \f$ A \cdot B \f$
+  //
+  template<typename S, typename T>
+  inline
+  Tensor<typename Promote<S, T>::type>
+  operator*(Tensor<S> const & A, Tensor<T> const & B)
+  {
+    return dot(A, B);
+  }
+
+  //
   // R^N scalar tensor product
   // \param s scalar
   // \param A tensor
   // \return \f$ s A \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Tensor<T>
+  Tensor<typename Promote<S, T>::type>
   operator*(S const & s, Tensor<T> const & A)
   {
     Index const
     N = A.get_dimension();
 
-    Tensor<T> B(N);
+    Tensor<typename Promote<S, T>::type>
+    B(N);
 
     switch (N) {
 
@@ -948,9 +989,9 @@ namespace Intrepid {
   // \param s scalar
   // \return \f$ s A \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Tensor<T>
+  Tensor<typename Promote<S, T>::type>
   operator*(Tensor<T> const & A, S const & s)
   {
     return s * A;
@@ -962,15 +1003,16 @@ namespace Intrepid {
   // \param s scalar
   // \return \f$ A / s \f$
   //
-  template<typename T, typename S>
+  template<typename S, typename T>
   inline
-  Tensor<T>
+  Tensor<typename Promote<S, T>::type>
   operator/(Tensor<T> const & A, S const & s)
   {
     Index const
     N = A.get_dimension();
 
-    Tensor<T> B(N);
+    Tensor<typename Promote<S, T>::type>
+    B(N);
 
     switch (N) {
 
@@ -1015,52 +1057,27 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ A u \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Vector<T>
-  operator*(Tensor<T> const & A, Vector<T> const & u)
-  {
-    return dot(A, u);
-  }
-
-  //
-  // R^N vector tensor product v = u A
-  // \param A tensor
-  // \param u vector
-  // \return \f$ u A = A^T u \f$
-  //
-  template<typename T>
-  inline
-  Vector<T>
-  operator*(Vector<T> const & u, Tensor<T> const & A)
-  {
-    return dot(u, A);
-  }
-
-  //
-  // R^N tensor vector product v = A u
-  // \param A tensor
-  // \param u vector
-  // \return \f$ A u \f$
-  //
-  template<typename T>
-  inline
-  Vector<T>
-  dot(Tensor<T> const & A, Vector<T> const & u)
+  Vector<typename Promote<S, T>::type>
+  dot(Tensor<T> const & A, Vector<S> const & u)
   {
     Index const
     N = A.get_dimension();
 
     assert(u.get_dimension() == N);
 
-    Vector<T>
+    Vector<typename Promote<S, T>::type>
     v(N);
 
     switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
-        T s = 0.0;
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
         for (Index j = 0; j < N; ++j) {
           s += A(i, j) * u(j);
         }
@@ -1090,24 +1107,27 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ u A = A^T u \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Vector<T>
-  dot(Vector<T> const & u, Tensor<T> const & A)
+  Vector<typename Promote<S, T>::type>
+  dot(Vector<S> const & u, Tensor<T> const & A)
   {
     Index const
     N = A.get_dimension();
 
     assert(u.get_dimension() == N);
 
-    Vector<T>
+    Vector<typename Promote<S, T>::type>
     v(N);
 
     switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
-        T s = 0.0;
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
         for (Index j = 0; j < N; ++j) {
           s += A(j, i) * u(j);
         }
@@ -1132,34 +1152,22 @@ namespace Intrepid {
   }
 
   //
-  // R^N tensor dot product C = A B
-  // \return \f$ A \cdot B \f$
-  //
-  template<typename T>
-  inline
-  Tensor<T>
-  operator*(Tensor<T> const & A, Tensor<T> const & B)
-  {
-    return dot(A, B);
-  }
-
-  //
   // R^N tensor tensor product C = A B
   // \param A tensor
   // \param B tensor
   // \return a tensor \f$ A \cdot B \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  dot(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  dot(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     C(N);
 
     switch (N) {
@@ -1167,7 +1175,10 @@ namespace Intrepid {
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          T s = 0.0;
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
           for (Index k = 0; k < N; ++k) {
             s += A(i, k) * B(k, j);
           }
@@ -1209,17 +1220,17 @@ namespace Intrepid {
   // \param B tensor
   // \return a tensor \f$ A^T \cdot B \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  t_dot(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  t_dot(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     C(N);
 
     switch (N) {
@@ -1227,7 +1238,10 @@ namespace Intrepid {
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          T s = 0.0;
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
           for (Index k = 0; k < N; ++k) {
             s += A(k, i) * B(k, j);
           }
@@ -1269,17 +1283,17 @@ namespace Intrepid {
   // \param B tensor
   // \return a tensor \f$ A \cdot B^T \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  dot_t(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  dot_t(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     C(N);
 
     switch (N) {
@@ -1287,7 +1301,10 @@ namespace Intrepid {
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          T s = 0.0;
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
           for (Index k = 0; k < N; ++k) {
             s += A(i, k) * B(j, k);
           }
@@ -1329,17 +1346,17 @@ namespace Intrepid {
   // \param B tensor
   // \return a tensor \f$ A^T \cdot B^T \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  t_dot_t(Tensor<T> const & A, Tensor<T> const & B)
+  Tensor<typename Promote<S, T>::type>
+  t_dot_t(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     C(N);
 
     switch (N) {
@@ -1347,7 +1364,10 @@ namespace Intrepid {
     default:
       for (Index i = 0; i < N; ++i) {
         for (Index j = 0; j < N; ++j) {
-          T s = 0.0;
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
           for (Index k = 0; k < N; ++k) {
             s += A(k, i) * B(j, k);
           }
@@ -1389,17 +1409,17 @@ namespace Intrepid {
   // \param B tensor
   // \return a scalar \f$ A : B \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  T
-  dotdot(Tensor<T> const & A, Tensor<T> const & B)
+  typename Promote<S, T>::type
+  dotdot(Tensor<S> const & A, Tensor<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    T
+    typename Promote<S, T>::type
     s = 0.0;
 
     switch (N) {
@@ -1434,24 +1454,27 @@ namespace Intrepid {
   // \param v vector
   // \return \f$ u \otimes v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  dyad(Vector<T> const & u, Vector<T> const & v)
+  Tensor<typename Promote<S, T>::type>
+  dyad(Vector<S> const & u, Vector<T> const & v)
   {
     Index const
     N = u.get_dimension();
 
     assert(v.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     A(N);
 
     switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
-        const T s = u(i);
+
+        typename Promote<S, T>::type const
+        s = u(i);
+
         for (Index j = 0; j < N; ++j) {
           A(i, j) = s * v(j);
         }
@@ -1491,10 +1514,10 @@ namespace Intrepid {
   // \param v vector
   // \return \f$ u \otimes v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  bun(Vector<T> const & u, Vector<T> const & v)
+  Tensor<typename Promote<S, T>::type>
+  bun(Vector<S> const & u, Vector<T> const & v)
   {
     return dyad(u, v);
   }
@@ -1505,10 +1528,10 @@ namespace Intrepid {
   // \param v vector
   // \return \f$ u \otimes v \f$
   //
-  template<typename T>
+  template<typename S, typename T>
   inline
-  Tensor<T>
-  tensor(Vector<T> const & u, Vector<T> const & v)
+  Tensor<typename Promote<S, T>::type>
+  tensor(Vector<S> const & u, Vector<T> const & v)
   {
     return dyad(u, v);
   }
