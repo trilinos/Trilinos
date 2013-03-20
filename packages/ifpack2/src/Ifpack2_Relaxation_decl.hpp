@@ -173,12 +173,12 @@ element of vector \f$x^{(k)}\f$.
 
 The Jacobi method computes
 \f[
-x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
+x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j \neq i} A_{ij} x^{(k)}_j ).
 \f]
 The "damped" Jacobi method generalizes Jacobi.  It introduces a
 damping parameter \f$\omega \f$, and computes
 \f[
-x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j \neq i} A_{ij} x^{(k)}_j ).
 \f]
 
 The "damped Gauss-Seidel method" is actually successive over-relaxation
@@ -195,18 +195,6 @@ x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j > i} A
 Users may set the sweep direction via the "relaxation: backward mode"
 option.  See the documentation of setParameters() for details.
 
-\note The computational kernels for the above SOR sweeps actually do
-not require branches in the inner loop to distinguish between the lower
-triangle, diagonal, and upper triangle of A.  Multiply through the
-forward sweep expression by \f$A_{ii}\f$ and combine terms, then divide
-through again by \fA_{ii}\f$.  This results in the expression
-\f[
-x^{(k+1)}_i = x^{(k)}_i + \omega b_i - \frac{\omega}{A_{ii}} ( \sum_{j \geq i} A_{ij} x^{(k)}_j + \sum_{j < i} x^{(k+1)}_j ).
-\f]
-Executing this expression in a forward sweep does not require
-distinguishing between the lower and upper triangle of A.  The
-same thing holds for the backward sweep.
-
 Gauss-Seidel / SOR also comes in a symmetric version.  This method
 first does a Forward sweep, then a Backward sweep.  Only the symmetric
 version of this preconditioner is guaranteed to be symmetric (or Hermitian,
@@ -221,8 +209,19 @@ documentation of the setParameters() method.  For advice on picking
 book: "Templates for the Solution of Linear Systems: Building Blocks
 for Iterative Methods, 2nd Edition," R. Barrett et al., SIAM, 1994.
 
-Note that this class does not actually use the formulae above to apply
-Jacobi or SOR.  For example, we optimize the formulae to avoid branches.
+\note This class does not actually use the formulae above to apply
+Jacobi or SOR.  For example, the computational kernels for the above SOR
+sweeps actually do not require branches in the inner loop to distinguish
+between the lower triangle, diagonal, and upper triangle of A.  One can
+see this by multiplying through the forward sweep expression by \f$A_{ii}\f$
+and combining terms, then dividing through again by \fA_{ii}\f$.  This
+results in the expression
+\f[
+x^{(k+1)}_i = x^{(k)}_i + \omega b_i - \frac{\omega}{A_{ii}} ( \sum_{j \geq i} A_{ij} x^{(k)}_j + \sum_{j < i} x^{(k+1)}_j ).
+\f]
+Executing this expression in a forward sweep does not require
+distinguishing between the lower and upper triangle of A.  The
+same thing holds for the backward sweep.
 */
 template<class MatrixType>
 class Relaxation :
