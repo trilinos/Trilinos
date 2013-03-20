@@ -324,7 +324,28 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "Kokkos::MultiVector::offsetView: contigValues_.size() = " 
+        << contigValues_.size() << " < startPos(=" << startPos 
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols 
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
 
       B.initializeValues (newNumRows,
                           newNumCols,
@@ -378,7 +399,28 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = " 
+        << contigValues_.size() << " < startPos(=" << startPos 
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols 
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
 
       B.initializeValues (newNumRows,
                           newNumCols,
@@ -578,7 +620,28 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "Kokkos::MultiVector::offsetView: contigValues_.size() = " 
+        << contigValues_.size() << " < startPos(=" << startPos 
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols 
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
 
       B.initializeValues (newNumRows,
                           newNumCols,
@@ -626,7 +689,28 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "Kokkos::MultiVector::offsetView: contigValues_.size() = " 
+        << contigValues_.size() << " < startPos(=" << startPos 
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols 
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
 
       B.initializeValues (newNumRows,
                           newNumCols,
@@ -793,8 +877,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -841,8 +935,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1010,8 +1114,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1058,8 +1172,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1227,8 +1351,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1275,8 +1409,18 @@ namespace Kokkos {
       // Starting position of the view of the data.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      // newNumCols == 0 and == 1 are special cases.
+      // If there is only one column, then the offset plus the stride 
+      // may be longer than the original number of rows.
+      // Thanks to Deaglan Halligan and Mike Parks for finding this.
+      size_t len = 0;
+      if (newNumCols == 0) {
+        len = 0;
+      } else if (newNumCols == 1) {
+        len = newNumRows;
+      } else { // newNumCols > 1
+        len = this->getStride () * newNumCols - offsetRow;
+      }
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
