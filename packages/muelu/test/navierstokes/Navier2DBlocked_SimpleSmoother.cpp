@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * Navier2D_blocked_bssmoother.cpp
- *
- *  Created on: Jun 18, 2012
- *      Author: wiesner
- */
 
 #include <unistd.h>
 #include <iostream>
@@ -102,8 +96,7 @@
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_BlockedPFactory.hpp"
-#include "MueLu_BlockedGaussSeidelSmoother.hpp"
-#include "MueLu_BraessSarazinSmoother.hpp"
+#include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -401,18 +394,23 @@ int main(int argc, char *argv[]) {
   // read in input parameters
 
   // default parameters
-  LO BS_nSweeps = 100;
-  Scalar BS_omega = 1.7;
+  LO SIMPLE_nSweeps = 100;
+  Scalar SIMPLE_omega = 0.02;
   LO SC_nSweeps = 1;
   Scalar SC_omega = 1.0;
-  int SC_bUseDirectSolver = 0;
+  LO PRED_nSweeps = 3;
+  Scalar PRED_omega = 1.0;
+
+  int SC_bUseDirectSolver = 1;
 
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  clp.setOption("BraessSarazin_sweeps",&BS_nSweeps,"number of sweeps with BraessSarazin smoother");
-  clp.setOption("BraessSarazin_omega", &BS_omega,  "scaling factor for BraessSarazin smoother");
-  clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
-  clp.setOption("SchurComp_omega",     &SC_omega,  "damping parameter for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
+  clp.setOption("SIMPLE_sweeps",&SIMPLE_nSweeps,"number of sweeps with SIMPLE smoother");
+  clp.setOption("SIMPLE_omega", &SIMPLE_omega,  "scaling factor for SIMPLE smoother");
+  clp.setOption("Predict_sweeps", &PRED_nSweeps,  "number of sweeps for SIMPLE internal velocity prediction smoother (GaussSeidel)");
+  clp.setOption("Predict_omega", &PRED_omega,  "damping parameter for SIMPLE internal velocity prediction smoother (GaussSeidel)");
+  clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
+  clp.setOption("SchurComp_omega",     &SC_omega,  "damping parameter for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
   clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
 
   switch (clp.parse(argc,argv)) {
@@ -511,27 +509,46 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////
   // Test Braess Sarazin Smoother as a solver
 
-  *out << "Test: Creating Braess Sarazin Smoother" << std::endl;
-  *out << "Test: Omega for BraessSarazin = " << BS_omega << std::endl;
-  *out << "Test: Number of sweeps for BraessSarazin = " << BS_nSweeps << std::endl;
+  *out << "Test: Creating SIMPLE Smoother" << std::endl;
+  *out << "Test: Omega for SIMPLE = " << SIMPLE_omega << std::endl;
+  *out << "Test: Number of sweeps for SIMPLE = " << SIMPLE_nSweeps << std::endl;
   *out << "Test: Omega for Schur Complement solver= " << SC_omega << std::endl;
   *out << "Test: Number of Schur Complement solver= " << SC_nSweeps << std::endl;
   *out << "Test: Setting up Braess Sarazin Smoother" << std::endl;
 
-  // define BraessSarazin Smoother with BS_nSweeps and BS_omega as scaling factor
+  // define SIMPLE Smoother with SIMPLE_nSweeps and SIMPLE_omega as scaling factor
   // AFact_ = Teuchos::null (= default) for the 2x2 blocked operator
-  RCP<BraessSarazinSmoother> BraessSarazinSm = rcp( new BraessSarazinSmoother(BS_nSweeps,BS_omega) );
+  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother(SIMPLE_nSweeps,SIMPLE_omega) );
 
-  RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(BraessSarazinSm) );
+  RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(SimpleSm) );
 
-  /*note that omega must be the same in the SchurComplementFactory and in the BraessSarazinSmoother*/
+  // define smoother for velocity prediction
+  RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
+  RCP<SmootherPrototype> smoProtoPredict = Teuchos::null;
+  std::string ifpackPredictType;
+  Teuchos::ParameterList ifpackPredictList;
+  ifpackPredictList.set("relaxation: sweeps", PRED_nSweeps );
+  ifpackPredictList.set("relaxation: damping factor", PRED_omega );
+  ifpackPredictType = "RELAXATION";
+  ifpackPredictList.set("relaxation: type", "Gauss-Seidel");
+  smoProtoPredict = rcp( new TrilinosSmoother(ifpackPredictType, ifpackPredictList, 0, A00Fact) );
+  RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
+  // define temporary FactoryManager that is used as input for BraessSarazin smoother
+  RCP<FactoryManager> MPredict = rcp(new FactoryManager());
+  MPredict->SetFactory("A",                 A00Fact);         // SchurComplement operator for correction step (defined as "A")
+  MPredict->SetFactory("Smoother",          SmooPredictFact);    // solver/smoother for correction step
+  MPredict->SetFactory("PreSmoother",               SmooPredictFact);
+  MPredict->SetFactory("PostSmoother",              SmooPredictFact);
+  MPredict->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
+  SimpleSm->SetVelocityPredictionFactoryManager(MPredict);    // set temporary factory manager in BraessSarazin smoother
+
+
   // define SchurComplement Factory
   // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
-  // and the scaling/damping factor omega that is used for BraessSarazin
   // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
   // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
   RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
-  SFact->SetParameter("omega", Teuchos::ParameterEntry(BS_omega));
+  SFact->SetParameter("omega", Teuchos::ParameterEntry(1.0)); // for Simple, omega is always 1.0 in the SchurComplement
   SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
   // define smoother/solver for BraessSarazin
@@ -561,7 +578,7 @@ int main(int argc, char *argv[]) {
   MB->SetFactory("PreSmoother",               SmooSCFact);
   MB->SetFactory("PostSmoother",              SmooSCFact);
   MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  BraessSarazinSm->SetFactoryManager(MB);    // set temporary factory manager in BraessSarazin smoother
+  SimpleSm->SetSchurCompFactoryManager(MB);    // set temporary factory manager in BraessSarazin smoother
 
   // setup main factory manager
   RCP<FactoryManager> M = rcp(new FactoryManager());
@@ -574,7 +591,7 @@ int main(int argc, char *argv[]) {
   Finest->Request(MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(M, "Smoother"));
 
   // call setup (= extract blocks and extract diagonal of F)
-  BraessSarazinSm->Setup(*Finest);
+  SimpleSm->Setup(*Finest);
 
   RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap,1);
   xtest->putScalar( (SC) 0.0);
@@ -585,10 +602,10 @@ int main(int argc, char *argv[]) {
 
   xR->norm2(norms);
   *out << "Test: ||x_0|| = " << norms[0] << std::endl;
-  *out << "Test: Applying Braess-Sarazin Smoother" << std::endl;
+  *out << "Test: Applying Simple Smoother" << std::endl;
   *out << "Test: START DATA" << std::endl;
   *out << "iterations\tVelocity_residual\tPressure_residual" << std::endl;
-  BraessSarazinSm->Apply(*xtest,*xR);
+  SimpleSm->Apply(*xtest,*xR);
   xtest->norm2(norms);
   *out << "Test: ||x_1|| = " << norms[0] << std::endl;
 

@@ -218,6 +218,10 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Sa
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchurComplementFactory;
 #endif
 
+#ifdef MUELU_SIMPLESMOOTHER_SHORT
+typedef MueLu::SimpleSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SimpleSmoother;
+#endif
+
 #ifdef MUELU_SMOOTHER_SHORT
 typedef MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Smoother;
 #endif
