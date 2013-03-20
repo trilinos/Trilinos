@@ -349,7 +349,7 @@ namespace Kokkos {
 
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -424,7 +424,7 @@ namespace Kokkos {
 
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -645,7 +645,7 @@ namespace Kokkos {
 
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -714,7 +714,7 @@ namespace Kokkos {
 
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -891,7 +891,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -949,7 +949,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -1128,7 +1128,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -1186,7 +1186,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -1365,7 +1365,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
@@ -1423,7 +1423,7 @@ namespace Kokkos {
       }
       B.initializeValues (newNumRows,
                           newNumCols,
-                          contigValues_.persistingView (startPos, len),
+                          contigValues_.persistingView (startPos, contigValues_.size () - Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos)),
                           this->getStride (),
                           this->getOrigNumRows (),
                           this->getOrigNumCols ());
