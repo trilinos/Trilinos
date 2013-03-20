@@ -93,10 +93,9 @@ public:
                       std::vector<std::size_t> & sideIds,
                       Intrepid::FieldContainer<double> coords,
                       const panzer::PhysicsBlock& pb,
-                      int workset_size,
                       std::vector<panzer::BC> & bcs,
                       int myRank) {
-     volume_worksets["block_0"] = panzer::buildWorksets(pb,cellIds,coords,workset_size);
+     volume_worksets["block_0"] = panzer::buildWorksets(pb,cellIds,coords);
      bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],pb,cellIds,sideIds,coords);
    }
    virtual ~TestWorksetFactory() {}
@@ -203,7 +202,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   indexer->getCoordinates(cellIds[0],coords);
 
    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
-     = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,*physicsBlocks[0],workset_size,bcs,myRank));
+     = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,*physicsBlocks[0],bcs,myRank));
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer
      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 

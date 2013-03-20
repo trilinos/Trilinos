@@ -136,8 +136,7 @@ namespace panzer {
 
       worksets.push_back(panzer::buildWorksets(*(panzer::findPhysicsBlock(element_blocks[i],physicsBlocks)),
 					       local_cell_ids,
-					       cell_vertex_coordinates,
-					       workset_size));
+					       cell_vertex_coordinates));
     
       TEST_EQUALITY((*worksets[i])[0].cell_vertex_coordinates(0,0,0), cell_vertex_coordinates(0,0,0));
       TEST_EQUALITY((*worksets[i])[0].cell_vertex_coordinates(2,3,1), cell_vertex_coordinates(2,3,1));

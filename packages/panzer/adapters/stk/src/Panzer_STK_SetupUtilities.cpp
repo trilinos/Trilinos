@@ -64,8 +64,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   // this may be processor dependent, so an element block
   // may not have elements and thus no contribution
   // on this processor
-  return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates,
-                               workset_size);
+  return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates);
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
@@ -150,7 +149,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
       mesh.getElementVertices(itr->second,vertices);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
-         = panzer::buildWorksets(pb, itr->second, vertices, workset_size);
+         = panzer::buildWorksets(pb, itr->second, vertices);
 
       // correct worksets so the sides are correct
       for(std::size_t w=0;w<current->size();w++) {

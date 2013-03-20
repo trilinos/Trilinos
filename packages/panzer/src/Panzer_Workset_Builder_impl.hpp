@@ -67,8 +67,7 @@ template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> > 
 panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 		      const std::vector<std::size_t>& local_cell_ids,
-		      const ArrayT& vertex_coordinates, 
-		      std::size_t workset_size)
+		      const ArrayT& vertex_coordinates)
 {
   using std::vector;
   using std::string;
@@ -78,6 +77,8 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
   panzer::IntrepidFieldContainerFactory arrayFactory;
 
   std::size_t total_num_cells = local_cell_ids.size();
+
+  std::size_t workset_size = pb.cellData().numCells();
 
   Teuchos::RCP< std::vector<panzer::Workset> > worksets_ptr = 
     Teuchos::rcp(new std::vector<panzer::Workset>);
