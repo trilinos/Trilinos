@@ -2629,6 +2629,12 @@ namespace Tpetra {
         // the CMake configure Teuchos_ENABLE_DEBUG is ON.
         X_colMap = X_domainMap->offsetViewNonConst (colMap, 0);
 
+        // FIXME (mfh 19 Mar 2013) Do we need to fill the remote
+        // entries of X_colMap with zeros?  Do we need to fill all of
+        // X_domainMap initially with zeros?  Ifpack
+        // (Ifpack_PointRelaxation.cpp, line 906) creates an entirely
+        // new MultiVector each time.
+
         // Do the first Import for the first sweep.  This simplifies
         // the logic in the sweeps.
         X_colMap->doImport (X, *importer, INSERT);
@@ -2836,6 +2842,50 @@ namespace Tpetra {
     else { // Column Map and domain Map are _not_ the same.
       X_colMap = getColumnMapMultiVector (X);
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap->getLocalMV ().getValues ().getRawPtr () !=
+        X_domainMap->getLocalMV ().getValues ().getRawPtr (),
+        std::logic_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "Start of column Map view of X is not equal to start of (domain Map "
+        "view of) X.  This means that Tpetra::MultiVector::offsetViewNonConst"
+        "is broken.  Please report this bug to the Tpetra developers.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap->getLocalMV ().getNumRows () <
+        X_domainMap->getLocalMV ().getNumRows (),
+        std::logic_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has " << X_colMap->getLocalMV ().getNumRows ()
+        << " local rows, which is less than the number of local rows "
+        << X_domainMap->getLocalMV ().getNumRows () << " in X_domainMap.  "
+        "This means that Tpetra::MultiVector::offsetViewNonConst "
+        "is broken.  Please report this bug to the Tpetra developers.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap->getLocalMV ().getNumCols () !=
+        X_domainMap->getLocalMV ().getNumCols (),
+        std::logic_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has " << X_colMap->getLocalMV ().getNumCols ()
+        << " local columns, which does not equal the number of local columns "
+        << X_domainMap->getLocalMV ().getNumCols () << " in X_domainMap.  "
+        "This means that Tpetra::MultiVector::offsetViewNonConst "
+        "is broken.  Please report this bug to the Tpetra developers.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap->getLocalMV ().getStride () !=
+        X_domainMap->getLocalMV ().getStride (),
+        std::logic_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has local stride " << X_colMap->getLocalMV ().getStride ()
+        << ", which does not equal the local stride "
+        << X_domainMap->getLocalMV ().getStride () << " of X_domainMap.  "
+        "This means that Tpetra::MultiVector::offsetViewNonConst is broken.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
 
       // We could just copy X into X_domainMap.  However, that wastes
       // a copy, because the Import also does a copy (plus
