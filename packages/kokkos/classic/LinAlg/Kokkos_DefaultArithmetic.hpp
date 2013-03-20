@@ -94,7 +94,12 @@ namespace Kokkos {
                   lda = Teuchos::as<int>(A.getStride()),
                   ldb = Teuchos::as<int>(B.getStride()),
                   ldc = Teuchos::as<int>(C.getStride());
-        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
+        // For some BLAS implementations (i.e. MKL), GEMM when B has one column
+        // is signficantly less efficient 
+        if (n == 1 && transB == Teuchos::NO_TRANS)
+          blas.GEMV(transA, A.getNumRows(), A.getNumCols(), alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), Teuchos::as<int>(1), beta, C.getValuesNonConst().getRawPtr(), Teuchos::as<int>(1));
+        else
+          blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
 
