@@ -453,6 +453,34 @@ namespace {
     TEST_EQUALITY_CONST( map1->isSameAs(*map1b), true );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
+  {
+    typedef Map<LO,GO> M;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int rank = comm->getRank();
+
+    // Create maps with zero elements on all but the first processor
+    Array<GO>  elem_list;
+    if (rank == 0)
+      elem_list.push_back(0);
+    M contig_uniform(1, 0, comm);
+    M contig_non_uniform(1, elem_list.size(), 0, comm);
+    M non_contig(1, elem_list, 0, comm);
+
+    // Check LID
+    LO lid_expected = rank == 0 ? 0 : OrdinalTraits<LO>::invalid();
+    TEST_EQUALITY( contig_uniform.getLocalElement(0), lid_expected );
+    TEST_EQUALITY( contig_non_uniform.getLocalElement(0), lid_expected );
+    TEST_EQUALITY( non_contig.getLocalElement(0), lid_expected );
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
 
   //
   // INSTANTIATIONS
@@ -468,7 +496,8 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
 #else
   // all ordinals, default node
 #  define UNIT_TEST_GROUP( LO, GO ) \
@@ -476,7 +505,8 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
 #endif // HAVE_TPETRA_DEBUG
 
 #define NC_TESTS(N) \
