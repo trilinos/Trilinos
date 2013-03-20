@@ -195,6 +195,18 @@ x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j > i} A
 Users may set the sweep direction via the "relaxation: backward mode"
 option.  See the documentation of setParameters() for details.
 
+\note The computational kernels for the above SOR sweeps actually do
+not require branches in the inner loop to distinguish between the lower
+triangle, diagonal, and upper triangle of A.  Multiply through the
+forward sweep expression by \f$A_{ii}\f$ and combine terms, then divide
+through again by \fA_{ii}\f$.  This results in the expression
+\f[
+x^{(k+1)}_i = x^{(k)}_i + \omega b_i - \frac{\omega}{A_{ii}} ( \sum_{j \geq i} A_{ij} x^{(k)}_j + \sum_{j < i} x^{(k+1)}_j ).
+\f]
+Executing this expression in a forward sweep does not require
+distinguishing between the lower and upper triangle of A.  The
+same thing holds for the backward sweep.
+
 Gauss-Seidel / SOR also comes in a symmetric version.  This method
 first does a Forward sweep, then a Backward sweep.  Only the symmetric
 version of this preconditioner is guaranteed to be symmetric (or Hermitian,
