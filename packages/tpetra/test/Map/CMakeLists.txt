@@ -77,4 +77,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-
+# Tpetra bug 5882
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_ExportTest_Bug5882
+  SOURCES
+    Map_ExportTest_Bug5882
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "passed!"
+  NUM_MPI_PROCS 2
+  )
