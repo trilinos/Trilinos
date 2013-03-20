@@ -522,17 +522,19 @@ namespace Tpetra {
       firstContiguousGID_ = lgMap_[as<LO>(0)];
       lastContiguousGID_ = firstContiguousGID_+1;
       for (size_t i = 1; i < numLocalElements_; ++i) {
-	const LO curLid = as<LO> (i);
-	if (lastContiguousGID_ != lgMap_[curLid]) break;
-	++lastContiguousGID_;
+        const LO curLid = as<LO> (i);
+        if (lastContiguousGID_ != lgMap_[curLid]) break;
+        ++lastContiguousGID_;
       }
       --lastContiguousGID_;
     }
     else {
-      firstContiguousGID_ = indexBase_;
+      // This insures tests for GIDs in the range
+      // [fistContiguousGID_, lastContiguousGID_] fail for processors with
+      // no local elements
+      firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
     }
-      
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
@@ -589,7 +591,7 @@ namespace Tpetra {
       return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
     }
     else if (globalIndex >= firstContiguousGID_ && 
-	     globalIndex <= lastContiguousGID_) {
+             globalIndex <= lastContiguousGID_) {
       return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
     }
     else {
