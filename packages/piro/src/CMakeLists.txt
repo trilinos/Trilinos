@@ -39,7 +39,8 @@ APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
 APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
                    Piro_MatrixFreeDecorator_Def.hpp
                    Piro_MatrixFreeLinearOp.hpp
-                   Piro_MatrixFreeLinearOp_Def.hpp)
+                   Piro_MatrixFreeLinearOp_Def.hpp
+                   Piro_ObserverBase.hpp)
 #
 # B.2) epetra files
 #

@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ************************************************************************
 //
@@ -39,81 +40,39 @@
 //
 // ************************************************************************
 // @HEADER
+*/
 
-#ifndef PIRO_NOXSOLVER_H
-#define PIRO_NOXSOLVER_H
-
-#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#ifndef PIRO_TEST_MOCKPBSERVER_HPP
+#define PIRO_TEST_MOCKPBSERVER_HPP
 
 #include "Piro_ObserverBase.hpp"
 
-#include "NOX.H"
-#include "NOX_Thyra.H"
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-/** \brief Thyra-based Model Evaluator for NOX solves */
+#include "Thyra_VectorBase.hpp"
 
 namespace Piro {
 
+namespace Test {
+
 template <typename Scalar>
-class NOXSolver
-    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
-{
-  public:
+class MockObserver : public ObserverBase<Scalar> {
+public:
+  virtual void observeSolution(const Thyra::VectorBase<Scalar> &solution);
 
-  /** \name Constructors/initializers */
-  //@{
-  /** \brief Takes the number of elements in the discretization . */
-  NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-            const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-            const Teuchos::RCP<ObserverBase<Scalar> > &observer = Teuchos::null);
-  //@}
+  const Thyra::VectorBase<Scalar> &lastSolution() const { return *lastSolution_; }
 
-  /** \name Overridden from Thyra::ModelEvaluatorBase . */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
-  //@}
-
-  /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  //@}
-
-  private:
-  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-
-  /** \brief . */
-  void evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
-
-  /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
-  //@}
-
-  Teuchos::RCP<Teuchos::ParameterList> appParams;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
-  Teuchos::RCP<ObserverBase<Scalar> > observer;
-
-  int num_p;
-  int num_g;
-  Teuchos::RCP<Thyra::NOXNonlinearSolver> solver;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out;
+private:
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > lastSolution_;
 };
 
+template <typename Scalar>
+void
+MockObserver<Scalar>::observeSolution(const Thyra::VectorBase<Scalar> &solution)
+{
+  lastSolution_ = solution.clone_v();
 }
 
-#include "Piro_NOXSolver_Def.hpp"
-#endif
+} // namespace Test
+
+} // namespace Piro
+
+#endif /* PIRO_TEST_MOCKPBSERVER_HPP */
