@@ -221,10 +221,6 @@ TRIBITS_ADD_TEST(
 #
 # e486af8c46174efd16fb9e45792f8fee8e4d8859
 #
-# Some people really like a nice clean dashboard.
-# I prefer known failures to unknown incorrectness.
-# But, what can I do, I'm not the only one on this project.
-
 # TRIBITS_ADD_TEST(
 #   tif_belos Ifpack2BelosCopyFiles
 #   NAME RILUK_5w_0
