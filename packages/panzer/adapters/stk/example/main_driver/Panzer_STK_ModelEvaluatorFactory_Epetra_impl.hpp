@@ -45,6 +45,7 @@
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
 #include "Panzer_config.hpp"
@@ -142,7 +143,7 @@ namespace panzer_stk {
       // Assembly sublist
       {
 	Teuchos::ParameterList& p = pl->sublist("Assembly");
-	p.set<unsigned long>("Workset Size", 1);
+	p.set<int>("Workset Size", 1);
 	p.set<int>("Default Integration Order",-1);
 	p.set<std::string>("Field Order","");
 	p.set<bool>("Use DOFManager FEI",false);
@@ -225,7 +226,7 @@ namespace panzer_stk {
     panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
     
     // extract assembly information
-    std::size_t workset_size = assembly_params.get<unsigned long>("Workset Size");
+    std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager

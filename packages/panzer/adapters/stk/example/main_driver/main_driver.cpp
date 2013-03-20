@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
     // 2. Build volume field managers
     {
       Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<unsigned long>("Workset Size"));
+      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
     
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                         cm_factory,
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
   
       {
         Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-        user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<unsigned long>("Workset Size"));
+        user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
       
         fluxResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                           *eqset_factory,
