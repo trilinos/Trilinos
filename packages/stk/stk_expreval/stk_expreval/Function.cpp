@@ -206,7 +206,7 @@ extern "C" {
   }
 
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
-  double randomize() {
+  static double randomize() {
     std::srand(::time(NULL));
     return 0.0;
   }
