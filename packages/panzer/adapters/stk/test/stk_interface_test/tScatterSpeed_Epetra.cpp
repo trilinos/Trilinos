@@ -1,4 +1,4 @@
-﻿// STL includes
+// STL includes
 #include <iostream>
 #include <vector>
 #include <set>
