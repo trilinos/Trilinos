@@ -30,26 +30,20 @@
 #ifndef IFPACK2_RELAXATION_DECL_HPP
 #define IFPACK2_RELAXATION_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
 #include <Tpetra_Vector.hpp>
-
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <string>
-#include <iostream>
-#include <sstream>
 
 namespace Teuchos {
-  // forward declaration
+  // forward declarations
   class ParameterList;
+  class Time;
 }
 
 namespace Ifpack2 {
@@ -612,8 +606,6 @@ private:
 
   //! The matrix for which to construct the preconditioner or smoother.
   const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  //! Communicator over whose processes the matrix and vectors are distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
@@ -660,13 +652,6 @@ private:
   double ComputeFlops_;
   //! The total number of floating-point operations for all successful calls to apply().
   mutable double ApplyFlops_;
-  //! Number of local rows in the sparse matrix.
-  size_t NumMyRows_;
-  //! Number of global rows in the sparse matrix.
-  global_size_t NumGlobalRows_;
-  //! Number of global nonzeros in the sparse matrix.
-  global_size_t NumGlobalNonzeros_;
-
   //@}
 
 }; //class Relaxation

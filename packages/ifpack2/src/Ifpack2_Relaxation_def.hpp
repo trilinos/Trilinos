@@ -32,6 +32,7 @@
 
 #include "Ifpack2_Relaxation_decl.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include <Teuchos_TimeMonitor.hpp>
 
 
 namespace {
@@ -94,20 +95,20 @@ namespace Ifpack2 {
 
 //==========================================================================
 template<class MatrixType>
-Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A)
+Relaxation<MatrixType>::
+Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& A)
 : A_(A),
-  Comm_ (A->getRowMap ()->getComm ()),
-  Time_ (Teuchos::rcp (new Teuchos::Time("Ifpack2::Relaxation"))),
+  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::JACOBI),
-  MinDiagonalValue_ (Teuchos::as<scalar_type> (0.0)),
-  DampingFactor_ (Teuchos::as<scalar_type> (1.0)),
+  MinDiagonalValue_ (Teuchos::ScalarTraits<scalar_type>::zero ()),
+  DampingFactor_ (Teuchos::ScalarTraits<scalar_type>::one ()),
   IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
   DoL1Method_ (false),
   L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
-  Condest_ (Teuchos::as<magnitude_type> (-1)),
+  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -117,16 +118,12 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<sc
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
   ComputeFlops_ (0.0),
-  ApplyFlops_ (0.0),
-  NumMyRows_ (0),
-  NumGlobalRows_ (0),
-  NumGlobalNonzeros_ (0)
+  ApplyFlops_ (0.0)
 {
-  this->setObjectLabel("Ifpack2::Relaxation");
+  this->setObjectLabel ("Ifpack2::Relaxation");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (),
-    std::runtime_error,
-    "Ifpack2::Relaxation(): The constructor needs a non-null input matrix.");
+    A_.is_null (), std::runtime_error,
+    "Ifpack2::Relaxation constructor: The input matrix A must be non-null.");
 }
 
 //==========================================================================
@@ -242,7 +239,7 @@ void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
 template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > &
 Relaxation<MatrixType>::getComm() const{
-  return(Comm_);
+  return A_->getRowMap ()->getComm ();
 }
 
 //==========================================================================
@@ -392,42 +389,44 @@ void Relaxation<MatrixType>::apply(
     "X has " << X.getNumVectors() << " columns, but Y has "
     << Y.getNumVectors() << " columns.");
 
-  Time_->start(true);
+  {
+    // Reset the timer each time, since Relaxation uses the same Time
+    // object to track times for different methods.
+    Teuchos::TimeMonitor timeMon (*Time_, true);
 
-  // If X and Y are pointing to the same memory location,
-  // we need to create an auxiliary vector, Xcopy
-  RCP<const MV> Xcopy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    Xcopy = rcp (new MV (X));
-  }
-  else {
-    Xcopy = rcpFromRef (X);
-  }
+    // If X and Y are pointing to the same memory location,
+    // we need to create an auxiliary vector, Xcopy
+    RCP<const MV> Xcopy;
+    if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+      Xcopy = rcp (new MV (X));
+    }
+    else {
+      Xcopy = rcpFromRef (X);
+    }
 
-  if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
-  }
+    if (ZeroStartingSolution_) {
+      Y.putScalar (STS::zero ());
+    }
 
-  // Flops are updated in each of the following.
-  switch (PrecType_) {
-  case Ifpack2::JACOBI:
-    ApplyInverseJacobi(*Xcopy,Y);
-    break;
-  case Ifpack2::GS:
-    ApplyInverseGS(*Xcopy,Y);
-    break;
-  case Ifpack2::SGS:
-    ApplyInverseSGS(*Xcopy,Y);
-    break;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Ifpack2::Relaxation::apply: Invalid preconditioner type enum value "
-      << PrecType_ << ".  Please report this bug to the Ifpack2 developers.");
+    // Each of the following methods updates the flop count itself.
+    switch (PrecType_) {
+    case Ifpack2::JACOBI:
+      ApplyInverseJacobi(*Xcopy,Y);
+      break;
+    case Ifpack2::GS:
+      ApplyInverseGS(*Xcopy,Y);
+      break;
+    case Ifpack2::SGS:
+      ApplyInverseSGS(*Xcopy,Y);
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Ifpack2::Relaxation::apply: Invalid preconditioner type enum value "
+        << PrecType_ << ".  Please report this bug to the Ifpack2 developers.");
+    }
   }
-
+  ApplyTime_ += Time_->totalElapsedTime ();
   ++NumApply_;
-  Time_->stop();
-  ApplyTime_ += Time_->totalElapsedTime();
 }
 
 //==========================================================================
@@ -453,36 +452,19 @@ void Relaxation<MatrixType>::applyMat(
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::initialize() {
-  IsInitialized_ = false;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
-    "Ifpack2::Relaxation::Initialize ERROR, Matrix is NULL");
-
-  Time_->start(true);
-
-  NumMyRows_ = A_->getNodeNumRows();
-  NumGlobalRows_ = A_->getGlobalNumRows();
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries();
-
-  if (Comm_->getSize() != 1) {
-    IsParallel_ = true;
-  }
-  else {
-    IsParallel_ = false;
-  }
-
+  // Initialization for Relaxation is trivial, so we say it takes zero time.
+  //InitializeTime_ += Time_->totalElapsedTime ();
   ++NumInitialize_;
-  Time_->stop();
-  InitializeTime_ += Time_->totalElapsedTime();
   IsInitialized_ = true;
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::compute()
+void Relaxation<MatrixType>::compute ()
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::rcp;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -490,96 +472,101 @@ void Relaxation<MatrixType>::compute()
   typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
 
+  // We don't count initialization in compute() time.
   if (! isInitialized ()) {
     initialize ();
   }
 
-  Time_->start(true);
+  {
+    // Reset the timer each time, since Relaxation uses the same Time
+    // object to track times for different methods.
+    Teuchos::TimeMonitor timeMon (*Time_, true);
 
-  // reset values
-  IsComputed_ = false;
-  Condest_ = -1.0;
+    // Reset state.
+    IsComputed_ = false;
+    Condest_ = -STM::one ();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    NumSweeps_ < 0,
-    std::logic_error,
-    "Ifpack2::Relaxation::compute: NumSweeps_ = " << NumSweeps_ << " < 0.  "
-    "Please report this bug to the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      NumSweeps_ < 0, std::logic_error,
+      "Ifpack2::Relaxation::compute: NumSweeps_ = " << NumSweeps_ << " < 0.  "
+      "Please report this bug to the Ifpack2 developers.");
 
-  Diagonal_ = rcp (new vector_type (A_->getRowMap ()));
+    Diagonal_ = rcp (new vector_type (A_->getRowMap ()));
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Diagonal_.is_null (),
-    std::logic_error,
-    "Ifpack2::Relaxation::compute: Vector of diagonal entries has not been "
-    "created yet.  Please report this bug to the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Diagonal_.is_null (), std::logic_error,
+      "Ifpack2::Relaxation::compute: Vector of diagonal entries has not been "
+      "created yet.  Please report this bug to the Ifpack2 developers.");
 
-  A_->getLocalDiagCopy (*Diagonal_);
-  ArrayRCP<scalar_type> DiagView = Diagonal_->get1dViewNonConst ();
+    A_->getLocalDiagCopy (*Diagonal_);
+    // "Host view" means that if the Node type is a GPU Node, the
+    // ArrayRCP points to host memory, not device memory.  It will
+    // write back to device memory (Diagonal_) at end of scope.
+    ArrayRCP<scalar_type> diagHostView = Diagonal_->get1dViewNonConst ();
 
-  // Setup for L1 Methods.
-  // Here we add half the value of the off-processor entries in the row,
-  // but only if diagonal isn't sufficiently large.
-  //
-  // Note: This is only done in the slower-but-more-general "RowMatrix" mode.
-  //
-  // This follows from Equation (6.5) in:
-  // Baker, Falgout, Kolev and Yang.  Multigrid Smoothers for Ultraparallel Computing.
-  // SIAM J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864--2887.
-  if (DoL1Method_ && IsParallel_) {
-    size_t maxLength = A_->getNodeMaxNumRowEntries ();
-    Array<local_ordinal_type> Indices(maxLength);
-    Array<scalar_type> Values(maxLength);
-    size_t NumEntries;
+    // The view below is only valid as long as diagHostView is within scope.
+#ifdef HAVE_IFPACK2_DEBUG
+    ArrayView<scalar_type> diag = diagHostView ();
+#else
+    scalar_type* KOKKOSCLASSIC_RESTRICT const diag = diagHostView.getRawPtr ();
+#endif // HAVE_IFPACK2_DEBUG
 
-    scalar_type two = STS::one () + STS::one ();
+    const size_t numMyRows = A_->getNodeNumRows ();
 
-    for (size_t i = 0; i < NumMyRows_; ++i) {
-      A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
-      magnitude_type diagonal_boost = STM::zero ();
-      for (size_t k = 0 ; k < NumEntries ; ++k) {
-        if (as<size_t> (Indices[k]) > i) {
-          diagonal_boost += STS::magnitude (Values[k] / two);
+    // Setup for L1 Methods.
+    // Here we add half the value of the off-processor entries in the row,
+    // but only if diagonal isn't sufficiently large.
+    //
+    // This follows from Equation (6.5) in: Baker, Falgout, Kolev and
+    // Yang.  "Multigrid Smoothers for Ultraparallel Computing."  SIAM
+    // J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864-2887.
+    if (DoL1Method_ && IsParallel_) {
+      const scalar_type two = STS::one () + STS::one ();
+      const size_t maxLength = A_->getNodeMaxNumRowEntries ();
+      Array<local_ordinal_type> indices (maxLength);
+      Array<scalar_type> values (maxLength);
+      size_t numEntries;
+
+      for (size_t i = 0; i < numMyRows; ++i) {
+        A_->getLocalRowCopy (i, indices (), values (), numEntries);
+        magnitude_type diagonal_boost = STM::zero ();
+        for (size_t k = 0 ; k < numEntries ; ++k) {
+          if (as<size_t> (indices[k]) > i) {
+            diagonal_boost += STS::magnitude (values[k] / two);
+          }
+        }
+        if (STS::magnitude (diag[i]) < L1Eta_ * diagonal_boost) {
+          diag[i] += diagonal_boost;
         }
       }
-      if (STS::magnitude (DiagView[i]) < L1Eta_ * diagonal_boost) {
-        DiagView[i] += diagonal_boost;
+    }
+
+    // Check diagonal elements, replace zero elements with the
+    // minmimum diagonal value, and store their inverses.
+    const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
+    const scalar_type zero = STS::zero ();
+    const scalar_type one = STS::one ();
+    for (size_t i = 0 ; i < numMyRows; ++i) {
+      const scalar_type d_i = diag[i];
+      if (STS::magnitude (d_i) < minDiagValMag) {
+        diag[i] = MinDiagonalValue_;
+      }
+      if (d_i != zero) {
+        diag[i] = one / d_i;
       }
     }
-  }
+    ComputeFlops_ += numMyRows;
 
-  // check diagonal elements, store the inverses, and verify that
-  // no zeros are around. If an element is zero, then by default
-  // its inverse is zero as well (that is, the row is ignored).
-  for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-    scalar_type& diag = DiagView[i];
-    if (STS::magnitude (diag) < STS::magnitude (MinDiagonalValue_)) {
-      diag = MinDiagonalValue_;
+    if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
+      Importer_ = A_->getGraph ()->getImporter ();
+      // mfh 21 Mar 2013: The Import object may be null, but in that
+      // case, the domain and column Maps are the same and we don't
+      // need to Import anyway.
     }
-    if (diag != STS::zero ()) {
-      diag = STS::one () / diag;
-    }
-  }
-  ComputeFlops_ += NumMyRows_;
+  } // end TimeMonitor scope
 
-
-  // We need to import data from external processors. Here I create a
-  // Tpetra::Import object if needed (stealing from A_ if possible)
-  // Marzio's comment:
-  // Note that I am doing some strange stuff to set the components of Y
-  // from Y2 (to save some time).
-  //
-  if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
-    Importer_=A_->getGraph()->getImporter();
-    if (Importer_.is_null ()) {
-      Importer_ = rcp (new import_type (A_->getDomainMap (),
-                                        A_->getColMap ()));
-    }
-  }
-
+  ComputeTime_ += Time_->totalElapsedTime ();
   ++NumCompute_;
-  Time_->stop();
-  ComputeTime_ += Time_->totalElapsedTime();
   IsComputed_ = true;
 }
 
@@ -593,7 +580,8 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
-  const size_t numVectors = X.getNumVectors ();
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numVectors = as<double> (X.getNumVectors ());
   if (NumSweeps_ == 1 && ZeroStartingSolution_) {
     // If we are only doing one Jacobi sweep, and if we are allowed to
     // assume that the initial guess is zero, then Jacobi is just
@@ -620,7 +608,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
       // about counting the number of floating-point operations we
       // actually did; they are about counting the number that the
       // algorithm _requires_ us to have done.)
-      flopUpdate = as<double> (NumGlobalRows_) * as<double> (numVectors);
+      flopUpdate = numGlobalRows * numVectors;
     }
     else {
       // The update would normally be
@@ -629,7 +617,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
       //
       // but we're also assuming that Y is zero on input, so it's
       // unfair to count the update addition.
-      flopUpdate = 2.0 * as<double> (NumGlobalRows_) * as<double> (numVectors);
+      flopUpdate = 2.0 * numGlobalRows * numVectors;
     }
     ApplyFlops_ += flopUpdate;
     return;
@@ -653,11 +641,10 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
 
   // Floating-point operations due to the damping factor, per matrix
   // row, per direction, per columm of output.
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
-  ApplyFlops_ += as<double> (NumSweeps_) * as<double> (numVectors) *
-    (2.0 * as<double> (NumGlobalRows_) +
-     2.0 * as<double> (NumGlobalNonzeros_) +
-     dampingFlops);
+  ApplyFlops_ += as<double> (NumSweeps_) * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 //==========================================================================
@@ -708,7 +695,15 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
   RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+    if (Importer_.is_null ()) { // domain and column Maps are the same.
+      // We will copy Y into Y2 below, so no need to fill with zeros here.
+      Y2 = rcp (new MV (Y.getMap (), NumVectors, false));
+    } else {
+      // FIXME (mfh 21 Mar 2013) We probably don't need to fill with
+      // zeros here, since we are doing an Import into Y2 below
+      // anyway.  However, it doesn't hurt correctness.
+      Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+    }
   }
   else {
     Y2 = rcpFromRef (Y);
@@ -720,14 +715,19 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
   ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
 
+  const size_t numMyRows = A_->getNodeNumRows ();
   for (int j = 0; j < NumSweeps_; j++) {
     // data exchange is here, once per sweep
     if (IsParallel_) {
-      Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+      if (Importer_.is_null ()) {
+        *Y2 = Y; // just copy, since domain and column Maps are the same
+      } else {
+        Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+      }
     }
 
     if (! DoBackwardGS_) { // Forward sweep
-      for (size_t i = 0; i < NumMyRows_; ++i) {
+      for (size_t i = 0; i < numMyRows; ++i) {
         size_t NumEntries;
         A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
 
@@ -744,7 +744,7 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     else { // Backward sweep
       // ptrdiff_t is the same size as size_t, but is signed.  Being
       // signed is important so that i >= 0 is not trivially true.
-      for (ptrdiff_t i = NumMyRows_ - 1; i >= 0; --i) {
+      for (ptrdiff_t i = as<ptrdiff_t> (numMyRows) - 1; i >= 0; --i) {
         size_t NumEntries;
         A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
 
@@ -766,11 +766,12 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   }
 
   // See flop count discussion in implementation of ApplyInverseGS_CrsMatrix().
-  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
-  const size_t numVectors = X.getNumVectors ();
-
-  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
-    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 //==========================================================================
@@ -781,6 +782,7 @@ ApplyInverseGS_CrsMatrix (const MatrixType& A,
                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Tpetra::ESweepDirection direction =
@@ -798,11 +800,12 @@ ApplyInverseGS_CrsMatrix (const MatrixType& A,
 
   // Floating-point operations due to the damping factor, per matrix
   // row, per direction, per columm of output.
-  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
-  const size_t numVectors = X.getNumVectors ();
-
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   ApplyFlops_ += NumSweeps_ * numVectors *
-    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 //==========================================================================
@@ -863,7 +866,15 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 
   RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+    if (Importer_.is_null ()) { // domain and column Maps are the same.
+      // We will copy Y into Y2 below, so no need to fill with zeros here.
+      Y2 = rcp (new MV (Y.getMap (), NumVectors, false));
+    } else {
+      // FIXME (mfh 21 Mar 2013) We probably don't need to fill with
+      // zeros here, since we are doing an Import into Y2 below
+      // anyway.  However, it doesn't hurt correctness.
+      Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+    }
   }
   else {
     Y2 = rcpFromRef (Y);
@@ -874,13 +885,19 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
   ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView ();
   ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView ();
 
+  const size_t numMyRows = A_->getNodeNumRows ();
+
   for (int iter = 0; iter < NumSweeps_; ++iter) {
     // only one data exchange per sweep
     if (IsParallel_) {
-      Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+      if (Importer_.is_null ()) {
+        *Y2 = Y; // just copy, since domain and column Maps are the same
+      } else {
+        Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+      }
     }
 
-    for (size_t i = 0; i < NumMyRows_; ++i) {
+    for (size_t i = 0; i < numMyRows; ++i) {
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
@@ -897,7 +914,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 
     // ptrdiff_t is the same size as size_t, but is signed.  Being
     // signed is important so that i >= 0 is not trivially true.
-    for (ptrdiff_t i = NumMyRows_  - 1; i >= 0; --i) {
+    for (ptrdiff_t i = as<ptrdiff_t> (numMyRows)  - 1; i >= 0; --i) {
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
@@ -919,11 +936,12 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
   }
 
   // See flop count discussion in implementation of ApplyInverseSGS_CrsMatrix().
-  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
-  const size_t numVectors = X.getNumVectors ();
-
-  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
-    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 //==========================================================================
@@ -934,6 +952,7 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
@@ -953,11 +972,12 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
 
   // Floating-point operations due to the damping factor, per matrix
   // row, per direction, per columm of output.
-  const size_t dampingFlops = (DampingFactor_ == STS::one()) ? 0 : 1;
-  const size_t numVectors = X.getNumVectors ();
-
-  ApplyFlops_ += 2 * NumSweeps_ * numVectors *
-    (2 * NumGlobalRows_ + 2 * NumGlobalNonzeros_ + dampingFlops);
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
 //==========================================================================
@@ -1029,7 +1049,7 @@ describe (Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
-  const int myRank = Comm_->getRank ();
+  const int myRank = this->getComm ()->getRank ();
 
   //    none: print nothing
   //     low: print O(1) info from Proc 0
