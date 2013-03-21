@@ -1910,13 +1910,12 @@ namespace Tpetra {
 
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(exporter.getSourceMap());
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(exporter.getTargetMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(exporter.getTargetMap(),true);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
 
-    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
-
+    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
 
     ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
 

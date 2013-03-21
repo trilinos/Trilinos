@@ -106,20 +106,8 @@ public:
 
   /// Compute and return the transpose of the matrix given to the constructor.
   ///
-  /// \param optimizeTranspose [in] If true, optimize the storage of
-  ///   the transpose matrix to return.
   ///
-  /// \param transposeMatrix [in/out] The target of the transpose
-  ///   operation; the matrix into which the result of the transpose
-  ///   will be put.
-  ///
-  /// \param TransposeRowMap [in] If this argument is not null, then
-  ///   the transpose matrix will be distributed using this Map as the
-  ///   row Map.  If null, this method will evenly distribute the rows
-  ///   of the transpose matrix.
-  Teuchos::RCP<crs_matrix_type>
-  createTranspose (const OptimizeOption optimizeTranspose=DoOptimizeStorage,
-		   Teuchos::RCP<const map_type> transposeRowMap=Teuchos::null);
+  Teuchos::RCP<crs_matrix_type> createTranspose();
         
 private: 
   //! The original matrix to be transposed.
