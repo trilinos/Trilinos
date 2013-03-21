@@ -582,10 +582,10 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
 
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
   const double numVectors = as<double> (X.getNumVectors ());
-  if (NumSweeps_ == 1 && ZeroStartingSolution_) {
-    // If we are only doing one Jacobi sweep, and if we are allowed to
-    // assume that the initial guess is zero, then Jacobi is just
-    // diagonal scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
+  if (ZeroStartingSolution_) {
+    // For the first Jacobi sweep, if we are allowed to assume that
+    // the initial guess is zero, then Jacobi is just diagonal
+    // scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
     //
     // Compute the diagonal scaling as
     // Y(i,j) = Y(i,j) + DampingFactor_ * X(i,j) * D(i).
@@ -620,11 +620,17 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
       flopUpdate = 2.0 * numGlobalRows * numVectors;
     }
     ApplyFlops_ += flopUpdate;
-    return;
+    if (NumSweeps_ == 1) {
+      return;
+    }
   }
-  MV A_times_Y (Y.getMap (), numVectors);
-
-  for (int j = 0; j < NumSweeps_; ++j) {
+  // If we were allowed to assume that the starting guess was zero,
+  // then we have already done the first sweep above.
+  const int startSweep = ZeroStartingSolution_ ? 1 : 0;
+  // We don't need to initialize the result MV, since the sparse
+  // mat-vec will clobber its contents anyway.
+  MV A_times_Y (Y.getMap (), numVectors, false);
+  for (int j = startSweep; j < NumSweeps_; ++j) {
     applyMat (Y, A_times_Y);
     A_times_Y.update (STS::one (), X, -STS::one ());
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
@@ -643,7 +649,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
   // row, per direction, per columm of output.
   const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
-  ApplyFlops_ += as<double> (NumSweeps_) * numVectors *
+  ApplyFlops_ += as<double> (NumSweeps_ - startSweep) * numVectors *
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
