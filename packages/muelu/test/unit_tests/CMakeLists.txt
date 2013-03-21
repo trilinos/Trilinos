@@ -48,6 +48,7 @@ APPEND_SET(SOURCES
   MultiVectorTransferFactory.cpp
   PermutedTransferFactory.cpp
   DistanceLaplacian.cpp
+  BlockedPFactory.cpp
 )
 
 ### Tests that require other Trilinos packages
