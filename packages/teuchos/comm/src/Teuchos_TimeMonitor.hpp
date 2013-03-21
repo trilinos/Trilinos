@@ -47,12 +47,12 @@
  *
  * \brief Scope protection wrapper for Teuchos::Time, with timer reporting functionality.
  *
- * An instance of the \c TimeMonitor class wraps a nonconst reference
- * to a \c Teuchos::Time timer object.  TimeMonitor's constructor
- * starts the timer, and its destructor stops the timer.  This ensures
- * scope safety of timers, so that no matter how a scope is exited
- * (whether the normal way or when an exception is thrown), a timer
- * started in the scope is stopped when the scope is left.
+ * An instance of the Teuchos::TimeMonitor class wraps a nonconst
+ * reference to a Teuchos::Time timer object.  TimeMonitor's
+ * constructor starts the timer, and its destructor stops the timer.
+ * This ensures scope safety of timers, so that no matter how a scope
+ * is exited (whether the normal way or when an exception is thrown),
+ * a timer started in the scope is stopped when the scope is left.
  *
  * TimeMonitor also has class methods that create or destroy timers
  * (in such a way that it can track the complete set of created timers
@@ -61,7 +61,7 @@
 
 /** \example TimeMonitor/cxx_main.cpp
  *
- * This is an example of how to use the \c Teuchos::TimeMonitor class.
+ * This is an example of how to use the Teuchos::TimeMonitor class.
  */
 
 #include "Teuchos_PerformanceMonitorBase.hpp"
@@ -121,7 +121,6 @@
 
 namespace Teuchos {
 
-
 /// \typedef stat_map_type
 /// \brief Global statistics collected from timer data.
 ///
@@ -161,8 +160,8 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// \warning This class must only be used to time functions that are
 ///   called only within the main program.  It may _not_ be used in
 ///   pre-program setup or post-program teardown!
-class TEUCHOSCOMM_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
-{
+class TEUCHOSCOMM_LIB_DLL_EXPORT TimeMonitor :
+    public PerformanceMonitorBase<Time> {
 public:
 
   /** \name Constructor/Destructor */
@@ -188,7 +187,7 @@ public:
   /// named timer, and you would like TimeMonitor to track the timer
   /// for later computation of global statistics over processes.
   ///
-  /// This method wraps \c getNewCounter() (inherited from the base
+  /// This method wraps getNewCounter() (inherited from the base
   /// class) for backwards compatibiity.
   static RCP<Time> getNewTimer (const std::string& name) {
     return getNewCounter (name);
@@ -204,7 +203,7 @@ public:
 
   /// \brief Compute global timer statistics for all timers on the given communicator.
   ///
-  /// The typical use case for \c Time and \c TimeMonitor is that all
+  /// The typical use case for Time and TimeMonitor is that all
   /// processes in a communicator create the same set of timers, and
   /// then want to report summary statistics.  This method supports
   /// that typical use case.  For each timer in the set, this method
@@ -296,13 +295,12 @@ public:
   ///   number and names of statistics.
   ///
   /// \param comm [in] Communicator whose process(es) will participate
-  ///   in the gathering of timer statistics.  This is a \c Ptr and
-  ///   not an \c RCP, because \c RCP would suggest that \c
-  ///   TimeMonitor were keeping the communicator around after return
-  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
-  ///   will only reference the communicator during this method.  If
-  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
-  ///   its \c ptr() method:
+  ///   in the gathering of timer statistics.  This is a Ptr and not
+  ///   an RCP, because RCP would suggest that TimeMonitor were
+  ///   keeping the communicator around after return of this method.
+  ///   Ptr suggests instead that TimeMonitor will only reference the
+  ///   communicator during this method.  If you have an RCP, you can
+  ///   turn it into a Ptr by calling its ptr() method:
   ///   \code
   ///   RCP<const Comm<int> > myComm = ...;
   ///   TimeMonitor::computeGlobalTimerStatistics (statData, statNames, myComm.ptr());
@@ -325,14 +323,14 @@ public:
 
   /// \brief Compute global timer statistics for all timers on all (MPI) processes.
   ///
-  /// This is an overload of the above \c
-  /// computeGlobalTimerStatistics() method for when the caller does
-  /// not want to provide a communicator explicitly.  This method
-  /// "does the right thing" in that case.  Specifically:
+  /// This is an overload of the above computeGlobalTimerStatistics()
+  /// method for when the caller does not want to provide a
+  /// communicator explicitly.  This method "does the right thing" in
+  /// that case.  Specifically:
   /// - If Trilinos was not built with MPI support, this method
   ///   assumes a serial "communicator" containing one process.
   /// - If Trilinos was built with MPI support and MPI has been
-  ///   initialized (via \c MPI_Init() or one of the wrappers in
+  ///   initialized (via MPI_Init() or one of the wrappers in
   ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
   ///   communicator.  This is the most common case.
   /// - If Trilinos was built with MPI support and MPI has <i>not</i>
@@ -348,7 +346,7 @@ public:
   ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
   ///   Otherwise, the method will never finish, since it will be
   ///   waiting forever for the non-participating processes.  If you
-  ///   want to use \c computeGlobalTimerStatistics() on a
+  ///   want to use computeGlobalTimerStatistics() on a
   ///   subcommunicator, please use the overloaded version above that
   ///   takes a communicator as an input argument.
   static void
@@ -360,21 +358,20 @@ public:
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
   /// If writeGlobalStatus=true, this method computes the same
-  /// statistics as \c computeGlobalTimerStatistics(), using the same
-  /// collective algorithm.  (\c writeGlobalStatus=false means that
-  /// only the process with rank 0 in the communicator reports its
-  /// timers' data.)  It then reports the results to the given output
-  /// stream on the process with rank 0 in the given communicator.
-  /// Output follows a human-readable tabular form.
+  /// statistics as computeGlobalTimerStatistics(), using the same
+  /// collective algorithm.  (<tt>writeGlobalStatus=false</tt> means
+  /// that only the process with rank 0 in the communicator reports
+  /// its timers' data.)  It then reports the results to the given
+  /// output stream on the process with rank 0 in the given
+  /// communicator.  Output follows a human-readable tabular form.
   ///
   /// \param comm [in] Communicator whose process(es) will participate
-  ///   in the gathering of timer statistics.  This is a \c Ptr and
-  ///   not an \c RCP, because \c RCP would suggest that \c
-  ///   TimeMonitor were keeping the communicator around after return
-  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
-  ///   will only reference the communicator during this method.  If
-  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
-  ///   its \c ptr() method:
+  ///   in the gathering of timer statistics.  This is a Ptr and not
+  ///   an RCP, because RCP would suggest that TimeMonitor were
+  ///   keeping the communicator around after return of this method.
+  ///   Ptr suggests instead that TimeMonitor will only reference the
+  ///   communicator during this method.  If you have an RCP, you can
+  ///   turn it into a Ptr by calling its ptr() method:
   ///   \code
   ///   RCP<const Comm<int> > myComm = ...;
   ///   TimeMonitor::summarize (myComm.ptr());
@@ -417,8 +414,8 @@ public:
   ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
-  ///   This method will <i>only</i> perform communication if \c
-  ///   writeGlobalStats is true.
+  ///   This method will <i>only</i> perform communication if
+  ///   <tt>writeGlobalStats</tt> is true.
   static void
   summarize (Ptr<const Comm<int> > comm,
              std::ostream &out=std::cout,
@@ -430,12 +427,12 @@ public:
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
-  /// This is an overload of the above \c summarize() method for when
-  /// the caller does not want to provide a communicator explicitly.
-  /// This method "does the right thing" in that case.  For an
-  /// explanation of what that means, see the documentation of the
-  /// overload of \c computeGlobalTimerStatistics() that does not
-  /// require a communicator argument.
+  /// This is an overload of the above summarize() method for when the
+  /// caller does not want to provide a communicator explicitly.  This
+  /// method "does the right thing" in that case.  For an explanation
+  /// of what that means, see the documentation of the overload of
+  /// computeGlobalTimerStatistics() that does not require a
+  /// communicator argument.
   ///
   /// \warning If you call this method when MPI is running, you
   ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
@@ -460,13 +457,12 @@ public:
   /// nonnull but empty (it will fill in default parameters).
   ///
   /// \param comm [in] Communicator whose process(es) will participate
-  ///   in the gathering of timer statistics.  This is a \c Ptr and
-  ///   not an \c RCP, because \c RCP would suggest that \c
-  ///   TimeMonitor were keeping the communicator around after return
-  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
-  ///   will only reference the communicator during this method.  If
-  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
-  ///   its \c ptr() method:
+  ///   in the gathering of timer statistics.  This is a Ptr and not
+  ///   an RCP, because RCP would suggest that TimeMonitor were
+  ///   keeping the communicator around after return of this method.
+  ///   Ptr suggests instead that TimeMonitor will only reference the
+  ///   communicator during this method.  If you have an RCP, you can
+  ///   turn it into a Ptr by calling its ptr() method:
   ///   \code
   ///   RCP<const Comm<int> > myComm = ...;
   ///   TimeMonitor::report (myComm.ptr (), ...);
@@ -523,8 +519,8 @@ public:
   ///
   /// "How to merge timer sets" refers to the set operation by which
   /// processors should combine their sets of timers in order to
-  /// compute global timer statistics.  This corresponds to the \c
-  /// setOp argument of summarize().
+  /// compute global timer statistics.  This corresponds to the
+  /// <tt>setOp</tt> argument of summarize().
   ///
   /// The remaining Boolean parameters are the same as the eponymous
   /// arguments of summarize(), to whose documentation one should
@@ -695,10 +691,9 @@ namespace Teuchos {
 /// explanation of the purpose of this class.
 class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurrogate
 {
-  virtual void summarize(std::ostream& out)
-    {
-      TimeMonitor::summarize(out);
-    }
+  virtual void summarize (std::ostream& out) {
+    TimeMonitor::summarize (out);
+  }
 };
 
 /// \class TimeMonitorSurrogateImplInserter
@@ -745,28 +740,21 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
 class TimeMonitorSurrogateImplInserter {
 public:
   //! Constructor: inject dependency on TimeMonitor into CommandLineProcessor.
-  TimeMonitorSurrogateImplInserter()
-    {
-      if (is_null(CommandLineProcessor::getTimeMonitorSurrogate())) {
-        CommandLineProcessor::setTimeMonitorSurrogate(
-          Teuchos::rcp(new TimeMonitorSurrogateImpl));
-        //std::cout << "\nDEBUG: Injected TimeMonitorSurrogateImpl!\n";
-      }
+  TimeMonitorSurrogateImplInserter () {
+    if (is_null (CommandLineProcessor::getTimeMonitorSurrogate ())) {
+      CommandLineProcessor::setTimeMonitorSurrogate (Teuchos::rcp (new TimeMonitorSurrogateImpl));
     }
+  }
 };
-
 
 } // end namespace Teuchos
 
 
 namespace {
 
-
-// Inject the impl in every translation unit to make sure it is done!
+// Inject the implementation in every translation unit.
 Teuchos::TimeMonitorSurrogateImplInserter timeMonitorSurrogateImplInserter;
 
-
-} // end namespace
-
+} // namespace (anonymous)
 
 #endif // TEUCHOS_TIMEMONITOR_H
