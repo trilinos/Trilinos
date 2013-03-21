@@ -115,11 +115,6 @@ namespace MueLu {
       minGlobalAggId[i] = numAggsGlobal[i-1];
     }
 
-    //GO numAggs = aggregates->GetNumAggregates();
-    //ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    //AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(*aggregates, *amalgInfo, aggSizes);
-    //Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
-    //AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
     ArrayRCP<LO> aggStart;
     ArrayRCP<GlobalOrdinal> aggToRowMap;
     AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
@@ -136,8 +131,9 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
+    GO numAggs = aggregates->GetNumAggregates();
     std::vector<GlobalOrdinal> nodeIds;
-    for (int i=0; i< aggStart.size(); ++i) {
+    for (int i=0; i< numAggs; ++i) {
       fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
       for (int k=aggStart[i]; k< aggStart[i+1]; ++k) {
         /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
