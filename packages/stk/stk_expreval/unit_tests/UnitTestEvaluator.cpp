@@ -457,7 +457,7 @@ UnitTestEvaluator::testEvaluator()
 
   STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("uniform_pdf(x,10,1.0)"    ,    0,    4,  1000, false ));
+  //STKUNIT_EXPECT_TRUE(evaluate_range("uniform_pdf(x,10,1.0)"    ,    0,    4,  1000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, false ));
   STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"       ,  0.0,  2.0,  2000, false ));
