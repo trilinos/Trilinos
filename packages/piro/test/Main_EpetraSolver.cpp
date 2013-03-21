@@ -43,8 +43,8 @@
 #include <iostream>
 #include <string>
 
-#include "Piro_ExtensibleFactory.hpp"
 #include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_ProviderHelpers.hpp"
 #include "Piro_Epetra_PerformSolve.hpp"
 
 #include "MockModelEval_A.hpp"

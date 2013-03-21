@@ -47,7 +47,7 @@
 #include "ObserveSolution_Epetra.hpp"
 
 #include "Piro_Epetra_SolverFactory.hpp"
-#include "Piro_ExtensibleFactory.hpp"
+#include "Piro_ProviderHelpers.hpp"
 
 #include "Piro_Epetra_PerformAnalysis.hpp"
 

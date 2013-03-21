@@ -40,30 +40,31 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_SOLVERFACTORY_H
-#define PIRO_SOLVERFACTORY_H
+#ifndef PIRO_PROVIDERBASE_H
+#define PIRO_PROVIDERBASE_H
 
-#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
-
-#include "Piro_ObserverBase.hpp"
-
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
+
+#include <functional>
 
 namespace Piro {
 
-//! Factory for creating Thyra-based Piro solvers
-class SolverFactory {
+template <typename T>
+class ProviderBase :
+  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
 public:
-  //! Create solver
-  template <typename Scalar>
-  Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
-      const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
+  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
+
+  ProviderBase() {}
+  virtual ~ProviderBase() {}
+
+private:
+  // Disallow copy & assignment
+  ProviderBase(const ProviderBase &);
+  ProviderBase &operator=(const ProviderBase &);
 };
 
 } // namespace Piro
 
-#include "Piro_SolverFactory_Def.hpp"
-
-#endif /* PIRO_SOLVERFACTORY_H */
+#endif /*PIRO_PROVIDERBASE_H*/

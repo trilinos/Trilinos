@@ -43,7 +43,7 @@
 #include "Piro_Epetra_StokhosSolver.hpp"
 
 #include "Piro_Epetra_SolverFactory.hpp"
-#include "Piro_ExtensibleFactory.hpp"
+#include "Piro_Provider.hpp"
 
 #include "Stokhos.hpp"
 #include "Stokhos_Epetra.hpp"
