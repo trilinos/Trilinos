@@ -709,7 +709,16 @@ public:
   /// <tt>std::range_error</tt>.  If it does not contain an integer,
   /// this throws <tt>std::invalid_argument</tt>.
   static long long safeConvert (const std::string& t) {
+#if defined(_MSC_VER)
+    // Windows does not implement strtoull, so we resort to a
+    // fallback.  Thanks to Ross Bartlett for pointing out _strtoi64.
+    // See the MSDN reference [last accessed 21 Mar 2013]:
+    //
+    // http://msdn.microsoft.com/en-us/library/h80404d3%28v=vs.80%29.aspx
+    return intToString<long long> (t, &_strtoi64, "long long");
+#else
     return intToString<long long> (t, &strtoll, "long long");
+#endif // defined(_MSC_VER)
   }
 
   //! Convert the given \c std::string to a <tt>long long</tt>.
@@ -731,7 +740,26 @@ public:
   /// <tt>std::range_error</tt>.  If it does not contain an integer,
   /// this throws <tt>std::invalid_argument</tt>.
   static unsigned long long safeConvert (const std::string& t) {
+#if defined(_MSC_VER)
+    // Windows does not implement strtoull, so we resort to a
+    // fallback.  The fallback does not know how to check for under-
+    // or overflow.  Alas, Windows does not seem to have an equivalent
+    // of _strtoi64 for unsigned long long.
+    const char intTypeName[] = "unsigned long long";
+    std::istringstream istr (t);
+    unsigned long long i = 0;
+    i >> istr;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! istr, std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::"
+      "convert: Unable to convert the given string \"" << t << "\" to " <<
+      intTypeName << ".  Windows lacks strtoull(), so we had to resort to a "
+      "fall-back conversion.  The fall-back method does not know how to test "
+      "for overflow.");
+    return i;
+#else
     return intToString<unsigned long long> (t, &strtoull, "unsigned long long");
+#endif // defined(_MSC_VER)
   }
 
   //! Convert the given \c std::string to an <tt>unsigned long long</tt>.
