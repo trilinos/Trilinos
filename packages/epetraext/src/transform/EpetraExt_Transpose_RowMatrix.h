@@ -63,18 +63,14 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   //! Constructor
   /*!
     \param In
-    MakeDataContiguous - Whether to optimize form of matrix to be contiguous data storage.
-    \param In
     TransposeRowMap - Map to be used for row mapping of transpose matrix
     \param In
     IgnoreNonLocalCols - Whether to ignore non-local columns for the transpose
    */
-  RowMatrix_Transpose( bool MakeDataContiguous = false,
-		       Epetra_Map * TransposeRowMap = 0,
+  RowMatrix_Transpose( Epetra_Map * TransposeRowMap = 0,
 		       bool IgnoreNonLocalCols = false)
   : TransposeMatrix_(0),
     TransposeRowMap_(TransposeRowMap),
-    MakeDataContiguous_(MakeDataContiguous),
     IgnoreNonLocalCols_(IgnoreNonLocalCols),
     NumMyRows_(0),
     NumMyCols_(0),
