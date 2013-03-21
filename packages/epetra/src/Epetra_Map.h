@@ -143,6 +143,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
   Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_Map(long long NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
   Epetra_Map(long long NumGlobalElements, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
@@ -179,6 +180,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
   Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_Map(long long NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
   Epetra_Map(long long NumGlobalElements, int NumMyElements, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
@@ -225,6 +227,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
              int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_Map(long long NumGlobalElements, int NumMyElements,
+             const long long *MyGlobalElements,
+             int IndexBase, const Epetra_Comm& Comm);
   Epetra_Map(long long NumGlobalElements, int NumMyElements,
              const long long *MyGlobalElements,
              long long IndexBase, const Epetra_Comm& Comm);

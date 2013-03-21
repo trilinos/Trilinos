@@ -225,6 +225,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
@@ -263,6 +264,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
+    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
     int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
 #endif
@@ -310,6 +313,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
        int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,  
+      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,  
       int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
@@ -360,6 +366,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
                   const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,
+      const int *ElementSizeList, int IndexBase,
+                  const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,
       const int *ElementSizeList, long long IndexBase,
