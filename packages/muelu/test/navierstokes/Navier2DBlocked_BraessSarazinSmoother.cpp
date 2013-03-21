@@ -591,7 +591,7 @@ int main(int argc, char *argv[]) {
   xtest->norm2(norms);
   *out << "Test: ||x_1|| = " << norms[0] << std::endl;
 
-  Teuchos::Array<typename Teuchos::ScalarTraits<double>::magnitudeType> test = MueLu::Utils<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
+  Teuchos::Array<Teuchos::ScalarTraits<double>::magnitudeType> test = MueLu::Utils<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
   *out << "residual norm: " << test[0] << std::endl;
 
   return EXIT_SUCCESS;
