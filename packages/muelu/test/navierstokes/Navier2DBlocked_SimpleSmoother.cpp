@@ -95,7 +95,6 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
-#include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_Utilities.hpp"

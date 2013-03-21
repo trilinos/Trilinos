@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetIgnoreUserData(true);
 
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null/*AFact necessary for row map index base*/));
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 

@@ -645,7 +645,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null)); // use row map index base from bOp
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 

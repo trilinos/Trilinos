@@ -101,7 +101,6 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
-#include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"

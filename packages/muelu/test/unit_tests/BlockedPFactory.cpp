@@ -242,7 +242,7 @@ namespace MueLuTests {
     FC2->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
     /////////////////////////////////////////// define blocked transfer ops
-    RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null)); // use row map index base from bOp
+    RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
     PFact->AddFactoryManager(FC1);
     PFact->AddFactoryManager(FC2);
 
