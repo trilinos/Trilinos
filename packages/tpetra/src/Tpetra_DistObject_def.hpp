@@ -438,7 +438,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  createViewsNonConst (Kokkos::ReadWriteOption rwo)
+  createViewsNonConst (Kokkos::ReadWriteOption /*rwo*/)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
