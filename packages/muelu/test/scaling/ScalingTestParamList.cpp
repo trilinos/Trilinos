@@ -165,8 +165,10 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0) {
     GO mx = galeriList.get("mx", -1);
     GO my = galeriList.get("my", -1);
+    GO mz = galeriList.get("mz", -1);
     std::cout << "Processor subdomains in x direction: " << mx << std::endl
               << "Processor subdomains in y direction: " << my << std::endl
+              << "Processor subdomains in z direction: " << mz << std::endl
               << "========================================================" << std::endl;
   }
 

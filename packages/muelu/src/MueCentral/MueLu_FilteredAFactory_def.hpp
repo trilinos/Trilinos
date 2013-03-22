@@ -84,13 +84,14 @@ namespace MueLu {
     RCP<Matrix>     A = Get< RCP<Matrix> >   (currentLevel, "A");
     RCP<GraphBase>  G = Get< RCP<GraphBase> >(currentLevel, "Graph");
     bool      lumping = pL.get<bool>("lumping");
-
     size_t    blkSize = A->GetFixedBlockSize();
 
     if (lumping)
       GetOStream(Runtime0,0) << "Lumping dropped entries" << std::endl;
 
     ArrayView<const GO> GIDs = A->getColMap()->getNodeElementList();
+
+    // NOTE: the good thing is that we mostly deal with local IDs
 
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getNodeMaxNumRowEntries());
@@ -143,6 +144,7 @@ namespace MueLu {
         newInds.resize(numInds);
         newVals.resize(numInds);
 
+        // NOTE: this is the only place where we do need GIDs
         for (size_t j = 0; j < numInds; j++)
           newInds[j] = GIDs[newInds[j]];
 
