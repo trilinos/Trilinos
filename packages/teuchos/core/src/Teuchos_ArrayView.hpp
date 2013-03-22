@@ -382,7 +382,9 @@ void ArrayView<T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
   if (ptr_ && arcp_.is_null()) {
     arcp_ = ArrayRCP<T>(ptr_, 0, size_, false, rcpNodeLookup);
   }
-#endif
+#else
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 }
 
 

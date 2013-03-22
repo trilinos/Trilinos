@@ -97,7 +97,7 @@ public:
       return *this;
     }
 private:
-  ArrayRCP<T1> arcp_pod_; 
+  ArrayRCP<T1> arcp_pod_;
   void freeMemory()
     {
       typedef typename ArrayRCP<T2>::iterator itr_t;
@@ -112,7 +112,7 @@ private:
 };
 
 
-// Constructors/Destructors/Initializers 
+// Constructors/Destructors/Initializers
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP( ENull )
@@ -162,6 +162,8 @@ ArrayRCP<T>::ArrayRCP(
       nodeDeleter.release();
     }
   }
+#else // NOT TEUCHOS_DEBUG
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
 #endif // TEUCHOS_DEBUG
 }
 
@@ -389,7 +391,7 @@ typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 }
 
 
-// ArrayRCP Views 
+// ArrayRCP Views
 
 
 template<class T> inline
@@ -451,7 +453,7 @@ ArrayRCP<T>::size() const
 }
 
 
-// ArrayView views 
+// ArrayView views
 
 
 template<class T> inline
@@ -932,7 +934,7 @@ Teuchos::arcpFromArrayView(const ArrayView<T> &av)
   return av.access_private_arcp();
 #else
   return arcp(av.getRawPtr(), 0, av.size(), false);
-#endif  
+#endif
 }
 
 
@@ -1183,7 +1185,7 @@ Teuchos::get_dealloc( const ArrayRCP<T>& p )
 
 template<class Dealloc_T, class T>
 inline
-Dealloc_T& 
+Dealloc_T&
 Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 {
   typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
